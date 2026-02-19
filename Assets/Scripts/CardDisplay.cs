@@ -115,6 +115,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         cardImage.texture = frontTexture;
     }
 
+    public void ShowBack()
+    {
+        if (cardImage == null || backTexture == null) return;
+        isFlipped = true;
+        cardImage.texture = backTexture;
+    }
+
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (GameManager.Instance != null)

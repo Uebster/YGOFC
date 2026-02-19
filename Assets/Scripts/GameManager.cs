@@ -20,6 +20,12 @@ public class GameManager : MonoBehaviour
     [Header("MODOS DE VISUALIZAÇÃO")]
     [Tooltip("Ativa o visualizador 2D (RawImage na tela)")]
     public bool modo2D_Ativado = true;
+    [Tooltip("Habilita funcionalidades de desenvolvedor (ex: ver mão do oponente, sacar para oponente)")]
+    public bool devMode = false;
+    [Tooltip("Permite sacar cartas clicando no Deck")]
+    public bool enableDeckClickDraw = true;
+    [Tooltip("Define se as cartas do oponente estão visíveis")]
+    public bool showOpponentHand = false;
 
     // --- REFERÊNCIAS 2D ---
     [Header("REFERÊNCIAS DO MODO 2D")]
@@ -30,6 +36,12 @@ public class GameManager : MonoBehaviour
     public GameObject cardPrefab; // Prefab da carta para instanciar na mão
     public Transform playerHandLayoutGroup; // O HorizontalLayoutGroup da mão do jogador
     public Transform opponentHandLayoutGroup; // O HorizontalLayoutGroup da mão do oponente
+    
+    [Header("Piles Visuals")]
+    public PileDisplay playerDeckDisplay;
+    public PileDisplay opponentDeckDisplay;
+    public PileDisplay playerGraveyardDisplay;
+    public PileDisplay opponentGraveyardDisplay;
 
     [Header("UI Elements")]
     public TextMeshProUGUI cardNameText;
@@ -39,8 +51,10 @@ public class GameManager : MonoBehaviour
 
     private List<CardData> playerDeck = new List<CardData>();
     private List<GameObject> playerHand = new List<GameObject>();
+    private List<CardData> playerGraveyard = new List<CardData>();
     private List<CardData> opponentDeck = new List<CardData>();
     private List<GameObject> opponentHand = new List<GameObject>();
+    private List<CardData> opponentGraveyard = new List<CardData>();
     private CardDisplay currentCardDisplay; // Referência ao CardDisplay na cardDisplayArea
 
     void Awake()
@@ -86,6 +100,7 @@ public class GameManager : MonoBehaviour
         playerDeck = new List<CardData>(cardDatabase.cardDatabase);
         ShuffleDeck();
         Debug.Log($"Deck do jogador inicializado com {playerDeck.Count} cartas.");
+        UpdatePileVisuals();
     }
 
     void InitializeOpponentDeck()
@@ -94,6 +109,7 @@ public class GameManager : MonoBehaviour
         opponentDeck = new List<CardData>(cardDatabase.cardDatabase);
         ShuffleOpponentDeck();
         Debug.Log($"Deck do oponente inicializado com {opponentDeck.Count} cartas.");
+        UpdatePileVisuals();
     }
 
     void ShuffleDeck()
@@ -109,6 +125,7 @@ public class GameManager : MonoBehaviour
             playerDeck[n] = value;
         }
         Debug.Log("Deck embaralhado.");
+        UpdatePileVisuals();
     }
 
     void ShuffleOpponentDeck()
@@ -123,6 +140,7 @@ public class GameManager : MonoBehaviour
             opponentDeck[k] = opponentDeck[n];
             opponentDeck[n] = value;
         }
+        UpdatePileVisuals();
     }
 
     public void DrawCard()
@@ -135,6 +153,7 @@ public class GameManager : MonoBehaviour
 
         CardData drawnCard = playerDeck[0];
         playerDeck.RemoveAt(0);
+        UpdatePileVisuals(); // Atualiza visual do deck após remover carta
         
         Debug.Log($"Carta comprada: {drawnCard.name}. Cartas restantes no deck: {playerDeck.Count}");
 
@@ -178,6 +197,7 @@ public class GameManager : MonoBehaviour
 
         CardData drawnCard = opponentDeck[0];
         opponentDeck.RemoveAt(0);
+        UpdatePileVisuals(); // Atualiza visual do deck do oponente
         
         // Adiciona a carta à mão visualmente
         if (cardPrefab != null && opponentHandLayoutGroup != null)
@@ -190,9 +210,16 @@ public class GameManager : MonoBehaviour
             }
             newCardDisplay.cardImage = newCardGO.GetComponent<RawImage>();
 
-            // Cartas do oponente entram viradas para baixo (false)
-            newCardDisplay.SetCard(drawnCard, cardBackTexture, false);
+            // Cartas do oponente entram viradas para baixo (false), exceto se showOpponentHand estiver ativo
+            bool startFaceUp = showOpponentHand;
+            newCardDisplay.SetCard(drawnCard, cardBackTexture, startFaceUp);
             opponentHand.Add(newCardGO);
+            
+            if (devMode) Debug.Log($"Oponente comprou: {drawnCard.name}");
+        }
+        else
+        {
+            Debug.LogError("DrawOpponentCard: CardPrefab ou OpponentHandLayoutGroup não atribuídos no GameManager!");
         }
     }
 
@@ -202,6 +229,20 @@ public class GameManager : MonoBehaviour
         {
             DrawCard();
         }
+    }
+
+    // Método para enviar carta para o cemitério (Exemplo de uso)
+    public void SendToGraveyard(CardData card, bool isPlayer)
+    {
+        if (isPlayer)
+        {
+            playerGraveyard.Add(card);
+        }
+        else
+        {
+            opponentGraveyard.Add(card);
+        }
+        UpdatePileVisuals();
     }
 
     public void DrawInitialOpponentHand(int count)
@@ -234,6 +275,33 @@ public class GameManager : MonoBehaviour
         // Define o visualizador para mostrar o verso da carta (estado neutro)
         // ou poderia limpar tudo. Vamos mostrar o verso.
         currentCardDisplay.SetCardBackOnly(cardBackTexture);
+    }
+
+    // Função de DEV para alternar visibilidade da mão do oponente
+    public void ToggleOpponentHandVisibility()
+    {
+        if (!devMode) return;
+
+        showOpponentHand = !showOpponentHand; // Alterna o estado
+
+        foreach (GameObject cardGO in opponentHand)
+        {
+            CardDisplay display = cardGO.GetComponent<CardDisplay>();
+            if (display != null)
+            {
+                if (showOpponentHand) display.ShowFront();
+                else display.ShowBack();
+            }
+        }
+    }
+
+    // Atualiza todos os visuais de pilhas (Decks e Cemitérios)
+    void UpdatePileVisuals()
+    {
+        if (playerDeckDisplay != null) playerDeckDisplay.UpdatePile(playerDeck, cardBackTexture);
+        if (opponentDeckDisplay != null) opponentDeckDisplay.UpdatePile(opponentDeck, cardBackTexture);
+        if (playerGraveyardDisplay != null) playerGraveyardDisplay.UpdatePile(playerGraveyard, cardBackTexture);
+        if (opponentGraveyardDisplay != null) opponentGraveyardDisplay.UpdatePile(opponentGraveyard, cardBackTexture);
     }
 
     IEnumerator LoadCardBackTexture()
@@ -276,6 +344,23 @@ public class GameManager : MonoBehaviour
         if (cardDisplayArea != null)
         {
             cardDisplayArea.gameObject.SetActive(modo2D_Ativado);
+        }
+
+        // Atualiza visibilidade da mão do oponente em tempo real se alterar o showOpponentHand no Inspector
+        if (Application.isPlaying && opponentHand != null)
+        {
+            foreach (GameObject cardGO in opponentHand)
+            {
+                if (cardGO != null)
+                {
+                    CardDisplay display = cardGO.GetComponent<CardDisplay>();
+                    if (display != null)
+                    {
+                        if (showOpponentHand) display.ShowFront();
+                        else display.ShowBack();
+                    }
+                }
+            }
         }
     }
 }
