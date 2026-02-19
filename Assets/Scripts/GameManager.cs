@@ -32,6 +32,12 @@ public class GameManager : MonoBehaviour
     public int screenHeight = 900;
     public bool fullScreen = false;
 
+    [Header("Hand Settings")]
+    [Tooltip("A escala das cartas na mão do jogador.")]
+    public Vector3 handCardScale = new Vector3(1f, 1f, 1f);
+    [Tooltip("A altura que a carta sobe ao passar o mouse sobre ela.")]
+    public float handCardHoverYOffset = 30f;
+
     // --- REFERÊNCIAS 2D ---
     [Header("REFERÊNCIAS DO MODO 2D")]
     public RawImage cardDisplayArea; // A RawImage onde a carta individual será exibida
@@ -47,6 +53,8 @@ public class GameManager : MonoBehaviour
     public PileDisplay opponentDeckDisplay;
     public PileDisplay playerGraveyardDisplay;
     public PileDisplay opponentGraveyardDisplay;
+    public PileDisplay playerExtraDeckDisplay;
+    public PileDisplay opponentExtraDeckDisplay;
 
     [Header("UI Elements")]
     public TextMeshProUGUI cardNameText;
@@ -60,6 +68,8 @@ public class GameManager : MonoBehaviour
     private List<CardData> opponentDeck = new List<CardData>();
     private List<GameObject> opponentHand = new List<GameObject>();
     private List<CardData> opponentGraveyard = new List<CardData>();
+    private List<CardData> playerExtraDeck = new List<CardData>();
+    private List<CardData> opponentExtraDeck = new List<CardData>();
     private CardDisplay currentCardDisplay; // Referência ao CardDisplay na cardDisplayArea
 
     void Awake()
@@ -127,6 +137,8 @@ public class GameManager : MonoBehaviour
         opponentDeck.Clear();
         playerGraveyard.Clear();
         opponentGraveyard.Clear();
+        playerExtraDeck.Clear();
+        opponentExtraDeck.Clear();
 
         // Atualiza visuais das pilhas e limpa o viewer
         UpdatePileVisuals();
@@ -135,8 +147,18 @@ public class GameManager : MonoBehaviour
 
     void InitializePlayerDeck()
     {
-        // Copia todas as cartas do banco de dados para o deck do jogador
-        playerDeck = new List<CardData>(cardDatabase.cardDatabase);
+        // Separa as cartas do Extra Deck (Fusão) do deck principal
+        foreach (var card in cardDatabase.cardDatabase)
+        {
+            if (card.type.Contains("Fusion"))
+            {
+                playerExtraDeck.Add(card);
+            }
+            else
+            {
+                playerDeck.Add(card);
+            }
+        }
         ShuffleDeck();
         Debug.Log($"Deck do jogador inicializado com {playerDeck.Count} cartas.");
         UpdatePileVisuals();
@@ -144,8 +166,18 @@ public class GameManager : MonoBehaviour
 
     void InitializeOpponentDeck()
     {
-        // Copia todas as cartas do banco de dados para o deck do oponente
-        opponentDeck = new List<CardData>(cardDatabase.cardDatabase);
+        // Lógica similar para o oponente
+        foreach (var card in cardDatabase.cardDatabase)
+        {
+            if (card.type.Contains("Fusion"))
+            {
+                opponentExtraDeck.Add(card);
+            }
+            else
+            {
+                opponentDeck.Add(card);
+            }
+        }
         ShuffleOpponentDeck();
         Debug.Log($"Deck do oponente inicializado com {opponentDeck.Count} cartas.");
         UpdatePileVisuals();
@@ -217,6 +249,10 @@ public class GameManager : MonoBehaviour
             // newCardDisplay.cardNameText = newCardGO.transform.Find("NameText").GetComponent<TextMeshProUGUI>();
             // ... e assim por diante para outros textos se o prefab os tiver e você quiser que apareçam na mão
 
+            newCardGO.transform.localScale = handCardScale;
+            newCardDisplay.hoverYOffset = handCardHoverYOffset;
+            newCardDisplay.isInteractable = true; // Habilita o efeito de hover
+
             newCardDisplay.SetCard(drawnCard, cardBackTexture);
             playerHand.Add(newCardGO);
         }
@@ -248,6 +284,10 @@ public class GameManager : MonoBehaviour
                 newCardDisplay = newCardGO.AddComponent<CardDisplay>();
             }
             newCardDisplay.cardImage = newCardGO.GetComponent<RawImage>();
+
+            newCardGO.transform.localScale = handCardScale;
+            newCardDisplay.hoverYOffset = handCardHoverYOffset;
+            newCardDisplay.isInteractable = true; // Habilita o efeito de hover
 
             // Cartas do oponente entram viradas para baixo (false), exceto se showOpponentHand estiver ativo
             bool startFaceUp = showOpponentHand;
@@ -282,6 +322,17 @@ public class GameManager : MonoBehaviour
             opponentGraveyard.Add(card);
         }
         UpdatePileVisuals();
+    }
+
+    public void ViewGraveyard(bool isPlayer)
+    {
+        if (UIManager.Instance == null) return;
+
+        List<CardData> graveyard = isPlayer ? playerGraveyard : opponentGraveyard;
+        // Opcional: não mostrar cemitério vazio
+        if (graveyard.Count == 0) return;
+
+        UIManager.Instance.ShowGraveyard(graveyard, cardBackTexture);
     }
 
     public void DrawInitialOpponentHand(int count)
@@ -341,6 +392,8 @@ public class GameManager : MonoBehaviour
         if (opponentDeckDisplay != null) opponentDeckDisplay.UpdatePile(opponentDeck, cardBackTexture);
         if (playerGraveyardDisplay != null) playerGraveyardDisplay.UpdatePile(playerGraveyard, cardBackTexture);
         if (opponentGraveyardDisplay != null) opponentGraveyardDisplay.UpdatePile(opponentGraveyard, cardBackTexture);
+        if (playerExtraDeckDisplay != null) playerExtraDeckDisplay.UpdatePile(playerExtraDeck, cardBackTexture);
+        if (opponentExtraDeckDisplay != null) opponentExtraDeckDisplay.UpdatePile(opponentExtraDeck, cardBackTexture);
     }
 
     IEnumerator LoadCardBackTexture()

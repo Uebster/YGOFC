@@ -10,6 +10,9 @@ public class UIManager : MonoBehaviour
     public GameObject mainMenuScreen;    // 3. Panel_MainMenu (Menu Principal)
     public GameObject duelScreen;        // 4. Panel_Duel (O Jogo)
 
+    [Header("Popups")]
+    public GraveyardViewer graveyardViewer;
+
     // Adicione outras telas aqui conforme precisar (Library, Campaign, etc)
     // public GameObject libraryScreen; 
 
@@ -40,6 +43,18 @@ public class UIManager : MonoBehaviour
         if (screenToShow != null)
         {
             screenToShow.SetActive(true);
+        }
+    }
+
+    public void ShowGraveyard(List<CardData> cards, Texture2D cardBack)
+    {
+        if (graveyardViewer != null)
+        {
+            graveyardViewer.Show(cards, cardBack);
+        }
+        else
+        {
+            Debug.LogError("GraveyardViewer não está atribuído no UIManager!");
         }
     }
 

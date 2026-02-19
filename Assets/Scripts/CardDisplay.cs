@@ -21,12 +21,23 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     private Texture2D frontTexture;
     private Texture2D backTexture;
     private bool isFlipped = false;
+    private RectTransform rectTransform;
+    private int originalSiblingIndex;
+
+    [HideInInspector] public float hoverYOffset = 30f;
+    [HideInInspector] public bool isInteractable = false; // Usado para habilitar hover apenas para cartas na mão
+
+    void Awake()
+    {
+        rectTransform = GetComponent<RectTransform>();
+    }
 
     // Este método será chamado pelo GameManager para definir os dados da carta
     public void SetCard(CardData card, Texture2D cardBackTexture, bool startFaceUp = true)
     {
         if (card == null) return;
         StopAllCoroutines(); // Para carregamentos anteriores
+
         currentCardData = card;
         backTexture = cardBackTexture;
         isFlipped = !startFaceUp; // Se startFaceUp for false, isFlipped será true (verso)
@@ -124,19 +135,39 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerEnter(PointerEventData eventData)
     {
+        if (isInteractable && rectTransform != null)
+        {
+            rectTransform.anchoredPosition += new Vector2(0, hoverYOffset);
+            originalSiblingIndex = transform.GetSiblingIndex();
+            transform.SetAsLastSibling();
+        }
+
         if (GameManager.Instance != null)
         {
             // Evita que o visualizador atualize a si mesmo se o mouse passar por cima dele
             if (GameManager.Instance.cardDisplayArea != null && cardImage == GameManager.Instance.cardDisplayArea) return;
 
+            // Lógica para visualizar extra deck mesmo virado para baixo
+            bool forceShowFaceUp = false;
+            if (GameManager.Instance.playerExtraDeckDisplay != null && transform.parent == GameManager.Instance.playerExtraDeckDisplay.contentParent)
+            {
+                forceShowFaceUp = true;
+            }
+
             // Se a carta estiver virada para baixo (isFlipped), mostra o verso no viewer (showFaceUp = false)
-            bool showFaceUp = !isFlipped;
+            bool showFaceUp = !isFlipped || forceShowFaceUp;
             GameManager.Instance.UpdateCardViewer(currentCardData, showFaceUp);
         }
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
+        if (isInteractable && rectTransform != null)
+        {
+            rectTransform.anchoredPosition -= new Vector2(0, hoverYOffset);
+            transform.SetSiblingIndex(originalSiblingIndex);
+        }
+
         if (GameManager.Instance != null)
         {
             GameManager.Instance.ClearCardViewer();

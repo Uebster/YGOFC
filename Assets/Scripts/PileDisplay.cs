@@ -128,5 +128,9 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
                 GameManager.Instance.DrawOpponentCard();
             }
         }
+        else if (pileType == PileType.Graveyard)
+        {
+            GameManager.Instance.ViewGraveyard(isPlayerPile);
+        }
     }
 }
