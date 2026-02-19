@@ -41,4 +41,9 @@ public class CardDatabase : MonoBehaviour
             Debug.LogError("ERRO: Arquivo 'cards.json' não encontrado em Assets/StreamingAssets!");
         }
     }
+
+    public CardData GetCardById(string id)
+    {
+        return cardDatabase.Find(x => x.id == id);
+    }
 }
