@@ -94,10 +94,43 @@ public class GameManager : MonoBehaviour
 
         yield return StartCoroutine(LoadCardBackTexture());
 
+        // Removido do Start automático. Agora aguarda o UIManager chamar StartDuel()
+        // InitializePlayerDeck();
+        // InitializeOpponentDeck();
+        // DrawInitialHand(5);
+        // DrawInitialOpponentHand(5);
+    }
+
+    // Novo método chamado pelo botão "Free Duel"
+    public void StartDuel()
+    {
+        // Limpa o estado anterior (destrói cartas visuais, limpa listas)
+        CleanupDuelState();
+
         InitializePlayerDeck();
         InitializeOpponentDeck();
         DrawInitialHand(5); // Exemplo: compra 5 cartas iniciais
         DrawInitialOpponentHand(5);
+    }
+
+    void CleanupDuelState()
+    {
+        // Destrói objetos visuais das mãos
+        foreach (GameObject card in playerHand) if (card != null) Destroy(card);
+        playerHand.Clear();
+
+        foreach (GameObject card in opponentHand) if (card != null) Destroy(card);
+        opponentHand.Clear();
+
+        // Limpa listas de dados
+        playerDeck.Clear();
+        opponentDeck.Clear();
+        playerGraveyard.Clear();
+        opponentGraveyard.Clear();
+
+        // Atualiza visuais das pilhas e limpa o viewer
+        UpdatePileVisuals();
+        ClearCardViewer();
     }
 
     void InitializePlayerDeck()
