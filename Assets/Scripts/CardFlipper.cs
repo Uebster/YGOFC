@@ -35,8 +35,7 @@ public class CardFlipper : MonoBehaviour
         {
             Debug.LogError("CardFlipper: ERRO - O componente Renderer não foi encontrado!");
             return;
-        }
-        
+        }        
         if (frontMaterial == null || backMaterial == null)
         {
             Debug.LogWarning("CardFlipper: AVISO - Materiais da frente ou verso não estão atribuídos no script!");

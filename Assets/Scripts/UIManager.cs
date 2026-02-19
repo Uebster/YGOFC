@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class UIManager : MonoBehaviour
 {
@@ -10,6 +11,29 @@ public class UIManager : MonoBehaviour
     public GameObject mainMenuScreen;    // 3. Panel_MainMenu (Menu Principal)
     public GameObject duelScreen;        // 4. Panel_Duel (O Jogo)
 
+    [Header("Sub-Menus Principais")]
+    public GameObject newGameMenu;       // Tela com Campaign, Arcade, Build Deck...
+    public GameObject continueMenu;      // Tela com Load, Delete
+    public GameObject onlineMenu;        // Tela com Create Room, Search...
+    public GameObject optionsMenu;       // Tela de Opções (Audio, Video...)
+
+    [Header("Telas de Funcionalidades")]
+    public GameObject campaignScreen;
+    public GameObject arcadeScreen;
+    public GameObject deckBuilderScreen;
+    public GameObject libraryMenu;       // Menu da Biblioteca
+    public GameObject saveScreen;
+    public GameObject loadScreen;
+    public GameObject libDuelistsScreen;
+    public GameObject libCardsScreen;
+    public GameObject libArenasScreen;
+    public GameObject libDecksScreen;
+
+    [Header("Sub-Menus de Opções")]
+    public GameObject audioScreen;
+    public GameObject videoScreen;
+    public GameObject controlsScreen;
+
     [Header("Popups")]
     public GraveyardViewer graveyardViewer;
 
@@ -18,6 +42,11 @@ public class UIManager : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
     }
 
@@ -25,6 +54,12 @@ public class UIManager : MonoBehaviour
     {
         // Ao iniciar o jogo, começa pela Abertura
         ShowScreen(openingScreen);
+
+        // Verificações de segurança para evitar erros silenciosos
+        if (openingScreen == null) Debug.LogWarning("UIManager: Opening Screen não atribuída!");
+        if (mainMenuScreen == null) Debug.LogWarning("UIManager: Main Menu Screen não atribuída!");
+        if (duelScreen == null) Debug.LogWarning("UIManager: Duel Screen não atribuída!");
+        if (graveyardViewer == null) Debug.LogWarning("UIManager: Graveyard Viewer não atribuído!");
 
         // DICA: Se quiser que a abertura passe sozinha após 3 segundos, descomente a linha abaixo:
         // Invoke("FinishOpening", 3f);
@@ -72,6 +107,68 @@ public class UIManager : MonoBehaviour
         ShowScreen(mainMenuScreen);
     }
 
+    // --- Navegação do Menu Principal ---
+
+    public void Btn_NewGame() { ShowScreen(newGameMenu); }
+    public void Btn_Continue() { ShowScreen(continueMenu); }
+    public void Btn_Online() { ShowScreen(onlineMenu); }
+    public void Btn_Options() { ShowScreen(optionsMenu); }
+    public void Btn_Exit() { Btn_ExitGame(); }
+
+    // --- Navegação New Game ---
+
+    public void Btn_Campaign() { ShowScreen(campaignScreen); }
+    public void Btn_Arcade() { ShowScreen(arcadeScreen); }
+    public void Btn_BuildDeck() { ShowScreen(deckBuilderScreen); }
+    
+    public void Btn_Library() { ShowScreen(libraryMenu); }
+    // Sub-menu Library
+    public void Btn_LibDuelists() { ShowScreen(libDuelistsScreen); }
+    public void Btn_LibCards() { ShowScreen(libCardsScreen); }
+    public void Btn_LibArenas() { ShowScreen(libArenasScreen); }
+    public void Btn_LibDecks() { ShowScreen(libDecksScreen); }
+
+    public void Btn_Save() { ShowScreen(saveScreen); }
+
+    // --- Navegação Continue ---
+
+    public void Btn_Load() { ShowScreen(loadScreen); }
+    public void Btn_DeleteSave() 
+    { 
+        Debug.Log("Abrir popup de deletar save..."); 
+        // Implementar lógica de delete
+    }
+
+    // --- Navegação Online ---
+
+    public void Btn_OnlineLoadDeck() { ShowScreen(deckBuilderScreen); } // Reusa o deck builder
+    public void Btn_CreateRoom() { Debug.Log("Criar Sala..."); }
+    public void Btn_EnterRoom() { Debug.Log("Entrar na Sala..."); }
+    public void Btn_SearchRoom() { Debug.Log("Buscar Sala..."); }
+
+    // --- Navegação Options ---
+
+    public void Btn_Audio() { ShowScreen(audioScreen); }
+    public void Btn_Video() { ShowScreen(videoScreen); }
+    public void Btn_Controls() { ShowScreen(controlsScreen); }
+
+    // --- Botões de Voltar ---
+
+    public void Btn_BackToNewGameMenu()
+    {
+        ShowScreen(newGameMenu);
+    }
+
+    public void Btn_BackToLibraryMenu()
+    {
+        ShowScreen(libraryMenu);
+    }
+
+    public void Btn_BackToOptionsMenu()
+    {
+        ShowScreen(optionsMenu);
+    }
+
     // Chame no botão "Free Duel" do Menu Principal
     public void Btn_StartFreeDuel()
     {
@@ -95,5 +192,8 @@ public class UIManager : MonoBehaviour
     {
         Debug.Log("Saindo do Jogo...");
         Application.Quit();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
     }
 }

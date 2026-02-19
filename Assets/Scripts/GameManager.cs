@@ -8,6 +8,16 @@ using System.Collections.Generic; // Necessário para List
 using System.Linq; // Necessário para Shuffle
 using UnityEngine.EventSystems;
 
+public enum GamePhase
+{
+    Draw,
+    Standby,
+    Main1,
+    Battle,
+    Main2,
+    End
+}
+
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
@@ -37,6 +47,13 @@ public class GameManager : MonoBehaviour
     public Vector3 handCardScale = new Vector3(1f, 1f, 1f);
     [Tooltip("A altura que a carta sobe ao passar o mouse sobre ela.")]
     public float handCardHoverYOffset = 30f;
+    [Tooltip("Ativa ou desativa o efeito de hover (subir) nas cartas da mão.")]
+    public bool enableHandHover = true;
+
+    [Header("Game Flow")]
+    public GamePhase currentPhase = GamePhase.Draw;
+    public float standbyPhaseDuration = 2.0f;
+    public TextMeshProUGUI phaseText; // Arraste um texto da UI aqui para ver a fase
 
     // --- REFERÊNCIAS 2D ---
     [Header("REFERÊNCIAS DO MODO 2D")]
@@ -121,6 +138,7 @@ public class GameManager : MonoBehaviour
         InitializeOpponentDeck();
         DrawInitialHand(5); // Exemplo: compra 5 cartas iniciais
         DrawInitialOpponentHand(5);
+        ChangePhase(GamePhase.Draw); // Começa o turno na Draw Phase
     }
 
     void CleanupDuelState()
@@ -260,6 +278,12 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogWarning("Card Prefab ou Player Hand Layout Group não atribuídos. Não foi possível adicionar a carta à mão visualmente.");
         }
+
+        // Lógica de Fase: Se o jogador sacar na Draw Phase, avança para Standby
+        if (currentPhase == GamePhase.Draw)
+        {
+            StartCoroutine(HandleStandbyPhase());
+        }
     }
 
     public void DrawOpponentCard()
@@ -384,6 +408,61 @@ public class GameManager : MonoBehaviour
             }
         }
     }
+
+    // --- SISTEMA DE FASES ---
+
+    public void ChangePhase(GamePhase newPhase)
+    {
+        currentPhase = newPhase;
+        Debug.Log($"--- FASE: {currentPhase} ---");
+        
+        if (phaseText != null)
+        {
+            phaseText.text = currentPhase.ToString().ToUpper();
+        }
+
+        // Lógica específica de entrada na fase
+        switch (currentPhase)
+        {
+            case GamePhase.Draw:
+                // Aguarda o jogador clicar no deck (DrawCard)
+                break;
+            case GamePhase.Standby:
+                StartCoroutine(HandleStandbyPhase());
+                break;
+            case GamePhase.Main1:
+                // Aguarda jogadas do player
+                break;
+            // Outras fases...
+        }
+    }
+
+    IEnumerator HandleStandbyPhase()
+    {
+        ChangePhase(GamePhase.Standby);
+        yield return new WaitForSeconds(standbyPhaseDuration);
+        ChangePhase(GamePhase.Main1);
+    }
+
+    // --- FUTURAS IMPLEMENTAÇÕES DE COMANDOS (COMENTÁRIOS) ---
+    /*
+    public void EnterBattlePhase() {
+        // Lógica: Clicar no botão "Battle Phase" ou Botão Direito em campo vazio durante Main1
+        ChangePhase(GamePhase.Battle);
+    }
+
+    public void EndTurn() {
+        // Lógica: Clicar em "End Phase" ou Botão Direito em campo vazio durante Main2 (ou Battle se pular M2)
+        ChangePhase(GamePhase.End);
+        // Trocar turno para oponente...
+    }
+
+    // Comandos de Jogo:
+    // Summon: Arrastar carta de monstro para zona de monstro (Face Up Attack)
+    // Set: Botão direito na carta da mão -> "Set" (Face Down Defense)
+    // Activate: Clicar em Spell/Trap -> "Activate"
+    // Surrender: Botão direito no Deck -> "Surrender"
+    */
 
     // Atualiza todos os visuais de pilhas (Decks e Cemitérios)
     void UpdatePileVisuals()

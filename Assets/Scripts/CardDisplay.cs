@@ -135,7 +135,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (isInteractable && rectTransform != null)
+        // Verifica se é interativo E se o hover está habilitado no GameManager
+        if (isInteractable && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHover)
         {
             rectTransform.anchoredPosition += new Vector2(0, hoverYOffset);
             originalSiblingIndex = transform.GetSiblingIndex();
@@ -162,7 +163,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (isInteractable && rectTransform != null)
+        if (isInteractable && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHover)
         {
             rectTransform.anchoredPosition -= new Vector2(0, hoverYOffset);
             transform.SetSiblingIndex(originalSiblingIndex);
