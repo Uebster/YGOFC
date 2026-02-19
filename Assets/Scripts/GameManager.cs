@@ -27,6 +27,11 @@ public class GameManager : MonoBehaviour
     [Tooltip("Define se as cartas do oponente estão visíveis")]
     public bool showOpponentHand = false;
 
+    [Header("CONFIGURAÇÕES DE TELA")]
+    public int screenWidth = 1600;
+    public int screenHeight = 900;
+    public bool fullScreen = false;
+
     // --- REFERÊNCIAS 2D ---
     [Header("REFERÊNCIAS DO MODO 2D")]
     public RawImage cardDisplayArea; // A RawImage onde a carta individual será exibida
@@ -60,6 +65,7 @@ public class GameManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
+        Screen.SetResolution(screenWidth, screenHeight, fullScreen);
     }
 
     IEnumerator Start()
