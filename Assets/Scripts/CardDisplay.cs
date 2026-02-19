@@ -6,8 +6,9 @@ using TMPro;
 using System.Collections;
 using UnityEngine.Networking;
 using System.IO;
+using UnityEngine.EventSystems;
 
-public class CardDisplay : MonoBehaviour
+public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     [Header("UI Elements")]
     public RawImage cardImage;
@@ -25,6 +26,7 @@ public class CardDisplay : MonoBehaviour
     public void SetCard(CardData card, Texture2D cardBackTexture, bool startFaceUp = true)
     {
         if (card == null) return;
+        StopAllCoroutines(); // Para carregamentos anteriores
         currentCardData = card;
         backTexture = cardBackTexture;
         isFlipped = !startFaceUp; // Se startFaceUp for false, isFlipped será true (verso)
@@ -38,6 +40,21 @@ public class CardDisplay : MonoBehaviour
         }
 
         StartCoroutine(LoadCardFrontTexture(card.image_filename));
+    }
+
+    public void SetCardBackOnly(Texture2D cardBackTexture)
+    {
+        StopAllCoroutines();
+        backTexture = cardBackTexture;
+        if (cardImage != null && backTexture != null)
+        {
+            cardImage.texture = backTexture;
+        }
+        // Limpa os textos
+        if (cardNameText != null) cardNameText.text = "";
+        if (cardInfoText != null) cardInfoText.text = "";
+        if (cardDescriptionText != null) cardDescriptionText.text = "";
+        if (cardStatsText != null) cardStatsText.text = "";
     }
 
     private void DisplayCardDetails()
@@ -96,5 +113,26 @@ public class CardDisplay : MonoBehaviour
         if (cardImage == null || frontTexture == null) return;
         isFlipped = false;
         cardImage.texture = frontTexture;
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (GameManager.Instance != null)
+        {
+            // Evita que o visualizador atualize a si mesmo se o mouse passar por cima dele
+            if (GameManager.Instance.cardDisplayArea != null && cardImage == GameManager.Instance.cardDisplayArea) return;
+
+            // Se a carta estiver virada para baixo (isFlipped), mostra o verso no viewer (showFaceUp = false)
+            bool showFaceUp = !isFlipped;
+            GameManager.Instance.UpdateCardViewer(currentCardData, showFaceUp);
+        }
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.ClearCardViewer();
+        }
     }
 }

@@ -6,9 +6,12 @@ using System.Collections;
 using UnityEngine.Networking;
 using System.Collections.Generic; // Necessário para List
 using System.Linq; // Necessário para Shuffle
+using UnityEngine.EventSystems;
 
 public class GameManager : MonoBehaviour
 {
+    public static GameManager Instance;
+
     [Header("Database Connection")]
     public CardDatabase cardDatabase;
     public CharacterDatabase characterDatabase;
@@ -26,6 +29,7 @@ public class GameManager : MonoBehaviour
     [Header("Card Prefab")]
     public GameObject cardPrefab; // Prefab da carta para instanciar na mão
     public Transform playerHandLayoutGroup; // O HorizontalLayoutGroup da mão do jogador
+    public Transform opponentHandLayoutGroup; // O HorizontalLayoutGroup da mão do oponente
 
     [Header("UI Elements")]
     public TextMeshProUGUI cardNameText;
@@ -35,14 +39,21 @@ public class GameManager : MonoBehaviour
 
     private List<CardData> playerDeck = new List<CardData>();
     private List<GameObject> playerHand = new List<GameObject>();
+    private List<CardData> opponentDeck = new List<CardData>();
+    private List<GameObject> opponentHand = new List<GameObject>();
     private CardDisplay currentCardDisplay; // Referência ao CardDisplay na cardDisplayArea
 
-    void Start()
+    void Awake()
+    {
+        Instance = this;
+    }
+
+    IEnumerator Start()
     {
         if (cardDatabase == null || cardDatabase.cardDatabase.Count == 0)
         {
             Debug.LogError("Banco de dados não conectado ou está vazio!");
-            return;
+            yield break;
         }
 
         // Inicializa o CardDisplay na área de exibição
@@ -61,9 +72,12 @@ public class GameManager : MonoBehaviour
             currentCardDisplay.cardStatsText = cardStatsText;
         }
 
-        StartCoroutine(LoadCardBackTexture());
+        yield return StartCoroutine(LoadCardBackTexture());
+
         InitializePlayerDeck();
+        InitializeOpponentDeck();
         DrawInitialHand(5); // Exemplo: compra 5 cartas iniciais
+        DrawInitialOpponentHand(5);
     }
 
     void InitializePlayerDeck()
@@ -72,6 +86,14 @@ public class GameManager : MonoBehaviour
         playerDeck = new List<CardData>(cardDatabase.cardDatabase);
         ShuffleDeck();
         Debug.Log($"Deck do jogador inicializado com {playerDeck.Count} cartas.");
+    }
+
+    void InitializeOpponentDeck()
+    {
+        // Copia todas as cartas do banco de dados para o deck do oponente
+        opponentDeck = new List<CardData>(cardDatabase.cardDatabase);
+        ShuffleOpponentDeck();
+        Debug.Log($"Deck do oponente inicializado com {opponentDeck.Count} cartas.");
     }
 
     void ShuffleDeck()
@@ -87,6 +109,20 @@ public class GameManager : MonoBehaviour
             playerDeck[n] = value;
         }
         Debug.Log("Deck embaralhado.");
+    }
+
+    void ShuffleOpponentDeck()
+    {
+        System.Random rng = new System.Random();
+        int n = opponentDeck.Count;
+        while (n > 1)
+        {
+            n--;
+            int k = rng.Next(n + 1);
+            CardData value = opponentDeck[k];
+            opponentDeck[k] = opponentDeck[n];
+            opponentDeck[n] = value;
+        }
     }
 
     public void DrawCard()
@@ -132,12 +168,72 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void DrawOpponentCard()
+    {
+        if (opponentDeck.Count == 0)
+        {
+            Debug.LogWarning("Deck do oponente vazio! Não é possível comprar mais cartas.");
+            return;
+        }
+
+        CardData drawnCard = opponentDeck[0];
+        opponentDeck.RemoveAt(0);
+        
+        // Adiciona a carta à mão visualmente
+        if (cardPrefab != null && opponentHandLayoutGroup != null)
+        {
+            GameObject newCardGO = Instantiate(cardPrefab, opponentHandLayoutGroup);
+            CardDisplay newCardDisplay = newCardGO.GetComponent<CardDisplay>();
+            if (newCardDisplay == null)
+            {
+                newCardDisplay = newCardGO.AddComponent<CardDisplay>();
+            }
+            newCardDisplay.cardImage = newCardGO.GetComponent<RawImage>();
+
+            // Cartas do oponente entram viradas para baixo (false)
+            newCardDisplay.SetCard(drawnCard, cardBackTexture, false);
+            opponentHand.Add(newCardGO);
+        }
+    }
+
     public void DrawInitialHand(int count)
     {
         for (int i = 0; i < count; i++)
         {
             DrawCard();
         }
+    }
+
+    public void DrawInitialOpponentHand(int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            DrawOpponentCard();
+        }
+    }
+
+    public void UpdateCardViewer(CardData card, bool isFaceUp)
+    {
+        if (currentCardDisplay == null) return;
+
+        if (isFaceUp && card != null)
+        {
+            currentCardDisplay.SetCard(card, cardBackTexture, true);
+        }
+        else
+        {
+            // Se a carta estiver virada para baixo ou for do oponente, mostra o verso
+            currentCardDisplay.SetCardBackOnly(cardBackTexture);
+        }
+    }
+
+    public void ClearCardViewer()
+    {
+        if (currentCardDisplay == null) return;
+        
+        // Define o visualizador para mostrar o verso da carta (estado neutro)
+        // ou poderia limpar tudo. Vamos mostrar o verso.
+        currentCardDisplay.SetCardBackOnly(cardBackTexture);
     }
 
     IEnumerator LoadCardBackTexture()
