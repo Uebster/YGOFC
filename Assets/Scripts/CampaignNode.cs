@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(Button))]
 public class CampaignNode : MonoBehaviour
@@ -10,7 +11,7 @@ public class CampaignNode : MonoBehaviour
     [Header("Configuração do Nível")]
     public int levelIndex; // 0 para Home, 1 para Act 1, etc.
     public NodeType nodeType = NodeType.Duel;
-    public string opponentID; // ID do personagem no CharacterDatabase (ex: "simon", "kaiba")
+    public List<string> opponentIDs; // Lista de oponentes neste Act (ex: 10 oponentes)
     
     [Header("Visual")]
     public GameObject lockIcon; // Ícone de cadeado (filho do botão)
@@ -45,7 +46,12 @@ public class CampaignNode : MonoBehaviour
 
         // Ícones visuais
         if (lockIcon != null) lockIcon.SetActive(!isUnlocked);
-        if (clearIcon != null) clearIcon.SetActive(isCompleted && nodeType == NodeType.Duel);
+        
+        // Verifica se completou todos os oponentes deste nó
+        int nextLevelStart = levelIndex + (opponentIDs != null ? opponentIDs.Count : 0);
+        bool isNodeCompleted = CampaignManager.Instance.maxUnlockedLevel >= nextLevelStart;
+        
+        if (clearIcon != null) clearIcon.SetActive(isNodeCompleted && nodeType == NodeType.Duel);
 
         // Se tiver o script MillenniumButton, podemos mudar a cor se estiver bloqueado
         if (milleniumEffect != null)
@@ -72,18 +78,35 @@ public class CampaignNode : MonoBehaviour
     {
         if (GameManager.Instance == null || UIManager.Instance == null) return;
 
+        if (opponentIDs == null || opponentIDs.Count == 0)
+        {
+            Debug.LogError($"CampaignNode {name} não tem oponentes configurados!");
+            return;
+        }
+
+        // Determina qual oponente enfrentar com base no progresso global
+        int currentGlobalLevel = CampaignManager.Instance.maxUnlockedLevel;
+        int localIndex = currentGlobalLevel - levelIndex;
+
+        // Se já completou este nó, enfrenta o último (boss) ou mantém o índice dentro do limite para replay
+        if (localIndex >= opponentIDs.Count) localIndex = opponentIDs.Count - 1;
+        if (localIndex < 0) localIndex = 0;
+
+        string currentOpponentID = opponentIDs[localIndex];
+
         // Busca os dados do oponente
-        CharacterData opponent = GameManager.Instance.characterDatabase.GetCharacterById(opponentID);
+        CharacterData opponent = GameManager.Instance.characterDatabase.GetCharacterById(currentOpponentID);
         
         if (opponent != null)
         {
-            Debug.Log($"Iniciando duelo contra: {opponent.name} (Nível {levelIndex})");
-            GameManager.Instance.StartDuel(opponent);
+            int duelIndex = levelIndex + localIndex;
+            Debug.Log($"Iniciando duelo contra: {opponent.name} (Act {levelIndex} - Batalha {localIndex + 1}/{opponentIDs.Count})");
+            GameManager.Instance.StartDuel(opponent, duelIndex);
             UIManager.Instance.ShowScreen(UIManager.Instance.duelScreen);
         }
         else
         {
-            Debug.LogError($"Oponente com ID '{opponentID}' não encontrado no CharacterDatabase!");
+            Debug.LogError($"Oponente com ID '{currentOpponentID}' não encontrado no CharacterDatabase!");
         }
     }
 }

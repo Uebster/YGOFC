@@ -91,6 +91,7 @@ public class GameManager : MonoBehaviour
 
     [Header("Current Duel Info")]
     public CharacterData currentOpponent; // Oponente atual carregado
+    public int currentDuelIndex = -1; // Índice do duelo atual na campanha (para salvar progresso)
 
     void Awake()
     {
@@ -167,9 +168,10 @@ public class GameManager : MonoBehaviour
     }
     
     // Sobrecarga para iniciar duelo contra personagem específico (Campanha)
-    public void StartDuel(CharacterData opponent)
+    public void StartDuel(CharacterData opponent, int duelIndex = -1)
     {
         currentOpponent = opponent;
+        currentDuelIndex = duelIndex;
         StartDuel(); // Chama o método principal
     }
 
