@@ -35,6 +35,7 @@ public class UIManager : MonoBehaviour
     public GameObject controlsScreen;
 
     [Header("Popups")]
+    public GameObject exitScreen;
     public GraveyardViewer graveyardViewer;
 
     // Adicione outras telas aqui conforme precisar (Library, Campaign, etc)
@@ -73,6 +74,29 @@ public class UIManager : MonoBehaviour
         if (pressStartScreen != null) pressStartScreen.SetActive(false);
         if (mainMenuScreen != null) mainMenuScreen.SetActive(false);
         if (duelScreen != null) duelScreen.SetActive(false);
+
+        // Adicionado: Desativa todos os outros painéis de sub-menu
+        if (newGameMenu != null) newGameMenu.SetActive(false);
+        if (continueMenu != null) continueMenu.SetActive(false);
+        if (onlineMenu != null) onlineMenu.SetActive(false);
+        if (optionsMenu != null) optionsMenu.SetActive(false);
+        if (campaignScreen != null) campaignScreen.SetActive(false);
+        if (arcadeScreen != null) arcadeScreen.SetActive(false);
+        if (deckBuilderScreen != null) deckBuilderScreen.SetActive(false);
+        if (libraryMenu != null) libraryMenu.SetActive(false);
+        if (saveScreen != null) saveScreen.SetActive(false);
+        if (loadScreen != null) loadScreen.SetActive(false);
+        if (libDuelistsScreen != null) libDuelistsScreen.SetActive(false);
+        if (libCardsScreen != null) libCardsScreen.SetActive(false);
+        if (libArenasScreen != null) libArenasScreen.SetActive(false);
+        if (libDecksScreen != null) libDecksScreen.SetActive(false);
+        
+        if (audioScreen != null) audioScreen.SetActive(false);
+        if (videoScreen != null) videoScreen.SetActive(false);
+        if (controlsScreen != null) controlsScreen.SetActive(false);
+        if (exitScreen != null) exitScreen.SetActive(false);
+
+        if (graveyardViewer != null) graveyardViewer.gameObject.SetActive(false);
 
         // 2. Ativa apenas a tela desejada
         if (screenToShow != null)
@@ -113,7 +137,14 @@ public class UIManager : MonoBehaviour
     public void Btn_Continue() { ShowScreen(continueMenu); }
     public void Btn_Online() { ShowScreen(onlineMenu); }
     public void Btn_Options() { ShowScreen(optionsMenu); }
-    public void Btn_Exit() { Btn_ExitGame(); }
+    public void Btn_Exit() 
+    { 
+        if (exitScreen != null) ShowScreen(exitScreen);
+        else Btn_ExitGame(); 
+    }
+
+    // Usado no botão "Não" da tela de saída
+    public void Btn_CancelExit() { ShowScreen(mainMenuScreen); }
 
     // --- Navegação New Game ---
 

@@ -89,6 +89,9 @@ public class GameManager : MonoBehaviour
     private List<CardData> opponentExtraDeck = new List<CardData>();
     private CardDisplay currentCardDisplay; // Referência ao CardDisplay na cardDisplayArea
 
+    [Header("Current Duel Info")]
+    public CharacterData currentOpponent; // Oponente atual carregado
+
     void Awake()
     {
         Instance = this;
@@ -162,10 +165,18 @@ public class GameManager : MonoBehaviour
         UpdatePileVisuals();
         ClearCardViewer();
     }
+    
+    // Sobrecarga para iniciar duelo contra personagem específico (Campanha)
+    public void StartDuel(CharacterData opponent)
+    {
+        currentOpponent = opponent;
+        StartDuel(); // Chama o método principal
+    }
 
     void InitializePlayerDeck()
     {
         // Separa as cartas do Extra Deck (Fusão) do deck principal
+        // (Aqui você futuramente carregará o deck salvo do jogador, por enquanto carrega tudo)
         foreach (var card in cardDatabase.cardDatabase)
         {
             if (card.type.Contains("Fusion"))
@@ -184,16 +195,33 @@ public class GameManager : MonoBehaviour
 
     void InitializeOpponentDeck()
     {
-        // Lógica similar para o oponente
-        foreach (var card in cardDatabase.cardDatabase)
+        // Se temos um oponente definido (Campanha), carregamos o deck dele
+        if (currentOpponent != null && currentOpponent.deck_A != null && currentOpponent.deck_A.Count > 0)
         {
-            if (card.type.Contains("Fusion"))
+            foreach (string cardId in currentOpponent.deck_A)
             {
-                opponentExtraDeck.Add(card);
+                CardData card = cardDatabase.GetCardById(cardId);
+                if (card != null)
+                {
+                    if (card.type.Contains("Fusion")) opponentExtraDeck.Add(card);
+                    else opponentDeck.Add(card);
+                }
             }
-            else
+        }
+        else
+        {
+            // Fallback: Se não tiver oponente (Free Duel genérico), carrega tudo ou aleatório
+            Debug.Log("Nenhum oponente específico definido. Carregando banco de dados inteiro (Modo Teste).");
+            foreach (var card in cardDatabase.cardDatabase)
             {
-                opponentDeck.Add(card);
+                if (card.type.Contains("Fusion"))
+                {
+                    opponentExtraDeck.Add(card);
+                }
+                else
+                {
+                    opponentDeck.Add(card);
+                }
             }
         }
         ShuffleOpponentDeck();
