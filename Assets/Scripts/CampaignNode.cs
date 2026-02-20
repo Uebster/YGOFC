@@ -9,9 +9,11 @@ public class CampaignNode : MonoBehaviour
     public enum NodeType { Home, Duel }
 
     [Header("Configuração do Nível")]
-    public int levelIndex; // 0 para Home, 1 para Act 1, etc.
+    public int actIndex; // 0 = Home, 1 = Act 1, 2 = Act 2...
     public NodeType nodeType = NodeType.Duel;
-    public List<string> opponentIDs; // Lista de oponentes neste Act (ex: 10 oponentes)
+    
+    // Referência ao banco de dados (pode ser estático ou arrastado)
+    public CampaignDatabase campaignDB; 
     
     [Header("Visual")]
     public GameObject lockIcon; // Ícone de cadeado (filho do botão)
@@ -38,8 +40,13 @@ public class CampaignNode : MonoBehaviour
     {
         if (CampaignManager.Instance == null) return;
 
-        bool isUnlocked = CampaignManager.Instance.IsLevelUnlocked(levelIndex);
-        bool isCompleted = CampaignManager.Instance.maxUnlockedLevel > levelIndex;
+        // Lógica Fixa: Cada ato tem 10 níveis.
+        // Act 1 começa no 1, Act 2 no 11, etc.
+        int startLevel = (actIndex - 1) * 10 + 1;
+
+        if (nodeType == NodeType.Home) startLevel = 0;
+
+        bool isUnlocked = CampaignManager.Instance.IsLevelUnlocked(startLevel);
 
         // Configura interatividade
         btn.interactable = isUnlocked;
@@ -48,8 +55,8 @@ public class CampaignNode : MonoBehaviour
         if (lockIcon != null) lockIcon.SetActive(!isUnlocked);
         
         // Verifica se completou todos os oponentes deste nó
-        int nextLevelStart = levelIndex + (opponentIDs != null ? opponentIDs.Count : 0);
-        bool isNodeCompleted = CampaignManager.Instance.maxUnlockedLevel >= nextLevelStart;
+        int endLevel = startLevel + 10;
+        bool isNodeCompleted = CampaignManager.Instance.maxUnlockedLevel >= endLevel;
         
         if (clearIcon != null) clearIcon.SetActive(isNodeCompleted && nodeType == NodeType.Duel);
 
@@ -78,29 +85,34 @@ public class CampaignNode : MonoBehaviour
     {
         if (GameManager.Instance == null || UIManager.Instance == null) return;
 
-        if (opponentIDs == null || opponentIDs.Count == 0)
+        if (campaignDB == null || campaignDB.acts.Count < actIndex)
         {
-            Debug.LogError($"CampaignNode {name} não tem oponentes configurados!");
+            Debug.LogError($"CampaignNode {name}: Database não configurado ou Act Index inválido!");
             return;
         }
 
+        var actData = campaignDB.acts[actIndex - 1]; // Ajuste de índice (Act 1 é index 0 na lista)
+
         // Determina qual oponente enfrentar com base no progresso global
         int currentGlobalLevel = CampaignManager.Instance.maxUnlockedLevel;
-        int localIndex = currentGlobalLevel - levelIndex;
+        
+        // O nível inicial deste ato (ex: Act 2 começa no 11)
+        int actStartLevel = (actIndex - 1) * 10 + 1;
+        int localIndex = currentGlobalLevel - actStartLevel;
 
         // Se já completou este nó, enfrenta o último (boss) ou mantém o índice dentro do limite para replay
-        if (localIndex >= opponentIDs.Count) localIndex = opponentIDs.Count - 1;
+        if (localIndex >= actData.opponentIDs.Count) localIndex = actData.opponentIDs.Count - 1;
         if (localIndex < 0) localIndex = 0;
 
-        string currentOpponentID = opponentIDs[localIndex];
+        string currentOpponentID = actData.opponentIDs[localIndex];
 
         // Busca os dados do oponente
         CharacterData opponent = GameManager.Instance.characterDatabase.GetCharacterById(currentOpponentID);
         
         if (opponent != null)
         {
-            int duelIndex = levelIndex + localIndex;
-            Debug.Log($"Iniciando duelo contra: {opponent.name} (Act {levelIndex} - Batalha {localIndex + 1}/{opponentIDs.Count})");
+            int duelIndex = actStartLevel + localIndex;
+            Debug.Log($"Iniciando duelo contra: {opponent.name} (Act {actIndex} - Batalha {localIndex + 1}/10)");
             GameManager.Instance.StartDuel(opponent, duelIndex);
             UIManager.Instance.ShowScreen(UIManager.Instance.duelScreen);
         }

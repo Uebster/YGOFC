@@ -1,0 +1,163 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8219cc02b8219c44a84deb25fff432a7, type: 3}
+  m_Name: "Criar o Database Na janela Project, clique com o bot\xE3o direito - Create
+    - YuGiOh - Campaign Database. Chame o arquivo de MainCampaignDB."
+  m_EditorClassIdentifier: Assembly-CSharp::CampaignDatabase
+  acts:
+  - actName: "Act 1: O In\xEDcio"
+    description: "Sua jornada come\xE7a na Academia de Duelos. Enfrente estudantes
+      e amigos para provar seu valor."
+    backgroundMap: {fileID: 0}
+    opponentIDs:
+    - 001_novice
+    - 002_student
+    - 003_female_student
+    - 007_intermediate
+    - 008_expert
+    - 009_mokuba
+    - 004_tristan
+    - 005_tea
+    - 006_grandpa
+    - 010_duke
+  - actName: 'Act 2: Reino dos Duelistas'
+    description: "Voc\xEA foi convidado para a ilha de Pegasus. Os maiores rivais
+      est\xE3o aqui."
+    backgroundMap: {fileID: 0}
+    opponentIDs:
+    - 013_rex
+    - 014_weevil
+    - 015_mako
+    - 011_joey
+    - 012_mai
+    - 016_keith
+    - 017_espa
+    - 018_bakura
+    - 019_yami_bakura
+    - 020_pegasus
+  - actName: 'Act 3: Batalha na Cidade'
+    description: O torneio mudou para as ruas de Domino City. Cuidado com os Rare
+      Hunters.
+    backgroundMap: {fileID: 0}
+    opponentIDs:
+    - 029_rare_hunter
+    - 030_rare_hunter_elite
+    - 027_strings
+    - 028_arkana
+    - 026_odion
+    - 025_ishizu
+    - 049_female_gba
+    - 050_grandpa_gba
+    - 022_yugi
+    - 021_kaiba
+  - actName: "Act 4: Guardi\xF5es M\xEDsticos"
+    description: "Para obter o poder antigo, voc\xEA deve derrotar os guardi\xF5es
+      dos elementos."
+    backgroundMap: {fileID: 0}
+    opponentIDs:
+    - 039_novice_gbc
+    - 040_female_gbc
+    - 031_desert_mage
+    - 032_forest_mage
+    - 033_mountain_mage
+    - 034_meadow_mage
+    - 035_ocean_mage
+    - 036_labyrinth_mage
+    - 037_simon
+    - 038_shadi
+  - actName: 'Act 5: Pesadelo Virtual'
+    description: "Voc\xEA est\xE1 preso no ciberespa\xE7o. Os Big Five e a fam\xEDlia
+      Kaiba digital querem seu corpo."
+    backgroundMap: {fileID: 0}
+    opponentIDs:
+    - 046_intermediate_gbc
+    - 047_expert_gbc
+    - 048_student_gbc
+    - 041_gansley
+    - 042_crump
+    - 043_johnson
+    - 044_leclyde
+    - 045_crockett
+    - 023_noah
+    - 024_gozaburo
+  - actName: "Act 6: Ascens\xE3o das Trevas"
+    description: "Heishin despertou e corrompeu os duelistas. Enfrente suas vers\xF5es
+      sombrias."
+    backgroundMap: {fileID: 0}
+    opponentIDs:
+    - 054_tea_adv
+    - 055_tristan_adv
+    - 058_rex_adv
+    - 059_weevil_adv
+    - 060_mako_adv
+    - 056_joey_adv
+    - 057_mai_adv
+    - 052_arkana_dark
+    - 053_bakura_spirit
+    - 051_heishin
+  - actName: 'Act 7: O Desafio da Elite'
+    description: Os melhores do mundo retornaram, mais fortes do que nunca.
+    backgroundMap: {fileID: 0}
+    opponentIDs:
+    - 069_rare_hunter_rematch
+    - 070_rare_elite_rematch
+    - 067_odion_rematch
+    - 068_strings_rematch
+    - 061_keith_adv
+    - 062_espa_adv
+    - 063_pegasus_adv
+    - 066_ishizu_adv
+    - 065_yugi_adv
+    - 064_kaiba_adv
+  - actName: 'Act 8: O Vale dos Reis'
+    description: Viaje ao passado para enfrentar os Sumos Sacerdotes e seus poderes
+      divinos.
+    backgroundMap: {fileID: 0}
+    opponentIDs:
+    - 076_desert_rematch
+    - 077_forest_rematch
+    - 078_mountain_rematch
+    - 079_meadow_rematch
+    - 080_ocean_rematch
+    - 072_isis
+    - 073_secmeton
+    - 074_martis
+    - 075_kepura
+    - 071_anubisius
+  - actName: 'Act 9: O Labirinto Final'
+    description: "O mal se re\xFAne para uma \xFAltima tentativa de par\xE1-lo."
+    backgroundMap: {fileID: 0}
+    opponentIDs:
+    - 081_labyrinth_rematch
+    - 082_gansley_rematch
+    - 083_crump_rematch
+    - 084_johnson_rematch
+    - 085_leclyde_rematch
+    - 086_crockett_rematch
+    - 087_simon_rematch
+    - 088_shadi_rematch
+    - 089_bakura_final
+    - 090_dark_bakura_final
+  - actName: 'Act 10: A Batalha Suprema'
+    description: O torneio definitivo para decidir o destino do mundo.
+    backgroundMap: {fileID: 0}
+    opponentIDs:
+    - 091_joey_final
+    - 092_mai_final
+    - 093_rex_final
+    - 094_weevil_final
+    - 095_mako_final
+    - 096_keith_final
+    - 097_espa_final
+    - 098_pegasus_final
+    - 099_kaiba_final
+    - 100_marik

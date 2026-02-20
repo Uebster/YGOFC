@@ -39,19 +39,29 @@ public class CampaignManager : MonoBehaviour
 
     public void SaveProgress()
     {
-        PlayerPrefs.SetInt("CampaignProgress", maxUnlockedLevel);
+        string key = "CampaignProgress";
+        if (GameManager.Instance != null && !string.IsNullOrEmpty(GameManager.Instance.currentSaveID))
+        {
+            key += "_" + GameManager.Instance.currentSaveID;
+        }
+        PlayerPrefs.SetInt(key, maxUnlockedLevel);
         PlayerPrefs.Save();
     }
 
     public void LoadProgress()
     {
-        maxUnlockedLevel = PlayerPrefs.GetInt("CampaignProgress", 1);
+        string key = "CampaignProgress";
+        if (GameManager.Instance != null && !string.IsNullOrEmpty(GameManager.Instance.currentSaveID))
+        {
+            key += "_" + GameManager.Instance.currentSaveID;
+        }
+        maxUnlockedLevel = PlayerPrefs.GetInt(key, 1);
     }
 
     // Chama a atualização visual em todos os nós do mapa
     public void UpdateMapVisuals()
     {
-        CampaignNode[] nodes = FindObjectsOfType<CampaignNode>();
+        CampaignNode[] nodes = FindObjectsByType<CampaignNode>(FindObjectsSortMode.None);
         foreach (var node in nodes)
         {
             node.UpdateVisualState();

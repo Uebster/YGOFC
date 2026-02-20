@@ -9,6 +9,7 @@ public class UIManager : MonoBehaviour
     public GameObject openingScreen;     // 1. Panel_Opening (Logo/Vídeo)
     public GameObject pressStartScreen;  // 2. Panel_PressStart (Tela de Título)
     public GameObject mainMenuScreen;    // 3. Panel_MainMenu (Menu Principal)
+    public GameObject nameInputScreen;   // 3.5 Panel_NameInput (Criação de Perfil)
     public GameObject duelScreen;        // 4. Panel_Duel (O Jogo)
 
     [Header("Sub-Menus Principais")]
@@ -73,6 +74,7 @@ public class UIManager : MonoBehaviour
         if (openingScreen != null) openingScreen.SetActive(false);
         if (pressStartScreen != null) pressStartScreen.SetActive(false);
         if (mainMenuScreen != null) mainMenuScreen.SetActive(false);
+        if (nameInputScreen != null) nameInputScreen.SetActive(false);
         if (duelScreen != null) duelScreen.SetActive(false);
 
         // Adicionado: Desativa todos os outros painéis de sub-menu
@@ -133,7 +135,12 @@ public class UIManager : MonoBehaviour
 
     // --- Navegação do Menu Principal ---
 
-    public void Btn_NewGame() { ShowScreen(newGameMenu); }
+    // Alterado: Agora vai para a tela de digitar nome primeiro
+    public void Btn_NewGame() { ShowScreen(nameInputScreen); }
+    
+    // Novo: Chamado pelo NameInputScreen quando o jogador confirma o nome
+    public void Btn_ConfirmNameInput() { ShowScreen(newGameMenu); }
+
     public void Btn_Continue() { ShowScreen(continueMenu); }
     public void Btn_Online() { ShowScreen(onlineMenu); }
     public void Btn_Options() { ShowScreen(optionsMenu); }

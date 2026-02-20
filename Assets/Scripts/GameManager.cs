@@ -93,6 +93,10 @@ public class GameManager : MonoBehaviour
     public CharacterData currentOpponent; // Oponente atual carregado
     public int currentDuelIndex = -1; // Índice do duelo atual na campanha (para salvar progresso)
 
+    [Header("Player Profile")]
+    public string playerName = "Duelist";
+    public string currentSaveID = "default";
+
     void Awake()
     {
         Instance = this;
@@ -106,6 +110,10 @@ public class GameManager : MonoBehaviour
             Debug.LogError("Banco de dados não conectado ou está vazio!");
             yield break;
         }
+        
+        // Carrega o nome salvo
+        playerName = PlayerPrefs.GetString("PlayerName", "Duelist");
+        currentSaveID = PlayerPrefs.GetString("CurrentSaveID", "default");
 
         // Inicializa o CardDisplay na área de exibição
         if (cardDisplayArea != null)
@@ -130,6 +138,15 @@ public class GameManager : MonoBehaviour
         // InitializeOpponentDeck();
         // DrawInitialHand(5);
         // DrawInitialOpponentHand(5);
+    }
+    
+    public void SetPlayerProfile(string newName, string newSaveID)
+    {
+        playerName = newName;
+        currentSaveID = newSaveID;
+        PlayerPrefs.SetString("PlayerName", playerName);
+        PlayerPrefs.SetString("CurrentSaveID", currentSaveID);
+        PlayerPrefs.Save();
     }
 
     // Novo método chamado pelo botão "Free Duel"
