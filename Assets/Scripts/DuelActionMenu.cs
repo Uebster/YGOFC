@@ -84,14 +84,18 @@ public class DuelActionMenu : MonoBehaviour
 
     void OnSet()
     {
-        if (GameManager.Instance != null)
-            GameManager.Instance.SummonMonster(currentCardGO, currentCardData, true); // true = Defesa (Set)
+        if (GameManager.Instance == null) return;
+
+        if (currentCardData.type.Contains("Monster")) GameManager.Instance.SummonMonster(currentCardGO, currentCardData, true);
+        else GameManager.Instance.PlaySpellTrap(currentCardGO, currentCardData, true);
+        
         CloseMenu();
     }
 
     void OnActivate()
     {
-        // Lógica de ativar magia (implementaremos depois)
+        if (GameManager.Instance != null)
+            GameManager.Instance.PlaySpellTrap(currentCardGO, currentCardData, false);
         CloseMenu();
     }
 

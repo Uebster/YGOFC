@@ -132,13 +132,25 @@ public class DuelFieldUI : MonoBehaviour
         layout.spacing = 10;
         layout.padding = new RectOffset(10, 10, 10, 10);
 
-        string[] phases = { "Draw Phase", "Standby Phase", "Main Phase 1", "Battle Phase", "Main Phase 2", "End Phase" };
+        // Nomes das fases devem corresponder ao Enum GamePhase para o parse funcionar (ou usar índice)
+        string[] phaseNames = { "Draw", "Standby", "Main1", "Battle", "Main2", "End" };
+        string[] displayNames = { "Draw Phase", "Standby Phase", "Main Phase 1", "Battle Phase", "Main Phase 2", "End Phase" };
 
-        foreach (string phase in phases)
+        for (int i = 0; i < phaseNames.Length; i++)
         {
-            GameObject pObj = new GameObject(phase, typeof(RectTransform), typeof(Image));
+            string pName = phaseNames[i];
+            string dName = displayNames[i];
+            GamePhase phaseEnum = (GamePhase)i;
+
+            GameObject pObj = new GameObject(pName, typeof(RectTransform), typeof(Image), typeof(Button));
             pObj.transform.SetParent(rt, false);
             pObj.GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.2f, 0.8f); // Cor do botão
+            
+            // Configura o botão
+            Button btn = pObj.GetComponent<Button>();
+            btn.onClick.AddListener(() => {
+                if (GameManager.Instance != null) GameManager.Instance.TryChangePhase(phaseEnum);
+            });
 
             GameObject tObj = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
             tObj.transform.SetParent(pObj.transform, false);
@@ -150,7 +162,7 @@ public class DuelFieldUI : MonoBehaviour
             tRT.offsetMax = new Vector2(-5, 0);
 
             TextMeshProUGUI txt = tObj.GetComponent<TextMeshProUGUI>();
-            txt.text = phase;
+            txt.text = dName;
             txt.alignment = TextAlignmentOptions.Center;
             txt.fontSize = 16;
             txt.enableAutoSizing = true;

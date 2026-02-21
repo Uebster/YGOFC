@@ -29,7 +29,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     private Texture2D backTexture;
     private bool isFlipped = false;
     private RectTransform rectTransform;
-    private int originalSiblingIndex;
+    
+    // Componentes para corrigir a renderização e tremedeira
+    private Canvas canvas;
+    private GraphicRaycaster graphicRaycaster;
+    private Vector3 originalScale = Vector3.one;
 
     [HideInInspector] public float hoverYOffset = 30f;
     [HideInInspector] public bool isInteractable = false; // Usado para habilitar hover apenas para cartas na mão
@@ -37,6 +41,24 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
+        
+        // FIX: Configura a Borda para esticar na carta toda e não bloquear cliques
+        if (outlineImage != null)
+        {
+            outlineImage.raycastTarget = false; // Importante: Ignora cliques
+            // Coloca a borda atrás de tudo (primeiro filho) para não cobrir a carta
+            outlineImage.transform.SetAsFirstSibling();
+            outlineImage.rectTransform.anchorMin = Vector2.zero;
+            outlineImage.rectTransform.anchorMax = Vector2.one;
+            // Expande mais para fora (-10px) para garantir que apareça por fora
+            outlineImage.rectTransform.offsetMin = new Vector2(-10, -10);
+            outlineImage.rectTransform.offsetMax = new Vector2(10, 10);
+            outlineImage.gameObject.SetActive(false);
+        }
+
+        // FIX: Adiciona Canvas para controlar a ordem de desenho sem quebrar o Layout (evita tremedeira)
+        canvas = gameObject.AddComponent<Canvas>();
+        graphicRaycaster = gameObject.AddComponent<GraphicRaycaster>();
     }
 
     // Este método será chamado pelo GameManager para definir os dados da carta
@@ -48,6 +70,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         currentCardData = card;
         backTexture = cardBackTexture;
         isFlipped = !startFaceUp; // Se startFaceUp for false, isFlipped será true (verso)
+        originalScale = transform.localScale; // Salva a escala inicial definida pelo GameManager
         
         DisplayCardDetails();
         
@@ -99,22 +122,24 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     IEnumerator LoadCardFrontTexture(string imagePath)
     {
         string fullPath = Path.Combine(Application.streamingAssetsPath, imagePath);
-        UnityWebRequest request = UnityWebRequestTexture.GetTexture("file://" + fullPath);
-        yield return request.SendWebRequest();
+        using (UnityWebRequest request = UnityWebRequestTexture.GetTexture("file://" + fullPath))
+        {
+            yield return request.SendWebRequest();
 
-        if (request.result == UnityWebRequest.Result.Success)
-        {
-            frontTexture = DownloadHandlerTexture.GetContent(request);
-            frontTexture.filterMode = FilterMode.Trilinear;
-            if (cardImage != null)
+            if (request.result == UnityWebRequest.Result.Success)
             {
-                // Só aplica a textura da frente se a carta NÃO estiver virada (isFlipped == false)
-                if (!isFlipped) cardImage.texture = frontTexture;
+                frontTexture = DownloadHandlerTexture.GetContent(request);
+                frontTexture.filterMode = FilterMode.Trilinear;
+                if (cardImage != null)
+                {
+                    // Só aplica a textura da frente se a carta NÃO estiver virada (isFlipped == false)
+                    if (!isFlipped) cardImage.texture = frontTexture;
+                }
             }
-        }
-        else
-        {
-            Debug.LogError($"Falha ao carregar imagem da frente da carta: {fullPath} | Erro: {request.error}");
+            else
+            {
+                Debug.LogError($"Falha ao carregar imagem da frente da carta: {fullPath} | Erro: {request.error}");
+            }
         }
     }
 
@@ -153,9 +178,12 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Verifica se é interativo E se o hover está habilitado no GameManager
         if (isInteractable && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHover)
         {
+            // FIX: Usa Canvas Sorting para trazer para frente visualmente sem recalcular o Layout
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = 10; // Valor alto para ficar por cima de tudo
+            
+            // Move para cima (Y) mantendo a escala original
             rectTransform.anchoredPosition += new Vector2(0, hoverYOffset);
-            originalSiblingIndex = transform.GetSiblingIndex();
-            transform.SetAsLastSibling();
         }
 
         if (GameManager.Instance != null)
@@ -187,8 +215,10 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // --- Remove Efeito de Subir ---
         if (isInteractable && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHover)
         {
+            // FIX: Reseta o Canvas e a Escala
+            canvas.overrideSorting = false;
+            canvas.sortingOrder = 0;
             rectTransform.anchoredPosition -= new Vector2(0, hoverYOffset);
-            transform.SetSiblingIndex(originalSiblingIndex);
         }
 
         if (GameManager.Instance != null)
@@ -210,10 +240,16 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerClick(PointerEventData eventData)
     {
+        Debug.Log($"CardDisplay: Clique detectado na carta {currentCardData?.name}");
+
         // Só abre o menu se a carta estiver na mão (isInteractable) e o menu existir
         if (isInteractable && DuelActionMenu.Instance != null)
         {
             DuelActionMenu.Instance.ShowMenu(gameObject, currentCardData);
+        }
+        else if (DuelActionMenu.Instance == null)
+        {
+            Debug.LogError("CardDisplay: DuelActionMenu.Instance não encontrado na cena!");
         }
     }
 }

@@ -572,14 +572,16 @@ public class GameManager : MonoBehaviour
     IEnumerator LoadCardBackTexture()
     {
         string fullPath = Path.Combine(Application.streamingAssetsPath, "YuGiOh_OCG_Classic_2147/0000 - Background.jpg");
-        UnityWebRequest request = UnityWebRequestTexture.GetTexture("file://" + fullPath);
-        yield return request.SendWebRequest();
-
-        if (request.result == UnityWebRequest.Result.Success)
+        using (UnityWebRequest request = UnityWebRequestTexture.GetTexture("file://" + fullPath))
         {
-            cardBackTexture = DownloadHandlerTexture.GetContent(request);
-            cardBackTexture.filterMode = FilterMode.Trilinear;
-            UpdatePileVisuals(); // Atualiza o visual dos decks caso o duelo já tenha começado
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                cardBackTexture = DownloadHandlerTexture.GetContent(request);
+                cardBackTexture.filterMode = FilterMode.Trilinear;
+                UpdatePileVisuals(); // Atualiza o visual dos decks caso o duelo já tenha começado
+            }
         }
     }
 
@@ -713,5 +715,100 @@ public class GameManager : MonoBehaviour
             if (zone.childCount == 0) return zone;
         }
         return null;
+    }
+
+    // --- LÓGICA DE SPELL / TRAP ---
+
+    public void PlaySpellTrap(GameObject cardGO, CardData cardData, bool isSet)
+    {
+        // 1. Validação de Fase
+        if (currentPhase != GamePhase.Main1 && currentPhase != GamePhase.Main2)
+        {
+            Debug.LogWarning("Ativar/Setar Spells só é permitido na Main Phase 1 ou 2.");
+            return;
+        }
+
+        Transform targetZone = null;
+
+        // 2. Verifica se é Field Spell
+        if (cardData.race == "Field")
+        {
+            if (duelFieldUI != null) targetZone = duelFieldUI.playerFieldSpell;
+        }
+        else
+        {
+            // Encontrar Zona de Spell Livre
+            targetZone = GetFreePlayerSpellZone();
+        }
+
+        if (targetZone == null)
+        {
+            Debug.LogWarning("Sem zonas de magia/armadilha livres!");
+            return;
+        }
+
+        // 3. Mover Carta
+        playerHand.Remove(cardGO);
+        cardGO.transform.SetParent(targetZone);
+        cardGO.transform.localPosition = Vector3.zero;
+        cardGO.transform.localScale = Vector3.one;
+
+        // 4. Configuração Visual
+        CardDisplay display = cardGO.GetComponent<CardDisplay>();
+        if (display != null)
+        {
+            display.isInteractable = false;
+
+            if (isSet)
+            {
+                display.ShowBack();
+                // Spells/Traps setadas ficam verticais (não rotacionam como monstros em defesa)
+                cardGO.transform.localRotation = Quaternion.identity; 
+            }
+            else
+            {
+                display.ShowFront();
+                cardGO.transform.localRotation = Quaternion.identity;
+
+                // Efeito de Ativação
+                bool isTrap = cardData.type.Contains("Trap");
+                if (DuelFXManager.Instance != null)
+                    DuelFXManager.Instance.PlayCardActivation(display, isTrap);
+                
+                if (DuelScoreManager.Instance != null)
+                {
+                    if (isTrap) DuelScoreManager.Instance.RecordTrapActivation();
+                    else DuelScoreManager.Instance.RecordSpellActivation();
+                }
+            }
+        }
+    }
+
+    private Transform GetFreePlayerSpellZone()
+    {
+        if (duelFieldUI == null || duelFieldUI.playerSpellZones == null) return null;
+        foreach (Transform zone in duelFieldUI.playerSpellZones)
+        {
+            if (zone.childCount == 0) return zone;
+        }
+        return null;
+    }
+
+    // --- CONTROLE DE FASE (UI) ---
+
+    public void TryChangePhase(GamePhase newPhase)
+    {
+        // Regra: Não pode voltar fases (exceto DevMode)
+        // Ordem: Draw(0) -> Standby(1) -> Main1(2) -> Battle(3) -> Main2(4) -> End(5)
+        if (!devMode)
+        {
+            if ((int)newPhase <= (int)currentPhase)
+            {
+                Debug.LogWarning("Não é possível voltar para uma fase anterior neste turno.");
+                return;
+            }
+        }
+
+        ChangePhase(newPhase);
     }
 }
