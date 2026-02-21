@@ -64,17 +64,39 @@ public class CardViewerUI : MonoBehaviour
         StartCoroutine(LoadCardTexture(card.image_filename));
     }
 
+    // Novo método para exibir uma carta específica (usado pelo Deck Builder)
+    public void DisplayCardData(CardData card)
+    {
+        if (card == null) return;
+
+        if (cardNameText) cardNameText.text = card.name;
+        if (cardDescriptionText) cardDescriptionText.text = card.description;
+
+        string info = $"[{card.type}]";
+        if (!string.IsNullOrEmpty(card.race)) info += $" / {card.race}";
+        if (card.level > 0) info += $" / LV: {card.level}";
+        if (cardInfoText) cardInfoText.text = info;
+
+        if (cardStatsText)
+            cardStatsText.text = card.type.Contains("Monster") ? $"ATK/ {card.atk}  DEF/ {card.def}" : "";
+        else if (cardStatsText) cardStatsText.text = "";
+
+        StartCoroutine(LoadCardTexture(card.image_filename));
+    }
+
     IEnumerator LoadCardBackTexture()
     {
         string fullPath = Path.Combine(Application.streamingAssetsPath, "YuGiOh_OCG_Classic_2147/0000 - Background.jpg");
-        UnityWebRequest request = UnityWebRequestTexture.GetTexture("file://" + fullPath);
-        yield return request.SendWebRequest();
-
-        if (request.result == UnityWebRequest.Result.Success)
+        using (UnityWebRequest request = UnityWebRequestTexture.GetTexture("file://" + fullPath))
         {
-            Texture2D texture = DownloadHandlerTexture.GetContent(request);
-            texture.filterMode = FilterMode.Trilinear;
-            backTexture2D = texture; // Salva para o flip 2D
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                Texture2D texture = DownloadHandlerTexture.GetContent(request);
+                texture.filterMode = FilterMode.Trilinear;
+                backTexture2D = texture; // Salva para o flip 2D
+            }
         }
     }
 
@@ -82,18 +104,21 @@ public class CardViewerUI : MonoBehaviour
     {
         string fullPath = Path.Combine(Application.streamingAssetsPath, imagePath);
         UnityWebRequest request = UnityWebRequestTexture.GetTexture("file://" + fullPath);
-        yield return request.SendWebRequest();
-
-        if (request.result == UnityWebRequest.Result.Success)
+        using (request)
         {
-            Texture2D texture = DownloadHandlerTexture.GetContent(request);
-            texture.filterMode = FilterMode.Trilinear;
+            yield return request.SendWebRequest();
 
-            // Atualiza o 2D
-            frontTexture2D = texture;
-            if (cardImage2D != null) {
-                is2DFlipped = false;
-                cardImage2D.texture = frontTexture2D;
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                Texture2D texture = DownloadHandlerTexture.GetContent(request);
+                texture.filterMode = FilterMode.Trilinear;
+
+                // Atualiza o 2D
+                frontTexture2D = texture;
+                if (cardImage2D != null) {
+                    is2DFlipped = false;
+                    cardImage2D.texture = frontTexture2D;
+                }
             }
         }
     }

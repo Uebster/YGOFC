@@ -57,6 +57,7 @@ public class GameManager : MonoBehaviour
     [Header("REFERÊNCIAS DO MODO 2D")]
     public RawImage cardDisplayArea; // A RawImage onde a carta individual será exibida
     private Texture2D cardBackTexture; // Textura do verso da carta, carregada uma vez
+    public Sprite cardMaskSprite; // Sprite para arredondar cantos (opcional)
 
     [Header("Card Prefab")]
     public GameObject cardPrefab; // Prefab da carta para instanciar na mão
@@ -78,6 +79,10 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI cardStatsText;
 
     private List<CardData> playerDeck = new List<CardData>();
+    // Adicionado: Side Deck e Baú (Trunk)
+    private List<CardData> playerSideDeck = new List<CardData>();
+    public List<string> playerTrunk = new List<string>(); // IDs das cartas que o jogador possui
+
     private List<GameObject> playerHand = new List<GameObject>();
     private List<CardData> playerGraveyard = new List<CardData>();
     private List<CardData> opponentDeck = new List<CardData>();
@@ -134,6 +139,13 @@ public class GameManager : MonoBehaviour
         if (duelFieldUI == null)
             duelFieldUI = FindFirstObjectByType<DuelFieldUI>();
 
+        // Inicializa o Baú com todas as cartas se estiver vazio (Modo Sandbox/Teste)
+        if (playerTrunk.Count == 0 && cardDatabase != null)
+        {
+            foreach(var card in cardDatabase.cardDatabase)
+                playerTrunk.Add(card.id);
+        }
+
         yield return StartCoroutine(LoadCardBackTexture());
 
         // Removido do Start automático. Agora aguarda o UIManager chamar StartDuel()
@@ -189,6 +201,7 @@ public class GameManager : MonoBehaviour
         playerGraveyard.Clear();
         opponentGraveyard.Clear();
         playerExtraDeck.Clear();
+        playerSideDeck.Clear();
         opponentExtraDeck.Clear();
 
         // Atualiza visuais das pilhas e limpa o viewer
@@ -207,7 +220,7 @@ public class GameManager : MonoBehaviour
     void InitializePlayerDeck()
     {
         // Separa as cartas do Extra Deck (Fusão) do deck principal
-        // (Aqui você futuramente carregará o deck salvo do jogador, por enquanto carrega tudo)
+        // TODO: Carregar do save real. Por enquanto carrega do banco.
         foreach (var card in cardDatabase.cardDatabase)
         {
             if (card.type.Contains("Fusion"))
@@ -348,6 +361,7 @@ public class GameManager : MonoBehaviour
             newCardDisplay.hoverYOffset = handCardHoverYOffset;
             newCardDisplay.isInteractable = true; // Habilita o efeito de hover
 
+            newCardDisplay.isPlayerCard = true; // Marca como carta do jogador (visível no viewer mesmo setada)
             newCardDisplay.SetCard(drawnCard, cardBackTexture);
             playerHand.Add(newCardGO);
         }
@@ -390,6 +404,7 @@ public class GameManager : MonoBehaviour
             newCardDisplay.hoverYOffset = handCardHoverYOffset;
             newCardDisplay.isInteractable = true; // Habilita o efeito de hover
 
+            newCardDisplay.isPlayerCard = false; // Carta do oponente
             // Cartas do oponente entram viradas para baixo (false), exceto se showOpponentHand estiver ativo
             bool startFaceUp = showOpponentHand;
             newCardDisplay.SetCard(drawnCard, cardBackTexture, startFaceUp);
@@ -512,6 +527,9 @@ public class GameManager : MonoBehaviour
         {
             phaseText.text = currentPhase.ToString().ToUpper();
         }
+
+        // Atualiza o destaque visual no tabuleiro
+        if (duelFieldUI != null) duelFieldUI.UpdatePhaseHighlight(currentPhase);
 
         // Lógica específica de entrada na fase
         switch (currentPhase)
@@ -810,5 +828,25 @@ public class GameManager : MonoBehaviour
         }
 
         ChangePhase(newPhase);
+    }
+
+    // --- GERENCIAMENTO DE DECK (ACESSO PÚBLICO) ---
+    
+    public List<CardData> GetPlayerMainDeck() { return playerDeck; }
+    public List<CardData> GetPlayerSideDeck() { return playerSideDeck; }
+    public List<CardData> GetPlayerExtraDeck() { return playerExtraDeck; }
+    
+    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
+    {
+        playerDeck = new List<CardData>(main);
+        playerSideDeck = new List<CardData>(side);
+        playerExtraDeck = new List<CardData>(extra);
+    }
+
+    public bool PlayerHasCard(string cardId)
+    {
+        // Verifica se o jogador tem a carta no baú (ou se está usando todas as cartas)
+        if (devMode) return true;
+        return playerTrunk.Contains(cardId);
     }
 }

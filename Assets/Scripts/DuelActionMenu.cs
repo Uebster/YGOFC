@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 public class DuelActionMenu : MonoBehaviour
 {
@@ -38,10 +41,18 @@ public class DuelActionMenu : MonoBehaviour
         // Fecha o menu se clicar com o botão direito ou Esc
         if (menuPanel != null && menuPanel.activeSelf)
         {
-            if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape))
-            {
-                CloseMenu();
-            }
+            bool rightClick = false;
+            bool escape = false;
+
+#if ENABLE_INPUT_SYSTEM
+            if (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame) rightClick = true;
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) escape = true;
+#else
+            if (Input.GetMouseButtonDown(1)) rightClick = true;
+            if (Input.GetKeyDown(KeyCode.Escape)) escape = true;
+#endif
+
+            if (rightClick || escape) CloseMenu();
         }
     }
 

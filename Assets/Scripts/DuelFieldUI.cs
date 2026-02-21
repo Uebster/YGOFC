@@ -40,6 +40,12 @@ public class DuelFieldUI : MonoBehaviour
     public Transform opponentExtraDeck;
     public Transform opponentHand;
 
+    [Header("Configuração de Fases")]
+    public Color phaseActiveColor = new Color(1f, 0.8f, 0f, 1f); // Amarelo/Dourado
+    public Color phaseInactiveColor = new Color(0.2f, 0.2f, 0.2f, 0.8f); // Cinza Escuro
+    
+    private Dictionary<GamePhase, Image> phaseImagesDict = new Dictionary<GamePhase, Image>();
+
     // --- FERRAMENTA DE GERAÇÃO AUTOMÁTICA (EDITOR) ---
 #if UNITY_EDITOR
     [ContextMenu("Gerar Layout do Tabuleiro")]
@@ -115,6 +121,52 @@ public class DuelFieldUI : MonoBehaviour
         Debug.Log("Tabuleiro com Personagens gerado!");
     }
 
+    // --- RUNTIME ---
+
+    void Awake()
+    {
+        // Tenta encontrar as referências dos botões de fase se foram gerados
+        Transform indicator = transform.Find("PhaseIndicator");
+        if (indicator != null)
+        {
+            string[] phaseNames = { "Draw", "Standby", "Main1", "Battle", "Main2", "End" };
+            for (int i = 0; i < phaseNames.Length; i++)
+            {
+                Transform pObj = indicator.Find(phaseNames[i]);
+                if (pObj != null)
+                {
+                    Image img = pObj.GetComponent<Image>();
+                    if (img != null)
+                    {
+                        phaseImagesDict[(GamePhase)i] = img;
+                    }
+
+                    // FIX: Garante que os botões funcionem em Runtime encontrando-os e adicionando listeners
+                    Button btn = pObj.GetComponent<Button>();
+                    if (btn != null)
+                    {
+                        GamePhase phaseEnum = (GamePhase)i;
+                        btn.onClick.RemoveAllListeners(); // Remove listeners antigos (do editor)
+                        btn.onClick.AddListener(() => {
+                            if (GameManager.Instance != null) GameManager.Instance.TryChangePhase(phaseEnum);
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    public void UpdatePhaseHighlight(GamePhase currentPhase)
+    {
+        foreach (var kvp in phaseImagesDict)
+        {
+            if (kvp.Value != null)
+            {
+                kvp.Value.color = (kvp.Key == currentPhase) ? phaseActiveColor : phaseInactiveColor;
+            }
+        }
+    }
+
     // --- FUNÇÕES AUXILIARES ---
 
     void CreatePhaseIndicator(string name, Transform parent, float yMin, float yMax, float xMin, float xMax)
@@ -169,6 +221,7 @@ public class DuelFieldUI : MonoBehaviour
             txt.fontSizeMin = 8;
             txt.fontSizeMax = 24;
             txt.color = Color.white;
+            txt.raycastTarget = false; // FIX: Permite clicar no botão através do texto
         }
     }
 

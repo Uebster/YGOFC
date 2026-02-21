@@ -33,10 +33,12 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     // Componentes para corrigir a renderização e tremedeira
     private Canvas canvas;
     private GraphicRaycaster graphicRaycaster;
+    private Canvas outlineCanvas; // Canvas exclusivo para a borda
     private Vector3 originalScale = Vector3.one;
 
     [HideInInspector] public float hoverYOffset = 30f;
     [HideInInspector] public bool isInteractable = false; // Usado para habilitar hover apenas para cartas na mão
+    [HideInInspector] public bool isPlayerCard = false; // Define se a carta pertence ao jogador (para visualização)
 
     void Awake()
     {
@@ -47,18 +49,44 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             outlineImage.raycastTarget = false; // Importante: Ignora cliques
             // Coloca a borda atrás de tudo (primeiro filho) para não cobrir a carta
-            outlineImage.transform.SetAsFirstSibling();
+            // outlineImage.transform.SetAsFirstSibling(); // Não é mais necessário com o Canvas
             outlineImage.rectTransform.anchorMin = Vector2.zero;
             outlineImage.rectTransform.anchorMax = Vector2.one;
             // Expande mais para fora (-10px) para garantir que apareça por fora
             outlineImage.rectTransform.offsetMin = new Vector2(-10, -10);
             outlineImage.rectTransform.offsetMax = new Vector2(10, 10);
+            
+            // FIX: Adiciona Canvas na borda para forçar renderização atrás da carta
+            outlineCanvas = outlineImage.gameObject.AddComponent<Canvas>();
+            outlineCanvas.overrideSorting = true;
+            outlineCanvas.sortingOrder = -1; // Começa atrás da carta (que é 0)
+            
             outlineImage.gameObject.SetActive(false);
         }
 
         // FIX: Adiciona Canvas para controlar a ordem de desenho sem quebrar o Layout (evita tremedeira)
         canvas = gameObject.AddComponent<Canvas>();
         graphicRaycaster = gameObject.AddComponent<GraphicRaycaster>();
+
+        // Tenta aplicar máscara de arredondamento se houver sprite configurado no GameManager
+        ApplyRoundedCorners();
+    }
+
+    void ApplyRoundedCorners()
+    {
+        if (GameManager.Instance != null && GameManager.Instance.cardMaskSprite != null && cardImage != null)
+        {
+            // Verifica se já existe uma máscara no pai
+            Mask mask = cardImage.transform.parent.GetComponent<Mask>();
+            if (mask == null)
+            {
+                // Adiciona componente de máscara ao objeto da carta (se tiver imagem de fundo) ou tenta configurar
+                // Nota: RawImage (cardImage) não suporta Mask diretamente como a Image.
+                // O ideal é que o Prefab tenha: Parent (Image + Mask) -> Child (RawImage).
+                // Se o seu prefab for simples, isso pode não funcionar perfeitamente sem ajuste manual no prefab.
+                // Debug.Log("Tentando aplicar máscara de cantos arredondados...");
+            }
+        }
     }
 
     // Este método será chamado pelo GameManager para definir os dados da carta
@@ -181,12 +209,19 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             // FIX: Usa Canvas Sorting para trazer para frente visualmente sem recalcular o Layout
             canvas.overrideSorting = true;
             canvas.sortingOrder = 10; // Valor alto para ficar por cima de tudo
+            if (outlineCanvas != null) outlineCanvas.sortingOrder = 9; // Borda logo atrás da carta
             
             // Move para cima (Y) mantendo a escala original
             rectTransform.anchoredPosition += new Vector2(0, hoverYOffset);
         }
 
-        if (GameManager.Instance != null)
+        // Prioridade: Se o DeckBuilder estiver aberto, usa o visualizador dele
+        if (DeckBuilderManager.Instance != null && DeckBuilderManager.Instance.gameObject.activeInHierarchy)
+        {
+            DeckBuilderManager.Instance.OnCardHover(currentCardData);
+        }
+        // Caso contrário, usa o visualizador do Duelo (GameManager)
+        else if (GameManager.Instance != null)
         {
             // Evita que o visualizador atualize a si mesmo se o mouse passar por cima dele
             if (GameManager.Instance.cardDisplayArea != null && cardImage == GameManager.Instance.cardDisplayArea) return;
@@ -198,8 +233,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 forceShowFaceUp = true;
             }
 
-            // Se a carta estiver virada para baixo (isFlipped), mostra o verso no viewer (showFaceUp = false)
-            bool showFaceUp = !isFlipped || forceShowFaceUp;
+            // Se a carta estiver virada para baixo (isFlipped), mostra o verso, a menos que seja do jogador ou extra deck
+            bool showFaceUp = !isFlipped || forceShowFaceUp || isPlayerCard;
             GameManager.Instance.UpdateCardViewer(currentCardData, showFaceUp);
         }
     }
@@ -218,6 +253,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             // FIX: Reseta o Canvas e a Escala
             canvas.overrideSorting = false;
             canvas.sortingOrder = 0;
+            if (outlineCanvas != null) outlineCanvas.sortingOrder = -1; // Volta para trás
             rectTransform.anchoredPosition -= new Vector2(0, hoverYOffset);
         }
 
