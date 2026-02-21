@@ -95,6 +95,8 @@ public class GameManager : MonoBehaviour
     public string playerName = "Duelist";
     public string currentSaveID = "default";
 
+    private bool hasDrawnThisTurn = false; // Controle de draw por turno
+
     void Awake()
     {
         Instance = this;
@@ -160,6 +162,9 @@ public class GameManager : MonoBehaviour
         InitializeOpponentDeck();
         DrawInitialHand(5); // Exemplo: compra 5 cartas iniciais
         DrawInitialOpponentHand(5);
+        
+        // Reseta flag de draw antes de começar o turno
+        hasDrawnThisTurn = false;
         ChangePhase(GamePhase.Draw); // Começa o turno na Draw Phase
 
         // Inicia o rastreamento de pontuação para o Rank
@@ -286,7 +291,7 @@ public class GameManager : MonoBehaviour
         UpdatePileVisuals();
     }
 
-    public void DrawCard()
+    public void DrawCard(bool ignoreLimit = false)
     {
         if (playerDeck.Count == 0)
         {
@@ -294,11 +299,29 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        // Lógica de Limitação de Draw (1 por turno na Draw Phase)
+        if (!devMode && !ignoreLimit)
+        {
+            if (currentPhase != GamePhase.Draw)
+            {
+                Debug.LogWarning("Você só pode comprar cartas na Draw Phase!");
+                return;
+            }
+            if (hasDrawnThisTurn)
+            {
+                Debug.LogWarning("Você já comprou uma carta neste turno!");
+                return;
+            }
+        }
+
         CardData drawnCard = playerDeck[0];
         playerDeck.RemoveAt(0);
         UpdatePileVisuals(); // Atualiza visual do deck após remover carta
         
         Debug.Log($"Carta comprada: {drawnCard.name}. Cartas restantes no deck: {playerDeck.Count}");
+        
+        // Marca que já comprou neste turno (se não for mão inicial)
+        if (!ignoreLimit) hasDrawnThisTurn = true;
 
         // Exibe a carta comprada na área de visualização principal
         if (currentCardDisplay != null)
@@ -384,7 +407,7 @@ public class GameManager : MonoBehaviour
     {
         for (int i = 0; i < count; i++)
         {
-            DrawCard();
+            DrawCard(true); // Ignora o limite para a mão inicial
         }
     }
 
@@ -494,6 +517,8 @@ public class GameManager : MonoBehaviour
         switch (currentPhase)
         {
             case GamePhase.Draw:
+                // Reseta o draw do turno ao entrar na Draw Phase
+                hasDrawnThisTurn = false;
                 // Aguarda o jogador clicar no deck (DrawCard)
                 break;
             case GamePhase.Standby:
@@ -554,6 +579,7 @@ public class GameManager : MonoBehaviour
         {
             cardBackTexture = DownloadHandlerTexture.GetContent(request);
             cardBackTexture.filterMode = FilterMode.Trilinear;
+            UpdatePileVisuals(); // Atualiza o visual dos decks caso o duelo já tenha começado
         }
     }
 

@@ -39,6 +39,9 @@ public class UIManager : MonoBehaviour
     public GameObject exitScreen;
     public GraveyardViewer graveyardViewer;
 
+    [Header("Debug")]
+    public bool testDuelDirectly = false;
+
     // Adicione outras telas aqui conforme precisar (Library, Campaign, etc)
     // public GameObject libraryScreen; 
 
@@ -54,6 +57,12 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
+        if (testDuelDirectly)
+        {
+            StartCoroutine(StartDuelDelayed());
+            return;
+        }
+
         // Ao iniciar o jogo, começa pela Abertura
         ShowScreen(openingScreen);
 
@@ -65,6 +74,13 @@ public class UIManager : MonoBehaviour
 
         // DICA: Se quiser que a abertura passe sozinha após 3 segundos, descomente a linha abaixo:
         // Invoke("FinishOpening", 3f);
+    }
+
+    System.Collections.IEnumerator StartDuelDelayed()
+    {
+        // Espera um pouco para o GameManager carregar texturas (verso da carta) e banco de dados
+        yield return new WaitForSeconds(0.5f);
+        Btn_StartFreeDuel();
     }
 
     // Função central que desativa tudo e ativa só o que queremos

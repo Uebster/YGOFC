@@ -27,6 +27,24 @@ public class DuelActionMenu : MonoBehaviour
         if (cancelBtn) cancelBtn.onClick.AddListener(CloseMenu);
     }
 
+    void Start()
+    {
+        // Garante que comece fechado ao iniciar a cena
+        CloseMenu();
+    }
+
+    void Update()
+    {
+        // Fecha o menu se clicar com o botão direito ou Esc
+        if (menuPanel != null && menuPanel.activeSelf)
+        {
+            if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape))
+            {
+                CloseMenu();
+            }
+        }
+    }
+
     public void ShowMenu(GameObject cardGO, CardData data)
     {
         currentCardGO = cardGO;
