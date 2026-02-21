@@ -20,21 +20,35 @@ public class CampaignNode : MonoBehaviour
     public Image targetImage; // A imagem do losango (se nulo, pega do botão)
     public GameObject lockIcon; // Ícone de cadeado (filho do botão)
     public GameObject clearIcon; // Ícone de "V" ou estrela (filho do botão)
-    public Color lockedColor = new Color(0f, 0f, 0f, 0.5f); // Cor de sombra (preto transparente)
+    public Color lockedColor = Color.black; // Cor de sombra (preto sólido)
     public Color unlockedColor = Color.white; // Cor normal
     
     private Button btn;
     private MillenniumButton milleniumEffect; // Se estiver usando o efeito visual
 
-    void Start()
+    void Awake()
     {
         btn = GetComponent<Button>();
         milleniumEffect = GetComponent<MillenniumButton>();
         
         // Tenta pegar a imagem do botão se não foi atribuída manualmente
         if (targetImage == null) targetImage = GetComponent<Image>();
-        
+
+        // IMPORTANTE: Desativa a transição padrão do botão para não brigar com nossa cor
+        if (btn != null) btn.transition = Selectable.Transition.None;
+    }
+
+    void Start()
+    {
         btn.onClick.AddListener(OnNodeClick);
+        UpdateVisualState();
+        // Força uma atualização extra após um breve momento para garantir que o CampaignManager carregou
+        StartCoroutine(DelayedUpdate());
+    }
+
+    private System.Collections.IEnumerator DelayedUpdate()
+    {
+        yield return new WaitForSeconds(0.1f);
         UpdateVisualState();
     }
 
@@ -43,9 +57,21 @@ public class CampaignNode : MonoBehaviour
         UpdateVisualState();
     }
 
+    // Permite testar clicando com botão direito no componente no Inspector
+    [ContextMenu("Force Update Visual")]
     public void UpdateVisualState()
     {
-        if (CampaignManager.Instance == null) return;
+        // Verificação de segurança com aviso
+        if (CampaignManager.Instance == null)
+        {
+            // Só avisa se estivermos jogando, para não spammar no editor
+            if (Application.isPlaying) 
+                Debug.LogWarning($"CampaignNode '{name}': CampaignManager.Instance não encontrado! O botão pode ficar escuro incorretamente.");
+            return;
+        }
+        
+        // Garante que temos a imagem antes de tentar pintar
+        if (targetImage == null) targetImage = GetComponent<Image>();
 
         bool isUnlocked = true; // Home e Menu começam desbloqueados
         bool isCompleted = false;
@@ -85,13 +111,23 @@ public class CampaignNode : MonoBehaviour
         // Se tiver o efeito Millennium, atualizamos a cor base dele para não haver conflito
         if (milleniumEffect != null)
         {
-            milleniumEffect.useColorTint = true;
-            milleniumEffect.bgNormalColor = finalColor;
-            // Força a atualização visual imediata
+            if (isUnlocked)
+            {
+                // Desbloqueado: Desativa tintura para não escurecer no hover, usa apenas escala
+                milleniumEffect.useColorTint = false;
+            }
+            else
+            {
+                // Bloqueado: Ativa tintura para aplicar a cor de sombra (preto)
+                milleniumEffect.useColorTint = true;
+                milleniumEffect.bgNormalColor = finalColor;
+            }
+            
             if (targetImage != null) targetImage.color = finalColor;
         }
         else if (targetImage != null)
         {
+            // Se estiver desbloqueado, garante Alpha 1 (sólido). Se bloqueado, usa a cor de sombra.
             targetImage.color = finalColor;
         }
     }
