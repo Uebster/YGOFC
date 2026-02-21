@@ -218,7 +218,7 @@ public class NameInputScreen : MonoBehaviour
         MillenniumButton mb = newKey.GetComponent<MillenniumButton>();
         if (mb == null) mb = newKey.AddComponent<MillenniumButton>();
         mb.scaleAmount = 1.2f; // Aumenta 20%
-        mb.useColorTint = true;
+        mb.useColorTint = false; // Desativa a mudança de cor, usa apenas escala
         mb.animationDuration = 0.1f;
 
         generatedKeys.Add(vKey);

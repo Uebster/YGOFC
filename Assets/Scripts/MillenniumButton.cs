@@ -15,7 +15,7 @@ public class MillenniumButton : MonoBehaviour, IPointerEnterHandler, IPointerExi
     public Image backgroundImage;
     public bool useColorTint = true; // Desmarque se estiver usando uma textura no fundo
     [Tooltip("Usado se 'useColorTint' for true.")]
-    public Color bgNormalColor = new Color(0f, 0f, 0f, 0.5f); // Preto transparente (Alpha 128)
+    public Color bgNormalColor = Color.white; // Branco Opaco (Padrão corrigido)
     [Tooltip("Usado se 'useColorTint' for true.")]
     public Color bgHoverColor = new Color(0.2f, 0.2f, 0.2f, 0.9f); // Cinza escuro quase opaco
 
