@@ -160,6 +160,12 @@ public class GameManager : MonoBehaviour
         DrawInitialHand(5); // Exemplo: compra 5 cartas iniciais
         DrawInitialOpponentHand(5);
         ChangePhase(GamePhase.Draw); // Começa o turno na Draw Phase
+
+        // Inicia o rastreamento de pontuação para o Rank
+        if (DuelScoreManager.Instance != null)
+        {
+            DuelScoreManager.Instance.StartDuelTracking();
+        }
     }
 
     void CleanupDuelState()
@@ -392,6 +398,21 @@ public class GameManager : MonoBehaviour
         {
             opponentGraveyard.Add(card);
         }
+        
+        if (DuelScoreManager.Instance != null)
+        {
+            // Registra pontuação se for carta do jogador indo pro cemitério
+            if (isPlayer)
+            {
+                DuelScoreManager.Instance.RecordCardSentToGY();
+            }
+            // Registra pontuação se for monstro do inimigo indo pro cemitério (destruído)
+            else if (card.type.Contains("Monster"))
+            {
+                DuelScoreManager.Instance.RecordEnemyMonsterDestroyed();
+            }
+        }
+
         UpdatePileVisuals();
     }
 
@@ -579,6 +600,31 @@ public class GameManager : MonoBehaviour
                     }
                 }
             }
+        }
+    }
+
+    // Método para finalizar o duelo e calcular o Rank
+    // Chame isso quando o HP de alguém chegar a 0 ou Deck acabar
+    public void EndDuel(bool playerWon, bool opponentDeckOut = false)
+    {
+        if (playerWon)
+        {
+            if (DuelScoreManager.Instance != null)
+            {
+                DuelScoreManager.Instance.StopDuelTracking(opponentDeckOut);
+                int score;
+                DuelRank rank = DuelScoreManager.Instance.CalculateFinalRank(out score);
+                
+                Debug.Log($"DUELO VENCIDO! Rank: {rank} | Pontos: {score}");
+                Debug.Log(DuelScoreManager.Instance.GetScoreReport());
+                
+                // TODO: Chamar UIManager para mostrar tela de Vitória com o Rank
+            }
+        }
+        else
+        {
+            Debug.Log("DUELO PERDIDO. Sem Rank.");
+            // TODO: Chamar UIManager para mostrar tela de Derrota
         }
     }
 }
