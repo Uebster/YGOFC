@@ -26,6 +26,9 @@ public class GameManager : MonoBehaviour
     public CardDatabase cardDatabase;
     public CharacterDatabase characterDatabase;
 
+    [Header("Field References")]
+    public DuelFieldUI duelFieldUI; // Referência ao script que segura as zonas
+
     // --- CONTROLES GERAIS ---
     [Header("MODOS DE VISUALIZAÇÃO")]
     [Tooltip("Ativa o visualizador 2D (RawImage na tela)")]
@@ -124,6 +127,10 @@ public class GameManager : MonoBehaviour
             currentCardDisplay.cardDescriptionText = cardDescriptionText;
             currentCardDisplay.cardStatsText = cardStatsText;
         }
+
+        // Tenta encontrar o DuelFieldUI se não estiver atribuído
+        if (duelFieldUI == null)
+            duelFieldUI = FindFirstObjectByType<DuelFieldUI>();
 
         yield return StartCoroutine(LoadCardBackTexture());
 
@@ -616,5 +623,69 @@ public class GameManager : MonoBehaviour
             
             // TODO: Chamar UIManager para mostrar tela de Resultado (Vitória/Derrota) com o Rank
         }
+    }
+
+    // --- LÓGICA DE INVOCACÃO ---
+
+    public void SummonMonster(GameObject cardGO, CardData cardData, bool isSet)
+    {
+        // 1. Validação de Fase
+        if (currentPhase != GamePhase.Main1 && currentPhase != GamePhase.Main2)
+        {
+            Debug.LogWarning("Invocação só é permitida na Main Phase 1 ou 2.");
+            return;
+        }
+
+        // 2. Encontrar Zona Livre
+        Transform targetZone = GetFreePlayerMonsterZone();
+        if (targetZone == null)
+        {
+            Debug.LogWarning("Sem zonas de monstro livres!");
+            return;
+        }
+
+        // 3. Mover Carta (Lógica de Dados e Visual)
+        playerHand.Remove(cardGO); // Remove da lista da mão
+        
+        cardGO.transform.SetParent(targetZone); // Coloca na zona
+        cardGO.transform.localPosition = Vector3.zero; // Centraliza
+        cardGO.transform.localScale = Vector3.one; // Reseta escala (tira o tamanho da mão)
+
+        // 4. Configuração Visual (Ataque vs Defesa)
+        CardDisplay display = cardGO.GetComponent<CardDisplay>();
+        if (display != null)
+        {
+            display.isInteractable = false; // Desativa o hover de mão (subir)
+            
+            if (isSet)
+            {
+                // Modo Defesa (Set): Virado para baixo e Rotacionado 90 graus
+                display.ShowBack();
+                cardGO.transform.localRotation = Quaternion.Euler(0, 0, 90);
+            }
+            else
+            {
+                // Modo Ataque: Virado para cima e Reto
+                display.ShowFront();
+                cardGO.transform.localRotation = Quaternion.identity;
+                
+                // Toca efeito visual de invocação
+                if (DuelFXManager.Instance != null)
+                    DuelFXManager.Instance.PlaySummonEffect(display);
+            }
+        }
+
+        // 5. Pontuação
+        if (DuelScoreManager.Instance != null) DuelScoreManager.Instance.RecordSummon();
+    }
+
+    private Transform GetFreePlayerMonsterZone()
+    {
+        if (duelFieldUI == null || duelFieldUI.playerMonsterZones == null) return null;
+        foreach (Transform zone in duelFieldUI.playerMonsterZones)
+        {
+            if (zone.childCount == 0) return zone;
+        }
+        return null;
     }
 }

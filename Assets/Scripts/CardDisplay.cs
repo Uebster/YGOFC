@@ -8,7 +8,7 @@ using UnityEngine.Networking;
 using System.IO;
 using UnityEngine.EventSystems;
 
-public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
     [Header("UI Elements")]
     public RawImage cardImage;
@@ -16,6 +16,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public TextMeshProUGUI cardInfoText;
     public TextMeshProUGUI cardDescriptionText;
     public TextMeshProUGUI cardStatsText;
+
+    [Header("Visual Effects")]
+    public Image outlineImage; // Arraste uma imagem de borda (filha) aqui
+    public bool enableHoverOutline = true;
+    public Color hoverColor = Color.yellow;
+    public Color tributeColor = new Color(0f, 0.6f, 1f); // Azul ciano brilhante
+    public Color attackColor = Color.red;
 
     private CardData currentCardData;
     private Texture2D frontTexture;
@@ -135,6 +142,14 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerEnter(PointerEventData eventData)
     {
+        // --- Efeito de Borda (Hover) ---
+        if (enableHoverOutline && outlineImage != null)
+        {
+            outlineImage.color = hoverColor;
+            outlineImage.gameObject.SetActive(true);
+        }
+
+        // --- Efeito de Subir (Apenas Mão) ---
         // Verifica se é interativo E se o hover está habilitado no GameManager
         if (isInteractable && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHover)
         {
@@ -163,6 +178,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerExit(PointerEventData eventData)
     {
+        // --- Remove Borda ---
+        if (outlineImage != null)
+        {
+            outlineImage.gameObject.SetActive(false);
+        }
+
+        // --- Remove Efeito de Subir ---
         if (isInteractable && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHover)
         {
             rectTransform.anchoredPosition -= new Vector2(0, hoverYOffset);
@@ -172,6 +194,26 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (GameManager.Instance != null)
         {
             GameManager.Instance.ClearCardViewer();
+        }
+    }
+
+    // Método para ativar o brilho de tributo (Luz Azul)
+    public void SetTributeHighlight(bool active)
+    {
+        if (outlineImage != null)
+        {
+            outlineImage.gameObject.SetActive(active);
+            outlineImage.color = tributeColor;
+            // Dica: Você pode adicionar um componente de animação (ping-pong alpha) na imagem da borda para pulsar
+        }
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        // Só abre o menu se a carta estiver na mão (isInteractable) e o menu existir
+        if (isInteractable && DuelActionMenu.Instance != null)
+        {
+            DuelActionMenu.Instance.ShowMenu(gameObject, currentCardData);
         }
     }
 }
