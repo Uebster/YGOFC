@@ -37,11 +37,6 @@ public class GameManager : MonoBehaviour
     [Tooltip("Define se as cartas do oponente estão visíveis")]
     public bool showOpponentHand = false;
 
-    [Header("CONFIGURAÇÕES DE TELA")]
-    public int screenWidth = 1600;
-    public int screenHeight = 900;
-    public bool fullScreen = false;
-
     [Header("Hand Settings")]
     [Tooltip("A escala das cartas na mão do jogador.")]
     public Vector3 handCardScale = new Vector3(1f, 1f, 1f);
@@ -100,7 +95,6 @@ public class GameManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
-        Screen.SetResolution(screenWidth, screenHeight, fullScreen);
     }
 
     IEnumerator Start()
@@ -605,26 +599,22 @@ public class GameManager : MonoBehaviour
 
     // Método para finalizar o duelo e calcular o Rank
     // Chame isso quando o HP de alguém chegar a 0 ou Deck acabar
-    public void EndDuel(bool playerWon, bool opponentDeckOut = false)
+    public void EndDuel(bool playerWon, bool isDeckOut = false)
     {
-        if (playerWon)
+        if (DuelScoreManager.Instance != null)
         {
-            if (DuelScoreManager.Instance != null)
-            {
-                DuelScoreManager.Instance.StopDuelTracking(opponentDeckOut);
-                int score;
-                DuelRank rank = DuelScoreManager.Instance.CalculateFinalRank(out score);
-                
-                Debug.Log($"DUELO VENCIDO! Rank: {rank} | Pontos: {score}");
-                Debug.Log(DuelScoreManager.Instance.GetScoreReport());
-                
-                // TODO: Chamar UIManager para mostrar tela de Vitória com o Rank
-            }
-        }
-        else
-        {
-            Debug.Log("DUELO PERDIDO. Sem Rank.");
-            // TODO: Chamar UIManager para mostrar tela de Derrota
+            // Pega o LP atual do jogador (você precisará implementar a variável playerLP no GameManager ou onde estiver)
+            int currentLP = 8000; // Placeholder, substitua pela variável real de LP
+
+            DuelScoreManager.Instance.StopDuelTracking(playerWon, isDeckOut, currentLP);
+            
+            int score;
+            DuelRank rank = DuelScoreManager.Instance.CalculateFinalRank(out score);
+            
+            Debug.Log($"DUELO FINALIZADO! Venceu: {playerWon} | Rank: {rank} | Pontos: {score}");
+            Debug.Log(DuelScoreManager.Instance.GetScoreReport());
+            
+            // TODO: Chamar UIManager para mostrar tela de Resultado (Vitória/Derrota) com o Rank
         }
     }
 }
