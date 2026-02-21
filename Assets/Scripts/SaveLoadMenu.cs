@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using TMPro;
 
 public class SaveLoadMenu : MonoBehaviour
 {
@@ -13,6 +14,21 @@ public class SaveLoadMenu : MonoBehaviour
     public GameObject slotPrefab; // O prefab do SaveSlotUI
     public Button newSaveButton; // Botão "Novo Save" (Apenas para tela de Save)
 
+    [Header("Confirmação")]
+    public GameObject confirmationPopup;
+    public TextMeshProUGUI confirmationText;
+    public Button confirmYesButton;
+    public Button confirmNoButton;
+
+    private System.Action pendingAction;
+
+    void Start()
+    {
+        if (confirmationPopup != null) confirmationPopup.SetActive(false);
+        if (confirmYesButton != null) confirmYesButton.onClick.AddListener(OnConfirmYes);
+        if (confirmNoButton != null) confirmNoButton.onClick.AddListener(OnConfirmNo);
+    }
+
     void OnEnable()
     {
         RefreshList();
@@ -24,6 +40,8 @@ public class SaveLoadMenu : MonoBehaviour
             newSaveButton.onClick.RemoveAllListeners();
             newSaveButton.onClick.AddListener(OnNewSaveClicked);
         }
+        
+        CloseConfirmation();
     }
 
     public void RefreshList()
@@ -52,9 +70,11 @@ public class SaveLoadMenu : MonoBehaviour
     {
         if (isSaveMode)
         {
-            // Sobrescrever Save Existente
-            SaveLoadSystem.Instance.SaveGame(data.saveID);
-            RefreshList(); // Atualiza a data/hora
+            ShowConfirmation($"Tem certeza que deseja sobrescrever o save de\n<color=yellow>{data.playerName}</color>?", () => 
+            {
+                SaveLoadSystem.Instance.SaveGame(data.saveID);
+                RefreshList();
+            });
         }
         else
         {
@@ -66,8 +86,11 @@ public class SaveLoadMenu : MonoBehaviour
 
     void OnDeleteClicked(SaveLoadSystem.GameSaveData data)
     {
-        SaveLoadSystem.Instance.DeleteSave(data.saveID);
-        RefreshList();
+        ShowConfirmation($"Tem certeza que deseja <color=red>DELETAR</color> o save de\n{data.playerName}?", () => 
+        {
+            SaveLoadSystem.Instance.DeleteSave(data.saveID);
+            RefreshList();
+        });
     }
 
     void OnNewSaveClicked()
@@ -79,5 +102,29 @@ public class SaveLoadMenu : MonoBehaviour
             SaveLoadSystem.Instance.SaveGame(newID);
             RefreshList();
         }
+    }
+
+    void ShowConfirmation(string message, System.Action action)
+    {
+        pendingAction = action;
+        if (confirmationText != null) confirmationText.text = message;
+        if (confirmationPopup != null) confirmationPopup.SetActive(true);
+    }
+
+    void OnConfirmYes()
+    {
+        pendingAction?.Invoke();
+        CloseConfirmation();
+    }
+
+    void OnConfirmNo()
+    {
+        CloseConfirmation();
+    }
+
+    void CloseConfirmation()
+    {
+        pendingAction = null;
+        if (confirmationPopup != null) confirmationPopup.SetActive(false);
     }
 }
