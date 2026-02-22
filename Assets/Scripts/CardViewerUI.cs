@@ -112,7 +112,12 @@ public class CardViewerUI : MonoBehaviour
     IEnumerator LoadCardTexture(string imagePath)
     {
         string fullPath = Path.Combine(Application.streamingAssetsPath, imagePath);
-        UnityWebRequest request = UnityWebRequestTexture.GetTexture("file://" + fullPath);
+        
+        // FIX: Usa System.Uri para escapar caracteres especiais (como #) corretamente
+        string url = "file://" + fullPath;
+        try { url = new System.Uri(fullPath).AbsoluteUri; } catch { }
+
+        UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
         using (request)
         {
             yield return request.SendWebRequest();

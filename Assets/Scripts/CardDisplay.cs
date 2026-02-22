@@ -108,7 +108,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             cardImage.texture = backTexture;
         }
 
-        StartCoroutine(LoadCardFrontTexture(card.image_filename));
+        // FIX: Verifica se o objeto está ativo antes de iniciar a corrotina para evitar erro
+        if (gameObject.activeInHierarchy)
+        {
+            StartCoroutine(LoadCardFrontTexture(card.image_filename));
+        }
     }
 
     public void SetCardBackOnly(Texture2D cardBackTexture)
@@ -150,7 +154,12 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     IEnumerator LoadCardFrontTexture(string imagePath)
     {
         string fullPath = Path.Combine(Application.streamingAssetsPath, imagePath);
-        using (UnityWebRequest request = UnityWebRequestTexture.GetTexture("file://" + fullPath))
+        
+        // FIX: Usa System.Uri para escapar caracteres especiais (como #) corretamente no caminho
+        string url = "file://" + fullPath;
+        try { url = new System.Uri(fullPath).AbsoluteUri; } catch { }
+
+        using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(url))
         {
             yield return request.SendWebRequest();
 
