@@ -26,10 +26,21 @@ public class DeckBuilderManager : MonoBehaviour
 
     [Header("UI References - Filters")]
     public TMP_InputField searchInput;
-    public Toggle filterMonster;
-    public Toggle filterSpell;
-    public Toggle filterTrap;
-    // Adicione mais toggles conforme necessário (Fusion, Ritual, etc)
+    
+    [Header("Filter Buttons")]
+    public Button btnSortABC;
+    public Button btnSortAtk;
+    public Button btnSortDef;
+    public Button btnFilterNormal;
+    public Button btnFilterEffect;
+    public Button btnFilterSpell;
+    public Button btnFilterTrap;
+    public Button btnFilterFusion;
+    public Button btnFilterRitual;
+
+    [Header("Filter Visuals")]
+    public Color activeColor = Color.white;
+    public Color inactiveColor = Color.gray;
 
     [Header("Prefabs")]
     public GameObject cardItemPrefab; // Prefab da carta na lista (pequeno)
@@ -47,9 +58,39 @@ public class DeckBuilderManager : MonoBehaviour
     private const int MAX_EXTRA = 15;
     private const int MAX_COPIES = 3;
 
+    // Estado dos Filtros
+    private bool showNormal = true;
+    private bool showEffect = true;
+    private bool showSpell = true;
+    private bool showTrap = true;
+    private bool showFusion = true;
+    private bool showRitual = true;
+    
+    private enum SortType { ABC, Atk, Def }
+    private SortType currentSort = SortType.ABC;
+
     void Awake()
     {
         Instance = this;
+    }
+
+    void Start()
+    {
+        // Configura os listeners dos botões
+        if (btnSortABC) btnSortABC.onClick.AddListener(() => SetSort(SortType.ABC));
+        if (btnSortAtk) btnSortAtk.onClick.AddListener(() => SetSort(SortType.Atk));
+        if (btnSortDef) btnSortDef.onClick.AddListener(() => SetSort(SortType.Def));
+
+        if (btnFilterNormal) btnFilterNormal.onClick.AddListener(() => ToggleFilter("Normal"));
+        if (btnFilterEffect) btnFilterEffect.onClick.AddListener(() => ToggleFilter("Effect"));
+        if (btnFilterSpell) btnFilterSpell.onClick.AddListener(() => ToggleFilter("Spell"));
+        if (btnFilterTrap) btnFilterTrap.onClick.AddListener(() => ToggleFilter("Trap"));
+        if (btnFilterFusion) btnFilterFusion.onClick.AddListener(() => ToggleFilter("Fusion"));
+        if (btnFilterRitual) btnFilterRitual.onClick.AddListener(() => ToggleFilter("Ritual"));
+        
+        if (searchInput) searchInput.onValueChanged.AddListener(delegate { RefreshTrunkUI(); });
+
+        UpdateFilterVisuals();
     }
 
     void OnEnable()
@@ -110,27 +151,97 @@ public class DeckBuilderManager : MonoBehaviour
         foreach (Transform child in trunkContent) Destroy(child.gameObject);
 
         string searchText = searchInput != null ? searchInput.text.ToLower() : "";
-        bool showMonster = filterMonster != null && filterMonster.isOn;
-        bool showSpell = filterSpell != null && filterSpell.isOn;
-        bool showTrap = filterTrap != null && filterTrap.isOn;
-        // Se nenhum filtro selecionado, mostra tudo
-        if (!showMonster && !showSpell && !showTrap) { showMonster = showSpell = showTrap = true; }
-
-        foreach (CardData card in currentTrunk)
+        
+        // Filtra a lista
+        var filteredList = currentTrunk.Where(card => 
         {
-            // Filtros
-            if (!string.IsNullOrEmpty(searchText) && !card.name.ToLower().Contains(searchText)) continue;
-            
-            bool isMonster = card.type.Contains("Monster");
+            // Filtro de Texto
+            if (!string.IsNullOrEmpty(searchText) && !card.name.ToLower().Contains(searchText)) return false;
+
+            // Filtros de Tipo
             bool isSpell = card.type.Contains("Spell");
             bool isTrap = card.type.Contains("Trap");
+            bool isFusion = card.type.Contains("Fusion");
+            bool isRitual = card.type.Contains("Ritual");
+            bool isEffect = card.type.Contains("Effect") && !isFusion && !isRitual; // Efeito puro
+            bool isNormal = card.type.Contains("Normal") && !isFusion && !isRitual; // Normal puro
 
-            if (isMonster && !showMonster) continue;
-            if (isSpell && !showSpell) continue;
-            if (isTrap && !showTrap) continue;
+            // Lógica "Power of Chaos": Se o botão está ativo, mostra o tipo.
+            if (isSpell && !showSpell) return false;
+            if (isTrap && !showTrap) return false;
+            if (isFusion && !showFusion) return false;
+            if (isRitual && !showRitual) return false;
+            if (isEffect && !showEffect) return false;
+            if (isNormal && !showNormal) return false;
 
+            return true;
+        }).ToList();
+
+        // Ordena a lista
+        switch (currentSort)
+        {
+            case SortType.ABC: filteredList = filteredList.OrderBy(c => c.name).ToList(); break;
+            case SortType.Atk: filteredList = filteredList.OrderByDescending(c => c.atk).ToList(); break;
+            case SortType.Def: filteredList = filteredList.OrderByDescending(c => c.def).ToList(); break;
+        }
+
+        // Cria os objetos
+        foreach (CardData card in filteredList)
+        {
             GameObject go = Instantiate(cardItemPrefab, trunkContent);
             SetupCardItem(go, card, DeckZoneType.Trunk);
+        }
+    }
+
+    // --- Funções de Controle dos Botões ---
+
+    void SetSort(SortType type)
+    {
+        currentSort = type;
+        UpdateFilterVisuals();
+        RefreshTrunkUI();
+    }
+
+    void ToggleFilter(string filterName)
+    {
+        switch (filterName)
+        {
+            case "Normal": showNormal = !showNormal; break;
+            case "Effect": showEffect = !showEffect; break;
+            case "Spell": showSpell = !showSpell; break;
+            case "Trap": showTrap = !showTrap; break;
+            case "Fusion": showFusion = !showFusion; break;
+            case "Ritual": showRitual = !showRitual; break;
+        }
+        UpdateFilterVisuals();
+        RefreshTrunkUI();
+    }
+
+    void UpdateFilterVisuals()
+    {
+        // Atualiza cores dos botões de Ordenação (Radio Button style)
+        SetButtonColor(btnSortABC, currentSort == SortType.ABC);
+        SetButtonColor(btnSortAtk, currentSort == SortType.Atk);
+        SetButtonColor(btnSortDef, currentSort == SortType.Def);
+
+        // Atualiza cores dos botões de Filtro (Toggle style)
+        SetButtonColor(btnFilterNormal, showNormal);
+        SetButtonColor(btnFilterEffect, showEffect);
+        SetButtonColor(btnFilterSpell, showSpell);
+        SetButtonColor(btnFilterTrap, showTrap);
+        SetButtonColor(btnFilterFusion, showFusion);
+        SetButtonColor(btnFilterRitual, showRitual);
+    }
+
+    void SetButtonColor(Button btn, bool isActive)
+    {
+        if (btn != null)
+        {
+            Image img = btn.GetComponent<Image>();
+            if (img != null)
+            {
+                img.color = isActive ? activeColor : inactiveColor;
+            }
         }
     }
 
