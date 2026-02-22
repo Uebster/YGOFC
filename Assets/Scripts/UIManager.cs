@@ -20,6 +20,8 @@ public class UIManager : MonoBehaviour
 
     [Header("Telas de Funcionalidades")]
     public GameObject campaignScreen;
+    public GameObject walkthroughScreen; // Referência para o Panel_Walktrough
+    public GameObject homeScreen;        // Referência para o Panel_Home
     public GameObject arcadeScreen;
     public GameObject deckBuilderScreen;
     public GameObject libraryMenu;       // Menu da Biblioteca
@@ -99,6 +101,8 @@ public class UIManager : MonoBehaviour
         if (onlineMenu != null) onlineMenu.SetActive(false);
         if (optionsMenu != null) optionsMenu.SetActive(false);
         if (campaignScreen != null) campaignScreen.SetActive(false);
+        if (homeScreen != null) homeScreen.SetActive(false); // Garante que o Home suma ao trocar de tela
+        if (walkthroughScreen != null) walkthroughScreen.SetActive(false);
         if (arcadeScreen != null) arcadeScreen.SetActive(false);
         if (deckBuilderScreen != null) deckBuilderScreen.SetActive(false);
         if (libraryMenu != null) libraryMenu.SetActive(false);

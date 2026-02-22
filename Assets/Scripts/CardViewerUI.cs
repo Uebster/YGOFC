@@ -32,6 +32,12 @@ public class CardViewerUI : MonoBehaviour
 
     void Start()
     {
+        // Fallback: Tenta pegar do GameManager se não estiver atribuído
+        if (cardDatabase == null && GameManager.Instance != null)
+        {
+            cardDatabase = GameManager.Instance.cardDatabase;
+        }
+
         if (cardDatabase == null || cardDatabase.cardDatabase.Count == 0)
         {
             Debug.LogError("Banco de dados não conectado ou está vazio!");
@@ -48,18 +54,21 @@ public class CardViewerUI : MonoBehaviour
 
         CardData card = cardDatabase.cardDatabase[index];
 
-        cardNameText.text = card.name;
-        cardDescriptionText.text = card.description;
+        if (cardNameText != null) cardNameText.text = card.name;
+        if (cardDescriptionText != null) cardDescriptionText.text = card.description;
 
         string info = $"[{card.type}]";
         if (!string.IsNullOrEmpty(card.race)) info += $" / {card.race}";
         if (card.level > 0) info += $" / LV: {card.level}";
-        cardInfoText.text = info;
+        if (cardInfoText != null) cardInfoText.text = info;
 
-        if (card.type.Contains("Monster"))
-            cardStatsText.text = $"ATK/ {card.atk}  DEF/ {card.def}";
-        else
-            cardStatsText.text = "";
+        if (cardStatsText != null)
+        {
+            if (card.type.Contains("Monster"))
+                cardStatsText.text = $"ATK/ {card.atk}  DEF/ {card.def}";
+            else
+                cardStatsText.text = "";
+        }
 
         StartCoroutine(LoadCardTexture(card.image_filename));
     }

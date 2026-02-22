@@ -62,7 +62,7 @@ public class CampaignNode : MonoBehaviour
     public void UpdateVisualState()
     {
         // Verificação de segurança com aviso
-        if (CampaignManager.Instance == null)
+        if (CampaignManager.Instance == null || GameManager.Instance == null)
         {
             // Só avisa se estivermos jogando, para não spammar no editor
             if (Application.isPlaying) 
@@ -91,7 +91,7 @@ public class CampaignNode : MonoBehaviour
             isUnlocked = devModeActive || CampaignManager.Instance.IsLevelUnlocked(startLevel);
 
             // Verifica se completou todos os oponentes deste nó
-            int endLevel = startLevel + 10;
+            int endLevel = startLevel + 9; // O último nível do ato (ex: 10, 20)
             isCompleted = CampaignManager.Instance.maxUnlockedLevel >= endLevel;
         }
 
@@ -140,9 +140,8 @@ public class CampaignNode : MonoBehaviour
         {
             case NodeType.Home:
                 // Abre o "Acampamento" (onde ver troféus, salvar, etc)
-                Debug.Log("Abrindo Home/Acampamento...");
-                // TODO: Criar e conectar a tela de Camp/Trophies no UIManager
-                // UIManager.Instance.ShowScreen(UIManager.Instance.campScreen);
+                Debug.Log("Abrindo Home...");
+                if (UIManager.Instance != null) UIManager.Instance.ShowScreen(UIManager.Instance.homeScreen);
                 break;
 
             case NodeType.Arena:
@@ -166,9 +165,36 @@ public class CampaignNode : MonoBehaviour
     {
         if (GameManager.Instance == null || UIManager.Instance == null) return;
 
-        if (campaignDB == null || campaignDB.acts.Count < actIndex)
+        // Fallback: Se não foi atribuído no Inspector, tenta pegar do GameManager
+        if (campaignDB == null && GameManager.Instance != null)
         {
-            Debug.LogError($"CampaignNode {name}: Database não configurado ou Act Index inválido!");
+            campaignDB = GameManager.Instance.campaignDatabase;
+        }
+
+        // AUTO-CORREÇÃO: Se o Act Index for 0, tenta adivinhar pelo nome do objeto (ex: "Act1" -> 1)
+        if (actIndex == 0 && name.StartsWith("Act"))
+        {
+            string numberPart = name.Replace("Act", "");
+            int.TryParse(numberPart, out actIndex);
+        }
+
+        // Debug detalhado para identificar a causa exata do erro
+        if (campaignDB == null)
+        {
+            Debug.LogError($"CampaignNode '{name}': ERRO CRÍTICO! 'campaignDB' está NULO. Verifique se o MainCampaignDB está arrastado no campo 'Campaign Database' do GameManager.");
+            return;
+        }
+
+        if (actIndex < 1)
+        {
+            Debug.LogError($"CampaignNode '{name}': ERRO! Act Index inválido ({actIndex}). O nome do botão deve ser 'Act1', 'Act2'... ou o índice deve ser definido manualmente.");
+            return;
+        }
+
+        if (campaignDB.acts == null || campaignDB.acts.Count < actIndex)
+        {
+            int count = (campaignDB.acts == null) ? 0 : campaignDB.acts.Count;
+            Debug.LogError($"CampaignNode '{name}': ERRO! O Banco de Dados existe mas não tem o Ato {actIndex}. Total de Atos no DB: {count}. (Dica: No Project, clique com botão direito no arquivo do DB e escolha 'Load Optimized Campaign').");
             return;
         }
 
@@ -193,9 +219,26 @@ public class CampaignNode : MonoBehaviour
         if (opponent != null)
         {
             int duelIndex = actStartLevel + localIndex;
-            Debug.Log($"Iniciando duelo contra: {opponent.name} (Act {actIndex} - Batalha {localIndex + 1}/10)");
-            GameManager.Instance.StartDuel(opponent, duelIndex);
-            UIManager.Instance.ShowScreen(UIManager.Instance.duelScreen);
+            
+            // Tenta encontrar o WalkthroughManager (mesmo se o painel estiver desativado)
+            WalkthroughManager wm = WalkthroughManager.Instance;
+            if (wm == null && UIManager.Instance != null && UIManager.Instance.walkthroughScreen != null)
+            {
+                wm = UIManager.Instance.walkthroughScreen.GetComponent<WalkthroughManager>();
+            }
+
+            // Se encontrou, usa ele
+            if (wm != null)
+            {
+                wm.ShowAct(actIndex, opponent, duelIndex);
+            }
+            // Fallback: Se não tiver Walkthrough configurado, vai direto pro duelo
+            else
+            {
+                Debug.LogWarning("WalkthroughManager não encontrado. Iniciando duelo direto.");
+                GameManager.Instance.StartDuel(opponent, duelIndex);
+                UIManager.Instance.ShowScreen(UIManager.Instance.duelScreen);
+            }
         }
         else
         {

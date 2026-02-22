@@ -25,6 +25,7 @@ public class GameManager : MonoBehaviour
     [Header("Database Connection")]
     public CardDatabase cardDatabase;
     public CharacterDatabase characterDatabase;
+    public CampaignDatabase campaignDatabase; // Adicionado para acesso global
 
     [Header("Field References")]
     public DuelFieldUI duelFieldUI; // Referência ao script que segura as zonas
