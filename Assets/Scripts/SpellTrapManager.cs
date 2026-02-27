@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+public enum SpellTrapTrigger { Attack, Summon, PhaseChange, Activation }
+
 public class SpellTrapManager : MonoBehaviour
 {
     public static SpellTrapManager Instance;
@@ -68,5 +70,20 @@ public class SpellTrapManager : MonoBehaviour
         // Aqui poderia chamar uma animação de shuffle no DeckDisplay
         Debug.Log("SpellTrapManager: Deck Shuffle solicitado.");
         needsShuffle = false; // Consumido
+    }
+
+    // Verifica se há armadilhas que podem ser ativadas em resposta a um evento
+    public bool CheckForTraps(SpellTrapTrigger trigger, CardDisplay source, CardDisplay target)
+    {
+        // Lógica simplificada: Verifica se o oponente tem traps setadas
+        // Em um jogo real, verificaria cada carta para ver se a condição de ativação é atendida (ex: Mirror Force no ataque)
+        
+        // Exemplo: Se for ataque, pergunta ao jogador se quer ativar algo (se tiver)
+        // UIManager.Instance.ShowConfirmation("Ativar Armadilha?", () => ActivateTrap(...));
+        
+        // Retorna true se uma interrupção ocorreu (chain iniciada)
+        // Retorna false se o jogo deve prosseguir normalmente
+        
+        return false; 
     }
 }

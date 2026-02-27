@@ -539,6 +539,13 @@ public class GameManager : MonoBehaviour
     // Chamado pelo PhaseManager quando entra na Draw Phase
     public void OnDrawPhaseStart()
     {
+        // Reseta estados de turno dos monstros no campo
+        if (duelFieldUI != null)
+        {
+            ResetCardStates(duelFieldUI.playerMonsterZones);
+            ResetCardStates(duelFieldUI.opponentMonsterZones);
+        }
+
         hasDrawnThisTurn = false;
         if (!canPlayerDrawFromDeck)
         {
@@ -548,6 +555,23 @@ public class GameManager : MonoBehaviour
             
             for(int i=0; i<draws; i++)
                 DrawCard();
+        }
+    }
+
+    private void ResetCardStates(Transform[] zones)
+    {
+        foreach (Transform zone in zones)
+        {
+            if (zone.childCount > 0)
+            {
+                CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (cd != null)
+                {
+                    cd.hasAttackedThisTurn = false;
+                    cd.hasChangedPositionThisTurn = false;
+                    cd.summonedThisTurn = false;
+                }
+            }
         }
     }
 
@@ -727,6 +751,7 @@ public class GameManager : MonoBehaviour
             if (isSet)
             {
                 display.position = CardDisplay.BattlePosition.Defense;
+                display.summonedThisTurn = true; // Marca invocação
                 // Modo Defesa (Set): Virado para baixo e Rotacionado 90 graus
                 float zRotation = isPlayer ? 90f : -90f;
                 display.ShowBack();
@@ -735,6 +760,7 @@ public class GameManager : MonoBehaviour
             else
             {
                 display.position = CardDisplay.BattlePosition.Attack;
+                display.summonedThisTurn = true; // Marca invocação
                 // Modo Ataque: Virado para cima e Reto
                 float zRotation = isPlayer ? 0f : 180f;
                 display.ShowFront();

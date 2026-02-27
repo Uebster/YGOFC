@@ -31,7 +31,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     private CardData currentCardData;
     private Texture2D frontTexture;
     private Texture2D backTexture;
-    private bool isFlipped = false;
+    public bool isFlipped = false; // Tornado público para acesso externo
     private RectTransform rectTransform;
     
     // Componentes para corrigir a renderização e tremedeira
@@ -45,6 +45,14 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool isOnField = false; // Define se a carta está no campo
     [HideInInspector] public bool isInPile = false; // Define se a carta está em uma pilha (Deck, GY, Extra)
     [HideInInspector] public BattlePosition position; // Posição de batalha do monstro
+    
+    // Variáveis de Estado de Turno
+    [HideInInspector] public bool hasAttackedThisTurn = false;
+    [HideInInspector] public bool hasChangedPositionThisTurn = false;
+    [HideInInspector] public bool summonedThisTurn = false;
+    
+    public CardData currentCardData => currentCardData; // Propriedade pública para acesso seguro
+
     private UnityWebRequest currentRequest; // Rastreia a requisição ativa para descarte correto
 
     void Awake()
@@ -294,6 +302,32 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         isFlipped = true;
         cardImage.texture = backTexture;
     }
+
+    public void ChangePosition()
+    {
+        if (position == BattlePosition.Attack)
+        {
+            position = BattlePosition.Defense;
+            // Defesa: Rotaciona 90 graus
+            transform.localRotation = Quaternion.Euler(0, 0, 90);
+            // Se estava virado para cima, continua virado para cima (Defesa Face-Up)
+            // Se estava virado para baixo (Set), continua virado para baixo (Defesa Face-Down)
+        }
+        else
+        {
+            position = BattlePosition.Attack;
+            // Ataque: Reto
+            transform.localRotation = Quaternion.identity;
+            
+            // Flip Summon: Se estava virado para baixo em defesa e muda para ataque, vira para cima
+            if (isFlipped)
+            {
+                RevealCard();
+                // Flip Summon conta como invocação? Em regras oficiais sim, mas aqui tratamos como mudança de posição.
+                // Efeitos de Flip seriam disparados aqui.
+            }
+        }
+    }
     
     // Novo método para revelar carta (Flip) com verificação de exceções
     public void RevealCard(bool isAttackTriggered = false)
@@ -427,6 +461,14 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerClick(PointerEventData eventData)
     {
+        // Clique Direito: Mudar Posição (se no campo)
+        if (eventData.button == PointerEventData.InputButton.Right && isOnField && currentCardData.type.Contains("Monster"))
+        {
+            if (BattleManager.Instance != null)
+                BattleManager.Instance.TryChangePosition(this);
+            return;
+        }
+
         Debug.Log($"CardDisplay: Clique detectado na carta {currentCardData?.name}");
 
         // O menu só deve aparecer para cartas na mão.
