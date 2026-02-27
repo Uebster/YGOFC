@@ -94,6 +94,7 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
 
                 if (display != null)
                 {
+                    display.isInPile = true; // Marca como carta de pilha para controle de hover
                     bool isFaceUp = (pileType == PileType.Graveyard);
 
                     if (!isFaceUp)
@@ -126,13 +127,13 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
         {
             if (isPlayerPile)
             {
-                // Jogador saca carta clicando no deck (se habilitado)
-                if (GameManager.Instance.enableDeckClickDraw)
+                // Player draws a card by clicking on the deck (if enabled)
+                if (GameManager.Instance.canPlayerDrawFromDeck)
                     GameManager.Instance.DrawCard();
             }
-            else if (GameManager.Instance.devMode)
+            else if (GameManager.Instance.canOpponentDrawFromDeck)
             {
-                // Desenvolvedor saca carta para o oponente clicando no deck dele
+                // Draw a card for the opponent by clicking on their deck (if enabled)
                 GameManager.Instance.DrawOpponentCard();
             }
         }

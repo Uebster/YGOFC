@@ -19,7 +19,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     [Header("Visual Effects")]
     public Image outlineImage; // Arraste uma imagem de borda (filha) aqui
-    [Tooltip("Se marcado, usa o componente Outline do Unity para criar uma borda simples.")]
+    [Tooltip("Se marcado, usa o componente Outline do Unity para criar uma borda simples (senão, usa a imagem 'outlineImage').")]
     public bool useSimpleOutline = true;
     public bool enableHoverOutline = true;
     public Color hoverColor = Color.yellow;
@@ -40,10 +40,49 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public float hoverYOffset = 30f;
     [HideInInspector] public bool isInteractable = false; // Usado para habilitar hover apenas para cartas na mão
     [HideInInspector] public bool isPlayerCard = false; // Define se a carta pertence ao jogador (para visualização)
+    [HideInInspector] public bool isOnField = false; // Define se a carta está no campo
+    [HideInInspector] public bool isInPile = false; // Define se a carta está em uma pilha (Deck, GY, Extra)
+    private UnityWebRequest currentRequest; // Rastreia a requisição ativa para descarte correto
 
     void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
+
+        // Se esta for a instância do CardViewer, tenta encontrar os textos automaticamente
+        if (GameManager.Instance != null && GameManager.Instance.cardViewerDisplay == this)
+        {
+            if (transform.parent != null)
+            {
+                var allTexts = transform.parent.GetComponentsInChildren<TextMeshProUGUI>(true);
+                foreach(var t in allTexts)
+                {
+                    if (t.name.Contains("Name")) cardNameText = t;
+                    if (t.name.Contains("Info")) cardInfoText = t;
+                    if (t.name.Contains("Description")) cardDescriptionText = t;
+                    if (t.name.Contains("Stats")) cardStatsText = t;
+                }
+            }
+        }
+
+        // AUTO-FIX: Se cardImage não estiver atribuído, tenta encontrar automaticamente
+        if (cardImage == null)
+        {
+            // 1. Tenta achar o filho "Art" (Padrão novo)
+            Transform art = transform.Find("Art");
+            if (art != null) 
+            {
+                cardImage = art.GetComponent<RawImage>();
+                // FIX EXTRA: Se o objeto "Art" existe mas está sem o componente RawImage, adiciona agora
+                if (cardImage == null) cardImage = art.gameObject.AddComponent<RawImage>();
+            }
+
+            // 2. Se não achou, tenta pegar do próprio objeto (Padrão antigo) ou qualquer filho
+            if (cardImage == null) cardImage = GetComponentInChildren<RawImage>();
+        }
+
+        // FIX: Garante que a imagem da carta não bloqueie o mouse (para o Hover no pai funcionar)
+        if (cardImage != null)
+            cardImage.raycastTarget = false;
         
         // FIX: Configura a Borda para esticar na carta toda e não bloquear cliques
         if (outlineImage != null)
@@ -68,18 +107,47 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     void ApplyRoundedCorners()
     {
-        if (GameManager.Instance != null && GameManager.Instance.cardMaskSprite != null && cardImage != null)
+        if (GameManager.Instance == null || cardImage == null) return;
+
+        bool useRounded = false;
+        if (GameManager.Instance.cardViewerDisplay == this)
         {
-            // Verifica se já existe uma máscara no pai
-            Mask mask = cardImage.transform.parent.GetComponent<Mask>();
-            if (mask == null)
+            useRounded = GameManager.Instance.useCardViewerRounded;
+        }
+        else if (isOnField || isInPile)
+        {
+            useRounded = GameManager.Instance.useFieldCardsRounded; // Piles use field settings
+        }
+        else // Hand
+        {
+            useRounded = GameManager.Instance.useHandCardsRounded;
+        }
+
+        Mask mask = GetComponent<Mask>();
+        // Se não tiver máscara e precisarmos arredondar, adiciona. Se não precisar, não adiciona à toa.
+        if (mask == null && useRounded) mask = gameObject.AddComponent<Mask>();
+        
+        Image parentImage = GetComponent<Image>();
+        if (parentImage == null && useRounded) parentImage = gameObject.AddComponent<Image>();
+
+        if (useRounded && GameManager.Instance.cardMaskSprite != null)
+        {
+            if (parentImage != null)
             {
-                // Adiciona componente de máscara ao objeto da carta (se tiver imagem de fundo) ou tenta configurar
-                // Nota: RawImage (cardImage) não suporta Mask diretamente como a Image.
-                // O ideal é que o Prefab tenha: Parent (Image + Mask) -> Child (RawImage).
-                // Se o seu prefab for simples, isso pode não funcionar perfeitamente sem ajuste manual no prefab.
-                // Debug.Log("Tentando aplicar máscara de cantos arredondados...");
+                parentImage.sprite = GameManager.Instance.cardMaskSprite;
+                parentImage.enabled = true;
             }
+            if (mask != null)
+            {
+                // A máscara DEVE ser visível para que o Outline tenha onde se desenhar
+                mask.showMaskGraphic = true; 
+                mask.enabled = true;
+            }
+        }
+        else
+        {
+            if (mask != null) mask.enabled = false;
+            if (parentImage != null) parentImage.enabled = false;
         }
     }
 
@@ -87,7 +155,20 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public void SetCard(CardData card, Texture2D cardBackTexture, bool startFaceUp = true)
     {
         if (card == null) return;
+        
+        // Limpa requisição anterior se ainda estiver rodando
+        if (currentRequest != null)
+        {
+            currentRequest.Dispose();
+            currentRequest = null;
+        }
         StopAllCoroutines(); // Para carregamentos anteriores
+        // Limpa textura anterior para liberar memória
+        if (frontTexture != null)
+        {
+            Destroy(frontTexture);
+            frontTexture = null;
+        }
 
         currentCardData = card;
         backTexture = cardBackTexture;
@@ -107,11 +188,23 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             StartCoroutine(LoadCardFrontTexture(card.image_filename));
         }
+        ApplyRoundedCorners();
     }
 
     public void SetCardBackOnly(Texture2D cardBackTexture)
     {
+        if (currentRequest != null)
+        {
+            currentRequest.Dispose();
+            currentRequest = null;
+        }
         StopAllCoroutines();
+        if (frontTexture != null)
+        {
+            Destroy(frontTexture);
+            frontTexture = null;
+        }
+
         backTexture = cardBackTexture;
         if (cardImage != null && backTexture != null)
         {
@@ -153,25 +246,28 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         string url = "file://" + fullPath;
         try { url = new System.Uri(fullPath).AbsoluteUri; } catch { }
 
-        using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(url))
-        {
-            yield return request.SendWebRequest();
+        // Não usamos 'using' aqui para poder descartar manualmente se a corrotina for interrompida
+        currentRequest = UnityWebRequestTexture.GetTexture(url);
+        
+        yield return currentRequest.SendWebRequest();
 
-            if (request.result == UnityWebRequest.Result.Success)
+        if (currentRequest.result == UnityWebRequest.Result.Success)
+        {
+            frontTexture = DownloadHandlerTexture.GetContent(currentRequest);
+            frontTexture.filterMode = FilterMode.Trilinear;
+            if (cardImage != null)
             {
-                frontTexture = DownloadHandlerTexture.GetContent(request);
-                frontTexture.filterMode = FilterMode.Trilinear;
-                if (cardImage != null)
-                {
-                    // Só aplica a textura da frente se a carta NÃO estiver virada (isFlipped == false)
-                    if (!isFlipped) cardImage.texture = frontTexture;
-                }
-            }
-            else
-            {
-                Debug.LogError($"Falha ao carregar imagem da frente da carta: {fullPath} | Erro: {request.error}");
+                // Só aplica a textura da frente se a carta NÃO estiver virada (isFlipped == false)
+                if (!isFlipped) cardImage.texture = frontTexture;
             }
         }
+        else
+        {
+            Debug.LogError($"Falha ao carregar imagem da frente da carta: {fullPath} | Erro: {currentRequest.error}");
+        }
+
+        currentRequest.Dispose();
+        currentRequest = null;
     }
 
     public void FlipCard()
@@ -198,18 +294,30 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        // --- Efeito de Borda (Hover) ---
-        if (enableHoverOutline)
+        bool shouldShowOutline = enableHoverOutline;
+        if (GameManager.Instance != null)
         {
-            if (useSimpleOutline && cardImage != null)
+            if (isOnField) shouldShowOutline = GameManager.Instance.enableFieldHoverOutline;
+            else if (isInPile) shouldShowOutline = GameManager.Instance.enablePileHoverOutline;
+            else if (isInteractable) shouldShowOutline = GameManager.Instance.enableHandHoverOutline; // Mão
+            // Verifica se é o Card Viewer
+            else if (GameManager.Instance.cardViewerDisplay == this) shouldShowOutline = GameManager.Instance.enableCardViewerOutline;
+        }
+
+        // --- Efeito de Borda (Hover) ---
+        if (shouldShowOutline)
+        {
+            if (useSimpleOutline)
             {
-                // Opção 1: Usa o componente Outline do Unity (Borda simples)
-                Outline outline = cardImage.GetComponent<Outline>();
-                if (outline == null) outline = cardImage.gameObject.AddComponent<Outline>();
+                // Opção 1: Usa o componente Outline do Unity no PAI (gameObject)
+                // Aplicar no pai garante que a máscara não corte o contorno externo
+                Outline outline = GetComponent<Outline>();
+                if (outline == null) outline = gameObject.AddComponent<Outline>();                
                 
                 outline.effectColor = hoverColor;
                 outline.effectDistance = new Vector2(4, -4); // Espessura da borda
-                outline.useGraphicAlpha = false; // Borda sólida ao redor do rect
+                // FIX: Usa o alpha do gráfico (sprite arredondado) para desenhar a borda
+                outline.useGraphicAlpha = true; 
                 outline.enabled = true;
             }
             else if (outlineImage != null)
@@ -222,7 +330,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
         // --- Efeito de Subir (Apenas Mão) ---
         // Verifica se é interativo E se o hover está habilitado no GameManager
-        if (isInteractable && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHover)
+        if (isInteractable && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect)
         {
             // FIX: Usa Canvas Sorting para trazer para frente visualmente sem recalcular o Layout
             canvas.overrideSorting = true;
@@ -241,7 +349,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         else if (GameManager.Instance != null)
         {
             // Evita que o visualizador atualize a si mesmo se o mouse passar por cima dele
-            if (GameManager.Instance.cardDisplayArea != null && cardImage == GameManager.Instance.cardDisplayArea) return;
+            if (GameManager.Instance.cardViewerDisplay != null && this == GameManager.Instance.cardViewerDisplay) return;
 
             // Lógica para visualizar extra deck mesmo virado para baixo
             bool forceShowFaceUp = false;
@@ -259,9 +367,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public void OnPointerExit(PointerEventData eventData)
     {
         // --- Remove Borda ---
-        if (useSimpleOutline && cardImage != null)
+        if (useSimpleOutline)
         {
-            Outline outline = cardImage.GetComponent<Outline>();
+            Outline outline = GetComponent<Outline>();
             if (outline != null) outline.enabled = false;
         }
 
@@ -271,7 +379,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
 
         // --- Remove Efeito de Subir ---
-        if (isInteractable && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHover)
+        if (isInteractable && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect)
         {
             // FIX: Reseta o Canvas e a Escala
             canvas.overrideSorting = false;
@@ -279,10 +387,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             rectTransform.anchoredPosition -= new Vector2(0, hoverYOffset);
         }
 
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.ClearCardViewer();
-        }
+        // FIX 4: NÃO limpamos o Card Viewer aqui para ele ficar "travado".
     }
 
     // Método para ativar o brilho de tributo (Luz Azul)
@@ -305,9 +410,91 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             DuelActionMenu.Instance.ShowMenu(gameObject, currentCardData);
         }
-        else if (DuelActionMenu.Instance == null)
+        else if (isInteractable && DuelActionMenu.Instance == null)
         {
             Debug.LogError("CardDisplay: DuelActionMenu.Instance não encontrado na cena!");
+        }
+    }
+
+#if UNITY_EDITOR
+    // Chamado automaticamente quando você altera algo no Inspector
+    void OnValidate()
+    {
+        // Se a referência estiver vazia, tenta encontrar automaticamente um filho chamado "Art"
+        if (cardImage == null)
+        {
+            Transform art = transform.Find("Art");
+            if (art != null) cardImage = art.GetComponent<RawImage>();
+        }
+    }
+
+    // Adiciona uma opção no menu de contexto do componente (Botão Direito -> Configurar Hierarquia)
+    [ContextMenu("Configurar Hierarquia (Art)")]
+    public void SetupHierarchy()
+    {
+        // 1. Verifica ou Cria o objeto filho "Art"
+        Transform artTransform = transform.Find("Art");
+        if (artTransform == null)
+        {
+            GameObject artObj = new GameObject("Art");
+            artObj.transform.SetParent(transform, false);
+            artTransform = artObj.transform;
+            
+            // Configura RectTransform para esticar (Stretch) em toda a carta
+            RectTransform rt = artObj.AddComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.sizeDelta = Vector2.zero; // Zera offsets para preencher tudo
+        }
+
+        // 2. Garante que o filho tem o componente RawImage
+        RawImage childRawImage = artTransform.GetComponent<RawImage>();
+        if (childRawImage == null) childRawImage = artTransform.gameObject.AddComponent<RawImage>();
+        childRawImage.raycastTarget = false; // IMPORTANTE: Desativa Raycast para não bloquear o pai
+
+        // 3. Se existir RawImage no pai (configuração antiga), migra para o filho e remove do pai
+        RawImage parentRawImage = GetComponent<RawImage>();
+        if (parentRawImage != null)
+        {
+            if (childRawImage.texture == null) childRawImage.texture = parentRawImage.texture;
+            childRawImage.color = parentRawImage.color;
+            
+            // Remove o componente do pai para evitar conflito com a máscara
+            UnityEditor.EditorApplication.delayCall += () => DestroyImmediate(parentRawImage);
+        }
+
+        // 4. Vincula a referência no script
+        cardImage = childRawImage;
+
+        // 5. Garante que o pai tenha Image e Mask para o arredondamento funcionar
+        if (GetComponent<Image>() == null) gameObject.AddComponent<Image>();
+        if (GetComponent<Mask>() == null) gameObject.AddComponent<Mask>().showMaskGraphic = true;
+
+        Debug.Log("Hierarquia da carta ajustada com sucesso: Pai(Mask) -> Art(RawImage).");
+    }
+#endif
+
+    void OnDisable()
+    {
+        // Garante que a requisição seja cancelada se o objeto for desativado
+        if (currentRequest != null && !currentRequest.isDone)
+        {
+            currentRequest.Dispose();
+            currentRequest = null;
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (currentRequest != null)
+        {
+            currentRequest.Dispose();
+            currentRequest = null;
+        }
+        if (frontTexture != null)
+        {
+            Destroy(frontTexture);
+            frontTexture = null;
         }
     }
 }

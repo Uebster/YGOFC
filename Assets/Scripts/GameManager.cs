@@ -31,25 +31,55 @@ public class GameManager : MonoBehaviour
     public DuelFieldUI duelFieldUI; // Referência ao script que segura as zonas
 
     // --- CONTROLES GERAIS ---
-    [Header("MODOS DE VISUALIZAÇÃO")]
-    [Tooltip("Ativa o visualizador 2D (RawImage na tela)")]
-    public bool modo2D_Ativado = true;
-    [Tooltip("Habilita funcionalidades de desenvolvedor (ex: ver mão do oponente, sacar para oponente)")]
-    public bool devMode = false;
-    [Tooltip("Permite sacar cartas clicando no Deck")]
-    public bool enableDeckClickDraw = true;
-    [Tooltip("Define se as cartas do oponente estão visíveis")]
-    public bool showOpponentHand = false;
+    [Header("View Mode")]
+    [Tooltip("Se marcado, usa um efeito 3D para virar as cartas. Se desmarcado, usa uma troca de textura 2D.")]
+    public bool use3DFlipEffect = false;
+    [Tooltip("Se marcado, usa o componente Outline do Unity para o contorno. Se desmarcado, usa uma imagem filha (OutlineImage).")]
+    public bool useSimpleOutline = true;
 
-    [Header("Hand Settings")]
-    [Tooltip("A escala das cartas na mão do jogador.")]
+    [Header("Card Visualization")]
+    [Tooltip("A escala das cartas no campo.")]
+    public Vector3 fieldCardScale = new Vector3(0.8f, 0.8f, 0.8f);
+    [Tooltip("A escala das cartas na mão.")]
     public Vector3 handCardScale = new Vector3(1f, 1f, 1f);
-    [Tooltip("A altura que a carta do JOGADOR sobe ao passar o mouse sobre ela.")]
-    public float handCardHoverYOffset = 30f;
-    [Tooltip("A altura que a carta do OPONENTE desce ao passar o mouse sobre ela (use um valor negativo).")]
-    public float opponentHandCardHoverYOffset = -30f;
-    [Tooltip("Ativa ou desativa o efeito de hover (subir) nas cartas da mão.")]
-    public bool enableHandHover = true;
+    [Tooltip("A altura que a carta do jogador sobe ao passar o mouse.")]
+    public float playerHandHoverYOffset = 30f;
+    [Tooltip("A altura que a carta do oponente desce ao passar o mouse.")]
+    public float opponentHandHoverYOffset = -30f;
+    [Tooltip("Ativa o efeito de subir/descer a carta na mão com o mouse.")]
+    public bool enableHandHoverEffect = true;
+
+    [Header("Outline")]
+    [Tooltip("Ativa o contorno de hover nas cartas da mão.")]
+    public bool enableHandHoverOutline = true;
+    [Tooltip("Ativa o contorno de hover nas cartas do campo.")]
+    public bool enableFieldHoverOutline = true;
+    [Tooltip("Ativa o contorno de hover nas cartas de pilhas (Deck, Cemitério, etc).")]
+    public bool enablePileHoverOutline = false;
+    [Tooltip("Ativa o contorno no visualizador de carta grande.")]
+    public bool enableCardViewerOutline = true;
+
+    [Header("Rounded Corners")]
+    [Tooltip("Arredonda as bordas das cartas no campo.")]
+    public bool useFieldCardsRounded = true;
+    [Tooltip("Arredonda as bordas das cartas na mão.")]
+    public bool useHandCardsRounded = true;
+    [Tooltip("Arredonda as bordas da carta no visualizador grande.")]
+    public bool useCardViewerRounded = true;
+
+    [Header("Game Modes")]
+    [Tooltip("Habilita funcionalidades de desenvolvedor.")]
+    public bool devMode = false;
+    [Tooltip("Define se as cartas na mão do oponente são visíveis.")]
+    public bool showOpponentHand = false;
+    [Tooltip("Permite sacar cartas clicando no Deck do jogador.")]
+    public bool canPlayerDrawFromDeck = true;
+    [Tooltip("Permite sacar cartas para o oponente clicando no Deck dele (Modo Dev).")]
+    public bool canOpponentDrawFromDeck = false;
+    [Tooltip("Permite que o jogador baixe cartas da mão para o campo.")]
+    public bool canPlacePlayerCards = true;
+    [Tooltip("Permite baixar cartas para o campo do oponente (Modo Dev).")]
+    public bool canPlaceOpponentCards = false;
 
     [Header("Game Flow")]
     public GamePhase currentPhase = GamePhase.Draw;
@@ -57,10 +87,10 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI phaseText; // Arraste um texto da UI aqui para ver a fase
 
     // --- REFERÊNCIAS 2D ---
-    [Header("REFERÊNCIAS DO MODO 2D")]
-    public RawImage cardDisplayArea; // A RawImage onde a carta individual será exibida
-    private Texture2D cardBackTexture; // Textura do verso da carta, carregada uma vez
+    [Header("Core References")]
+    public CardDisplay cardViewerDisplay;
     public Sprite cardMaskSprite; // Sprite para arredondar cantos (opcional)
+    private Texture2D cardBackTexture; // Textura do verso da carta, carregada uma vez
 
     [Header("Card Prefab")]
     public GameObject cardPrefab; // Prefab da carta para instanciar na mão
@@ -75,12 +105,6 @@ public class GameManager : MonoBehaviour
     public PileDisplay playerExtraDeckDisplay;
     public PileDisplay opponentExtraDeckDisplay;
 
-    [Header("UI Elements")]
-    public TextMeshProUGUI cardNameText;
-    public TextMeshProUGUI cardInfoText;
-    public TextMeshProUGUI cardDescriptionText;
-    public TextMeshProUGUI cardStatsText;
-
     private List<CardData> playerDeck = new List<CardData>();
     // Adicionado: Side Deck e Baú (Trunk)
     private List<CardData> playerSideDeck = new List<CardData>();
@@ -93,7 +117,6 @@ public class GameManager : MonoBehaviour
     private List<CardData> opponentGraveyard = new List<CardData>();
     private List<CardData> playerExtraDeck = new List<CardData>();
     private List<CardData> opponentExtraDeck = new List<CardData>();
-    private CardDisplay currentCardDisplay; // Referência ao CardDisplay na cardDisplayArea
 
     [Header("Current Duel Info")]
     public CharacterData currentOpponent; // Oponente atual carregado
@@ -104,6 +127,7 @@ public class GameManager : MonoBehaviour
     public string currentSaveID = "default";
 
     private bool hasDrawnThisTurn = false; // Controle de draw por turno
+    private UnityWebRequest backTextureRequest; // Para evitar memory leak
 
     void Awake()
     {
@@ -121,21 +145,11 @@ public class GameManager : MonoBehaviour
         // Carrega o nome salvo
         playerName = PlayerPrefs.GetString("PlayerName", "Duelist");
         currentSaveID = PlayerPrefs.GetString("CurrentSaveID", "default");
-
-        // Inicializa o CardDisplay na área de exibição
-        if (cardDisplayArea != null)
+    
+        // O CardViewer agora busca seus próprios textos
+        if (cardViewerDisplay == null)
         {
-            currentCardDisplay = cardDisplayArea.GetComponent<CardDisplay>();
-            if (currentCardDisplay == null)
-            {
-                currentCardDisplay = cardDisplayArea.gameObject.AddComponent<CardDisplay>();
-            }
-            // Conecta os elementos de UI do CardDisplay
-            currentCardDisplay.cardImage = cardDisplayArea;
-            currentCardDisplay.cardNameText = cardNameText;
-            currentCardDisplay.cardInfoText = cardInfoText;
-            currentCardDisplay.cardDescriptionText = cardDescriptionText;
-            currentCardDisplay.cardStatsText = cardStatsText;
+            Debug.LogWarning("GameManager: O campo 'Card Viewer Display' não foi atribuído no Inspector. A visualização de cartas não funcionará.");
         }
 
         // Tenta encontrar o DuelFieldUI se não estiver atribuído
@@ -151,11 +165,13 @@ public class GameManager : MonoBehaviour
 
         yield return StartCoroutine(LoadCardBackTexture());
 
-        // Removido do Start automático. Agora aguarda o UIManager chamar StartDuel()
-        // InitializePlayerDeck();
-        // InitializeOpponentDeck();
-        // DrawInitialHand(5);
-        // DrawInitialOpponentHand(5);
+        // FIX: Inicializa o deck automaticamente se estiver vazio (para testar o Draw imediatamente)
+        if (playerDeck.Count == 0)
+        {
+            InitializePlayerDeck();
+            InitializeOpponentDeck();
+            DrawInitialHand(5);
+        }
     }
     
     public void SetPlayerProfile(string newName, string newSaveID)
@@ -340,9 +356,9 @@ public class GameManager : MonoBehaviour
         if (!ignoreLimit) hasDrawnThisTurn = true;
 
         // Exibe a carta comprada na área de visualização principal
-        if (currentCardDisplay != null)
+        if (cardViewerDisplay != null)
         {
-            currentCardDisplay.SetCard(drawnCard, cardBackTexture);
+            cardViewerDisplay.SetCard(drawnCard, cardBackTexture);
         }
 
         // Adiciona a carta à mão visualmente
@@ -354,17 +370,17 @@ public class GameManager : MonoBehaviour
             {
                 newCardDisplay = newCardGO.AddComponent<CardDisplay>();
             }
-            // Conecta os elementos de UI do prefab (assumindo que o prefab tem os mesmos elementos)
-            newCardDisplay.cardImage = newCardGO.GetComponent<RawImage>(); // Ou encontre o RawImage filho
-            // Para simplificar, não vamos conectar os textos da mão por enquanto, apenas a imagem
-            // newCardDisplay.cardNameText = newCardGO.transform.Find("NameText").GetComponent<TextMeshProUGUI>();
-            // ... e assim por diante para outros textos se o prefab os tiver e você quiser que apareçam na mão
-
+            
+            // Força a busca de componentes se necessário, pois Awake pode já ter rodado antes de configurarmos tudo
+            // Mas como acabamos de instanciar, Awake rodou.
+            // Se a carta foi instanciada desativada, Awake não rodou.
+            // Vamos garantir que ela esteja pronta.
+            
             newCardGO.transform.localScale = handCardScale;
-            newCardDisplay.hoverYOffset = handCardHoverYOffset;
-            newCardDisplay.isInteractable = true; // Habilita o efeito de hover
+            newCardDisplay.hoverYOffset = playerHandHoverYOffset;
+            newCardDisplay.isInteractable = true; 
 
-            newCardDisplay.isPlayerCard = true; // Marca como carta do jogador (visível no viewer mesmo setada)
+            newCardDisplay.isPlayerCard = true;
             newCardDisplay.SetCard(drawnCard, cardBackTexture);
             playerHand.Add(newCardGO);
         }
@@ -374,7 +390,7 @@ public class GameManager : MonoBehaviour
         }
 
         // Lógica de Fase: Se o jogador sacar na Draw Phase, avança para Standby
-        if (currentPhase == GamePhase.Draw)
+        if (!ignoreLimit && currentPhase == GamePhase.Draw)
         {
             StartCoroutine(HandleStandbyPhase());
         }
@@ -401,10 +417,9 @@ public class GameManager : MonoBehaviour
             {
                 newCardDisplay = newCardGO.AddComponent<CardDisplay>();
             }
-            newCardDisplay.cardImage = newCardGO.GetComponent<RawImage>();
 
             newCardGO.transform.localScale = handCardScale;
-            newCardDisplay.hoverYOffset = opponentHandCardHoverYOffset; // Usa o offset do oponente
+            newCardDisplay.hoverYOffset = opponentHandHoverYOffset; // Usa o offset do oponente
             newCardDisplay.isInteractable = true; // Habilita o efeito de hover
 
             newCardDisplay.isPlayerCard = false; // Carta do oponente
@@ -479,26 +494,27 @@ public class GameManager : MonoBehaviour
 
     public void UpdateCardViewer(CardData card, bool isFaceUp)
     {
-        if (currentCardDisplay == null) return;
+        if (cardViewerDisplay == null) return;
 
         if (isFaceUp && card != null)
         {
-            currentCardDisplay.SetCard(card, cardBackTexture, true);
+            cardViewerDisplay.SetCard(card, cardBackTexture, true);
         }
         else
         {
             // Se a carta estiver virada para baixo ou for do oponente, mostra o verso
-            currentCardDisplay.SetCardBackOnly(cardBackTexture);
+            cardViewerDisplay.SetCardBackOnly(cardBackTexture);
         }
+        
+        // Força a atualização visual do Card Viewer para aplicar as configurações de borda/arredondamento
+        // Isso é importante se as configurações mudarem em tempo real ou se o estado da carta mudar
+        // O método SetCard já chama ApplyRoundedCorners, mas podemos garantir aqui também se necessário.
     }
 
     public void ClearCardViewer()
     {
-        if (currentCardDisplay == null) return;
-        
-        // Define o visualizador para mostrar o verso da carta (estado neutro)
-        // ou poderia limpar tudo. Vamos mostrar o verso.
-        currentCardDisplay.SetCardBackOnly(cardBackTexture);
+        if (cardViewerDisplay == null) return;
+        cardViewerDisplay.SetCardBackOnly(cardBackTexture);
     }
 
     // Função de DEV para alternar visibilidade da mão do oponente
@@ -593,17 +609,21 @@ public class GameManager : MonoBehaviour
     IEnumerator LoadCardBackTexture()
     {
         string fullPath = Path.Combine(Application.streamingAssetsPath, "YuGiOh_OCG_Classic_2147/0000 - Background.jpg");
-        using (UnityWebRequest request = UnityWebRequestTexture.GetTexture("file://" + fullPath))
-        {
-            yield return request.SendWebRequest();
+        string url = "file://" + fullPath;
+        try { url = new System.Uri(fullPath).AbsoluteUri; } catch { }
 
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                cardBackTexture = DownloadHandlerTexture.GetContent(request);
-                cardBackTexture.filterMode = FilterMode.Trilinear;
-                UpdatePileVisuals(); // Atualiza o visual dos decks caso o duelo já tenha começado
-            }
+        // Removemos o 'using' para evitar o leak do alocador temporário
+        backTextureRequest = UnityWebRequestTexture.GetTexture(url);
+        yield return backTextureRequest.SendWebRequest();
+
+        if (backTextureRequest.result == UnityWebRequest.Result.Success)
+        {
+            cardBackTexture = DownloadHandlerTexture.GetContent(backTextureRequest);
+            cardBackTexture.filterMode = FilterMode.Trilinear;
+            UpdatePileVisuals(); // Atualiza o visual dos decks caso o duelo já tenha começado
         }
+        backTextureRequest.Dispose();
+        backTextureRequest = null;
     }
 
     IEnumerator LoadCardTexture(string imagePath)
@@ -629,12 +649,6 @@ public class GameManager : MonoBehaviour
     // Chamado automaticamente no Editor quando você muda um valor
     void OnValidate()
     {
-        // Ativa/Desativa os objetos com base nos toggles
-        if (cardDisplayArea != null)
-        {
-            cardDisplayArea.gameObject.SetActive(modo2D_Ativado);
-        }
-
         // Atualiza visibilidade da mão do oponente em tempo real se alterar o showOpponentHand no Inspector
         if (Application.isPlaying && opponentHand != null)
         {
@@ -678,15 +692,18 @@ public class GameManager : MonoBehaviour
 
     public void SummonMonster(GameObject cardGO, CardData cardData, bool isSet)
     {
+        CardDisplay display = cardGO.GetComponent<CardDisplay>();
+        bool isPlayer = display != null ? display.isPlayerCard : true;
+
         // 1. Validação de Fase
-        if (currentPhase != GamePhase.Main1 && currentPhase != GamePhase.Main2)
+        if (!devMode && isPlayer && currentPhase != GamePhase.Main1 && currentPhase != GamePhase.Main2)
         {
             Debug.LogWarning("Invocação só é permitida na Main Phase 1 ou 2.");
             return;
         }
 
         // 2. Encontrar Zona Livre
-        Transform targetZone = GetFreePlayerMonsterZone();
+        Transform targetZone = isPlayer ? GetFreePlayerMonsterZone() : GetFreeOpponentMonsterZone();
         if (targetZone == null)
         {
             Debug.LogWarning("Sem zonas de monstro livres!");
@@ -694,17 +711,18 @@ public class GameManager : MonoBehaviour
         }
 
         // 3. Mover Carta (Lógica de Dados e Visual)
-        playerHand.Remove(cardGO); // Remove da lista da mão
+        if (isPlayer) playerHand.Remove(cardGO);
+        else opponentHand.Remove(cardGO);
         
         cardGO.transform.SetParent(targetZone); // Coloca na zona
         cardGO.transform.localPosition = Vector3.zero; // Centraliza
-        cardGO.transform.localScale = Vector3.one; // Reseta escala (tira o tamanho da mão)
+        cardGO.transform.localScale = fieldCardScale; // Reseta escala para a do campo
 
         // 4. Configuração Visual (Ataque vs Defesa)
-        CardDisplay display = cardGO.GetComponent<CardDisplay>();
         if (display != null)
         {
             display.isInteractable = false; // Desativa o hover de mão (subir)
+            display.isOnField = true;
             
             if (isSet)
             {
@@ -738,12 +756,25 @@ public class GameManager : MonoBehaviour
         return null;
     }
 
+    private Transform GetFreeOpponentMonsterZone()
+    {
+        if (duelFieldUI == null || duelFieldUI.opponentMonsterZones == null) return null;
+        foreach (Transform zone in duelFieldUI.opponentMonsterZones)
+        {
+            if (zone.childCount == 0) return zone;
+        }
+        return null;
+    }
+
     // --- LÓGICA DE SPELL / TRAP ---
 
     public void PlaySpellTrap(GameObject cardGO, CardData cardData, bool isSet)
     {
+        CardDisplay display = cardGO.GetComponent<CardDisplay>();
+        bool isPlayer = display != null ? display.isPlayerCard : true;
+
         // 1. Validação de Fase
-        if (currentPhase != GamePhase.Main1 && currentPhase != GamePhase.Main2)
+        if (!devMode && isPlayer && currentPhase != GamePhase.Main1 && currentPhase != GamePhase.Main2)
         {
             Debug.LogWarning("Ativar/Setar Spells só é permitido na Main Phase 1 ou 2.");
             return;
@@ -754,12 +785,13 @@ public class GameManager : MonoBehaviour
         // 2. Verifica se é Field Spell
         if (cardData.race == "Field")
         {
-            if (duelFieldUI != null) targetZone = duelFieldUI.playerFieldSpell;
+            if (duelFieldUI != null) 
+                targetZone = isPlayer ? duelFieldUI.playerFieldSpell : duelFieldUI.opponentFieldSpell;
         }
         else
         {
             // Encontrar Zona de Spell Livre
-            targetZone = GetFreePlayerSpellZone();
+            targetZone = isPlayer ? GetFreePlayerSpellZone() : GetFreeOpponentSpellZone();
         }
 
         if (targetZone == null)
@@ -769,16 +801,18 @@ public class GameManager : MonoBehaviour
         }
 
         // 3. Mover Carta
-        playerHand.Remove(cardGO);
+        if (isPlayer) playerHand.Remove(cardGO);
+        else opponentHand.Remove(cardGO);
+
         cardGO.transform.SetParent(targetZone);
         cardGO.transform.localPosition = Vector3.zero;
-        cardGO.transform.localScale = Vector3.one;
+        cardGO.transform.localScale = fieldCardScale;
 
         // 4. Configuração Visual
-        CardDisplay display = cardGO.GetComponent<CardDisplay>();
         if (display != null)
         {
             display.isInteractable = false;
+            display.isOnField = true;
 
             if (isSet)
             {
@@ -809,6 +843,16 @@ public class GameManager : MonoBehaviour
     {
         if (duelFieldUI == null || duelFieldUI.playerSpellZones == null) return null;
         foreach (Transform zone in duelFieldUI.playerSpellZones)
+        {
+            if (zone.childCount == 0) return zone;
+        }
+        return null;
+    }
+
+    private Transform GetFreeOpponentSpellZone()
+    {
+        if (duelFieldUI == null || duelFieldUI.opponentSpellZones == null) return null;
+        foreach (Transform zone in duelFieldUI.opponentSpellZones)
         {
             if (zone.childCount == 0) return zone;
         }
@@ -851,5 +895,26 @@ public class GameManager : MonoBehaviour
         // Verifica se o jogador tem a carta no baú (ou se está usando todas as cartas)
         if (devMode) return true;
         return playerTrunk.Contains(cardId);
+    }
+
+    void OnDisable()
+    {
+        // Garante que a requisição seja cancelada se o objeto for desativado
+        if (backTextureRequest != null && !backTextureRequest.isDone)
+        {
+            backTextureRequest.Dispose();
+            backTextureRequest = null;
+        }
+    }
+
+    void OnDestroy()
+    {
+        // Garante que a requisição seja limpa se o jogo parar abruptamente
+        if (backTextureRequest != null)
+        {
+            backTextureRequest.Dispose();
+            backTextureRequest = null;
+        }
+
     }
 }

@@ -29,6 +29,9 @@ public class CardViewerUI : MonoBehaviour
     public TextMeshProUGUI cardStatsText;
 
     private int currentIndex = 0;
+    private UnityWebRequest currentRequest;
+    private UnityWebRequest backTextureRequest; // Rastreia a requisição do verso
+    private Coroutine loadCardCoroutine;
 
     void Start()
     {
@@ -52,6 +55,19 @@ public class CardViewerUI : MonoBehaviour
     {
         if (index < 0 || index >= cardDatabase.cardDatabase.Count) return;
 
+        // Limpeza de recursos anteriores
+        if (currentRequest != null)
+        {
+            currentRequest.Dispose();
+            currentRequest = null;
+        }
+        if (loadCardCoroutine != null) StopCoroutine(loadCardCoroutine);
+        if (frontTexture2D != null)
+        {
+            Destroy(frontTexture2D);
+            frontTexture2D = null;
+        }
+
         CardData card = cardDatabase.cardDatabase[index];
 
         if (cardNameText != null) cardNameText.text = card.name;
@@ -70,13 +86,26 @@ public class CardViewerUI : MonoBehaviour
                 cardStatsText.text = "";
         }
 
-        StartCoroutine(LoadCardTexture(card.image_filename));
+        loadCardCoroutine = StartCoroutine(LoadCardTexture(card.image_filename));
     }
 
     // Novo método para exibir uma carta específica (usado pelo Deck Builder)
     public void DisplayCardData(CardData card)
     {
         if (card == null) return;
+
+        // Limpeza de recursos anteriores
+        if (currentRequest != null)
+        {
+            currentRequest.Dispose();
+            currentRequest = null;
+        }
+        if (loadCardCoroutine != null) StopCoroutine(loadCardCoroutine);
+        if (frontTexture2D != null)
+        {
+            Destroy(frontTexture2D);
+            frontTexture2D = null;
+        }
 
         if (cardNameText) cardNameText.text = card.name;
         if (cardDescriptionText) cardDescriptionText.text = card.description;
@@ -90,23 +119,27 @@ public class CardViewerUI : MonoBehaviour
             cardStatsText.text = card.type.Contains("Monster") ? $"ATK/ {card.atk}  DEF/ {card.def}" : "";
         else if (cardStatsText) cardStatsText.text = "";
 
-        StartCoroutine(LoadCardTexture(card.image_filename));
+        loadCardCoroutine = StartCoroutine(LoadCardTexture(card.image_filename));
     }
 
     IEnumerator LoadCardBackTexture()
     {
         string fullPath = Path.Combine(Application.streamingAssetsPath, "YuGiOh_OCG_Classic_2147/0000 - Background.jpg");
-        using (UnityWebRequest request = UnityWebRequestTexture.GetTexture("file://" + fullPath))
-        {
-            yield return request.SendWebRequest();
+        string url = "file://" + fullPath;
+        try { url = new System.Uri(fullPath).AbsoluteUri; } catch { }
 
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                Texture2D texture = DownloadHandlerTexture.GetContent(request);
-                texture.filterMode = FilterMode.Trilinear;
-                backTexture2D = texture; // Salva para o flip 2D
-            }
+        // Removemos o 'using' para evitar o leak se a corrotina for interrompida
+        backTextureRequest = UnityWebRequestTexture.GetTexture(url);
+        yield return backTextureRequest.SendWebRequest();
+
+        if (backTextureRequest.result == UnityWebRequest.Result.Success)
+        {
+            Texture2D texture = DownloadHandlerTexture.GetContent(backTextureRequest);
+            texture.filterMode = FilterMode.Trilinear;
+            backTexture2D = texture; // Salva para o flip 2D
         }
+        backTextureRequest.Dispose();
+        backTextureRequest = null;
     }
 
     IEnumerator LoadCardTexture(string imagePath)
@@ -117,24 +150,23 @@ public class CardViewerUI : MonoBehaviour
         string url = "file://" + fullPath;
         try { url = new System.Uri(fullPath).AbsoluteUri; } catch { }
 
-        UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
-        using (request)
+        currentRequest = UnityWebRequestTexture.GetTexture(url);
+        
+        yield return currentRequest.SendWebRequest();
+
+        if (currentRequest.result == UnityWebRequest.Result.Success)
         {
-            yield return request.SendWebRequest();
+            frontTexture2D = DownloadHandlerTexture.GetContent(currentRequest);
+            frontTexture2D.filterMode = FilterMode.Trilinear;
 
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                Texture2D texture = DownloadHandlerTexture.GetContent(request);
-                texture.filterMode = FilterMode.Trilinear;
-
-                // Atualiza o 2D
-                frontTexture2D = texture;
-                if (cardImage2D != null) {
-                    is2DFlipped = false;
-                    cardImage2D.texture = frontTexture2D;
-                }
+            // Atualiza o 2D
+            if (cardImage2D != null) {
+                is2DFlipped = false;
+                cardImage2D.texture = frontTexture2D;
             }
         }
+        currentRequest.Dispose();
+        currentRequest = null;
     }
 
     // --- Funções de Interação ---
@@ -169,6 +201,36 @@ public class CardViewerUI : MonoBehaviour
         if (cardImage2D != null)
         {
             cardImage2D.gameObject.SetActive(modo2D_Ativado);
+        }
+    }
+
+    void OnDisable()
+    {
+        // Garante que a requisição seja cancelada se o objeto for desativado
+        if (currentRequest != null && !currentRequest.isDone)
+        {
+            currentRequest.Dispose();
+            currentRequest = null;
+        }
+        if (backTextureRequest != null && !backTextureRequest.isDone) backTextureRequest.Dispose();
+    }
+
+    void OnDestroy()
+    {
+        if (currentRequest != null)
+        {
+            currentRequest.Dispose();
+            currentRequest = null;
+        }
+        if (backTextureRequest != null)
+        {
+            backTextureRequest.Dispose();
+            backTextureRequest = null;
+        }
+        if (frontTexture2D != null)
+        {
+            Destroy(frontTexture2D);
+            frontTexture2D = null;
         }
     }
 }
