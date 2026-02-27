@@ -19,6 +19,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     [Header("Visual Effects")]
     public Image outlineImage; // Arraste uma imagem de borda (filha) aqui
+    [Tooltip("Se marcado, usa o componente Outline do Unity para criar uma borda simples.")]
+    public bool useSimpleOutline = true;
     public bool enableHoverOutline = true;
     public Color hoverColor = Color.yellow;
     public Color tributeColor = new Color(0f, 0.6f, 1f); // Azul ciano brilhante
@@ -33,7 +35,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     // Componentes para corrigir a renderização e tremedeira
     private Canvas canvas;
     private GraphicRaycaster graphicRaycaster;
-    private Canvas outlineCanvas; // Canvas exclusivo para a borda
     private Vector3 originalScale = Vector3.one;
 
     [HideInInspector] public float hoverYOffset = 30f;
@@ -48,18 +49,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (outlineImage != null)
         {
             outlineImage.raycastTarget = false; // Importante: Ignora cliques
-            // Coloca a borda atrás de tudo (primeiro filho) para não cobrir a carta
-            // outlineImage.transform.SetAsFirstSibling(); // Não é mais necessário com o Canvas
+            // FIX: Coloca a borda atrás de tudo (primeiro filho) para não cobrir a carta
+            outlineImage.transform.SetAsFirstSibling();
             outlineImage.rectTransform.anchorMin = Vector2.zero;
             outlineImage.rectTransform.anchorMax = Vector2.one;
-            // Expande mais para fora (-10px) para garantir que apareça por fora
-            outlineImage.rectTransform.offsetMin = new Vector2(-10, -10);
-            outlineImage.rectTransform.offsetMax = new Vector2(10, 10);
-            
-            // FIX: Adiciona Canvas na borda para forçar renderização atrás da carta
-            outlineCanvas = outlineImage.gameObject.AddComponent<Canvas>();
-            outlineCanvas.overrideSorting = true;
-            outlineCanvas.sortingOrder = -1; // Começa atrás da carta (que é 0)
+            // O tamanho será controlado pelo layout ou sprite
             
             outlineImage.gameObject.SetActive(false);
         }
@@ -205,10 +199,25 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public void OnPointerEnter(PointerEventData eventData)
     {
         // --- Efeito de Borda (Hover) ---
-        if (enableHoverOutline && outlineImage != null)
+        if (enableHoverOutline)
         {
-            outlineImage.color = hoverColor;
-            outlineImage.gameObject.SetActive(true);
+            if (useSimpleOutline && cardImage != null)
+            {
+                // Opção 1: Usa o componente Outline do Unity (Borda simples)
+                Outline outline = cardImage.GetComponent<Outline>();
+                if (outline == null) outline = cardImage.gameObject.AddComponent<Outline>();
+                
+                outline.effectColor = hoverColor;
+                outline.effectDistance = new Vector2(4, -4); // Espessura da borda
+                outline.useGraphicAlpha = false; // Borda sólida ao redor do rect
+                outline.enabled = true;
+            }
+            else if (outlineImage != null)
+            {
+                // Opção 2: Usa a imagem separada (se useSimpleOutline for false)
+                outlineImage.color = hoverColor;
+                outlineImage.gameObject.SetActive(true);
+            }
         }
 
         // --- Efeito de Subir (Apenas Mão) ---
@@ -218,7 +227,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             // FIX: Usa Canvas Sorting para trazer para frente visualmente sem recalcular o Layout
             canvas.overrideSorting = true;
             canvas.sortingOrder = 10; // Valor alto para ficar por cima de tudo
-            if (outlineCanvas != null) outlineCanvas.sortingOrder = 9; // Borda logo atrás da carta
             
             // Move para cima (Y) mantendo a escala original
             rectTransform.anchoredPosition += new Vector2(0, hoverYOffset);
@@ -251,6 +259,12 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public void OnPointerExit(PointerEventData eventData)
     {
         // --- Remove Borda ---
+        if (useSimpleOutline && cardImage != null)
+        {
+            Outline outline = cardImage.GetComponent<Outline>();
+            if (outline != null) outline.enabled = false;
+        }
+
         if (outlineImage != null)
         {
             outlineImage.gameObject.SetActive(false);
@@ -262,7 +276,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             // FIX: Reseta o Canvas e a Escala
             canvas.overrideSorting = false;
             canvas.sortingOrder = 0;
-            if (outlineCanvas != null) outlineCanvas.sortingOrder = -1; // Volta para trás
             rectTransform.anchoredPosition -= new Vector2(0, hoverYOffset);
         }
 

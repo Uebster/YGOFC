@@ -44,8 +44,10 @@ public class GameManager : MonoBehaviour
     [Header("Hand Settings")]
     [Tooltip("A escala das cartas na mão do jogador.")]
     public Vector3 handCardScale = new Vector3(1f, 1f, 1f);
-    [Tooltip("A altura que a carta sobe ao passar o mouse sobre ela.")]
+    [Tooltip("A altura que a carta do JOGADOR sobe ao passar o mouse sobre ela.")]
     public float handCardHoverYOffset = 30f;
+    [Tooltip("A altura que a carta do OPONENTE desce ao passar o mouse sobre ela (use um valor negativo).")]
+    public float opponentHandCardHoverYOffset = -30f;
     [Tooltip("Ativa ou desativa o efeito de hover (subir) nas cartas da mão.")]
     public bool enableHandHover = true;
 
@@ -402,7 +404,7 @@ public class GameManager : MonoBehaviour
             newCardDisplay.cardImage = newCardGO.GetComponent<RawImage>();
 
             newCardGO.transform.localScale = handCardScale;
-            newCardDisplay.hoverYOffset = handCardHoverYOffset;
+            newCardDisplay.hoverYOffset = opponentHandCardHoverYOffset; // Usa o offset do oponente
             newCardDisplay.isInteractable = true; // Habilita o efeito de hover
 
             newCardDisplay.isPlayerCard = false; // Carta do oponente

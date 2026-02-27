@@ -112,7 +112,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 910.00006, y: 389.96335}
-  m_SizeDelta: {x: 120, y: 168}
+  m_SizeDelta: {x: 130, y: 182}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5861880548395617391
 CanvasRenderer:
@@ -167,9 +167,11 @@ MonoBehaviour:
   cardDescriptionText: {fileID: 0}
   cardStatsText: {fileID: 0}
   outlineImage: {fileID: 1523905877554514941}
+  useSimpleOutline: 1
   enableHoverOutline: 1
   hoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   tributeColor: {r: 0, g: 0.6, b: 1, a: 1}
   attackColor: {r: 1, g: 0, b: 0, a: 1}
   hoverYOffset: 30
   isInteractable: 0
+  isPlayerCard: 0
