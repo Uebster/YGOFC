@@ -4,8 +4,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro; // Necessário para textos de alta qualidade
 using System.Collections.Generic;
+using UnityEngine.EventSystems;
 
-public class DuelFieldUI : MonoBehaviour
+public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
 {
     [Header("Configuração Visual")]
     public Sprite backgroundSprite; // Arraste o fundo aqui
@@ -148,7 +149,7 @@ public class DuelFieldUI : MonoBehaviour
                         GamePhase phaseEnum = (GamePhase)i;
                         btn.onClick.RemoveAllListeners(); // Remove listeners antigos (do editor)
                         btn.onClick.AddListener(() => {
-                            if (GameManager.Instance != null) GameManager.Instance.TryChangePhase(phaseEnum);
+                            if (PhaseManager.Instance != null) PhaseManager.Instance.TryChangePhase(phaseEnum);
                         });
                     }
                 }
@@ -163,6 +164,24 @@ public class DuelFieldUI : MonoBehaviour
             if (kvp.Value != null)
             {
                 kvp.Value.color = (kvp.Key == currentPhase) ? phaseActiveColor : phaseInactiveColor;
+            }
+        }
+    }
+
+    // Detecta clique no fundo do tabuleiro (FieldArea)
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (eventData.button == PointerEventData.InputButton.Right)
+        {
+            // Clique direito no vazio -> Sugerir mudança de fase/turno
+            if (PhaseManager.Instance != null && UIManager.Instance != null)
+            {
+                // Lógica simples: Se estiver na Main1/2/Battle, sugere ir para End Phase
+                // Ou abre um menu de contexto rápido de fases
+                UIManager.Instance.ShowConfirmation("Deseja encerrar o turno?", () => {
+                    PhaseManager.Instance.ChangePhase(GamePhase.End);
+                    // E depois trocar o turno no GameManager
+                });
             }
         }
     }
@@ -201,7 +220,7 @@ public class DuelFieldUI : MonoBehaviour
             // Configura o botão
             Button btn = pObj.GetComponent<Button>();
             btn.onClick.AddListener(() => {
-                if (GameManager.Instance != null) GameManager.Instance.TryChangePhase(phaseEnum);
+                if (PhaseManager.Instance != null) PhaseManager.Instance.TryChangePhase(phaseEnum);
             });
 
             GameObject tObj = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));

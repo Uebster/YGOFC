@@ -81,11 +81,6 @@ public class GameManager : MonoBehaviour
     [Tooltip("Permite baixar cartas para o campo do oponente (Modo Dev).")]
     public bool canPlaceOpponentCards = false;
 
-    [Header("Game Flow")]
-    public GamePhase currentPhase = GamePhase.Draw;
-    public float standbyPhaseDuration = 2.0f;
-    public TextMeshProUGUI phaseText; // Arraste um texto da UI aqui para ver a fase
-
     // --- REFERÊNCIAS 2D ---
     [Header("Core References")]
     public CardDisplay cardViewerDisplay;
@@ -196,7 +191,9 @@ public class GameManager : MonoBehaviour
         
         // Reseta flag de draw antes de começar o turno
         hasDrawnThisTurn = false;
-        ChangePhase(GamePhase.Draw); // Começa o turno na Draw Phase
+        
+        if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
+        else Debug.LogError("PhaseManager não encontrado!");
 
         // Inicia o rastreamento de pontuação para o Rank
         if (DuelScoreManager.Instance != null)
@@ -331,8 +328,10 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // Lógica de Limitação de Draw (1 por turno na Draw Phase)
-        if (!devMode && !ignoreLimit)
+        GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Draw;
+
+        // Se não for um saque especial (mão inicial) e não estiver em modo dev, aplicam-se as regras do turno.
+        if (!ignoreLimit && !devMode)
         {
             if (currentPhase != GamePhase.Draw)
             {
@@ -390,9 +389,10 @@ public class GameManager : MonoBehaviour
         }
 
         // Lógica de Fase: Se o jogador sacar na Draw Phase, avança para Standby
-        if (!ignoreLimit && currentPhase == GamePhase.Draw)
+        if (!ignoreLimit && currentPhase == GamePhase.Draw && PhaseManager.Instance != null)
         {
-            StartCoroutine(HandleStandbyPhase());
+            // Avança para Standby via PhaseManager
+            PhaseManager.Instance.ChangePhase(GamePhase.Standby);
         }
     }
 
@@ -423,6 +423,7 @@ public class GameManager : MonoBehaviour
             newCardDisplay.isInteractable = true; // Habilita o efeito de hover
 
             newCardDisplay.isPlayerCard = false; // Carta do oponente
+            newCardGO.transform.localRotation = Quaternion.Euler(0, 0, 180); // Vira a carta para o jogador
             // Cartas do oponente entram viradas para baixo (false), exceto se showOpponentHand estiver ativo
             bool startFaceUp = showOpponentHand;
             newCardDisplay.SetCard(drawnCard, cardBackTexture, startFaceUp);
@@ -535,44 +536,19 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // --- SISTEMA DE FASES ---
-
-    public void ChangePhase(GamePhase newPhase)
+    // Chamado pelo PhaseManager quando entra na Draw Phase
+    public void OnDrawPhaseStart()
     {
-        currentPhase = newPhase;
-        Debug.Log($"--- FASE: {currentPhase} ---");
-        
-        if (phaseText != null)
+        hasDrawnThisTurn = false;
+        if (!canPlayerDrawFromDeck)
         {
-            phaseText.text = currentPhase.ToString().ToUpper();
+            // Verifica exceções de Draw via SpellTrapManager
+            int draws = 1;
+            if (SpellTrapManager.Instance != null) draws += SpellTrapManager.Instance.extraDrawsPerTurn;
+            
+            for(int i=0; i<draws; i++)
+                DrawCard();
         }
-
-        // Atualiza o destaque visual no tabuleiro
-        if (duelFieldUI != null) duelFieldUI.UpdatePhaseHighlight(currentPhase);
-
-        // Lógica específica de entrada na fase
-        switch (currentPhase)
-        {
-            case GamePhase.Draw:
-                // Reseta o draw do turno ao entrar na Draw Phase
-                hasDrawnThisTurn = false;
-                // Aguarda o jogador clicar no deck (DrawCard)
-                break;
-            case GamePhase.Standby:
-                StartCoroutine(HandleStandbyPhase());
-                break;
-            case GamePhase.Main1:
-                // Aguarda jogadas do player
-                break;
-            // Outras fases...
-        }
-    }
-
-    IEnumerator HandleStandbyPhase()
-    {
-        ChangePhase(GamePhase.Standby);
-        yield return new WaitForSeconds(standbyPhaseDuration);
-        ChangePhase(GamePhase.Main1);
     }
 
     // --- FUTURAS IMPLEMENTAÇÕES DE COMANDOS (COMENTÁRIOS) ---
@@ -695,7 +671,31 @@ public class GameManager : MonoBehaviour
         CardDisplay display = cardGO.GetComponent<CardDisplay>();
         bool isPlayer = display != null ? display.isPlayerCard : true;
 
+        // 0. Validação de Regras de Invocação (SummonManager)
+        if (SummonManager.Instance != null)
+        {
+            // Verifica se pode invocar (Normal Summon, Tributos, etc)
+            // Nota: isSpecial = false (por enquanto, invocação da mão é Normal)
+            if (!SummonManager.Instance.PerformSummon(cardData, isSet, false, isPlayer))
+            {
+                return;
+            }
+        }
+
+        // 0. Validação de Permissão
+        if (isPlayer && !canPlacePlayerCards)
+        {
+            Debug.LogWarning("Ação bloqueada: 'canPlacePlayerCards' está desativado.");
+            return;
+        }
+        if (!isPlayer && !canPlaceOpponentCards)
+        {
+            Debug.LogWarning("Ação bloqueada: 'canPlaceOpponentCards' está desativado.");
+            return;
+        }
+
         // 1. Validação de Fase
+        GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Main1;
         if (!devMode && isPlayer && currentPhase != GamePhase.Main1 && currentPhase != GamePhase.Main2)
         {
             Debug.LogWarning("Invocação só é permitida na Main Phase 1 ou 2.");
@@ -726,15 +726,19 @@ public class GameManager : MonoBehaviour
             
             if (isSet)
             {
+                display.position = CardDisplay.BattlePosition.Defense;
                 // Modo Defesa (Set): Virado para baixo e Rotacionado 90 graus
+                float zRotation = isPlayer ? 90f : -90f;
                 display.ShowBack();
-                cardGO.transform.localRotation = Quaternion.Euler(0, 0, 90);
+                cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRotation);
             }
             else
             {
+                display.position = CardDisplay.BattlePosition.Attack;
                 // Modo Ataque: Virado para cima e Reto
+                float zRotation = isPlayer ? 0f : 180f;
                 display.ShowFront();
-                cardGO.transform.localRotation = Quaternion.identity;
+                cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRotation);
                 
                 // Toca efeito visual de invocação
                 if (DuelFXManager.Instance != null)
@@ -773,7 +777,27 @@ public class GameManager : MonoBehaviour
         CardDisplay display = cardGO.GetComponent<CardDisplay>();
         bool isPlayer = display != null ? display.isPlayerCard : true;
 
+        // 0.5 Validação de Armadilha
+        if (!devMode && isPlayer && cardData.type.Contains("Trap") && !isSet)
+        {
+            Debug.LogWarning("Cartas de Armadilha devem ser baixadas (Set) antes de serem ativadas.");
+            return;
+        }
+
+        // 0. Validação de Permissão
+        if (isPlayer && !canPlacePlayerCards)
+        {
+            Debug.LogWarning("Ação bloqueada: 'canPlacePlayerCards' está desativado.");
+            return;
+        }
+        if (!isPlayer && !canPlaceOpponentCards)
+        {
+            Debug.LogWarning("Ação bloqueada: 'canPlaceOpponentCards' está desativado.");
+            return;
+        }
+
         // 1. Validação de Fase
+        GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Main1;
         if (!devMode && isPlayer && currentPhase != GamePhase.Main1 && currentPhase != GamePhase.Main2)
         {
             Debug.LogWarning("Ativar/Setar Spells só é permitido na Main Phase 1 ou 2.");
@@ -816,14 +840,16 @@ public class GameManager : MonoBehaviour
 
             if (isSet)
             {
+                float zRotation = isPlayer ? 0f : 180f;
                 display.ShowBack();
                 // Spells/Traps setadas ficam verticais (não rotacionam como monstros em defesa)
-                cardGO.transform.localRotation = Quaternion.identity; 
+                cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRotation); 
             }
             else
             {
+                float zRotation = isPlayer ? 0f : 180f;
                 display.ShowFront();
-                cardGO.transform.localRotation = Quaternion.identity;
+                cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRotation);
 
                 // Efeito de Ativação
                 bool isTrap = cardData.type.Contains("Trap");
@@ -863,18 +889,7 @@ public class GameManager : MonoBehaviour
 
     public void TryChangePhase(GamePhase newPhase)
     {
-        // Regra: Não pode voltar fases (exceto DevMode)
-        // Ordem: Draw(0) -> Standby(1) -> Main1(2) -> Battle(3) -> Main2(4) -> End(5)
-        if (!devMode)
-        {
-            if ((int)newPhase <= (int)currentPhase)
-            {
-                Debug.LogWarning("Não é possível voltar para uma fase anterior neste turno.");
-                return;
-            }
-        }
-
-        ChangePhase(newPhase);
+        if (PhaseManager.Instance != null) PhaseManager.Instance.TryChangePhase(newPhase);
     }
 
     // --- GERENCIAMENTO DE DECK (ACESSO PÚBLICO) ---

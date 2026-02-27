@@ -10,6 +10,8 @@ using UnityEngine.EventSystems;
 
 public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
+    public enum BattlePosition { Attack, Defense }
+
     [Header("UI Elements")]
     public RawImage cardImage;
     public TextMeshProUGUI cardNameText;
@@ -42,6 +44,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool isPlayerCard = false; // Define se a carta pertence ao jogador (para visualização)
     [HideInInspector] public bool isOnField = false; // Define se a carta está no campo
     [HideInInspector] public bool isInPile = false; // Define se a carta está em uma pilha (Deck, GY, Extra)
+    [HideInInspector] public BattlePosition position; // Posição de batalha do monstro
     private UnityWebRequest currentRequest; // Rastreia a requisição ativa para descarte correto
 
     void Awake()
@@ -291,6 +294,27 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         isFlipped = true;
         cardImage.texture = backTexture;
     }
+    
+    // Novo método para revelar carta (Flip) com verificação de exceções
+    public void RevealCard(bool isAttackTriggered = false)
+    {
+        if (!isFlipped) return; // Já está revelada
+
+        // Verifica exceções via SpellTrapManager ou efeitos de monstros
+        // Por exemplo, "Light of Intervention" impede monstros de serem setados face-down, ou revela todos.
+        // Aqui é um bom lugar para hooks de efeitos de "Flip Effect" monsters.
+        
+        if (isAttackTriggered)
+        {
+            Debug.Log($"CardDisplay: Carta {currentCardData.name} revelada por ataque!");
+            // TODO: Disparar efeito de Flip do monstro se houver
+        }
+
+        ShowFront();
+        
+        // Se for Spell/Trap, pode ser que precise ficar revelada ou ir pro GY dependendo do tipo (Continuous vs Normal)
+        // Isso será tratado pelo GameManager/SpellTrapManager na resolução da chain.
+    }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
@@ -405,14 +429,28 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     {
         Debug.Log($"CardDisplay: Clique detectado na carta {currentCardData?.name}");
 
-        // Só abre o menu se a carta estiver na mão (isInteractable) e o menu existir
-        if (isInteractable && DuelActionMenu.Instance != null)
-        {
-            DuelActionMenu.Instance.ShowMenu(gameObject, currentCardData);
-        }
-        else if (isInteractable && DuelActionMenu.Instance == null)
+        // O menu só deve aparecer para cartas na mão.
+        if (!isInteractable) return;
+
+        if (DuelActionMenu.Instance == null)
         {
             Debug.LogError("CardDisplay: DuelActionMenu.Instance não encontrado na cena!");
+            return;
+        }
+
+        bool canShowMenu = false;
+        if (isPlayerCard && GameManager.Instance.canPlacePlayerCards)
+        {
+            canShowMenu = true;
+        }
+        else if (!isPlayerCard && GameManager.Instance.canPlaceOpponentCards)
+        {
+            canShowMenu = true;
+        }
+
+        if (canShowMenu)
+        {
+            DuelActionMenu.Instance.ShowMenu(gameObject, currentCardData);
         }
     }
 

@@ -66,8 +66,18 @@ public class DuelActionMenu : MonoBehaviour
         
         if (summonBtn) 
         {
-            summonBtn.gameObject.SetActive(isMonster);
-            // Opcional: Mudar texto para "Summon"
+            bool canSummon = isMonster;
+            // Verifica se pode invocar (Normal Summon)
+            if (isMonster && SummonManager.Instance != null)
+            {
+                // Verifica limite de turno
+                if (!SummonManager.Instance.CanNormalSummon()) canSummon = false;
+                
+                // Verifica tributos (apenas visualmente, a lógica real está no SummonManager)
+                int tributes = SummonManager.Instance.GetRequiredTributes(data.level);
+                if (!SummonManager.Instance.HasEnoughTributes(tributes, true)) canSummon = false;
+            }
+            summonBtn.gameObject.SetActive(canSummon);
         }
         
         if (setBtn) 
@@ -81,7 +91,24 @@ public class DuelActionMenu : MonoBehaviour
         // Posiciona o menu perto da carta clicada
         if (menuPanel != null)
         {
-            menuPanel.transform.position = cardGO.transform.position;
+            RectTransform cardRect = cardGO.GetComponent<RectTransform>();
+            CardDisplay cardDisplay = cardGO.GetComponent<CardDisplay>();
+            if (cardRect != null)
+            {
+                // Posiciona o menu acima da carta.
+                bool isOpponentCard = (cardDisplay != null && !cardDisplay.isPlayerCard);
+                // Se for carta do oponente (rotacionada), o offset Y precisa ser negativo para "subir" na tela.
+                float yDirection = isOpponentCard ? -1f : 1f;
+
+                // A altura exata do offset depende do tamanho da carta e do menu.
+                float cardHeight = cardRect.rect.height * cardRect.lossyScale.y;
+                Vector3 offset = new Vector3(0, cardHeight * 0.6f * yDirection, 0); // Ajuste este valor (0.6f) conforme necessário
+                menuPanel.transform.position = cardGO.transform.position + offset;
+            }
+            else
+            {
+                menuPanel.transform.position = cardGO.transform.position;
+            }
             menuPanel.SetActive(true);
         }
     }

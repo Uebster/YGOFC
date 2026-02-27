@@ -34,13 +34,16 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
             LayoutElement le = newCard.GetComponent<LayoutElement>();
             if (le != null) le.ignoreLayout = true;
 
-            // FIX: Desativa Raycast das cartas visuais para não bloquear o clique na pilha
-            // Se as cartas bloquearem, o OnPointerClick deste script (PileDisplay) nunca será chamado.
-            RawImage img = newCard.GetComponent<RawImage>();
-            if (img != null) img.raycastTarget = false;
-            
             CardDisplay cd = newCard.GetComponent<CardDisplay>();
-            if (cd != null && cd.cardImage != null) cd.cardImage.raycastTarget = false;
+            if (cd != null)
+            {
+                // FIX: Desativa o GraphicRaycaster para que o clique passe para a pilha.
+                GraphicRaycaster gr = cd.GetComponent<GraphicRaycaster>();
+                if (gr != null) gr.enabled = false;
+
+                // Garante que a imagem interna também não bloqueie o clique.
+                if (cd.cardImage != null) cd.cardImage.raycastTarget = false;
+            }
             
             activeCards.Add(newCard);
         }

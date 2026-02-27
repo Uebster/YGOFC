@@ -39,6 +39,7 @@ public class UIManager : MonoBehaviour
 
     [Header("Popups")]
     public GameObject exitScreen;
+    public GameObject confirmationModal; // Novo modal genérico
     public GraveyardViewer graveyardViewer;
 
     [Header("Debug")]
@@ -117,6 +118,7 @@ public class UIManager : MonoBehaviour
         if (videoScreen != null) videoScreen.SetActive(false);
         if (controlsScreen != null) controlsScreen.SetActive(false);
         if (exitScreen != null) exitScreen.SetActive(false);
+        if (confirmationModal != null) confirmationModal.SetActive(false);
 
         if (graveyardViewer != null) graveyardViewer.gameObject.SetActive(false);
 
@@ -136,6 +138,36 @@ public class UIManager : MonoBehaviour
         else
         {
             Debug.LogError("GraveyardViewer não está atribuído no UIManager!");
+        }
+    }
+
+    // Novo método para mostrar modal de confirmação genérico
+    public void ShowConfirmation(string message, System.Action onConfirm, System.Action onCancel = null)
+    {
+        if (confirmationModal == null)
+        {
+            Debug.LogWarning("UIManager: Confirmation Modal não atribuído!");
+            onConfirm?.Invoke(); // Fallback: confirma direto se não tiver UI
+            return;
+        }
+
+        confirmationModal.SetActive(true);
+        
+        // Configura texto e botões (assumindo que o modal tem um script ou estrutura padrão)
+        // Aqui estou buscando componentes dinamicamente para simplificar, mas o ideal é ter um script ConfirmationModalUI
+        TextMeshProUGUI txt = confirmationModal.GetComponentInChildren<TextMeshProUGUI>();
+        if (txt) txt.text = message;
+
+        Button[] btns = confirmationModal.GetComponentsInChildren<Button>();
+        if (btns.Length >= 1) // Botão Confirmar
+        {
+            btns[0].onClick.RemoveAllListeners();
+            btns[0].onClick.AddListener(() => { confirmationModal.SetActive(false); onConfirm?.Invoke(); });
+        }
+        if (btns.Length >= 2) // Botão Cancelar
+        {
+            btns[1].onClick.RemoveAllListeners();
+            btns[1].onClick.AddListener(() => { confirmationModal.SetActive(false); onCancel?.Invoke(); });
         }
     }
 
