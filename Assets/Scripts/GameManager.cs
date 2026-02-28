@@ -183,6 +183,9 @@ public class GameManager : MonoBehaviour
     {
         // Limpa o estado anterior (destrói cartas visuais, limpa listas)
         CleanupDuelState();
+        
+        // Garante que os gerenciadores essenciais existam na cena
+        EnsureCoreManagers();
 
         InitializePlayerDeck();
         InitializeOpponentDeck();
@@ -193,13 +196,30 @@ public class GameManager : MonoBehaviour
         hasDrawnThisTurn = false;
         
         if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
-        else Debug.LogError("PhaseManager não encontrado!");
+        else Debug.LogError("PhaseManager não encontrado mesmo após tentativa de criação!");
 
         // Inicia o rastreamento de pontuação para o Rank
         if (DuelScoreManager.Instance != null)
         {
             DuelScoreManager.Instance.StartDuelTracking();
         }
+    }
+
+    // Cria automaticamente os gerenciadores se eles não estiverem na cena
+    void EnsureCoreManagers()
+    {
+        if (PhaseManager.Instance == null) CreateManager<PhaseManager>();
+        if (SummonManager.Instance == null) CreateManager<SummonManager>();
+        if (BattleManager.Instance == null) CreateManager<BattleManager>();
+        if (SpellTrapManager.Instance == null) CreateManager<SpellTrapManager>();
+        if (ChainManager.Instance == null) CreateManager<ChainManager>();
+    }
+
+    void CreateManager<T>() where T : MonoBehaviour
+    {
+        GameObject go = new GameObject(typeof(T).Name);
+        go.AddComponent<T>();
+        Debug.Log($"GameManager: Auto-criado gerenciador ausente: {typeof(T).Name}");
     }
 
     void CleanupDuelState()
@@ -483,6 +503,17 @@ public class GameManager : MonoBehaviour
         if (graveyard.Count == 0) return;
 
         UIManager.Instance.ShowGraveyard(graveyard, cardBackTexture);
+    }
+
+    public void ViewExtraDeck(bool isPlayer)
+    {
+        if (UIManager.Instance == null) return;
+
+        // Nota: Normalmente só se pode ver o próprio Extra Deck, a menos que um efeito permita
+        if (!isPlayer && !devMode) return;
+
+        List<CardData> extraDeck = isPlayer ? playerExtraDeck : opponentExtraDeck;
+        UIManager.Instance.ShowExtraDeck(extraDeck, cardBackTexture);
     }
 
     public void DrawInitialOpponentHand(int count)
@@ -863,6 +894,7 @@ public class GameManager : MonoBehaviour
         {
             display.isInteractable = false;
             display.isOnField = true;
+            display.summonedThisTurn = true; // Marca que foi colocada neste turno
 
             if (isSet)
             {
@@ -907,6 +939,36 @@ public class GameManager : MonoBehaviour
             if (zone.childCount == 0) return zone;
         }
         return null;
+    }
+
+    public void ActivateFieldSpellTrap(GameObject cardGO)
+    {
+        CardDisplay display = cardGO.GetComponent<CardDisplay>();
+        if (display == null || !display.isOnField) return;
+
+        CardData cardData = display.CurrentCardData;
+        bool isPlayer = display.isPlayerCard;
+
+        // Vira a carta para cima
+        display.ShowFront();
+
+        // Efeito de Ativação
+        bool isTrap = cardData.type.Contains("Trap");
+        if (DuelFXManager.Instance != null)
+            DuelFXManager.Instance.PlayCardActivation(display, isTrap);
+        
+        if (DuelScoreManager.Instance != null)
+        {
+            if (isTrap) DuelScoreManager.Instance.RecordTrapActivation();
+            else DuelScoreManager.Instance.RecordSpellActivation();
+        }
+
+        // Integração com Sistema de Chains
+        if (ChainManager.Instance != null)
+        {
+            ChainManager.Instance.AddToChain(display, isPlayer);
+            ChainManager.Instance.ResolveChain();
+        }
     }
 
     private Transform GetFreeOpponentSpellZone()

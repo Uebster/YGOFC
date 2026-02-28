@@ -73,18 +73,47 @@ public class SpellTrapManager : MonoBehaviour
     }
 
     // Verifica se há armadilhas que podem ser ativadas em resposta a um evento
-    public bool CheckForTraps(SpellTrapTrigger trigger, CardDisplay source, CardDisplay target)
+    public void CheckForTraps(SpellTrapTrigger trigger, CardDisplay source, CardDisplay target, System.Action onContinue)
     {
-        // Lógica simplificada: Verifica se o oponente tem traps setadas
-        // Em um jogo real, verificaria cada carta para ver se a condição de ativação é atendida (ex: Mirror Force no ataque)
+        // Lógica simplificada: Procura por qualquer armadilha setada no campo do oponente (ou jogador, dependendo da lógica)
+        // Para este exemplo, vamos verificar se há alguma Trap setada no campo de quem está sendo atacado.
         
-        // Exemplo: Se for ataque, pergunta ao jogador se quer ativar algo (se tiver)
-        // UIManager.Instance.ShowConfirmation("Ativar Armadilha?", () => ActivateTrap(...));
+        CardDisplay trapToActivate = null;
+
+        // Exemplo simples: Verifica zonas de spell do oponente (assumindo que o player está atacando)
+        if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null)
+        {
+            // Se for ataque do player, checa traps do oponente
+            bool checkOpponent = source.isPlayerCard; 
+            Transform[] zones = checkOpponent ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
+
+            foreach (Transform zone in zones)
+            {
+                if (zone.childCount > 0)
+                {
+                    CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                    // Verifica se é Trap e se está virada para baixo (Set)
+                    if (cd != null && cd.CurrentCardData.type.Contains("Trap") && cd.isFlipped)
+                    {
+                        trapToActivate = cd;
+                        break; // Encontrou uma (simplificação: pega a primeira)
+                    }
+                }
+            }
+        }
         
-        // Retorna true se uma interrupção ocorreu (chain iniciada)
-        // Retorna false se o jogo deve prosseguir normalmente
-        
-        return false; 
+        if (trapToActivate != null)
+        {
+            UIManager.Instance.ShowConfirmation($"Ativar {trapToActivate.CurrentCardData.name}?", () => {
+                // Sim: Ativa a carta
+                GameManager.Instance.PlaySpellTrap(trapToActivate.gameObject, trapToActivate.CurrentCardData, false);
+                // Nota: Não chamamos onContinue() aqui porque a ativação interrompe o ataque (ou inicia uma Chain)
+            }, onContinue); // Não: Continua o ataque
+        }
+        else
+        {
+            onContinue?.Invoke();
+        }
     }
 
     // Verifica se há cartas que podem ser encadeadas (Chained)

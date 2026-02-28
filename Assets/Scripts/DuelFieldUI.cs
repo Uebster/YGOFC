@@ -44,6 +44,7 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
     [Header("Configuração de Fases")]
     public Color phaseActiveColor = new Color(1f, 0.8f, 0f, 1f); // Amarelo/Dourado
     public Color phaseInactiveColor = new Color(0.2f, 0.2f, 0.2f, 0.8f); // Cinza Escuro
+    public bool enablePhaseNeonEffect = true; // Opção para habilitar o efeito neon
     
     private Dictionary<GamePhase, Image> phaseImagesDict = new Dictionary<GamePhase, Image>();
 
@@ -136,14 +137,19 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
                 Transform pObj = indicator.Find(phaseNames[i]);
                 if (pObj != null)
                 {
-                    Image img = pObj.GetComponent<Image>();
-                    if (img != null)
-                    {
-                        phaseImagesDict[(GamePhase)i] = img;
-                    }
-
-                    // FIX: Garante que os botões funcionem em Runtime encontrando-os e adicionando listeners
+                    // Tenta encontrar o botão no objeto ou nos filhos (para suportar sua estrutura Btn_Draw dentro de Draw Phase)
                     Button btn = pObj.GetComponent<Button>();
+                    if (btn == null) btn = pObj.GetComponentInChildren<Button>();
+
+                    Image img = pObj.GetComponent<Image>();
+                    // Se achou o botão, prefere usar a imagem do botão para o highlight
+                    if (btn != null && btn.targetGraphic != null && btn.targetGraphic is Image btnImg)
+                    {
+                        img = btnImg;
+                    }
+                    
+                    if (img != null) phaseImagesDict[(GamePhase)i] = img;
+
                     if (btn != null)
                     {
                         GamePhase phaseEnum = (GamePhase)i;
@@ -164,6 +170,23 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
             if (kvp.Value != null)
             {
                 kvp.Value.color = (kvp.Key == currentPhase) ? phaseActiveColor : phaseInactiveColor;
+
+                // Lógica do Efeito Neon (Outline)
+                if (enablePhaseNeonEffect)
+                {
+                    Outline outline = kvp.Value.GetComponent<Outline>();
+                    if (kvp.Key == currentPhase)
+                    {
+                        if (outline == null) outline = kvp.Value.gameObject.AddComponent<Outline>();
+                        outline.enabled = true;
+                        outline.effectColor = phaseActiveColor; // Usa a mesma cor da fase para o neon
+                        outline.effectDistance = new Vector2(2, -2); // Distância suave
+                    }
+                    else
+                    {
+                        if (outline != null) outline.enabled = false;
+                    }
+                }
             }
         }
     }

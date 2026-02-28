@@ -38,7 +38,7 @@ public class ChainManager : MonoBehaviour
         link.isPlayerEffect = isPlayer;
 
         currentChain.Add(link);
-        Debug.Log($"Chain Link {link.linkNumber}: {card.currentCardData.name} ativado.");
+        Debug.Log($"Chain Link {link.linkNumber}: {card.CurrentCardData.name} ativado.");
 
         // Feedback Visual
         if (DuelFXManager.Instance != null)
@@ -66,7 +66,7 @@ public class ChainManager : MonoBehaviour
         for (int i = currentChain.Count - 1; i >= 0; i--)
         {
             ChainLink link = currentChain[i];
-            Debug.Log($"Resolvendo Chain Link {link.linkNumber}: {link.cardSource.currentCardData.name}");
+            Debug.Log($"Resolvendo Chain Link {link.linkNumber}: {link.cardSource.CurrentCardData.name}");
             
             // Feedback Visual da Resolução
             if (link.cardSource != null)
@@ -85,7 +85,7 @@ public class ChainManager : MonoBehaviour
             // Contínuas, Campo, Equipamento e Pêndulo ficam no campo.
             if (link.cardSource != null)
             {
-                CardData data = link.cardSource.currentCardData;
+                CardData data = link.cardSource.CurrentCardData;
                 bool staysOnField = IsContinuousType(data);
                 
                 if (!staysOnField)

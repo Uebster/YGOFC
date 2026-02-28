@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 
 public class PileDisplay : MonoBehaviour, IPointerClickHandler
 {
-    public enum PileType { Deck, Graveyard }
+    public enum PileType { Deck, Graveyard, ExtraDeck, Field }
     [Header("Configuração")]
     public PileType pileType;
     public bool isPlayerPile = true; // Define se é do jogador ou oponente
@@ -71,7 +71,7 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
             
             int dataIndex = 0;
 
-            if (pileType == PileType.Deck)
+            if (pileType == PileType.Deck || pileType == PileType.ExtraDeck)
             {
                 // No Deck (GameManager), o índice 0 é o TOPO (próxima carta a comprar).
                 // Visualmente, o topo deve ser o último filho (renderizado por cima).
@@ -80,7 +80,7 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
                 // Visual Topo -> Dados [0]
                 dataIndex = (targetCount - 1) - i;
             }
-            else // Graveyard
+            else // Graveyard ou Field
             {
                 // No Cemitério, adicionamos cartas ao final da lista.
                 // Índice 0 = Primeira carta morta (Fundo).
@@ -98,7 +98,7 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
                 if (display != null)
                 {
                     display.isInPile = true; // Marca como carta de pilha para controle de hover
-                    bool isFaceUp = (pileType == PileType.Graveyard);
+                    bool isFaceUp = (pileType == PileType.Graveyard || pileType == PileType.Field);
 
                     if (!isFaceUp)
                     {
@@ -126,6 +126,18 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
     {
         if (GameManager.Instance == null) return;
 
+        // Clique Direito no Deck do Jogador -> Surrender
+        if (eventData.button == PointerEventData.InputButton.Right && pileType == PileType.Deck && isPlayerPile)
+        {
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowConfirmation("Deseja se render?", () => {
+                    GameManager.Instance.EndDuel(false); // false = player perdeu
+                });
+            }
+            return;
+        }
+
         if (pileType == PileType.Deck)
         {
             if (isPlayerPile)
@@ -143,6 +155,14 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
         else if (pileType == PileType.Graveyard)
         {
             GameManager.Instance.ViewGraveyard(isPlayerPile);
+        }
+        else if (pileType == PileType.ExtraDeck)
+        {
+            GameManager.Instance.ViewExtraDeck(isPlayerPile);
+        }
+        else if (pileType == PileType.Field)
+        {
+            // Futuro: Interação com a carta de campo (se necessário)
         }
     }
 }

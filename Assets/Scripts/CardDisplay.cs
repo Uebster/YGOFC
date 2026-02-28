@@ -51,7 +51,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool hasChangedPositionThisTurn = false;
     [HideInInspector] public bool summonedThisTurn = false;
     
-    public CardData currentCardData => currentCardData; // Propriedade pública para acesso seguro
+    public CardData CurrentCardData => currentCardData; // Propriedade pública para acesso seguro (Renomeado para evitar conflito)
 
     private UnityWebRequest currentRequest; // Rastreia a requisição ativa para descarte correto
 
@@ -471,28 +471,43 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
         Debug.Log($"CardDisplay: Clique detectado na carta {currentCardData?.name}");
 
-        // O menu só deve aparecer para cartas na mão.
-        if (!isInteractable) return;
-
-        if (DuelActionMenu.Instance == null)
+        // Lógica para cartas na MÃO (isInteractable é o flag para isso)
+        if (isInteractable)
         {
-            Debug.LogError("CardDisplay: DuelActionMenu.Instance não encontrado na cena!");
-            return;
+            if (DuelActionMenu.Instance == null)
+            {
+                Debug.LogError("CardDisplay: DuelActionMenu.Instance não encontrado na cena!");
+                return;
+            }
+
+            bool canShowMenu = false;
+            if (isPlayerCard && GameManager.Instance.canPlacePlayerCards)
+            {
+                canShowMenu = true;
+            }
+            else if (!isPlayerCard && GameManager.Instance.canPlaceOpponentCards)
+            {
+                canShowMenu = true;
+            }
+
+            if (canShowMenu)
+            {
+                DuelActionMenu.Instance.ShowMenu(gameObject, currentCardData);
+            }
+            return; // Ação para carta na mão termina aqui
         }
 
-        bool canShowMenu = false;
-        if (isPlayerCard && GameManager.Instance.canPlacePlayerCards)
+        // Lógica para cartas no CAMPO (Spells/Traps Setadas)
+        if (isOnField && isFlipped && (currentCardData.type.Contains("Spell") || currentCardData.type.Contains("Trap")))
         {
-            canShowMenu = true;
-        }
-        else if (!isPlayerCard && GameManager.Instance.canPlaceOpponentCards)
-        {
-            canShowMenu = true;
-        }
+            bool canActivate = (GameManager.Instance.devMode) || (!summonedThisTurn);
 
-        if (canShowMenu)
-        {
-            DuelActionMenu.Instance.ShowMenu(gameObject, currentCardData);
+            if (canActivate)
+            {
+                UIManager.Instance.ShowConfirmation($"Ativar {currentCardData.name}?", () => {
+                    GameManager.Instance.ActivateFieldSpellTrap(gameObject);
+                });
+            }
         }
     }
 

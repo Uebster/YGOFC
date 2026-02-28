@@ -37,13 +37,13 @@ public class BattleManager : MonoBehaviour
         }
 
         currentAttacker = attacker;
-        Debug.Log($"Ataque declarado por {attacker.currentCardData.name}. Selecione um alvo.");
+        Debug.Log($"Ataque declarado por {attacker.CurrentCardData.name}. Selecione um alvo.");
         
         // Aqui você pode ativar um modo de seleção visual (brilho nos alvos válidos)
         // Se o oponente não tiver monstros, pode atacar direto (Direct Attack)
         if (HasDirectAttackCondition())
         {
-            UIManager.Instance.ShowConfirmation("Atacar diretamente?", () => PerformDirectAttack(attacker));
+            UIManager.Instance.ShowConfirmation("Atacar diretamente?", () => CheckTrapsAndAttackDirectly(attacker));
         }
     }
 
@@ -56,8 +56,8 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
+        UIManager.Instance.ShowConfirmation($"Atacar {target.CurrentCardData.name}?", () => CheckTrapsAndBattle(currentAttacker, target));
         currentTarget = target;
-        UIManager.Instance.ShowConfirmation($"Atacar {target.currentCardData.name}?", () => PerformBattle(currentAttacker, currentTarget));
     }
 
     private bool HasDirectAttackCondition()
@@ -71,29 +71,31 @@ public class BattleManager : MonoBehaviour
         return true;
     }
 
+    private void CheckTrapsAndAttackDirectly(CardDisplay attacker)
+    {
+        // Verifica armadilhas antes do dano (passa callback para continuar se não houver trap)
+        SpellTrapManager.Instance.CheckForTraps(SpellTrapTrigger.Attack, attacker, null, () => 
+        {
+            PerformDirectAttack(attacker);
+        });
+    }
+
     private void PerformDirectAttack(CardDisplay attacker)
     {
-        // Verifica armadilhas antes do dano
-        if (SpellTrapManager.Instance.CheckForTraps(SpellTrapTrigger.Attack, attacker, null))
-        {
-            // Se uma armadilha for ativada e negar o ataque, pare aqui.
-            // Por simplicidade, vamos assumir que o SpellTrapManager lida com a interrupção ou retorna true se algo aconteceu.
-            // return; 
-        }
-
-        int damage = attacker.currentCardData.atk;
+        int damage = attacker.CurrentCardData.atk;
         Debug.Log($"Ataque Direto! Dano: {damage}");
         
         // Aplica dano ao oponente
         // GameManager.Instance.DamageOpponent(damage);
         
-        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayAttack(attacker, null, null); // Null target = direct
+        if (DuelFXManager.Instance != null) 
+            DuelFXManager.Instance.PlayAttack(attacker, null, null); // Null target = direct
         
         attacker.hasAttackedThisTurn = true;
         ClearBattleState();
     }
 
-    private void PerformBattle(CardDisplay attacker, CardDisplay target)
+    private void CheckTrapsAndBattle(CardDisplay attacker, CardDisplay target)
     {
         // Revela o alvo se estiver virado para baixo (Flip)
         if (target.isFlipped)
@@ -101,16 +103,18 @@ public class BattleManager : MonoBehaviour
             target.RevealCard(true); // true = triggered by attack
         }
 
-        // Verifica armadilhas
-        if (SpellTrapManager.Instance.CheckForTraps(SpellTrapTrigger.Attack, attacker, target))
+        SpellTrapManager.Instance.CheckForTraps(SpellTrapTrigger.Attack, attacker, target, () =>
         {
-            // return; // Se interrompido
-        }
+            PerformBattle(attacker, target);
+        });
+    }
 
-        int atkPoints = attacker.currentCardData.atk;
-        int targetPoints = (target.position == CardDisplay.BattlePosition.Attack) ? target.currentCardData.atk : target.currentCardData.def;
+    private void PerformBattle(CardDisplay attacker, CardDisplay target)
+    {
+        int atkPoints = attacker.CurrentCardData.atk;
+        int targetPoints = (target.position == CardDisplay.BattlePosition.Attack) ? target.CurrentCardData.atk : target.CurrentCardData.def;
 
-        Debug.Log($"Batalha: {attacker.currentCardData.name} ({atkPoints}) vs {target.currentCardData.name} ({targetPoints}) [{target.position}]");
+        Debug.Log($"Batalha: {attacker.CurrentCardData.name} ({atkPoints}) vs {target.CurrentCardData.name} ({targetPoints}) [{target.position}]");
 
         if (DuelFXManager.Instance != null)
         {
@@ -132,7 +136,7 @@ public class BattleManager : MonoBehaviour
                 int damage = atk - def;
                 Debug.Log($"Vitória do Atacante! Oponente toma {damage} de dano. Alvo destruído.");
                 // GameManager.Instance.DamageOpponent(damage);
-                GameManager.Instance.SendToGraveyard(target.currentCardData, target.isPlayerCard);
+                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
                 Destroy(target.gameObject);
             }
             else if (atk < def)
@@ -140,14 +144,14 @@ public class BattleManager : MonoBehaviour
                 int damage = def - atk;
                 Debug.Log($"Vitória do Alvo! Atacante toma {damage} de dano. Atacante destruído.");
                 // GameManager.Instance.DamagePlayer(damage);
-                GameManager.Instance.SendToGraveyard(attacker.currentCardData, attacker.isPlayerCard);
+                GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
                 Destroy(attacker.gameObject);
             }
             else // Empate
             {
                 Debug.Log("Empate! Ambos destruídos.");
-                GameManager.Instance.SendToGraveyard(target.currentCardData, target.isPlayerCard);
-                GameManager.Instance.SendToGraveyard(attacker.currentCardData, attacker.isPlayerCard);
+                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
                 Destroy(target.gameObject);
                 Destroy(attacker.gameObject);
             }
@@ -157,7 +161,7 @@ public class BattleManager : MonoBehaviour
             if (atk > def)
             {
                 Debug.Log("Vitória do Atacante! Alvo destruído (sem dano).");
-                GameManager.Instance.SendToGraveyard(target.currentCardData, target.isPlayerCard);
+                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
                 Destroy(target.gameObject);
             }
             else if (atk < def)
@@ -211,7 +215,10 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
-        card.ChangePosition();
-        card.hasChangedPositionThisTurn = true;
+        string newPos = card.position == CardDisplay.BattlePosition.Attack ? "Defesa" : "Ataque";
+        UIManager.Instance.ShowConfirmation($"Mudar para {newPos}?", () => {
+            card.ChangePosition();
+            card.hasChangedPositionThisTurn = true;
+        });
     }
 }

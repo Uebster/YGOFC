@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.UI;
+using TMPro;
 
 public class UIManager : MonoBehaviour
 {
@@ -41,6 +43,7 @@ public class UIManager : MonoBehaviour
     public GameObject exitScreen;
     public GameObject confirmationModal; // Novo modal genérico
     public GraveyardViewer graveyardViewer;
+    public GraveyardViewer extraDeckViewer; // Reusa o script GraveyardViewer para o Extra Deck
 
     [Header("Debug")]
     public bool testDuelDirectly = false;
@@ -121,6 +124,7 @@ public class UIManager : MonoBehaviour
         if (confirmationModal != null) confirmationModal.SetActive(false);
 
         if (graveyardViewer != null) graveyardViewer.gameObject.SetActive(false);
+        if (extraDeckViewer != null) extraDeckViewer.gameObject.SetActive(false);
 
         // 2. Ativa apenas a tela desejada
         if (screenToShow != null)
@@ -138,6 +142,18 @@ public class UIManager : MonoBehaviour
         else
         {
             Debug.LogError("GraveyardViewer não está atribuído no UIManager!");
+        }
+    }
+
+    public void ShowExtraDeck(List<CardData> cards, Texture2D cardBack)
+    {
+        if (extraDeckViewer != null)
+        {
+            extraDeckViewer.Show(cards, cardBack);
+        }
+        else
+        {
+            Debug.LogError("ExtraDeckViewer não está atribuído no UIManager!");
         }
     }
 
