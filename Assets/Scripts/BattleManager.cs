@@ -86,7 +86,7 @@ public class BattleManager : MonoBehaviour
         Debug.Log($"Ataque Direto! Dano: {damage}");
         
         // Aplica dano ao oponente
-        // GameManager.Instance.DamageOpponent(damage);
+        GameManager.Instance.DamageOpponent(damage);
         
         if (DuelFXManager.Instance != null) 
             DuelFXManager.Instance.PlayAttack(attacker, null, null); // Null target = direct
@@ -135,7 +135,7 @@ public class BattleManager : MonoBehaviour
             {
                 int damage = atk - def;
                 Debug.Log($"Vitória do Atacante! Oponente toma {damage} de dano. Alvo destruído.");
-                // GameManager.Instance.DamageOpponent(damage);
+                GameManager.Instance.DamageOpponent(damage);
                 GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
                 Destroy(target.gameObject);
             }
@@ -143,7 +143,7 @@ public class BattleManager : MonoBehaviour
             {
                 int damage = def - atk;
                 Debug.Log($"Vitória do Alvo! Atacante toma {damage} de dano. Atacante destruído.");
-                // GameManager.Instance.DamagePlayer(damage);
+                GameManager.Instance.DamagePlayer(damage);
                 GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
                 Destroy(attacker.gameObject);
             }
@@ -168,7 +168,7 @@ public class BattleManager : MonoBehaviour
             {
                 int damage = def - atk;
                 Debug.Log($"Defesa Sólida! Atacante toma {damage} de dano.");
-                // GameManager.Instance.DamagePlayer(damage);
+                GameManager.Instance.DamagePlayer(damage);
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayAttackFail(attacker);
             }
             else

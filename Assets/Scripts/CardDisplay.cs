@@ -461,6 +461,16 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerClick(PointerEventData eventData)
     {
+        // Lógica de Seleção de Tributo (Prioridade Máxima)
+        if (SummonManager.Instance != null && SummonManager.Instance.isSelectingTributes)
+        {
+            if (isOnField && isPlayerCard && currentCardData.type.Contains("Monster"))
+            {
+                SummonManager.Instance.SelectTributeCandidate(this);
+            }
+            return; // Não faz mais nada se estiver selecionando tributo
+        }
+
         // Clique Direito: Mudar Posição (se no campo)
         if (eventData.button == PointerEventData.InputButton.Right && isOnField && currentCardData.type.Contains("Monster"))
         {

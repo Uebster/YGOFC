@@ -82,11 +82,26 @@ public class DuelActionMenu : MonoBehaviour
         
         if (setBtn) 
         {
-            setBtn.gameObject.SetActive(true); // Monstros e Armadilhas podem ser "Setados"
-            // Opcional: Mudar texto para "Set" (Defesa)
+            bool canSet = true;
+            if (isMonster && SummonManager.Instance != null)
+            {
+                // Set também respeita limite de turno e tributos
+                if (!SummonManager.Instance.CanNormalSummon()) canSet = false;
+                
+                int tributes = SummonManager.Instance.GetRequiredTributes(data.level);
+                if (!SummonManager.Instance.HasEnoughTributes(tributes, true)) canSet = false;
+            }
+            setBtn.gameObject.SetActive(canSet); 
         }
 
         if (activateBtn) activateBtn.gameObject.SetActive(!isMonster);
+
+        // Se nenhuma ação for possível, não abre o menu
+        if (!summonBtn.gameObject.activeSelf && !setBtn.gameObject.activeSelf && !activateBtn.gameObject.activeSelf)
+        {
+            Debug.Log("Nenhuma ação disponível para esta carta.");
+            return;
+        }
 
         // Posiciona o menu perto da carta clicada
         if (menuPanel != null)
@@ -116,7 +131,7 @@ public class DuelActionMenu : MonoBehaviour
     void OnSummon()
     {
         if (GameManager.Instance != null)
-            GameManager.Instance.SummonMonster(currentCardGO, currentCardData, false); // false = Ataque
+            GameManager.Instance.TrySummonMonster(currentCardGO, currentCardData, false); // false = Ataque
         CloseMenu();
     }
 
@@ -124,7 +139,7 @@ public class DuelActionMenu : MonoBehaviour
     {
         if (GameManager.Instance == null) return;
 
-        if (currentCardData.type.Contains("Monster")) GameManager.Instance.SummonMonster(currentCardGO, currentCardData, true);
+        if (currentCardData.type.Contains("Monster")) GameManager.Instance.TrySummonMonster(currentCardGO, currentCardData, true);
         else GameManager.Instance.PlaySpellTrap(currentCardGO, currentCardData, true);
         
         CloseMenu();

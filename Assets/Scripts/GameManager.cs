@@ -120,6 +120,8 @@ public class GameManager : MonoBehaviour
     [Header("Player Profile")]
     public string playerName = "Duelist";
     public string currentSaveID = "default";
+    public int playerLP = 8000;
+    public int opponentLP = 8000;
 
     private bool hasDrawnThisTurn = false; // Controle de draw por turno
     private UnityWebRequest backTextureRequest; // Para evitar memory leak
@@ -191,6 +193,11 @@ public class GameManager : MonoBehaviour
         InitializeOpponentDeck();
         DrawInitialHand(5); // Exemplo: compra 5 cartas iniciais
         DrawInitialOpponentHand(5);
+        
+        // Inicializa LP
+        playerLP = 8000;
+        opponentLP = 8000;
+        UpdateLPUI();
         
         // Reseta flag de draw antes de começar o turno
         hasDrawnThisTurn = false;
@@ -704,10 +711,7 @@ public class GameManager : MonoBehaviour
     {
         if (DuelScoreManager.Instance != null)
         {
-            // Pega o LP atual do jogador (você precisará implementar a variável playerLP no GameManager ou onde estiver)
-            int currentLP = 8000; // Placeholder, substitua pela variável real de LP
-
-            DuelScoreManager.Instance.StopDuelTracking(playerWon, isDeckOut, currentLP);
+            DuelScoreManager.Instance.StopDuelTracking(playerWon, isDeckOut, playerLP);
             
             int score;
             DuelRank rank = DuelScoreManager.Instance.CalculateFinalRank(out score);
@@ -719,9 +723,45 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // --- SISTEMA DE DANO E LP ---
+
+    public void DamagePlayer(int amount)
+    {
+        playerLP -= amount;
+        if (playerLP < 0) playerLP = 0;
+        UpdateLPUI();
+        
+        if (DuelScoreManager.Instance != null) DuelScoreManager.Instance.RecordDamageTaken(amount);
+        Debug.Log($"Player tomou {amount} de dano. LP Restante: {playerLP}");
+
+        if (playerLP == 0) EndDuel(false);
+    }
+
+    public void DamageOpponent(int amount)
+    {
+        opponentLP -= amount;
+        if (opponentLP < 0) opponentLP = 0;
+        UpdateLPUI();
+
+        if (DuelScoreManager.Instance != null) DuelScoreManager.Instance.RecordDamageDealt(amount);
+        Debug.Log($"Oponente tomou {amount} de dano. LP Restante: {opponentLP}");
+
+        if (opponentLP == 0) EndDuel(true);
+    }
+
+    private void UpdateLPUI()
+    {
+        if (duelFieldUI != null)
+        {
+            if (duelFieldUI.playerLPText != null) duelFieldUI.playerLPText.text = playerLP.ToString();
+            if (duelFieldUI.opponentLPText != null) duelFieldUI.opponentLPText.text = opponentLP.ToString();
+        }
+    }
+
     // --- LÓGICA DE INVOCACÃO ---
 
-    public void SummonMonster(GameObject cardGO, CardData cardData, bool isSet)
+    // Renomeado para TrySummonMonster para indicar que é o início do processo
+    public void TrySummonMonster(GameObject cardGO, CardData cardData, bool isSet)
     {
         CardDisplay display = cardGO.GetComponent<CardDisplay>();
         bool isPlayer = display != null ? display.isPlayerCard : true;
@@ -731,8 +771,11 @@ public class GameManager : MonoBehaviour
         {
             // Verifica se pode invocar (Normal Summon, Tributos, etc)
             // Nota: isSpecial = false (por enquanto, invocação da mão é Normal)
-            if (!SummonManager.Instance.PerformSummon(cardData, isSet, false, isPlayer))
+            // Passamos o GameObject agora para o SummonManager poder controlar o fluxo manual
+            if (!SummonManager.Instance.PerformSummon(cardGO, cardData, isSet, false, isPlayer))
             {
+                // Se retornou false, pode ser porque iniciou a seleção manual de tributo
+                // ou porque falhou a validação. Em ambos os casos, paramos aqui.
                 return;
             }
         }
@@ -757,6 +800,13 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        // Se passou por tudo (ou foi auto-tribute), finaliza
+        FinalizeSummon(cardGO, cardData, isSet, isPlayer);
+    }
+
+    // Novo método público para finalizar a invocação (chamado pelo SummonManager após tributo manual)
+    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isSet, bool isPlayer)
+    {
         // 2. Encontrar Zona Livre
         Transform targetZone = isPlayer ? GetFreePlayerMonsterZone() : GetFreeOpponentMonsterZone();
         if (targetZone == null)
@@ -766,6 +816,7 @@ public class GameManager : MonoBehaviour
         }
 
         // 3. Mover Carta (Lógica de Dados e Visual)
+        CardDisplay display = cardGO.GetComponent<CardDisplay>();
         if (isPlayer) playerHand.Remove(cardGO);
         else opponentHand.Remove(cardGO);
         

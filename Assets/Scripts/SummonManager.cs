@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq; // Necessário para ordenar lista de tributos
 
 public class SummonManager : MonoBehaviour
 {
@@ -7,6 +8,17 @@ public class SummonManager : MonoBehaviour
 
     [Header("Limites de Turno")]
     public bool hasPerformedNormalSummon = false;
+    
+    [Header("Configuração")]
+    public bool enableAutoTribute = false; // Switch para alternar entre tributo automático e manual
+
+    // Estado da Seleção Manual de Tributo
+    [HideInInspector] public bool isSelectingTributes = false;
+    private GameObject pendingCardGO;
+    private CardData pendingCardData;
+    private bool pendingIsSet;
+    private List<CardDisplay> currentSelectedTributes = new List<CardDisplay>();
+    private int currentTributesRequired;
 
     [Header("Contadores de Special Summon (Player)")]
     public int specialSummonFromHandAtk = 0;
@@ -68,7 +80,7 @@ public class SummonManager : MonoBehaviour
     }
 
     // Realiza a invocação (lógica de regras)
-    public bool PerformSummon(CardData card, bool isSet, bool isSpecial, bool isPlayer)
+    public bool PerformSummon(GameObject cardGO, CardData card, bool isSet, bool isSpecial, bool isPlayer)
     {
         // Se for Normal Summon, verifica limite e tributos
         if (!isSpecial)
@@ -86,10 +98,19 @@ public class SummonManager : MonoBehaviour
                 return false;
             }
 
-            // Se precisar de tributo, a lógica de seleção de tributos deve ser chamada aqui (UI).
-            // Por enquanto, vamos assumir que o jogador "paga" automaticamente ou que a UI de seleção virá depois.
-            // TODO: Implementar UI de seleção de tributos.
-            
+            if (tributesNeeded > 0)
+            {
+                if (enableAutoTribute)
+                {
+                    ProcessAutoTribute(tributesNeeded, isPlayer);
+                }
+                else
+                {
+                    StartManualTributeSelection(cardGO, card, isSet, isPlayer, tributesNeeded);
+                    return false; // Interrompe o fluxo imediato para esperar a seleção
+                }
+            }
+
             if (isPlayer) hasPerformedNormalSummon = true;
         }
         else
@@ -104,5 +125,111 @@ public class SummonManager : MonoBehaviour
         }
 
         return true;
+    }
+
+    // Inicia o modo de seleção manual
+    private void StartManualTributeSelection(GameObject cardGO, CardData card, bool isSet, bool isPlayer, int required)
+    {
+        isSelectingTributes = true;
+        pendingCardGO = cardGO;
+        pendingCardData = card;
+        pendingIsSet = isSet;
+        currentTributesRequired = required;
+        currentSelectedTributes.Clear();
+
+        if (UIManager.Instance != null)
+            UIManager.Instance.ShowConfirmation($"Selecione {required} monstro(s) para tributar.", null, CancelTributeSelection); // Null no confirm pois a confirmação virá após selecionar
+        
+        Debug.Log($"Iniciando seleção de tributo. Necessário: {required}");
+    }
+
+    // Chamado pelo CardDisplay ao clicar em um monstro no campo
+    public void SelectTributeCandidate(CardDisplay candidate)
+    {
+        if (!isSelectingTributes) return;
+        if (!candidate.isPlayerCard || !candidate.isOnField) return;
+
+        if (currentSelectedTributes.Contains(candidate))
+        {
+            // Deselecionar
+            currentSelectedTributes.Remove(candidate);
+            candidate.SetTributeHighlight(false);
+        }
+        else
+        {
+            // Selecionar
+            if (currentSelectedTributes.Count < currentTributesRequired)
+            {
+                currentSelectedTributes.Add(candidate);
+                candidate.SetTributeHighlight(true);
+            }
+        }
+
+        // Verifica se completou a seleção
+        if (currentSelectedTributes.Count == currentTributesRequired)
+        {
+            UIManager.Instance.ShowConfirmation("Tributar os monstros selecionados?", ConfirmManualTribute, CancelTributeSelection);
+        }
+    }
+
+    private void ConfirmManualTribute()
+    {
+        foreach (var monster in currentSelectedTributes)
+        {
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayTributeEffect(monster);
+            GameManager.Instance.SendToGraveyard(monster.CurrentCardData, true);
+            Destroy(monster.gameObject);
+        }
+
+        isSelectingTributes = false;
+        if (GameManager.Instance != null)
+            GameManager.Instance.FinalizeSummon(pendingCardGO, pendingCardData, pendingIsSet, true);
+    }
+
+    public void CancelTributeSelection()
+    {
+        isSelectingTributes = false;
+        foreach (var monster in currentSelectedTributes)
+        {
+            if (monster != null) monster.SetTributeHighlight(false);
+        }
+        currentSelectedTributes.Clear();
+        Debug.Log("Seleção de tributo cancelada.");
+    }
+
+    // Lógica temporária: Sacrifica automaticamente os monstros com menor ATK
+    private void ProcessAutoTribute(int count, bool isPlayer)
+    {
+        if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return;
+
+        Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+        List<CardDisplay> availableMonsters = new List<CardDisplay>();
+
+        // Coleta monstros disponíveis
+        foreach (Transform zone in zones)
+        {
+            if (zone.childCount > 0)
+            {
+                CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (cd != null) availableMonsters.Add(cd);
+            }
+        }
+
+        // Ordena por ATK (menor para maior) para sacrificar os mais fracos primeiro
+        // Isso é uma lógica básica para validar o sistema. No futuro, abriremos um menu de seleção.
+        availableMonsters.Sort((a, b) => a.CurrentCardData.atk.CompareTo(b.CurrentCardData.atk));
+
+        int tributed = 0;
+        foreach (CardDisplay monster in availableMonsters)
+        {
+            if (tributed >= count) break;
+
+            // Efeito visual de tributo
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayTributeEffect(monster);
+
+            GameManager.Instance.SendToGraveyard(monster.CurrentCardData, isPlayer);
+            Destroy(monster.gameObject);
+            tributed++;
+        }
     }
 }
