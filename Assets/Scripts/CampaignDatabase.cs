@@ -11,6 +11,7 @@ public class CampaignDatabase : ScriptableObject
         [TextArea(3, 5)]
         public string description;
         public Sprite backgroundMap; // Imagem de fundo para este ato (opcional)
+        public DuelTheme theme; // O tema visual para os duelos deste ato
         public List<string> opponentIDs; // IDs dos 10 oponentes (ex: "simon", "yugi")
     }
 
@@ -41,6 +42,18 @@ public class CampaignDatabase : ScriptableObject
     {
         if (actIndex >= 0 && actIndex < acts.Count)
             return acts[actIndex];
+        return null;
+    }
+
+    // Helper para pegar o tema baseado no nível global
+    public DuelTheme GetThemeForLevel(int globalLevel)
+    {
+        int index = globalLevel - 1;
+        int actIndex = index / 10;
+        
+        if (actIndex >= 0 && actIndex < acts.Count)
+            return acts[actIndex].theme;
+            
         return null;
     }
 

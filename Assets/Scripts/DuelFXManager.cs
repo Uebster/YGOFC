@@ -43,6 +43,19 @@ public class DuelFXManager : MonoBehaviour
         Instance = this;
     }
 
+    public void UpdateThemeFX(DuelTheme theme)
+    {
+        if (theme == null) return;
+        
+        if (theme.spellActivateVFX != null) spellActivateVFX = theme.spellActivateVFX;
+        if (theme.trapActivateVFX != null) trapActivateVFX = theme.trapActivateVFX;
+        if (theme.summonVFX != null) summonVFX = theme.summonVFX;
+        if (theme.fusionVFX != null) fusionVFX = theme.fusionVFX;
+        if (theme.tributeVFX != null) tributeVFX = theme.tributeVFX;
+        if (theme.attackVFX != null) attackVFX = theme.attackVFX;
+        if (theme.explosionVFX != null) explosionVFX = theme.explosionVFX;
+    }
+
     // --- ATIVAÇÃO DE MAGIA / ARMADILHA ---
 
     public void PlayCardActivation(CardDisplay card, bool isTrap, System.Action onComplete = null)

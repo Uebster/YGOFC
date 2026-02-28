@@ -372,7 +372,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 Outline outline = GetComponent<Outline>();
                 if (outline == null) outline = gameObject.AddComponent<Outline>();                
                 
-                outline.effectColor = hoverColor;
+                // Usa a cor do tema se disponível, senão usa a cor local
+                outline.effectColor = (GameManager.Instance != null) ? GameManager.Instance.themeHoverColor : hoverColor;
                 outline.effectDistance = new Vector2(4, -4); // Espessura da borda
                 // FIX: Usa o alpha do gráfico (sprite arredondado) para desenhar a borda
                 outline.useGraphicAlpha = true; 
@@ -381,7 +382,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             else if (outlineImage != null)
             {
                 // Opção 2: Usa a imagem separada (se useSimpleOutline for false)
-                outlineImage.color = hoverColor;
+                outlineImage.color = (GameManager.Instance != null) ? GameManager.Instance.themeHoverColor : hoverColor;
                 outlineImage.gameObject.SetActive(true);
             }
         }

@@ -123,6 +123,9 @@ public class GameManager : MonoBehaviour
     public int playerLP = 8000;
     public int opponentLP = 8000;
 
+    [Header("Runtime Theme Settings")]
+    public Color themeHoverColor = Color.yellow; // Atualizado pelo DuelThemeManager
+
     private bool hasDrawnThisTurn = false; // Controle de draw por turno
     private UnityWebRequest backTextureRequest; // Para evitar memory leak
 
@@ -209,6 +212,17 @@ public class GameManager : MonoBehaviour
         if (DuelScoreManager.Instance != null)
         {
             DuelScoreManager.Instance.StartDuelTracking();
+        }
+
+        // Aplica o tema visual (se estivermos em um duelo de campanha ou tivermos um índice válido)
+        if (campaignDatabase != null && DuelThemeManager.Instance != null)
+        {
+            // Se currentDuelIndex for -1 (Free Duel), tenta usar o tema do Ato 1 ou um padrão
+            int levelToUse = (currentDuelIndex > 0) ? currentDuelIndex : 1;
+            
+            DuelTheme theme = campaignDatabase.GetThemeForLevel(levelToUse);
+            if (theme != null)
+                DuelThemeManager.Instance.ApplyTheme(theme);
         }
     }
 
