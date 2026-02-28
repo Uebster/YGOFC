@@ -41,13 +41,6 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
     public Transform opponentExtraDeck;
     public Transform opponentHand;
 
-    [Header("Configuração de Fases")]
-    public Color phaseActiveColor = new Color(1f, 0.8f, 0f, 1f); // Amarelo/Dourado
-    public Color phaseInactiveColor = new Color(0.2f, 0.2f, 0.2f, 0.8f); // Cinza Escuro
-    public bool enablePhaseNeonEffect = true; // Opção para habilitar o efeito neon
-    
-    private Dictionary<GamePhase, Image> phaseImagesDict = new Dictionary<GamePhase, Image>();
-
     // --- FERRAMENTA DE GERAÇÃO AUTOMÁTICA (EDITOR) ---
 #if UNITY_EDITOR
     [ContextMenu("Gerar Layout do Tabuleiro")]
@@ -125,72 +118,6 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
 
     // --- RUNTIME ---
 
-    void Awake()
-    {
-        // Tenta encontrar as referências dos botões de fase se foram gerados
-        Transform indicator = transform.Find("PhaseIndicator");
-        if (indicator != null)
-        {
-            string[] phaseNames = { "Draw", "Standby", "Main1", "Battle", "Main2", "End" };
-            for (int i = 0; i < phaseNames.Length; i++)
-            {
-                Transform pObj = indicator.Find(phaseNames[i]);
-                if (pObj != null)
-                {
-                    // Tenta encontrar o botão no objeto ou nos filhos (para suportar sua estrutura Btn_Draw dentro de Draw Phase)
-                    Button btn = pObj.GetComponent<Button>();
-                    if (btn == null) btn = pObj.GetComponentInChildren<Button>();
-
-                    Image img = pObj.GetComponent<Image>();
-                    // Se achou o botão, prefere usar a imagem do botão para o highlight
-                    if (btn != null && btn.targetGraphic != null && btn.targetGraphic is Image btnImg)
-                    {
-                        img = btnImg;
-                    }
-                    
-                    if (img != null) phaseImagesDict[(GamePhase)i] = img;
-
-                    if (btn != null)
-                    {
-                        GamePhase phaseEnum = (GamePhase)i;
-                        btn.onClick.RemoveAllListeners(); // Remove listeners antigos (do editor)
-                        btn.onClick.AddListener(() => {
-                            if (PhaseManager.Instance != null) PhaseManager.Instance.TryChangePhase(phaseEnum);
-                        });
-                    }
-                }
-            }
-        }
-    }
-
-    public void UpdatePhaseHighlight(GamePhase currentPhase)
-    {
-        foreach (var kvp in phaseImagesDict)
-        {
-            if (kvp.Value != null)
-            {
-                kvp.Value.color = (kvp.Key == currentPhase) ? phaseActiveColor : phaseInactiveColor;
-
-                // Lógica do Efeito Neon (Outline)
-                if (enablePhaseNeonEffect)
-                {
-                    Outline outline = kvp.Value.GetComponent<Outline>();
-                    if (kvp.Key == currentPhase)
-                    {
-                        if (outline == null) outline = kvp.Value.gameObject.AddComponent<Outline>();
-                        outline.enabled = true;
-                        outline.effectColor = phaseActiveColor; // Usa a mesma cor da fase para o neon
-                        outline.effectDistance = new Vector2(2, -2); // Distância suave
-                    }
-                    else
-                    {
-                        if (outline != null) outline.enabled = false;
-                    }
-                }
-            }
-        }
-    }
-
     // Detecta clique no fundo do tabuleiro (FieldArea)
     public void OnPointerClick(PointerEventData eventData)
     {
@@ -242,10 +169,8 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
             
             // Configura o botão
             Button btn = pObj.GetComponent<Button>();
-            btn.onClick.AddListener(() => {
-                if (PhaseManager.Instance != null) PhaseManager.Instance.TryChangePhase(phaseEnum);
-            });
-
+            // O listener agora é adicionado pelo PhaseManager em runtime
+            
             GameObject tObj = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
             tObj.transform.SetParent(pObj.transform, false);
             
