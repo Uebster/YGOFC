@@ -887,6 +887,14 @@ public class GameManager : MonoBehaviour
                     if (isTrap) DuelScoreManager.Instance.RecordTrapActivation();
                     else DuelScoreManager.Instance.RecordSpellActivation();
                 }
+
+                // Integração com Sistema de Chains
+                if (ChainManager.Instance != null)
+                {
+                    ChainManager.Instance.AddToChain(display, isPlayer);
+                    // Resolve imediatamente por enquanto (sem sistema de resposta manual implementado)
+                    ChainManager.Instance.ResolveChain();
+                }
             }
         }
     }

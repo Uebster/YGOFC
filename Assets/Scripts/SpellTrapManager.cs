@@ -86,4 +86,13 @@ public class SpellTrapManager : MonoBehaviour
         
         return false; 
     }
+
+    // Verifica se há cartas que podem ser encadeadas (Chained)
+    public bool CheckChainResponse(ChainManager.ChainLink lastLink)
+    {
+        // Lógica futura: Verificar Trap Cards ou Quick-Play Spells que podem responder
+        // Ex: Se o oponente ativou algo, verificar minhas armadilhas
+        
+        return false;
+    }
 }
