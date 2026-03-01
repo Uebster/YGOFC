@@ -3079,6 +3079,10 @@ public class CardEffectManager : MonoBehaviour
         // 1500 - Recycle (Pay 300 Recycle)
         AddEffect("1500", c => { Effect_PayLP(c, 300); Debug.Log("Recycle: Retorna carta do GY ao deck."); });
 
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 1501 - 1600)
+        // =========================================================================================
+
         // 1502 - Red Gadget (Search Yellow Gadget)
         AddEffect("1502", c => Effect_SearchDeck(c, "Yellow Gadget"));
 
