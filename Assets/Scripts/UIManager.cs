@@ -45,7 +45,9 @@ public class UIManager : MonoBehaviour
     public GraveyardViewer graveyardViewer;
     public GraveyardViewer extraDeckViewer; // Reusa o script GraveyardViewer para o Extra Deck
     public GraveyardViewer removedCardsViewer; // Reusa o script para Cartas Removidas
+    public GraveyardViewer deckViewer; // Reusa o script para visualizar o Deck (Dev Tool)
     public PositionSelectionUI positionSelectionModal; // Novo modal específico
+    public CardSelectionUI cardSelectionModal; // Novo modal de seleção múltipla
 
     [Header("Debug")]
     public bool testDuelDirectly = false;
@@ -128,7 +130,9 @@ public class UIManager : MonoBehaviour
         if (graveyardViewer != null) graveyardViewer.gameObject.SetActive(false);
         if (extraDeckViewer != null) extraDeckViewer.gameObject.SetActive(false);
         if (removedCardsViewer != null) removedCardsViewer.gameObject.SetActive(false);
+        if (deckViewer != null) deckViewer.gameObject.SetActive(false);
         if (positionSelectionModal != null) positionSelectionModal.gameObject.SetActive(false);
+        if (cardSelectionModal != null) cardSelectionModal.gameObject.SetActive(false);
 
         // 2. Ativa apenas a tela desejada
         if (screenToShow != null)
@@ -169,6 +173,14 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    public void ShowDeck(List<CardData> cards, Texture2D cardBack)
+    {
+        if (deckViewer != null)
+        {
+            deckViewer.Show(cards, cardBack);
+        }
+    }
+
     public void ShowPositionSelection(CardData card, System.Action<CardDisplay.BattlePosition> onSelected)
     {
         if (positionSelectionModal != null)
@@ -179,6 +191,22 @@ public class UIManager : MonoBehaviour
         {
             Debug.LogWarning("PositionSelectionUI não atribuído! Usando Ataque por padrão.");
             onSelected?.Invoke(CardDisplay.BattlePosition.Attack);
+        }
+    }
+
+    public void ShowCardSelection(List<CardData> cards, string title, int min, int max, System.Action<List<CardData>> onConfirm)
+    {
+        if (cardSelectionModal != null)
+        {
+            cardSelectionModal.Show(cards, title, min, max, onConfirm);
+        }
+        else
+        {
+            Debug.LogError("UIManager: CardSelectionUI não atribuído!");
+            // Fallback: Seleciona os primeiros 'min' cards automaticamente para não travar o jogo
+            List<CardData> fallback = new List<CardData>();
+            for(int i=0; i<Mathf.Min(min, cards.Count); i++) fallback.Add(cards[i]);
+            onConfirm?.Invoke(fallback);
         }
     }
 

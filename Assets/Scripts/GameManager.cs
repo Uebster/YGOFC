@@ -1337,16 +1337,28 @@ public class GameManager : MonoBehaviour
         Debug.Log($"Controle de {card.CurrentCardData.name} alterado.");
     }
 
-    // Mockup para Seleção de Cartas (Search/Revive)
-    // Em um sistema completo, isso abriria um painel UI com ScrollView
+    // Método para Seleção Única (Mantido para compatibilidade, redireciona para Multi)
     public void OpenCardSelection(List<CardData> sourceList, string title, System.Action<CardData> onSelected)
+    {
+        OpenCardMultiSelection(sourceList, title, 1, 1, (selectedList) => {
+            if (selectedList != null && selectedList.Count > 0)
+                onSelected?.Invoke(selectedList[0]);
+        });
+    }
+
+    // Método para Seleção Múltipla
+    public void OpenCardMultiSelection(List<CardData> sourceList, string title, int min, int max, System.Action<List<CardData>> onSelected)
     {
         if (sourceList.Count > 0)
         {
-            // SIMULAÇÃO: Seleciona automaticamente a primeira carta válida
-            // Futuramente: UIManager.Instance.ShowCardSelectionPanel(sourceList, onSelected);
-            Debug.Log($"[UI Mockup] Selecionando carta de '{title}': {sourceList[0].name}");
-            onSelected?.Invoke(sourceList[0]);
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowCardSelection(sourceList, title, min, max, onSelected);
+            }
+            else
+            {
+                Debug.LogError("GameManager: UIManager não encontrado para seleção de cartas.");
+            }
         }
         else
         {
@@ -1379,6 +1391,18 @@ public class GameManager : MonoBehaviour
         cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRot);
 
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySummonEffect(display);
+    }
+
+    // Ferramenta de Dev: Visualizar Deck
+    public void ViewDeck(bool isPlayer)
+    {
+        if (UIManager.Instance == null) return;
+
+        // Se for oponente e não estiver em modo Dev, bloqueia (a menos que uma carta permita, mas aí seria via efeito específico)
+        if (!isPlayer && !devMode) return;
+
+        List<CardData> deck = isPlayer ? playerDeck : opponentDeck;
+        UIManager.Instance.ShowDeck(deck, cardBackTexture);
     }
 
     // Helper para o EffectTestManager e outros sistemas
