@@ -425,6 +425,7 @@ public partial class CardEffectManager
     void Effect_0053_AmphibiousBugrothMK3(CardDisplay source)
     {
         // Se "Umi" no campo, ataca direto.
+        // O que falta: Lógica de ataque direto no BattleManager.
         if (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013")) // Umi ou Legendary Ocean
         {
             Debug.Log("MK-3: Condição de ataque direto ativa.");
@@ -631,6 +632,7 @@ public partial class CardEffectManager
     void Effect_0054_Amplifier(CardDisplay source)
     {
         // Equip Jinzo. Jinzo do controlador não nega Traps do controlador.
+        // O que falta: Verificar se o alvo é Jinzo e lógica de imunidade.
         Effect_Equip(source, 0, 0, "Machine"); // Simplificado
     }
 
@@ -1154,6 +1156,7 @@ public partial class CardEffectManager
     void Effect_0135_BarkOfDarkRuler(CardDisplay source)
     {
         // Pay LP; reduce DEF of Fiend.
+        // O que falta: Seleção de alvo e custo de LP.
         Debug.Log("Bark of Dark Ruler: Debuff de Fiend.");
     }
 
@@ -1265,6 +1268,7 @@ public partial class CardEffectManager
     void Effect_0166_BehemothTheKingOfAllAnimals(CardDisplay source)
     {
         // Tribute Summon: Return beasts from GY to hand.
+        // O que falta: Trigger de Invocação Tributo.
         Debug.Log("Behemoth: Recupera bestas ao ser tributado.");
     }
 
@@ -1283,6 +1287,7 @@ public partial class CardEffectManager
     void Effect_0169_BerserkGorilla(CardDisplay source)
     {
         // Destroy if Defense. Must attack.
+        // O que falta: Verificação contínua de posição e obrigação de ataque.
         if (source.position == CardDisplay.BattlePosition.Defense)
         {
             GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
@@ -1294,6 +1299,7 @@ public partial class CardEffectManager
     void Effect_0172_BigBangShot(CardDisplay source)
     {
         // Equip: +400, Piercing. If removed, banish monster.
+        // O que falta: Trigger de remoção para banir.
         Effect_Equip(source, 400, 0);
     }
 
@@ -1311,6 +1317,7 @@ public partial class CardEffectManager
     void Effect_0177_BigShieldGardna(CardDisplay source)
     {
         // Negate Spell targeting it (face-down). Change to Attack if attacked.
+        // O que falta: Trigger de alvo e ataque.
         Debug.Log("Big Shield Gardna: Efeitos defensivos.");
     }
 
@@ -1368,6 +1375,7 @@ public partial class CardEffectManager
     void Effect_0189_BLSEnvoy(CardDisplay source)
     {
         // Banish 1 monster OR Double Attack.
+        // O que falta: UI de escolha de efeito.
         Debug.Log("BLS Envoy: Escolha efeito (Banir ou Ataque Duplo).");
     }
 
@@ -1390,6 +1398,7 @@ public partial class CardEffectManager
     void Effect_0196_BladeRabbit(CardDisplay source)
     {
         // Changed to Attack: Destroy 1 monster.
+        // O que falta: Trigger de mudança de posição.
         Debug.Log("Blade Rabbit: Destrói monstro ao mudar posição.");
     }
 
@@ -1413,12 +1422,14 @@ public partial class CardEffectManager
     void Effect_0199_BlastJuggler(CardDisplay source)
     {
         // Tribute (Standby): Destroy 2 face-up with ATK 1000 or less.
+        // O que falta: Trigger de Standby e seleção múltipla.
         Debug.Log("Blast Juggler: Destruição em massa de monstros fracos.");
     }
 
     void Effect_0200_BlastMagician(CardDisplay source)
     {
         // Remove counters -> Destroy monster.
+        // O que falta: Sistema de Spell Counters.
         Debug.Log("Blast Magician: Remove contadores para destruir.");
     }
 
