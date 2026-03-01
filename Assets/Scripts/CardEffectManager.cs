@@ -2333,6 +2333,531 @@ public class CardEffectManager : MonoBehaviour
         // 1098 - Lord of D. (Protect Dragons)
         AddEffect("1098", c => Debug.Log("Lord of D.: Protege Dragões de alvo."));
 
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 1101 - 1200)
+        // =========================================================================================
+
+        // 1101 - Lost Guardian (DEF = banished Rock * 700)
+        AddEffect("1101", c => Debug.Log("Lost Guardian: DEF baseado em Rocks banidos."));
+
+        // 1103 - Luminous Soldier (Buff vs Dark)
+        AddEffect("1103", c => Debug.Log("Luminous Soldier: +500 ATK contra DARK."));
+
+        // 1104 - Luminous Spark (Field Light +500/-400)
+        AddEffect("1104", c => Effect_Field(c, 500, -400, "", "Light"));
+
+        // 1112 - Machine Conversion Factory (Equip Machine +300/300)
+        AddEffect("1112", c => Effect_Equip(c, 300, 300, "Machine"));
+
+        // 1113 - Machine Duplication (SS duplicates)
+        AddEffect("1113", c => Debug.Log("Machine Duplication: Invoca cópias do deck."));
+
+        // 1114 - Machine King (Buff per Machine)
+        AddEffect("1114", c => Debug.Log("Machine King: +100 ATK por Machine."));
+
+        // 1117 - Mad Sword Beast (Piercing)
+        AddEffect("1117", c => Debug.Log("Mad Sword Beast: Dano perfurante."));
+
+        // 1119 - Mage Power (Equip Buff per S/T)
+        AddEffect("1119", Effect_MagePower);
+
+        // 1120 - Magic Cylinder (Negate & Burn)
+        AddEffect("1120", c => Debug.Log("Magic Cylinder: Nega ataque e causa dano igual ATK."));
+
+        // 1121 - Magic Drain (Counter Spell)
+        AddEffect("1121", c => Debug.Log("Magic Drain: Nega magia se oponente não descartar."));
+
+        // 1122 - Magic Formula (Equip DM +700, Heal)
+        AddEffect("1122", c => { Effect_Equip(c, 700, 0, "Spellcaster"); Debug.Log("Magic Formula: Cura 1000 se for pro GY."); });
+
+        // 1123 - Magic Jammer (Discard 1, Negate Spell)
+        AddEffect("1123", c => Debug.Log("Magic Jammer: Descarta 1 para negar magia."));
+
+        // 1124 - Magic Reflector (Counter on Spell)
+        AddEffect("1124", c => Debug.Log("Magic Reflector: Protege magia com contador."));
+
+        // 1125 - Magical Arm Shield (Redirect Attack)
+        AddEffect("1125", c => Debug.Log("Magical Arm Shield: Redireciona ataque para monstro do oponente."));
+
+        // 1126 - Magical Dimension (Tribute SS Destroy)
+        AddEffect("1126", c => Debug.Log("Magical Dimension: Tributa, Invoca Mago, Destrói."));
+
+        // 1127 - Magical Explosion (Burn per Spell in GY)
+        AddEffect("1127", c => Debug.Log("Magical Explosion: Dano por magias no GY."));
+
+        // 1129 - Magical Hats (Hide monster)
+        AddEffect("1129", c => Debug.Log("Magical Hats: Esconde monstro e invoca 2 S/T como monstros."));
+
+        // 1130 - Magical Labyrinth (Equip Wall, SS Shadow)
+        AddEffect("1130", c => Debug.Log("Magical Labyrinth: Invoca Wall Shadow."));
+
+        // 1131 - Magical Marionette (Counters, Destroy)
+        AddEffect("1131", c => Debug.Log("Magical Marionette: Remove contadores para destruir monstros."));
+
+        // 1132 - Magical Merchant (Excavate)
+        AddEffect("1132", c => Debug.Log("Magical Merchant: Escava até achar S/T."));
+
+        // 1133 - Magical Plant Mandragola (Counters)
+        AddEffect("1133", c => Debug.Log("Mandragola: Coloca contadores em tudo."));
+
+        // 1134 - Magical Scientist (Pay 1000 SS Fusion)
+        AddEffect("1134", c => { Effect_PayLP(c, 1000); Debug.Log("Magical Scientist: Invoca Fusão Lv6-."); });
+
+        // 1135 - Magical Stone Excavation (Discard 2, Add Spell)
+        AddEffect("1135", c => Debug.Log("Magical Stone Excavation: Recupera magia do GY."));
+
+        // 1136 - Magical Thorn (Burn on discard)
+        AddEffect("1136", c => Debug.Log("Magical Thorn: Dano quando oponente descarta."));
+
+        // 1137 - Magician of Black Chaos (Ritual)
+        AddEffect("1137", c => Debug.Log("Magician of Black Chaos: Ritual."));
+
+        // 1138 - Magician of Faith (Flip Add Spell)
+        AddEffect("1138", c => Debug.Log("Magician of Faith: Recupera magia do GY."));
+
+        // 1139 - Magician's Valkyria (Protect Spellcasters)
+        AddEffect("1139", c => Debug.Log("Magician's Valkyria: Oponente não pode atacar outros Magos."));
+
+        // 1140 - Maha Vailo (Buff per Equip)
+        AddEffect("1140", c => Debug.Log("Maha Vailo: Ganha ATK por equipamentos."));
+
+        // 1141 - Maharaghi (Spirit, Peek)
+        AddEffect("1141", c => Debug.Log("Maharaghi: Olha topo do deck."));
+
+        // 1142 - Maiden of the Aqua (Umi field)
+        AddEffect("1142", c => Debug.Log("Maiden of the Aqua: Trata campo como Umi."));
+
+        // 1144 - Maji-Gire Panda (Buff per Beast destroyed)
+        AddEffect("1144", c => Debug.Log("Maji-Gire Panda: Ganha ATK quando Besta é destruída."));
+
+        // 1145 - Major Riot (Return -> SS)
+        AddEffect("1145", c => Debug.Log("Major Riot: Reset de monstros."));
+
+        // 1146 - Maju Garzett (ATK = Tributes)
+        AddEffect("1146", c => Debug.Log("Maju Garzett: ATK igual soma dos tributos."));
+
+        // 1147 - Makiu, the Magical Mist (Destroy DEF < ATK)
+        AddEffect("1147", c => Debug.Log("Makiu: Destrói monstros com DEF baixa."));
+
+        // 1148 - Makyura the Destructor (Trap from hand)
+        AddEffect("1148", c => Debug.Log("Makyura: Ativar Traps da mão."));
+
+        // 1149 - Malevolent Catastrophe (Destroy S/T on attack)
+        AddEffect("1149", c => Debug.Log("Malevolent Catastrophe: Destrói todas as S/T."));
+
+        // 1150 - Malevolent Nuzzler (Equip +700)
+        AddEffect("1150", c => Effect_Equip(c, 700, 0));
+
+        // 1151 - Malice Dispersion (Discard 1, Destroy Continuous Traps)
+        AddEffect("1151", c => Debug.Log("Malice Dispersion: Destrói Traps Contínuas."));
+
+        // 1152 - Malice Doll of Demise (Revive)
+        AddEffect("1152", c => Debug.Log("Malice Doll: Renasce se enviado por Continuous Spell."));
+
+        // 1155 - Man-Eater Bug (Flip Destroy)
+        AddEffect("1155", c => Effect_FlipDestroy(c, TargetType.Monster));
+
+        // 1159 - Man-Thro' Tro' (Tribute Normal -> 800 dmg)
+        AddEffect("1159", c => Effect_TributeToBurn(c, 1, 800));
+
+        // 1160 - Manga Ryu-Ran (Toon)
+        AddEffect("1160", c => Debug.Log("Manga Ryu-Ran: Toon."));
+
+        // 1161 - Manju of the Ten Thousand Hands (Search Ritual)
+        AddEffect("1161", c => Effect_SearchDeck(c, "Ritual"));
+
+        // 1162 - Manticore of Darkness (Revive loop)
+        AddEffect("1162", c => Debug.Log("Manticore: Revive enviando besta."));
+
+        // 1163 - Marauding Captain (SS from hand, Lock attack)
+        AddEffect("1163", c => Debug.Log("Marauding Captain: Invoca da mão, protege Warriors."));
+
+        // 1165 - Marshmallon (Indestructible, Burn)
+        AddEffect("1165", c => Debug.Log("Marshmallon: Indestrutível em batalha, 1000 dano."));
+
+        // 1166 - Marshmallon Glasses (Redirect attack)
+        AddEffect("1166", c => Debug.Log("Marshmallon Glasses: Ataques devem ser no Marshmallon."));
+
+        // 1167 - Maryokutai (Negate Spell)
+        AddEffect("1167", c => Debug.Log("Maryokutai: Nega magia."));
+
+        // 1169 - Mask of Brutality (Equip +1000/-1000)
+        AddEffect("1169", c => Effect_Equip(c, 1000, -1000));
+
+        // 1170 - Mask of Darkness (Flip Add Trap)
+        AddEffect("1170", c => Debug.Log("Mask of Darkness: Recupera Trap do GY."));
+
+        // 1171 - Mask of Dispel (Burn 500)
+        AddEffect("1171", c => Debug.Log("Mask of Dispel: Dano por turno."));
+
+        // 1172 - Mask of Restrict (No Tributes)
+        AddEffect("1172", c => Debug.Log("Mask of Restrict: Ninguém pode tributar."));
+
+        // 1173 - Mask of Weakness (Debuff -700)
+        AddEffect("1173", c => Debug.Log("Mask of Weakness: -700 ATK."));
+
+        // 1174 - Mask of the Accursed (Lock Attack, Burn)
+        AddEffect("1174", c => Debug.Log("Mask of the Accursed: Trava ataque e causa dano."));
+
+        // 1175 - Masked Beast Des Gardius (Snatch Steal on death)
+        AddEffect("1175", c => Debug.Log("Des Gardius: Equipa Mask of Remnants ao morrer."));
+
+        // 1177 - Masked Dragon (Float into Dragon)
+        AddEffect("1177", c => Debug.Log("Masked Dragon: Invoca Dragão <= 1500 do deck."));
+
+        // 1178 - Masked Sorcerer (Draw on damage)
+        AddEffect("1178", c => Debug.Log("Masked Sorcerer: Compra 1 ao causar dano."));
+
+        // 1179 - Mass Driver (Tribute -> 400 dmg)
+        AddEffect("1179", c => Effect_TributeToBurn(c, 1, 400));
+
+        // 1182 - Master Monk (Double Attack)
+        AddEffect("1182", c => Debug.Log("Master Monk: Ataque duplo."));
+
+        // 1184 - Mataza the Zapper (Double Attack, No Control Switch)
+        AddEffect("1184", c => Debug.Log("Mataza: Ataque duplo, controle fixo."));
+
+        // 1186 - Maximum Six (Roll die -> Gain ATK)
+        AddEffect("1186", c => Debug.Log("Maximum Six: Ganha ATK no dado."));
+
+        // 1187 - Mazera DeVille (Hand Destruction)
+        AddEffect("1187", c => Debug.Log("Mazera DeVille: Oponente descarta 3."));
+
+        // 1190 - Mecha-Dog Marron (Burn on destroy)
+        AddEffect("1190", c => Debug.Log("Mecha-Dog Marron: 1000 dano."));
+
+        // 1192 - Mechanical Hound (No Spells)
+        AddEffect("1192", c => Debug.Log("Mechanical Hound: Oponente não ativa magias se você não tiver mão."));
+
+        // 1196 - Medusa Worm (Flip Destroy, Cycle)
+        AddEffect("1196", c => Debug.Log("Medusa Worm: Destrói monstro, vira face-down."));
+
+        // 1197 - Mefist the Infernal General (Piercing, Discard)
+        AddEffect("1197", c => Debug.Log("Mefist: Perfurante e descarte."));
+
+        // 1199 - Mega Ton Magical Cannon (Remove 10 counters -> Nuke)
+        AddEffect("1199", c => Debug.Log("Mega Ton Magical Cannon: Remove 10 contadores, destrói tudo do oponente."));
+
+        // 1200 - Megamorph (Double/Halve ATK)
+        AddEffect("1200", c => Debug.Log("Megamorph: Dobra ou divide ATK baseado no LP."));
+
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 1201 - 1300)
+        // =========================================================================================
+
+        // 1201 - Megarock Dragon (SS Banish Rocks)
+        AddEffect("1201", c => Debug.Log("Megarock Dragon: SS banindo Rocks. Stats = qtd * 700."));
+
+        // 1207 - Mermaid Knight (Double Attack with Umi)
+        AddEffect("1207", c => Debug.Log("Mermaid Knight: Ataque duplo com Umi."));
+
+        // 1208 - Mesmeric Control (Lock Battle Position)
+        AddEffect("1208", c => Debug.Log("Mesmeric Control: Oponente não muda posição no próximo turno."));
+
+        // 1209 - Messenger of Peace (Lock Attack >= 1500)
+        AddEffect("1209", c => Debug.Log("Messenger of Peace: Monstros >= 1500 ATK não atacam."));
+
+        // 1211 - Metal Detector (Negate Continuous Trap)
+        AddEffect("1211", c => Debug.Log("Metal Detector: Nega Trap Contínua."));
+
+        // 1215 - Metal Reflect Slime (Trap Monster)
+        AddEffect("1215", c => Debug.Log("Metal Reflect Slime: Vira monstro com 3000 DEF."));
+
+        // 1216 - Metallizing Parasite - Lunatite (Union Protect)
+        AddEffect("1216", c => Debug.Log("Lunatite: Union. Protege de magias."));
+
+        // 1217 - Metalmorph (Trap Equip)
+        AddEffect("1217", c => Debug.Log("Metalmorph: +300 ATK/DEF. Ganha metade do ATK do alvo ao atacar."));
+
+        // 1218 - Metalsilver Armor (Redirect Target)
+        AddEffect("1218", c => Debug.Log("Metalsilver Armor: Redireciona alvos para o equipado."));
+
+        // 1219 - Metalzoa (SS from Deck)
+        AddEffect("1219", c => Debug.Log("Metalzoa: Invoca do deck tributando Zoa com Metalmorph."));
+
+        // 1220 - Metamorphosis (Tribute -> Fusion)
+        AddEffect("1220", c => Debug.Log("Metamorphosis: Tributa 1 para invocar Fusão de mesmo nível."));
+
+        // 1223 - Meteor of Destruction (Burn 1000)
+        AddEffect("1223", c => { if(GameManager.Instance.opponentLP > 3000) Effect_DirectDamage(c, 1000); });
+
+        // 1224 - Meteorain (Piercing for all)
+        AddEffect("1224", c => Debug.Log("Meteorain: Dano perfurante para todos seus monstros."));
+
+        // 1225 - Michizure (Destroy on destroy)
+        AddEffect("1225", c => Debug.Log("Michizure: Destrói monstro quando o seu morre."));
+
+        // 1226 - Micro Ray (DEF 0)
+        AddEffect("1226", c => Debug.Log("Micro Ray: DEF do alvo vira 0."));
+
+        // 1227 - Mid Shield Gardna (Flip Negate Spell)
+        AddEffect("1227", c => Debug.Log("Mid Shield Gardna: Nega magia que dá alvo."));
+
+        // 1232 - Millennium Scorpion (Gain ATK on kill)
+        AddEffect("1232", c => Debug.Log("Millennium Scorpion: +500 ATK por destruição."));
+
+        // 1234 - Milus Radiant (Field Earth +500, Wind -400)
+        AddEffect("1234", c => Effect_Field(c, 500, -400, "", "Earth"));
+
+        // 1235 - Minar (Burn on discard)
+        AddEffect("1235", c => Debug.Log("Minar: 1000 dano se descartado pelo oponente."));
+
+        // 1236 - Mind Control (Take Control)
+        AddEffect("1236", Effect_BrainControl); // Reusa lógica similar
+
+        // 1237 - Mind Crush (Hand Destruction)
+        AddEffect("1237", c => Debug.Log("Mind Crush: Declara carta, verifica mão."));
+
+        // 1238 - Mind Haxorz (Peek Hand/Set)
+        AddEffect("1238", c => { Effect_PayLP(c, 500); Debug.Log("Mind Haxorz: Ver mão e setadas."); });
+
+        // 1239 - Mind Wipe (Hand Refresh)
+        AddEffect("1239", c => Debug.Log("Mind Wipe: Embaralha mão e compra (se <= 3)."));
+
+        // 1240 - Mind on Air (Reveal Hand)
+        AddEffect("1240", c => Debug.Log("Mind on Air: Mão do oponente revelada."));
+
+        // 1241 - Mine Golem (Burn on destroy)
+        AddEffect("1241", c => Debug.Log("Mine Golem: 500 dano ao morrer."));
+
+        // 1242 - Minefield Eruption (Burn per Golem)
+        AddEffect("1242", c => Debug.Log("Minefield Eruption: Dano por Mine Golem."));
+
+        // 1244 - Minor Goblin Official (Burn Standby)
+        AddEffect("1244", c => Debug.Log("Minor Goblin Official: 500 dano na Standby se LP <= 3000."));
+
+        // 1245 - Miracle Dig (Recycle Banished)
+        AddEffect("1245", c => Debug.Log("Miracle Dig: Retorna 3 banidas ao GY."));
+
+        // 1246 - Miracle Fusion (Fusion Banish GY)
+        AddEffect("1246", c => Debug.Log("Miracle Fusion: Fusão HERO banindo do GY."));
+
+        // 1247 - Miracle Restoring (Revive DM/BB)
+        AddEffect("1247", c => Debug.Log("Miracle Restoring: Remove contadores para reviver DM ou BB."));
+
+        // 1248 - Mirage Dragon (No Traps Battle)
+        AddEffect("1248", c => Debug.Log("Mirage Dragon: Sem Traps na Battle Phase."));
+
+        // 1249 - Mirage Knight (Battle Logic)
+        AddEffect("1249", c => Debug.Log("Mirage Knight: Ganha ATK do oponente."));
+
+        // 1250 - Mirage of Nightmare (Draw/Discard)
+        AddEffect("1250", c => Debug.Log("Mirage of Nightmare: Compra até 4, descarta na Standby."));
+
+        // 1251 - Mirror Force (Destroy Attack Pos)
+        AddEffect("1251", Effect_MirrorForce);
+
+        // 1252 - Mirror Wall (Halve ATK)
+        AddEffect("1252", c => Debug.Log("Mirror Wall: Corta ATK pela metade. Custo de manutenção."));
+
+        // 1254 - Mispolymerization (Return Fusion)
+        AddEffect("1254", c => Debug.Log("Mispolymerization: Retorna Fusão ao Extra."));
+
+        // 1255 - Moai Interceptor Cannons (Flip Face-down)
+        AddEffect("1255", c => Debug.Log("Moai Interceptor Cannons: Vira face-down 1x por turno."));
+
+        // 1256 - Mobius the Frost Monarch (Destroy 2 S/T)
+        AddEffect("1256", c => Debug.Log("Mobius: Destrói até 2 S/T ao tributar."));
+
+        // 1257 - Moisture Creature (Destroy S/T)
+        AddEffect("1257", c => Debug.Log("Moisture Creature: Destrói S/T se 3 tributos."));
+
+        // 1259 - Mokey Mokey Smackdown (Buff)
+        AddEffect("1259", c => Debug.Log("Mokey Mokey Smackdown: ATK 3000 se Fada destruída."));
+
+        // 1261 - Molten Destruction (Field Fire +500/-400)
+        AddEffect("1261", c => Effect_Field(c, 500, -400, "", "Fire"));
+
+        // 1262 - Molten Zombie (Draw on SS)
+        AddEffect("1262", c => Debug.Log("Molten Zombie: Compra 1 se invocado do GY."));
+
+        // 1264 - Monk Fighter (No Battle Damage)
+        AddEffect("1264", c => Debug.Log("Monk Fighter: Sem dano de batalha."));
+
+        // 1266 - Monster Eye (Recycle Poly)
+        AddEffect("1266", c => { Effect_PayLP(c, 1000); Debug.Log("Monster Eye: Recupera Polymerization."); });
+
+        // 1267 - Monster Gate (Excavate SS)
+        AddEffect("1267", c => Debug.Log("Monster Gate: Tributa 1, escava e invoca."));
+
+        // 1268 - Monster Reborn (Revive) - Já existente, mas reforçando
+        AddEffect("1268", Effect_MonsterReborn);
+
+        // 1269 - Monster Recovery (Shuffle Hand/Field)
+        AddEffect("1269", c => Debug.Log("Monster Recovery: Embaralha monstro e mão, compra nova mão."));
+
+        // 1274 - Mooyan Curry (Gain 200 LP)
+        AddEffect("1274", c => Effect_GainLP(c, 200));
+
+        // 1275 - Morale Boost (Gain/Lose LP on Equip)
+        AddEffect("1275", c => Debug.Log("Morale Boost: Ganha/Perde LP com Equips."));
+
+        // 1277 - Morphing Jar (Hand Reset)
+        AddEffect("1277", c => Debug.Log("Morphing Jar: Ambos descartam e compram 5."));
+
+        // 1278 - Morphing Jar #2 (Deck Reset)
+        AddEffect("1278", c => Debug.Log("Morphing Jar #2: Embaralha monstros e invoca novos."));
+
+        // 1279 - Mother Grizzly (Search Water)
+        AddEffect("1279", c => Effect_SearchDeck(c, "Water"));
+
+        // 1280 - Mountain (Field Dragon/WingedBeast/Thunder +200)
+        AddEffect("1280", c => { Effect_Field(c, 200, 200, "Dragon"); Effect_Field(c, 200, 200, "Winged Beast"); Effect_Field(c, 200, 200, "Thunder"); });
+
+        // 1283 - Mucus Yolk (Direct Attack / Gain ATK)
+        AddEffect("1283", c => Debug.Log("Mucus Yolk: Ataque direto, ganha 1000 ATK."));
+
+        // 1284 - Mudora (Buff per Fairy)
+        AddEffect("1284", c => Debug.Log("Mudora: Ganha ATK por Fadas no GY."));
+
+        // 1285 - Muka Muka (Buff per Hand)
+        AddEffect("1285", Effect_MukaMuka);
+
+        // 1286 - Muko (Anti-Draw)
+        AddEffect("1286", c => Debug.Log("Muko: Descarta cartas compradas."));
+
+        // 1287 - Multiplication of Ants (Tokens)
+        AddEffect("1287", c => Debug.Log("Multiplication of Ants: Tributa Inseto, cria 2 Tokens."));
+
+        // 1288 - Multiply (Kuriboh Tokens)
+        AddEffect("1288", c => Debug.Log("Multiply: Tributa Kuriboh, enche campo de Tokens."));
+
+        // 1291 - Mushroom Man #2 (Burn Control)
+        AddEffect("1291", c => Debug.Log("Mushroom Man #2: Dano na Standby, paga para passar controle."));
+
+        // 1293 - Mustering of the Dark Scorpions (Swarm)
+        AddEffect("1293", c => Debug.Log("Mustering: Invoca Dark Scorpions se tiver Don Zaloog."));
+
+        // 1294 - My Body as a Shield (Negate Destroy)
+        AddEffect("1294", c => { Effect_PayLP(c, 1500); Debug.Log("My Body as a Shield: Nega destruição."); });
+
+        // 1295 - Mysterious Guard (Flip Bounce)
+        AddEffect("1295", c => Debug.Log("Mysterious Guard: Retorna monstro ao topo do deck."));
+
+        // 1296 - Mysterious Puppeteer (Gain LP on Summon)
+        AddEffect("1296", c => Debug.Log("Mysterious Puppeteer: Ganha 500 LP por invocação."));
+
+        // 1298 - Mystic Box (Destroy & Swap)
+        AddEffect("1298", Effect_MysticBox);
+
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 1301 - 1400)
+        // =========================================================================================
+
+        // 1301 - Mystic Lamp (Direct Attack)
+        AddEffect("1301", c => Debug.Log("Mystic Lamp: Ataque direto."));
+
+        // 1302 - Mystic Plasma Zone (Field Dark +500/-400)
+        AddEffect("1302", c => Effect_Field(c, 500, -400, "", "Dark"));
+
+        // 1303 - Mystic Probe (Negate Continuous Spell)
+        AddEffect("1303", c => Debug.Log("Mystic Probe: Nega Spell Contínua."));
+
+        // 1304 - Mystic Swordsman LV2 (Destroy Face-down)
+        AddEffect("1304", c => Debug.Log("Mystic Swordsman LV2: Destrói face-down sem flip."));
+
+        // 1305 - Mystic Swordsman LV4 (Destroy Face-down)
+        AddEffect("1305", c => Debug.Log("Mystic Swordsman LV4: Destrói face-down sem flip."));
+
+        // 1306 - Mystic Swordsman LV6 (Destroy Face-down / Top Deck)
+        AddEffect("1306", c => Debug.Log("Mystic Swordsman LV6: Destrói face-down e põe no topo."));
+
+        // 1307 - Mystic Tomato (Search Dark)
+        AddEffect("1307", c => Effect_SearchDeck(c, "Dark"));
+
+        // 1308 - Mystical Beast of Serket (Eat Monster)
+        AddEffect("1308", c => Debug.Log("Serket: Destrói monstro batalhado e ganha 500 ATK."));
+
+        // 1318 - Mystical Space Typhoon (Destroy S/T)
+        AddEffect("1318", Effect_MST);
+
+        // 1319 - Mystik Wok (Tribute -> Heal)
+        AddEffect("1319", c => Debug.Log("Mystik Wok: Tributa monstro para ganhar LP (ATK ou DEF)."));
+
+        // 1324 - Necrovalley (Field GK +500, GY Lock)
+        AddEffect("1324", c => { Effect_Field(c, 500, 500, "Gravekeeper's"); Debug.Log("Necrovalley: Bloqueia efeitos no GY."); });
+
+        // 1325 - Needle Ball (Flip Burn)
+        AddEffect("1325", c => { Effect_PayLP(c, 2000); Effect_DirectDamage(c, 1000); });
+
+        // 1326 - Needle Burrower (Burn on destroy)
+        AddEffect("1326", c => Debug.Log("Needle Burrower: Dano igual Nível x 500."));
+
+        // 1327 - Needle Ceiling (Destroy all if 4+)
+        AddEffect("1327", c => Debug.Log("Needle Ceiling: Destrói todos monstros se houver 4 ou mais."));
+
+        // 1329 - Needle Worm (Mill 5)
+        AddEffect("1329", c => Debug.Log("Needle Worm: Oponente descarta 5 do topo do deck."));
+
+        // 1330 - Negate Attack (Negate & End Battle)
+        AddEffect("1330", c => Debug.Log("Negate Attack: Nega ataque e encerra Battle Phase."));
+
+        // 1331 - Neko Mane King (End Turn)
+        AddEffect("1331", c => Debug.Log("Neko Mane King: Encerra o turno do oponente."));
+
+        // 1338 - Newdoria (Destroy on destroy)
+        AddEffect("1338", c => Debug.Log("Newdoria: Destrói 1 monstro ao ser destruído."));
+
+        // 1339 - Night Assailant (Flip Destroy / Recycle)
+        AddEffect("1339", c => Debug.Log("Night Assailant: Flip destrói monstro. Recupera Flip do GY."));
+
+        // 1341 - Nightmare Horse (Direct Attack)
+        AddEffect("1341", c => Debug.Log("Nightmare Horse: Ataque direto."));
+
+        // 1342 - Nightmare Penguin (Buff Water / Bounce)
+        AddEffect("1342", c => Debug.Log("Nightmare Penguin: Buff Water. Flip retorna carta."));
+
+        // 1344 - Nightmare Wheel (Lock & Burn)
+        AddEffect("1344", c => Debug.Log("Nightmare Wheel: Prende monstro e causa 500 dano."));
+
+        // 1345 - Nightmare's Steelcage (Stall)
+        AddEffect("1345", c => Debug.Log("Nightmare's Steelcage: Ninguém ataca por 2 turnos."));
+
+        // 1346 - Nimble Momonga (Heal & SS)
+        AddEffect("1346", c => { Effect_GainLP(c, 1000); Debug.Log("Nimble Momonga: SS cópias do deck."); });
+
+        // 1353 - Nobleman of Crossout (Banish Face-down)
+        AddEffect("1353", c => Debug.Log("Nobleman of Crossout: Destrói e bane face-down."));
+
+        // 1354 - Nobleman of Extermination (Banish Face-down S/T)
+        AddEffect("1354", c => Debug.Log("Nobleman of Extermination: Destrói e bane S/T face-down."));
+
+        // 1355 - Nobleman-Eater Bug (Destroy 2)
+        AddEffect("1355", c => Debug.Log("Nobleman-Eater Bug: Destrói 2 monstros."));
+
+        // 1364 - Obnoxious Celtic Guard (Battle Protection)
+        AddEffect("1364", c => Debug.Log("Obnoxious Celtic Guard: Não morre por monstros 1900+ ATK."));
+
+        // 1368 - Offerings to the Doomed (Destroy & Skip Draw)
+        AddEffect("1368", c => Debug.Log("Offerings to the Doomed: Destrói face-up, pula Draw Phase."));
+
+        // 1371 - Ojama Delta Hurricane!! (Nuke)
+        AddEffect("1371", c => Debug.Log("Ojama Delta Hurricane!!: Destrói tudo do oponente se tiver Ojamas."));
+
+        // 1374 - Ojama Trio (Tokens)
+        AddEffect("1374", c => Debug.Log("Ojama Trio: Invoca 3 Tokens no campo do oponente."));
+
+        // 1376 - Old Vindictive Magician (Flip Destroy)
+        AddEffect("1376", c => Effect_FlipDestroy(c, TargetType.Monster));
+
+        // 1382 - Ookazi (Burn 800)
+        AddEffect("1382", c => Effect_DirectDamage(c, 800));
+
+        // 1384 - Opti-Camouflage Armor (Direct Attack Lv1)
+        AddEffect("1384", c => Debug.Log("Opti-Camouflage Armor: Nível 1 ataca direto."));
+
+        // 1387 - Ordeal of a Traveler (Hand Game)
+        AddEffect("1387", c => Debug.Log("Ordeal of a Traveler: Oponente adivinha carta da mão."));
+
+        // 1397 - Painful Choice (Search 5)
+        AddEffect("1397", c => Debug.Log("Painful Choice: Seleciona 5, oponente escolhe 1 para sua mão."));
+
+        // 1398 - Paladin of White Dragon (Ritual / SS Blue-Eyes)
+        AddEffect("1398", c => Debug.Log("Paladin of White Dragon: Ritual. Tributa para invocar Blue-Eyes."));
+
+        // 1400 - Pandemonium (Field Archfiend)
+        AddEffect("1400", c => Debug.Log("Pandemonium: Busca Archfiend quando um é destruído."));
+
     }
 
     void AddEffect(string id, System.Action<CardDisplay> effect)
@@ -2848,6 +3373,54 @@ public class CardEffectManager : MonoBehaviour
             CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.playerFieldSpell, GameManager.Instance.duelFieldUI.opponentFieldSpell }, toDestroy);
         }
         DestroyCards(toDestroy, source.isPlayerCard);
+    }
+
+    void Effect_MirrorForce(CardDisplay source)
+    {
+        Debug.Log("Mirror Force: Destruir monstros em ataque do oponente.");
+        List<CardDisplay> toDestroy = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            // Se o jogador ativou, destrói os do oponente
+            Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+            
+            foreach (var zone in zones)
+            {
+                if (zone.childCount > 0)
+                {
+                    var monster = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (monster != null && monster.position == CardDisplay.BattlePosition.Attack)
+                    {
+                        toDestroy.Add(monster);
+                    }
+                }
+            }
+        }
+        DestroyCards(toDestroy, source.isPlayerCard);
+    }
+
+    void Effect_Megamorph(CardDisplay source)
+    {
+        Effect_Equip(source, 0, 0); // Placeholder visual
+        Debug.Log("Megamorph ativado: Se LP < Oponente -> Dobra ATK. Se LP > Oponente -> Metade ATK.");
+    }
+
+    void Effect_MagePower(CardDisplay source)
+    {
+        Effect_Equip(source, 0, 0); // Placeholder visual
+        Debug.Log("Mage Power: Ganha 500 ATK/DEF para cada Spell/Trap que você controla.");
+    }
+
+    void Effect_MukaMuka(CardDisplay source)
+    {
+        Debug.Log("Muka Muka: Ganha 300 ATK/DEF para cada carta na sua mão.");
+        // Em um sistema real, isso se inscreveria em eventos de mudança de mão
+    }
+
+    void Effect_MysticBox(CardDisplay source)
+    {
+        Debug.Log("Mystic Box: Selecione 1 monstro do oponente para destruir e 1 seu para dar o controle.");
+        // Lógica de seleção dupla e troca de controle
     }
 
     void Effect_CallOfTheHaunted(CardDisplay source)
