@@ -93,6 +93,13 @@ public class PhaseManager : MonoBehaviour
                 }
                 break;
             case GamePhase.Standby:
+                // Notifica o CardEffectManager sobre o início da Standby Phase
+                if (CardEffectManager.Instance != null)
+                {
+                    CardEffectManager.Instance.OnPhaseStart(GamePhase.Standby);
+                }
+                break;
+            case GamePhase.Standby:
                 StartCoroutine(HandleStandbyPhase());
                 break;
             case GamePhase.Main1:

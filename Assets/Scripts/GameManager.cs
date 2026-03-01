@@ -549,6 +549,12 @@ public class GameManager : MonoBehaviour
             }
         }
 
+        // Notifica o sistema de efeitos (Gatilhos Globais)
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.OnCardSentToGraveyard(card, isPlayer);
+        }
+
         UpdatePileVisuals();
     }
 
@@ -850,6 +856,12 @@ public class GameManager : MonoBehaviour
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.UpdateBGM(playerLP, opponentLP);
 
         if (playerLP == 0) EndDuel(false);
+
+        // Notifica dano (para cartas como Numinous Healer, etc)
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.OnDamageTaken(true, amount);
+        }
     }
 
     public void DamageOpponent(int amount)
@@ -865,6 +877,12 @@ public class GameManager : MonoBehaviour
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.UpdateBGM(playerLP, opponentLP);
 
         if (opponentLP == 0) EndDuel(true);
+
+        // Notifica dano
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.OnDamageTaken(false, amount);
+        }
     }
 
     // --- CONDIÇÕES DE VITÓRIA ESPECIAIS ---
@@ -1391,6 +1409,12 @@ public class GameManager : MonoBehaviour
         cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRot);
 
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySummonEffect(display);
+
+        // Notifica invocação especial (para Card of Safe Return, etc)
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.OnSpecialSummon(display);
+        }
     }
 
     // Ferramenta de Dev: Visualizar Deck

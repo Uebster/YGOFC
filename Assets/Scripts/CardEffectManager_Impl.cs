@@ -5,24 +5,153 @@ public partial class CardEffectManager
 {
     // --- MÉTODOS UTILITÁRIOS COMUNS (REAPROVEITADOS) ---
 
-    public void CheckMaintenanceCosts()
+    // --- SISTEMA DE EVENTOS E FASES (TURNOBSERVER) ---
+
+    public void OnPhaseStart(GamePhase phase)
     {
-        // Exemplo: Imperial Order (0932)
-        if (GameManager.Instance.IsCardActiveOnField("0932"))
+        Debug.Log($"CardEffectManager: Processando efeitos da fase {phase}...");
+
+        if (phase == GamePhase.Standby)
         {
-            Debug.Log("Imperial Order: Manutenção de 700 LP.");
-            if (GameManager.Instance.playerLP > 700)
+            // 1. Custos de Manutenção (Maintenance Costs)
+            CheckMaintenanceCosts();
+
+            // 2. Efeitos de Fase (Phase Triggers)
+            
+            // Dancing Fairy (0393): Ganha 1000 LP se em Defesa
+            CheckActiveCards("0393", (card) => {
+                if (card.position == CardDisplay.BattlePosition.Defense && card.isPlayerCard)
+                {
+                    Effect_GainLP(card, 1000);
+                }
+            });
+
+            // Darklord Marie (0453): Ganha 200 LP se no GY
+            List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
+            foreach(var cardData in myGY)
             {
-                GameManager.Instance.DamagePlayer(700);
+                if (cardData.id == "0453")
+                {
+                    Debug.Log("Darklord Marie (GY): Ganha 200 LP.");
+                    GameManager.Instance.playerLP += 200;
+                    // TODO: Atualizar UI
+                }
             }
-            else
+
+            // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
+            // (Na verdade é End Phase, movido para lá se fosse o caso)
+        }
+        else if (phase == GamePhase.End)
+        {
+            // Solar Flare Dragon (1686): 500 dano
+            CheckActiveCards("1686", (card) => {
+                if (card.isPlayerCard) Effect_DirectDamage(card, 500);
+            });
+        }
+    }
+
+    public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer)
+    {
+        // Coffin Seller (0314): Dano quando monstro do oponente vai pro GY
+        if (!isOwnerPlayer && card.type.Contains("Monster"))
+        {
+            CheckActiveCards("0314", (source) => {
+                if (source.isPlayerCard)
+                {
+                    Debug.Log("Coffin Seller: Oponente enviou monstro ao GY. 300 Dano.");
+                    Effect_DirectDamage(source, 300);
+                }
+            });
+        }
+    }
+
+    public void OnSpecialSummon(CardDisplay summonedCard)
+    {
+        // Card of Safe Return (0266): Compra 1 quando monstro é invocado do GY
+        // (Precisaríamos saber se veio do GY, por enquanto assumimos que sim para teste ou adicionamos flag)
+        CheckActiveCards("0266", (source) => {
+            if (source.isPlayerCard && summonedCard.isPlayerCard)
             {
-                Debug.Log("Imperial Order destruída por falta de LP.");
-                // TODO: Destruir a carta
+                Debug.Log("Card of Safe Return: Compra 1 carta.");
+                GameManager.Instance.DrawCard();
+            }
+        });
+    }
+
+    public void OnDamageTaken(bool isPlayer, int amount)
+    {
+        // Numinous Healer (1360), Attack and Receive (0117) - Geralmente são Traps ativáveis, não automáticas.
+        // Mas efeitos contínuos como "Des Wombat" (0477) preveniriam isso antes.
+    }
+
+    // Helper para iterar cartas ativas no campo
+    private void CheckActiveCards(string cardId, System.Action<CardDisplay> action)
+    {
+        if (GameManager.Instance.duelFieldUI == null) return;
+        
+        // Verifica todas as zonas do jogador (e oponente se necessário)
+        // Simplificado para zonas do jogador por enquanto
+        List<Transform> allZones = new List<Transform>();
+        allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
+        allZones.AddRange(GameManager.Instance.duelFieldUI.playerSpellZones);
+        allZones.Add(GameManager.Instance.duelFieldUI.playerFieldSpell);
+
+        foreach (var zone in allZones)
+        {
+            if (zone.childCount == 0) continue;
+            CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+            if (cd != null && cd.isOnField && !cd.isFlipped && cd.CurrentCardData.id == cardId)
+            {
+                action(cd);
             }
         }
     }
 
+    private void CheckMaintenanceCosts()
+    {
+        // Imperial Order (0932)
+        CheckActiveCards("0932", (card) => {
+            if (card.isPlayerCard)
+            {
+                if (GameManager.Instance.playerLP > 700)
+                {
+                    Debug.Log("Imperial Order: Manutenção de 700 LP paga.");
+                    GameManager.Instance.DamagePlayer(700);
+                }
+                else
+                {
+                    Debug.Log("Imperial Order: Destruída por falta de LP.");
+                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
+                    Destroy(card.gameObject);
+                }
+            }
+        });
+
+        // Mirror Wall (1252)
+        CheckActiveCards("1252", (card) => {
+            if (card.isPlayerCard)
+            {
+                if (GameManager.Instance.playerLP > 2000)
+                {
+                    Debug.Log("Mirror Wall: Manutenção de 2000 LP paga.");
+                    GameManager.Instance.DamagePlayer(2000);
+                }
+                else
+                {
+                    Debug.Log("Mirror Wall: Destruída por falta de LP.");
+                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
+                    Destroy(card.gameObject);
+                }
+            }
+        });
+    }
+
+    // --- FIM DO SISTEMA DE EVENTOS ---
+
+    void Effect_DirectDamage(CardDisplay source, int amount)
+    {
+        if (source.isPlayerCard) GameManager.Instance.DamageOpponent(amount);
+        }
     void Effect_DirectDamage(CardDisplay source, int amount)
     {
         if (source.isPlayerCard) GameManager.Instance.DamageOpponent(amount);

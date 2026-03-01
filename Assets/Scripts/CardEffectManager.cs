@@ -48,6 +48,12 @@ public partial class CardEffectManager : MonoBehaviour
         }
     }
 
+    // Métodos de Eventos (Implementados em CardEffectManager_Impl.cs)
+    // public void OnPhaseStart(GamePhase phase);
+    // public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer);
+    // public void OnSpecialSummon(CardDisplay summonedCard);
+    // public void OnDamageTaken(bool isPlayer, int amount);
+
     void DestroyAllMonsters(bool targetOpponent, bool targetPlayer)
     {
         List<CardDisplay> toDestroy = new List<CardDisplay>();

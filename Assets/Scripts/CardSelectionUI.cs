@@ -11,6 +11,7 @@ public class CardSelectionUI : MonoBehaviour
     public GameObject cardItemPrefab; // Prefab da carta (pode ser o mesmo do DeckBuilder)
     public Button confirmButton;
     public TextMeshProUGUI confirmButtonText;
+    public Button closeButton; // Para o botão CloseDeckCards da hierarquia
 
     private List<CardData> sourceList;
     private List<CardData> selectedCards = new List<CardData>();
@@ -24,6 +25,7 @@ public class CardSelectionUI : MonoBehaviour
     void Awake()
     {
         if (confirmButton) confirmButton.onClick.AddListener(ConfirmSelection);
+        if (closeButton) closeButton.onClick.AddListener(CancelSelection);
         // Garante que comece fechado
         gameObject.SetActive(false);
     }
@@ -151,5 +153,12 @@ public class CardSelectionUI : MonoBehaviour
     {
         gameObject.SetActive(false);
         onConfirm?.Invoke(selectedCards);
+    }
+
+    void CancelSelection()
+    {
+        gameObject.SetActive(false);
+        // Retorna nulo ou lista vazia para indicar cancelamento
+        onConfirm?.Invoke(new List<CardData>());
     }
 }

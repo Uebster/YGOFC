@@ -36,6 +36,16 @@ public class DuelThemeManager : MonoBehaviour
     public Image playerRemovedZone; // A zona no tabuleiro
     public Image opponentRemovedZone; // A zona no tabuleiro
 
+    [Header("Deck Viewer")]
+    public Image deckViewerPanel;
+    public Image handleDeckViewer;
+    public Image closeDeckViewer;
+
+    [Header("Card Selection Modal")]
+    public Image cardSelectionPanel;
+    public Image handleCardSelection;
+    public Image closeCardSelection;
+
     [Header("15-19: Action Menu")]
     public Image panelActionMenu;
     public Image btnSummon;
@@ -90,6 +100,14 @@ public class DuelThemeManager : MonoBehaviour
         SetSprite(removedViewerPanel, theme.removedViewerPanel);
         SetSprite(handleRemoved, theme.handleRemoved);
         SetSprite(closeRemoved, theme.closeRemovedBtn);
+
+        SetSprite(deckViewerPanel, theme.graveyardViewerPanel); // Reusa estilo do GY
+        SetSprite(handleDeckViewer, theme.handleGraveyard);
+        SetSprite(closeDeckViewer, theme.closeGraveyardBtn);
+
+        SetSprite(cardSelectionPanel, theme.graveyardViewerPanel); // Reusa estilo do GY ou cria novo
+        SetSprite(handleCardSelection, theme.handleGraveyard);
+        SetSprite(closeCardSelection, theme.closeGraveyardBtn);
         
         // Opcional: Se quiser que a zona no tabuleiro tenha um sprite específico do tema
         // SetSprite(playerRemovedZone, theme.removedZoneBg); 
