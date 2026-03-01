@@ -228,4 +228,137 @@ public partial class CardEffectManager
             }
         });
     }
+
+    // --- EFEITOS COMUNS (REFERENCIADOS POR MÚLTIPLAS CARTAS) ---
+
+    void Effect_MST(CardDisplay source)
+    {
+        Debug.Log("MST: Destruir 1 S/T.");
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")),
+                (t) => {
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                    GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                    Destroy(t.gameObject);
+                }
+            );
+        }
+    }
+
+    void Effect_HeavyStorm(CardDisplay source)
+    {
+        Debug.Log("Heavy Storm: Destruir todas as S/T.");
+        List<CardDisplay> toDestroy = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, toDestroy);
+            CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, toDestroy);
+            CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.playerFieldSpell, GameManager.Instance.duelFieldUI.opponentFieldSpell }, toDestroy);
+        }
+        DestroyCards(toDestroy, source.isPlayerCard);
+    }
+
+    void Effect_HarpiesFeatherDuster(CardDisplay source)
+    {
+        Debug.Log("Harpie's Feather Duster: Destruir S/T do oponente.");
+        List<CardDisplay> toDestroy = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
+            CollectCards(zones, toDestroy);
+            Transform fieldZone = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentFieldSpell : GameManager.Instance.duelFieldUI.playerFieldSpell;
+            CollectCards(new Transform[] { fieldZone }, toDestroy);
+        }
+        DestroyCards(toDestroy, source.isPlayerCard);
+    }
+
+    void Effect_Raigeki(CardDisplay source)
+    {
+        DestroyAllMonsters(true, false);
+    }
+
+    void Effect_MirrorForce(CardDisplay source)
+    {
+        Debug.Log("Mirror Force: Destruir monstros em ataque do oponente.");
+        List<CardDisplay> toDestroy = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+            foreach (var zone in zones)
+            {
+                if (zone.childCount > 0)
+                {
+                    var monster = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (monster != null && monster.position == CardDisplay.BattlePosition.Attack)
+                        toDestroy.Add(monster);
+                }
+            }
+        }
+        DestroyCards(toDestroy, source.isPlayerCard);
+    }
+
+    void Effect_MagicCylinder(CardDisplay source)
+    {
+        if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+        {
+            int damage = BattleManager.Instance.currentAttacker.CurrentCardData.atk;
+            Effect_DirectDamage(source, damage);
+        }
+    }
+
+    void Effect_EnemyController(CardDisplay source)
+    {
+        Debug.Log("Enemy Controller: Escolha 1 efeito (Mudar Posição ou Controlar).");
+        Effect_ChangeControl(source, true);
+    }
+
+    void Effect_MonsterReborn(CardDisplay source)
+    {
+        Effect_Revive(source, true);
+    }
+
+    void Effect_MagePower(CardDisplay source)
+    {
+        Effect_Equip(source, 500, 500); // Simplificado
+    }
+
+    void Effect_MukaMuka(CardDisplay source)
+    {
+        Debug.Log("Muka Muka: Ganha ATK por cartas na mão.");
+    }
+
+    void Effect_MysticBox(CardDisplay source)
+    {
+        Debug.Log("Mystic Box: Destruir e trocar controle.");
+    }
+
+    void Effect_Scapegoat(CardDisplay source)
+    {
+        for(int i=0; i<4; i++) GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Sheep Token");
+    }
+
+    void Effect_RingOfDestruction(CardDisplay source)
+    {
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && !t.isFlipped,
+                (t) => {
+                    int damage = t.CurrentCardData.atk;
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                    GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                    Destroy(t.gameObject);
+                    GameManager.Instance.DamagePlayer(damage);
+                    GameManager.Instance.DamageOpponent(damage);
+                }
+            );
+        }
+    }
+
+    void Effect_SecretBarrel(CardDisplay source)
+    {
+        Effect_DirectDamage(source, 1000); // Simplificado
+    }
 }

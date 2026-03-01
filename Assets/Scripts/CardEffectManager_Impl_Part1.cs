@@ -1257,7 +1257,7 @@ public partial class CardEffectManager
     void Effect_0203_BlastingTheRuins(CardDisplay source)
     {
         // Efeito: Se houver 30+ cartas no GY, causa 3000 de dano.
-        int gyCount = source.isPlayerCard ? GameManager.Instance.playerGraveyardDisplay.pileData.Count : GameManager.Instance.opponentGraveyardDisplay.pileData.Count;
+        int gyCount = source.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard().Count : GameManager.Instance.GetOpponentGraveyard().Count;
         if (gyCount >= 30) 
         {
             Effect_DirectDamage(source, 3000);

@@ -4,6 +4,7 @@ public partial class CardEffectManager
 {
     void InitializeEffects_Part5()
     {
+        /*
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 2001 - 2100)
         // =========================================================================================
@@ -296,5 +297,6 @@ public partial class CardEffectManager
 
         // 2147 - Zone Eater (Destroy after 5 turns)
         AddEffect("2147", c => Debug.Log("Zone Eater: Destrói atacado após 5 turnos."));
+        */
     }
 }

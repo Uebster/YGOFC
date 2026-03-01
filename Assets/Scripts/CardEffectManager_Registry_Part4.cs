@@ -4,6 +4,7 @@ public partial class CardEffectManager
 {
     void InitializeEffects_Part4()
     {
+        /*
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 1501 - 1600)
         // =========================================================================================
@@ -1059,5 +1060,6 @@ public partial class CardEffectManager
 
         // 1998 - Two-Pronged Attack (Destroy 2 Own, 1 Opp)
         AddEffect("1998", c => Debug.Log("Two-Pronged Attack: Destrói 2 seus e 1 do oponente."));
+        */
     }
 }

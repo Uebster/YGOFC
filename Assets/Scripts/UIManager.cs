@@ -210,6 +210,12 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    // Exibe uma mensagem simples (usa o modal de confirmação adaptado)
+    public void ShowMessage(string message)
+    {
+        ShowConfirmation(message, null, null);
+    }
+
     // Novo método para mostrar modal de confirmação genérico
     public void ShowConfirmation(string message, System.Action onConfirm, System.Action onCancel = null)
     {
