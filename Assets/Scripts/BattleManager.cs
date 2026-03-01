@@ -59,6 +59,20 @@ public class BattleManager : MonoBehaviour
             return false;
         }
 
+        // Para Alligator's Sword Dragon e Amphibious Bugroth MK-3:
+        if (attacker.CurrentCardData.id == "0037" || attacker.CurrentCardData.id == "0053") // IDs
+        {
+            if (AreAllEnemyMonstersEarthWaterOrFire()) return true;
+        }
+
+        return true;
+    }
+
+    public bool CanAttack(CardDisplay attacker)
+    {
+        // Gravity Bind (85742772)
+        if (GameManager.Instance.IsCardActiveOnField("85742772") && attacker.CurrentCardData.level >= 4)
+        {
         // Messenger of Peace (44656491)
         if (GameManager.Instance.IsCardActiveOnField("44656491") && attacker.currentAtk >= 1500)
         {
@@ -73,6 +87,7 @@ public class BattleManager : MonoBehaviour
         }
 
         return true;
+    }
     }
 
     public void SelectTarget(CardDisplay target)
