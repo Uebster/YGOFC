@@ -5,210 +5,206 @@ public partial class CardEffectManager
     void InitializeEffects_Part1()
     {
         // =========================================================================================
-        // LÓGICA PARA AS CARTAS (ID 0001 - 0100) - SEM PULAR NENHUMA
+        // LÓGICA PARA AS CARTAS (ID 0001 - 0500)
         // =========================================================================================
 
         // 0001 - 3-Hump Lacooda (Tribute 2 to Draw 3)
-        AddEffect("0001", c => Effect_TributeToDraw(c, 2, 3));
+        AddEffect("0001", Effect_0001_3HumpLacooda);
 
         // 0003 - 4-Starred Ladybug of Doom (FLIP: Destroy opponent Level 4 monsters)
-        AddEffect("0003", c => Effect_FlipDestroyLevel(c, 4));
+        AddEffect("0003", Effect_0003_4StarredLadybugOfDoom);
 
         // 0004 - 7 (Spell: Gain 700 LP)
-        AddEffect("0004", c => Effect_GainLP(c, 700));
+        AddEffect("0004", Effect_0004_7);
 
         // 0006 - 7 Completed (Equip: +700 ATK or DEF to Machine)
-        AddEffect("0006", c => Effect_Equip(c, 700, 700, "Machine"));
+        AddEffect("0006", Effect_0006_7Completed);
 
         // 0007 - 8-Claws Scorpion (Set self)
-        AddEffect("0007", Effect_TurnSet);
+        AddEffect("0007", Effect_0007_8ClawsScorpion);
 
         // 0008 - A Cat of Ill Omen (FLIP: Search Trap)
-        AddEffect("0008", c => Effect_SearchDeck(c, "Trap"));
+        AddEffect("0008", Effect_0008_ACatOfIllOmen);
 
         // 0009 - A Deal with Dark Ruler (Special Summon Berserk Dragon)
-        AddEffect("0009", c => Debug.Log("A Deal with Dark Ruler: Requer condição de nível 8 destruído."));
+        AddEffect("0009", Effect_0009_ADealWithDarkRuler);
 
         // 0010 - A Feather of the Phoenix (Discard 1, Target GY, Top Deck)
-        AddEffect("0010", Effect_FeatherOfThePhoenix);
+        AddEffect("0010", Effect_0010_AFeatherOfThePhoenix);
 
         // 0011 - A Feint Plan (Trap: No attacks on face-down)
-        AddEffect("0011", Effect_AFeintPlan);
+        AddEffect("0011", Effect_0011_AFeintPlan);
 
         // 0012 - A Hero Emerges (Trap: SS from hand when attacked)
-        AddEffect("0012", c => Debug.Log("A Hero Emerges: Oponente escolhe carta da sua mão para invocar."));
+        AddEffect("0012", Effect_0012_AHeroEmerges);
 
         // 0013 - A Legendary Ocean (Field: Water +200/200, Level -1)
-        AddEffect("0013", c => Effect_Field(c, 200, 200, "Aqua", "", -1));
+        AddEffect("0013", Effect_0013_ALegendaryOcean);
 
         // 0014 - A Man with Wdjat (Reveal Set Card)
-        AddEffect("0014", Effect_RevealSetCard);
+        AddEffect("0014", Effect_0014_AManWithWdjat);
 
         // 0015 - A Rival Appears! (Special Summon same level)
-        AddEffect("0015", Effect_ARivalAppears);
+        AddEffect("0015", Effect_0015_ARivalAppears);
 
         // 0016 - A Wingbeat of Giant Dragon (Return Dragon, Destroy S/T)
-        AddEffect("0016", Effect_WingbeatOfGiantDragon);
+        AddEffect("0016", Effect_0016_AWingbeatOfGiantDragon);
 
         // 0017 - A-Team: Trap Disposal Unit (Negate Trap)
-        AddEffect("0017", c => Debug.Log("A-Team: Efeito Rápido de negar armadilha."));
+        AddEffect("0017", Effect_0017_ATeamTrapDisposalUnit);
 
         // 0018 - Absolute End (Trap: Attacks become direct)
-        AddEffect("0018", c => Debug.Log("Absolute End: Ataques se tornam diretos."));
+        AddEffect("0018", Effect_0018_AbsoluteEnd);
 
         // 0019 - Absorbing Kid from the Sky (Heal on destroy)
-        AddEffect("0019", c => Debug.Log("Absorbing Kid: Ganha LP igual ao nível do monstro destruído x 300."));
+        AddEffect("0019", Effect_0019_AbsorbingKidFromTheSky);
 
         // 0021 - Abyss Soldier (Discard Water, Bounce)
-        AddEffect("0021", Effect_AbyssSoldier);
+        AddEffect("0021", Effect_0021_AbyssSoldier);
 
         // 0022 - Abyssal Designator (Pay 1000, Declare Type/Attr)
-        AddEffect("0022", c => Effect_PayLP(c, 1000));
+        AddEffect("0022", Effect_0022_AbyssalDesignator);
 
         // 0024 - Acid Rain (Destroy Machines)
-        AddEffect("0024", c => Effect_DestroyType(c, "Machine"));
+        AddEffect("0024", Effect_0024_AcidRain);
 
         // 0025 - Acid Trap Hole (Target Set, Flip, Destroy if DEF < 2000)
-        AddEffect("0025", Effect_AcidTrapHole);
+        AddEffect("0025", Effect_0025_AcidTrapHole);
 
         // 0027 - Adhesion Trap Hole (Trap: Halve ATK)
-        AddEffect("0027", Effect_AdhesionTrapHole);
+        AddEffect("0027", Effect_0027_AdhesionTrapHole);
 
         // 0028 - After the Struggle (Spell: Destroy battle participants)
-        AddEffect("0028", c => Debug.Log("After the Struggle: Destrói monstros que batalharam."));
+        AddEffect("0028", Effect_0028_AfterTheStruggle);
 
         // 0029 - Agido (Dice Roll SS)
-        AddEffect("0029", Effect_Agido);
+        AddEffect("0029", Effect_0029_Agido);
 
         // 0031 - Airknight Parshath (Piercing + Draw)
-        AddEffect("0031", Effect_AirknightParshath);
+        AddEffect("0031", Effect_0031_AirknightParshath);
 
         // 0037 - Alligator's Sword Dragon (Direct Attack condition)
-        AddEffect("0037", c => Debug.Log("Alligator's Sword Dragon: Pode atacar direto sob condições."));
+        AddEffect("0037", Effect_0037_AlligatorsSwordDragon);
 
         // 0039 - Altar for Tribute (Tribute to Heal)
-        AddEffect("0039", Effect_AltarForTribute);
+        AddEffect("0039", Effect_0039_AltarForTribute);
 
         // 0041 - Amazoness Archer (Tribute 2, Burn 1200)
-        AddEffect("0041", c => Effect_TributeToBurn(c, 2, 1200));
+        AddEffect("0041", Effect_0041_AmazonessArcher);
 
         // 0042 - Amazoness Archers (Trap: -500 ATK, must attack)
-        AddEffect("0042", c => Debug.Log("Amazoness Archers: Oponente perde 500 ATK e deve atacar."));
+        AddEffect("0042", Effect_0042_AmazonessArchers);
 
         // 0043 - Amazoness Blowpiper (Effect: -500 ATK)
-        AddEffect("0043", Effect_AmazonessBlowpiper);
+        AddEffect("0043", Effect_0043_AmazonessBlowpiper);
 
         // 0044 - Amazoness Chain Master (Effect: Steal monster from hand)
-        AddEffect("0044", Effect_AmazonessChainMaster);
+        AddEffect("0044", Effect_0044_AmazonessChainMaster);
 
         // 0045 - Amazoness Fighter (Effect: No battle damage)
-        AddEffect("0045", c => Debug.Log("Amazoness Fighter: Você não toma dano de batalha."));
+        AddEffect("0045", Effect_0045_AmazonessFighter);
 
         // 0046 - Amazoness Paladin (Effect: +100 ATK per Amazoness)
-        AddEffect("0046", c => Debug.Log("Amazoness Paladin: Ganha 100 ATK por cada Amazoness."));
+        AddEffect("0046", Effect_0046_AmazonessPaladin);
 
         // 0047 - Amazoness Spellcaster (Swap ATK)
-        AddEffect("0047", Effect_AmazonessSpellcaster);
+        AddEffect("0047", Effect_0047_AmazonessSpellcaster);
 
         // 0048 - Amazoness Swords Woman (Effect: Reflect damage)
-        AddEffect("0048", c => Debug.Log("Amazoness Swords Woman: Oponente toma o dano de batalha."));
+        AddEffect("0048", Effect_0048_AmazonessSwordsWoman);
 
         // 0049 - Amazoness Tiger (Effect: +400 ATK, attack target)
-        AddEffect("0049", c => Debug.Log("Amazoness Tiger: Ganha 400 ATK. Oponente só pode atacar este."));
+        AddEffect("0049", Effect_0049_AmazonessTiger);
 
         // 0050 - Ameba (Burn on control switch)
-        AddEffect("0050", Effect_Ameba);
+        AddEffect("0050", Effect_0050_Ameba);
 
-        // 0052 - Amphibious Bugroth (Fusion) - Sem efeito
         // 0053 - Amphibious Bugroth MK-3 (Direct Attack with Umi)
-        AddEffect("0053", c => Debug.Log("MK-3: Ataca direto se Umi estiver no campo."));
+        AddEffect("0053", Effect_0053_AmphibiousBugrothMK3);
 
         // 0054 - Amplifier (Equip to Jinzo)
-        AddEffect("0054", c => Effect_Equip(c, 0, 0, "Machine")); 
+        AddEffect("0054", Effect_0054_Amplifier);
 
         // 0055 - An Owl of Luck (FLIP: Field Spell to top)
-        AddEffect("0055", c => Effect_SearchDeckTop(c, "Field", "Spell"));
+        AddEffect("0055", Effect_0055_AnOwlOfLuck);
 
         // 0058 - Ancient Gear Beast (No S/T in battle, Negate effects)
-        AddEffect("0058", c => Debug.Log("Ancient Gear Beast: Nega efeitos e impede S/T na batalha."));
+        AddEffect("0058", Effect_0058_AncientGearBeast);
 
         // 0059 - Ancient Gear Golem (Piercing, No S/T in battle)
-        AddEffect("0059", c => Debug.Log("Ancient Gear Golem: Dano Perfurante e impede S/T na batalha."));
+        AddEffect("0059", Effect_0059_AncientGearGolem);
 
         // 0060 - Ancient Gear Soldier (No S/T in battle)
-        AddEffect("0060", c => Debug.Log("Ancient Gear Soldier: Impede S/T na batalha."));
+        AddEffect("0060", Effect_0060_AncientGearSoldier);
 
         // 0062 - Ancient Lamp (SS La Jinn)
-        AddEffect("0062", Effect_AncientLamp); // Already linked, implementation updated
+        AddEffect("0062", Effect_0062_AncientLamp);
 
         // 0066 - Ancient Telescope (See top 5)
-        AddEffect("0066", Effect_AncientTelescope); // Already linked, implementation updated
+        AddEffect("0066", Effect_0066_AncientTelescope);
 
         // 0069 - Andro Sphinx (SS cost, Burn)
-        AddEffect("0069", c => Debug.Log("Andro Sphinx: Causa dano ao destruir monstros em defesa."));
+        AddEffect("0069", Effect_0069_AndroSphinx);
 
         // 0071 - Ante (Hand reveal game)
-        AddEffect("0071", Effect_Ante);
+        AddEffect("0071", Effect_0071_Ante);
 
         // 0073 - Anti Raigeki (Trap: Negate Raigeki)
-        AddEffect("0073", Effect_AntiRaigeki);
+        AddEffect("0073", Effect_0073_AntiRaigeki);
 
         // 0074 - Anti-Aircraft Flower (Tribute Insect -> 800 dmg)
-        AddEffect("0074", c => Effect_TributeToBurn(c, 1, 800, "Insect"));
+        AddEffect("0074", Effect_0074_AntiAircraftFlower);
 
         // 0075 - Anti-Spell (Trap: Remove counters to negate spell)
-        AddEffect("0075", c => Debug.Log("Anti-Spell: Remove 2 contadores para negar magia."));
+        AddEffect("0075", Effect_0075_AntiSpell);
 
         // 0076 - Anti-Spell Fragrance (Trap: Must set spells)
-        AddEffect("0076", c => Debug.Log("Anti-Spell Fragrance: Magias devem ser baixadas antes de usar."));
+        AddEffect("0076", Effect_0076_AntiSpellFragrance);
 
         // 0077 - Apprentice Magician (Spell Counter, SS on destroy)
-        AddEffect("0077", c => Debug.Log("Apprentice Magician: Coloca contador e invoca mago Lv2 ao morrer."));
+        AddEffect("0077", Effect_0077_ApprenticeMagician);
 
         // 0078 - Appropriate (Trap: Draw when opp draws)
-        AddEffect("0078", c => Debug.Log("Appropriate: Compre 2 cartas quando o oponente comprar fora da Draw Phase."));
+        AddEffect("0078", Effect_0078_Appropriate);
 
         // 0079 - Aqua Chorus (Trap: +500 ATK/DEF to same name)
-        AddEffect("0079", c => Debug.Log("Aqua Chorus: Buff para monstros com mesmo nome."));
-
-        // 0080 - Aqua Dragon (Fusion) - Sem efeito no JSON original, mas se tiver:
-        // AddEffect("0080", ...);
+        AddEffect("0079", Effect_0079_AquaChorus);
 
         // 0083 - Aqua Spirit (Position Change)
-        AddEffect("0083", Effect_AquaSpirit);
+        AddEffect("0083", Effect_0083_AquaSpirit);
 
         // 0084 - Arcana Knight Joker (Negate targeting)
-        AddEffect("0084", c => Debug.Log("Arcana Knight Joker: Descarta para negar efeito que dá alvo."));
+        AddEffect("0084", Effect_0084_ArcanaKnightJoker);
 
         // 0085 - Arcane Archer of the Forest (Tribute Plant -> Destroy S/T)
-        AddEffect("0085", Effect_ArcaneArcher);
+        AddEffect("0085", Effect_0085_ArcaneArcherOfTheForest);
 
         // 0089 - Archfiend of Gilfer (Equip on GY sent)
-        AddEffect("0089", Effect_ArchfiendOfGilfer);
+        AddEffect("0089", Effect_0089_ArchfiendOfGilfer);
 
         // 0090 - Archfiend's Oath (Pay 500, declare, excavate)
-        AddEffect("0090", Effect_ArchfiendsOath);
+        AddEffect("0090", Effect_0090_ArchfiendsOath);
 
         // 0091 - Archfiend's Roar (Pay 500, SS Archfiend)
-        AddEffect("0091", Effect_ArchfiendsRoar);
+        AddEffect("0091", Effect_0091_ArchfiendsRoar);
 
         // 0092 - Archlord Zerato (Discard LIGHT -> Destroy Monsters)
-        AddEffect("0092", Effect_ArchlordZerato);
+        AddEffect("0092", Effect_0092_ArchlordZerato);
 
         // 0096 - Armed Dragon LV3 (Standby Phase Level Up)
-        AddEffect("0096", c => Effect_LevelUp(c, "0097")); // ID do LV5
+        AddEffect("0096", Effect_0096_ArmedDragonLV3);
 
         // 0097 - Armed Dragon LV5 (Discard -> Destroy Monster)
-        AddEffect("0097", Effect_ArmedDragonLV5);
+        AddEffect("0097", Effect_0097_ArmedDragonLV5);
 
         // 0098 - Armed Dragon LV7 (Discard -> Destroy All Monsters)
-        AddEffect("0098", Effect_ArmedDragonLV7);
+        AddEffect("0098", Effect_0098_ArmedDragonLV7);
 
         // 0099 - Armed Ninja (FLIP: Destroy Spell)
-        AddEffect("0099", c => Effect_FlipDestroy(c, TargetType.Spell));
+        AddEffect("0099", Effect_0099_ArmedNinja);
 
         // 0100 - Armed Samurai - Ben Kei (Multi attacks)
-        AddEffect("0100", c => Debug.Log("Ben Kei: Ganha 1 ataque extra por equipamento."));
+        AddEffect("0100", Effect_0100_ArmedSamuraiBenKei);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 0101 - 0200)
