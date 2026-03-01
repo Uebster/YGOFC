@@ -26,6 +26,7 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
     public Transform playerFieldSpell;
     public Transform playerExtraDeck;
     public Transform playerHand;
+    public Transform playerRemoved; // Nova zona
 
     [Header("Info do Oponente")]
     public Image opponentAvatarImage;
@@ -40,6 +41,7 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
     public Transform opponentFieldSpell;
     public Transform opponentExtraDeck;
     public Transform opponentHand;
+    public Transform opponentRemoved; // Nova zona
 
     // --- FERRAMENTA DE GERAÇÃO AUTOMÁTICA (EDITOR) ---
 #if UNITY_EDITOR
@@ -91,6 +93,7 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
         playerExtraDeck = CreateSpecialZone("ExtraDeck", playerArea, 0.45f, 0.65f, 0.02f, 0.12f, new Color(0.3f, 0.1f, 0.3f));
         playerGraveyard = CreateSpecialZone("Graveyard", playerArea, 0.65f, 0.85f, 0.88f, 0.98f, Color.gray);
         playerDeck = CreateSpecialZone("Deck", playerArea, 0.45f, 0.65f, 0.88f, 0.98f, new Color(0.4f, 0.2f, 0.1f));
+        playerRemoved = CreateSpecialZone("Removed", playerArea, 0.85f, 0.95f, 0.88f, 0.98f, new Color(0.1f, 0.1f, 0.1f)); // Exemplo de posição
 
 
         // --- LADO DO OPONENTE ---
@@ -112,6 +115,7 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
         opponentExtraDeck = CreateSpecialZone("ExtraDeck", opponentArea, 0.35f, 0.55f, 0.88f, 0.98f, new Color(0.3f, 0.1f, 0.3f));
         opponentGraveyard = CreateSpecialZone("Graveyard", opponentArea, 0.15f, 0.35f, 0.02f, 0.12f, Color.gray);
         opponentDeck = CreateSpecialZone("Deck", opponentArea, 0.35f, 0.55f, 0.02f, 0.12f, new Color(0.4f, 0.2f, 0.1f));
+        opponentRemoved = CreateSpecialZone("Removed", opponentArea, 0.05f, 0.15f, 0.02f, 0.12f, new Color(0.1f, 0.1f, 0.1f));
 
         Debug.Log("Tabuleiro com Personagens gerado!");
     }

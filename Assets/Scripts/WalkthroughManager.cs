@@ -15,6 +15,9 @@ public class WalkthroughManager : MonoBehaviour
     [Header("Configuração de Texto")]
     public float typeSpeed = 0.02f; // Velocidade da escrita
 
+    [Header("Audio")]
+    public AudioSource audioSource; // Arraste um AudioSource aqui ou ele será criado automaticamente
+
     // Dados temporários para iniciar o duelo
     private CharacterData pendingOpponent;
     private int pendingDuelIndex;
@@ -37,6 +40,13 @@ public class WalkthroughManager : MonoBehaviour
                 if (t != null) foundPanels.Add(t.gameObject);
             }
             actPanels = foundPanels.ToArray();
+        }
+
+        // Garante que existe um AudioSource
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
         }
     }
 
@@ -86,6 +96,23 @@ public class WalkthroughManager : MonoBehaviour
                             fullTextToShow += $"\n\nOponente: {opponent.name}\nDificuldade: {opponent.difficulty}";
                             
                             StartCoroutine(TypeTextRoutine());
+
+                            // --- Lógica de Música do Tema ---
+                            if (audioSource != null && actData.theme != null)
+                            {
+                                if (actData.theme.walkthroughBGM != null)
+                                {
+                                    // Só troca se for uma música diferente para não reiniciar o loop
+                                    if (audioSource.clip != actData.theme.walkthroughBGM)
+                                    {
+                                        audioSource.clip = actData.theme.walkthroughBGM;
+                                        audioSource.loop = true;
+                                        audioSource.Play();
+                                    }
+                                    else if (!audioSource.isPlaying) audioSource.Play();
+                                }
+                                else audioSource.Stop(); // Para se o tema não tiver música definida
+                            }
                         }
                     }
                 }

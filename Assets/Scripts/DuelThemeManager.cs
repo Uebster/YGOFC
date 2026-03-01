@@ -28,6 +28,13 @@ public class DuelThemeManager : MonoBehaviour
     public Image extraDeckViewerPanel;
     public Image handleExtraDeck;
     public Image closeExtraDeck;
+    
+    [Header("Removed Cards Viewer")]
+    public Image removedViewerPanel;
+    public Image handleRemoved;
+    public Image closeRemoved;
+    public Image playerRemovedZone; // A zona no tabuleiro
+    public Image opponentRemovedZone; // A zona no tabuleiro
 
     [Header("15-19: Action Menu")]
     public Image panelActionMenu;
@@ -74,6 +81,13 @@ public class DuelThemeManager : MonoBehaviour
         SetSprite(extraDeckViewerPanel, theme.extraDeckViewerPanel);
         SetSprite(handleExtraDeck, theme.handleExtraDeck);
         SetSprite(closeExtraDeck, theme.closeExtraDeckBtn);
+        
+        SetSprite(removedViewerPanel, theme.removedViewerPanel);
+        SetSprite(handleRemoved, theme.handleRemoved);
+        SetSprite(closeRemoved, theme.closeRemovedBtn);
+        
+        // Opcional: Se quiser que a zona no tabuleiro tenha um sprite específico do tema
+        // SetSprite(playerRemovedZone, theme.removedZoneBg); 
 
         SetSprite(panelActionMenu, theme.panelActionMenu);
         SetSprite(btnSummon, theme.btnSummon);

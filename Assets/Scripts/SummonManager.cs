@@ -183,7 +183,7 @@ public class SummonManager : MonoBehaviour
 
         isSelectingTributes = false;
         if (GameManager.Instance != null)
-            GameManager.Instance.FinalizeSummon(pendingCardGO, pendingCardData, pendingIsSet, true);
+            GameManager.Instance.FinalizeSummon(pendingCardGO, pendingCardData, pendingIsSet, true, pendingIsSet);
     }
 
     public void CancelTributeSelection()

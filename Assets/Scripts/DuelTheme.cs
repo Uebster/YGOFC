@@ -25,6 +25,11 @@ public class DuelTheme : ScriptableObject
     public Sprite extraDeckViewerPanel;
     public Sprite handleExtraDeck;
     public Sprite closeExtraDeckBtn;
+    
+    [Header("Viewers (Removed Cards)")]
+    public Sprite removedViewerPanel;
+    public Sprite handleRemoved;
+    public Sprite closeRemovedBtn;
 
     [Header("Action Menu")]
     public Sprite panelActionMenu;
@@ -57,7 +62,12 @@ public class DuelTheme : ScriptableObject
     public GameObject tributeVFX;
     public GameObject attackVFX;
     public GameObject explosionVFX;
+    public GameObject banishVFX;
+    public GameObject flipVFX;
     
     [Header("Audio Overrides (Opcional)")]
-    public AudioClip bgm; // Música de fundo do tema
+    public AudioClip walkthroughBGM;  // Música da tela de história/walkthrough
+    public AudioClip bgmNormal;       // Música padrão
+    public AudioClip bgmTense;        // Música de desvantagem (LP < 50% do oponente)
+    public AudioClip bgmWinning;      // Música de vantagem (LP > 200% do oponente)
 }

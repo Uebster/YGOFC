@@ -44,6 +44,8 @@ public class UIManager : MonoBehaviour
     public GameObject confirmationModal; // Novo modal genérico
     public GraveyardViewer graveyardViewer;
     public GraveyardViewer extraDeckViewer; // Reusa o script GraveyardViewer para o Extra Deck
+    public GraveyardViewer removedCardsViewer; // Reusa o script para Cartas Removidas
+    public PositionSelectionUI positionSelectionModal; // Novo modal específico
 
     [Header("Debug")]
     public bool testDuelDirectly = false;
@@ -125,6 +127,8 @@ public class UIManager : MonoBehaviour
 
         if (graveyardViewer != null) graveyardViewer.gameObject.SetActive(false);
         if (extraDeckViewer != null) extraDeckViewer.gameObject.SetActive(false);
+        if (removedCardsViewer != null) removedCardsViewer.gameObject.SetActive(false);
+        if (positionSelectionModal != null) positionSelectionModal.gameObject.SetActive(false);
 
         // 2. Ativa apenas a tela desejada
         if (screenToShow != null)
@@ -154,6 +158,27 @@ public class UIManager : MonoBehaviour
         else
         {
             Debug.LogError("ExtraDeckViewer não está atribuído no UIManager!");
+        }
+    }
+
+    public void ShowRemovedCards(List<CardData> cards, Texture2D cardBack)
+    {
+        if (removedCardsViewer != null)
+        {
+            removedCardsViewer.Show(cards, cardBack);
+        }
+    }
+
+    public void ShowPositionSelection(CardData card, System.Action<CardDisplay.BattlePosition> onSelected)
+    {
+        if (positionSelectionModal != null)
+        {
+            positionSelectionModal.Show(card, onSelected);
+        }
+        else
+        {
+            Debug.LogWarning("PositionSelectionUI não atribuído! Usando Ataque por padrão.");
+            onSelected?.Invoke(CardDisplay.BattlePosition.Attack);
         }
     }
 

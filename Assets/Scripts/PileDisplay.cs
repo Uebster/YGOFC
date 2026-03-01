@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 
 public class PileDisplay : MonoBehaviour, IPointerClickHandler
 {
-    public enum PileType { Deck, Graveyard, ExtraDeck, Field }
+    public enum PileType { Deck, Graveyard, ExtraDeck, Field, Removed }
     [Header("Configuração")]
     public PileType pileType;
     public bool isPlayerPile = true; // Define se é do jogador ou oponente
@@ -80,7 +80,7 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
                 // Visual Topo -> Dados [0]
                 dataIndex = (targetCount - 1) - i;
             }
-            else // Graveyard ou Field
+            else // Graveyard, Field ou Removed
             {
                 // No Cemitério, adicionamos cartas ao final da lista.
                 // Índice 0 = Primeira carta morta (Fundo).
@@ -98,7 +98,7 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
                 if (display != null)
                 {
                     display.isInPile = true; // Marca como carta de pilha para controle de hover
-                    bool isFaceUp = (pileType == PileType.Graveyard || pileType == PileType.Field);
+                    bool isFaceUp = (pileType != PileType.Deck); // Tudo exceto Deck é face-up
 
                     if (!isFaceUp)
                     {
@@ -159,6 +159,10 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
         else if (pileType == PileType.ExtraDeck)
         {
             GameManager.Instance.ViewExtraDeck(isPlayerPile);
+        }
+        else if (pileType == PileType.Removed)
+        {
+            GameManager.Instance.ViewRemovedCards(isPlayerPile);
         }
         else if (pileType == PileType.Field)
         {

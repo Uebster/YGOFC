@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b80f2649cb31c5249b996cc1da9cb79e, type: 3}
+  m_Name: Theme_Act1
+  m_EditorClassIdentifier: Assembly-CSharp::DuelTheme
+  boardBackground: {fileID: 0}
+  fieldImage: {fileID: 0}
+  phaseIndicatorBg: {fileID: 0}
+  playerProfileBg: {fileID: 0}
+  opponentProfileBg: {fileID: 0}
+  panelCardViewer: {fileID: 0}
+  panelDescription: {fileID: 0}
+  handleDescription: {fileID: 0}
+  graveyardViewerPanel: {fileID: 0}
+  handleGraveyard: {fileID: 0}
+  closeGraveyardBtn: {fileID: 0}
+  extraDeckViewerPanel: {fileID: 0}
+  handleExtraDeck: {fileID: 0}
+  closeExtraDeckBtn: {fileID: 0}
+  removedViewerPanel: {fileID: 0}
+  handleRemoved: {fileID: 0}
+  closeRemovedBtn: {fileID: 0}
+  panelActionMenu: {fileID: 0}
+  btnSummon: {fileID: 0}
+  btnSet: {fileID: 0}
+  btnActivate: {fileID: 0}
+  btnCancel: {fileID: 0}
+  panelConfirmation: {fileID: 0}
+  btnYes: {fileID: 0}
+  btnNo: {fileID: 0}
+  globalFont: {fileID: 0}
+  mainTextColor: {r: 1, g: 1, b: 1, a: 1}
+  fontSizeMultiplier: 1
+  hoverOutlineColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  phaseActiveColor: {r: 1, g: 0.8, b: 0, a: 1}
+  phaseInactiveColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.8}
+  spellActivateVFX: {fileID: 0}
+  trapActivateVFX: {fileID: 0}
+  summonVFX: {fileID: 0}
+  fusionVFX: {fileID: 0}
+  tributeVFX: {fileID: 0}
+  attackVFX: {fileID: 0}
+  explosionVFX: {fileID: 0}
+  bgm: {fileID: 0}

@@ -12,6 +12,7 @@ public class DuelFXManager : MonoBehaviour
     [Header("Referências da Cena")]
     public Transform boardCenter; // Arraste um objeto vazio no centro do campo
     public AudioSource audioSource; // Fonte de áudio principal para SFX
+    public AudioSource bgmSource;   // Fonte de áudio para Música de Fundo (Loop)
 
     [Header("Efeitos Visuais (Prefabs)")]
     public GameObject spellActivateVFX; // Partículas de magia
@@ -22,6 +23,10 @@ public class DuelFXManager : MonoBehaviour
     public GameObject attackVFX;        // Corte ou impacto
     public GameObject explosionVFX;     // Fumaça/Explosão de destruição
     public GameObject reflectVFX;       // Escudo/Barreira (Ataque falhou)
+    public GameObject banishVFX;        // Carta removida de jogo (vórtice/buraco negro)
+    public GameObject flipVFX;          // Efeito de Flip
+    public GameObject damageVFX;        // Dano direto ou batalha vencida
+    public GameObject defenseSuccessVFX;// Defesa bem sucedida (escudo metálico)
 
     [Header("Efeitos Sonoros (AudioClips)")]
     public AudioClip spellSound;
@@ -32,6 +37,15 @@ public class DuelFXManager : MonoBehaviour
     public AudioClip attackSound;
     public AudioClip destroySound;
     public AudioClip reflectSound;
+    public AudioClip banishSound;
+    public AudioClip flipSound;
+    public AudioClip damageSound;
+    public AudioClip defenseSound;
+
+    // Variáveis de BGM do Tema Atual
+    private AudioClip currentBgmNormal;
+    private AudioClip currentBgmTense;
+    private AudioClip currentBgmWinning;
 
     void Awake()
     {
@@ -41,6 +55,13 @@ public class DuelFXManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        // Garante que existe um AudioSource para BGM se não foi atribuído
+        if (bgmSource == null)
+        {
+            bgmSource = gameObject.AddComponent<AudioSource>();
+            bgmSource.loop = true;
+        }
     }
 
     public void UpdateThemeFX(DuelTheme theme)
@@ -54,6 +75,42 @@ public class DuelFXManager : MonoBehaviour
         if (theme.tributeVFX != null) tributeVFX = theme.tributeVFX;
         if (theme.attackVFX != null) attackVFX = theme.attackVFX;
         if (theme.explosionVFX != null) explosionVFX = theme.explosionVFX;
+        if (theme.banishVFX != null) banishVFX = theme.banishVFX;
+        if (theme.flipVFX != null) flipVFX = theme.flipVFX;
+
+        // Atualiza referências de música
+        currentBgmNormal = theme.bgmNormal;
+        currentBgmTense = theme.bgmTense;
+        currentBgmWinning = theme.bgmWinning;
+
+        // Força atualização da música
+        if (GameManager.Instance != null)
+        {
+            UpdateBGM(GameManager.Instance.playerLP, GameManager.Instance.opponentLP);
+        }
+    }
+
+    public void UpdateBGM(int playerLP, int opponentLP)
+    {
+        if (bgmSource == null) return;
+
+        AudioClip targetClip = currentBgmNormal;
+
+        // Lógica de Tensão/Vitória
+        if (playerLP > 0 && opponentLP > 0)
+        {
+            if (playerLP <= opponentLP * 0.5f && currentBgmTense != null)
+                targetClip = currentBgmTense; // Tensa (metade dos pontos do oponente)
+            else if (playerLP >= opponentLP * 2.0f && currentBgmWinning != null)
+                targetClip = currentBgmWinning; // Empolgante (dobro dos pontos)
+        }
+
+        // Troca a música se for diferente da atual
+        if (bgmSource.clip != targetClip)
+        {
+            bgmSource.clip = targetClip;
+            bgmSource.Play();
+        }
     }
 
     // --- ATIVAÇÃO DE MAGIA / ARMADILHA ---
@@ -199,6 +256,32 @@ public class DuelFXManager : MonoBehaviour
             vfx.transform.SetParent(card.transform);
             // O VFX deve ter um script de auto-destruição ou ser destruído quando a carta for
         }
+    }
+
+    // --- NOVOS EFEITOS DE BATALHA E JOGO ---
+
+    public void PlayBanishEffect(CardDisplay card)
+    {
+        PlaySound(banishSound);
+        SpawnVFX(banishVFX, card.transform.position);
+    }
+
+    public void PlayFlipEffect(CardDisplay card)
+    {
+        PlaySound(flipSound);
+        SpawnVFX(flipVFX, card.transform.position);
+    }
+
+    public void PlayDamageEffect(Vector3 position)
+    {
+        PlaySound(damageSound);
+        SpawnVFX(damageVFX, position);
+    }
+
+    public void PlayDefenseSuccessEffect(CardDisplay card)
+    {
+        PlaySound(defenseSound);
+        SpawnVFX(defenseSuccessVFX, card.transform.position);
     }
 
     // --- UTILITÁRIOS ---

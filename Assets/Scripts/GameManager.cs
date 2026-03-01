@@ -99,6 +99,8 @@ public class GameManager : MonoBehaviour
     public PileDisplay opponentGraveyardDisplay;
     public PileDisplay playerExtraDeckDisplay;
     public PileDisplay opponentExtraDeckDisplay;
+    public PileDisplay playerRemovedDisplay; // Novo
+    public PileDisplay opponentRemovedDisplay; // Novo
 
     private List<CardData> playerDeck = new List<CardData>();
     // Adicionado: Side Deck e Baú (Trunk)
@@ -112,6 +114,8 @@ public class GameManager : MonoBehaviour
     private List<CardData> opponentGraveyard = new List<CardData>();
     private List<CardData> playerExtraDeck = new List<CardData>();
     private List<CardData> opponentExtraDeck = new List<CardData>();
+    private List<CardData> playerRemoved = new List<CardData>(); // Novo
+    private List<CardData> opponentRemoved = new List<CardData>(); // Novo
 
     [Header("Current Duel Info")]
     public CharacterData currentOpponent; // Oponente atual carregado
@@ -260,6 +264,8 @@ public class GameManager : MonoBehaviour
         playerExtraDeck.Clear();
         playerSideDeck.Clear();
         opponentExtraDeck.Clear();
+        playerRemoved.Clear();
+        opponentRemoved.Clear();
 
         // Atualiza visuais das pilhas e limpa o viewer
         UpdatePileVisuals();
@@ -515,6 +521,23 @@ public class GameManager : MonoBehaviour
         UpdatePileVisuals();
     }
 
+    // Novo método para remover de jogo (Banir)
+    public void RemoveFromPlay(CardData card, bool isPlayer)
+    {
+        if (isPlayer)
+        {
+            playerRemoved.Add(card);
+        }
+        else
+        {
+            opponentRemoved.Add(card);
+        }
+        
+        // TODO: Adicionar lógica de pontuação se necessário
+        
+        UpdatePileVisuals();
+    }
+
     public void ViewGraveyard(bool isPlayer)
     {
         if (UIManager.Instance == null) return;
@@ -535,6 +558,15 @@ public class GameManager : MonoBehaviour
 
         List<CardData> extraDeck = isPlayer ? playerExtraDeck : opponentExtraDeck;
         UIManager.Instance.ShowExtraDeck(extraDeck, cardBackTexture);
+    }
+
+    public void ViewRemovedCards(bool isPlayer)
+    {
+        if (UIManager.Instance == null) return;
+
+        List<CardData> removed = isPlayer ? playerRemoved : opponentRemoved;
+        // Reusa o visualizador de cemitério ou um específico se criado
+        UIManager.Instance.ShowRemovedCards(removed, cardBackTexture);
     }
 
     public void DrawInitialOpponentHand(int count)
@@ -656,6 +688,8 @@ public class GameManager : MonoBehaviour
         if (opponentGraveyardDisplay != null) opponentGraveyardDisplay.UpdatePile(opponentGraveyard, cardBackTexture);
         if (playerExtraDeckDisplay != null) playerExtraDeckDisplay.UpdatePile(playerExtraDeck, cardBackTexture);
         if (opponentExtraDeckDisplay != null) opponentExtraDeckDisplay.UpdatePile(opponentExtraDeck, cardBackTexture);
+        if (playerRemovedDisplay != null) playerRemovedDisplay.UpdatePile(playerRemoved, cardBackTexture);
+        if (opponentRemovedDisplay != null) opponentRemovedDisplay.UpdatePile(opponentRemoved, cardBackTexture);
     }
 
     IEnumerator LoadCardBackTexture()
@@ -748,6 +782,9 @@ public class GameManager : MonoBehaviour
         if (DuelScoreManager.Instance != null) DuelScoreManager.Instance.RecordDamageTaken(amount);
         Debug.Log($"Player tomou {amount} de dano. LP Restante: {playerLP}");
 
+        // Atualiza a música baseada na nova situação de vida
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.UpdateBGM(playerLP, opponentLP);
+
         if (playerLP == 0) EndDuel(false);
     }
 
@@ -759,6 +796,9 @@ public class GameManager : MonoBehaviour
 
         if (DuelScoreManager.Instance != null) DuelScoreManager.Instance.RecordDamageDealt(amount);
         Debug.Log($"Oponente tomou {amount} de dano. LP Restante: {opponentLP}");
+
+        // Atualiza a música baseada na nova situação de vida
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.UpdateBGM(playerLP, opponentLP);
 
         if (opponentLP == 0) EndDuel(true);
     }
@@ -815,11 +855,27 @@ public class GameManager : MonoBehaviour
         }
 
         // Se passou por tudo (ou foi auto-tribute), finaliza
-        FinalizeSummon(cardGO, cardData, isSet, isPlayer);
+        // Normal Summon/Set: Se isSet=true, é Face-Down Defense. Se false, é Face-Up Attack.
+        FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet); 
+    }
+
+    // Novo método para Special Summon que pede a posição
+    public void PerformSpecialSummon(GameObject cardGO, CardData cardData)
+    {
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowPositionSelection(cardData, (selectedPosition) => 
+            {
+                bool isDefense = (selectedPosition == CardDisplay.BattlePosition.Defense);
+                // Special Summon geralmente é Face-Up, mesmo em defesa
+                FinalizeSummon(cardGO, cardData, isDefense, true, false); // false = Face-Up
+            });
+        }
     }
 
     // Novo método público para finalizar a invocação (chamado pelo SummonManager após tributo manual)
-    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isSet, bool isPlayer)
+    // Atualizado para suportar Face-Down explicitamente
+    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false)
     {
         // 2. Encontrar Zona Livre
         Transform targetZone = isPlayer ? GetFreePlayerMonsterZone() : GetFreeOpponentMonsterZone();
@@ -844,13 +900,14 @@ public class GameManager : MonoBehaviour
             display.isInteractable = false; // Desativa o hover de mão (subir)
             display.isOnField = true;
             
-            if (isSet)
+            if (isDefensePos)
             {
                 display.position = CardDisplay.BattlePosition.Defense;
                 display.summonedThisTurn = true; // Marca invocação
                 // Modo Defesa (Set): Virado para baixo e Rotacionado 90 graus
                 float zRotation = isPlayer ? 90f : -90f;
-                display.ShowBack();
+                
+                if (isFaceDown) display.ShowBack(); else display.ShowFront();
                 cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRotation);
             }
             else
