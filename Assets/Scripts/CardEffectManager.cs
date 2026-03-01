@@ -48,8 +48,10 @@ public partial class CardEffectManager : MonoBehaviour
         }
     }
 
-    public void OnBattlePositionChanged(CardDisplay card) { OnBattlePositionChangedImpl(card); }
+    public void OnSummon(CardDisplay card) { OnSummonImpl(card); }
+    public void OnSet(CardDisplay card) { OnSetImpl(card); }
 
+    public void OnBattlePositionChanged(CardDisplay card) { OnBattlePositionChangedImpl(card); }
     public void OnDamageDealt(CardDisplay attacker, CardDisplay target, int amount) { OnDamageDealtImpl(attacker, target, amount); }
 
 

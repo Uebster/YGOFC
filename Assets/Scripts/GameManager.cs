@@ -1677,6 +1677,7 @@ public class GameManager : MonoBehaviour
 
     }
 
+
     public void OnBattlePositionChanged(CardDisplay card)
     {
         // Notifica o sistema de efeitos
@@ -1687,5 +1688,7 @@ public class GameManager : MonoBehaviour
                 // Notifica sistema de efeitos (Ex: Fire Princess)
         CardEffectManager.Instance.OnDamageDealt(attacker, target, amount);
     }
+
+
 
 }

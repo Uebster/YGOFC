@@ -27,6 +27,9 @@ public partial class CardEffectManager
         Effect_FlipDestroyLevel(source, 4);
     }
 
+    partial void OnSummonImpl(CardDisplay card);
+
+    partial void OnSetImpl(CardDisplay card);
 
     partial void OnBattlePositionChangedImpl(CardDisplay card);
 
