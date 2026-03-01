@@ -907,7 +907,7 @@ public class CardEffectManager : MonoBehaviour
 
         // 0412 - Dark Flare Knight (No Battle Damage / SS Mirage Knight)
         AddEffect("0412", c => Debug.Log("Dark Flare Knight: Sem dano de batalha. Invoca Mirage Knight."));
-
+        
         // 0414 - Dark Hole (Destroy all monsters)
         AddEffect("0414", Effect_DarkHole);
 
@@ -1117,6 +1117,1221 @@ public class CardEffectManager : MonoBehaviour
 
         // 0500 - Dimensionhole (Blink)
         AddEffect("0500", c => Debug.Log("Dimensionhole: Remove monstro até a próxima Standby Phase."));
+
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 0501 - 0600)
+        // =========================================================================================
+
+        // 0501 - Disappear (Remove from play 1 card from opponent's Graveyard)
+        AddEffect("0501", c => Debug.Log("Disappear: Banir 1 carta do cemitério do oponente."));
+
+        // 0502 - Disarmament (Destroy all Equip Cards)
+        AddEffect("0502", c => Debug.Log("Disarmament: Destruir todas as cartas de Equipamento."));
+
+        // 0503 - Disc Fighter (Destroy Defense Position monster with DEF >= 2000)
+        AddEffect("0503", c => Debug.Log("Disc Fighter: Destrói monstro em defesa com DEF >= 2000 sem cálculo de dano."));
+
+        // 0506 - Disturbance Strategy (Opponent shuffles hand, draws same number)
+        AddEffect("0506", c => Debug.Log("Disturbance Strategy: Oponente embaralha mão e compra o mesmo número."));
+
+        // 0508 - Divine Wrath (Discard 1, negate monster effect, destroy)
+        AddEffect("0508", c => Debug.Log("Divine Wrath: Descarte 1 para negar efeito de monstro e destruir."));
+
+        // 0510 - Doitsu (Union)
+        AddEffect("0510", c => Debug.Log("Doitsu: Union para Soitsu."));
+
+        // 0512 - Dokurorider (Ritual)
+        AddEffect("0512", c => Debug.Log("Dokurorider: Ritual."));
+
+        // 0515 - Don Turtle (SS Don Turtle)
+        AddEffect("0515", c => Debug.Log("Don Turtle: Invocar cópias da mão."));
+
+        // 0516 - Don Zaloog (Hand destruction / Mill)
+        AddEffect("0516", c => Debug.Log("Don Zaloog: Descarte ou Mill ao causar dano."));
+
+        // 0517 - Dora of Fate (Damage on summon)
+        AddEffect("0517", c => Debug.Log("Dora of Fate: Dano ao invocar monstro de nível menor."));
+
+        // 0519 - Doriado's Blessing (Ritual Spell)
+        AddEffect("0519", c => Debug.Log("Doriado's Blessing: Ritual."));
+
+        // 0522 - Double Attack (Discard monster -> Double attack)
+        AddEffect("0522", c => Debug.Log("Double Attack: Descarte monstro para dar ataque duplo a outro de nível menor."));
+
+        // 0523 - Double Coston (2 Tributes for DARK)
+        AddEffect("0523", c => Debug.Log("Double Coston: Vale por 2 tributos para DARK."));
+
+        // 0524 - Double Snare (Destroy Jinzo/Royal Decree)
+        AddEffect("0524", c => Debug.Log("Double Snare: Destrói carta que nega Traps."));
+
+        // 0525 - Double Spell (Discard Spell -> Use Opp Spell)
+        AddEffect("0525", c => Debug.Log("Double Spell: Copiar magia do cemitério do oponente."));
+
+        // 0526 - Dragged Down into the Grave (Hand destruction/Draw)
+        AddEffect("0526", c => Debug.Log("Dragged Down: Ambos descartam e compram 1."));
+
+        // 0527 - Dragon Capture Jar (Dragons to Defense)
+        AddEffect("0527", c => Debug.Log("Dragon Capture Jar: Dragões em defesa."));
+
+        // 0528 - Dragon Manipulator (Flip: Control Dragon)
+        AddEffect("0528", c => Debug.Log("Dragon Manipulator: Controlar Dragão."));
+
+        // 0529 - Dragon Master Knight (Fusion)
+        AddEffect("0529", c => Debug.Log("Dragon Master Knight: +500 ATK por Dragão."));
+
+        // 0530 - Dragon Piper (Flip: Destroy Jar, Dragons to Attack)
+        AddEffect("0530", c => Debug.Log("Dragon Piper: Destrói Jarra, Dragões para Ataque."));
+
+        // 0531 - Dragon Seeker (Destroy Dragon)
+        AddEffect("0531", c => Debug.Log("Dragon Seeker: Destrói Dragão ao ser invocado."));
+
+        // 0533 - Dragon Treasure (Equip Dragon +300/300)
+        AddEffect("0533", c => Effect_Equip(c, 300, 300, "Dragon"));
+
+        // 0535 - Dragon's Gunfire (Damage or Destroy)
+        AddEffect("0535", c => Debug.Log("Dragon's Gunfire: 800 dano ou destruir monstro com DEF <= 800."));
+
+        // 0536 - Dragon's Mirror (Fusion Banish)
+        AddEffect("0536", c => Debug.Log("Dragon's Mirror: Fusão de Dragão banindo do GY."));
+
+        // 0537 - Dragon's Rage (Piercing for Dragons)
+        AddEffect("0537", c => Debug.Log("Dragon's Rage: Dano perfurante para Dragões."));
+
+        // 0539 - Dragonic Attack (Equip Warrior -> Dragon +500)
+        AddEffect("0539", c => Debug.Log("Dragonic Attack: Warrior vira Dragon e ganha 500."));
+
+        // 0540 - Draining Shield (Negate attack, Gain LP)
+        AddEffect("0540", c => Debug.Log("Draining Shield: Negar ataque e ganhar LP."));
+
+        // 0541 - Dramatic Rescue (Return Amazoness, SS)
+        AddEffect("0541", c => Debug.Log("Dramatic Rescue: Salvar Amazoness e invocar outro."));
+
+        // 0542 - Dream Clown (Destroy on Defense)
+        AddEffect("0542", c => Debug.Log("Dream Clown: Destruir monstro ao mudar para defesa."));
+
+        // 0543 - Dreamsprite (Redirect attack)
+        AddEffect("0543", c => Debug.Log("Dreamsprite: Redirecionar ataque."));
+
+        // 0544 - Drill Bug (Parasite Paracide effect)
+        AddEffect("0544", c => Debug.Log("Drill Bug: Colocar Parasite Paracide no deck do oponente."));
+
+        // 0545 - Drillago (Direct attack condition)
+        AddEffect("0545", c => Debug.Log("Drillago: Ataque direto se oponente tiver monstros >= 1600 ATK."));
+
+        // 0546 - Drillroid (Destroy Defense)
+        AddEffect("0546", c => Debug.Log("Drillroid: Destrói monstro em defesa antes do cálculo."));
+
+        // 0547 - Driving Snow (Destroy S/T)
+        AddEffect("0547", c => Debug.Log("Driving Snow: Destruir S/T quando Trap é destruída."));
+
+        // 0550 - Drop Off (Discard draw)
+        AddEffect("0550", c => Debug.Log("Drop Off: Oponente descarta carta comprada."));
+
+        // 0551 - Dummy Golem (Flip: Swap control)
+        AddEffect("0551", c => Debug.Log("Dummy Golem: Trocar controle com monstro do oponente."));
+
+        // 0554 - Dust Barrier (Normal Monster immune to Spells)
+        AddEffect("0554", c => Debug.Log("Dust Barrier: Monstros Normais imunes a Magia por 2 turnos."));
+
+        // 0555 - Dust Tornado (Destroy S/T, Set)
+        AddEffect("0555", c => Debug.Log("Dust Tornado: Destruir S/T e setar carta."));
+
+        // 0556 - Eagle Eye (No Traps on Summon)
+        AddEffect("0556", c => Debug.Log("Eagle Eye: Sem traps na invocação."));
+
+        // 0557 - Earth Chant (Ritual Spell)
+        AddEffect("0557", c => Debug.Log("Earth Chant: Ritual EARTH."));
+
+        // 0559 - Earthquake (Change to Defense)
+        AddEffect("0559", c => Debug.Log("Earthquake: Mudar todos face-up para defesa."));
+
+        // 0560 - Earthshaker (Attribute destroy)
+        AddEffect("0560", c => Debug.Log("Earthshaker: Destruir monstros de atributos específicos."));
+
+        // 0561 - Eatgaboon (Destroy low ATK summon)
+        AddEffect("0561", c => Debug.Log("Eatgaboon: Destruir invocação com ATK <= 500."));
+
+        // 0562 - Ebon Magician Curran (Burn)
+        AddEffect("0562", c => Debug.Log("Curran: Dano por monstros do oponente."));
+
+        // 0563 - Ectoplasmer (Tribute to burn)
+        AddEffect("0563", c => Debug.Log("Ectoplasmer: Tributar para causar dano."));
+
+        // 0564 - Ekibyo Drakmord (Lock attack, destroy)
+        AddEffect("0564", c => Debug.Log("Ekibyo Drakmord: Impede ataque, destrói após 2 turnos."));
+
+        // 0566 - Electric Lizard (Stun Zombie attacker)
+        AddEffect("0566", c => Debug.Log("Electric Lizard: Atacante não-Zumbi não ataca no próximo turno."));
+
+        // 0567 - Electric Snake (Draw 2 on discard)
+        AddEffect("0567", c => Debug.Log("Electric Snake: Compre 2 se descartado pelo oponente."));
+
+        // 0568 - Electro-Whip (Equip Thunder +300/300)
+        AddEffect("0568", c => Effect_Equip(c, 300, 300, "Thunder"));
+
+        // 0569 - Electromagnetic Bagworm (Flip: Control Machine)
+        AddEffect("0569", c => Debug.Log("Electromagnetic Bagworm: Controlar Máquina."));
+
+        // 0570 - Elegant Egotist (SS Harpie)
+        AddEffect("0570", c => Debug.Log("Elegant Egotist: Invocar Harpie Lady."));
+
+        // 0571 - Element Doom (Attribute effects)
+        AddEffect("0571", c => Debug.Log("Element Doom: Efeitos por atributo."));
+
+        // 0572 - Element Dragon (Attribute effects)
+        AddEffect("0572", c => Debug.Log("Element Dragon: Efeitos por atributo."));
+
+        // 0573 - Element Magician (Attribute effects)
+        AddEffect("0573", c => Debug.Log("Element Magician: Efeitos por atributo."));
+
+        // 0574 - Element Saurus (Attribute effects)
+        AddEffect("0574", c => Debug.Log("Element Saurus: Efeitos por atributo."));
+
+        // 0575 - Element Soldier (Attribute effects)
+        AddEffect("0575", c => Debug.Log("Element Soldier: Efeitos por atributo."));
+
+        // 0576 - Element Valkyrie (Attribute effects)
+        AddEffect("0576", c => Debug.Log("Element Valkyrie: Efeitos por atributo."));
+
+        // 0577 - Elemental Burst (Tribute 4 -> Nuke)
+        AddEffect("0577", c => Debug.Log("Elemental Burst: Destruir tudo do oponente."));
+
+        // 0579 - Elemental HERO Bubbleman (SS, Draw 2)
+        AddEffect("0579", c => Debug.Log("Bubbleman: SS se mão vazia, compra 2 se campo vazio."));
+
+        // 0582 - Elemental HERO Flame Wingman (Burn on destroy)
+        AddEffect("0582", c => Debug.Log("Flame Wingman: Dano igual ATK do monstro destruído."));
+
+        // 0584 - Elemental HERO Thunder Giant (Discard -> Destroy)
+        AddEffect("0584", c => Debug.Log("Thunder Giant: Descarte para destruir monstro."));
+
+        // 0585 - Elemental Mistress Doriado (Ritual)
+        AddEffect("0585", c => Debug.Log("Doriado: Ritual."));
+
+        // 0586 - Elephant Statue of Blessing (Gain LP on discard)
+        AddEffect("0586", c => Debug.Log("Elephant Statue of Blessing: Ganha 2000 LP se descartado pelo oponente."));
+
+        // 0587 - Elephant Statue of Disaster (Damage on discard)
+        AddEffect("0587", c => Debug.Log("Elephant Statue of Disaster: 2000 dano se descartado pelo oponente."));
+
+        // 0588 - Elf's Light (Equip LIGHT +400/-200)
+        AddEffect("0588", c => Effect_Equip(c, 400, -200, "", "Light"));
+
+        // 0589 - Emblem of Dragon Destroyer (Search Buster Blader)
+        AddEffect("0589", c => Effect_SearchDeck(c, "Buster Blader"));
+
+        // 0590 - Embodiment of Apophis (Trap Monster)
+        AddEffect("0590", c => Debug.Log("Embodiment of Apophis: Vira monstro."));
+
+        // 0592 - Emergency Provisions (Send S/T -> Gain LP)
+        AddEffect("0592", c => Debug.Log("Emergency Provisions: Envia S/T para ganhar 1000 LP cada."));
+
+        // 0593 - Emes the Infinity (Gain ATK)
+        AddEffect("0593", c => Debug.Log("Emes the Infinity: Ganha 700 ATK ao destruir monstro."));
+
+        // 0594 - Emissary of the Afterlife (Search Normal)
+        AddEffect("0594", c => Debug.Log("Emissary of the Afterlife: Busca Normal Monster Lv3 ou menor."));
+
+        // 0595 - Emissary of the Oasis (Protect Normal)
+        AddEffect("0595", c => Debug.Log("Emissary of the Oasis: Protege Normal Monster Lv3 ou menor."));
+
+        // 0599 - Enchanted Javelin (Gain LP equal to ATK)
+        AddEffect("0599", c => Debug.Log("Enchanted Javelin: Ganha LP igual ao ATK do atacante."));
+
+        // 0600 - Enchanting Fitting Room (Pay 800, Excavate)
+        AddEffect("0600", c => Debug.Log("Enchanting Fitting Room: Paga 800, escava 4, invoca Normais Lv3 ou menor."));
+
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 0601 - 0700)
+        // =========================================================================================
+
+        // 0602 - Enemy Controller (Change Pos / Take Control)
+        AddEffect("0602", Effect_EnemyController);
+
+        // 0603 - Energy Drain (Buff)
+        AddEffect("0603", c => Debug.Log("Energy Drain: Buff por cartas na mão do oponente."));
+
+        // 0604 - Enervating Mist (Hand limit 5)
+        AddEffect("0604", c => Debug.Log("Enervating Mist: Limite de mão 5."));
+
+        // 0607 - Eradicating Aerosol (Destroy Insects)
+        AddEffect("0607", c => Effect_DestroyType(c, "Insect"));
+
+        // 0608 - Eria the Water Charmer (Flip: Control Water)
+        AddEffect("0608", c => Debug.Log("Eria: Controlar monstro WATER."));
+
+        // 0609 - Eternal Drought (Destroy Fish)
+        AddEffect("0609", c => Effect_DestroyType(c, "Fish"));
+
+        // 0610 - Eternal Rest (Destroy Equipped)
+        AddEffect("0610", c => Debug.Log("Eternal Rest: Destruir monstros equipados."));
+
+        // 0612 - Exchange (Swap card in hand)
+        AddEffect("0612", c => Debug.Log("Exchange: Trocar cartas da mão."));
+
+        // 0613 - Exchange of the Spirit (Swap Deck/GY)
+        AddEffect("0613", c => Debug.Log("Exchange of the Spirit: Trocar Deck e GY."));
+
+        // 0614 - Exhausting Spell (Remove Spell Counters)
+        AddEffect("0614", c => Debug.Log("Exhausting Spell: Remover contadores."));
+
+        // 0615 - Exile of the Wicked (Destroy Fiends)
+        AddEffect("0615", c => Effect_DestroyType(c, "Fiend"));
+
+        // 0616 - Exiled Force (Tribute to destroy)
+        AddEffect("0616", c => Debug.Log("Exiled Force: Tributar para destruir."));
+
+        // 0617 - Exodia Necross (SS condition)
+        AddEffect("0617", c => Debug.Log("Exodia Necross: Imune e ganha ATK."));
+
+        // 0620 - Fairy Box (Coin toss 0 ATK)
+        AddEffect("0620", c => Debug.Log("Fairy Box: Moeda para zerar ATK."));
+
+        // 0622 - Fairy Guardian (Recycle Spell)
+        AddEffect("0622", c => Debug.Log("Fairy Guardian: Reciclar Magia."));
+
+        // 0624 - Fairy Meteor Crush (Equip Piercing)
+        AddEffect("0624", c => Effect_Equip(c, 0, 0));
+
+        // 0626 - Fairy of the Spring (Recycle Equip)
+        AddEffect("0626", c => Debug.Log("Fairy of the Spring: Reciclar Equip Spell."));
+
+        // 0628 - Fairy's Hand Mirror (Redirect Spell)
+        AddEffect("0628", c => Debug.Log("Fairy's Hand Mirror: Redirecionar alvo de Magia."));
+
+        // 0631 - Fake Trap (Protect Traps)
+        AddEffect("0631", c => Debug.Log("Fake Trap: Proteger armadilhas."));
+
+        // 0632 - Falling Down (Snatch Steal Archfiend)
+        AddEffect("0632", c => Debug.Log("Falling Down: Snatch Steal para Archfiends."));
+
+        // 0633 - Familiar Knight (SS on destroy)
+        AddEffect("0633", c => Debug.Log("Familiar Knight: SS da mão ao ser destruído."));
+
+        // 0634 - Fatal Abacus (Burn on GY)
+        AddEffect("0634", c => Debug.Log("Fatal Abacus: Dano por monstro enviado ao GY."));
+
+        // 0635 - Fear from the Dark (SS on discard)
+        AddEffect("0635", c => Debug.Log("Fear from the Dark: SS se descartado."));
+
+        // 0636 - Fengsheng Mirror (Discard Spirit)
+        AddEffect("0636", c => Debug.Log("Fengsheng Mirror: Olhar mão e descartar Spirit."));
+
+        // 0637 - Fenrir (Skip Draw)
+        AddEffect("0637", c => Debug.Log("Fenrir: Skip Draw Phase."));
+
+        // 0639 - Fiber Jar (Reset Duel)
+        AddEffect("0639", c => Debug.Log("Fiber Jar: Reset total do duelo."));
+
+        // 0640 - Fiend Comedian (Banish/Mill)
+        AddEffect("0640", c => Debug.Log("Fiend Comedian: Banir GY ou millar."));
+
+        // 0648 - Fiend's Hand Mirror (Redirect Spell)
+        AddEffect("0648", c => Debug.Log("Fiend's Hand Mirror: Redirecionar alvo de Magia (S/T)."));
+
+        // 0650 - Fiend's Sanctuary (SS Token)
+        AddEffect("0650", c => Debug.Log("Fiend's Sanctuary: SS Token."));
+
+        // 0651 - Final Attack Orders (Force Attack)
+        AddEffect("0651", c => Debug.Log("Final Attack Orders: Forçar ataque."));
+
+        // 0652 - Final Countdown (Win in 20)
+        AddEffect("0652", c => { Effect_PayLP(c, 2000); Debug.Log("Final Countdown: Contagem iniciada."); });
+
+        // 0653 - Final Destiny (Discard 5 Nuke)
+        AddEffect("0653", c => Debug.Log("Final Destiny: Descartar 5 para destruir tudo."));
+
+        // 0654 - Final Flame (Burn 600)
+        AddEffect("0654", c => Effect_DirectDamage(c, 600));
+
+        // 0656 - Fire Darts (Dice Burn)
+        AddEffect("0656", c => Debug.Log("Fire Darts: Dano de dados."));
+
+        // 0659 - Fire Princess (Burn on Heal)
+        AddEffect("0659", c => Debug.Log("Fire Princess: Dano ao curar."));
+
+        // 0661 - Fire Sorcerer (Banish Hand Burn)
+        AddEffect("0661", c => Debug.Log("Fire Sorcerer: Banir da mão para dano."));
+
+        // 0662 - Firebird (Gain ATK)
+        AddEffect("0662", c => Debug.Log("Firebird: Ganha ATK."));
+
+        // 0666 - Fissure (Destroy lowest ATK)
+        AddEffect("0666", c => Debug.Log("Fissure: Destruir menor ATK."));
+
+        // 0673 - Flame Ruler (2 Tributes Fire)
+        AddEffect("0673", c => Debug.Log("Flame Ruler: 2 tributos para Fire."));
+
+        // 0676 - Flash Assailant (Debuff hand)
+        AddEffect("0676", c => Debug.Log("Flash Assailant: Debuff por cartas na mão."));
+
+        // 0677 - Flint (Lock)
+        AddEffect("0677", c => Debug.Log("Flint: Travar monstro."));
+
+        // 0680 - Flying Kamakiri #1 (Search Wind)
+        AddEffect("0680", c => Effect_SearchDeck(c, "WIND"));
+
+        // 0683 - Follow Wind (Equip +300)
+        AddEffect("0683", c => Effect_Equip(c, 300, 300, "Winged Beast"));
+
+        // 0684 - Foolish Burial (Mill)
+        AddEffect("0684", c => Debug.Log("Foolish Burial: Enviar do deck ao GY."));
+
+        // 0685 - Forced Ceasefire (No Traps)
+        AddEffect("0685", c => Debug.Log("Forced Ceasefire: Impedir Traps."));
+
+        // 0686 - Forced Requisition (Discard)
+        AddEffect("0686", c => Debug.Log("Forced Requisition: Descarte forçado."));
+
+        // 0687 - Forest (Field Buff)
+        AddEffect("0687", c => Effect_Field(c, 200, 200, "Insect"));
+
+        // 0688 - Formation Union (Union)
+        AddEffect("0688", c => Debug.Log("Formation Union: Equipar/Desequipar Union."));
+
+        // 0691 - Fox Fire (Revive)
+        AddEffect("0691", c => Debug.Log("Fox Fire: Reviver."));
+
+        // 0692 - Freed the Brave Wanderer (Banish Light Destroy)
+        AddEffect("0692", c => Debug.Log("Freed: Banir 2 Light para destruir."));
+
+        // 0693 - Freed the Matchless General (Search Warrior)
+        AddEffect("0693", c => Debug.Log("Freed General: Buscar Warrior."));
+
+        // 0694 - Freezing Beast (Union)
+        AddEffect("0694", c => Debug.Log("Freezing Beast: Union."));
+
+        // 0696 - Frontier Wiseman (Negate Target)
+        AddEffect("0696", c => Debug.Log("Frontier Wiseman: Negar alvo em Warrior."));
+
+        // 0697 - Frontline Base (SS Union)
+        AddEffect("0697", c => Debug.Log("Frontline Base: SS Union."));
+
+        // 0698 - Frozen Soul (Skip Battle)
+        AddEffect("0698", c => Debug.Log("Frozen Soul: Pular Battle Phase."));
+
+        // 0699 - Fruits of Kozaky's Studies (Reorder)
+        AddEffect("0699", c => Debug.Log("Fruits of Kozaky: Reordenar deck."));
+
+        // 0700 - Fuh-Rin-Ka-Zan (4 Elements)
+        AddEffect("0700", c => Debug.Log("Fuh-Rin-Ka-Zan: Efeito poderoso se 4 elementos."));
+
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 0701 - 0800)
+        // =========================================================================================
+
+        // 0701 - Fuhma Shuriken (Equip Ninja +700, Burn 700 on GY)
+        AddEffect("0701", c => { Effect_Equip(c, 700, 0); Debug.Log("Fuhma Shuriken: Dano se for pro GY."); });
+
+        // 0702 - Fulfillment of the Contract (Pay 800, Revive Ritual)
+        AddEffect("0702", c => { Effect_PayLP(c, 800); Debug.Log("Fulfillment: Reviver Ritual."); });
+
+        // 0704 - Fushi No Tori (Spirit, Heal damage)
+        AddEffect("0704", c => Debug.Log("Fushi No Tori: Spirit. Cura igual ao dano."));
+
+        // 0705 - Fushioh Richie (Flip, Negate, SS Zombie)
+        AddEffect("0705", c => Debug.Log("Fushioh Richie: Flip SS Zombie."));
+
+        // 0706 - Fusilier Dragon (NS no tribute)
+        AddEffect("0706", c => Debug.Log("Fusilier Dragon: NS sem tributo (stats metade)."));
+
+        // 0707 - Fusion Gate (Field Fusion)
+        AddEffect("0707", c => Debug.Log("Fusion Gate: Fusão banindo."));
+
+        // 0708 - Fusion Recovery (Add Poly + Material)
+        AddEffect("0708", c => Debug.Log("Fusion Recovery: Recuperar Poly e Material."));
+
+        // 0709 - Fusion Sage (Search Poly)
+        AddEffect("0709", c => Effect_SearchDeck(c, "Polymerization"));
+
+        // 0710 - Fusion Sword Murasame Blade (Equip Warrior +800)
+        AddEffect("0710", c => Effect_Equip(c, 800, 0, "Warrior"));
+
+        // 0711 - Fusion Weapon (Equip Fusion Lv6- +1500)
+        AddEffect("0711", c => Debug.Log("Fusion Weapon: +1500 para Fusão Lv6-."));
+
+        // 0715 - Gaia Power (Field Earth +500/-400)
+        AddEffect("0715", c => Effect_Field(c, 500, -400, "", "Earth"));
+
+        // 0716 - Gaia Soul (Tribute Pyro buff)
+        AddEffect("0716", c => Debug.Log("Gaia Soul: Tributar Pyro para ATK."));
+
+        // 0719 - Gale Dogra (Pay 3000 dump Extra)
+        AddEffect("0719", c => { Effect_PayLP(c, 3000); Debug.Log("Gale Dogra: Enviar do Extra para GY."); });
+
+        // 0720 - Gale Lizard (Flip Return)
+        AddEffect("0720", c => Effect_FlipReturn(c, TargetType.Monster));
+
+        // 0721 - Gamble (Coin toss)
+        AddEffect("0721", c => Debug.Log("Gamble: Moeda."));
+
+        // 0725 - Garma Sword Oath (Ritual)
+        AddEffect("0725", c => Debug.Log("Garma Sword Oath: Ritual."));
+
+        // 0728 - Garuda the Wind Spirit (SS Banish Wind)
+        AddEffect("0728", c => Debug.Log("Garuda: SS banindo Wind."));
+
+        // 0731 - Gate Guardian (SS Tributes)
+        AddEffect("0731", c => Debug.Log("Gate Guardian: SS complexo."));
+
+        // 0733 - Gather Your Mind (Search self)
+        AddEffect("0733", c => Effect_SearchDeck(c, "Gather Your Mind"));
+
+        // 0734 - Gatling Dragon (Coin destroy)
+        AddEffect("0734", c => Debug.Log("Gatling Dragon: Moedas para destruir."));
+
+        // 0736 - Gear Golem the Moving Fortress (Pay 800 Direct)
+        AddEffect("0736", c => { Effect_PayLP(c, 800); Debug.Log("Gear Golem: Ataque direto."); });
+
+        // 0737 - Gearfried the Iron Knight (Destroy Equip)
+        AddEffect("0737", c => Debug.Log("Gearfried: Destrói equipamentos."));
+
+        // 0738 - Gearfried the Swordmaster (Destroy on Equip)
+        AddEffect("0738", c => Debug.Log("Gearfried Swordmaster: Destrói monstro ao equipar."));
+
+        // 0740 - Gemini Imps (Negate discard)
+        AddEffect("0740", c => Debug.Log("Gemini Imps: Nega descarte."));
+
+        // 0742 - Germ Infection (Equip Debuff)
+        AddEffect("0742", c => Debug.Log("Germ Infection: -300 ATK por turno."));
+
+        // 0743 - Gernia (SS on destroy)
+        AddEffect("0743", c => Debug.Log("Gernia: Renasce na Standby."));
+
+        // 0744 - Getsu Fuhma (Destroy Fiend/Zombie)
+        AddEffect("0744", c => Debug.Log("Getsu Fuhma: Destrói Fiend/Zombie."));
+
+        // 0745 - Ghost Knight of Jackal (SS opp monster)
+        AddEffect("0745", c => Debug.Log("Ghost Knight: Rouba monstro."));
+
+        // 0747 - Giant Axe Mummy (Flip, Destroy weak attacker)
+        AddEffect("0747", c => Debug.Log("Giant Axe Mummy: Destrói atacante fraco."));
+
+        // 0749 - Giant Germ (Burn, SS)
+        AddEffect("0749", c => { Effect_DirectDamage(c, 500); Debug.Log("Giant Germ: SS cópias."); });
+
+        // 0750 - Giant Kozaky (Destroy if no Kozaky)
+        AddEffect("0750", c => Debug.Log("Giant Kozaky: Dano se destruído."));
+
+        // 0752 - Giant Orc (Defense after attack)
+        AddEffect("0752", c => Debug.Log("Giant Orc: Vira defesa."));
+
+        // 0753 - Giant Rat (Recycle Earth)
+        AddEffect("0753", c => Debug.Log("Giant Rat: Busca Earth <= 1500."));
+
+        // 0757 - Giant Trunade (Bounce S/T)
+        AddEffect("0757", c => Debug.Log("Giant Trunade: Retorna S/T."));
+
+        // 0759 - Gift of The Mystical Elf (Gain LP)
+        AddEffect("0759", c => {
+            int count = 0;
+            if (GameManager.Instance.duelFieldUI != null) {
+                foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if(z.childCount > 0) count++;
+                foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) count++;
+            }
+            Effect_GainLP(c, count * 300);
+        });
+
+        // 0760 - Gift of the Martyr (Buff)
+        AddEffect("0760", c => Debug.Log("Gift of the Martyr: Buff ATK."));
+
+        // 0763 - Gigantes (SS Banish Earth, Heavy Storm)
+        AddEffect("0763", c => Debug.Log("Gigantes: SS Earth. Destrói S/T."));
+
+        // 0767 - Gilasaurus (SS, Opp SS)
+        AddEffect("0767", c => Debug.Log("Gilasaurus: SS da mão."));
+
+        // 0768 - Gilford the Lightning (3 Tribute Raigeki)
+        AddEffect("0768", c => Debug.Log("Gilford: Raigeki se 3 tributos."));
+
+        // 0771 - Goblin Attack Force (Defense after attack)
+        AddEffect("0771", c => Debug.Log("Goblin Attack Force: Vira defesa."));
+
+        // 0773 - Goblin Elite Attack Force (Defense after attack)
+        AddEffect("0773", c => Debug.Log("Goblin Elite: Vira defesa."));
+
+        // 0774 - Goblin Fan (Destroy Flip)
+        AddEffect("0774", c => Debug.Log("Goblin Fan: Destrói Flip Lv2-."));
+
+        // 0775 - Goblin King (Stats)
+        AddEffect("0775", c => Debug.Log("Goblin King: Stats por Fiends."));
+
+        // 0776 - Goblin Thief (Damage/Heal)
+        AddEffect("0776", c => { Effect_DirectDamage(c, 500); Effect_GainLP(c, 500); });
+
+        // 0777 - Goblin Zombie (Mill/Search)
+        AddEffect("0777", c => Debug.Log("Goblin Zombie: Mill e Busca."));
+
+        // 0778 - Goblin of Greed (No discard cost)
+        AddEffect("0778", c => Debug.Log("Goblin of Greed: Impede custos."));
+
+        // 0779 - Goblin's Secret Remedy (Heal 600)
+        AddEffect("0779", c => Effect_GainLP(c, 600));
+
+        // 0780 - Goddess of Whim (Coin ATK)
+        AddEffect("0780", c => Debug.Log("Goddess of Whim: Modifica ATK."));
+
+        // 0781 - Goddess with the Third Eye (Fusion Sub)
+        AddEffect("0781", c => Debug.Log("Goddess with the Third Eye: Substituto."));
+
+        // 0784 - Golem Sentry (Flip Bounce)
+        AddEffect("0784", c => Effect_FlipReturn(c, TargetType.Monster));
+
+        // 0786 - Good Goblin Housekeeping (Draw/Return)
+        AddEffect("0786", c => Debug.Log("Good Goblin Housekeeping: Draw e return."));
+
+        // 0787 - Gora Turtle (Lock 1900+)
+        AddEffect("0787", c => Debug.Log("Gora Turtle: Bloqueia 1900+."));
+
+        // 0788 - Gora Turtle of Illusion (Negate Target)
+        AddEffect("0788", c => Debug.Log("Gora Turtle of Illusion: Nega alvo S/T."));
+
+        // 0790 - Gorgon's Eye (Negate Defense)
+        AddEffect("0790", c => Debug.Log("Gorgon's Eye: Nega efeitos defesa."));
+
+        // 0791 - Graceful Charity (Draw 3 Discard 2)
+        AddEffect("0791", c => { 
+            GameManager.Instance.DrawCard(); 
+            GameManager.Instance.DrawCard(); 
+            GameManager.Instance.DrawCard(); 
+            Debug.Log("Graceful Charity: Descarte 2 cartas."); 
+        });
+
+        // 0792 - Graceful Dice (Roll Buff)
+        AddEffect("0792", c => Debug.Log("Graceful Dice: Buff por dado."));
+
+        // 0794 - Gradius' Option (Token)
+        AddEffect("0794", c => Debug.Log("Gradius' Option: Token."));
+
+        // 0795 - Granadora (Heal/Damage)
+        AddEffect("0795", c => { Effect_GainLP(c, 1000); Debug.Log("Granadora: Dano ao morrer."); });
+
+        // 0797 - Granmarg the Rock Monarch (Destroy Set)
+        AddEffect("0797", c => Debug.Log("Granmarg: Destrói setada."));
+
+        // 0799 - Grave Lure (Reveal)
+        AddEffect("0799", c => Debug.Log("Grave Lure: Revela topo."));
+
+        // 0800 - Grave Ohja (Damage on Flip)
+        AddEffect("0800", c => Debug.Log("Grave Ohja: Dano em Flip Summon."));
+
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 0801 - 0900)
+        // =========================================================================================
+
+        // 0801 - Grave Protector (Shuffle destroyed into Deck)
+        AddEffect("0801", c => Debug.Log("Grave Protector: Monstros destruídos voltam ao deck."));
+
+        // 0802 - Gravedigger Ghoul (Banish 2 from Opp GY)
+        AddEffect("0802", c => Debug.Log("Gravedigger Ghoul: Banir 2 do GY do oponente."));
+
+        // 0803 - Gravekeeper's Assailant (Change battle pos with Necrovalley)
+        AddEffect("0803", c => Debug.Log("Gravekeeper's Assailant: Muda posição se Necrovalley."));
+
+        // 0804 - Gravekeeper's Cannonholder (Tribute GK -> 700 dmg)
+        AddEffect("0804", c => Effect_TributeToBurn(c, 1, 700, "Spellcaster")); // Simplificado para Spellcaster/GK
+
+        // 0805 - Gravekeeper's Chief (Revive GK)
+        AddEffect("0805", c => Debug.Log("Gravekeeper's Chief: Reviver Gravekeeper."));
+
+        // 0806 - Gravekeeper's Curse (Burn 500 on Summon)
+        AddEffect("0806", c => Effect_DirectDamage(c, 500));
+
+        // 0807 - Gravekeeper's Guard (Flip Bounce)
+        AddEffect("0807", c => Effect_FlipReturn(c, TargetType.Monster));
+
+        // 0808 - Gravekeeper's Servant (Mill to attack)
+        AddEffect("0808", c => Debug.Log("Gravekeeper's Servant: Oponente milla para atacar."));
+
+        // 0809 - Gravekeeper's Spear Soldier (Piercing)
+        AddEffect("0809", c => Debug.Log("Gravekeeper's Spear Soldier: Dano perfurante."));
+
+        // 0810 - Gravekeeper's Spy (Flip SS GK)
+        AddEffect("0810", c => Effect_SearchDeck(c, "Gravekeeper's"));
+
+        // 0811 - Gravekeeper's Vassal (Effect Damage)
+        AddEffect("0811", c => Debug.Log("Gravekeeper's Vassal: Dano de batalha vira efeito."));
+
+        // 0812 - Gravekeeper's Watcher (Negate discard effect)
+        AddEffect("0812", c => Debug.Log("Gravekeeper's Watcher: Nega efeito de descarte."));
+
+        // 0813 - Graverobber (Use Opp Spell)
+        AddEffect("0813", c => Debug.Log("Graverobber: Usar magia do oponente."));
+
+        // 0814 - Graverobber's Retribution (Burn per banished)
+        AddEffect("0814", c => Debug.Log("Graverobber's Retribution: Dano por banidas."));
+
+        // 0816 - Gravity Axe - Grarl (Equip +500, Lock pos)
+        AddEffect("0816", c => Effect_Equip(c, 500, 0));
+
+        // 0817 - Gravity Bind (Level 4+ no attack)
+        AddEffect("0817", c => Debug.Log("Gravity Bind: Nível 4+ não ataca."));
+
+        // 0818 - Gray Wing (Discard -> Double Attack)
+        AddEffect("0818", c => Debug.Log("Gray Wing: Ataque duplo."));
+
+        // 0821 - Great Dezard (Negate / SS Fushioh)
+        AddEffect("0821", c => Debug.Log("Great Dezard: Nega alvo / Invoca Fushioh."));
+
+        // 0822 - Great Long Nose (Skip Battle Phase)
+        AddEffect("0822", c => Debug.Log("Great Long Nose: Pula Battle Phase do oponente."));
+
+        // 0823 - Great Maju Garzett (Double Tribute ATK)
+        AddEffect("0823", c => Debug.Log("Great Maju Garzett: ATK = 2x Tributo."));
+
+        // 0825 - Great Moth (SS Condition)
+        AddEffect("0825", c => Debug.Log("Great Moth: Invocar via Petit Moth."));
+
+        // 0826 - Great Phantom Thief (Hand destruction)
+        AddEffect("0826", c => Debug.Log("Great Phantom Thief: Descarte ao causar dano."));
+
+        // 0828 - Greed (Burn on Draw)
+        AddEffect("0828", c => Debug.Log("Greed: Dano ao comprar por efeito."));
+
+        // 0829 - Green Gadget (Search Red Gadget)
+        AddEffect("0829", c => Effect_SearchDeck(c, "Red Gadget"));
+
+        // 0831 - Greenkappa (Flip Destroy 2 S/T)
+        AddEffect("0831", c => Debug.Log("Greenkappa: Destrói 2 S/T setadas."));
+
+        // 0832 - Gren Maju Da Eiza (Stats = Banished * 400)
+        AddEffect("0832", c => Debug.Log("Gren Maju: ATK por banidas."));
+
+        // 0834 - Griggle (Heal on control switch)
+        AddEffect("0834", c => Debug.Log("Griggle: Ganha 3000 LP ao trocar controle."));
+
+        // 0836 - Ground Collapse (Block Zones)
+        AddEffect("0836", c => Debug.Log("Ground Collapse: Bloqueia zonas."));
+
+        // 0838 - Gryphon Wing (Anti-Harpie Duster)
+        AddEffect("0838", c => Debug.Log("Gryphon Wing: Nega Duster e destrói."));
+
+        // 0839 - Gryphon's Feather Duster (Destroy own S/T -> Heal)
+        AddEffect("0839", c => Debug.Log("Gryphon's Feather Duster: Destrói próprias S/T e cura."));
+
+        // 0840 - Guardian Angel Joan (Heal on destroy)
+        AddEffect("0840", c => Debug.Log("Guardian Angel Joan: Cura igual ATK do destruído."));
+
+        // 0841 - Guardian Baou (Negate effects / Buff)
+        AddEffect("0841", c => Debug.Log("Guardian Baou: Nega efeitos e ganha ATK."));
+
+        // 0842 - Guardian Ceal (Send Equip -> Destroy Monster)
+        AddEffect("0842", c => Debug.Log("Guardian Ceal: Envia equip para destruir monstro."));
+
+        // 0843 - Guardian Elma (Recycle Equip)
+        AddEffect("0843", c => Debug.Log("Guardian Elma: Recupera equip do GY."));
+
+        // 0844 - Guardian Grarl (SS Condition)
+        AddEffect("0844", c => Debug.Log("Guardian Grarl: SS se tiver Gravity Axe."));
+
+        // 0845 - Guardian Kay'est (Immune to Spells)
+        AddEffect("0845", c => Debug.Log("Guardian Kay'est: Imune a magias."));
+
+        // 0846 - Guardian Sphinx (Flip Bounce All)
+        AddEffect("0846", c => Debug.Log("Guardian Sphinx: Retorna todos monstros do oponente."));
+
+        // 0847 - Guardian Statue (Flip Bounce 1)
+        AddEffect("0847", c => Effect_FlipReturn(c, TargetType.Monster));
+
+        // 0848 - Guardian Tryce (SS on destroy)
+        AddEffect("0848", c => Debug.Log("Guardian Tryce: Invoca material do GY."));
+
+        // 0851 - Gust (Destroy S/T on S destruction)
+        AddEffect("0851", c => Debug.Log("Gust: Destrói S/T se magia destruída."));
+
+        // 0852 - Gust Fan (Equip Wind +400/-200)
+        AddEffect("0852", c => Effect_Equip(c, 400, -200, "", "Wind"));
+
+        // 0853 - Gyaku-Gire Panda (Buff per opp monster, Piercing)
+        AddEffect("0853", c => Debug.Log("Gyaku-Gire Panda: Buff por monstros do oponente."));
+
+        // 0855 - Gyroid (Protect once)
+        AddEffect("0855", c => Debug.Log("Gyroid: Protege 1x por turno."));
+
+        // 0856 - Hade-Hane (Flip Bounce 3)
+        AddEffect("0856", c => Debug.Log("Hade-Hane: Retorna até 3 monstros."));
+
+        // 0857 - Hallowed Life Barrier (Discard -> No Damage)
+        AddEffect("0857", c => Debug.Log("Hallowed Life Barrier: Sem dano neste turno."));
+
+        // 0858 - Hamburger Recipe (Ritual)
+        AddEffect("0858", c => Debug.Log("Hamburger Recipe: Ritual."));
+
+        // 0859 - Hammer Shot (Destroy highest ATK)
+        AddEffect("0859", c => Debug.Log("Hammer Shot: Destrói maior ATK em ataque."));
+
+        // 0860 - Hand of Nephthys (Tribute 2 -> SS Phoenix)
+        AddEffect("0860", c => Debug.Log("Hand of Nephthys: Invoca Sacred Phoenix."));
+
+        // 0861 - Hane-Hane (Flip Bounce 1)
+        AddEffect("0861", c => Effect_FlipReturn(c, TargetType.Monster));
+
+        // 0863 - Hannibal Necromancer (Counter -> Destroy Trap)
+        AddEffect("0863", c => Debug.Log("Hannibal Necromancer: Remove contador para destruir Trap."));
+
+        // 0868 - Harpie Lady 1 (Buff Wind)
+        AddEffect("0868", c => Effect_Field(c, 300, 0, "", "Wind"));
+
+        // 0869 - Harpie Lady 2 (Negate Flip)
+        AddEffect("0869", c => Debug.Log("Harpie Lady 2: Nega efeitos de Flip."));
+
+        // 0870 - Harpie Lady 3 (Lock Attack)
+        AddEffect("0870", c => Debug.Log("Harpie Lady 3: Bloqueia ataque do oponente por 2 turnos."));
+
+        // 0871 - Harpie Lady Sisters (SS Condition)
+        AddEffect("0871", c => Debug.Log("Harpie Lady Sisters: SS via Elegant Egotist."));
+
+        // 0872 - Harpie's Feather Duster (Destroy Opp S/T)
+        AddEffect("0872", Effect_HarpiesFeatherDuster);
+
+        // 0873 - Harpie's Pet Dragon (Buff per Harpie)
+        AddEffect("0873", c => Debug.Log("Harpie's Pet Dragon: Ganha ATK por Harpies."));
+
+        // 0874 - Harpies' Hunting Ground (Field Buff / Destroy S/T)
+        AddEffect("0874", c => { Effect_Field(c, 200, 200, "Winged Beast"); Debug.Log("Hunting Ground: Destrói S/T na invocação de Harpie."); });
+
+        // 0875 - Hayabusa Knight (Double Attack)
+        AddEffect("0875", c => Debug.Log("Hayabusa Knight: Ataque duplo."));
+
+        // 0877 - Heart of Clear Water (Equip Protect)
+        AddEffect("0877", c => Debug.Log("Heart of Clear Water: Protege monstro fraco."));
+
+        // 0878 - Heart of the Underdog (Draw Normal -> Draw again)
+        AddEffect("0878", c => Debug.Log("Heart of the Underdog: Compra extra se comprar Normal Monster."));
+
+        // 0879 - Heavy Mech Support Platform (Union)
+        AddEffect("0879", c => Debug.Log("Heavy Mech Support Platform: Union."));
+
+        // 0880 - Heavy Slump (Hand shuffle draw 2)
+        AddEffect("0880", c => Debug.Log("Heavy Slump: Oponente compra 2 se tiver 8+."));
+
+        // 0881 - Heavy Storm (Destroy all S/T)
+        AddEffect("0881", Effect_HeavyStorm);
+
+        // 0882 - Helping Robo for Combat (Draw/BottomDeck)
+        AddEffect("0882", c => Debug.Log("Helping Robo: Compra 1, retorna 1."));
+
+        // 0883 - Helpoemer (Discard on Battle Phase)
+        AddEffect("0883", c => Debug.Log("Helpoemer: Oponente descarta na Battle Phase."));
+
+        // 0885 - Hero Signal (SS HERO on destroy)
+        AddEffect("0885", c => Debug.Log("Hero Signal: Invoca HERO do deck."));
+
+        // 0888 - Hidden Soldiers (SS Dark on Opp Summon)
+        AddEffect("0888", c => Debug.Log("Hidden Soldiers: Invoca DARK da mão."));
+
+        // 0889 - Hidden Spellbook (Recycle 2 Spells)
+        AddEffect("0889", c => Debug.Log("Hidden Spellbook: Recicla 2 magias."));
+
+        // 0890 - Hieracosphinx (Protect Face-down)
+        AddEffect("0890", c => Debug.Log("Hieracosphinx: Oponente não pode atacar face-down."));
+
+        // 0891 - Hieroglyph Lithograph (Hand limit 7)
+        AddEffect("0891", c => { Effect_PayLP(c, 1000); Debug.Log("Hieroglyph Lithograph: Limite de mão 7."); });
+
+        // 0893 - Hiita the Fire Charmer (Flip Control Fire)
+        AddEffect("0893", c => Debug.Log("Hiita: Controlar monstro FIRE."));
+
+        // 0894 - Hino-Kagu-Tsuchi (Hand Destruction)
+        AddEffect("0894", c => Debug.Log("Hino-Kagu-Tsuchi: Oponente descarta mão na Draw Phase."));
+
+        // 0895 - Hinotama (Burn 500)
+        AddEffect("0895", c => Effect_DirectDamage(c, 500));
+
+        // 0897 - Hiro's Shadow Scout (Flip Draw 3 / Discard Spells)
+        AddEffect("0897", c => Debug.Log("Hiro's Shadow Scout: Oponente compra 3, descarta magias."));
+
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 0901 - 1000)
+        // =========================================================================================
+
+        // 0901 - Homunculus the Alchemic Being (Change Attribute)
+        AddEffect("0901", c => Debug.Log("Homunculus: Mudar atributo."));
+
+        // 0903 - Horn of Heaven (Negate Summon)
+        AddEffect("0903", c => Debug.Log("Horn of Heaven: Tributar 1 para negar invocação."));
+
+        // 0904 - Horn of Light (Equip +800 DEF, Recycle)
+        AddEffect("0904", c => Effect_Equip(c, 0, 800));
+
+        // 0905 - Horn of the Unicorn (Equip +700/700, Recycle)
+        AddEffect("0905", c => Effect_Equip(c, 700, 700));
+
+        // 0906 - Horus the Black Flame Dragon LV4 (Level Up)
+        AddEffect("0906", c => Effect_LevelUp(c, "0907")); // LV6
+
+        // 0907 - Horus the Black Flame Dragon LV6 (Unaffected by Spells, Level Up)
+        AddEffect("0907", c => Effect_LevelUp(c, "0908")); // LV8
+
+        // 0908 - Horus the Black Flame Dragon LV8 (Negate Spells)
+        AddEffect("0908", c => Debug.Log("Horus LV8: Negar ativação de Magia."));
+
+        // 0909 - Horus' Servant (Protect Horus)
+        AddEffect("0909", c => Debug.Log("Horus' Servant: Protege Horus de alvo."));
+
+        // 0910 - Hoshiningen (Field Light +500, Dark -400)
+        AddEffect("0910", c => Effect_Field(c, 500, -400, "", "Light"));
+
+        // 0911 - Hourglass of Courage (Stats Halved/Doubled)
+        AddEffect("0911", c => Debug.Log("Hourglass of Courage: Stats metade/dobro."));
+
+        // 0913 - House of Adhesive Tape (Destroy Summon DEF <= 500)
+        AddEffect("0913", c => Debug.Log("House of Adhesive Tape: Destrói invocação com DEF <= 500."));
+
+        // 0914 - Howling Insect (Search Insect <= 1500)
+        AddEffect("0914", c => Effect_SearchDeck(c, "Insect"));
+
+        // 0915 - Huge Revolution (Nuke Hand/Field)
+        AddEffect("0915", c => Debug.Log("Huge Revolution: Destrói tudo se tiver trio da revolução."));
+
+        // 0916 - Human-Wave Tactics (SS Normal Monsters)
+        AddEffect("0916", c => Debug.Log("Human-Wave Tactics: Invoca Normais na End Phase."));
+
+        // 0922 - Hyena (SS Hyena)
+        AddEffect("0922", c => Effect_SearchDeck(c, "Hyena"));
+
+        // 0926 - Hyper Hammerhead (Bounce)
+        AddEffect("0926", c => Debug.Log("Hyper Hammerhead: Retorna oponente para mão após batalha."));
+
+        // 0927 - Hysteric Fairy (Tribute 2 -> Gain 1000 LP)
+        AddEffect("0927", c => { Debug.Log("Hysteric Fairy: Tributa 2 para ganhar 1000 LP."); Effect_GainLP(c, 1000); });
+
+        // 0931 - Impenetrable Formation (Buff DEF)
+        AddEffect("0931", c => Debug.Log("Impenetrable Formation: +700 DEF."));
+
+        // 0932 - Imperial Order (Negate Spells)
+        AddEffect("0932", c => Debug.Log("Imperial Order: Nega todas as Magias."));
+
+        // 0933 - Inaba White Rabbit (Direct Attack)
+        AddEffect("0933", c => Debug.Log("Inaba White Rabbit: Ataque direto, retorna para mão."));
+
+        // 0935 - Indomitable Fighter Lei Lei (Attack -> Defense)
+        AddEffect("0935", c => Debug.Log("Lei Lei: Vira defesa após atacar."));
+
+        // 0936 - Infernal Flame Emperor (Banish Fire -> Destroy S/T)
+        AddEffect("0936", c => Debug.Log("Infernal Flame Emperor: Bane Fire para destruir S/T."));
+
+        // 0937 - Infernalqueen Archfiend (Buff Archfiend)
+        AddEffect("0937", c => Debug.Log("Infernalqueen: +1000 ATK para um Archfiend."));
+
+        // 0938 - Inferno (SS Banish Fire, Burn)
+        AddEffect("0938", c => Debug.Log("Inferno: SS banindo Fire. 1500 dano ao destruir monstro."));
+
+        // 0939 - Inferno Fire Blast (Red-Eyes Burn)
+        AddEffect("0939", c => Debug.Log("Inferno Fire Blast: Dano igual ATK do Red-Eyes."));
+
+        // 0940 - Inferno Hammer (Flip Face-down)
+        AddEffect("0940", c => Debug.Log("Inferno Hammer: Vira monstro do oponente face-down."));
+
+        // 0941 - Inferno Tempest (Banish Decks/GYs)
+        AddEffect("0941", c => Debug.Log("Inferno Tempest: Bane monstros dos Decks e GYs."));
+
+        // 0942 - Infinite Cards (No Hand Limit)
+        AddEffect("0942", c => Debug.Log("Infinite Cards: Sem limite de mão."));
+
+        // 0943 - Infinite Dismissal (Destroy Lv3-)
+        AddEffect("0943", c => Debug.Log("Infinite Dismissal: Destrói Lv3 ou menor na End Phase."));
+
+        // 0944 - Injection Fairy Lily (Pay 2000 -> +3000 ATK)
+        AddEffect("0944", c => Debug.Log("Injection Fairy Lily: Paga 2000 LP para ganhar 3000 ATK."));
+
+        // 0946 - Insect Armor with Laser Cannon (Equip Insect +700)
+        AddEffect("0946", c => Effect_Equip(c, 700, 0, "Insect"));
+
+        // 0947 - Insect Barrier (Block Insect Attacks)
+        AddEffect("0947", c => Debug.Log("Insect Barrier: Insetos do oponente não atacam."));
+
+        // 0948 - Insect Imitation (Tribute -> SS Insect Lv+1)
+        AddEffect("0948", c => Debug.Log("Insect Imitation: Evoluir Inseto."));
+
+        // 0950 - Insect Princess (Attack Pos, Buff)
+        AddEffect("0950", c => Debug.Log("Insect Princess: Insetos oponente em ataque. Ganha ATK."));
+
+        // 0951 - Insect Queen (Buff, Token)
+        AddEffect("0951", c => Debug.Log("Insect Queen: Buff por Insetos. Gera Token."));
+
+        // 0952 - Insect Soldiers of the Sky (Buff vs Wind)
+        AddEffect("0952", c => Debug.Log("Insect Soldiers: +1000 ATK contra Wind."));
+
+        // 0953 - Inspection (Look Hand)
+        AddEffect("0953", c => { Effect_PayLP(c, 500); Debug.Log("Inspection: Olhar carta da mão."); });
+
+        // 0954 - Interdimensional Matter Transporter (Banish until End Phase)
+        AddEffect("0954", c => Debug.Log("Interdimensional Matter Transporter: Banir temporariamente."));
+
+        // 0956 - Invader of Darkness (No Quick-Play)
+        AddEffect("0956", c => Debug.Log("Invader of Darkness: Bloqueia Quick-Play Spells."));
+
+        // 0957 - Invader of the Throne (Flip Swap)
+        AddEffect("0957", c => Debug.Log("Invader of the Throne: Troca controle."));
+
+        // 0958 - Invasion of Flames (No Traps)
+        AddEffect("0958", c => Debug.Log("Invasion of Flames: Sem traps na invocação."));
+
+        // 0959 - Invigoration (Equip Earth +400/-200)
+        AddEffect("0959", c => Effect_Equip(c, 400, -200, "", "Earth"));
+
+        // 0960 - Invitation to a Dark Sleep (Lock Attack)
+        AddEffect("0960", c => Debug.Log("Invitation to a Dark Sleep: Impede ataque."));
+
+        // 0961 - Iron Blacksmith Kotetsu (Flip Add Equip)
+        AddEffect("0961", c => Effect_SearchDeck(c, "Equip"));
+
+        // 0964 - Jade Insect Whistle (Opponent Search Insect)
+        AddEffect("0964", c => Debug.Log("Jade Insect Whistle: Oponente busca Inseto para o topo."));
+
+        // 0965 - Jam Breeding Machine (Token)
+        AddEffect("0965", c => Debug.Log("Jam Breeding Machine: Gera Slime Token."));
+
+        // 0966 - Jam Defender (Redirect)
+        AddEffect("0966", c => Debug.Log("Jam Defender: Redireciona ataque para Revival Jam."));
+
+        // 0967 - Jar Robber (Negate Pot)
+        AddEffect("0967", c => Debug.Log("Jar Robber: Nega Pot of Greed e você compra."));
+
+        // 0968 - Jar of Greed (Draw 1)
+        AddEffect("0968", c => { GameManager.Instance.DrawCard(); Debug.Log("Jar of Greed: Comprou 1 carta."); });
+
+        // 0973 - Jetroid (Trap from Hand)
+        AddEffect("0973", c => Debug.Log("Jetroid: Pode ativar Trap da mão se atacado."));
+
+        // 0974 - Jigen Bakudan (Flip Nuke)
+        AddEffect("0974", c => Debug.Log("Jigen Bakudan: Destrói tudo e causa dano."));
+
+        // 0975 - Jinzo (Negate Traps)
+        AddEffect("0975", c => Debug.Log("Jinzo: Nega todas as Armadilhas."));
+
+        // 0976 - Jinzo #7 (Direct Attack)
+        AddEffect("0976", c => Debug.Log("Jinzo #7: Ataque direto."));
+
+        // 0977 - Jirai Gumo (Coin Toss Attack)
+        AddEffect("0977", c => Debug.Log("Jirai Gumo: Moeda ao atacar."));
+
+        // 0979 - Jowgen the Spiritualist (Destroy SS / Prevent SS)
+        AddEffect("0979", c => Debug.Log("Jowgen: Destrói SS e impede novas SS."));
+
+        // 0980 - Jowls of Dark Demise (Flip Control)
+        AddEffect("0980", c => Debug.Log("Jowls: Toma controle até End Phase."));
+
+        // 0982 - Judgment of Anubis (Counter S/T Destroy)
+        AddEffect("0982", c => Debug.Log("Judgment of Anubis: Nega destruição de S/T, destrói monstro e causa dano."));
+
+        // 0983 - Judgment of the Desert (Lock Position)
+        AddEffect("0983", c => Debug.Log("Judgment of the Desert: Trava posição de batalha."));
+
+        // 0984 - Judgment of the Pharaoh (Lock/Negate)
+        AddEffect("0984", c => Debug.Log("Judgment of the Pharaoh: Bloqueia invocação ou S/T."));
+
+        // 0985 - Just Desserts (Burn 500 per monster)
+        AddEffect("0985", c => {
+            int count = 0;
+            if (GameManager.Instance.duelFieldUI != null) {
+                foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) count++;
+            }
+            Effect_DirectDamage(c, count * 500);
+        });
+
+        // 0986 - KA-2 Des Scissors (Burn on destroy)
+        AddEffect("0986", c => Debug.Log("KA-2 Des Scissors: Dano igual nível x 500."));
+
+        // 0990 - Kaibaman (Tribute -> SS Blue-Eyes)
+        AddEffect("0990", c => Debug.Log("Kaibaman: Invoca Blue-Eyes da mão."));
+
+        // 0992 - Kaiser Colosseum (Limit Monsters)
+        AddEffect("0992", c => Debug.Log("Kaiser Colosseum: Limita número de monstros do oponente."));
+
+        // 0994 - Kaiser Glider (Bounce on destroy)
+        AddEffect("0994", c => Debug.Log("Kaiser Glider: Retorna monstro para mão."));
+
+        // 0995 - Kaiser Sea Horse (2 Tributes Light)
+        AddEffect("0995", c => Debug.Log("Kaiser Sea Horse: 2 tributos para Light."));
+
+        // 0998 - Kaminote Blow (Destroy with Monk)
+        AddEffect("0998", c => Debug.Log("Kaminote Blow: Destrói monstro que batalhou com Monk."));
+
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 1001 - 1100)
+        // =========================================================================================
+
+        // 1001 - Kangaroo Champ (Change to Defense)
+        AddEffect("1001", c => Debug.Log("Kangaroo Champ: Vira defesa após batalha."));
+
+        // 1004 - Karakuri Spider (Destroy Dark)
+        AddEffect("1004", c => Debug.Log("Karakuri Spider: Destrói DARK se atacar."));
+
+        // 1005 - Karate Man (Double ATK)
+        AddEffect("1005", c => Debug.Log("Karate Man: Dobra ATK, morre na End Phase."));
+
+        // 1008 - Kazejin (Zero ATK)
+        AddEffect("1008", c => Debug.Log("Kazejin: Zera ATK do atacante."));
+
+        // 1009 - Kelbek (Bounce attacker)
+        AddEffect("1009", c => Debug.Log("Kelbek: Retorna atacante para mão."));
+
+        // 1010 - Keldo (Shuffle GY into Deck)
+        AddEffect("1010", c => Debug.Log("Keldo: Retorna 2 do GY do oponente para o Deck."));
+
+        // 1014 - King Dragun (SS Dragon)
+        AddEffect("1014", c => Debug.Log("King Dragun: Invoca Dragão da mão."));
+
+        // 1016 - King Tiger Wanghu (Destroy weak summon)
+        AddEffect("1016", c => Debug.Log("King Tiger Wanghu: Destrói invocação <= 1400 ATK."));
+
+        // 1018 - King of the Skull Servants (Stats / Revive)
+        AddEffect("1018", c => Debug.Log("King of the Skull Servants: ATK por Skull Servants."));
+
+        // 1019 - King of the Swamp (Search Poly)
+        AddEffect("1019", c => Effect_SearchDeck(c, "Polymerization"));
+
+        // 1020 - King's Knight (SS Jack's Knight)
+        AddEffect("1020", c => Debug.Log("King's Knight: Invoca Jack's Knight."));
+
+        // 1021 - Kiryu (Union)
+        AddEffect("1021", c => Debug.Log("Kiryu: Union para Dark Blade."));
+
+        // 1022 - Kiseitai (Equip on attack)
+        AddEffect("1022", c => Debug.Log("Kiseitai: Equipa no atacante e cura."));
+
+        // 1023 - Kishido Spirit (Battle protection)
+        AddEffect("1023", c => Debug.Log("Kishido Spirit: Protege se ATK igual."));
+
+        // 1024 - Knight's Title (SS Dark Magician Knight)
+        AddEffect("1024", c => Debug.Log("Knight's Title: Invoca Dark Magician Knight."));
+
+        // 1025 - Koitsu (Union)
+        AddEffect("1025", c => Debug.Log("Koitsu: Union para Aitsu."));
+
+        // 1028 - Kotodama (Destroy duplicates)
+        AddEffect("1028", c => Debug.Log("Kotodama: Destrói monstros com mesmo nome."));
+
+        // 1031 - Kozaky's Self-Destruct Button (Damage on destroy)
+        AddEffect("1031", c => Debug.Log("Kozaky's Self-Destruct Button: 1000 dano."));
+
+        // 1033 - Kryuel (Coin destroy)
+        AddEffect("1033", c => Debug.Log("Kryuel: Moeda para destruir."));
+
+        // 1035 - Kunai with Chain (Mode change / Buff)
+        AddEffect("1035", c => Debug.Log("Kunai with Chain: Vira defesa ou +500 ATK."));
+
+        // 1037 - Kuriboh (Negate damage)
+        AddEffect("1037", c => Debug.Log("Kuriboh: Descarta para 0 dano."));
+
+        // 1040 - Kycoo the Ghost Destroyer (Banish GY)
+        AddEffect("1040", c => Debug.Log("Kycoo: Bane do GY ao causar dano."));
+
+        // 1046 - Labyrinth of Nightmare (Change positions)
+        AddEffect("1046", c => Debug.Log("Labyrinth of Nightmare: Muda posições na End Phase."));
+
+        // 1047 - Lady Assailant of Flames (Flip Banish/Burn)
+        AddEffect("1047", c => Debug.Log("Lady Assailant: Bane topo do deck e causa dano."));
+
+        // 1048 - Lady Ninja Yae (Bounce S/T)
+        AddEffect("1048", c => Debug.Log("Lady Ninja Yae: Descarta Wind para retornar S/T."));
+
+        // 1049 - Lady Panther (Recycle)
+        AddEffect("1049", c => Debug.Log("Lady Panther: Recupera monstro destruído."));
+
+        // 1051 - Larvae Moth (SS Condition)
+        AddEffect("1051", c => Debug.Log("Larvae Moth: SS via Petit Moth."));
+
+        // 1053 - Laser Cannon Armor (Equip Insect +300)
+        AddEffect("1053", c => Effect_Equip(c, 300, 300, "Insect"));
+
+        // 1054 - Last Day of Witch (Destroy Spellcasters)
+        AddEffect("1054", c => Effect_DestroyType(c, "Spellcaster"));
+
+        // 1055 - Last Turn (Win Condition)
+        AddEffect("1055", c => Debug.Log("Last Turn: Evento especial de vitória."));
+
+        // 1056 - Last Will (SS from Deck)
+        AddEffect("1056", c => Debug.Log("Last Will: Invoca do deck se monstro foi enviado ao GY."));
+
+        // 1059 - Lava Battleguard (Buff)
+        AddEffect("1059", c => Debug.Log("Lava Battleguard: Buff por Swamp Battleguard."));
+
+        // 1060 - Lava Golem (Tribute 2 Opp, Burn)
+        AddEffect("1060", c => Debug.Log("Lava Golem: Tributa 2 do oponente, causa dano."));
+
+        // 1063 - Legacy Hunter (Hand Shuffle)
+        AddEffect("1063", c => Debug.Log("Legacy Hunter: Oponente embaralha carta da mão no deck."));
+
+        // 1064 - Legacy of Yata-Garasu (Draw)
+        AddEffect("1064", c => { GameManager.Instance.DrawCard(); Debug.Log("Legacy of Yata-Garasu: Compra 1 (ou 2)."); });
+
+        // 1065 - Legendary Black Belt (Burn DEF)
+        AddEffect("1065", c => Debug.Log("Legendary Black Belt: Dano igual DEF."));
+
+        // 1066 - Legendary Fiend (Gain ATK)
+        AddEffect("1066", c => Debug.Log("Legendary Fiend: Ganha 700 ATK na Standby."));
+
+        // 1067 - Legendary Flame Lord (Ritual)
+        AddEffect("1067", c => Debug.Log("Legendary Flame Lord: Ritual."));
+
+        // 1068 - Legendary Jujitsu Master (Spin)
+        AddEffect("1068", c => Debug.Log("Legendary Jujitsu Master: Retorna atacante ao topo do deck."));
+
+        // 1069 - Legendary Sword (Equip Warrior +300)
+        AddEffect("1069", c => Effect_Equip(c, 300, 300, "Warrior"));
+
+        // 1070 - Leghul (Direct Attack)
+        AddEffect("1070", c => Debug.Log("Leghul: Ataque direto."));
+
+        // 1071 - Lekunga (SS Token)
+        AddEffect("1071", c => Debug.Log("Lekunga: Bane Water para invocar Token."));
+
+        // 1075 - Lesser Fiend (Banish destroyed)
+        AddEffect("1075", c => Debug.Log("Lesser Fiend: Bane monstros destruídos."));
+
+        // 1076 - Level Conversion Lab (Change Level)
+        AddEffect("1076", c => Debug.Log("Level Conversion Lab: Muda nível."));
+
+        // 1077 - Level Limit - Area B (Defense Position)
+        AddEffect("1077", c => Debug.Log("Level Limit - Area B: Nível 4+ em defesa."));
+
+        // 1078 - Level Up! (SS LV monster)
+        AddEffect("1078", c => Debug.Log("Level Up!: Evolui monstro LV."));
+
+        // 1079 - Levia-Dragon - Daedalus (Nuke)
+        AddEffect("1079", c => Debug.Log("Daedalus: Envia Umi para destruir tudo."));
+
+        // 1080 - Life Absorbing Machine (Heal)
+        AddEffect("1080", c => Debug.Log("Life Absorbing Machine: Recupera metade do LP pago."));
+
+        // 1081 - Light of Intervention (No Set)
+        AddEffect("1081", c => Debug.Log("Light of Intervention: Monstros não podem ser setados."));
+
+        // 1082 - Light of Judgment (Hand/Field destruction)
+        AddEffect("1082", c => Debug.Log("Light of Judgment: Descarta ou destrói."));
+
+        // 1083 - Lighten the Load (Reload high level)
+        AddEffect("1083", c => Debug.Log("Lighten the Load: Embaralha Nível 7+ para comprar."));
+
+        // 1084 - Lightforce Sword (Banish hand)
+        AddEffect("1084", c => Debug.Log("Lightforce Sword: Bane carta da mão temporariamente."));
+
+        // 1085 - Lightning Blade (Equip Warrior +800)
+        AddEffect("1085", c => Effect_Equip(c, 800, 0, "Warrior"));
+
+        // 1087 - Lightning Vortex (Destroy Face-up)
+        AddEffect("1087", c => Debug.Log("Lightning Vortex: Descarta 1, destrói face-up do oponente."));
+
+        // 1088 - Limiter Removal (Double Machine ATK)
+        AddEffect("1088", c => Debug.Log("Limiter Removal: Dobra ATK de Máquinas."));
+
+        // 1091 - Little Chimera (Field Fire +500, Water -400)
+        AddEffect("1091", c => Effect_Field(c, 500, -400, "", "Fire"));
+
+        // 1093 - Little-Winguard (Change Pos)
+        AddEffect("1093", c => Debug.Log("Little-Winguard: Muda posição na End Phase."));
+
+        // 1096 - Lone Wolf (Immunity)
+        AddEffect("1096", c => Debug.Log("Lone Wolf: Imunidade para monstros específicos."));
+
+        // 1097 - Lord Poison (Revive Plant)
+        AddEffect("1097", c => Debug.Log("Lord Poison: Revive Planta ao ser destruído."));
+
+        // 1098 - Lord of D. (Protect Dragons)
+        AddEffect("1098", c => Debug.Log("Lord of D.: Protege Dragões de alvo."));
 
     }
 
@@ -1436,6 +2651,28 @@ public class CardEffectManager : MonoBehaviour
         }
     }
 
+    void CollectCards(Transform[] zones, List<CardDisplay> list)
+    {
+        foreach (var zone in zones)
+        {
+            if (zone != null && zone.childCount > 0)
+            {
+                var cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (cd != null) list.Add(cd);
+            }
+        }
+    }
+
+    void DestroyCards(List<CardDisplay> cards, bool isPlayerSource)
+    {
+        foreach (var card in cards)
+        {
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
+            GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+            Destroy(card.gameObject);
+        }
+    }
+
     void CollectMonsters(Transform[] zones, List<CardDisplay> list)
     {
         foreach (var zone in zones)
@@ -1504,5 +2741,218 @@ public class CardEffectManager : MonoBehaviour
             case TargetType.Any: return true;
             default: return false;
         }
+    }
+
+    void Effect_BlockAttack(CardDisplay source)
+    {
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.position == CardDisplay.BattlePosition.Attack && !t.isPlayerCard,
+                (t) => {
+                    t.ChangePosition();
+                    Debug.Log($"Block Attack: {t.CurrentCardData.name} mudou para defesa.");
+                }
+            );
+        }
+    }
+
+    void Effect_BlowbackDragon(CardDisplay source)
+    {
+        // 3 moedas, se 2 caras, destrói alvo
+        int heads = 0;
+        for(int i=0; i<3; i++) if(Random.value > 0.5f) heads++;
+        
+        if (heads >= 2)
+        {
+            Debug.Log($"Blowback Dragon: {heads} caras! Destruindo alvo.");
+            // Lógica de seleção de alvo e destruição
+        }
+        else
+        {
+            Debug.Log($"Blowback Dragon: {heads} caras. Falhou.");
+        }
+    }
+
+    void Effect_BookOfLife(CardDisplay source)
+    {
+        Debug.Log("Book of Life: Invocar Zumbi e banir monstro do oponente.");
+    }
+
+    void Effect_BookOfMoon(CardDisplay source)
+    {
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.position == CardDisplay.BattlePosition.Attack, // Simplificação
+                (t) => {
+                    t.ChangePosition(); // Vira defesa
+                    t.ShowBack(); // Face-down
+                    Debug.Log($"Book of Moon: {t.CurrentCardData.name} virado para baixo.");
+                }
+            );
+        }
+    }
+
+    void Effect_BookOfTaiyou(CardDisplay source)
+    {
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isFlipped,
+                (t) => {
+                    t.RevealCard();
+                    t.ChangePosition(); // Vira ataque
+                    Debug.Log($"Book of Taiyou: {t.CurrentCardData.name} virado para cima.");
+                }
+            );
+        }
+    }
+
+    void Effect_BrainControl(CardDisplay source)
+    {
+        Debug.Log("Brain Control: Pagar 800 LP para controlar monstro.");
+        Effect_PayLP(source, 800);
+    }
+
+    void Effect_BurstStream(CardDisplay source)
+    {
+        // Verifica se controla Blue-Eyes
+        // Se sim, destrói todos os monstros do oponente
+        Debug.Log("Burst Stream: Destruir monstros do oponente (se tiver Blue-Eyes).");
+        DestroyAllMonsters(true, false);
+    }
+
+    void Effect_HarpiesFeatherDuster(CardDisplay source)
+    {
+        Debug.Log("Harpie's Feather Duster: Destruir S/T do oponente.");
+        List<CardDisplay> toDestroy = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
+            CollectCards(zones, toDestroy);
+            Transform fieldZone = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentFieldSpell : GameManager.Instance.duelFieldUI.playerFieldSpell;
+            CollectCards(new Transform[] { fieldZone }, toDestroy);
+        }
+        DestroyCards(toDestroy, source.isPlayerCard);
+    }
+
+    void Effect_HeavyStorm(CardDisplay source)
+    {
+        Debug.Log("Heavy Storm: Destruir todas as S/T.");
+        List<CardDisplay> toDestroy = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, toDestroy);
+            CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, toDestroy);
+            CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.playerFieldSpell, GameManager.Instance.duelFieldUI.opponentFieldSpell }, toDestroy);
+        }
+        DestroyCards(toDestroy, source.isPlayerCard);
+    }
+
+    void Effect_CallOfTheHaunted(CardDisplay source)
+    {
+        Debug.Log("Call of the Haunted: Invocar do GY em ataque.");
+    }
+
+    void Effect_CardDestruction(CardDisplay source)
+    {
+        Debug.Log("Card Destruction: Ambos descartam mão e compram a mesma quantidade.");
+    }
+
+    void Effect_Ceasefire(CardDisplay source)
+    {
+        Debug.Log("Ceasefire: Virar todos para cima e causar dano por efeito.");
+    }
+
+    void Effect_CemetaryBomb(CardDisplay source)
+    {
+        int damage = GameManager.Instance.opponentGraveyardDisplay.pileData.Count * 100;
+        GameManager.Instance.DamageOpponent(damage);
+    }
+
+    void Effect_ChangeOfHeart(CardDisplay source)
+    {
+        Debug.Log("Change of Heart: Controlar monstro até o fim do turno.");
+    }
+
+    void Effect_ChaosEmperorDragon(CardDisplay source)
+    {
+        Effect_PayLP(source, 1000);
+        Debug.Log("Chaos Emperor Dragon: Enviar tudo para o GY e causar dano.");
+    }
+
+    void Effect_ChaosEnd(CardDisplay source)
+    {
+        if (GameManager.Instance.playerRemoved.Count >= 7)
+        {
+            DestroyAllMonsters(true, true);
+        }
+    }
+
+    void Effect_ChaosSorcerer(CardDisplay source)
+    {
+        Debug.Log("Chaos Sorcerer: Banir monstro face-up.");
+    }
+
+    void Effect_AssaultOnGHQ(CardDisplay source)
+    {
+        Debug.Log("Assault on GHQ: Destruir monstro para millar oponente.");
+    }
+
+    void Effect_AutonomousActionUnit(CardDisplay source)
+    {
+        Effect_PayLP(source, 1500);
+        Debug.Log("Autonomous Action Unit: Invocar do GY do oponente.");
+    }
+
+    void Effect_BackToSquareOne(CardDisplay source)
+    {
+        Debug.Log("Back to Square One: Descartar para retornar monstro ao topo do deck.");
+    }
+
+    void Effect_BarrelDragon(CardDisplay source)
+    {
+        // 3 moedas, 2 caras = destruir
+        int heads = 0;
+        for(int i=0; i<3; i++) if(Random.value > 0.5f) heads++;
+        if (heads >= 2) Debug.Log("Barrel Dragon: Sucesso! Destruir alvo.");
+    }
+
+    void Effect_Bazoo(CardDisplay source)
+    {
+        Debug.Log("Bazoo: Banir do GY para ganhar ATK.");
+    }
+
+    void Effect_BuffStats(CardDisplay source, int atk, int def)
+    {
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                (t) => t.ModifyStats(atk, def)
+            );
+        }
+    }
+
+    void Effect_CompulsoryEvacuationDevice(CardDisplay source)
+    {
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                (t) => {
+                    Debug.Log($"Compulsory Evacuation Device: {t.CurrentCardData.name} retornado para a mão.");
+                    // Lógica de retornar para a mão (simplificada: destruir visualmente)
+                    // Em um sistema completo, moveria para a lista da mão e instanciaria o prefab lá.
+                    Destroy(t.gameObject); 
+                }
+            );
+        }
+    }
+
+    void Effect_EnemyController(CardDisplay source)
+    {
+        Debug.Log("Enemy Controller: Escolha 1 efeito (Mudar Posição ou Controlar).");
     }
 }
