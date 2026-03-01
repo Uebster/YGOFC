@@ -110,6 +110,66 @@ public partial class CardEffectManager
         }
     }
 
+    // --- BATTLE HOOKS ---
+
+    public bool IsAttackRestricted(CardDisplay attacker)
+    {
+        // Swords of Revealing Light (72302403)
+        // Verifica se o oponente do atacante tem Swords ativo
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            bool attackerIsPlayer = attacker.isPlayerCard;
+            Transform[] enemySpellZones = attackerIsPlayer ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
+            
+            foreach (var zone in enemySpellZones)
+            {
+                if (zone.childCount > 0)
+                {
+                    CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (cd != null && cd.isOnField && !cd.isFlipped && cd.CurrentCardData.id == "72302403")
+                    {
+                        Debug.Log("Ataque impedido por Swords of Revealing Light!");
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public void OnAttackDeclared(CardDisplay attacker, CardDisplay target, System.Action onContinue)
+    {
+        // Aqui poderíamos verificar Kuriboh na mão, etc.
+        // Por enquanto, apenas continua o fluxo.
+        onContinue?.Invoke();
+    }
+
+    public void OnDamageCalculation(CardDisplay attacker, CardDisplay target)
+    {
+        // Skyscraper (63035430)
+        // Se E-Hero atacando monstro mais forte, +1000 ATK.
+        if (GameManager.Instance.IsCardActiveOnField("63035430"))
+        {
+            if (attacker.CurrentCardData.name.Contains("Elemental HERO") && target != null)
+            {
+                int targetPower = (target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : target.currentDef;
+                if (targetPower > attacker.currentAtk)
+                {
+                    Debug.Log("Skyscraper: +1000 ATK para E-HERO.");
+                    attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 1000, null));
+                }
+            }
+        }
+
+        // Injection Fairy Lily (79575620) - Lógica de pagar LP seria aqui
+    }
+
+    public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
+    {
+        // D.D. Warrior Lady (7572887) - Lógica de banir seria aqui
+        // Mystic Tomato (83011278) - Lógica de busca seria aqui
+    }
+
     // Helper para iterar cartas ativas no campo
     private void CheckActiveCards(string cardId, System.Action<CardDisplay> action)
     {

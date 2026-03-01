@@ -54,6 +54,10 @@ public partial class CardEffectManager : MonoBehaviour
     // public void OnSpecialSummon(CardDisplay summonedCard);
     // public void OnDamageTaken(bool isPlayer, int amount);
     // public void OnCardLeavesField(CardDisplay card);
+    // public bool IsAttackRestricted(CardDisplay attacker);
+    // public void OnAttackDeclared(CardDisplay attacker, CardDisplay target, System.Action onContinue);
+    // public void OnDamageCalculation(CardDisplay attacker, CardDisplay target);
+    // public void OnBattleEnd(CardDisplay attacker, CardDisplay target);
 
     void DestroyAllMonsters(bool targetOpponent, bool targetPlayer)
     {

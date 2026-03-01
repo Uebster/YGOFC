@@ -36,27 +36,8 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
-        // --- VERIFICAÇÕES DE EFEITOS GLOBAIS ---
-        
-        // Gravity Bind (85742772): Nível 4 ou maior não ataca
-        if (GameManager.Instance.IsCardActiveOnField("85742772"))
-        {
-            if (attacker.CurrentCardData.level >= 4)
-            {
-                Debug.Log("Ataque impedido por Gravity Bind!");
-                return;
-            }
-        }
-
-        // Messenger of Peace (44656491): ATK 1500 ou maior não ataca
-        if (GameManager.Instance.IsCardActiveOnField("44656491"))
-        {
-            if (attacker.currentAtk >= 1500)
-            {
-                Debug.Log("Ataque impedido por Messenger of Peace!");
-                return;
-            }
-        }
+        // Verifica restrições de ataque (Gravity Bind, etc)
+        if (!CanAttack(attacker)) return;
 
         currentAttacker = attacker;
         Debug.Log($"Ataque declarado por {attacker.CurrentCardData.name}. Selecione um alvo.");
@@ -67,6 +48,31 @@ public class BattleManager : MonoBehaviour
         {
             UIManager.Instance.ShowConfirmation("Atacar diretamente?", () => CheckTrapsAndAttackDirectly(attacker));
         }
+    }
+
+    public bool CanAttack(CardDisplay attacker)
+    {
+        // Gravity Bind (85742772)
+        if (GameManager.Instance.IsCardActiveOnField("85742772") && attacker.CurrentCardData.level >= 4)
+        {
+            Debug.Log("Ataque impedido por Gravity Bind!");
+            return false;
+        }
+
+        // Messenger of Peace (44656491)
+        if (GameManager.Instance.IsCardActiveOnField("44656491") && attacker.currentAtk >= 1500)
+        {
+            Debug.Log("Ataque impedido por Messenger of Peace!");
+            return false;
+        }
+
+        // Hook para outros efeitos (Swords of Revealing Light, etc)
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.IsAttackRestricted(attacker))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     public void SelectTarget(CardDisplay target)
@@ -98,13 +104,27 @@ public class BattleManager : MonoBehaviour
         // Verifica armadilhas antes do dano (passa callback para continuar se não houver trap)
         SpellTrapManager.Instance.CheckForTraps(SpellTrapTrigger.Attack, attacker, null, () => 
         {
-            PerformDirectAttack(attacker);
+            // Hook OnAttackDeclared (para Kuriboh, etc)
+            if (CardEffectManager.Instance != null)
+            {
+                CardEffectManager.Instance.OnAttackDeclared(attacker, null, () => PerformDirectAttack(attacker));
+            }
+            else
+            {
+                PerformDirectAttack(attacker);
+            }
         });
     }
 
     private void PerformDirectAttack(CardDisplay attacker)
     {
-        int damage = attacker.CurrentCardData.atk;
+        // Hook OnDamageCalculation (para Injection Fairy Lily, etc)
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.OnDamageCalculation(attacker, null);
+        }
+
+        int damage = attacker.currentAtk; // Usa currentAtk (pode ter mudado no hook acima)
         Debug.Log($"Ataque Direto! Dano: {damage}");
         
         // Aplica dano ao oponente
@@ -127,14 +147,28 @@ public class BattleManager : MonoBehaviour
 
         SpellTrapManager.Instance.CheckForTraps(SpellTrapTrigger.Attack, attacker, target, () =>
         {
-            PerformBattle(attacker, target);
+            // Hook OnAttackDeclared
+            if (CardEffectManager.Instance != null)
+            {
+                CardEffectManager.Instance.OnAttackDeclared(attacker, target, () => PerformBattle(attacker, target));
+            }
+            else
+            {
+                PerformBattle(attacker, target);
+            }
         });
     }
 
     private void PerformBattle(CardDisplay attacker, CardDisplay target)
     {
-        int atkPoints = attacker.CurrentCardData.atk;
-        int targetPoints = (target.position == CardDisplay.BattlePosition.Attack) ? target.CurrentCardData.atk : target.CurrentCardData.def;
+        // Hook OnDamageCalculation (Skyscraper, etc)
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.OnDamageCalculation(attacker, target);
+        }
+
+        int atkPoints = attacker.currentAtk; // Usa currentAtk
+        int targetPoints = (target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : target.currentDef;
 
         Debug.Log($"Batalha: {attacker.CurrentCardData.name} ({atkPoints}) vs {target.CurrentCardData.name} ({targetPoints}) [{target.position}]");
 
@@ -198,6 +232,12 @@ public class BattleManager : MonoBehaviour
                 Debug.Log("Empate (Defesa). Nada acontece.");
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayAttackFail(attacker);
             }
+        }
+
+        // Hook OnBattleEnd (D.D. Warrior Lady, Mystic Tomato)
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.OnBattleEnd(attacker, target);
         }
 
         attacker.hasAttackedThisTurn = true;
