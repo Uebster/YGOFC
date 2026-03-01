@@ -317,6 +317,7 @@ public partial class CardEffectManager
                 (target) => 
                 {
                     Debug.Log($"{source.CurrentCardData.name} equipada em {target.CurrentCardData.name}");
+                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment); // <---- CRIA O LINK
                     // Usa o novo sistema de modificadores
                     if (atkBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, atkBonus, source));
                     if (defBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, defBonus, source));
