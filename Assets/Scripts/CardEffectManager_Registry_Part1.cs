@@ -211,650 +211,646 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 0101 - Armor Break (Trap: Negate Equip)
-        AddEffect("0101", c => Debug.Log("Armor Break: Negar ativação de Equip Spell."));
+        AddEffect("0101", Effect_0101_ArmorBreak);
 
         // 0102 - Armor Exe (Maintenance cost)
-        AddEffect("0102", c => Debug.Log("Armor Exe: Remover contador ou destruir."));
+        AddEffect("0102", Effect_0102_ArmorExe);
 
         // 0103 - Armored Glass (Trap: Negate Equips)
-        AddEffect("0103", c => Debug.Log("Armored Glass: Negar efeitos de Equipamento."));
+        AddEffect("0103", Effect_0103_ArmoredGlass);
 
         // 0108 - Array of Revealing Light (Declare Type)
-        AddEffect("0108", c => Debug.Log("Array of Revealing Light: Declarar tipo."));
+        AddEffect("0108", Effect_0108_ArrayOfRevealingLight);
 
         // 0109 - Arsenal Bug (Stats modification)
-        AddEffect("0109", c => Debug.Log("Arsenal Bug: ATK/DEF vira 1000 se não houver outro Inseto."));
+        AddEffect("0109", Effect_0109_ArsenalBug);
 
         // 0110 - Arsenal Robber (Opponent sends Equip)
-        AddEffect("0110", Effect_ArsenalRobber);
+        AddEffect("0110", Effect_0110_ArsenalRobber);
 
         // 0111 - Arsenal Summoner (FLIP: Search Guardian)
-        AddEffect("0111", c => Effect_SearchDeck(c, "Guardian"));
+        AddEffect("0111", Effect_0111_ArsenalSummoner);
 
         // 0112 - Assault on GHQ (Destroy own -> Mill opp)
-        AddEffect("0112", Effect_AssaultOnGHQ);
+        AddEffect("0112", Effect_0112_AssaultOnGHQ);
 
         // 0113 - Astral Barrier (Direct Attack redirection)
-        AddEffect("0113", c => Debug.Log("Astral Barrier: Redirecionar para ataque direto."));
+        AddEffect("0113", Effect_0113_AstralBarrier);
 
         // 0114 - Asura Priest (Attack all)
-        AddEffect("0114", c => Debug.Log("Asura Priest: Ataca todos. Retorna para mão."));
+        AddEffect("0114", Effect_0114_AsuraPriest);
 
         // 0115 - Aswan Apparition (Damage -> Trap recycling)
-        AddEffect("0115", c => Debug.Log("Aswan Apparition: Reciclar Trap do GY."));
+        AddEffect("0115", Effect_0115_AswanApparition);
 
         // 0116 - Atomic Firefly (Destroyed -> Damage)
-        AddEffect("0116", c => Debug.Log("Atomic Firefly: 1000 dano ao oponente."));
+        AddEffect("0116", Effect_0116_AtomicFirefly);
 
         // 0117 - Attack and Receive (Damage trigger)
-        AddEffect("0117", Effect_AttackAndReceive);
+        AddEffect("0117", Effect_0117_AttackAndReceive);
 
         // 0118 - Aussa the Earth Charmer (FLIP: Control Earth)
-        AddEffect("0118", c => Debug.Log("Aussa: Controlar monstro EARTH."));
+        AddEffect("0118", Effect_0118_AussaTheEarthCharmer);
 
         // 0119 - Autonomous Action Unit (Pay 1500 -> SS opp GY)
-        AddEffect("0119", Effect_AutonomousActionUnit);
+        AddEffect("0119", Effect_0119_AutonomousActionUnit);
 
         // 0120 - Avatar of The Pot (Send Pot -> Draw 3)
-        AddEffect("0120", Effect_AvatarOfThePot);
+        AddEffect("0120", Effect_0120_AvatarOfThePot);
 
         // 0122 - Axe of Despair (Equip +1000)
-        AddEffect("0122", c => Effect_Equip(c, 1000, 0));
+        AddEffect("0122", Effect_0122_AxeOfDespair);
 
         // 0124 - B.E.S. Big Core (Counters)
-        AddEffect("0124", c => Debug.Log("B.E.S. Big Core: Contadores."));
+        AddEffect("0124", Effect_0124_BESBigCore);
 
         // 0125 - B.E.S. Crystal Core (Counters)
-        AddEffect("0125", c => Debug.Log("B.E.S. Crystal Core: Contadores."));
+        AddEffect("0125", Effect_0125_BESCrystalCore);
 
         // 0127 - Back to Square One (Discard -> Bounce)
-        AddEffect("0127", Effect_BackToSquareOne);
+        AddEffect("0127", Effect_0127_BackToSquareOne);
 
         // 0128 - Backfire (Fire destroyed -> Damage)
-        AddEffect("0128", Effect_Backfire);
+        AddEffect("0128", Effect_0128_Backfire);
 
         // 0129 - Backup Soldier (Recycle Normals)
-        AddEffect("0129", Effect_BackupSoldier);
+        AddEffect("0129", Effect_0129_BackupSoldier);
 
         // 0130 - Bad Reaction to Simochi (Heal -> Damage)
-        AddEffect("0130", c => Debug.Log("Simochi: Cura vira dano."));
+        AddEffect("0130", Effect_0130_BadReactionToSimochi);
 
         // 0131 - Bait Doll (Force activation)
-        AddEffect("0131", c => Debug.Log("Bait Doll: Forçar ativação de set."));
+        AddEffect("0131", Effect_0131_BaitDoll);
 
         // 0132 - Balloon Lizard (Counters -> Damage)
-        AddEffect("0132", c => Debug.Log("Balloon Lizard: Contadores e dano."));
+        AddEffect("0132", Effect_0132_BalloonLizard);
 
         // 0133 - Banisher of the Light (Macro Cosmos effect)
-        AddEffect("0133", c => Debug.Log("Banisher of the Light: Banir cartas enviadas ao GY."));
+        AddEffect("0133", Effect_0133_BanisherOfTheLight);
 
         // 0134 - Banner of Courage (Battle Phase Buff)
-        AddEffect("0134", c => Debug.Log("Banner of Courage: +200 ATK na Battle Phase."));
+        AddEffect("0134", Effect_0134_BannerOfCourage);
 
         // 0135 - Bark of Dark Ruler (Pay LP -> Debuff)
-        AddEffect("0135", c => Debug.Log("Bark of Dark Ruler: Pagar LP para reduzir stats."));
+        AddEffect("0135", Effect_0135_BarkOfDarkRuler);
 
         // 0138 - Barrel Behind the Door (Reflect damage)
-        AddEffect("0138", c => Debug.Log("Barrel Behind the Door: Refletir dano de efeito."));
+        AddEffect("0138", Effect_0138_BarrelBehindTheDoor);
 
         // 0139 - Barrel Dragon (Coin toss destroy)
-        AddEffect("0139", Effect_BarrelDragon);
+        AddEffect("0139", Effect_0139_BarrelDragon);
 
         // 0144 - Battery Charger (Pay 500 -> SS Batteryman)
-        AddEffect("0144", Effect_BatteryCharger);
+        AddEffect("0144", Effect_0144_BatteryCharger);
 
         // 0145 - Batteryman AA (Stats)
-        AddEffect("0145", c => Debug.Log("Batteryman AA: Ganha ATK/DEF."));
+        AddEffect("0145", Effect_0145_BatterymanAA);
 
         // 0146 - Batteryman C (Buff Machines)
-        AddEffect("0146", c => Debug.Log("Batteryman C: Buff em Machines."));
+        AddEffect("0146", Effect_0146_BatterymanC);
 
         // 0151 - Battle-Scarred (Archfiend cost)
-        AddEffect("0151", c => Debug.Log("Battle-Scarred: Oponente paga custo de Archfiend."));
+        AddEffect("0151", Effect_0151_BattleScarred);
 
         // 0152 - Bazoo the Soul-Eater (Banish -> Buff)
-        AddEffect("0152", Effect_Bazoo);
+        AddEffect("0152", Effect_0152_BazooTheSoulEater);
 
         // 0155 - Beast Fangs (Equip +300/300)
-        AddEffect("0155", c => Effect_Equip(c, 300, 300, "Beast"));
+        AddEffect("0155", Effect_0155_BeastFangs);
 
         // 0156 - Beast Soul Swap (Swap Beast)
-        AddEffect("0156", Effect_BeastSoulSwap);
+        AddEffect("0156", Effect_0156_BeastSoulSwap);
 
         // 0158 - Beastking of the Swamps (Fusion Sub / Search Poly)
-        AddEffect("0158", c => Debug.Log("Beastking: Substituto de fusão ou buscar Poly."));
+        AddEffect("0158", Effect_0158_BeastkingOfTheSwamps);
 
         // 0163 - Beckoning Light (Discard hand -> Retrieve Light)
-        AddEffect("0163", Effect_BeckoningLight);
+        AddEffect("0163", Effect_0163_BeckoningLight);
 
         // 0164 - Begone, Knave! (Damage -> Bounce)
-        AddEffect("0164", c => Debug.Log("Begone, Knave!: Retornar monstro que causou dano."));
+        AddEffect("0164", Effect_0164_BegoneKnave);
 
         // 0166 - Behemoth the King of All Animals (Tribute effect)
-        AddEffect("0166", c => Debug.Log("Behemoth: Retornar Bestas do GY."));
+        AddEffect("0166", Effect_0166_BehemothTheKingOfAllAnimals);
 
         // 0167 - Berfomet (Search Gazelle)
-        AddEffect("0167", c => Effect_SearchDeck(c, "Gazelle the King of Mythical Beasts"));
+        AddEffect("0167", Effect_0167_Berfomet);
 
         // 0168 - Berserk Dragon (Multi attack)
-        AddEffect("0168", c => Debug.Log("Berserk Dragon: Ataca todos."));
+        AddEffect("0168", Effect_0168_BerserkDragon);
 
         // 0169 - Berserk Gorilla (Must attack)
-        AddEffect("0169", c => Debug.Log("Berserk Gorilla: Destruído se defesa. Deve atacar."));
+        AddEffect("0169", Effect_0169_BerserkGorilla);
 
         // 0172 - Big Bang Shot (Equip +400, Piercing, Banish)
-        AddEffect("0172", c => Effect_Equip(c, 400, 0));
+        AddEffect("0172", Effect_0172_BigBangShot);
 
         // 0173 - Big Burn (Banish GYs)
-        AddEffect("0173", c => Debug.Log("Big Burn: Banir ambos os cemitérios."));
+        AddEffect("0173", Effect_0173_BigBurn);
 
         // 0174 - Big Eye (FLIP: Reorder deck)
-        AddEffect("0174", c => Debug.Log("Big Eye: Reordenar topo do deck."));
+        AddEffect("0174", Effect_0174_BigEye);
 
         // 0177 - Big Shield Gardna (Negate target, change pos)
-        AddEffect("0177", c => Debug.Log("Big Shield Gardna: Nega magia e muda posição."));
+        AddEffect("0177", Effect_0177_BigShieldGardna);
 
         // 0178 - Big Wave Small Wave (Swap Water monsters)
-        AddEffect("0178", Effect_BigWaveSmallWave);
+        AddEffect("0178", Effect_0178_BigWaveSmallWave);
 
         // 0179 - Big-Tusked Mammoth (Prevent attack)
-        AddEffect("0179", c => Debug.Log("Big-Tusked Mammoth: Impede ataque no turno de invocação."));
+        AddEffect("0179", Effect_0179_BigTuskedMammoth);
 
         // 0183 - Birdface (Search Harpie)
-        AddEffect("0183", c => Effect_SearchDeck(c, "Harpie Lady"));
+        AddEffect("0183", Effect_0183_Birdface);
 
         // 0184 - Bite Shoes (FLIP: Change pos)
-        AddEffect("0184", c => Debug.Log("Bite Shoes: Mudar posição de batalha."));
+        AddEffect("0184", Effect_0184_BiteShoes);
 
         // 0185 - Black Dragon's Chick (SS Red-Eyes)
-        AddEffect("0185", Effect_BlackDragonsChick);
+        AddEffect("0185", Effect_0185_BlackDragonsChick);
 
         // 0189 - BLS - Envoy (Banish / Double Attack)
-        AddEffect("0189", c => Debug.Log("BLS Envoy: Banir ou Ataque Duplo."));
+        AddEffect("0189", Effect_0189_BLSEnvoy);
 
         // 0191 - Black Pendant (Equip +500, Burn 500)
-        AddEffect("0191", c => Effect_Equip(c, 500, 0));
+        AddEffect("0191", Effect_0191_BlackPendant);
 
         // 0193 - Black Tyranno (Direct Attack)
-        AddEffect("0193", c => Debug.Log("Black Tyranno: Ataque direto se tudo defesa."));
+        AddEffect("0193", Effect_0193_BlackTyranno);
 
         // 0195 - Blade Knight (Hand size buff)
-        AddEffect("0195", c => Debug.Log("Blade Knight: Buff se mão vazia."));
+        AddEffect("0195", Effect_0195_BladeKnight);
 
         // 0196 - Blade Rabbit (Pos change -> Destroy)
-        AddEffect("0196", c => Debug.Log("Blade Rabbit: Destruir monstro ao mudar para defesa."));
+        AddEffect("0196", Effect_0196_BladeRabbit);
 
         // 0197 - Bladefly (Buff Wind)
-        AddEffect("0197", c => Effect_Field(c, 500, 500, "", "WIND"));
+        AddEffect("0197", Effect_0197_Bladefly);
 
         // 0198 - Blast Held by a Tribute (Destroy attacking tribute)
-        AddEffect("0198", Effect_BlastHeldByATribute);
+        AddEffect("0198", Effect_0198_BlastHeldByATribute);
 
         // 0199 - Blast Juggler (Tribute -> Destroy weak)
-        AddEffect("0199", c => Debug.Log("Blast Juggler: Destruir monstros fracos."));
+        AddEffect("0199", Effect_0199_BlastJuggler);
 
         // 0200 - Blast Magician (Counters -> Destroy)
-        AddEffect("0200", Effect_BlastMagician);
+        AddEffect("0200", Effect_0200_BlastMagician);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 0201 - 0300)
         // =========================================================================================
 
         // 0201 - Blast Sphere (Equip to attacker, destroy & burn)
-        AddEffect("0201", c => Debug.Log("Blast Sphere: Se atacado face-down, equipa no atacante e destrói na próxima Standby."));
+        AddEffect("0201", Effect_0201_BlastSphere);
 
         // 0202 - Blast with Chain (Equip +500, destroy card if destroyed)
-        AddEffect("0202", c => Effect_Equip(c, 500, 0));
+        AddEffect("0202", Effect_0202_BlastWithChain);
 
         // 0203 - Blasting the Ruins (30+ GY -> 3000 dmg)
-        AddEffect("0203", c => {
-            int gyCount = c.isPlayerCard ? GameManager.Instance.playerGraveyardDisplay.pileData.Count : GameManager.Instance.opponentGraveyardDisplay.pileData.Count;
-            if (gyCount >= 30) GameManager.Instance.DamageOpponent(3000);
-        });
+        AddEffect("0203", Effect_0203_BlastingTheRuins);
 
         // 0205 - Blessings of the Nile (Gain LP on discard)
-        AddEffect("0205", c => Debug.Log("Blessings of the Nile: Ganha 1000 LP quando cartas são descartadas."));
+        AddEffect("0205", Effect_0205_BlessingsOfTheNile);
 
         // 0206 - Blind Destruction (Dice roll destroy)
-        AddEffect("0206", c => Debug.Log("Blind Destruction: Rola dado na Standby para destruir monstros."));
+        AddEffect("0206", Effect_0206_BlindDestruction);
 
         // 0207 - Blindly Loyal Goblin (Control switch immunity)
-        AddEffect("0207", c => Debug.Log("Blindly Loyal Goblin: Controle não pode mudar."));
+        AddEffect("0207", Effect_0207_BlindlyLoyalGoblin);
 
         // 0208 - Block Attack (Change to Defense)
-        AddEffect("0208", Effect_BlockAttack);
+        AddEffect("0208", Effect_0208_BlockAttack);
 
         // 0210 - Blood Sucker (Mill on damage)
-        AddEffect("0210", c => Debug.Log("Blood Sucker: Envia topo do deck do oponente ao GY ao causar dano."));
+        AddEffect("0210", Effect_0210_BloodSucker);
 
         // 0211 - Blowback Dragon (Coin toss destroy)
-        AddEffect("0211", Effect_BlowbackDragon);
+        AddEffect("0211", Effect_0211_BlowbackDragon);
 
         // 0212 - Blue Medicine (Gain 400 LP)
-        AddEffect("0212", c => Effect_GainLP(c, 400));
+        AddEffect("0212", Effect_0212_BlueMedicine);
 
         // 0214 - Blue-Eyes Shining Dragon (SS condition, negate target)
-        AddEffect("0214", c => Debug.Log("Blue-Eyes Shining Dragon: Nega efeitos que dão alvo."));
+        AddEffect("0214", Effect_0214_BlueEyesShiningDragon);
 
         // 0215 - Blue-Eyes Toon Dragon (Toon)
-        AddEffect("0215", c => Debug.Log("Toon Dragon: Ataca direto se oponente não tiver Toon."));
+        AddEffect("0215", Effect_0215_BlueEyesToonDragon);
 
         // 0219 - Boar Soldier (Destroy if Normal Summoned)
-        AddEffect("0219", c => Debug.Log("Boar Soldier: Destruído se Normal Summon."));
+        AddEffect("0219", Effect_0219_BoarSoldier);
 
         // 0223 - Bombardment Beetle (Flip check)
-        AddEffect("0223", c => Debug.Log("Bombardment Beetle: Revela face-down do oponente."));
+        AddEffect("0223", Effect_0223_BombardmentBeetle);
 
         // 0227 - Book of Life (SS Zombie, Banish opp monster)
-        AddEffect("0227", Effect_BookOfLife);
+        AddEffect("0227", Effect_0227_BookOfLife);
 
         // 0228 - Book of Moon (Face-down Defense)
-        AddEffect("0228", Effect_BookOfMoon);
+        AddEffect("0228", Effect_0228_BookOfMoon);
 
         // 0229 - Book of Secret Arts (Equip +300/300 Spellcaster)
-        AddEffect("0229", c => Effect_Equip(c, 300, 300, "Spellcaster"));
+        AddEffect("0229", Effect_0229_BookOfSecretArts);
 
         // 0230 - Book of Taiyou (Face-up Attack)
-        AddEffect("0230", Effect_BookOfTaiyou);
+        AddEffect("0230", Effect_0230_BookOfTaiyou);
 
         // 0232 - Bottomless Shifting Sand (Destroy highest ATK)
-        AddEffect("0232", c => Debug.Log("Bottomless Shifting Sand: Destrói monstro com maior ATK."));
+        AddEffect("0232", Effect_0232_BottomlessShiftingSand);
 
         // 0233 - Bottomless Trap Hole (Destroy & Banish >= 1500)
-        AddEffect("0233", Effect_BottomlessTrapHole);
+        AddEffect("0233", Effect_0233_BottomlessTrapHole);
 
         // 0235 - Bowganian (Burn 600)
-        AddEffect("0235", c => Debug.Log("Bowganian: 600 dano na Standby Phase."));
+        AddEffect("0235", Effect_0235_Bowganian);
 
         // 0237 - Brain Control (Take control)
-        AddEffect("0237", Effect_BrainControl);
+        AddEffect("0237", Effect_0237_BrainControl);
 
         // 0238 - Brain Jacker (Flip take control)
-        AddEffect("0238", c => Debug.Log("Brain Jacker: Equipa e toma controle."));
+        AddEffect("0238", Effect_0238_BrainJacker);
 
         // 0240 - Breaker the Magical Warrior (Counter destroy S/T)
-        AddEffect("0240", Effect_BreakerTheMagicalWarrior);
+        AddEffect("0240", Effect_0240_BreakerTheMagicalWarrior);
 
         // 0241 - Breath of Light (Destroy Rock)
-        AddEffect("0241", c => Effect_DestroyType(c, "Rock"));
+        AddEffect("0241", Effect_0241_BreathOfLight);
 
         // 0242 - Bubble Crash (Hand/Field limit)
-        AddEffect("0242", c => Debug.Log("Bubble Crash: Envia cartas ao GY até ter 5."));
+        AddEffect("0242", Effect_0242_BubbleCrash);
 
         // 0243 - Bubble Shuffle (Change pos, SS HERO)
-        AddEffect("0243", Effect_BubbleShuffle);
+        AddEffect("0243", Effect_0243_BubbleShuffle);
 
         // 0244 - Bubonic Vermin (Flip SS)
-        AddEffect("0244", c => Effect_SearchDeck(c, "Bubonic Vermin"));
+        AddEffect("0244", Effect_0244_BubonicVermin);
 
         // 0246 - Burning Algae (Opp gain LP)
-        AddEffect("0246", c => { if(c.isPlayerCard) GameManager.Instance.opponentLP += 1000; else GameManager.Instance.playerLP += 1000; });
+        AddEffect("0246", Effect_0246_BurningAlgae);
 
         // 0248 - Burning Land (Destroy Field, Burn)
-        AddEffect("0248", c => Debug.Log("Burning Land: Destrói campos e causa dano na Standby."));
+        AddEffect("0248", Effect_0248_BurningLand);
 
         // 0249 - Burning Spear (Equip +400/-200)
-        AddEffect("0249", c => Effect_Equip(c, 400, -200, "", "Fire"));
+        AddEffect("0249", Effect_0249_BurningSpear);
 
         // 0250 - Burst Breath (Tribute Dragon, destroy <= ATK)
-        AddEffect("0250", c => Debug.Log("Burst Breath: Tributa Dragão para destruir monstros."));
+        AddEffect("0250", Effect_0250_BurstBreath);
 
         // 0251 - Burst Stream of Destruction (Destroy all opp monsters if BEWD)
-        AddEffect("0251", Effect_BurstStream);
+        AddEffect("0251", Effect_0251_BurstStreamOfDestruction);
 
         // 0252 - Buster Blader (Passive buff)
-        AddEffect("0252", c => Debug.Log("Buster Blader: Ganha ATK por Dragões."));
+        AddEffect("0252", Effect_0252_BusterBlader);
 
         // 0253 - Buster Rancher (Equip buff small monster)
-        AddEffect("0253", c => Debug.Log("Buster Rancher: Buff massivo se ATK base <= 1000."));
+        AddEffect("0253", Effect_0253_BusterRancher);
 
         // 0254 - Butterfly Dagger - Elma (Equip +300)
-        AddEffect("0254", c => Effect_Equip(c, 300, 0));
+        AddEffect("0254", Effect_0254_ButterflyDaggerElma);
 
         // 0255 - Byser Shock (Return Set cards)
-        AddEffect("0255", c => Debug.Log("Byser Shock: Retorna cartas setadas para a mão."));
+        AddEffect("0255", Effect_0255_ByserShock);
 
         // 0256 - Call of Darkness (Anti-Monster Reborn)
-        AddEffect("0256", c => Debug.Log("Call of Darkness: Pune Monster Reborn."));
+        AddEffect("0256", Effect_0256_CallOfDarkness);
 
         // 0257 - Call of the Earthbound (Redirect attack)
-        AddEffect("0257", c => Debug.Log("Call of the Earthbound: Redireciona ataque."));
+        AddEffect("0257", Effect_0257_CallOfTheEarthbound);
 
         // 0258 - Call of the Grave (Negate Monster Reborn)
-        AddEffect("0258", c => Debug.Log("Call of the Grave: Nega Monster Reborn."));
+        AddEffect("0258", Effect_0258_CallOfTheGrave);
 
         // 0259 - Call of the Haunted (SS from GY)
-        AddEffect("0259", Effect_CallOfTheHaunted);
+        AddEffect("0259", Effect_0259_CallOfTheHaunted);
 
         // 0260 - Call of the Mummy (SS Zombie)
-        AddEffect("0260", Effect_CallOfTheMummy);
+        AddEffect("0260", Effect_0260_CallOfTheMummy);
 
         // 0262 - Cannon Soldier (Tribute burn)
-        AddEffect("0262", c => Effect_TributeToBurn(c, 1, 500));
+        AddEffect("0262", Effect_0262_CannonSoldier);
 
         // 0263 - Cannonball Spear Shellfish (Immunity)
-        AddEffect("0263", c => Debug.Log("Cannonball Spear Shellfish: Imune a magias com Umi."));
+        AddEffect("0263", Effect_0263_CannonballSpearShellfish);
 
         // 0264 - Card Destruction (Hand refresh)
-        AddEffect("0264", Effect_CardDestruction);
+        AddEffect("0264", Effect_0264_CardDestruction);
 
         // 0265 - Card Shuffle (Pay 300 shuffle)
-        AddEffect("0265", c => { Effect_PayLP(c, 300); Debug.Log("Deck embaralhado."); });
+        AddEffect("0265", Effect_0265_CardShuffle);
 
         // 0266 - Card of Safe Return (Draw on SS)
-        AddEffect("0266", c => Debug.Log("Card of Safe Return: Compre 1 quando invocar do GY."));
+        AddEffect("0266", Effect_0266_CardOfSafeReturn);
 
         // 0267 - Card of Sanctity (Draw until 2)
-        AddEffect("0267", Effect_CardOfSanctity);
+        AddEffect("0267", Effect_0267_CardOfSanctity);
 
         // 0268 - Castle Gate (Tribute burn)
-        AddEffect("0268", c => Debug.Log("Castle Gate: Tributa para causar dano."));
+        AddEffect("0268", Effect_0268_CastleGate);
 
         // 0269 - Castle Walls (Trap +500 DEF)
-        AddEffect("0269", c => Effect_BuffStats(c, 0, 500));
+        AddEffect("0269", Effect_0269_CastleWalls);
 
         // 0270 - Castle of Dark Illusions (Flip buff Zombies)
-        AddEffect("0270", c => Debug.Log("Castle of Dark Illusions: Buff em Zumbis."));
+        AddEffect("0270", Effect_0270_CastleOfDarkIllusions);
 
         // 0271 - Cat's Ear Tribe (Set opp ATK to 200)
-        AddEffect("0271", c => Debug.Log("Cat's Ear Tribe: ATK do oponente vira 200."));
+        AddEffect("0271", Effect_0271_CatsEarTribe);
 
         // 0272 - Catapult Turtle (Tribute burn half ATK)
-        AddEffect("0272", Effect_CatapultTurtle);
+        AddEffect("0272", Effect_0272_CatapultTurtle);
 
         // 0273 - Catnipped Kitty (Zero DEF)
-        AddEffect("0273", c => Debug.Log("Catnipped Kitty: Torna DEF do oponente 0."));
+        AddEffect("0273", Effect_0273_CatnippedKitty);
 
         // 0274 - Cave Dragon (Restrictions)
-        AddEffect("0274", c => Debug.Log("Cave Dragon: Restrições de invocação e ataque."));
+        AddEffect("0274", Effect_0274_CaveDragon);
 
         // 0275 - Ceasefire (Flip all, burn)
-        AddEffect("0275", Effect_Ceasefire);
+        AddEffect("0275", Effect_0275_Ceasefire);
 
         // 0277 - Cemetary Bomb (Burn per GY card)
-        AddEffect("0277", Effect_CemetaryBomb);
+        AddEffect("0277", Effect_0277_CemetaryBomb);
 
         // 0278 - Centrifugal Field (Fusion recovery)
-        AddEffect("0278", c => Debug.Log("Centrifugal Field: Recupera material de fusão."));
+        AddEffect("0278", Effect_0278_CentrifugalField);
 
         // 0279 - Ceremonial Bell (Reveal hands)
-        AddEffect("0279", c => Debug.Log("Ceremonial Bell: Mãos reveladas."));
+        AddEffect("0279", Effect_0279_CeremonialBell);
 
         // 0280 - Cestus of Dagla (Equip +500 Fairy)
-        AddEffect("0280", c => Effect_Equip(c, 500, 0, "Fairy"));
+        AddEffect("0280", Effect_0280_CestusOfDagla);
 
         // 0281 - Chain Burst (Burn on Trap)
-        AddEffect("0281", c => Debug.Log("Chain Burst: Dano ao ativar armadilha."));
+        AddEffect("0281", Effect_0281_ChainBurst);
 
         // 0282 - Chain Destruction (Destroy copies)
-        AddEffect("0282", c => Debug.Log("Chain Destruction: Destrói cópias no deck/mão."));
+        AddEffect("0282", Effect_0282_ChainDestruction);
 
         // 0283 - Chain Disappearance (Banish copies)
-        AddEffect("0283", c => Debug.Log("Chain Disappearance: Bane cópias no deck/mão."));
+        AddEffect("0283", Effect_0283_ChainDisappearance);
 
         // 0284 - Chain Energy (Cost to play)
-        AddEffect("0284", c => Debug.Log("Chain Energy: Custo de LP para jogar."));
+        AddEffect("0284", Effect_0284_ChainEnergy);
 
         // 0287 - Change of Heart (Take control)
-        AddEffect("0287", Effect_ChangeOfHeart);
+        AddEffect("0287", Effect_0287_ChangeOfHeart);
 
         // 0288 - Chaos Command Magician (Negate target)
-        AddEffect("0288", c => Debug.Log("Chaos Command Magician: Nega efeitos de monstro que dão alvo."));
+        AddEffect("0288", Effect_0288_ChaosCommandMagician);
 
         // 0289 - Chaos Emperor Dragon (Nuke)
-        AddEffect("0289", Effect_ChaosEmperorDragon);
+        AddEffect("0289", Effect_0289_ChaosEmperorDragon);
 
         // 0290 - Chaos End (Nuke monsters)
-        AddEffect("0290", Effect_ChaosEnd);
+        AddEffect("0290", Effect_0290_ChaosEnd);
 
         // 0291 - Chaos Greed (Draw 2)
-        AddEffect("0291", c => { if(GameManager.Instance.playerRemoved.Count >= 4 && GameManager.Instance.playerGraveyard.Count == 0) { GameManager.Instance.DrawCard(); GameManager.Instance.DrawCard(); } });
+        AddEffect("0291", Effect_0291_ChaosGreed);
 
         // 0292 - Chaos Necromancer (ATK = GY * 300)
-        AddEffect("0292", c => Debug.Log("Chaos Necromancer: ATK baseado no GY."));
+        AddEffect("0292", Effect_0292_ChaosNecromancer);
 
         // 0293 - Chaos Sorcerer (Banish)
-        AddEffect("0293", Effect_ChaosSorcerer);
+        AddEffect("0293", Effect_0293_ChaosSorcerer);
 
         // 0294 - Chaosrider Gustaph (Banish spells for ATK)
-        AddEffect("0294", c => Debug.Log("Chaosrider Gustaph: Bane magias para ganhar ATK."));
+        AddEffect("0294", Effect_0294_ChaosriderGustaph);
 
         // 0296 - Charm of Shabti (Protect Gravekeepers)
-        AddEffect("0296", c => Debug.Log("Charm of Shabti: Protege Gravekeepers."));
+        AddEffect("0296", Effect_0296_CharmOfShabti);
 
         // 0298 - Checkmate (Direct attack)
-        AddEffect("0298", c => Debug.Log("Checkmate: Terrorking ataca direto."));
+        AddEffect("0298", Effect_0298_Checkmate);
 
         // 0299 - Chimera the Flying Mythical Beast (SS on destroy)
-        AddEffect("0299", c => Debug.Log("Chimera: Invoca material do GY."));
+        AddEffect("0299", Effect_0299_ChimeraTheFlyingMythicalBeast);
 
         // 0300 - Chiron the Mage (Destroy S/T)
-        AddEffect("0300", Effect_Chiron);
+        AddEffect("0300", Effect_0300_ChironTheMage);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 0301 - 0400)
         // =========================================================================================
 
         // 0301 - Chopman the Desperate Outlaw (Flip: Equip Spell from GY)
-        AddEffect("0301", c => Debug.Log("Chopman: Equipar Spell do GY."));
+        AddEffect("0301", Effect_0301_ChopmanTheDesperateOutlaw);
 
         // 0302 - Chorus of Sanctuary (Continuous Spell: +500 DEF to Defense Position)
-        AddEffect("0302", c => Debug.Log("Chorus of Sanctuary: +500 DEF para monstros em defesa."));
+        AddEffect("0302", Effect_0302_ChorusOfSanctuary);
 
         // 0303 - Chosen One (Spell: Hand selection game)
-        AddEffect("0303", c => Debug.Log("Chosen One: Selecionar cartas da mão."));
+        AddEffect("0303", Effect_0303_ChosenOne);
 
         // 0305 - Cipher Soldier (Effect: +2000 ATK/DEF vs Warrior)
-        AddEffect("0305", c => Debug.Log("Cipher Soldier: +2000 ATK/DEF contra Warrior."));
+        AddEffect("0305", Effect_0305_CipherSoldier);
 
         // 0307 - Cloning (Trap: SS Clone Token)
-        AddEffect("0307", c => Debug.Log("Cloning: Invocar Clone Token."));
+        AddEffect("0307", Effect_0307_Cloning);
 
         // 0309 - Coach Goblin (Effect: Return Normal Monster to deck to draw 1)
-        AddEffect("0309", c => Debug.Log("Coach Goblin: Retornar Normal Monster para comprar 1."));
+        AddEffect("0309", Effect_0309_CoachGoblin);
 
         // 0310 - Cobra Jar (Flip: SS Token)
-        AddEffect("0310", c => Debug.Log("Cobra Jar: Invocar Token."));
+        AddEffect("0310", Effect_0310_CobraJar);
 
         // 0311 - Cobraman Sakuzy (Effect: Flip face-down once per turn. When flipped face-up, look at Set S/T)
-        AddEffect("0311", c => Debug.Log("Cobraman Sakuzy: Olhar S/T setadas."));
+        AddEffect("0311", Effect_0311_CobramanSakuzy);
 
         // 0312 - Cockroach Knight (Effect: When sent to GY, return to top of Deck)
-        AddEffect("0312", c => Debug.Log("Cockroach Knight: Retorna ao topo do deck."));
+        AddEffect("0312", Effect_0312_CockroachKnight);
 
         // 0313 - Cocoon of Evolution (Effect: Equip to Petit Moth)
-        AddEffect("0313", c => Effect_Equip(c, 0, 2000, "Insect")); // Simplificação
+        AddEffect("0313", Effect_0313_CocoonOfEvolution);
 
         // 0314 - Coffin Seller (Trap: Damage when monster sent to opp GY)
-        AddEffect("0314", c => Debug.Log("Coffin Seller: 300 dano por monstro enviado ao GY."));
+        AddEffect("0314", Effect_0314_CoffinSeller);
 
         // 0315 - Cold Wave (Spell: No S/T until next turn)
-        AddEffect("0315", c => Debug.Log("Cold Wave: Bloqueia S/T."));
+        AddEffect("0315", Effect_0315_ColdWave);
 
         // 0316 - Collected Power (Trap: Equip all Equips to target)
-        AddEffect("0316", c => Debug.Log("Collected Power: Roubar equipamentos."));
+        AddEffect("0316", Effect_0316_CollectedPower);
 
         // 0317 - Combination Attack (Spell: Union monster attack again)
-        AddEffect("0317", c => Debug.Log("Combination Attack: Ataque extra com Union."));
+        AddEffect("0317", Effect_0317_CombinationAttack);
 
         // 0318 - Command Knight (Effect: Warrior +400 ATK, cannot be attacked if other monster)
-        AddEffect("0318", c => Debug.Log("Command Knight: +400 ATK para Warriors."));
+        AddEffect("0318", Effect_0318_CommandKnight);
 
         // 0319 - Commencement Dance (Ritual Spell)
-        AddEffect("0319", c => Debug.Log("Commencement Dance: Ritual."));
+        AddEffect("0319", Effect_0319_CommencementDance);
 
         // 0320 - Compulsory Evacuation Device (Trap: Return monster to hand)
-        AddEffect("0320", Effect_CompulsoryEvacuationDevice);
+        AddEffect("0320", Effect_0320_CompulsoryEvacuationDevice);
 
         // 0321 - Confiscation (Spell: Pay 1000, discard opp hand)
-        AddEffect("0321", c => { Effect_PayLP(c, 1000); Debug.Log("Confiscation: Descartar da mão do oponente."); });
+        AddEffect("0321", Effect_0321_Confiscation);
 
         // 0322 - Conscription (Trap: Excavate top deck, SS if monster)
-        AddEffect("0322", c => Debug.Log("Conscription: Roubar monstro do topo do deck."));
+        AddEffect("0322", Effect_0322_Conscription);
 
         // 0323 - Continuous Destruction Punch (Spell: Destroy attacker if DEF > ATK)
-        AddEffect("0323", c => Debug.Log("Continuous Destruction Punch: Destruir atacante."));
+        AddEffect("0323", Effect_0323_ContinuousDestructionPunch);
 
         // 0324 - Contract with Exodia (Spell: SS Exodia Necross)
-        AddEffect("0324", c => Debug.Log("Contract with Exodia: Invocar Exodia Necross."));
+        AddEffect("0324", Effect_0324_ContractWithExodia);
 
         // 0325 - Contract with the Abyss (Ritual Spell)
-        AddEffect("0325", c => Debug.Log("Contract with the Abyss: Ritual DARK."));
+        AddEffect("0325", Effect_0325_ContractWithTheAbyss);
 
         // 0326 - Contract with the Dark Master (Ritual Spell)
-        AddEffect("0326", c => Debug.Log("Contract with the Dark Master: Ritual Zorc."));
+        AddEffect("0326", Effect_0326_ContractWithTheDarkMaster);
 
         // 0327 - Convulsion of Nature (Spell: Turn decks upside down)
-        AddEffect("0327", c => Debug.Log("Convulsion of Nature: Inverter decks."));
+        AddEffect("0327", Effect_0327_ConvulsionOfNature);
 
         // 0328 - Copycat (Effect: Copy ATK/DEF)
-        AddEffect("0328", c => Debug.Log("Copycat: Copiar ATK/DEF."));
+        AddEffect("0328", Effect_0328_Copycat);
 
         // 0331 - Cost Down (Spell: Discard 1, Level -2)
-        AddEffect("0331", c => Debug.Log("Cost Down: Reduzir níveis."));
+        AddEffect("0331", Effect_0331_CostDown);
 
         // 0332 - Covering Fire (Trap: Gain ATK of other monster)
-        AddEffect("0332", c => Debug.Log("Covering Fire: Buff de ATK."));
+        AddEffect("0332", Effect_0332_CoveringFire);
 
         // 0333 - Crab Turtle (Ritual Monster)
         // 0334 - Crass Clown (Effect: Return monster when changed to Attack)
-        AddEffect("0334", c => Debug.Log("Crass Clown: Retornar monstro."));
+        AddEffect("0334", Effect_0334_CrassClown);
 
         // 0338 - Creature Swap (Spell: Swap monsters)
-        AddEffect("0338", c => Debug.Log("Creature Swap: Trocar monstros."));
+        AddEffect("0338", Effect_0338_CreatureSwap);
 
         // 0339 - Creeping Doom Manta (Effect: No Traps on Summon)
-        AddEffect("0339", c => Debug.Log("Creeping Doom Manta: Sem traps na invocação."));
+        AddEffect("0339", Effect_0339_CreepingDoomManta);
 
         // 0340 - Crimson Ninja (Flip: Destroy Trap)
-        AddEffect("0340", c => Effect_FlipDestroy(c, TargetType.Trap));
+        AddEffect("0340", Effect_0340_CrimsonNinja);
 
         // 0341 - Crimson Sentry (Effect: Tribute to return destroyed monster)
-        AddEffect("0341", c => Debug.Log("Crimson Sentry: Recuperar monstro."));
+        AddEffect("0341", Effect_0341_CrimsonSentry);
 
         // 0343 - Criosphinx (Effect: Discard when monster returned to hand)
-        AddEffect("0343", c => Debug.Log("Criosphinx: Descarte ao retornar para mão."));
+        AddEffect("0343", Effect_0343_Criosphinx);
 
         // 0344 - Cross Counter (Trap: Double damage on defense, destroy attacker)
-        AddEffect("0344", c => Debug.Log("Cross Counter: Dano dobrado e destruir."));
+        AddEffect("0344", Effect_0344_CrossCounter);
 
         // 0346 - Crush Card Virus (Trap: Destroy high ATK monsters)
-        AddEffect("0346", c => Debug.Log("Crush Card Virus: Destruir monstros fortes."));
-        AddEffect("0346", Effect_CrushCardVirus);
+        AddEffect("0346", Effect_0346_CrushCardVirus);
 
         // 0347 - Cure Mermaid (Effect: Gain LP)
-        AddEffect("0347", c => Debug.Log("Cure Mermaid: Ganhar LP na Standby."));
+        AddEffect("0347", Effect_0347_CureMermaid);
 
         // 0348 - Curse of Aging (Trap: Discard 1, -500 ATK/DEF)
-        AddEffect("0348", c => Debug.Log("Curse of Aging: Debuff global."));
+        AddEffect("0348", Effect_0348_CurseOfAging);
 
         // 0349 - Curse of Anubis (Trap: Effect monsters to Defense, DEF 0)
-        AddEffect("0349", c => Debug.Log("Curse of Anubis: Defesa e DEF 0."));
+        AddEffect("0349", Effect_0349_CurseOfAnubis);
 
         // 0350 - Curse of Darkness (Trap: Damage on Spell activation)
-        AddEffect("0350", c => Debug.Log("Curse of Darkness: Dano por magia."));
+        AddEffect("0350", Effect_0350_CurseOfDarkness);
 
         // 0352 - Curse of Fiend (Spell: Change positions)
-        AddEffect("0352", c => Debug.Log("Curse of Fiend: Mudar posições."));
+        AddEffect("0352", Effect_0352_CurseOfFiend);
 
         // 0353 - Curse of Royal (Trap: Negate S/T destruction)
-        AddEffect("0353", c => Debug.Log("Curse of Royal: Negar destruição de S/T."));
+        AddEffect("0353", Effect_0353_CurseOfRoyal);
 
         // 0354 - Curse of the Masked Beast (Ritual Spell)
-        AddEffect("0354", c => Debug.Log("Curse of the Masked Beast: Ritual."));
+        AddEffect("0354", Effect_0354_CurseOfTheMaskedBeast);
 
         // 0355 - Cursed Seal of the Forbidden Spell (Trap: Negate Spell)
-        AddEffect("0355", c => Debug.Log("Cursed Seal: Negar e banir magia."));
+        AddEffect("0355", Effect_0355_CursedSealOfTheForbiddenSpell);
 
         // 0357 - Cyber Archfiend (Effect: Draw if hand empty)
-        AddEffect("0357", c => Debug.Log("Cyber Archfiend: Comprar na Draw Phase."));
+        AddEffect("0357", Effect_0357_CyberArchfiend);
 
         // 0359 - Cyber Dragon (Effect: SS if opp controls monster)
-        AddEffect("0359", c => Debug.Log("Cyber Dragon: Invocação Especial."));
+        AddEffect("0359", Effect_0359_CyberDragon);
 
         // 0362 - Cyber Harpie Lady (Effect: Name treated as Harpie Lady)
-        AddEffect("0362", c => Debug.Log("Cyber Harpie Lady: Nome tratado como Harpie Lady."));
+        AddEffect("0362", Effect_0362_CyberHarpieLady);
 
         // 0363 - Cyber Jar (Flip: Destroy all, draw 5, SS)
-        AddEffect("0363", c => Debug.Log("Cyber Jar: Resetar campo."));
+        AddEffect("0363", Effect_0363_CyberJar);
 
         // 0364 - Cyber Raider (Effect: Destroy/Equip Equip Card)
-        AddEffect("0364", c => Debug.Log("Cyber Raider: Roubar equipamento."));
+        AddEffect("0364", Effect_0364_CyberRaider);
 
         // 0366 - Cyber Shield (Spell: Equip Harpie +500)
-        AddEffect("0366", c => Effect_Equip(c, 500, 0, "Winged Beast")); // Simplificado
+        AddEffect("0366", Effect_0366_CyberShield);
 
         // 0369 - Cyber Twin Dragon (Fusion Monster)
-        AddEffect("0369", c => Debug.Log("Cyber Twin Dragon: Ataque duplo."));
+        AddEffect("0369", Effect_0369_CyberTwinDragon);
 
         // 0370 - Cyber-Stein (Effect: Pay 5000 SS Fusion)
-        AddEffect("0370", c => { Effect_PayLP(c, 5000); Debug.Log("Cyber-Stein: Invocar Fusão."); });
+        AddEffect("0370", Effect_0370_CyberStein);
 
         // 0372 - Cybernetic Cyclopean (Effect: +1000 ATK if hand empty)
-        AddEffect("0372", c => Debug.Log("Cybernetic Cyclopean: Buff se mão vazia."));
+        AddEffect("0372", Effect_0372_CyberneticCyclopean);
 
         // 0373 - Cybernetic Magician (Effect: Discard 1, ATK 2000)
-        AddEffect("0373", c => Debug.Log("Cybernetic Magician: Alterar ATK."));
+        AddEffect("0373", Effect_0373_CyberneticMagician);
 
         // 0374 - Cyclon Laser (Spell: Equip Gradius +300, Piercing)
-        AddEffect("0374", c => Effect_Equip(c, 300, 0, "Machine"));
+        AddEffect("0374", Effect_0374_CyclonLaser);
 
         // 0377 - D. Tribe (Trap: Treat as Dragon)
-        AddEffect("0377", c => Debug.Log("D. Tribe: Todos viram Dragão."));
+        AddEffect("0377", Effect_0377_DTribe);
 
         // 0378 - D.D. Assailant (Effect: Banish on destroy)
-        AddEffect("0378", c => Debug.Log("D.D. Assailant: Banir atacante."));
+        AddEffect("0378", Effect_0378_DDAssailant);
 
         // 0379 - D.D. Borderline (Spell: No battle if no spells in GY)
-        AddEffect("0379", c => Debug.Log("D.D. Borderline: Impedir batalha."));
+        AddEffect("0379", Effect_0379_DDBorderline);
 
         // 0380 - D.D. Crazy Beast (Effect: Banish destroyed monster)
-        AddEffect("0380", c => Debug.Log("D.D. Crazy Beast: Banir monstro destruído."));
+        AddEffect("0380", Effect_0380_DDCrazyBeast);
 
         // 0381 - D.D. Designator (Spell: Declare card, remove from hand)
-        AddEffect("0381", c => Debug.Log("D.D. Designator: Banir da mão."));
+        AddEffect("0381", Effect_0381_DDDesignator);
 
         // 0382 - D.D. Dynamite (Trap: Damage per banished)
-        AddEffect("0382", c => Debug.Log("D.D. Dynamite: Dano por banidas."));
+        AddEffect("0382", Effect_0382_DDDynamite);
 
         // 0383 - D.D. Scout Plane (Effect: SS if banished)
-        AddEffect("0383", c => Debug.Log("D.D. Scout Plane: Retornar se banido."));
+        AddEffect("0383", Effect_0383_DDScoutPlane);
 
         // 0384 - D.D. Survivor (Effect: SS if banished)
-        AddEffect("0384", c => Debug.Log("D.D. Survivor: Retornar se banido."));
+        AddEffect("0384", Effect_0384_DDSurvivor);
 
         // 0386 - D.D. Trap Hole (Trap: Destroy/Banish Set monster)
-        AddEffect("0386", c => Debug.Log("D.D. Trap Hole: Destruir e banir."));
+        AddEffect("0386", Effect_0386_DDTrapHole);
 
         // 0387 - D.D. Warrior (Effect: Banish both on battle)
-        AddEffect("0387", c => Debug.Log("D.D. Warrior: Banir ambos."));
+        AddEffect("0387", Effect_0387_DDWarrior);
 
         // 0388 - D.D. Warrior Lady (Effect: Banish both on battle)
-        AddEffect("0388", c => Debug.Log("D.D. Warrior Lady: Banir ambos (opcional)."));
+        AddEffect("0388", Effect_0388_DDWarriorLady);
 
         // 0389 - D.D.M. - Different Dimension Master (Effect: Discard Spell, SS banished)
-        AddEffect("0389", c => Debug.Log("D.D.M.: Invocar banido."));
+        AddEffect("0389", Effect_0389_DDM);
 
         // 0390 - DNA Surgery (Trap: Change Type)
-        AddEffect("0390", c => Debug.Log("DNA Surgery: Mudar tipo."));
+        AddEffect("0390", Effect_0390_DNASurgery);
 
         // 0391 - DNA Transplant (Trap: Change Attribute)
-        AddEffect("0391", c => Debug.Log("DNA Transplant: Mudar atributo."));
+        AddEffect("0391", Effect_0391_DNATransplant);
 
         // 0393 - Dancing Fairy (Effect: Gain 1000 LP in Defense)
-        AddEffect("0393", c => Debug.Log("Dancing Fairy: Ganhar LP."));
+        AddEffect("0393", Effect_0393_DancingFairy);
 
         // 0394 - Dangerous Machine Type-6 (Spell: Dice effect)
-        AddEffect("0394", c => Debug.Log("Dangerous Machine Type-6: Efeito de dado."));
+        AddEffect("0394", Effect_0394_DangerousMachineType6);
 
         // 0395 - Dark Artist (Effect: Halve DEF vs Light)
-        AddEffect("0395", c => Debug.Log("Dark Artist: Reduzir DEF."));
+        AddEffect("0395", Effect_0395_DarkArtist);
 
         // 0397 - Dark Balter the Terrible (Fusion Monster)
-        AddEffect("0397", c => Debug.Log("Dark Balter: Negar magia/efeito."));
+        AddEffect("0397", Effect_0397_DarkBalterTheTerrible);
 
         // 0400 - Dark Blade the Dragon Knight (Fusion Monster)
-        AddEffect("0400", c => Debug.Log("Dark Blade Dragon Knight: Banir do GY."));
+        AddEffect("0400", Effect_0400_DarkBladeTheDragonKnight);
 
         // 0401 - Dark Cat with White Tail (FLIP: Bounce)
         AddEffect("0401", c => Debug.Log("Dark Cat with White Tail: Retorna monstros para a mão."));
