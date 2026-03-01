@@ -311,7 +311,6 @@ public partial class CardEffectManager
         Debug.Log("Airknight Parshath: Compra 1 carta (Trigger de dano).");
         if (source.isPlayerCard) GameManager.Instance.DrawCard();
     }
-
     void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     {
         // Pode atacar direto se os únicos monstros face-up do oponente forem Earth, Water ou Fire.
@@ -382,8 +381,25 @@ public partial class CardEffectManager
 
     void Effect_0046_AmazonessPaladin(CardDisplay source)
     {
-        // +100 ATK por cada "Amazoness".
-        // Passivo/Continuous Update.
+       if (GameManager.Instance.duelFieldUI == null) return;
+        
+        int amazonessCount = 0;
+
+        List<Transform> allZones = new List<Transform>();
+        allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
+        allZones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+
+        foreach (var zone in allZones)
+        {
+            if (zone.childCount == 0) continue;
+            CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+            if (cd != null && cd.isOnField && !cd.isFlipped && cd.CurrentCardData.name.Contains("Amazoness"))
+            {
+                amazonessCount++;
+            }
+        }
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, amazonessCount*100, source));
+        Debug.Log($"Campo ativado: Amazoness Paladin. Buff aplicado.");
     }
 
     void Effect_0047_AmazonessSpellcaster(CardDisplay source)
