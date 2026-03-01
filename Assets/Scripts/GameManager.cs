@@ -366,16 +366,10 @@ public class GameManager : MonoBehaviour
     public void ShuffleDeck(bool isPlayer)
     {
         List<CardData> deck = isPlayer ? playerDeck : opponentDeck;
-        if (deck == null)
-        {
-            Debug.LogError("Tentativa de embaralhar um deck nulo.");
-            return;
-        }
         System.Random rng = new System.Random();
         int n = deck.Count;
         while (n > 1)
-        {
-            n--;
+ {
             int k = rng.Next(n + 1);
             CardData value = deck[k];
             deck[k] = deck[n];
@@ -542,23 +536,6 @@ public class GameManager : MonoBehaviour
         Debug.Log($"{data.name} retornada ao deck (Topo: {toTop}).");
     }
 
-    public void DestroyCard(CardDisplay card, bool byEffect = false)
-    {
-        if (card == null) return;
-
-        // Remove modificadores que essa carta pode estar aplicando.
-        if (CardEffectManager.Instance != null)
-            CardEffectManager.Instance.OnCardLeavesField(card);
-
-        // Desativa visualmente
-        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
-
-        // Lógica do cemitério (move os dados)
-        SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
-
-        // Destrói
-        Destroy(card.gameObject);
-    }
     // --- NOVAS AÇÕES PADRONIZADAS ---
 
     public void TributeCard(CardDisplay card)
@@ -578,64 +555,6 @@ public class GameManager : MonoBehaviour
         Destroy(card.gameObject);
     }
 
-    public void ChangeBattlePosition(CardDisplay card, CardDisplay.BattlePosition newPos)
-    {
-        GameManager.Instance.ChangeBattlePosition(card, newPos);
-    }
-
-    // Método para criar um elo entre duas cartas
-    public void CreateCardLink(CardDisplay source, CardDisplay target, CardLink.LinkType type)
-    {
-        CardLink link = source.gameObject.AddComponent<CardLink>();
-        link.Initialize(source, target, type);
-        Debug.Log($"Link criado: {source.CurrentCardData.name} -> {target.CurrentCardData.name} ({type})");
-    }
-
-    // Método para quebrar os elos de uma carta
-    public void BreakAllLinks(CardDisplay card)
-    {
-        // Destruir todos os elos originados por esta carta
-        CardLink[] sourceLinks = card.GetComponents<CardLink>();
-        foreach (var link in sourceLinks)
-        {
-            if (link.target != null)
-            {
-                Debug.Log($"Quebrando elo de {card.CurrentCardData.name} -> {link.target.CurrentCardData.name}");
-                // Se for elo contínuo, destruir o alvo também
-                if (link.type == CardLink.LinkType.Continuous)
-                {
-                    Debug.Log($"Elo contínuo quebrado: destruindo {link.target.CurrentCardData.name} também.");
-                    DestroyCard(link.target, true);
-                }
-            }
-            Destroy(link);
-        }
-
-        // Destruir todos os elos que apontam para esta carta
-        List<CardDisplay> allCards = FindObjectsByType<CardDisplay>(FindObjectsSortMode.None).ToList();
-        foreach (var otherCard in allCards)
-        {
-            CardLink[] targetLinks = otherCard.GetComponents<CardLink>();
-            foreach (var link in targetLinks)
-            {
-                if (link.target == card)
-                {
-                    Debug.Log($"Quebrando elo de {link.source.CurrentCardData.name} -> {card.CurrentCardData.name}");
-                    Destroy(link);
-                }
-            }
-        }
-    }
-
-    // Chamado quando uma carta é destruída (agora usa a ação padronizada)
-    public void DestroyCard(CardDisplay card, bool byEffect = false)
-    {
-        if (card == null) return;
-        BreakAllLinks(card); // <--- QUEBRA OS LINKS ANTES DE DESTRUIR
-
-        // Remove modificadores que essa carta pode estar aplicando.
-        if (CardEffectManager.Instance != null)
-            CardEffectManager.Instance.OnCardLeavesField(card);
     public bool PayLifePoints(bool isPlayer, int amount)
     {
         int currentLP = isPlayer ? playerLP : opponentLP;
@@ -823,8 +742,6 @@ public class GameManager : MonoBehaviour
     public void SendToGraveyard(CardData card, bool isPlayer)
     {
         if (isPlayer)
-
-        
         {
             playerGraveyard.Add(card);
         }
