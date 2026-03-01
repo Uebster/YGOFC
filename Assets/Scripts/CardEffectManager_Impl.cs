@@ -276,7 +276,7 @@ public partial class CardEffectManager
         // Destruição:
         DestroyAllMonsters(true, false);
     }
-    
+
     void Effect_Ante(CardDisplay source)
     {
         Debug.Log("Ante: Minigame de revelar cartas.");
@@ -301,6 +301,11 @@ public partial class CardEffectManager
         Debug.Log("Arcane Archer: Tributar Planta para destruir S/T.");
     }
 
+    void Effect_ArchfiendOfGilfer(CardDisplay source)
+    {
+        Effect_Equip(source, -500, 0);
+    }
+
     void Effect_ArchfiendsOath(CardDisplay source)
     {
         GameManager.Instance.DamagePlayer(500);
@@ -318,6 +323,17 @@ public partial class CardEffectManager
         Debug.Log("Archlord Zerato: Descarte LIGHT para destruir monstros.");
     }
 
+    void Effect_ArsenalRobber(CardDisplay source)
+    {
+        Debug.Log("Arsenal Robber: Oponente escolhe uma Equip Spell do deck e envia ao GY.");
+    }
+
+    void Effect_AttackAndReceive(CardDisplay source)
+    {
+        // Dano simples por enquanto, lógica de "se tomou dano" é trigger
+        Effect_DirectDamage(source, 700);
+    }
+
     void Effect_LevelUp(CardDisplay source, string nextLevelId)
     {
         Debug.Log($"Level Up! Invocando {nextLevelId}.");
@@ -331,6 +347,16 @@ public partial class CardEffectManager
     void Effect_ArmedDragonLV7(CardDisplay source)
     {
         Debug.Log("Armed Dragon LV7: Descarte monstro para destruir todos <= ATK.");
+    }
+
+    void Effect_AvatarOfThePot(CardDisplay source)
+    {
+        // Requer enviar Pot of Greed da mão
+        Debug.Log("Avatar of The Pot: Enviando Pot of Greed da mão para comprar 3.");
+        // Lógica de custo...
+        GameManager.Instance.DrawCard();
+        GameManager.Instance.DrawCard();
+        GameManager.Instance.DrawCard();
     }
 
     void Effect_DarkHole(CardDisplay source)
@@ -388,6 +414,11 @@ public partial class CardEffectManager
         Debug.Log($"Efeito FLIP (Return) ativado: {source.CurrentCardData.name}");
     }
 
+    void Effect_Backfire(CardDisplay source)
+    {
+        Effect_DirectDamage(source, 500);
+    }
+
     void Effect_BlockAttack(CardDisplay source)
     {
         if (SpellTrapManager.Instance != null)
@@ -417,9 +448,34 @@ public partial class CardEffectManager
         }
     }
 
+    void Effect_BackupSoldier(CardDisplay source)
+    {
+        // Recupera 3 monstros normais do GY
+        // Simplificado: Recupera até 3
+        Debug.Log("Backup Soldier: Recuperando monstros normais do GY.");
+        // TODO: UI de seleção múltipla
+    }
+
+    void Effect_BadReactionToSimochi(CardDisplay source)
+    {
+        Debug.Log("Bad Reaction to Simochi ativado. Cura vira dano.");
+        // Requer flag global no GameManager
+    }
+
+    void Effect_BaitDoll(CardDisplay source)
+    {
+        // Força ativação de setada
+        // Seleciona alvo setado, revela, se for trap ativa, senão destrói
+        Debug.Log("Bait Doll: Forçando ativação.");
+    }
+
     void Effect_BookOfLife(CardDisplay source)
     {
         Debug.Log("Book of Life: Invocar Zumbi e banir monstro do oponente.");
+        // Revive Zumbi
+        Effect_Revive(source, false);
+        // Bane do oponente
+        // TODO: Seleção de banimento
     }
 
     void Effect_BookOfMoon(CardDisplay source)
@@ -435,6 +491,13 @@ public partial class CardEffectManager
                 }
             );
         }
+    }
+
+    void Effect_BatteryCharger(CardDisplay source)
+    {
+        Effect_PayLP(source, 500);
+        // SS Batteryman
+        Debug.Log("Battery Charger: SS Batteryman do GY.");
     }
 
     void Effect_BookOfTaiyou(CardDisplay source)
@@ -470,6 +533,12 @@ public partial class CardEffectManager
         Effect_PayLP(source, 800);
     }
 
+    void Effect_BeastSoulSwap(CardDisplay source)
+    {
+        // Retorna Besta para mão, invoca outra
+        Debug.Log("Beast Soul Swap: Troca de Bestas.");
+    }
+
     void Effect_BurstStream(CardDisplay source)
     {
         Debug.Log("Burst Stream: Destruir monstros do oponente (se tiver Blue-Eyes).");
@@ -503,6 +572,32 @@ public partial class CardEffectManager
         DestroyCards(toDestroy, source.isPlayerCard);
     }
 
+    void Effect_BeckoningLight(CardDisplay source)
+    {
+        // Descarta mão, recupera Light
+        Debug.Log("Beckoning Light: Troca mão por Light do GY.");
+    }
+
+    void Effect_BegoneKnave(CardDisplay source)
+    {
+        Debug.Log("Begone, Knave! ativado. Monstros que causam dano voltam para a mão.");
+    }
+
+    void Effect_BigWaveSmallWave(CardDisplay source)
+    {
+        // Destrói todos Water, invoca Water da mão
+        Debug.Log("Big Wave Small Wave: Substituindo monstros de Água.");
+        // DestroyAllMonsters(true, true); // Filtrado por Water
+    }
+
+    void Effect_BlackDragonsChick(CardDisplay source)
+    {
+        // Envia a si mesmo para o GY
+        // Invoca Red-Eyes
+        Debug.Log("Black Dragon's Chick: Invocando Red-Eyes B. Dragon.");
+        // GameManager.Instance.SpecialSummonFromData(redEyesData, source.isPlayerCard);
+    }
+
     void Effect_MirrorForce(CardDisplay source)
     {
         Debug.Log("Mirror Force: Destruir monstros em ataque do oponente.");
@@ -526,6 +621,16 @@ public partial class CardEffectManager
         DestroyCards(toDestroy, source.isPlayerCard);
     }
 
+    void Effect_BlastHeldByATribute(CardDisplay source)
+    {
+        // Destrói atacante tributado e causa 1000 dano
+        if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+        {
+            // Verifica se foi tributado (precisa de flag no CardDisplay)
+            Debug.Log("Blast Held by a Tribute: Destruindo atacante e causando 1000 dano.");
+        }
+    }
+
     void Effect_RingOfDestruction(CardDisplay source)
     {
         Debug.Log("Ring of Destruction ativado.");
@@ -547,6 +652,17 @@ public partial class CardEffectManager
         }
     }
 
+    void Effect_BlastMagician(CardDisplay source)
+    {
+        // Remove contadores para destruir
+        Debug.Log("Blast Magician: Removendo contadores para destruir monstro.");
+    }
+
+    void Effect_BottomlessTrapHole(CardDisplay source)
+    {
+        Debug.Log("Bottomless Trap Hole: Destruindo e banindo monstro invocado com 1500+ ATK.");
+    }
+
     void Effect_MagicCylinder(CardDisplay source)
     {
         if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
@@ -559,6 +675,12 @@ public partial class CardEffectManager
             if (source.isPlayerCard) GameManager.Instance.DamageOpponent(damage);
             else GameManager.Instance.DamagePlayer(damage);
         }
+    }
+
+    void Effect_BreakerTheMagicalWarrior(CardDisplay source)
+    {
+        // Ganha contador na invocação
+        Debug.Log("Breaker: Ganhou contador. Pode remover para destruir S/T.");
     }
 
     void Effect_Megamorph(CardDisplay source)
@@ -576,6 +698,12 @@ public partial class CardEffectManager
     void Effect_MukaMuka(CardDisplay source)
     {
         Debug.Log("Muka Muka: Ganha 300 ATK/DEF para cada carta na sua mão.");
+    }
+
+    void Effect_BubbleShuffle(CardDisplay source)
+    {
+        // Muda posição de E-Hero e oponente, depois invoca E-Hero
+        Debug.Log("Bubble Shuffle: Mudando posições e invocando.");
     }
 
     void Effect_Scapegoat(CardDisplay source)
@@ -597,6 +725,12 @@ public partial class CardEffectManager
         });
     }
 
+    void Effect_CallOfTheMummy(CardDisplay source)
+    {
+        // SS Zumbi da mão se não controlar monstros
+        Debug.Log("Call of the Mummy: Invocando Zumbi da mão.");
+    }
+
     void Effect_MysticBox(CardDisplay source)
     {
         Debug.Log("Mystic Box: Selecione 1 monstro do oponente para destruir e 1 seu para dar o controle.");
@@ -607,9 +741,26 @@ public partial class CardEffectManager
         Debug.Log("Call of the Haunted: Invocar do GY em ataque.");
     }
 
+    void Effect_CatapultTurtle(CardDisplay source)
+    {
+        // Tributa 1, dano = metade ATK
+        Debug.Log("Catapult Turtle: Tributando para causar dano.");
+    }
+
     void Effect_CardDestruction(CardDisplay source)
     {
         Debug.Log("Card Destruction: Ambos descartam mão e compram a mesma quantidade.");
+    }
+
+    void Effect_CardOfSanctity(CardDisplay source)
+    {
+        // Anime version: Draw until 6? TCG: Banish hand/field, draw 2.
+        // Vamos usar TCG
+        Debug.Log("Card of Sanctity: Banindo mão e campo, comprando 2.");
+        // Limpa campo e mão (banish)
+        // ...
+        GameManager.Instance.DrawCard();
+        GameManager.Instance.DrawCard();
     }
 
     void Effect_Ceasefire(CardDisplay source)
@@ -626,6 +777,11 @@ public partial class CardEffectManager
     void Effect_ChangeOfHeart(CardDisplay source)
     {
         Debug.Log("Change of Heart: Controlar monstro até o fim do turno.");
+    }
+
+    void Effect_Chiron(CardDisplay source)
+    {
+        Debug.Log("Chiron the Mage: Descarte Magia para destruir S/T.");
     }
 
     void Effect_ChaosEmperorDragon(CardDisplay source)
