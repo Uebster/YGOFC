@@ -418,6 +418,12 @@ public partial class CardEffectManager
         Debug.Log($"Level Up! Invocando {nextLevelId}.");
         // Lógica de buscar no deck/mão e invocar
     }
+    
+    void Effect_TurnSet(CardDisplay source)
+    {
+        if (source.position == CardDisplay.BattlePosition.Attack) source.ChangePosition();
+        source.ShowBack();
+    }
 
     void Effect_TurnSet(CardDisplay source)
     {
@@ -520,6 +526,7 @@ public partial class CardEffectManager
         List<CardDisplay> toDestroy = new List<CardDisplay>();
         if (GameManager.Instance.duelFieldUI != null)
         {
+            
             CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, toDestroy);
             CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, toDestroy);
             CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.playerFieldSpell, GameManager.Instance.duelFieldUI.opponentFieldSpell }, toDestroy);

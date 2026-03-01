@@ -366,6 +366,11 @@ public class GameManager : MonoBehaviour
     public void ShuffleDeck(bool isPlayer)
     {
         List<CardData> deck = isPlayer ? playerDeck : opponentDeck;
+        if (deck == null)
+        {
+            Debug.LogError("Tentativa de embaralhar um deck nulo.");
+            return;
+        }
         System.Random rng = new System.Random();
         int n = deck.Count;
         while (n > 1)
@@ -401,6 +406,56 @@ public class GameManager : MonoBehaviour
 
         // Destrói o objeto visual
         Destroy(card.gameObject);
+    }
+
+    public void ShuffleDeck(bool isPlayer)
+    {
+        GameManager.Instance.ShuffleDeck(isPlayer);
+    }
+
+    // --- NOVAS AÇÕES PADRONIZADAS ---
+
+    public void TributeCard(CardDisplay card)
+    {
+        if (card == null) return;
+
+        // Efeito Visual
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayTributeEffect(card);
+
+        // Remove modificadores
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
+
+        // Envia para o GY (Lógica de dados)
+        SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+
+        // Destrói o objeto visual
+        Destroy(card.gameObject);
+    }
+
+    public bool PayLifePoints(bool isPlayer, int amount)
+    {
+        int currentLP = isPlayer ? playerLP : opponentLP;
+        if (currentLP < amount) return false; // Não pode pagar
+
+        if (isPlayer) playerLP -= amount;
+        else opponentLP -= amount;
+        
+        UpdateLPUI();
+        Debug.Log($"{(isPlayer ? "Player" : "Oponente")} pagou {amount} LP.");
+        return true;
+    }
+
+    public void GainLifePoints(bool isPlayer, int amount)
+    {
+        if (isPlayer) playerLP += amount;
+        else opponentLP += amount;
+        
+        UpdateLPUI();
+        Debug.Log($"{(isPlayer ? "Player" : "Oponente")} ganhou {amount} LP.");
+        
+        // Notifica sistema de efeitos (Ex: Fire Princess)
+        if (CardEffectManager.Instance != null)
+            CardEffectManager.Instance.OnLifePointsGained(isPlayer, amount);
     }
 
     public void MillCards(bool isPlayer, int amount)
@@ -487,6 +542,23 @@ public class GameManager : MonoBehaviour
         Debug.Log($"{data.name} retornada ao deck (Topo: {toTop}).");
     }
 
+    public void DestroyCard(CardDisplay card, bool byEffect = false)
+    {
+        if (card == null) return;
+
+        // Remove modificadores que essa carta pode estar aplicando.
+        if (CardEffectManager.Instance != null)
+            CardEffectManager.Instance.OnCardLeavesField(card);
+
+        // Desativa visualmente
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
+
+        // Lógica do cemitério (move os dados)
+        SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+
+        // Destrói
+        Destroy(card.gameObject);
+    }
     // --- NOVAS AÇÕES PADRONIZADAS ---
 
     public void TributeCard(CardDisplay card)
