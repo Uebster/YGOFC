@@ -3712,6 +3712,424 @@ public class CardEffectManager : MonoBehaviour
         // 1800 - Swarm of Locusts (Destroy S/T / Flip Down)
         AddEffect("1800", c => Debug.Log("Swarm of Locusts: Destrói S/T, flip down."));
 
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 1801 - 1900)
+        // =========================================================================================
+
+        // 1801 - Swarm of Scarabs (Flip Destroy Monster)
+        AddEffect("1801", c => Effect_FlipDestroy(c, TargetType.Monster));
+
+        // 1802 - Swift Gaia the Fierce Knight (NS No Tribute)
+        AddEffect("1802", c => Debug.Log("Swift Gaia: NS sem tributo se for a única carta."));
+
+        // 1804 - Sword Hunter (Equip destroyed)
+        AddEffect("1804", c => Debug.Log("Sword Hunter: Equipa monstros destruídos."));
+
+        // 1806 - Sword of Dark Destruction (Equip Dark +400/-200)
+        AddEffect("1806", c => Effect_Equip(c, 400, -200, "", "Dark"));
+
+        // 1807 - Sword of Deep-Seated (Equip +500/500, Recycle)
+        AddEffect("1807", c => Effect_Equip(c, 500, 500));
+
+        // 1808 - Sword of Dragon's Soul (Equip Warrior +700, Destroy Dragon)
+        AddEffect("1808", c => Effect_Equip(c, 700, 0, "Warrior"));
+
+        // 1809 - Sword of the Soul-Eater (Equip Normal Lv3-, Buff)
+        AddEffect("1809", c => Debug.Log("Sword of the Soul-Eater: Tributa Normais para ganhar ATK."));
+
+        // 1810 - Swords of Concealing Light (Face-down Defense)
+        AddEffect("1810", c => Debug.Log("Swords of Concealing Light: Oponente face-down por 2 turnos."));
+
+        // 1811 - Swords of Revealing Light (Face-up, No Attack)
+        AddEffect("1811", c => Debug.Log("Swords of Revealing Light: Revela e impede ataque por 3 turnos."));
+
+        // 1812 - Swordsman from a Distant Land (Destroy monster after battle)
+        AddEffect("1812", c => Debug.Log("Swordsman from a Distant Land: Destrói monstro em 5 turnos."));
+
+        // 1816 - System Down (Pay 1000 Banish Machines)
+        AddEffect("1816", c => { Effect_PayLP(c, 1000); Debug.Log("System Down: Bane Machines do oponente."); });
+
+        // 1817 - T.A.D.P.O.L.E. (Search copies)
+        AddEffect("1817", c => Effect_SearchDeck(c, "T.A.D.P.O.L.E."));
+
+        // 1818 - Tactical Espionage Expert (No Traps on Summon)
+        AddEffect("1818", c => Debug.Log("Tactical Espionage Expert: Sem traps na invocação."));
+
+        // 1819 - Tailor of the Fickle (Switch Equip)
+        AddEffect("1819", c => Debug.Log("Tailor of the Fickle: Troca alvo de equipamento."));
+
+        // 1820 - Tainted Wisdom (Shuffle Deck)
+        AddEffect("1820", c => Debug.Log("Tainted Wisdom: Embaralha deck ao mudar para defesa."));
+
+        // 1823 - Talisman of Spell Sealing (Lock Spells)
+        AddEffect("1823", c => Debug.Log("Talisman of Spell Sealing: Bloqueia Magias (requer Sealmaster)."));
+
+        // 1824 - Talisman of Trap Sealing (Lock Traps)
+        AddEffect("1824", c => Debug.Log("Talisman of Trap Sealing: Bloqueia Armadilhas (requer Sealmaster)."));
+
+        // 1827 - Taunt (Force Attack Target)
+        AddEffect("1827", c => Debug.Log("Taunt: Força ataque em monstro específico."));
+
+        // 1829 - Temple of the Kings (Trap turn set, SS Serket)
+        AddEffect("1829", c => Debug.Log("Temple of the Kings: Ativa Trap no turno que baixa."));
+
+        // 1833 - Terraforming (Search Field Spell)
+        AddEffect("1833", c => Effect_SearchDeck(c, "Field", "Spell"));
+
+        // 1834 - Terrorking Archfiend (Negate, Maintenance)
+        AddEffect("1834", c => Debug.Log("Terrorking Archfiend: Nega alvo, custo de manutenção."));
+
+        // 1836 - Teva (No Attack Next Turn)
+        AddEffect("1836", c => Debug.Log("Teva: Oponente não ataca no próximo turno."));
+
+        // 1839 - The A. Forces (Buff Warriors)
+        AddEffect("1839", c => Debug.Log("The A. Forces: +200 ATK por Warrior/Spellcaster."));
+
+        // 1840 - The Agent of Creation - Venus (Pay 500 SS Shine Ball)
+        AddEffect("1840", c => { Effect_PayLP(c, 500); Debug.Log("Venus: Invoca Shine Ball."); });
+
+        // 1841 - The Agent of Force - Mars (Immune Spell, ATK=LP Diff)
+        AddEffect("1841", c => Debug.Log("Mars: Imune a Magia, ATK = Diferença de LP."));
+
+        // 1842 - The Agent of Judgment - Saturn (Tribute Burn)
+        AddEffect("1842", c => Debug.Log("Saturn: Tributa para causar dano igual diferença de LP."));
+
+        // 1843 - The Agent of Wisdom - Mercury (Draw if hand empty)
+        AddEffect("1843", c => Debug.Log("Mercury: Compra 1 se mão vazia na End Phase."));
+
+        // 1846 - The Big March of Animals (Buff Beasts)
+        AddEffect("1846", c => Debug.Log("The Big March of Animals: +200 ATK por Besta."));
+
+        // 1847 - The Bistro Butcher (Draw 2 for Opp)
+        AddEffect("1847", c => Debug.Log("The Bistro Butcher: Oponente compra 2 ao tomar dano."));
+
+        // 1848 - The Cheerful Coffin (Discard)
+        AddEffect("1848", c => Debug.Log("The Cheerful Coffin: Descarta até 3 monstros."));
+
+        // 1849 - The Creator Incarnate (Tribute SS Creator)
+        AddEffect("1849", c => Debug.Log("The Creator Incarnate: Invoca The Creator da mão."));
+
+        // 1850 - The Dark - Hex-Sealed Fusion (Fusion Sub)
+        AddEffect("1850", c => Debug.Log("The Dark - Hex-Sealed Fusion: Substituto de fusão."));
+
+        // 1851 - The Dark Door (One Attack)
+        AddEffect("1851", c => Debug.Log("The Dark Door: Apenas 1 ataque por turno."));
+
+        // 1853 - The Dragon's Bead (Discard Negate Trap)
+        AddEffect("1853", c => Debug.Log("The Dragon's Bead: Descarta para negar Trap que alvo Dragão."));
+
+        // 1856 - The Earth - Hex-Sealed Fusion (Fusion Sub)
+        AddEffect("1856", c => Debug.Log("The Earth - Hex-Sealed Fusion: Substituto de fusão."));
+
+        // 1857 - The Emperor's Holiday (Negate Equips)
+        AddEffect("1857", c => Debug.Log("The Emperor's Holiday: Nega cartas de Equipamento."));
+
+        // 1858 - The End of Anubis (Negate GY)
+        AddEffect("1858", c => Debug.Log("The End of Anubis: Nega efeitos no GY."));
+
+        // 1859 - The Eye of Truth (Reveal Hand, Heal)
+        AddEffect("1859", c => Debug.Log("The Eye of Truth: Revela mão do oponente, cura se tiver Magia."));
+
+        // 1860 - The Fiend Megacyber (SS Condition)
+        AddEffect("1860", c => Debug.Log("The Fiend Megacyber: SS se oponente tiver mais monstros."));
+
+        // 1861 - The First Sarcophagus (SS Spirit of Pharaoh)
+        AddEffect("1861", c => Debug.Log("The First Sarcophagus: Inicia contagem para Spirit of Pharaoh."));
+
+        // 1862 - The Flute of Summoning Dragon (SS 2 Dragons)
+        AddEffect("1862", c => Debug.Log("The Flute of Summoning Dragon: Invoca até 2 Dragões (requer Lord of D.)."));
+
+        // 1863 - The Forceful Sentry (Look Hand, Return to Deck)
+        AddEffect("1863", c => Debug.Log("The Forceful Sentry: Retorna carta da mão do oponente ao deck."));
+
+        // 1864 - The Forgiving Maiden (Tribute Recycle)
+        AddEffect("1864", c => Debug.Log("The Forgiving Maiden: Recupera monstro destruído."));
+
+        // 1866 - The Graveyard in the Fourth Dimension (Recycle LV)
+        AddEffect("1866", c => Debug.Log("The Graveyard in the Fourth Dimension: Recicla 2 monstros LV."));
+
+        // 1868 - The Hunter with 7 Weapons (Declare Type +1000)
+        AddEffect("1868", c => Debug.Log("The Hunter with 7 Weapons: +1000 ATK contra tipo declarado."));
+
+        // 1870 - The Immortal of Thunder (Flip +3000 LP, Lose 5000)
+        AddEffect("1870", c => { Effect_GainLP(c, 3000); Debug.Log("The Immortal of Thunder: Ganha 3000 LP (perde 5000 depois)."); });
+
+        // 1871 - The Inexperienced Spy (Look Hand)
+        AddEffect("1871", c => Debug.Log("The Inexperienced Spy: Olha 1 carta da mão do oponente."));
+
+        // 1873 - The Kick Man (Equip on SS)
+        AddEffect("1873", c => Debug.Log("The Kick Man: Equipa magia do GY ao ser invocado."));
+
+        // 1874 - The Last Warrior from Another Planet (Lock Summons)
+        AddEffect("1874", c => Debug.Log("The Last Warrior: Impede invocações."));
+
+        // 1875 - The Law of the Normal (Reset, Destroy)
+        AddEffect("1875", c => Debug.Log("The Law of the Normal: Destrói tudo, descarta mãos."));
+
+        // 1876 - The Legendary Fisherman (Immune Umi)
+        AddEffect("1876", c => Debug.Log("The Legendary Fisherman: Imune a magia e ataque com Umi."));
+
+        // 1877 - The Light - Hex-Sealed Fusion (Fusion Sub)
+        AddEffect("1877", c => Debug.Log("The Light - Hex-Sealed Fusion: Substituto de fusão."));
+
+        // 1878 - The Little Swordsman of Aile (Tribute +700)
+        AddEffect("1878", c => Debug.Log("The Little Swordsman of Aile: Tributa para ganhar ATK."));
+
+        // 1879 - The Mask of Remnants (Shuffle/Equip)
+        AddEffect("1879", c => Debug.Log("The Mask of Remnants: Equipa e controla (via Des Gardius)."));
+
+        // 1880 - The Masked Beast (Ritual)
+        AddEffect("1880", c => Debug.Log("The Masked Beast: Ritual."));
+
+        // 1883 - The Puppet Magic of Dark Ruler (Banish -> SS Fiend)
+        AddEffect("1883", c => Debug.Log("The Puppet Magic: Bane monstros para invocar Fiend do GY."));
+
+        // 1884 - The Regulation of Tribe (Type Lock)
+        AddEffect("1884", c => Debug.Log("The Regulation of Tribe: Tipo declarado não ataca."));
+
+        // 1885 - The Reliable Guardian (Quick-Play +700 DEF)
+        AddEffect("1885", c => Effect_BuffStats(c, 0, 700));
+
+        // 1886 - The Rock Spirit (SS Banish Earth)
+        AddEffect("1886", c => Debug.Log("The Rock Spirit: SS banindo Earth."));
+
+        // 1887 - The Sanctuary in the Sky (No Fairy Damage)
+        AddEffect("1887", c => Debug.Log("The Sanctuary in the Sky: Sem dano de batalha com Fadas."));
+
+        // 1889 - The Secret of the Bandit (Discard on Damage)
+        AddEffect("1889", c => Debug.Log("The Secret of the Bandit: Descarte ao causar dano."));
+
+        // 1890 - The Selection (Pay 1000 Negate Summon)
+        AddEffect("1890", c => { Effect_PayLP(c, 1000); Debug.Log("The Selection: Nega invocação de mesmo tipo."); });
+
+        // 1892 - The Shallow Grave (SS Face-down)
+        AddEffect("1892", c => Debug.Log("The Shallow Grave: Ambos invocam monstro face-down do GY."));
+
+        // 1894 - The Spell Absorbing Life (Flip Face-up, Heal)
+        AddEffect("1894", c => Debug.Log("The Spell Absorbing Life: Vira face-up e cura."));
+
+        // 1896 - The Stern Mystic (Flip Reveal)
+        AddEffect("1896", c => Debug.Log("The Stern Mystic: Revela cartas face-down."));
+
+        // 1898 - The Thing in the Crater (SS Pyro)
+        AddEffect("1898", c => Debug.Log("The Thing in the Crater: Invoca Pyro da mão ao ser destruído."));
+
+        // 1900 - The Tricky (SS Discard)
+        AddEffect("1900", c => Debug.Log("The Tricky: SS descartando 1 carta."));
+
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 1901 - 2000)
+        // =========================================================================================
+
+        // 1901 - The Trojan Horse (2 Tributes Earth)
+        AddEffect("1901", c => Debug.Log("The Trojan Horse: Vale por 2 tributos para Earth."));
+
+        // 1902 - The Unfriendly Amazon (Maintenance)
+        AddEffect("1902", c => Debug.Log("The Unfriendly Amazon: Tributa monstro na Standby ou destrói."));
+
+        // 1903 - The Unhappy Girl (Lock Attack/Pos)
+        AddEffect("1903", c => Debug.Log("The Unhappy Girl: Trava monstro que batalhou."));
+
+        // 1904 - The Unhappy Maiden (End Battle Phase)
+        AddEffect("1904", c => Debug.Log("The Unhappy Maiden: Encerra Battle Phase ao ser destruída."));
+
+        // 1906 - The Warrior Returning Alive (Recycle Warrior)
+        AddEffect("1906", c => Debug.Log("The Warrior Returning Alive: Recupera Warrior do GY."));
+
+        // 1907 - The Wicked Dreadroot (Halve Stats)
+        AddEffect("1907", c => Debug.Log("The Wicked Dreadroot: Corta ATK/DEF de todos pela metade."));
+
+        // 1908 - The Wicked Worm Beast (Return to Hand)
+        AddEffect("1908", c => Debug.Log("The Wicked Worm Beast: Retorna para mão na End Phase."));
+
+        // 1909 - Theban Nightmare (Buff if empty)
+        AddEffect("1909", c => Debug.Log("Theban Nightmare: +1500 ATK se mão/S-T vazios."));
+
+        // 1910 - Theinen the Great Sphinx (SS +3000)
+        AddEffect("1910", c => Debug.Log("Theinen: SS especial com 6500 ATK."));
+
+        // 1911 - Thestalos the Firestorm Monarch (Discard Burn)
+        AddEffect("1911", c => Debug.Log("Thestalos: Descarta carta da mão do oponente e causa dano."));
+
+        // 1913 - Thousand Energy (Buff Lv2 Normal)
+        AddEffect("1913", c => Debug.Log("Thousand Energy: +1000 ATK para Normais Lv2."));
+
+        // 1914 - Thousand Knives (Destroy if DM)
+        AddEffect("1914", c => Debug.Log("Thousand Knives: Destrói monstro se controlar Dark Magician."));
+
+        // 1915 - Thousand Needles (Destroy Attacker)
+        AddEffect("1915", c => Debug.Log("Thousand Needles: Destrói atacante se DEF > ATK."));
+
+        // 1917 - Thousand-Eyes Restrict (Absorb, Lock)
+        AddEffect("1917", c => Debug.Log("Thousand-Eyes Restrict: Absorve monstro, impede ataques."));
+
+        // 1918 - Threatening Roar (No Attack)
+        AddEffect("1918", c => Debug.Log("Threatening Roar: Oponente não pode atacar neste turno."));
+
+        // 1921 - Throwstone Unit (Tribute Warrior -> Destroy)
+        AddEffect("1921", c => Debug.Log("Throwstone Unit: Tributa Warrior para destruir monstro com DEF <= ATK."));
+
+        // 1922 - Thunder Crash (Destroy Own -> Burn)
+        AddEffect("1922", c => Debug.Log("Thunder Crash: Destrói seus monstros, 300 dano por cada."));
+
+        // 1923 - Thunder Dragon (Discard -> Add 2)
+        AddEffect("1923", c => Debug.Log("Thunder Dragon: Descarta para buscar até 2 cópias."));
+
+        // 1925 - Thunder Nyan Nyan (Destroy if non-Light)
+        AddEffect("1925", c => Debug.Log("Thunder Nyan Nyan: Destruída se houver monstro não-LIGHT."));
+
+        // 1926 - Thunder of Ruler (Skip Battle Phase)
+        AddEffect("1926", c => Debug.Log("Thunder of Ruler: Pula Battle Phase do oponente."));
+
+        // 1928 - Time Machine (Revive Destroyed)
+        AddEffect("1928", c => Debug.Log("Time Machine: Revive monstro destruído na mesma posição."));
+
+        // 1929 - Time Seal (Skip Draw)
+        AddEffect("1929", c => Debug.Log("Time Seal: Pula Draw Phase do oponente."));
+
+        // 1930 - Time Wizard (Coin Destroy)
+        AddEffect("1930", c => Debug.Log("Time Wizard: Moeda para destruir monstros ou tomar dano."));
+
+        // 1931 - Timeater (Skip Main 1)
+        AddEffect("1931", c => Debug.Log("Timeater: Oponente pula Main Phase 1."));
+
+        // 1932 - Timidity (Protect Set S/T)
+        AddEffect("1932", c => Debug.Log("Timidity: Impede destruição de S/T setadas."));
+
+        // 1935 - Token Feastevil (Destroy Tokens Burn)
+        AddEffect("1935", c => Debug.Log("Token Feastevil: Destrói Tokens e causa dano."));
+
+        // 1936 - Token Thanksgiving (Destroy Tokens Heal)
+        AddEffect("1936", c => Debug.Log("Token Thanksgiving: Destrói Tokens e cura."));
+
+        // 1937 - Toll (Pay to Attack)
+        AddEffect("1937", c => Debug.Log("Toll: Paga 500 LP para atacar."));
+
+        // 1941 - Toon Cannon Soldier (Toon, Tribute Burn)
+        AddEffect("1941", c => Effect_TributeToBurn(c, 1, 500));
+
+        // 1942 - Toon Dark Magician Girl (Toon, Direct)
+        AddEffect("1942", c => Debug.Log("Toon DMG: Ataque direto, SS especial."));
+
+        // 1943 - Toon Defense (Redirect to Direct)
+        AddEffect("1943", c => Debug.Log("Toon Defense: Redireciona ataque para direto."));
+
+        // 1944 - Toon Gemini Elf (Toon, Discard)
+        AddEffect("1944", c => Debug.Log("Toon Gemini Elf: Descarte ao causar dano."));
+
+        // 1945 - Toon Goblin Attack Force (Toon, Defense)
+        AddEffect("1945", c => Debug.Log("Toon Goblin: Vira defesa após ataque."));
+
+        // 1946 - Toon Masked Sorcerer (Toon, Draw)
+        AddEffect("1946", c => Debug.Log("Toon Masked Sorcerer: Compra 1 ao causar dano."));
+
+        // 1947 - Toon Mermaid (Toon, SS)
+        AddEffect("1947", c => Debug.Log("Toon Mermaid: SS se Toon World."));
+
+        // 1948 - Toon Summoned Skull (Toon, SS)
+        AddEffect("1948", c => Debug.Log("Toon Summoned Skull: SS tributando."));
+
+        // 1949 - Toon Table of Contents (Search Toon)
+        AddEffect("1949", c => Effect_SearchDeck(c, "Toon"));
+
+        // 1950 - Toon World (Pay 1000)
+        AddEffect("1950", c => { Effect_PayLP(c, 1000); Debug.Log("Toon World ativado."); });
+
+        // 1952 - Tornado Bird (Flip Bounce 2 S/T)
+        AddEffect("1952", c => Debug.Log("Tornado Bird: Retorna 2 S/T para a mão."));
+
+        // 1953 - Tornado Wall (No Damage with Umi)
+        AddEffect("1953", c => Debug.Log("Tornado Wall: Sem dano de batalha se Umi estiver em campo."));
+
+        // 1954 - Torpedo Fish (Immune with Umi)
+        AddEffect("1954", c => Debug.Log("Torpedo Fish: Imune a magias com Umi."));
+
+        // 1955 - Torrential Tribute (Destroy All on Summon)
+        AddEffect("1955", c => Debug.Log("Torrential Tribute: Destrói todos os monstros na invocação."));
+
+        // 1956 - Total Defense Shogun (Attack in Defense)
+        AddEffect("1956", c => Debug.Log("Total Defense Shogun: Pode atacar em posição de defesa."));
+
+        // 1957 - Tower of Babel (Counters -> Burn)
+        AddEffect("1957", c => Debug.Log("Tower of Babel: 4º contador causa 3000 de dano."));
+
+        // 1958 - Tragedy (Destroy Defense on Pos Change)
+        AddEffect("1958", c => Debug.Log("Tragedy: Destrói monstros em defesa ao mudar posição."));
+
+        // 1960 - Transcendent Wings (SS Winged Kuriboh LV10)
+        AddEffect("1960", c => Debug.Log("Transcendent Wings: Evolui Winged Kuriboh."));
+
+        // 1961 - Trap Dustshoot (Hand Shuffle)
+        AddEffect("1961", c => Debug.Log("Trap Dustshoot: Retorna carta da mão do oponente ao deck."));
+
+        // 1962 - Trap Hole (Destroy Summon 1000+)
+        AddEffect("1962", c => Debug.Log("Trap Hole: Destrói monstro invocado com 1000+ ATK."));
+
+        // 1963 - Trap Jammer (Negate Battle Trap)
+        AddEffect("1963", c => Debug.Log("Trap Jammer: Nega Trap na Battle Phase."));
+
+        // 1964 - Trap Master (Flip Destroy Trap)
+        AddEffect("1964", c => Effect_FlipDestroy(c, TargetType.Trap));
+
+        // 1965 - Trap of Board Eraser (Negate Burn, Discard)
+        AddEffect("1965", c => Debug.Log("Trap of Board Eraser: Nega dano de efeito, oponente descarta."));
+
+        // 1966 - Trap of Darkness (Copy Trap)
+        AddEffect("1966", c => Debug.Log("Trap of Darkness: Copia efeito de Trap Normal do GY."));
+
+        // 1967 - Tremendous Fire (Burn 1000/500)
+        AddEffect("1967", c => { Effect_DirectDamage(c, 1000); Effect_PayLP(c, 500); });
+
+        // 1971 - Triangle Ecstasy Spark (Buff Harpie Sisters)
+        AddEffect("1971", c => Debug.Log("Triangle Ecstasy Spark: Harpie Sisters 2700 ATK, sem Traps."));
+
+        // 1972 - Triangle Power (Buff Lv1 Normal)
+        AddEffect("1972", c => Debug.Log("Triangle Power: +2000 ATK para Normais Lv1."));
+
+        // 1973 - Tribe-Infecting Virus (Destroy Type)
+        AddEffect("1973", c => Debug.Log("Tribe-Infecting Virus: Descarta para destruir Tipo declarado."));
+
+        // 1974 - Tribute Doll (SS Lv7)
+        AddEffect("1974", c => Debug.Log("Tribute Doll: Tributa para invocar Lv7 da mão."));
+
+        // 1975 - Tribute to the Doomed (Discard Destroy)
+        AddEffect("1975", c => Debug.Log("Tribute to the Doomed: Descarta para destruir monstro."));
+
+        // 1976 - Tricky Spell 4 (Tokens)
+        AddEffect("1976", c => Debug.Log("Tricky Spell 4: Tributa Tricky para invocar Tokens."));
+
+        // 1978 - Troop Dragon (Float)
+        AddEffect("1978", c => Effect_SearchDeck(c, "Troop Dragon"));
+
+        // 1979 - Tsukuyomi (Flip Face-down, Return)
+        AddEffect("1979", c => Debug.Log("Tsukuyomi: Vira monstro face-down. Retorna para mão."));
+
+        // 1981 - Turtle Oath (Ritual Spell)
+        AddEffect("1981", c => Debug.Log("Turtle Oath: Ritual."));
+
+        // 1985 - Tutan Mask (Negate Target Zombie)
+        AddEffect("1985", c => Debug.Log("Tutan Mask: Nega S/T que alvo Zumbi."));
+
+        // 1988 - Twin Swords of Flashing Light - Tryce (Equip -500, 2 Attacks)
+        AddEffect("1988", c => { Effect_Equip(c, -500, 0); Debug.Log("Tryce: Ataque duplo."); });
+
+        // 1989 - Twin-Headed Behemoth (Revive 1000)
+        AddEffect("1989", c => Debug.Log("Twin-Headed Behemoth: Renasce com 1000 ATK/DEF."));
+
+        // 1992 - Twin-Headed Wolf (Negate Flip)
+        AddEffect("1992", c => Debug.Log("Twin-Headed Wolf: Nega efeitos Flip em batalha."));
+
+        // 1993 - Twinheaded Beast (Double Attack)
+        AddEffect("1993", c => Debug.Log("Twinheaded Beast: Ataque duplo."));
+
+        // 1994 - Two Thousand Needles (Destroy Attacker)
+        AddEffect("1994", c => Debug.Log("Two Thousand Needles: Destrói atacante se ATK < DEF."));
+
+        // 1996 - Two-Man Cell Battle (SS Normal End Phase)
+        AddEffect("1996", c => Debug.Log("Two-Man Cell Battle: Invoca Normal Lv4 na End Phase."));
+
+        // 1998 - Two-Pronged Attack (Destroy 2 Own, 1 Opp)
+        AddEffect("1998", c => Debug.Log("Two-Pronged Attack: Destrói 2 seus e 1 do oponente."));
 
     }
 
