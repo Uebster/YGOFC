@@ -47,6 +47,11 @@ public class DuelThemeManager : MonoBehaviour
     public Image panelConfirmation;
     public Image btnYes;
     public Image btnNo;
+    
+    [Header("Position Selection")]
+    public Image panelPositionSelection;
+    public Image btnPositionAttack;
+    public Image btnPositionDefense;
 
     [Header("Text Containers")]
     // Arraste o objeto pai (Canvas ou Panel_Duel) para buscar todos os textos automaticamente
@@ -98,6 +103,10 @@ public class DuelThemeManager : MonoBehaviour
         SetSprite(panelConfirmation, theme.panelConfirmation);
         SetSprite(btnYes, theme.btnYes);
         SetSprite(btnNo, theme.btnNo);
+        
+        SetSprite(panelPositionSelection, theme.panelPositionSelection);
+        SetSprite(btnPositionAttack, theme.btnPositionAttack);
+        SetSprite(btnPositionDefense, theme.btnPositionDefense);
 
         // 2. Aplica Estilos de Texto
         if (uiRootForTexts != null)

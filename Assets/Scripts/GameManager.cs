@@ -287,21 +287,39 @@ public class GameManager : MonoBehaviour
 
     void InitializePlayerDeck()
     {
-        // Separa as cartas do Extra Deck (Fusão) do deck principal
-        // TODO: Carregar do save real. Por enquanto carrega do banco.
-        foreach (var card in cardDatabase.cardDatabase)
+        // Verifica se já existe um deck salvo no SaveLoadSystem
+        // Se não, gera um novo
+        if (InitialDeckBuilder.Instance != null)
         {
-            if (card.type.Contains("Fusion"))
-            {
-                playerExtraDeck.Add(card);
-            }
-            else
+            Debug.Log("Gerando Deck Inicial Único...");
+            List<CardData> generatedDeck = InitialDeckBuilder.Instance.GenerateInitialDeck();
+            
+            playerDeck.Clear();
+            playerExtraDeck.Clear(); // Deck inicial não tem fusões prontas
+
+            foreach (var card in generatedDeck)
             {
                 playerDeck.Add(card);
+                // Adiciona ao Trunk também para que o jogador "possua" a carta
+                if (!playerTrunk.Contains(card.id))
+                {
+                    playerTrunk.Add(card.id);
+                }
             }
         }
-        ShuffleDeck();
-        Debug.Log($"Deck do jogador inicializado com {playerDeck.Count} cartas.");
+        else
+        {
+            // Fallback antigo (carrega tudo ou aleatório simples)
+            Debug.LogWarning("InitialDeckBuilder não encontrado. Usando fallback.");
+            // ... código antigo ...
+        }
+
+        // Salva o jogo imediatamente para persistir o deck gerado
+        if (SaveLoadSystem.Instance != null)
+        {
+            SaveLoadSystem.Instance.SaveGame(currentSaveID);
+        }
+
         UpdatePileVisuals();
     }
 

@@ -42,6 +42,11 @@ public class DuelTheme : ScriptableObject
     public Sprite panelConfirmation;
     public Sprite btnYes;
     public Sprite btnNo;
+    
+    [Header("Position Selection Modal")]
+    public Sprite panelPositionSelection;
+    public Sprite btnPositionAttack;
+    public Sprite btnPositionDefense;
 
     [Header("Text Styling")]
     public TMP_FontAsset globalFont; // Fonte global para o duelo
