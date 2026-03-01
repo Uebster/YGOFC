@@ -2362,7 +2362,7 @@ public class CardEffectManager : MonoBehaviour
         AddEffect("1119", Effect_MagePower);
 
         // 1120 - Magic Cylinder (Negate & Burn)
-        AddEffect("1120", c => Debug.Log("Magic Cylinder: Nega ataque e causa dano igual ATK."));
+        AddEffect("1120", Effect_MagicCylinder);
 
         // 1121 - Magic Drain (Counter Spell)
         AddEffect("1121", c => Debug.Log("Magic Drain: Nega magia se oponente não descartar."));
@@ -2938,7 +2938,7 @@ public class CardEffectManager : MonoBehaviour
         AddEffect("1436", c => Debug.Log("Pitch-Black Warwolf: Sem Traps na Battle Phase."));
 
         // 1437 - Pitch-Dark Dragon (Union)
-        AddEffect("1437", c => Debug.Log("Pitch-Dark Dragon: Union para Dark Blade."));
+        AddEffect("1437", c => Effect_Union(c, "Dark Blade", 400, 400));
 
         // 1438 - Pixie Knight (Opponent Recycle Spell)
         AddEffect("1438", c => Debug.Log("Pixie Knight: Oponente recupera Magia."));
@@ -3156,7 +3156,7 @@ public class CardEffectManager : MonoBehaviour
         AddEffect("1532", c => Debug.Log("Rigorous Reaver: Ambos descartam."));
 
         // 1533 - Ring of Destruction (Destroy & Burn)
-        AddEffect("1533", c => Debug.Log("Ring of Destruction: Destrói e causa dano igual ATK."));
+        AddEffect("1533", Effect_RingOfDestruction);
 
         // 1534 - Ring of Magnetism (Equip -500, Taunt)
         AddEffect("1534", c => Effect_Equip(c, -500, -500));
@@ -4963,6 +4963,44 @@ public class CardEffectManager : MonoBehaviour
             }
         }
         DestroyCards(toDestroy, source.isPlayerCard);
+    }
+
+    void Effect_RingOfDestruction(CardDisplay source)
+    {
+        Debug.Log("Ring of Destruction ativado.");
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && !t.isFlipped, // Face-up monsters
+                (t) => {
+                    int damage = t.CurrentCardData.atk;
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                    GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                    Destroy(t.gameObject);
+                    
+                    // Damage both players
+                    GameManager.Instance.DamagePlayer(damage);
+                    GameManager.Instance.DamageOpponent(damage);
+                    Debug.Log($"Ring of Destruction: {damage} de dano para ambos.");
+                }
+            );
+        }
+    }
+
+    void Effect_MagicCylinder(CardDisplay source)
+    {
+        if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+        {
+            CardDisplay attacker = BattleManager.Instance.currentAttacker;
+            int damage = attacker.CurrentCardData.atk;
+            
+            Debug.Log($"Magic Cylinder: Negando ataque de {attacker.CurrentCardData.name} e causando {damage} de dano.");
+            
+            // Nega o ataque (simulado aqui causando o dano)
+            if (source.isPlayerCard) GameManager.Instance.DamageOpponent(damage);
+            else GameManager.Instance.DamagePlayer(damage);
+            // TODO: Cancelar ataque no BattleManager
+        }
     }
 
     void Effect_Megamorph(CardDisplay source)
