@@ -3293,6 +3293,218 @@ public class CardEffectManager : MonoBehaviour
         // 1597 - Scroll of Bewitchment (Equip Change Attribute)
         AddEffect("1597", c => Debug.Log("Scroll of Bewitchment: Muda atributo."));
 
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 1601 - 1700)
+        // =========================================================================================
+
+        // 1601 - Seal of the Ancients (Pay 1000, Reveal Face-down)
+        AddEffect("1601", c => { Effect_PayLP(c, 1000); Debug.Log("Seal of the Ancients: Revela todas as cartas face-down do oponente."); });
+
+        // 1603 - Sebek's Blessing (Quick-Play: Gain LP = Damage)
+        AddEffect("1603", c => Debug.Log("Sebek's Blessing: Ganha LP igual ao dano direto causado."));
+
+        // 1604 - Second Coin Toss (Redo coin toss)
+        AddEffect("1604", c => Debug.Log("Second Coin Toss: Permite refazer um lançamento de moeda."));
+
+        // 1605 - Second Goblin (Union)
+        AddEffect("1605", c => Debug.Log("Second Goblin: Union para Giant Orc."));
+
+        // 1606 - Secret Barrel (Burn per card)
+        AddEffect("1606", Effect_SecretBarrel);
+
+        // 1607 - Secret Pass to the Treasures (Direct attack < 1000)
+        AddEffect("1607", c => Debug.Log("Secret Pass: Monstro com ATK <= 1000 pode atacar direto."));
+
+        // 1610 - Self-Destruct Button (Draw game condition)
+        AddEffect("1610", c => Debug.Log("Self-Destruct Button: Se diferença de LP > 7000, LP de ambos vira 0."));
+
+        // 1612 - Senju of the Thousand Hands (Search Ritual Monster)
+        AddEffect("1612", c => Effect_SearchDeck(c, "Ritual", "Monster"));
+
+        // 1613 - Senri Eye (Pay 100, peek deck)
+        AddEffect("1613", c => { Effect_PayLP(c, 100); Debug.Log("Senri Eye: Olha carta do topo do deck do oponente."); });
+
+        // 1615 - Serial Spell (Discard hand, copy spell)
+        AddEffect("1615", c => Debug.Log("Serial Spell: Descarta mão para copiar efeito de Normal Spell."));
+
+        // 1618 - Serpentine Princess (Deck shuffle -> SS)
+        AddEffect("1618", c => Debug.Log("Serpentine Princess: Se embaralhada no deck, invoca monstro Lv3 ou menor."));
+
+        // 1619 - Servant of Catabolism (Direct attack)
+        AddEffect("1619", c => Debug.Log("Servant of Catabolism: Pode atacar diretamente."));
+
+        // 1620 - Seven Tools of the Bandit (Pay 1000 negate Trap)
+        AddEffect("1620", c => { Effect_PayLP(c, 1000); Debug.Log("Seven Tools: Nega ativação de Armadilha e destrói."); });
+
+        // 1621 - Shadow Ghoul (Gain ATK per GY)
+        AddEffect("1621", c => Debug.Log("Shadow Ghoul: Ganha 100 ATK por monstro no seu GY."));
+
+        // 1623 - Shadow Spell (Continuous Trap: -700 ATK, no attack/change pos)
+        AddEffect("1623", c => Debug.Log("Shadow Spell: Alvo perde 700 ATK e não pode atacar/mudar posição."));
+
+        // 1624 - Shadow Tamer (Flip: Control Fiend)
+        AddEffect("1624", c => Debug.Log("Shadow Tamer: Toma controle de 1 Fiend do oponente."));
+
+        // 1625 - Shadow of Eyes (Trigger: Set -> Attack)
+        AddEffect("1625", c => Debug.Log("Shadow of Eyes: Força monstro Setado para Posição de Ataque."));
+
+        // 1626 - Shadowknight Archfiend (Maintenance, Dice negate)
+        AddEffect("1626", c => Debug.Log("Shadowknight Archfiend: Custo de manutenção e chance de negar alvo."));
+
+        // 1627 - Shadowslayer (Direct attack if all def)
+        AddEffect("1627", c => Debug.Log("Shadowslayer: Ataca direto se oponente só tiver monstros em defesa."));
+
+        // 1629 - Share the Pain (Tribute 1, Opp tribute 1)
+        AddEffect("1629", c => Debug.Log("Share the Pain: Você tributa 1, oponente tributa 1."));
+
+        // 1630 - Shield & Sword (Swap ATK/DEF)
+        AddEffect("1630", c => Debug.Log("Shield & Sword: Troca ATK e DEF de todos os monstros no campo."));
+
+        // 1631 - Shield Crush (Destroy Def)
+        AddEffect("1631", c => Debug.Log("Shield Crush: Destrói 1 monstro em Posição de Defesa."));
+
+        // 1632 - Shien's Spy (Give control)
+        AddEffect("1632", c => Debug.Log("Shien's Spy: Dá o controle de um monstro seu para o oponente."));
+
+        // 1633 - Shift (Redirect target)
+        AddEffect("1633", c => Debug.Log("Shift: Redireciona alvo de magia/ataque para outro monstro seu."));
+
+        // 1634 - Shifting Shadows (Shuffle def monsters)
+        AddEffect("1634", c => { Effect_PayLP(c, 300); Debug.Log("Shifting Shadows: Embaralha posições dos monstros em defesa."); });
+
+        // 1635 - Shinato's Ark (Ritual Spell)
+        AddEffect("1635", c => Debug.Log("Shinato's Ark: Ritual para Shinato."));
+
+        // 1636 - Shinato, King of a Higher Plane (Burn on destroy)
+        AddEffect("1636", c => Debug.Log("Shinato: Se destruir defesa, causa dano igual ao ATK original."));
+
+        // 1637 - Shine Palace (Equip Light +700)
+        AddEffect("1637", c => Effect_Equip(c, 700, 0, "", "Light"));
+
+        // 1639 - Shining Angel (Floater Light)
+        AddEffect("1639", c => Effect_SearchDeck(c, "Light"));
+
+        // 1641 - Shooting Star Bow - Ceal (Equip -1000, Direct Attack)
+        AddEffect("1641", c => { Effect_Equip(c, -1000, 0); Debug.Log("Ceal: Equipado pode atacar diretamente."); });
+
+        // 1643 - Shrink (Halve ATK)
+        AddEffect("1643", c => Debug.Log("Shrink: ATK original do alvo cai pela metade até o fim do turno."));
+
+        // 1644 - Silent Doom (Revive Normal Def)
+        AddEffect("1644", c => Debug.Log("Silent Doom: Invoca Normal Monster do GY em defesa."));
+
+        // 1645 - Silent Swordsman LV3 (Negate Spell target, LV up)
+        AddEffect("1645", c => Effect_LevelUp(c, "1646")); // LV5
+
+        // 1646 - Silent Swordsman LV5 (Immune Spell, LV up)
+        AddEffect("1646", c => Effect_LevelUp(c, "1647")); // LV7
+
+        // 1647 - Silent Swordsman LV7 (Negate all Spells)
+        AddEffect("1647", c => Debug.Log("Silent Swordsman LV7: Nega todas as magias no campo."));
+
+        // 1648 - Silpheed (SS Banish Wind, Hand discard)
+        AddEffect("1648", c => Debug.Log("Silpheed: SS banindo Wind. Oponente descarta se destruído."));
+
+        // 1649 - Silver Bow and Arrow (Equip Fairy +300)
+        AddEffect("1649", c => Effect_Equip(c, 300, 300, "Fairy"));
+
+        // 1651 - Sinister Serpent (Return to hand)
+        AddEffect("1651", c => Debug.Log("Sinister Serpent: Retorna do GY para a mão na Standby Phase."));
+
+        // 1652 - Sixth Sense (Dice draw/mill)
+        AddEffect("1652", c => Debug.Log("Sixth Sense: Declara 2 números, rola dado. Acertou=Draw, Errou=Mill."));
+
+        // 1653 - Skelengel (Flip Draw)
+        AddEffect("1653", c => { GameManager.Instance.DrawCard(); Debug.Log("Skelengel: Compra 1 carta."); });
+
+        // 1655 - Skill Drain (Negate face-up effects)
+        AddEffect("1655", c => { Effect_PayLP(c, 1000); Debug.Log("Skill Drain: Nega efeitos de monstros face-up."); });
+
+        // 1656 - Skilled Dark Magician (Counters -> SS DM)
+        AddEffect("1656", c => Debug.Log("Skilled Dark Magician: 3 contadores -> Invoca Dark Magician."));
+
+        // 1657 - Skilled White Magician (Counters -> SS BB)
+        AddEffect("1657", c => Debug.Log("Skilled White Magician: 3 contadores -> Invoca Buster Blader."));
+
+        // 1658 - Skull Archfiend of Lightning (Maintenance, Dice negate)
+        AddEffect("1658", c => Debug.Log("Skull Archfiend: Manutenção e chance de negar alvo."));
+
+        // 1659 - Skull Dice (Dice debuff)
+        AddEffect("1659", c => Debug.Log("Skull Dice: Rola dado para reduzir ATK/DEF do oponente."));
+
+        // 1661 - Skull Guardian (Ritual)
+        AddEffect("1661", c => Debug.Log("Skull Guardian: Ritual."));
+
+        // 1662 - Skull Invitation (Burn on GY)
+        AddEffect("1662", c => Debug.Log("Skull Invitation: 300 dano por cada carta enviada ao GY."));
+
+        // 1664 - Skull Knight #2 (Tribute -> SS copy)
+        AddEffect("1664", c => Debug.Log("Skull Knight #2: Invoca cópia se tributado para Fiend."));
+
+        // 1665 - Skull Lair (Banish GY -> Destroy)
+        AddEffect("1665", c => Debug.Log("Skull Lair: Bane monstros do GY para destruir monstro face-up."));
+
+        // 1670 - Skull-Mark Ladybug (Heal on GY)
+        AddEffect("1670", c => { Effect_GainLP(c, 1000); Debug.Log("Skull-Mark Ladybug: Ganha 1000 LP."); });
+
+        // 1674 - Skyscraper (Field: HERO +1000 on attack)
+        AddEffect("1674", c => Debug.Log("Skyscraper: E-HERO ganha 1000 ATK ao atacar monstro mais forte."));
+
+        // 1675 - Slate Warrior (Flip buff, debuff killer)
+        AddEffect("1675", c => Debug.Log("Slate Warrior: Flip +500. Quem destruir perde 500."));
+
+        // 1679 - Smashing Ground (Destroy highest DEF)
+        AddEffect("1679", c => Debug.Log("Smashing Ground: Destrói monstro do oponente com maior DEF."));
+
+        // 1680 - Smoke Grenade of the Thief (Equip: Look hand discard)
+        AddEffect("1680", c => Debug.Log("Smoke Grenade: Olha mão do oponente e descarta 1."));
+
+        // 1681 - Snake Fang (Debuff DEF)
+        AddEffect("1681", c => Debug.Log("Snake Fang: Reduz DEF em 500."));
+
+        // 1683 - Snatch Steal (Equip Control, Opp heal)
+        AddEffect("1683", c => Debug.Log("Snatch Steal: Toma controle. Oponente ganha 1000 LP por turno."));
+
+        // 1684 - Sogen (Field Warrior/Beast-Warrior +200)
+        AddEffect("1684", c => { Effect_Field(c, 200, 200, "Warrior"); Effect_Field(c, 200, 200, "Beast-Warrior"); });
+
+        // 1686 - Solar Flare Dragon (Burn, Protect)
+        AddEffect("1686", c => Debug.Log("Solar Flare Dragon: 500 dano na End Phase. Não pode ser atacado se tiver outro Pyro."));
+
+        // 1687 - Solar Ray (Burn per Light)
+        AddEffect("1687", c => Debug.Log("Solar Ray: 600 dano por cada monstro LIGHT face-up."));
+
+        // 1688 - Solemn Judgment (Counter: Pay half negate)
+        AddEffect("1688", c => Debug.Log("Solemn Judgment: Paga metade do LP para negar Invocação/Magia/Armadilha."));
+
+        // 1689 - Solemn Wishes (Heal on draw)
+        AddEffect("1689", c => Debug.Log("Solemn Wishes: Ganha 500 LP cada vez que compra carta."));
+
+        // 1691 - Solomon's Lawbook (Skip Standby)
+        AddEffect("1691", c => Debug.Log("Solomon's Lawbook: Pula a próxima Standby Phase."));
+
+        // 1692 - Sonic Bird (Search Ritual Spell)
+        AddEffect("1692", c => Effect_SearchDeck(c, "Ritual", "Spell"));
+
+        // 1694 - Sonic Jammer (Flip: No Spells)
+        AddEffect("1694", c => Debug.Log("Sonic Jammer: Oponente não pode ativar Magias no próximo turno."));
+
+        // 1696 - Sorcerer of Dark Magic (Negate Traps)
+        AddEffect("1696", c => Debug.Log("Sorcerer of Dark Magic: Nega ativação de Armadilhas."));
+
+        // 1698 - Soul Absorption (Heal on banish)
+        AddEffect("1698", c => Debug.Log("Soul Absorption: Ganha 500 LP por cada carta banida."));
+
+        // 1699 - Soul Demolition (Pay 500 Banish GY)
+        AddEffect("1699", c => Debug.Log("Soul Demolition: Paga 500 para banir monstro do GY do oponente."));
+
+        // 1700 - Soul Exchange (Tribute Opp monster)
+        AddEffect("1700", c => Debug.Log("Soul Exchange: Seleciona monstro do oponente para tributar no lugar do seu."));
+
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 1701 - 1800)
+        // =========================================================================================
+
     }
 
     void AddEffect(string id, System.Action<CardDisplay> effect)
