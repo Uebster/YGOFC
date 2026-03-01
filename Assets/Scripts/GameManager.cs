@@ -549,6 +549,12 @@ public class GameManager : MonoBehaviour
             }
         }
 
+        // Remove modificadores gerados por esta carta em outras cartas
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.OnCardLeavesField(cardDisplay);
+        }
+
         // Notifica o sistema de efeitos (Gatilhos Globais)
         if (CardEffectManager.Instance != null)
         {

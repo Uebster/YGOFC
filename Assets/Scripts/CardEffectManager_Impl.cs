@@ -47,6 +47,13 @@ public partial class CardEffectManager
             CheckActiveCards("1686", (card) => {
                 if (card.isPlayerCard) Effect_DirectDamage(card, 500);
             });
+
+            // Limpa buffs temporários de todas as cartas no campo
+            // (Isso deveria ser feito em todos os monstros, não só nos ativos)
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                CleanAllExpiredModifiers();
+            }
         }
     }
 
@@ -82,6 +89,25 @@ public partial class CardEffectManager
     {
         // Numinous Healer (1360), Attack and Receive (0117) - Geralmente são Traps ativáveis, não automáticas.
         // Mas efeitos contínuos como "Des Wombat" (0477) preveniriam isso antes.
+    }
+
+    public void OnCardLeavesField(CardDisplay card)
+    {
+        // Remove quaisquer modificadores que esta carta tenha aplicado em outras
+        // Ex: Se um Equip Spell for destruído, o monstro perde o buff
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<Transform> allZones = new List<Transform>();
+            allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
+            allZones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+
+            foreach (var zone in allZones)
+            {
+                if (zone.childCount == 0) continue;
+                CardDisplay target = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (target != null) target.RemoveModifiersFromSource(card);
+            }
+        }
     }
 
     // Helper para iterar cartas ativas no campo
@@ -146,6 +172,23 @@ public partial class CardEffectManager
         });
     }
 
+    private void CleanAllExpiredModifiers()
+    {
+        List<Transform> allZones = new List<Transform>();
+        allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
+        allZones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+
+        foreach (var zone in allZones)
+        {
+            if (zone.childCount == 0) continue;
+            CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+            if (cd != null)
+            {
+                cd.CleanExpiredModifiers();
+            }
+        }
+    }
+
     // --- FIM DO SISTEMA DE EVENTOS ---
 
     void Effect_DirectDamage(CardDisplay source, int amount)
@@ -206,7 +249,9 @@ public partial class CardEffectManager
                 (target) => 
                 {
                     Debug.Log($"{source.CurrentCardData.name} equipada em {target.CurrentCardData.name}");
-                    target.ModifyStats(atkBonus, defBonus);
+                    // Usa o novo sistema de modificadores
+                    if (atkBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, atkBonus, source));
+                    if (defBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, defBonus, source));
                     // TODO: Vincular visualmente
                 }
             );
@@ -215,8 +260,30 @@ public partial class CardEffectManager
 
     void Effect_Field(CardDisplay source, int atkBonus, int defBonus, string requiredRace = "", string requiredAttribute = "", int levelMod = 0)
     {
-        Debug.Log($"Campo ativado: {source.CurrentCardData.name}. Buff: {atkBonus}/{defBonus}");
-        // Lógica de aplicar buff em área
+        // Lógica simplificada: Aplica em todos os monstros atuais (em um sistema real, seria um efeito contínuo que checa ao entrar/sair)
+        // Por enquanto, vamos aplicar como "Continuous" em todos os monstros válidos já no campo
+        if (GameManager.Instance.duelFieldUI == null) return;
+
+        List<Transform> allZones = new List<Transform>();
+        allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
+        allZones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+
+        foreach (var zone in allZones)
+        {
+            if (zone.childCount == 0) continue;
+            CardDisplay target = zone.GetChild(0).GetComponent<CardDisplay>();
+            if (target == null) continue;
+
+            bool matchRace = string.IsNullOrEmpty(requiredRace) || target.CurrentCardData.race == requiredRace;
+            bool matchAttr = string.IsNullOrEmpty(requiredAttribute) || target.CurrentCardData.attribute == requiredAttribute;
+
+            if (matchRace && matchAttr)
+            {
+                if (atkBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Field, StatModifier.Operation.Add, atkBonus, source));
+                if (defBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Field, StatModifier.Operation.Add, defBonus, source));
+            }
+        }
+        Debug.Log($"Campo ativado: {source.CurrentCardData.name}. Buff aplicado.");
     }
 
     void Effect_FlipDestroy(CardDisplay source, TargetType type)
@@ -297,7 +364,10 @@ public partial class CardEffectManager
         {
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
-                (t) => t.ModifyStats(atk, def)
+                (t) => {
+                    if (atk != 0) t.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, atk, source));
+                    if (def != 0) t.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, def, source));
+                }
             );
         }
     }

@@ -53,6 +53,7 @@ public partial class CardEffectManager : MonoBehaviour
     // public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer);
     // public void OnSpecialSummon(CardDisplay summonedCard);
     // public void OnDamageTaken(bool isPlayer, int amount);
+    // public void OnCardLeavesField(CardDisplay card);
 
     void DestroyAllMonsters(bool targetOpponent, bool targetPlayer)
     {

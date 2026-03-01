@@ -57,6 +57,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public int currentAtk;
     [HideInInspector] public int currentDef;
 
+    // Lista de modificadores ativos nesta carta
+    private List<StatModifier> activeModifiers = new List<StatModifier>();
+
     public CardData CurrentCardData => currentCardData; // Propriedade pública para acesso seguro (Renomeado para evitar conflito)
 
     private UnityWebRequest currentRequest; // Rastreia a requisição ativa para descarte correto
@@ -196,6 +199,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         originalDef = card.def;
         currentAtk = card.atk;
         currentDef = card.def;
+
+        activeModifiers.Clear(); // Limpa modificadores antigos ao resetar a carta
 
         originalScale = transform.localScale; // Salva a escala inicial definida pelo GameManager
         
@@ -369,15 +374,83 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Isso será tratado pelo GameManager/SpellTrapManager na resolução da chain.
     }
 
-    // Método para modificar stats (Buffs/Debuffs)
-    public void ModifyStats(int atkChange, int defChange)
+    // --- SISTEMA DE MODIFICADORES DE STATS ---
+
+    public void AddStatModifier(StatModifier mod)
     {
-        currentAtk += atkChange;
-        currentDef += defChange;
-        if (currentAtk < 0) currentAtk = 0;
-        if (currentDef < 0) currentDef = 0;
+        activeModifiers.Add(mod);
+        RecalculateStats();
+    }
+
+    public void RemoveStatModifier(string modId)
+    {
+        activeModifiers.RemoveAll(m => m.id == modId);
+        RecalculateStats();
+    }
+
+    public void RemoveModifiersFromSource(CardDisplay source)
+    {
+        int removed = activeModifiers.RemoveAll(m => m.source == source);
+        if (removed > 0) RecalculateStats();
+    }
+
+    public void CleanExpiredModifiers()
+    {
+        int removed = activeModifiers.RemoveAll(m => m.removeAtEndPhase);
+        if (removed > 0) RecalculateStats();
+    }
+
+    public void RecalculateStats()
+    {
+        if (currentCardData == null) return;
+
+        // 1. Começa com o valor base da carta
+        int finalAtk = currentCardData.atk >= 0 ? currentCardData.atk : 0;
+        int finalDef = currentCardData.def >= 0 ? currentCardData.def : 0;
+
+        // 2. Aplica modificadores que definem um valor (Set) - ex: Megamorph, Beast King Barbaros
+        foreach (var mod in activeModifiers)
+        {
+            if (mod.operation == StatModifier.Operation.Set)
+            {
+                if (mod.statType == StatModifier.StatType.ATK) finalAtk = mod.value;
+                if (mod.statType == StatModifier.StatType.DEF) finalDef = mod.value;
+            }
+        }
+
+        // 3. Aplica adições e subtrações (Add) - ex: Equipamentos, Campos, Buffs
+        foreach (var mod in activeModifiers)
+        {
+            if (mod.operation == StatModifier.Operation.Add)
+            {
+                if (mod.statType == StatModifier.StatType.ATK) finalAtk += mod.value;
+                if (mod.statType == StatModifier.StatType.DEF) finalDef += mod.value;
+            }
+        }
+
+        // 4. Aplica multiplicadores (Multiply) - ex: Limiter Removal, Shrink
+        foreach (var mod in activeModifiers)
+        {
+            if (mod.operation == StatModifier.Operation.Multiply)
+            {
+                if (mod.statType == StatModifier.StatType.ATK) finalAtk = Mathf.FloorToInt(finalAtk * mod.multiplier);
+                if (mod.statType == StatModifier.StatType.DEF) finalDef = Mathf.FloorToInt(finalDef * mod.multiplier);
+            }
+        }
+
+        // Garante que não fique negativo
+        currentAtk = Mathf.Max(0, finalAtk);
+        currentDef = Mathf.Max(0, finalDef);
 
         DisplayCardDetails(); // Atualiza o texto na carta
+    }
+
+    // Método antigo mantido para compatibilidade, agora usa o novo sistema
+    public void ModifyStats(int atkChange, int defChange)
+    {
+        // Cria modificadores temporários (até o fim do turno) por padrão para chamadas antigas
+        if (atkChange != 0) AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, atkChange, null));
+        if (defChange != 0) AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, defChange, null));
     }
 
     public void OnPointerEnter(PointerEventData eventData)
