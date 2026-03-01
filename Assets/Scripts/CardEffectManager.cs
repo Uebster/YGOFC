@@ -48,6 +48,11 @@ public partial class CardEffectManager : MonoBehaviour
         }
     }
 
+    public void OnBattlePositionChanged(CardDisplay card) { OnBattlePositionChangedImpl(card); }
+
+    public void OnDamageDealt(CardDisplay attacker, CardDisplay target, int amount) { OnDamageDealtImpl(attacker, target, amount); }
+
+
     // Métodos de Eventos (Implementados em CardEffectManager_Impl.cs)
     // public void OnPhaseStart(GamePhase phase);
     // public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer);

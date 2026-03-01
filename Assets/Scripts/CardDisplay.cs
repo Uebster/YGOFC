@@ -344,6 +344,10 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 // Flip Summon conta como invocação? Em regras oficiais sim, mas aqui tratamos como mudança de posição.
                 // Efeitos de Flip seriam disparados aqui.
             }
+                    GameManager.Instance.OnBattlePositionChanged(this);
+    // Informa o EventManager da invocação
+    if (GameManager.Instance != null)
+        GameManager.Instance.OnSummon(this);
         }
     }
     
