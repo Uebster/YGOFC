@@ -33,7 +33,7 @@ public partial class CardEffectManager
         AddEffect("0010", Effect_FeatherOfThePhoenix);
 
         // 0011 - A Feint Plan (Trap: No attacks on face-down)
-        AddEffect("0011", c => Debug.Log("A Feint Plan: Impede ataques a monstros virados para baixo."));
+        AddEffect("0011", Effect_AFeintPlan);
 
         // 0012 - A Hero Emerges (Trap: SS from hand when attacked)
         AddEffect("0012", c => Debug.Log("A Hero Emerges: Oponente escolhe carta da sua mão para invocar."));
@@ -72,7 +72,7 @@ public partial class CardEffectManager
         AddEffect("0025", Effect_AcidTrapHole);
 
         // 0027 - Adhesion Trap Hole (Trap: Halve ATK)
-        AddEffect("0027", c => Debug.Log("Adhesion Trap Hole: Corta ATK do monstro invocado pela metade."));
+        AddEffect("0027", Effect_AdhesionTrapHole);
 
         // 0028 - After the Struggle (Spell: Destroy battle participants)
         AddEffect("0028", c => Debug.Log("After the Struggle: Destrói monstros que batalharam."));
@@ -96,10 +96,10 @@ public partial class CardEffectManager
         AddEffect("0042", c => Debug.Log("Amazoness Archers: Oponente perde 500 ATK e deve atacar."));
 
         // 0043 - Amazoness Blowpiper (Effect: -500 ATK)
-        AddEffect("0043", c => Debug.Log("Amazoness Blowpiper: Reduz ATK de um monstro em 500."));
+        AddEffect("0043", Effect_AmazonessBlowpiper);
 
         // 0044 - Amazoness Chain Master (Effect: Steal monster from hand)
-        AddEffect("0044", c => Debug.Log("Amazoness Chain Master: Paga 1500 LP para pegar monstro da mão do oponente."));
+        AddEffect("0044", Effect_AmazonessChainMaster);
 
         // 0045 - Amazoness Fighter (Effect: No battle damage)
         AddEffect("0045", c => Debug.Log("Amazoness Fighter: Você não toma dano de batalha."));
@@ -139,10 +139,10 @@ public partial class CardEffectManager
         AddEffect("0060", c => Debug.Log("Ancient Gear Soldier: Impede S/T na batalha."));
 
         // 0062 - Ancient Lamp (SS La Jinn)
-        AddEffect("0062", Effect_AncientLamp);
+        AddEffect("0062", Effect_AncientLamp); // Already linked, implementation updated
 
         // 0066 - Ancient Telescope (See top 5)
-        AddEffect("0066", Effect_AncientTelescope);
+        AddEffect("0066", Effect_AncientTelescope); // Already linked, implementation updated
 
         // 0069 - Andro Sphinx (SS cost, Burn)
         AddEffect("0069", c => Debug.Log("Andro Sphinx: Causa dano ao destruir monstros em defesa."));
@@ -151,7 +151,7 @@ public partial class CardEffectManager
         AddEffect("0071", Effect_Ante);
 
         // 0073 - Anti Raigeki (Trap: Negate Raigeki)
-        AddEffect("0073", c => Debug.Log("Anti Raigeki: Nega Raigeki e destrói monstros do oponente."));
+        AddEffect("0073", Effect_AntiRaigeki);
 
         // 0074 - Anti-Aircraft Flower (Tribute Insect -> 800 dmg)
         AddEffect("0074", c => Effect_TributeToBurn(c, 1, 800, "Insect"));
@@ -184,7 +184,7 @@ public partial class CardEffectManager
         AddEffect("0085", Effect_ArcaneArcher);
 
         // 0089 - Archfiend of Gilfer (Equip on GY sent)
-        AddEffect("0089", c => Debug.Log("Archfiend of Gilfer: Se equipa para reduzir ATK em 500."));
+        AddEffect("0089", Effect_ArchfiendOfGilfer);
 
         // 0090 - Archfiend's Oath (Pay 500, declare, excavate)
         AddEffect("0090", Effect_ArchfiendsOath);
@@ -230,7 +230,7 @@ public partial class CardEffectManager
         AddEffect("0109", c => Debug.Log("Arsenal Bug: ATK/DEF vira 1000 se não houver outro Inseto."));
 
         // 0110 - Arsenal Robber (Opponent sends Equip)
-        AddEffect("0110", c => Debug.Log("Arsenal Robber: Oponente envia Equip do Deck."));
+        AddEffect("0110", Effect_ArsenalRobber);
 
         // 0111 - Arsenal Summoner (FLIP: Search Guardian)
         AddEffect("0111", c => Effect_SearchDeck(c, "Guardian"));
@@ -251,7 +251,7 @@ public partial class CardEffectManager
         AddEffect("0116", c => Debug.Log("Atomic Firefly: 1000 dano ao oponente."));
 
         // 0117 - Attack and Receive (Damage trigger)
-        AddEffect("0117", c => Debug.Log("Attack and Receive: Dano ao oponente."));
+        AddEffect("0117", Effect_AttackAndReceive);
 
         // 0118 - Aussa the Earth Charmer (FLIP: Control Earth)
         AddEffect("0118", c => Debug.Log("Aussa: Controlar monstro EARTH."));
@@ -260,7 +260,7 @@ public partial class CardEffectManager
         AddEffect("0119", Effect_AutonomousActionUnit);
 
         // 0120 - Avatar of The Pot (Send Pot -> Draw 3)
-        AddEffect("0120", c => Debug.Log("Avatar of The Pot: Enviar Pot of Greed para comprar 3."));
+        AddEffect("0120", Effect_AvatarOfThePot);
 
         // 0122 - Axe of Despair (Equip +1000)
         AddEffect("0122", c => Effect_Equip(c, 1000, 0));
@@ -275,10 +275,10 @@ public partial class CardEffectManager
         AddEffect("0127", Effect_BackToSquareOne);
 
         // 0128 - Backfire (Fire destroyed -> Damage)
-        AddEffect("0128", c => Debug.Log("Backfire: 500 dano."));
+        AddEffect("0128", Effect_Backfire);
 
         // 0129 - Backup Soldier (Recycle Normals)
-        AddEffect("0129", c => Debug.Log("Backup Soldier: Recuperar monstros normais."));
+        AddEffect("0129", Effect_BackupSoldier);
 
         // 0130 - Bad Reaction to Simochi (Heal -> Damage)
         AddEffect("0130", c => Debug.Log("Simochi: Cura vira dano."));
@@ -305,7 +305,7 @@ public partial class CardEffectManager
         AddEffect("0139", Effect_BarrelDragon);
 
         // 0144 - Battery Charger (Pay 500 -> SS Batteryman)
-        AddEffect("0144", c => Debug.Log("Battery Charger: SS Batteryman."));
+        AddEffect("0144", Effect_BatteryCharger);
 
         // 0145 - Batteryman AA (Stats)
         AddEffect("0145", c => Debug.Log("Batteryman AA: Ganha ATK/DEF."));
@@ -323,13 +323,13 @@ public partial class CardEffectManager
         AddEffect("0155", c => Effect_Equip(c, 300, 300, "Beast"));
 
         // 0156 - Beast Soul Swap (Swap Beast)
-        AddEffect("0156", c => Debug.Log("Beast Soul Swap: Trocar Besta."));
+        AddEffect("0156", Effect_BeastSoulSwap);
 
         // 0158 - Beastking of the Swamps (Fusion Sub / Search Poly)
         AddEffect("0158", c => Debug.Log("Beastking: Substituto de fusão ou buscar Poly."));
 
         // 0163 - Beckoning Light (Discard hand -> Retrieve Light)
-        AddEffect("0163", c => Debug.Log("Beckoning Light: Trocar mão por Light do GY."));
+        AddEffect("0163", Effect_BeckoningLight);
 
         // 0164 - Begone, Knave! (Damage -> Bounce)
         AddEffect("0164", c => Debug.Log("Begone, Knave!: Retornar monstro que causou dano."));
@@ -359,7 +359,7 @@ public partial class CardEffectManager
         AddEffect("0177", c => Debug.Log("Big Shield Gardna: Nega magia e muda posição."));
 
         // 0178 - Big Wave Small Wave (Swap Water monsters)
-        AddEffect("0178", c => Debug.Log("Big Wave Small Wave: Trocar monstros de água."));
+        AddEffect("0178", Effect_BigWaveSmallWave);
 
         // 0179 - Big-Tusked Mammoth (Prevent attack)
         AddEffect("0179", c => Debug.Log("Big-Tusked Mammoth: Impede ataque no turno de invocação."));
@@ -371,7 +371,7 @@ public partial class CardEffectManager
         AddEffect("0184", c => Debug.Log("Bite Shoes: Mudar posição de batalha."));
 
         // 0185 - Black Dragon's Chick (SS Red-Eyes)
-        AddEffect("0185", c => Debug.Log("Black Dragon's Chick: Invocar Red-Eyes da mão."));
+        AddEffect("0185", Effect_BlackDragonsChick);
 
         // 0189 - BLS - Envoy (Banish / Double Attack)
         AddEffect("0189", c => Debug.Log("BLS Envoy: Banir ou Ataque Duplo."));
@@ -392,13 +392,13 @@ public partial class CardEffectManager
         AddEffect("0197", c => Effect_Field(c, 500, 500, "", "WIND"));
 
         // 0198 - Blast Held by a Tribute (Destroy attacking tribute)
-        AddEffect("0198", c => Debug.Log("Blast Held by a Tribute: Destruir atacante tributado e dano."));
+        AddEffect("0198", Effect_BlastHeldByATribute);
 
         // 0199 - Blast Juggler (Tribute -> Destroy weak)
         AddEffect("0199", c => Debug.Log("Blast Juggler: Destruir monstros fracos."));
 
         // 0200 - Blast Magician (Counters -> Destroy)
-        AddEffect("0200", c => Debug.Log("Blast Magician: Remover contadores para destruir."));
+        AddEffect("0200", Effect_BlastMagician);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 0201 - 0300)
@@ -465,7 +465,7 @@ public partial class CardEffectManager
         AddEffect("0232", c => Debug.Log("Bottomless Shifting Sand: Destrói monstro com maior ATK."));
 
         // 0233 - Bottomless Trap Hole (Destroy & Banish >= 1500)
-        AddEffect("0233", c => Debug.Log("Bottomless Trap Hole: Destrói e bane invocação >= 1500 ATK."));
+        AddEffect("0233", Effect_BottomlessTrapHole);
 
         // 0235 - Bowganian (Burn 600)
         AddEffect("0235", c => Debug.Log("Bowganian: 600 dano na Standby Phase."));
@@ -477,7 +477,7 @@ public partial class CardEffectManager
         AddEffect("0238", c => Debug.Log("Brain Jacker: Equipa e toma controle."));
 
         // 0240 - Breaker the Magical Warrior (Counter destroy S/T)
-        AddEffect("0240", c => Debug.Log("Breaker: Ganha contador. Remove para destruir S/T."));
+        AddEffect("0240", Effect_BreakerTheMagicalWarrior);
 
         // 0241 - Breath of Light (Destroy Rock)
         AddEffect("0241", c => Effect_DestroyType(c, "Rock"));
@@ -486,7 +486,7 @@ public partial class CardEffectManager
         AddEffect("0242", c => Debug.Log("Bubble Crash: Envia cartas ao GY até ter 5."));
 
         // 0243 - Bubble Shuffle (Change pos, SS HERO)
-        AddEffect("0243", c => Debug.Log("Bubble Shuffle: Muda posição e invoca HERO."));
+        AddEffect("0243", Effect_BubbleShuffle);
 
         // 0244 - Bubonic Vermin (Flip SS)
         AddEffect("0244", c => Effect_SearchDeck(c, "Bubonic Vermin"));
@@ -531,7 +531,7 @@ public partial class CardEffectManager
         AddEffect("0259", Effect_CallOfTheHaunted);
 
         // 0260 - Call of the Mummy (SS Zombie)
-        AddEffect("0260", c => Debug.Log("Call of the Mummy: Invoca Zumbi da mão."));
+        AddEffect("0260", Effect_CallOfTheMummy);
 
         // 0262 - Cannon Soldier (Tribute burn)
         AddEffect("0262", c => Effect_TributeToBurn(c, 1, 500));
@@ -549,7 +549,7 @@ public partial class CardEffectManager
         AddEffect("0266", c => Debug.Log("Card of Safe Return: Compre 1 quando invocar do GY."));
 
         // 0267 - Card of Sanctity (Draw until 2)
-        AddEffect("0267", c => Debug.Log("Card of Sanctity: Banir tudo, comprar até ter 2."));
+        AddEffect("0267", Effect_CardOfSanctity);
 
         // 0268 - Castle Gate (Tribute burn)
         AddEffect("0268", c => Debug.Log("Castle Gate: Tributa para causar dano."));
@@ -564,7 +564,7 @@ public partial class CardEffectManager
         AddEffect("0271", c => Debug.Log("Cat's Ear Tribe: ATK do oponente vira 200."));
 
         // 0272 - Catapult Turtle (Tribute burn half ATK)
-        AddEffect("0272", c => Debug.Log("Catapult Turtle: Tributa para causar metade do ATK."));
+        AddEffect("0272", Effect_CatapultTurtle);
 
         // 0273 - Catnipped Kitty (Zero DEF)
         AddEffect("0273", c => Debug.Log("Catnipped Kitty: Torna DEF do oponente 0."));
@@ -633,7 +633,7 @@ public partial class CardEffectManager
         AddEffect("0299", c => Debug.Log("Chimera: Invoca material do GY."));
 
         // 0300 - Chiron the Mage (Destroy S/T)
-        AddEffect("0300", c => Debug.Log("Chiron: Descarta magia para destruir S/T."));
+        AddEffect("0300", Effect_Chiron);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 0301 - 0400)

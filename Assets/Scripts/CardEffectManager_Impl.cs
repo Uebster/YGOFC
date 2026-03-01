@@ -49,6 +49,17 @@ public partial class CardEffectManager
         }
     }
 
+    void Effect_AmazonessBlowpiper(CardDisplay source)
+    {
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                (t) => t.ModifyStats(-500, 0)
+            );
+        }
+    }
+
     void Effect_CrushCardVirus(CardDisplay source)
     {
         if (SummonManager.Instance != null)
@@ -161,6 +172,15 @@ public partial class CardEffectManager
         Debug.Log("Wingbeat: Retornar Dragão e destruir S/T.");
     }
 
+    void Effect_AFeintPlan(CardDisplay source)
+    {
+        // Lógica simplificada: Define uma flag no GameManager ou BattleManager
+        // Como não temos acesso direto a flags customizadas no BattleManager ainda,
+        // vamos simular com um log e um efeito visual.
+        Debug.Log("A Feint Plan ativado: Monstros face-down não podem ser atacados este turno.");
+        // TODO: Implementar flag 'cannotAttackFaceDown' no BattleManager
+    }
+
     void Effect_AbyssSoldier(CardDisplay source)
     {
         Debug.Log("Abyss Soldier: Descarte Water para retornar carta.");
@@ -195,6 +215,17 @@ public partial class CardEffectManager
         }
     }
 
+    void Effect_AdhesionTrapHole(CardDisplay source)
+    {
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"), // Deveria ser o monstro invocado
+                (t) => t.ModifyStats(-t.currentAtk / 2, 0)
+            );
+        }
+    }
+
     void Effect_Agido(CardDisplay source)
     {
         int roll = Random.Range(1, 7);
@@ -217,16 +248,35 @@ public partial class CardEffectManager
         Debug.Log("Amazoness Spellcaster: Trocar ATK.");
     }
 
+    void Effect_AmazonessChainMaster(CardDisplay source)
+    {
+        Effect_PayLP(source, 1500);
+        Debug.Log("Amazoness Chain Master: Olhar mão do oponente e pegar um monstro (Lógica de UI pendente).");
+        // TODO: Abrir UI para ver mão do oponente
+    }
     void Effect_AncientLamp(CardDisplay source)
     {
         Debug.Log("Ancient Lamp: Invocando La Jinn.");
+        // Tenta invocar La Jinn do Deck ou Mão
+        // CardData laJinn = ...
+        // GameManager.Instance.SpecialSummonFromData(laJinn, source.isPlayerCard);
     }
 
     void Effect_AncientTelescope(CardDisplay source)
     {
         Debug.Log("Ancient Telescope: Vendo topo do deck do oponente.");
+        // TODO: Mostrar topo do deck do oponente em um painel
     }
 
+    void Effect_AntiRaigeki(CardDisplay source)
+    {
+        // Se ativado em resposta a Raigeki
+        Debug.Log("Anti Raigeki: Negando Raigeki e destruindo monstros do oponente.");
+        // Negação seria via ChainManager
+        // Destruição:
+        DestroyAllMonsters(true, false);
+    }
+    
     void Effect_Ante(CardDisplay source)
     {
         Debug.Log("Ante: Minigame de revelar cartas.");
