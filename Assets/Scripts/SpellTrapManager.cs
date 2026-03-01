@@ -37,15 +37,21 @@ public class SpellTrapManager : MonoBehaviour
 
     // Verifica se uma carta específica pode ser ativada (considerando exceções)
     public bool CanActivateCard(CardData card, bool isOwnerTurn)
-{
-            // Jinzo (77585513): Traps não podem ser ativadas
+    {
+        // Jinzo (77585513): Traps não podem ser ativadas
         if (card.type.Contains("Trap") && GameManager.Instance.IsCardActiveOnField("77585513"))
         {
             Debug.Log("Ativação de Trap bloqueada por Jinzo!");
             return false;
         }
 
-    {
+        // Imperial Order (0932) / Spell Canceller (1721) / Silent Swordsman LV7 (1647)
+        if (card.type.Contains("Spell") && IsSpellNegationActive())
+        {
+            Debug.Log("Ativação de Magia bloqueada por efeito contínuo!");
+            return false;
+        }
+
         if (card.type.Contains("Spell"))
         {
             // Regras básicas de Spell
@@ -60,6 +66,15 @@ public class SpellTrapManager : MonoBehaviour
             // Traps precisam estar setadas por 1 turno (verificação feita no CardDisplay/GameManager geralmente)
             return !isOwnerTurn; // Normalmente ativa no turno do oponente ou em resposta
         }
+        return false;
+    }
+
+    public bool IsSpellNegationActive()
+    {
+        if (GameManager.Instance == null) return false;
+        if (GameManager.Instance.IsCardActiveOnField("0932")) return true; // Imperial Order
+        if (GameManager.Instance.IsCardActiveOnField("1721")) return true; // Spell Canceller
+        if (GameManager.Instance.IsCardActiveOnField("1647")) return true; // Silent Swordsman LV7
         return false;
     }
 

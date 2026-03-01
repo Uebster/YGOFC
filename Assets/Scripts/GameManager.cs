@@ -129,6 +129,7 @@ public class GameManager : MonoBehaviour
     public string currentSaveID = "default";
     public int playerLP = 8000;
     public int opponentLP = 8000;
+    public int turnCount = 0; // Contagem de turnos
 
     [Header("Runtime Theme Settings")]
     public Color themeHoverColor = Color.yellow; // Atualizado pelo DuelThemeManager
@@ -207,6 +208,7 @@ public class GameManager : MonoBehaviour
         // Inicializa LP
         playerLP = 8000;
         opponentLP = 8000;
+        turnCount = 0;
         UpdateLPUI();
         
         // Reseta flag de draw antes de começar o turno
@@ -659,6 +661,7 @@ public class GameManager : MonoBehaviour
             ResetCardStates(duelFieldUI.opponentMonsterZones);
         }
 
+        turnCount++; // Incrementa o turno
         hasDrawnThisTurn = false;
         if (!canPlayerDrawFromDeck)
         {
@@ -669,6 +672,38 @@ public class GameManager : MonoBehaviour
             for(int i=0; i<draws; i++)
                 DrawCard();
         }
+    }
+
+    // Chamado pelo PhaseManager quando entra na Standby Phase
+    public void OnStandbyPhaseStart()
+    {
+        // Verifica custos de manutenção (Imperial Order, Mirror Wall, etc)
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.CheckMaintenanceCosts();
+        }
+    }
+
+    // --- SISTEMA DE MOEDAS ---
+    public void TossCoin(int numberOfCoins, System.Action<int> onResult)
+    {
+        StartCoroutine(CoinTossRoutine(numberOfCoins, onResult));
+    }
+
+    private IEnumerator CoinTossRoutine(int numberOfCoins, System.Action<int> onResult)
+    {
+        int headsCount = 0;
+        for (int i = 0; i < numberOfCoins; i++)
+        {
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage($"Jogando moeda {i+1}...");
+            yield return new WaitForSeconds(0.8f); // Tempo para "animação"
+            
+            bool isHeads = Random.value > 0.5f;
+            if (isHeads) headsCount++;
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage(isHeads ? "CARA!" : "COROA!");
+            yield return new WaitForSeconds(0.5f);
+        }
+        onResult?.Invoke(headsCount);
     }
 
     private void ResetCardStates(Transform[] zones)
