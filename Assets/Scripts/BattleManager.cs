@@ -36,6 +36,28 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
+        // --- VERIFICAÇÕES DE EFEITOS GLOBAIS ---
+        
+        // Gravity Bind (85742772): Nível 4 ou maior não ataca
+        if (GameManager.Instance.IsCardActiveOnField("85742772"))
+        {
+            if (attacker.CurrentCardData.level >= 4)
+            {
+                Debug.Log("Ataque impedido por Gravity Bind!");
+                return;
+            }
+        }
+
+        // Messenger of Peace (44656491): ATK 1500 ou maior não ataca
+        if (GameManager.Instance.IsCardActiveOnField("44656491"))
+        {
+            if (attacker.currentAtk >= 1500)
+            {
+                Debug.Log("Ataque impedido por Messenger of Peace!");
+                return;
+            }
+        }
+
         currentAttacker = attacker;
         Debug.Log($"Ataque declarado por {attacker.CurrentCardData.name}. Selecione um alvo.");
         

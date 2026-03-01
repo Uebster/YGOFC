@@ -37,6 +37,14 @@ public class SpellTrapManager : MonoBehaviour
 
     // Verifica se uma carta específica pode ser ativada (considerando exceções)
     public bool CanActivateCard(CardData card, bool isOwnerTurn)
+{
+            // Jinzo (77585513): Traps não podem ser ativadas
+        if (card.type.Contains("Trap") && GameManager.Instance.IsCardActiveOnField("77585513"))
+        {
+            Debug.Log("Ativação de Trap bloqueada por Jinzo!");
+            return false;
+        }
+
     {
         if (card.type.Contains("Spell"))
         {

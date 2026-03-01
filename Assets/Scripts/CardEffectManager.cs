@@ -616,7 +616,7 @@ public class CardEffectManager : MonoBehaviour
         AddEffect("0284", c => Debug.Log("Chain Energy: Custo de LP para jogar."));
 
         // 0287 - Change of Heart (Take control)
-        AddEffect("0287", Effect_ChangeOfHeart);
+        AddEffect("0287", c => Effect_ChangeControl(c, true)); // true = devolve no fim do turno (TODO)
 
         // 0288 - Chaos Command Magician (Negate target)
         AddEffect("0288", c => Debug.Log("Chaos Command Magician: Nega efeitos de monstro que dão alvo."));
@@ -2681,7 +2681,7 @@ public class CardEffectManager : MonoBehaviour
         AddEffect("1267", c => Debug.Log("Monster Gate: Tributa 1, escava e invoca."));
 
         // 1268 - Monster Reborn (Revive) - Já existente, mas reforçando
-        AddEffect("1268", Effect_MonsterReborn);
+        AddEffect("1268", c => Effect_Revive(c, true)); // true = qualquer GY
 
         // 1269 - Monster Recovery (Shuffle Hand/Field)
         AddEffect("1269", c => Debug.Log("Monster Recovery: Embaralha monstro e mão, compra nova mão."));
@@ -3270,7 +3270,7 @@ public class CardEffectManager : MonoBehaviour
         AddEffect("1587", c => Debug.Log("Sanga: Zera ATK do atacante."));
 
         // 1588 - Sangan (Search 1500-)
-        AddEffect("1588", c => Debug.Log("Sangan: Busca monstro 1500- ATK."));
+        AddEffect("1588", c => Effect_SearchDeck(c, "Monster", "", 1500));
 
         // 1590 - Sasuke Samurai (Destroy Face-down)
         AddEffect("1590", c => Debug.Log("Sasuke Samurai: Destrói face-down antes do cálculo."));
@@ -3288,7 +3288,7 @@ public class CardEffectManager : MonoBehaviour
         AddEffect("1594", c => Debug.Log("Satellite Cannon: Ganha 1000 ATK por turno."));
 
         // 1595 - Scapegoat (SS 4 Tokens)
-        AddEffect("1595", c => Debug.Log("Scapegoat: Invoca 4 Sheep Tokens."));
+        AddEffect("1595", Effect_Scapegoat);
 
         // 1597 - Scroll of Bewitchment (Equip Change Attribute)
         AddEffect("1597", c => Debug.Log("Scroll of Bewitchment: Muda atributo."));
@@ -3463,7 +3463,7 @@ public class CardEffectManager : MonoBehaviour
         AddEffect("1681", c => Debug.Log("Snake Fang: Reduz DEF em 500."));
 
         // 1683 - Snatch Steal (Equip Control, Opp heal)
-        AddEffect("1683", c => Debug.Log("Snatch Steal: Toma controle. Oponente ganha 1000 LP por turno."));
+        AddEffect("1683", c => { Effect_Equip(c, 0, 0); Effect_ChangeControl(c, false); });
 
         // 1684 - Sogen (Field Warrior/Beast-Warrior +200)
         AddEffect("1684", c => { Effect_Field(c, 200, 200, "Warrior"); Effect_Field(c, 200, 200, "Beast-Warrior"); });
@@ -4794,11 +4794,6 @@ public class CardEffectManager : MonoBehaviour
         Debug.Log("MST ativado. Seleção de alvo pendente.");
     }
 
-    void Effect_MonsterReborn(CardDisplay source)
-    {
-        Debug.Log("Monster Reborn ativado. Seleção de cemitério pendente.");
-    }
-
     void Effect_FlipDestroy(CardDisplay source, TargetType type)
     {
         Debug.Log($"Efeito FLIP ativado: {source.CurrentCardData.name}");
@@ -4900,12 +4895,17 @@ public class CardEffectManager : MonoBehaviour
         }
     }
 
-    void Effect_BrainControl(CardDisplay source)
+    void Effect_ChangeControl(CardDisplay source, bool returnAtEndPhase)
     {
-        Debug.Log("Brain Control: Pagar 800 LP para controlar monstro.");
-        Effect_PayLP(source, 800);
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && t.isPlayerCard != source.isPlayerCard,
+                (t) => GameManager.Instance.SwitchControl(t)
+            );
+        }
     }
-
+    
     void Effect_BurstStream(CardDisplay source)
     {
         // Verifica se controla Blue-Eyes
@@ -5019,6 +5019,26 @@ public class CardEffectManager : MonoBehaviour
     {
         Debug.Log("Muka Muka: Ganha 300 ATK/DEF para cada carta na sua mão.");
         // Em um sistema real, isso se inscreveria em eventos de mudança de mão
+    }
+
+    void Effect_Scapegoat(CardDisplay source)
+    {
+        // Invoca 4 Tokens
+        for(int i=0; i<4; i++)
+            GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Sheep Token");
+    }
+
+    void Effect_Revive(CardDisplay source, bool anyGraveyard)
+    {
+        List<CardData> targets = new List<CardData>();
+        targets.AddRange(GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.type.Contains("Monster")));
+        if (anyGraveyard)
+            targets.AddRange(GameManager.Instance.GetOpponentGraveyard().FindAll(c => c.type.Contains("Monster")));
+
+        GameManager.Instance.OpenCardSelection(targets, "Selecione monstro para reviver", (selected) => {
+            GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+            Debug.Log($"Revivendo {selected.name}");
+        });
     }
 
     void Effect_MysticBox(CardDisplay source)

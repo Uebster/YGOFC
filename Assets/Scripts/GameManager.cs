@@ -91,6 +91,7 @@ public class GameManager : MonoBehaviour
 
     [Header("Card Prefab")]
     public GameObject cardPrefab; // Prefab da carta para instanciar na mão
+    public GameObject tokenPrefab; // Prefab para Tokens (Scapegoat, etc)
     public Transform playerHandLayoutGroup; // O HorizontalLayoutGroup da mão do jogador
     public Transform opponentHandLayoutGroup; // O HorizontalLayoutGroup da mão do oponente
     
@@ -1177,6 +1178,10 @@ public class GameManager : MonoBehaviour
     public List<CardData> GetPlayerMainDeck() { return playerDeck; }
     public List<CardData> GetPlayerSideDeck() { return playerSideDeck; }
     public List<CardData> GetPlayerExtraDeck() { return playerExtraDeck; }
+    public List<CardData> GetPlayerGraveyard() { return playerGraveyard; }
+    public List<CardData> GetOpponentGraveyard() { return opponentGraveyard; }
+    public List<CardData> GetPlayerHandData() { return playerHand.Select(g => g.GetComponent<CardDisplay>().CurrentCardData).ToList(); }
+
     
     public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
     {
@@ -1190,6 +1195,155 @@ public class GameManager : MonoBehaviour
         // Verifica se o jogador tem a carta no baú (ou se está usando todas as cartas)
         if (devMode) return true;
         return playerTrunk.Contains(cardId);
+    }
+
+    // --- SISTEMAS DE JOGO AVANÇADOS ---
+
+    // Verifica se uma carta específica está ativa no campo (Face-up)
+    // Usado para: Jinzo, Gravity Bind, Umi, etc.
+    public bool IsCardActiveOnField(string cardId)
+    {
+        if (duelFieldUI == null) return false;
+
+        bool CheckZone(Transform[] zones)
+        {
+            foreach (var z in zones)
+            {
+                if (z.childCount > 0)
+                {
+                    var c = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (c != null && c.isOnField && !c.isFlipped && c.CurrentCardData.id == cardId) return true;
+                }
+            }
+            return false;
+        }
+
+        if (CheckZone(duelFieldUI.playerSpellZones)) return true;
+        if (CheckZone(duelFieldUI.opponentSpellZones)) return true;
+        if (CheckZone(duelFieldUI.playerMonsterZones)) return true; // Jinzo é monstro
+        if (CheckZone(duelFieldUI.opponentMonsterZones)) return true;
+        
+        // Checa Field Spells
+        if (duelFieldUI.playerFieldSpell.childCount > 0)
+        {
+            var c = duelFieldUI.playerFieldSpell.GetChild(0).GetComponent<CardDisplay>();
+            if (c != null && !c.isFlipped && c.CurrentCardData.id == cardId) return true;
+        }
+        if (duelFieldUI.opponentFieldSpell.childCount > 0)
+        {
+            var c = duelFieldUI.opponentFieldSpell.GetChild(0).GetComponent<CardDisplay>();
+            if (c != null && !c.isFlipped && c.CurrentCardData.id == cardId) return true;
+        }
+
+        return false;
+    }
+
+    // Sistema de Tokens (Scapegoat, etc)
+    public void SpawnToken(bool forPlayer, int atk, int def, string name)
+    {
+        Transform targetZone = forPlayer ? GetFreePlayerMonsterZone() : GetFreeOpponentMonsterZone();
+        if (targetZone == null) return; // Campo cheio
+
+        GameObject tokenGO = Instantiate(tokenPrefab != null ? tokenPrefab : cardPrefab, targetZone);
+        CardDisplay display = tokenGO.GetComponent<CardDisplay>();
+        if (display == null) display = tokenGO.AddComponent<CardDisplay>();
+
+        // Cria dados fictícios para o Token
+        CardData tokenData = new CardData();
+        tokenData.id = "TOKEN";
+        tokenData.name = name;
+        tokenData.type = "Monster (Normal)";
+        tokenData.race = "Token"; // Ou Beast, etc, dependendo do efeito
+        tokenData.atk = atk;
+        tokenData.def = def;
+        tokenData.level = 1;
+        tokenData.description = "Token Monster";
+
+        display.isPlayerCard = forPlayer;
+        display.isOnField = true;
+        display.position = CardDisplay.BattlePosition.Defense;
+        display.SetCard(tokenData, cardBackTexture, true); // Face-up
+
+        // Configuração Visual
+        tokenGO.transform.localPosition = Vector3.zero;
+        tokenGO.transform.localScale = fieldCardScale;
+        float zRotation = forPlayer ? 90f : -90f; // Defesa
+        tokenGO.transform.localRotation = Quaternion.Euler(0, 0, zRotation);
+
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySummonEffect(display);
+    }
+
+    // Troca de Controle (Change of Heart, Snatch Steal)
+    public void SwitchControl(CardDisplay card)
+    {
+        bool newOwnerIsPlayer = !card.isPlayerCard;
+        Transform newZone = newOwnerIsPlayer ? GetFreePlayerMonsterZone() : GetFreeOpponentMonsterZone();
+
+        if (newZone == null)
+        {
+            Debug.LogWarning("Sem espaço para trocar o controle do monstro.");
+            return;
+        }
+
+        // Remove da lista da mão se por acaso estiver lá (segurança)
+        if (card.isPlayerCard) playerHand.Remove(card.gameObject);
+        else opponentHand.Remove(card.gameObject);
+
+        card.transform.SetParent(newZone);
+        card.transform.localPosition = Vector3.zero;
+        card.isPlayerCard = newOwnerIsPlayer;
+
+        // Ajusta rotação visual baseada na posição de batalha e novo dono
+        float zRot = 0;
+        if (card.position == CardDisplay.BattlePosition.Defense) zRot = newOwnerIsPlayer ? 90f : -90f;
+        else zRot = newOwnerIsPlayer ? 0f : 180f;
+
+        card.transform.localRotation = Quaternion.Euler(0, 0, zRot);
+        Debug.Log($"Controle de {card.CurrentCardData.name} alterado.");
+    }
+
+    // Mockup para Seleção de Cartas (Search/Revive)
+    // Em um sistema completo, isso abriria um painel UI com ScrollView
+    public void OpenCardSelection(List<CardData> sourceList, string title, System.Action<CardData> onSelected)
+    {
+        if (sourceList.Count > 0)
+        {
+            // SIMULAÇÃO: Seleciona automaticamente a primeira carta válida
+            // Futuramente: UIManager.Instance.ShowCardSelectionPanel(sourceList, onSelected);
+            Debug.Log($"[UI Mockup] Selecionando carta de '{title}': {sourceList[0].name}");
+            onSelected?.Invoke(sourceList[0]);
+        }
+        else
+        {
+            Debug.Log("Nenhuma carta válida para selecionar.");
+        }
+    }
+
+    // Invocação Especial direta por dados (para Monster Reborn, etc)
+    public void SpecialSummonFromData(CardData data, bool forPlayer, bool faceUp = true, bool defense = false)
+    {
+        Transform targetZone = forPlayer ? GetFreePlayerMonsterZone() : GetFreeOpponentMonsterZone();
+        if (targetZone == null) return;
+
+        GameObject cardGO = Instantiate(cardPrefab, targetZone);
+        CardDisplay display = cardGO.GetComponent<CardDisplay>();
+        if (display == null) display = cardGO.AddComponent<CardDisplay>();
+
+        display.isPlayerCard = forPlayer;
+        display.isOnField = true;
+        display.position = defense ? CardDisplay.BattlePosition.Defense : CardDisplay.BattlePosition.Attack;
+        display.SetCard(data, cardBackTexture, faceUp);
+
+        cardGO.transform.localPosition = Vector3.zero;
+        cardGO.transform.localScale = fieldCardScale;
+        
+        float zRot = 0;
+        if (defense) zRot = forPlayer ? 90f : -90f;
+        else zRot = forPlayer ? 0f : 180f;
+        
+        cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRot);
+
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySummonEffect(display);
     }
 
     // Helper para o EffectTestManager e outros sistemas
