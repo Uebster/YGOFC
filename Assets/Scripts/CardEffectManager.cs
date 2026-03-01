@@ -3505,6 +3505,214 @@ public class CardEffectManager : MonoBehaviour
         // LÓGICA PARA AS CARTAS (ID 1701 - 1800)
         // =========================================================================================
 
+        // 1702 - Soul Release (Banish 5 GY)
+        AddEffect("1702", c => Debug.Log("Soul Release: Banir até 5 do GY."));
+
+        // 1703 - Soul Resurrection (Revive Normal Defense)
+        AddEffect("1703", c => Debug.Log("Soul Resurrection: Reviver Normal em Defesa."));
+
+        // 1704 - Soul Reversal (Recycle Flip)
+        AddEffect("1704", c => Debug.Log("Soul Reversal: Retornar Flip do GY ao Deck."));
+
+        // 1705 - Soul Rope (Pay 1000 SS Lv4)
+        AddEffect("1705", c => Debug.Log("Soul Rope: Paga 1000, SS Lv4 do Deck."));
+
+        // 1706 - Soul Taker (Destroy & Heal Opp)
+        AddEffect("1706", c => Debug.Log("Soul Taker: Destrói monstro, oponente ganha 1000 LP."));
+
+        // 1708 - Soul of Purity and Light (SS Condition / Debuff)
+        AddEffect("1708", c => Debug.Log("Soul of Purity and Light: SS banindo 2 LIGHT. Debuff oponente."));
+
+        // 1709 - Soul of the Pure (Gain 800)
+        AddEffect("1709", c => Effect_GainLP(c, 800));
+
+        // 1710 - Soul-Absorbing Bone Tower (Mill on Zombie SS)
+        AddEffect("1710", c => Debug.Log("Bone Tower: Mill 2 quando Zumbi é invocado."));
+
+        // 1714 - Spark Blaster (Pos Change)
+        AddEffect("1714", c => Debug.Log("Spark Blaster: Equip Sparkman. Muda posição."));
+
+        // 1715 - Sparks (Burn 200)
+        AddEffect("1715", c => Effect_DirectDamage(c, 200));
+
+        // 1716 - Spatial Collapse (Limit 5)
+        AddEffect("1716", c => Debug.Log("Spatial Collapse: Limite de 5 cartas."));
+
+        // 1717 - Spear Cretin (Flip Mutual Revive)
+        AddEffect("1717", c => Debug.Log("Spear Cretin: Flip, ambos invocam do GY."));
+
+        // 1718 - Spear Dragon (Piercing / Defense)
+        AddEffect("1718", c => Debug.Log("Spear Dragon: Perfurante, vira defesa."));
+
+        // 1719 - Special Hurricane (Destroy SS)
+        AddEffect("1719", c => Debug.Log("Special Hurricane: Destrói monstros SS."));
+
+        // 1720 - Spell Absorption (Gain LP on Spell)
+        AddEffect("1720", c => Debug.Log("Spell Absorption: Ganha 500 LP por magia."));
+
+        // 1721 - Spell Canceller (Negate Spells)
+        AddEffect("1721", c => Debug.Log("Spell Canceller: Nega magias."));
+
+        // 1722 - Spell Economics (No LP Cost)
+        AddEffect("1722", c => Debug.Log("Spell Economics: Sem custo de LP para magias."));
+
+        // 1723 - Spell Purification (Destroy Continuous Spells)
+        AddEffect("1723", c => Debug.Log("Spell Purification: Destrói Continuous Spells."));
+
+        // 1724 - Spell Reproduction (Recycle Spell)
+        AddEffect("1724", c => Debug.Log("Spell Reproduction: Recupera magia."));
+
+        // 1725 - Spell Shattering Arrow (Destroy Face-up Spells)
+        AddEffect("1725", c => Debug.Log("Spell Shattering Arrow: Destrói face-up Spells e dano."));
+
+        // 1726 - Spell Shield Type-8 (Negate Spell)
+        AddEffect("1726", c => Debug.Log("Spell Shield Type-8: Nega magia."));
+
+        // 1727 - Spell Vanishing (Negate & Banish)
+        AddEffect("1727", c => Debug.Log("Spell Vanishing: Nega e bane cópias."));
+
+        // 1728 - Spell of Pain (Redirect Damage)
+        AddEffect("1728", c => Debug.Log("Spell of Pain: Redireciona dano de efeito."));
+
+        // 1729 - Spell-Stopping Statute (Negate Continuous Spell)
+        AddEffect("1729", c => Debug.Log("Spell-Stopping Statute: Nega Continuous Spell."));
+
+        // 1730 - Spellbinding Circle (Lock)
+        AddEffect("1730", c => Debug.Log("Spellbinding Circle: Prende monstro."));
+
+        // 1731 - Spellbook Organization (Reorder)
+        AddEffect("1731", c => Debug.Log("Spellbook Organization: Reordena topo."));
+
+        // 1733 - Sphinx Teleia (SS Condition / Burn)
+        AddEffect("1733", c => Debug.Log("Sphinx Teleia: SS especial, dano em defesa."));
+
+        // 1737 - Spiral Spear Strike (Piercing Gaia)
+        AddEffect("1737", c => Debug.Log("Spiral Spear Strike: Perfurante para Gaia."));
+
+        // 1738 - Spirit Barrier (No Battle Damage)
+        AddEffect("1738", c => Debug.Log("Spirit Barrier: Sem dano de batalha se tiver monstro."));
+
+        // 1739 - Spirit Caller (Flip SS Normal)
+        AddEffect("1739", c => Debug.Log("Spirit Caller: Flip SS Normal Lv3-."));
+
+        // 1740 - Spirit Elimination (Banish Field)
+        AddEffect("1740", c => Debug.Log("Spirit Elimination: Banir do campo em vez do GY."));
+
+        // 1745 - Spirit Reaper (Indestructible / Discard)
+        AddEffect("1745", c => Debug.Log("Spirit Reaper: Indestrutível batalha, descarte."));
+
+        // 1746 - Spirit Ryu (Discard Dragon Buff)
+        AddEffect("1746", c => Debug.Log("Spirit Ryu: Descarte Dragão para ATK."));
+
+        // 1747 - Spirit of Flames (SS Banish Fire)
+        AddEffect("1747", c => Debug.Log("Spirit of Flames: SS banindo FIRE."));
+
+        // 1749 - Spirit of the Breeze (Gain LP)
+        AddEffect("1749", c => Debug.Log("Spirit of the Breeze: Ganha LP."));
+
+        // 1752 - Spirit of the Pharaoh (SS Zombies)
+        AddEffect("1752", c => Debug.Log("Spirit of the Pharaoh: SS Zumbis."));
+
+        // 1753 - Spirit of the Pot of Greed (Draw Extra)
+        AddEffect("1753", c => Debug.Log("Spirit of the Pot: Compra extra."));
+
+        // 1755 - Spirit's Invitation (Bounce)
+        AddEffect("1755", c => Debug.Log("Spirit's Invitation: Bounce."));
+
+        // 1756 - Spiritual Earth Art - Kurogane (Swap Earth)
+        AddEffect("1756", c => Debug.Log("Kurogane: Troca Earth."));
+
+        // 1757 - Spiritual Energy Settle Machine (Keep Spirits)
+        AddEffect("1757", c => Debug.Log("Spiritual Energy: Mantém Spirits."));
+
+        // 1758 - Spiritual Fire Art - Kurenai (Burn)
+        AddEffect("1758", c => Debug.Log("Kurenai: Tributa Fire para dano."));
+
+        // 1759 - Spiritual Water Art - Aoi (Hand Destruction)
+        AddEffect("1759", c => Debug.Log("Aoi: Hand destruction."));
+
+        // 1760 - Spiritual Wind Art - Miyabi (Spin)
+        AddEffect("1760", c => Debug.Log("Miyabi: Spin."));
+
+        // 1761 - Spiritualism (Bounce S/T)
+        AddEffect("1761", c => Debug.Log("Spiritualism: Bounce S/T."));
+
+        // 1762 - Spring of Rebirth (Gain LP on Bounce)
+        AddEffect("1762", c => Debug.Log("Spring of Rebirth: Ganha LP por bounce."));
+
+        // 1764 - Stamping Destruction (Destroy S/T Burn)
+        AddEffect("1764", c => Debug.Log("Stamping Destruction: Destrói S/T e dano."));
+
+        // 1765 - Star Boy (Field Water +500 Fire -400)
+        AddEffect("1765", c => Effect_Field(c, 500, -400, "", "Water"));
+
+        // 1766 - Statue of the Wicked (Token)
+        AddEffect("1766", c => Debug.Log("Statue of the Wicked: Token."));
+
+        // 1767 - Staunch Defender (Forced Attack)
+        AddEffect("1767", c => Debug.Log("Staunch Defender: Redireciona ataques."));
+
+        // 1768 - Stealth Bird (Burn / Flip Down)
+        AddEffect("1768", c => Debug.Log("Stealth Bird: Dano 1000, flip down."));
+
+        // 1770 - Steamroid (Battle Stats)
+        AddEffect("1770", c => Debug.Log("Steamroid: Modifica ATK na batalha."));
+
+        // 1773 - Steel Scorpion (Destroy non-Machine)
+        AddEffect("1773", c => Debug.Log("Steel Scorpion: Destrói não-máquina."));
+
+        // 1774 - Steel Shell (Equip Water +400/-200)
+        AddEffect("1774", c => Effect_Equip(c, 400, -200, "", "Water"));
+
+        // 1775 - Stim-Pack (Equip +700 / Decay)
+        AddEffect("1775", c => Debug.Log("Stim-Pack: +700 ATK, perde 200."));
+
+        // 1780 - Stone Statue of the Aztecs (Double Battle Damage)
+        AddEffect("1780", c => Debug.Log("Aztecs: Dano de batalha dobrado."));
+
+        // 1781 - Stop Defense (Change to Attack)
+        AddEffect("1781", c => Debug.Log("Stop Defense: Muda para ataque."));
+
+        // 1782 - Stray Lambs (Tokens)
+        AddEffect("1782", c => Debug.Log("Stray Lambs: 2 Tokens."));
+
+        // 1783 - Strike Ninja (Dodge)
+        AddEffect("1783", c => Debug.Log("Strike Ninja: Dodge banindo 2 Dark."));
+
+        // 1784 - Stronghold the Moving Fortress (Trap Monster)
+        AddEffect("1784", c => Debug.Log("Stronghold: Trap Monster."));
+
+        // 1786 - Stumbling (Defense on Summon)
+        AddEffect("1786", c => Debug.Log("Stumbling: Invocados viram defesa."));
+
+        // 1788 - Suijin (Zero ATK)
+        AddEffect("1788", c => Debug.Log("Suijin: Zera ATK."));
+
+        // 1790 - Summoner Monk (Discard Spell SS)
+        AddEffect("1790", c => Debug.Log("Summoner Monk: Descarta Spell invoca Lv4."));
+
+        // 1791 - Summoner of Illusions (Flip SS Fusion)
+        AddEffect("1791", c => Debug.Log("Summoner of Illusions: Flip tributa invoca Fusão."));
+
+        // 1792 - Super Rejuvenation (Draw Dragons)
+        AddEffect("1792", c => Debug.Log("Super Rejuvenation: Compra por Dragões."));
+
+        // 1795 - Super War-Lion (Ritual)
+        AddEffect("1795", c => Debug.Log("Super War-Lion: Ritual."));
+
+        // 1796 - Supply (Recycle Fusion Material)
+        AddEffect("1796", c => Debug.Log("Supply: Recupera materiais."));
+
+        // 1798 - Susa Soldier (Halve Damage)
+        AddEffect("1798", c => Debug.Log("Susa Soldier: Dano cortado."));
+
+        // 1799 - Swamp Battleguard (Buff)
+        AddEffect("1799", c => Debug.Log("Swamp Battleguard: Buff por Lava Battleguard."));
+
+        // 1800 - Swarm of Locusts (Destroy S/T / Flip Down)
+        AddEffect("1800", c => Debug.Log("Swarm of Locusts: Destrói S/T, flip down."));
+
+
     }
 
     void AddEffect(string id, System.Action<CardDisplay> effect)
