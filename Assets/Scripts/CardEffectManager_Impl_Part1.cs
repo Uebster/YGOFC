@@ -2351,4 +2351,800 @@ public partial class CardEffectManager
         Debug.Log("Cyber Dragon: Condição de SS (Verificação no SummonManager pendente).");
     }
 
+    // =========================================================================================
+    // IMPLEMENTAÇÃO ESPECÍFICA (ID 0360 - 0400)
+    // =========================================================================================
+
+    void Effect_0362_CyberHarpieLady(CardDisplay source)
+    {
+        // Efeito: O nome desta carta é tratado como "Harpie Lady".
+        // O que falta: Sistema de Alias de nomes no CardData ou verificação dinâmica.
+        Debug.Log("Cyber Harpie Lady: Nome tratado como Harpie Lady.");
+    }
+
+    void Effect_0363_CyberJar(CardDisplay source)
+    {
+        // FLIP: Destrói todos os monstros. Ambos compram 5, invocam Lv4- encontrados.
+        // O que falta: Lógica complexa de escavar e invocar múltiplos monstros para ambos os jogadores.
+        Debug.Log("Cyber Jar: Destruindo tudo e comprando 5 (Invocação pendente).");
+        // DestroyAllMonsters(true, true); // Requer acesso ao método
+        // Draw 5 for both
+    }
+
+    void Effect_0364_CyberRaider(CardDisplay source)
+    {
+        // Efeito: Selecione 1 Equip Card no campo; destrua-o ou equipe-o neste card.
+        // O que falta: Escolha de modo (Destruir ou Equipar) e lógica de roubar equipamento.
+        Debug.Log("Cyber Raider: Roubar/Destruir Equipamento.");
+    }
+
+    void Effect_0366_CyberShield(CardDisplay source)
+    {
+        // Equip: Harpie Lady +500 ATK.
+        Effect_Equip(source, 500, 0, "Winged Beast"); // Simplificado para Winged Beast ou nome
+    }
+
+    void Effect_0369_CyberTwinDragon(CardDisplay source)
+    {
+        // Efeito: Pode atacar duas vezes na Battle Phase.
+        // O que falta: StatModifier de ataques múltiplos ou flag no BattleManager.
+        Debug.Log("Cyber Twin Dragon: Ataque duplo.");
+    }
+
+    void Effect_0370_CyberStein(CardDisplay source)
+    {
+        // Efeito: Pague 5000 LP; SS 1 Fusão do Extra Deck em Ataque.
+        Effect_PayLP(source, 5000);
+        // Abrir Extra Deck e invocar
+        Debug.Log("Cyber-Stein: Invocar Fusão (UI de Extra Deck pendente).");
+        // GameManager.Instance.ViewExtraDeck(source.isPlayerCard); // Precisa permitir seleção para invocar
+    }
+
+    void Effect_0372_CyberneticCyclopean(CardDisplay source)
+    {
+        // Efeito: Se você não tiver cartas na mão, ganha 1000 ATK.
+        // O que falta: Verificação contínua da mão e atualização de stats.
+        Debug.Log("Cybernetic Cyclopean: +1000 ATK se mão vazia.");
+    }
+
+    void Effect_0373_CyberneticMagician(CardDisplay source)
+    {
+        // Efeito: Descarte 1 carta; ATK de 1 monstro vira 2000.
+        // O que falta: UI de descarte e seleção de alvo para modificar ATK base.
+        Debug.Log("Cybernetic Magician: Alterar ATK para 2000.");
+    }
+
+    void Effect_0374_CyclonLaser(CardDisplay source)
+    {
+        // Equip: Gradius +300 ATK, Piercing.
+        Effect_Equip(source, 300, 0, "Machine"); // Simplificado
+    }
+
+    void Effect_0377_DTribe(CardDisplay source)
+    {
+        // Trap: Todos os monstros viram Dragão.
+        // O que falta: Modificador de Tipo global.
+        Debug.Log("D. Tribe: Todos viram Dragão.");
+    }
+
+    void Effect_0378_DDAssailant(CardDisplay source)
+    {
+        // Efeito: Se destruído em batalha, bane o atacante e este card.
+        // O que falta: Trigger de destruição em batalha no BattleManager.
+        Debug.Log("D.D. Assailant: Banir atacante.");
+    }
+
+    void Effect_0379_DDBorderline(CardDisplay source)
+    {
+        // Spell: Ninguém ataca se não houver Spells no seu GY.
+        // O que falta: Restrição de ataque global condicional no BattleManager.
+        Debug.Log("D.D. Borderline: Bloqueio de ataque.");
+    }
+
+    void Effect_0380_DDCrazyBeast(CardDisplay source)
+    {
+        // Efeito: Bane monstro destruído por este card em batalha.
+        // O que falta: Trigger de destruição por batalha.
+        Debug.Log("D.D. Crazy Beast: Banir destruído.");
+    }
+
+    void Effect_0381_DDDesignator(CardDisplay source)
+    {
+        // Spell: Declare 1 carta; verifique mão do oponente. Se tiver, bane. Se não, bane 1 da sua.
+        // O que falta: Input de texto para declarar nome e verificação da mão.
+        Debug.Log("D.D. Designator: Adivinhar carta da mão.");
+    }
+
+    void Effect_0382_DDDynamite(CardDisplay source)
+    {
+        // Trap: 300 dano por cada carta banida do oponente.
+        // O que falta: Contagem de banidas do oponente.
+        Debug.Log("D.D. Dynamite: Dano por banidas.");
+    }
+
+    void Effect_0383_DDScoutPlane(CardDisplay source)
+    {
+        // Efeito: Se banido, SS na End Phase.
+        // O que falta: Evento OnBanished e TurnObserver.
+        Debug.Log("D.D. Scout Plane: Retorna se banido.");
+    }
+
+    void Effect_0384_DDSurvivor(CardDisplay source)
+    {
+        // Efeito: Se banido enquanto face-up, SS na End Phase.
+        Debug.Log("D.D. Survivor: Retorna se banido.");
+    }
+
+    void Effect_0386_DDTrapHole(CardDisplay source)
+    {
+        // Trap: Quando oponente Set monstro: Destrói e bane.
+        // O que falta: Trigger de Set no SummonManager.
+        Debug.Log("D.D. Trap Hole: Destruir e banir Set.");
+    }
+
+    void Effect_0387_DDWarrior(CardDisplay source)
+    {
+        // Efeito: Após batalha, bane este card e o oponente.
+        Debug.Log("D.D. Warrior: Banir ambos.");
+    }
+
+    void Effect_0388_DDWarriorLady(CardDisplay source)
+    {
+        // Efeito: Após batalha, pode banir este card e o oponente.
+        Debug.Log("D.D. Warrior Lady: Banir ambos (Opcional).");
+    }
+
+    void Effect_0389_DDM(CardDisplay source)
+    {
+        // Efeito: Descarte 1 Spell; SS 1 monstro banido.
+        // O que falta: UI de descarte específico e seleção de banidos.
+        Debug.Log("D.D.M.: Invocar banido.");
+    }
+
+    void Effect_0390_DNASurgery(CardDisplay source)
+    {
+        // Trap: Declare 1 Tipo; todos viram esse Tipo.
+        // O que falta: Input de declaração e modificador global.
+        Debug.Log("DNA Surgery: Mudar tipo de todos.");
+    }
+
+    void Effect_0391_DNATransplant(CardDisplay source)
+    {
+        // Trap: Declare 1 Atributo; todos viram esse Atributo.
+        Debug.Log("DNA Transplant: Mudar atributo de todos.");
+    }
+
+    void Effect_0393_DancingFairy(CardDisplay source)
+    {
+        // Efeito: Se em Defesa, ganha 1000 LP na Standby.
+        // O que falta: TurnObserver.
+        Debug.Log("Dancing Fairy: Ganha LP na Standby.");
+    }
+
+    void Effect_0394_DangerousMachineType6(CardDisplay source)
+    {
+        // Spell: Rola dado e aplica efeito aleatório.
+        Debug.Log("Dangerous Machine Type-6: Efeito de dado.");
+    }
+
+    void Effect_0395_DarkArtist(CardDisplay source)
+    {
+        // Efeito: DEF cai pela metade se atacado por LIGHT.
+        // O que falta: Cálculo de dano condicional.
+        Debug.Log("Dark Artist: DEF reduzida contra LIGHT.");
+    }
+
+    void Effect_0397_DarkBalterTheTerrible(CardDisplay source)
+    {
+        // Fusão: Pague 1000 para negar Normal Spell. Nega efeitos de monstros destruídos.
+        // O que falta: Sistema de Chain para negar Spell.
+        Debug.Log("Dark Balter: Negar Spell / Negar efeitos.");
+    }
+
+    void Effect_0400_DarkBladeTheDragonKnight(CardDisplay source)
+    {
+        // Fusão: Bane até 3 monstros do GY do oponente.
+        // O que falta: Seleção múltipla no GY do oponente.
+        Debug.Log("Dark Blade Dragon Knight: Banir do GY.");
+    }
+
+    // =========================================================================================
+    // IMPLEMENTAÇÃO ESPECÍFICA (ID 0401 - 0500)
+    // =========================================================================================
+
+    void Effect_0401_DarkCatWithWhiteTail(CardDisplay source)
+    {
+        // FLIP: Retorna 2 monstros do oponente e 1 seu para a mão.
+        // O que falta: Seleção múltipla complexa (2 oponente, 1 jogador).
+        Debug.Log("Dark Cat with White Tail: Bounce múltiplo (UI de seleção pendente).");
+    }
+
+    void Effect_0402_DarkCatapulter(CardDisplay source)
+    {
+        // Efeito: Remove contador para destruir S/T.
+        // O que falta: Sistema de Spell Counters.
+        Debug.Log("Dark Catapulter: Remove contador para destruir S/T.");
+    }
+
+    void Effect_0404_DarkCoffin(CardDisplay source)
+    {
+        // Efeito: Se destruído face-down, oponente escolhe: Descartar 1 ou Destruir 1 monstro.
+        // O que falta: UI de escolha para o oponente.
+        Debug.Log("Dark Coffin: Oponente escolhe punição (UI pendente).");
+    }
+
+    void Effect_0405_DarkCore(CardDisplay source)
+    {
+        // Efeito: Descarte 1; bana 1 monstro face-up.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                Debug.Log($"Dark Core: Descartou {discarded.name}.");
+                if (SpellTrapManager.Instance != null)
+                {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && !t.isFlipped, // Face-up
+                        (target) => {
+                            GameManager.Instance.RemoveFromPlay(target.CurrentCardData, target.isPlayerCard);
+                            Destroy(target.gameObject);
+                            Debug.Log($"Dark Core: Baniu {target.CurrentCardData.name}.");
+                        }
+                    );
+                }
+            });
+        }
+    }
+
+    void Effect_0406_DarkDesignator(CardDisplay source)
+    {
+        // Efeito: Declare 1 monstro; se estiver no deck do oponente, adicione à mão dele.
+        // O que falta: Input de texto para declarar nome.
+        Debug.Log("Dark Designator: Adiciona carta do deck do oponente à mão dele (Input pendente).");
+    }
+
+    void Effect_0407_DarkDriceratops(CardDisplay source)
+    {
+        // Efeito: Dano perfurante.
+        // O que falta: Passivo no BattleManager.
+        Debug.Log("Dark Driceratops: Dano perfurante.");
+    }
+
+    void Effect_0408_DarkDustSpirit(CardDisplay source)
+    {
+        // Efeito: Spirit. Ao ser invocado, destrói todos os monstros face-up.
+        // O que falta: Retorno para mão na End Phase (Spirit).
+        Debug.Log("Dark Dust Spirit: Destruindo monstros face-up...");
+        // DestroyAllMonsters(true, true); // Filtrar por face-up
+    }
+
+    void Effect_0409_DarkElf(CardDisplay source)
+    {
+        // Efeito: Paga 1000 LP para atacar.
+        // O que falta: Hook no BattleManager antes do ataque.
+        Debug.Log("Dark Elf: Custo de ataque.");
+    }
+
+    void Effect_0410_DarkEnergy(CardDisplay source)
+    {
+        // Equip: Fiend +300 ATK/DEF.
+        Effect_Equip(source, 300, 300, "Fiend");
+    }
+
+    void Effect_0411_DarkFactoryOfMassProduction(CardDisplay source)
+    {
+        // Efeito: Recupera 2 Monstros Normais do GY.
+        // O que falta: Seleção múltipla (2 alvos).
+        Debug.Log("Dark Factory: Recupera 2 Monstros Normais (UI Multi-Select pendente).");
+    }
+
+    void Effect_0412_DarkFlareKnight(CardDisplay source)
+    {
+        // Efeito: Sem dano de batalha. Se destruído, invoca Mirage Knight.
+        // O que falta: Evento OnDestroyed.
+        Debug.Log("Dark Flare Knight: Invoca Mirage Knight ao morrer.");
+    }
+
+    void Effect_0414_DarkHole(CardDisplay source)
+    {
+        // Efeito: Destrói todos os monstros no campo.
+        DestroyAllMonsters(true, true);
+    }
+
+    void Effect_0415_DarkJeroid(CardDisplay source)
+    {
+        // Efeito: Seleciona 1 monstro; ele perde 800 ATK.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isFlipped,
+                (t) => t.ModifyStats(-800, 0)
+            );
+        }
+    }
+
+    void Effect_0417_DarkMagicAttack(CardDisplay source)
+    {
+        // Efeito: Se controlar Dark Magician, destrói todas as S/T do oponente.
+        if (GameManager.Instance.IsCardActiveOnField("0419") || GameManager.Instance.IsCardActiveOnField("Dark Magician")) // ID ou Nome
+        {
+            Effect_HarpiesFeatherDuster(source); // Reusa lógica
+        }
+        else
+        {
+            Debug.Log("Dark Magic Attack: Requer Dark Magician.");
+        }
+    }
+
+    void Effect_0418_DarkMagicCurtain(CardDisplay source)
+    {
+        // Efeito: Paga metade do LP; SS Dark Magician do Deck.
+        int cost = GameManager.Instance.playerLP / 2;
+        Effect_PayLP(source, cost);
+        Effect_SearchDeck(source, "Dark Magician"); // Simplificado (deveria invocar)
+    }
+
+    void Effect_0420_DarkMagicianGirl(CardDisplay source)
+    {
+        // Efeito: +300 ATK por DM/Magician of Black Chaos nos GYs.
+        // O que falta: StatModifier dinâmico checando GYs.
+        Debug.Log("Dark Magician Girl: Buff por Magos no GY.");
+    }
+
+    void Effect_0421_DarkMagicianKnight(CardDisplay source)
+    {
+        // Efeito: Destrói 1 carta no campo.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField,
+                (t) => {
+                    GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                    Destroy(t.gameObject);
+                }
+            );
+        }
+    }
+
+    void Effect_0422_DarkMagicianOfChaos(CardDisplay source)
+    {
+        // Efeito: Recupera 1 Spell do GY na End Phase. Se destruído, é banido.
+        // O que falta: TurnObserver e evento OnDestroyed.
+        Debug.Log("DMoC: Recupera Spell na End Phase.");
+    }
+
+    void Effect_0423_DarkMasterZorc(CardDisplay source)
+    {
+        // Efeito: Rola dado. 1-2: Destrói monstros oponente. 3-5: Destrói 1 monstro. 6: Destrói a si mesmo.
+        // O que falta: Lógica de dado e seleção condicional.
+        Debug.Log("Dark Master - Zorc: Efeito de dado pendente.");
+    }
+
+    void Effect_0424_DarkMimicLV1(CardDisplay source)
+    {
+        // FLIP: Compra 1. Standby: Envia ao GY, SS LV3.
+        GameManager.Instance.DrawCard();
+        Effect_LevelUp(source, "0425"); // LV3
+    }
+
+    void Effect_0425_DarkMimicLV3(CardDisplay source)
+    {
+        // Efeito: Se destruído em batalha, compra 1. Se invocado pelo LV1, compra 2.
+        // O que falta: Flag 'summonedByEffect' e evento OnDestroyed.
+        Debug.Log("Dark Mimic LV3: Compra ao morrer.");
+    }
+
+    void Effect_0426_DarkMirrorForce(CardDisplay source)
+    {
+        // Efeito: Quando oponente ataca: Bane todos os monstros em Defesa do oponente.
+        // O que falta: Trigger de ataque.
+        Debug.Log("Dark Mirror Force: Bane defesa do oponente.");
+    }
+
+    void Effect_0427_DarkNecrofear(CardDisplay source)
+    {
+        // Efeito: SS banindo 3 Fiends. Na End Phase se destruído, equipa no oponente e controla.
+        // O que falta: Lógica de equipamento pós-morte.
+        Debug.Log("Dark Necrofear: Possessão pendente.");
+    }
+
+    void Effect_0428_DarkPaladin(CardDisplay source)
+    {
+        // Efeito: Nega Spell descartando 1. +500 ATK por Dragão.
+        // O que falta: Sistema de Chain e StatModifier.
+        Debug.Log("Dark Paladin: Negação e Buff.");
+    }
+
+    void Effect_0432_DarkRoomOfNightmare(CardDisplay source)
+    {
+        // Efeito: Se oponente tomar dano de efeito, causa +300.
+        // O que falta: Evento OnDamageDealt (Effect).
+        Debug.Log("Dark Room of Nightmare: Dano extra.");
+    }
+
+    void Effect_0433_DarkRulerHaDes(CardDisplay source)
+    {
+        // Efeito: Nega efeitos de monstros destruídos por Fiends.
+        // O que falta: Global rule modifier.
+        Debug.Log("Dark Ruler Ha Des: Nega efeitos de monstros destruídos.");
+    }
+
+    void Effect_0434_DarkSage(CardDisplay source)
+    {
+        // Efeito: Busca 1 Spell.
+        Effect_SearchDeck(source, "Spell");
+    }
+
+    void Effect_0435_DarkScorpionChickTheYellow(CardDisplay source)
+    {
+        // Efeito: Dano -> Bounce monstro ou olhar topo deck.
+        Debug.Log("Chick the Yellow: Efeito de dano.");
+    }
+
+    void Effect_0436_DarkScorpionCliffTheTrapRemover(CardDisplay source)
+    {
+        // Efeito: Dano -> Destrói S/T ou Mill 2.
+        Debug.Log("Cliff the Trap Remover: Efeito de dano.");
+    }
+
+    void Effect_0437_DarkScorpionGorgTheStrong(CardDisplay source)
+    {
+        // Efeito: Dano -> Bounce monstro (topo deck) ou Mill 1.
+        Debug.Log("Gorg the Strong: Efeito de dano.");
+    }
+
+    void Effect_0438_DarkScorpionMeanaeTheThorn(CardDisplay source)
+    {
+        // Efeito: Dano -> Busca Dark Scorpion ou Recicla Dark Scorpion.
+        Debug.Log("Meanae the Thorn: Efeito de dano.");
+    }
+
+    void Effect_0439_DarkScorpionBurglars(CardDisplay source)
+    {
+        // Efeito: Se você controla 3 Dark Scorpions, envie 1 Spell do deck do oponente ao GY.
+        Debug.Log("Dark Scorpion Burglars: Mill de Spell.");
+    }
+
+    void Effect_0440_DarkScorpionCombination(CardDisplay source)
+    {
+        // Efeito: Se tiver os 5 Dark Scorpions, todos atacam direto e causam 400 dano cada.
+        Debug.Log("Dark Scorpion Combination: Ataque total.");
+    }
+
+    void Effect_0442_DarkSnakeSyndrome(CardDisplay source)
+    {
+        // Efeito: Standby -> Dano dobra a cada turno.
+        // O que falta: TurnObserver e contador de turnos na carta.
+        Debug.Log("Dark Snake Syndrome: Dano progressivo.");
+    }
+
+    void Effect_0443_DarkSpiritOfTheSilent(CardDisplay source)
+    {
+        // Efeito: Oponente ataca -> Nega e obriga outro monstro a atacar.
+        // O que falta: Interrupção de ataque e forçar novo atacante.
+        Debug.Log("Dark Spirit of the Silent: Redireciona ataque.");
+    }
+
+    void Effect_0446_DarkZebra(CardDisplay source)
+    {
+        // Efeito: Se for o único monstro na Standby, vira defesa.
+        // O que falta: TurnObserver.
+        Debug.Log("Dark Zebra: Vira defesa.");
+    }
+
+    void Effect_0447_DarkEyesIllusionist(CardDisplay source)
+    {
+        // FLIP: Seleciona 1 monstro; ele não ataca.
+        // O que falta: Vínculo persistente de efeito.
+        Debug.Log("Dark-Eyes Illusionist: Congela monstro.");
+    }
+
+    void Effect_0448_DarkPiercingLight(CardDisplay source)
+    {
+        // Efeito: Vira todos os monstros face-down do oponente para face-up.
+        // O que falta: Iterar monstros do oponente e chamar RevealCard.
+        Debug.Log("Dark-Piercing Light: Revela monstros.");
+    }
+
+    void Effect_0449_DarkbishopArchfiend(CardDisplay source)
+    {
+        // Efeito: Protege Archfiends de efeitos que dão alvo (rola dado).
+        Debug.Log("Darkbishop Archfiend: Proteção de Archfiend.");
+    }
+
+    void Effect_0453_DarklordMarie(CardDisplay source)
+    {
+        // Efeito: Ganha 200 LP na Standby se estiver no GY.
+        // O que falta: TurnObserver checando GY.
+        Debug.Log("Darklord Marie: Cura no GY.");
+    }
+
+    void Effect_0454_DarknessApproaches(CardDisplay source)
+    {
+        // Efeito: Descarte 2; vire 1 monstro face-down (mesmo em ataque).
+        // O que falta: Suporte a Face-Down Attack Position (regra antiga/obscura).
+        Debug.Log("Darkness Approaches: Vira face-down.");
+    }
+
+    void Effect_0456_DeFusion(CardDisplay source)
+    {
+        // Efeito: Retorna Fusão ao Extra Deck, invoca materiais do GY.
+        // O que falta: Rastrear materiais usados na fusão.
+        Debug.Log("De-Fusion: Desfaz fusão.");
+    }
+
+    void Effect_0457_DeSpell(CardDisplay source)
+    {
+        // Efeito: Destrói 1 Spell Card. Se setada, revela e destrói se for Spell.
+        Effect_MST(source); // Simplificado
+    }
+
+    void Effect_0458_DealOfPhantom(CardDisplay source)
+    {
+        // Efeito: Buff baseado no GY.
+        Debug.Log("Deal of Phantom: Buff.");
+    }
+
+    void Effect_0459_DecayedCommander(CardDisplay source)
+    {
+        // Efeito: Se atacar direto, oponente descarta 1.
+        Debug.Log("Decayed Commander: Descarte no ataque direto.");
+    }
+
+    void Effect_0460_DeckDevastationVirus(CardDisplay source)
+    {
+        // Efeito: Tribute Dark 2000+ ATK; destrói monstros 1500- ATK do oponente.
+        if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
+        {
+            Debug.Log("Deck Devastation Virus: Destruindo monstros fracos...");
+            // DestroyAllMonsters(true, false); // Simplificado
+        }
+    }
+
+    void Effect_0461_DedicationThroughLightAndDarkness(CardDisplay source)
+    {
+        // Efeito: Tribute Dark Magician; SS Dark Magician of Chaos.
+        Debug.Log("Dedication: Invocando DMoC.");
+    }
+
+    void Effect_0463_DeepseaWarrior(CardDisplay source)
+    {
+        // Efeito: Imune a Spells se Umi estiver no campo.
+        Debug.Log("Deepsea Warrior: Imune a Spells com Umi.");
+    }
+
+    void Effect_0464_DekoichiTheBattlechantedLocomotive(CardDisplay source)
+    {
+        // FLIP: Compra 1 carta (+1 por cada Bokoichi).
+        GameManager.Instance.DrawCard();
+        // TODO: Checar Bokoichi
+    }
+
+    void Effect_0465_DelinquentDuo(CardDisplay source)
+    {
+        // Efeito: Pague 1000 LP; oponente descarta 1 aleatório e 1 à escolha dele.
+        Effect_PayLP(source, 1000);
+        Debug.Log("Delinquent Duo: Oponente descarta 2.");
+    }
+
+    void Effect_0466_DeltaAttacker(CardDisplay source)
+    {
+        // Efeito: Se controlar 3 Normais mesmo nome (Lv3-), atacam direto.
+        Debug.Log("Delta Attacker: Ataque direto em trio.");
+    }
+
+    void Effect_0467_Demotion(CardDisplay source)
+    {
+        // Equip: Reduz Nível em 2.
+        Debug.Log("Demotion: Nível reduzido.");
+    }
+
+    void Effect_0468_DesCounterblow(CardDisplay source)
+    {
+        // Efeito: Destrói monstro que atacar direto.
+        Debug.Log("Des Counterblow: Destrói atacante direto.");
+    }
+
+    void Effect_0469_DesCroaking(CardDisplay source)
+    {
+        // Efeito: Se controlar 3 Des Frogs, destrói tudo do oponente.
+        Debug.Log("Des Croaking: Nuke condicional.");
+    }
+
+    void Effect_0470_DesDendle(CardDisplay source)
+    {
+        // Efeito: Union para Vampiric Orchis. Gera Token.
+        Debug.Log("Des Dendle: Union/Token.");
+    }
+
+    void Effect_0471_DesFeralImp(CardDisplay source)
+    {
+        // FLIP: Retorna 1 carta do GY para o Deck.
+        Debug.Log("Des Feral Imp: Recicla do GY.");
+    }
+
+    void Effect_0472_DesFrog(CardDisplay source)
+    {
+        // Efeito: SS Des Frogs do deck igual a T.A.D.P.O.L.E. no GY.
+        Debug.Log("Des Frog: Swarm.");
+    }
+
+    void Effect_0473_DesKangaroo(CardDisplay source)
+    {
+        // Efeito: Se ATK < DEF do oponente, destrói oponente (cálculo de dano aplica).
+        Debug.Log("Des Kangaroo: Destrói defesa forte.");
+    }
+
+    void Effect_0474_DesKoala(CardDisplay source)
+    {
+        // FLIP: Dano 400 x cartas na mão do oponente.
+        int handCount = 3; // Simulado
+        Effect_DirectDamage(source, handCount * 400);
+    }
+
+    void Effect_0475_DesLacooda(CardDisplay source)
+    {
+        // Efeito: 1x turno, vira face-down. FLIP: Compra 1.
+        GameManager.Instance.DrawCard();
+        Effect_TurnSet(source); // Pode virar face-down
+    }
+
+    void Effect_0476_DesVolstgalph(CardDisplay source)
+    {
+        // Efeito: Dano 500 ao destruir monstro. +200 ATK por Spell Normal/Quick.
+        Debug.Log("Des Volstgalph: Burn e Buff.");
+    }
+
+    void Effect_0477_DesWombat(CardDisplay source)
+    {
+        // Efeito: Dano de efeito em você vira 0.
+        Debug.Log("Des Wombat: Proteção contra dano de efeito.");
+    }
+
+    void Effect_0478_DesertSunlight(CardDisplay source)
+    {
+        // Efeito: Todos os monstros viram Defesa Face-up.
+        Debug.Log("Desert Sunlight: Revela monstros.");
+    }
+
+    void Effect_0479_Desertapir(CardDisplay source)
+    {
+        // FLIP: Vira 1 monstro face-down.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isFlipped,
+                (t) => t.ShowBack()
+            );
+        }
+    }
+
+    void Effect_0480_DespairFromTheDark(CardDisplay source)
+    {
+        // Efeito: Se enviado do deck/mão ao GY por efeito do oponente, SS.
+        Debug.Log("Despair from the Dark: SS condicional.");
+    }
+
+    void Effect_0481_DesrookArchfiend(CardDisplay source)
+    {
+        // Efeito: Envia da mão ao GY para reviver Terrorking destruído.
+        Debug.Log("Desrook Archfiend: Salva Terrorking.");
+    }
+
+    void Effect_0482_DestinyBoard(CardDisplay source)
+    {
+        // Efeito: Coloca Spirit Messages. Vitória em 5 turnos.
+        Debug.Log("Destiny Board: Contagem para vitória.");
+    }
+
+    void Effect_0484_DestructionPunch(CardDisplay source)
+    {
+        // Efeito: Se ATK atacante < DEF defensor, destrói atacante.
+        Debug.Log("Destruction Punch: Destrói atacante fraco.");
+    }
+
+    void Effect_0485_DestructionRing(CardDisplay source)
+    {
+        // Efeito: Destrói 1 monstro seu; 1000 dano a ambos.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard,
+                (t) => {
+                    GameManager.Instance.SendToGraveyard(t.CurrentCardData, true);
+                    Destroy(t.gameObject);
+                    GameManager.Instance.DamagePlayer(1000);
+                    GameManager.Instance.DamageOpponent(1000);
+                }
+            );
+        }
+    }
+
+    void Effect_0487_DianKetoTheCureMaster(CardDisplay source)
+    {
+        // Efeito: Ganha 1000 LP.
+        Effect_GainLP(source, 1000);
+    }
+
+    void Effect_0489_DiceJar(CardDisplay source)
+    {
+        // FLIP: Ambos rolam dado. Perdedor toma dano (pode ser 6000).
+        Debug.Log("Dice Jar: Risco de dano massivo.");
+    }
+
+    void Effect_0490_DiceReRoll(CardDisplay source)
+    {
+        // Efeito: Permite rolar dado novamente 1x por turno.
+        Debug.Log("Dice Re-Roll: Reroll.");
+    }
+
+    void Effect_0491_DifferentDimensionCapsule(CardDisplay source)
+    {
+        // Efeito: Bane 1 carta do deck face-down. Adiciona à mão em 2 turnos.
+        Debug.Log("Different Dimension Capsule: Busca demorada.");
+    }
+
+    void Effect_0492_DifferentDimensionDragon(CardDisplay source)
+    {
+        // Efeito: Imune a destruição por S/T que não dão alvo.
+        Debug.Log("Different Dimension Dragon: Proteção específica.");
+    }
+
+    void Effect_0493_DifferentDimensionGate(CardDisplay source)
+    {
+        // Efeito: Bane 1 monstro de cada lado. Retorna se destruído.
+        Debug.Log("Different Dimension Gate: Remoção temporária.");
+    }
+
+    void Effect_0494_DiffusionWaveMotion(CardDisplay source)
+    {
+        // Efeito: Paga 1000 LP; Mago Lv7+ ataca todos os monstros do oponente.
+        Effect_PayLP(source, 1000);
+        Debug.Log("Diffusion Wave-Motion: Ataque em área.");
+    }
+
+    void Effect_0496_DimensionDistortion(CardDisplay source)
+    {
+        // Efeito: Se GY vazio, SS 1 monstro banido.
+        if (GameManager.Instance.GetPlayerGraveyard().Count == 0)
+        {
+            // Lógica de selecionar banido
+            Debug.Log("Dimension Distortion: Invoca banido.");
+        }
+    }
+
+    void Effect_0497_DimensionFusion(CardDisplay source)
+    {
+        // Efeito: Paga 2000 LP; ambos SS o máximo de monstros banidos possível.
+        Effect_PayLP(source, 2000);
+        Debug.Log("Dimension Fusion: Invocação em massa de banidos.");
+    }
+
+    void Effect_0498_DimensionJar(CardDisplay source)
+    {
+        // FLIP: Bane até 3 monstros do GY do oponente.
+        Debug.Log("Dimension Jar: Limpa GY do oponente.");
+    }
+
+    void Effect_0499_DimensionWall(CardDisplay source)
+    {
+        // Efeito: Oponente toma o dano de batalha de um ataque.
+        Debug.Log("Dimension Wall: Reflete dano.");
+    }
+
+    void Effect_0500_Dimensionhole(CardDisplay source)
+    {
+        // Efeito: Bane 1 monstro seu até a próxima Standby Phase.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (t) => {
+                    // Banir temporariamente (Simulado: Destrói)
+                    Destroy(t.gameObject);
+                    Debug.Log($"Dimensionhole: {t.CurrentCardData.name} removido temporariamente.");
+                }
+            );
+        }
+    }
 }
