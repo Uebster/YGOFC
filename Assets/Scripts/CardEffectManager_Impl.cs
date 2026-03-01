@@ -294,8 +294,37 @@ public partial class CardEffectManager
 
     void Effect_SearchDeck(CardDisplay source, string term, string typeFilter = "")
     {
-        Debug.Log($"Procurando '{term}' ({typeFilter}) no deck...");
-        // GameManager.Instance.OpenCardSelection(...)
+        bool isPlayer = source.isPlayerCard;
+        List<CardData> deck = isPlayer ? GameManager.Instance.GetPlayerMainDeck() : null;
+
+        if (deck == null)
+        {
+            Debug.LogError("Effect_SearchDeck: Deck is null!");
+            return;
+        }
+
+        List<CardData> results = deck.FindAll(c => c.name.Contains(term) && (string.IsNullOrEmpty(typeFilter) || c.type.Contains(typeFilter)));
+
+        if (results.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(results, $"Selecione '{term}' do Deck", (selected) => {
+                if (selected != null)
+                {
+                    Debug.Log($"Adicionando {selected.name} à mão.");
+                    deck.Remove(selected);
+                    GameManager.Instance.AddCardToHand(selected, isPlayer);
+                    GameManager.Instance.ShuffleDeck(isPlayer); // Shuffle após busca
+                }
+                else
+                {
+                    Debug.Log("Nenhuma carta selecionada.");
+                }
+            });
+        }
+        else
+        {
+            Debug.Log($"Nenhuma carta encontrada com o termo '{term}'.");
+        }
     }
 
     void Effect_SearchDeckTop(CardDisplay source, string type, string subType = "")
@@ -317,6 +346,7 @@ public partial class CardEffectManager
                 (target) => 
                 {
                     Debug.Log($"{source.CurrentCardData.name} equipada em {target.CurrentCardData.name}");
+                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
                     GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment); // <---- CRIA O LINK
                     // Usa o novo sistema de modificadores
                     if (atkBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, atkBonus, source));

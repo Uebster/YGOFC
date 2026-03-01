@@ -122,7 +122,6 @@ public partial class CardEffectManager
                 GameManager.Instance.SendToGraveyard(picked, source.isPlayerCard);
             }
         }
-    }
 
     void Effect_0013_ALegendaryOcean(CardDisplay source)
     {
@@ -768,6 +767,7 @@ public partial class CardEffectManager
     void Effect_0101_ArmorBreak(CardDisplay source)
     {
         // Counter Trap: Negate Equip Spell activation.
+        // Lógica de negação aqui
         Debug.Log("Armor Break: Lógica de Counter Trap pendente.");
     }
 
@@ -784,20 +784,43 @@ public partial class CardEffectManager
 
     void Effect_0108_ArrayOfRevealingLight(CardDisplay source)
     {
-        Debug.Log("Array of Revealing Light: Declarar Tipo (UI Pendente).");
+        // Trap: Pay 2000, declare Type. Monsters of that type cannot attack this turn.
+        Effect_PayLP(source, 2000);
+        Debug.Log("Array of Revealing Light: Effect incompleto, falta UI de escolha de tipo.");
+        // Futuro: Abrir tela de seleção e armazenar (GameManager.chosenType = tipoEscolhido;)
     }
 
     void Effect_0109_ArsenalBug(CardDisplay source)
     {
         // Continuous: ATK = 2000. Se não tiver outro Inseto, ATK = 1000.
-        Debug.Log("Arsenal Bug: Checagem contínua de Insetos pendente.");
+        // Aplica stat dinâmico baseado na existência de outros insetos.
+        if (HasAnotherInsect(source))
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, 2000, source));
+        else
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, 1000, source));
+    }
+
+    bool HasAnotherInsect(CardDisplay self)
+    {
+        // TODO: Implementar checagem no campo
+        return false; // SIMULADO
     }
 
     void Effect_0110_ArsenalRobber(CardDisplay source)
     {
         // Oponente escolhe Equip do Deck e envia ao GY.
-        Debug.Log("Arsenal Robber: Oponente seleciona Equip do Deck (Simulado: Envia o primeiro).");
-        // Simulação futura: Buscar no deck do oponente e enviar.
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        CardData equipSpell = deck.Find(c => c.type.Contains("Spell") && c.property == "Equip");
+
+        if (equipSpell != null)
+        {
+            Debug.Log("Beastking: Buscando Polymerization...");
+            // Adicionar à mão (Lógica de AddToHand pendente no GameManager)
+        }
+        else
+        {
+            Debug.Log("Beastking: Buscando Polymerization...");
+        }
     }
 
     void Effect_0111_ArsenalSummoner(CardDisplay source)
@@ -1155,7 +1178,7 @@ public partial class CardEffectManager
     void Effect_0183_Birdface(CardDisplay source)
     {
         // Destroyed by battle: Add Harpie Lady.
-        Effect_SearchDeck(source, "Harpie Lady");
+        Effect_SearchDeck(source, "Harpie Lady"); // Harpie Lady busca
     }
 
     void Effect_0184_BiteShoes(CardDisplay source)
@@ -2973,5 +2996,6 @@ public partial class CardEffectManager
                 }
             );
         }
+    }
     }
 }
