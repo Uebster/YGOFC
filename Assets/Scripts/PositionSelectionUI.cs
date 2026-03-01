@@ -45,10 +45,6 @@ public class PositionSelectionUI : MonoBehaviour
                     SetPosition = btnTr.Find("SetPosition")?.GetComponent<Image>();
             }
         }
-    }
-
-    void Start()
-    {
         if (Btn_SummonPosition) 
             Btn_SummonPosition.onClick.AddListener(() => SelectPosition(CardDisplay.BattlePosition.Attack));
         

@@ -11138,6 +11138,8 @@ MonoBehaviour:
   confirmationModal: {fileID: 1628700972}
   graveyardViewer: {fileID: 1940979129}
   extraDeckViewer: {fileID: 1398106766}
+  removedCardsViewer: {fileID: 0}
+  positionSelectionModal: {fileID: 0}
   testDuelDirectly: 1
 --- !u!4 &227733473
 Transform:
@@ -12144,7 +12146,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0010108594}
+  m_AnchoredPosition: {x: 0, y: 0.0009900824}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &251103715
@@ -16346,7 +16348,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009409225}
+  m_AnchoredPosition: {x: 0, y: 0.0009674363}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &322488726
@@ -21696,7 +21698,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009409225}
+  m_AnchoredPosition: {x: 0, y: 0.0009674363}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &440854236
@@ -27723,6 +27725,8 @@ MonoBehaviour:
   opponentGraveyardDisplay: {fileID: 801113560}
   playerExtraDeckDisplay: {fileID: 2117041680}
   opponentExtraDeckDisplay: {fileID: 1249841120}
+  playerRemovedDisplay: {fileID: 0}
+  opponentRemovedDisplay: {fileID: 0}
   playerTrunk: []
   currentOpponent:
     id: 
@@ -28614,6 +28618,53 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 554559987}
   m_CullTransparentMesh: 1
+--- !u!1 &555079365
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 555079367}
+  - component: {fileID: 555079366}
+  m_Layer: 0
+  m_Name: EffectTester
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &555079366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 555079365}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c57237c8c596e1e428d66e57fd322227, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EffectTestManager
+  showDebugUI: 1
+  playerTestCard: {fileID: 0}
+  opponentTestCard: {fileID: 0}
+--- !u!4 &555079367
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 555079365}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1139.1267, y: 496.2751, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &557065736
 GameObject:
   m_ObjectHideFlags: 0
@@ -30186,14 +30237,19 @@ MonoBehaviour:
   animationSpeed: 1.5
   boardCenter: {fileID: 0}
   audioSource: {fileID: 0}
+  bgmSource: {fileID: 0}
   spellActivateVFX: {fileID: 0}
   trapActivateVFX: {fileID: 0}
-  summonVFX: {fileID: 0}
+  summonVFX: {fileID: 1545806602296978, guid: 9e4577abe56a95f4a91d29a0473cd30c, type: 3}
   fusionVFX: {fileID: 0}
   tributeVFX: {fileID: 0}
   attackVFX: {fileID: 0}
   explosionVFX: {fileID: 0}
   reflectVFX: {fileID: 0}
+  banishVFX: {fileID: 0}
+  flipVFX: {fileID: 0}
+  damageVFX: {fileID: 1947871717301538, guid: a990e3ac1318b834488c784d851f42a9, type: 3}
+  defenseSuccessVFX: {fileID: 0}
   spellSound: {fileID: 0}
   trapSound: {fileID: 0}
   summonSound: {fileID: 0}
@@ -30202,6 +30258,10 @@ MonoBehaviour:
   attackSound: {fileID: 0}
   destroySound: {fileID: 0}
   reflectSound: {fileID: 0}
+  banishSound: {fileID: 0}
+  flipSound: {fileID: 0}
+  damageSound: {fileID: 0}
+  defenseSound: {fileID: 0}
 --- !u!4 &589386419
 Transform:
   m_ObjectHideFlags: 0
@@ -40157,7 +40217,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0010108594}
+  m_AnchoredPosition: {x: 0, y: 0.0009900824}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &822369378
@@ -44684,6 +44744,7 @@ MonoBehaviour:
   - {fileID: 2110339344}
   - {fileID: 2144449691}
   typeSpeed: 0.02
+  audioSource: {fileID: 0}
 --- !u!1 &910059449
 GameObject:
   m_ObjectHideFlags: 0
@@ -66466,7 +66527,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009857506}
+  m_AnchoredPosition: {x: 0, y: 0.000024369096}
   m_SizeDelta: {x: 0, y: 351.24}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1357261021
@@ -69219,7 +69280,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009409225}
+  m_AnchoredPosition: {x: 0, y: 0.0009674363}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1403579448
@@ -69458,7 +69519,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00095484854}
+  m_AnchoredPosition: {x: 0, y: 0.0009564528}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1423252461
@@ -81087,7 +81148,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 76.2883, y: 6.6289}
+  m_AnchoredPosition: {x: 76.28833, y: 6.6289062}
   m_SizeDelta: {x: -1447.5045, y: -695.2545}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1634917411
@@ -100685,7 +100746,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009409225}
+  m_AnchoredPosition: {x: 0, y: 0.0009674363}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &2110339344
@@ -102948,3 +103009,4 @@ SceneRoots:
   - {fileID: 1219269476}
   - {fileID: 1554787251}
   - {fileID: 1383578800}
+  - {fileID: 555079367}

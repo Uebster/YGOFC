@@ -1130,6 +1130,12 @@ public class GameManager : MonoBehaviour
         return playerTrunk.Contains(cardId);
     }
 
+    // Helper para o EffectTestManager e outros sistemas
+    public Texture2D GetCardBackTexture()
+    {
+        return cardBackTexture;
+    }
+
     void OnDisable()
     {
         // Garante que a requisição seja cancelada se o objeto for desativado

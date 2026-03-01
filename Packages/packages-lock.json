@@ -41,6 +41,15 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.unity.2d.pixel-perfect": {
+      "version": "5.1.1",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.imgui": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.2d.psdimporter": {
       "version": "12.0.1",
       "depth": 0,
@@ -99,9 +108,19 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.unity.analytics": {
+      "version": "3.8.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0",
+        "com.unity.services.analytics": "1.0.4"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.burst": {
       "version": "1.8.27",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.mathematics": "1.2.1",
@@ -134,6 +153,22 @@
       "depth": 1,
       "source": "builtin",
       "dependencies": {}
+    },
+    "com.unity.feature.2d": {
+      "version": "2.0.2",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.2d.animation": "13.0.4",
+        "com.unity.2d.pixel-perfect": "5.1.1",
+        "com.unity.2d.psdimporter": "12.0.1",
+        "com.unity.2d.sprite": "1.0.0",
+        "com.unity.2d.spriteshape": "13.0.0",
+        "com.unity.2d.tilemap": "1.0.0",
+        "com.unity.2d.tilemap.extras": "6.0.1",
+        "com.unity.2d.aseprite": "3.0.1",
+        "com.unity.2d.tooling": "1.0.2"
+      }
     },
     "com.unity.ide.rider": {
       "version": "3.0.39",
@@ -184,9 +219,25 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.unity.nuget.newtonsoft-json": {
+      "version": "3.2.2",
+      "depth": 3,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.postprocessing": {
+      "version": "3.5.1",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.physics": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.render-pipelines.core": {
       "version": "17.3.0",
-      "depth": 1,
+      "depth": 0,
       "source": "builtin",
       "dependencies": {
         "com.unity.burst": "1.8.14",
@@ -210,7 +261,7 @@
     },
     "com.unity.render-pipelines.universal-config": {
       "version": "17.0.3",
-      "depth": 1,
+      "depth": 0,
       "source": "builtin",
       "dependencies": {
         "com.unity.render-pipelines.core": "17.0.3"
@@ -218,14 +269,36 @@
     },
     "com.unity.searcher": {
       "version": "4.9.4",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.unity.services.analytics": {
+      "version": "6.2.0",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0",
+        "com.unity.services.core": "1.12.4",
+        "com.unity.modules.jsonserialize": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.services.core": {
+      "version": "1.16.0",
+      "depth": 2,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.androidjni": "1.0.0",
+        "com.unity.nuget.newtonsoft-json": "3.2.1",
+        "com.unity.modules.unitywebrequest": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.shadergraph": {
       "version": "17.3.0",
-      "depth": 1,
+      "depth": 0,
       "source": "builtin",
       "dependencies": {
         "com.unity.render-pipelines.core": "17.3.0",
