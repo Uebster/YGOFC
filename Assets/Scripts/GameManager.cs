@@ -240,6 +240,7 @@ public class GameManager : MonoBehaviour
         if (BattleManager.Instance == null) CreateManager<BattleManager>();
         if (SpellTrapManager.Instance == null) CreateManager<SpellTrapManager>();
         if (ChainManager.Instance == null) CreateManager<ChainManager>();
+        if (CardEffectManager.Instance == null) CreateManager<CardEffectManager>();
         
         // Cria o gerenciador de testes se o modo estiver ativo
         if (effectTestMode && FindFirstObjectByType<EffectTestManager>() == null) CreateManager<EffectTestManager>();
@@ -1071,6 +1072,12 @@ public class GameManager : MonoBehaviour
                     ChainManager.Instance.AddToChain(display, isPlayer);
                     // Resolve imediatamente por enquanto (sem sistema de resposta manual implementado)
                     ChainManager.Instance.ResolveChain();
+                    
+                    // Executa o efeito lógico da carta
+                    if (CardEffectManager.Instance != null)
+                    {
+                        CardEffectManager.Instance.ExecuteCardEffect(display);
+                    }
                 }
             }
         }
@@ -1113,6 +1120,12 @@ public class GameManager : MonoBehaviour
         {
             ChainManager.Instance.AddToChain(display, isPlayer);
             ChainManager.Instance.ResolveChain();
+            
+            // Executa o efeito lógico da carta
+            if (CardEffectManager.Instance != null)
+            {
+                CardEffectManager.Instance.ExecuteCardEffect(display);
+            }
         }
     }
 
