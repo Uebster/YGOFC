@@ -454,10 +454,14 @@ public class GameManager : MonoBehaviour
             newCardDisplay.SetCard(drawnCard, cardBackTexture);
             playerHand.Add(newCardGO);
         }
+
         else
         {
             Debug.LogWarning("Card Prefab ou Player Hand Layout Group não atribuídos. Não foi possível adicionar a carta à mão visualmente.");
         }
+
+        // Verifica vitória por Exodia após comprar
+        CheckExodiaWin();
 
         // Lógica de Fase: Se o jogador sacar na Draw Phase, avança para Standby
         if (!ignoreLimit && currentPhase == GamePhase.Draw && PhaseManager.Instance != null)
@@ -825,6 +829,28 @@ public class GameManager : MonoBehaviour
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.UpdateBGM(playerLP, opponentLP);
 
         if (opponentLP == 0) EndDuel(true);
+    }
+
+    // --- CONDIÇÕES DE VITÓRIA ESPECIAIS ---
+
+    public void CheckExodiaWin()
+    {
+        // IDs das 5 partes do Exodia (Baseado no seu JSON)
+        string[] exodiaParts = { "0618", "1061", "1062", "1530", "1531" };
+        HashSet<string> handIds = new HashSet<string>();
+        
+        foreach (GameObject cardGO in playerHand)
+        {
+            CardDisplay display = cardGO.GetComponent<CardDisplay>();
+            if (display != null) handIds.Add(display.CurrentCardData.id);
+        }
+
+        if (exodiaParts.All(id => handIds.Contains(id)))
+        {
+            Debug.Log("EXODIA OBLITERATE! VITÓRIA AUTOMÁTICA!");
+            // TODO: Tocar animação especial do Exodia aqui
+            EndDuel(true);
+        }
     }
 
     private void UpdateLPUI()

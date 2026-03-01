@@ -51,6 +51,12 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool hasChangedPositionThisTurn = false;
     [HideInInspector] public bool summonedThisTurn = false;
     
+    // Stats em Tempo Real (Modificados por efeitos)
+    [HideInInspector] public int originalAtk;
+    [HideInInspector] public int originalDef;
+    [HideInInspector] public int currentAtk;
+    [HideInInspector] public int currentDef;
+
     public CardData CurrentCardData => currentCardData; // Propriedade pública para acesso seguro (Renomeado para evitar conflito)
 
     private UnityWebRequest currentRequest; // Rastreia a requisição ativa para descarte correto
@@ -184,6 +190,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         currentCardData = card;
         backTexture = cardBackTexture;
         isFlipped = !startFaceUp; // Se startFaceUp for false, isFlipped será true (verso)
+        
+        // Inicializa stats
+        originalAtk = card.atk;
+        originalDef = card.def;
+        currentAtk = card.atk;
+        currentDef = card.def;
+
         originalScale = transform.localScale; // Salva a escala inicial definida pelo GameManager
         
         DisplayCardDetails();
@@ -243,7 +256,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (cardStatsText != null)
         {
             if (currentCardData.type.Contains("Monster"))
-                cardStatsText.text = $"ATK/ {currentCardData.atk}  DEF/ {currentCardData.def}";
+                cardStatsText.text = $"ATK/ {currentAtk}  DEF/ {currentDef}";
             else
                 cardStatsText.text = "";
         }
@@ -341,13 +354,30 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (isAttackTriggered)
         {
             Debug.Log($"CardDisplay: Carta {currentCardData.name} revelada por ataque!");
-            // TODO: Disparar efeito de Flip do monstro se houver
+        }
+
+        // Verifica se é um monstro de efeito FLIP
+        if (currentCardData.description.StartsWith("FLIP:") || currentCardData.description.Contains("FLIP:"))
+        {
+            if (CardEffectManager.Instance != null)
+                CardEffectManager.Instance.ExecuteCardEffect(this);
         }
 
         ShowFront();
         
         // Se for Spell/Trap, pode ser que precise ficar revelada ou ir pro GY dependendo do tipo (Continuous vs Normal)
         // Isso será tratado pelo GameManager/SpellTrapManager na resolução da chain.
+    }
+
+    // Método para modificar stats (Buffs/Debuffs)
+    public void ModifyStats(int atkChange, int defChange)
+    {
+        currentAtk += atkChange;
+        currentDef += defChange;
+        if (currentAtk < 0) currentAtk = 0;
+        if (currentDef < 0) currentDef = 0;
+
+        DisplayCardDetails(); // Atualiza o texto na carta
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -470,6 +500,14 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 SummonManager.Instance.SelectTributeCandidate(this);
             }
             return; // Não faz mais nada se estiver selecionando tributo
+        }
+
+        // Lógica de Seleção de Alvo (Spell/Trap)
+        if (SpellTrapManager.Instance != null && SpellTrapManager.Instance.isSelectingTarget)
+        {
+            // Passa o clique para o gerenciador validar
+            SpellTrapManager.Instance.SelectTarget(this);
+            return;
         }
 
         // Clique Direito: Mudar Posição (se no campo)

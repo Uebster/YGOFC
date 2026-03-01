@@ -18,6 +18,11 @@ public class SpellTrapManager : MonoBehaviour
     [Header("Controle de Shuffle")]
     public bool needsShuffle = false;
 
+    // --- SISTEMA DE SELEÇÃO DE ALVO (TARGETING) ---
+    [HideInInspector] public bool isSelectingTarget = false;
+    private System.Action<CardDisplay> onTargetSelected;
+    private System.Predicate<CardDisplay> targetFilter;
+
     void Awake()
     {
         Instance = this;
@@ -27,6 +32,7 @@ public class SpellTrapManager : MonoBehaviour
     {
         extraDrawsPerTurn = 0;
         // skipDrawPhase geralmente persiste até ser consumido, então não reseta aqui cegamente
+        CancelTargetSelection();
     }
 
     // Verifica se uma carta específica pode ser ativada (considerando exceções)
@@ -123,5 +129,41 @@ public class SpellTrapManager : MonoBehaviour
         // Ex: Se o oponente ativou algo, verificar minhas armadilhas
         
         return false;
+    }
+
+    // --- LÓGICA DE SELEÇÃO DE ALVO ---
+
+    public void StartTargetSelection(System.Predicate<CardDisplay> filter, System.Action<CardDisplay> callback)
+    {
+        isSelectingTarget = true;
+        targetFilter = filter;
+        onTargetSelected = callback;
+
+        if (UIManager.Instance != null)
+            UIManager.Instance.ShowConfirmation("Selecione um alvo no campo.", null, CancelTargetSelection);
+        
+        Debug.Log("SpellTrapManager: Iniciando seleção de alvo...");
+    }
+
+    public void SelectTarget(CardDisplay card)
+    {
+        if (!isSelectingTarget) return;
+
+        if (targetFilter != null && !targetFilter(card))
+        {
+            Debug.Log("Alvo inválido para esta carta.");
+            return;
+        }
+
+        // Alvo válido
+        isSelectingTarget = false;
+        onTargetSelected?.Invoke(card);
+    }
+
+    public void CancelTargetSelection()
+    {
+        isSelectingTarget = false;
+        onTargetSelected = null;
+        targetFilter = null;
     }
 }
