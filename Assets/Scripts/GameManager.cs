@@ -70,6 +70,8 @@ public class GameManager : MonoBehaviour
     [Header("Game Modes")]
     [Tooltip("Habilita funcionalidades de desenvolvedor.")]
     public bool devMode = false;
+    [Tooltip("Habilita o menu de testes de efeitos visuais e sonoros.")]
+    public bool effectTestMode = false;
     [Tooltip("Define se as cartas na mão do oponente são visíveis.")]
     public bool showOpponentHand = false;
     [Tooltip("Permite sacar cartas clicando no Deck do jogador.")]
@@ -238,6 +240,9 @@ public class GameManager : MonoBehaviour
         if (BattleManager.Instance == null) CreateManager<BattleManager>();
         if (SpellTrapManager.Instance == null) CreateManager<SpellTrapManager>();
         if (ChainManager.Instance == null) CreateManager<ChainManager>();
+        
+        // Cria o gerenciador de testes se o modo estiver ativo
+        if (effectTestMode && FindFirstObjectByType<EffectTestManager>() == null) CreateManager<EffectTestManager>();
     }
 
     void CreateManager<T>() where T : MonoBehaviour

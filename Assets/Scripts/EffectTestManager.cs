@@ -2,7 +2,6 @@ using UnityEngine;
 
 public class EffectTestManager : MonoBehaviour
 {
-    public bool showDebugUI = true;
     
     // Referências para as cartas de teste (podem ser atribuídas manualmente ou criadas)
     public CardDisplay playerTestCard;
@@ -10,7 +9,8 @@ public class EffectTestManager : MonoBehaviour
 
     void OnGUI()
     {
-        if (!showDebugUI) return;
+        // Verifica se o modo de teste está ativo no GameManager
+        if (GameManager.Instance == null || !GameManager.Instance.effectTestMode) return;
 
         // Área de botões no canto esquerdo
         GUILayout.BeginArea(new Rect(10, 10, 220, Screen.height - 20));

@@ -27709,6 +27709,7 @@ MonoBehaviour:
   useHandCardsRounded: 1
   useCardViewerRounded: 1
   devMode: 1
+  effectTestMode: 0
   showOpponentHand: 0
   canPlayerDrawFromDeck: 1
   canOpponentDrawFromDeck: 1
@@ -28647,7 +28648,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c57237c8c596e1e428d66e57fd322227, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EffectTestManager
-  showDebugUI: 1
   playerTestCard: {fileID: 0}
   opponentTestCard: {fileID: 0}
 --- !u!4 &555079367
@@ -30240,7 +30240,7 @@ MonoBehaviour:
   bgmSource: {fileID: 0}
   spellActivateVFX: {fileID: 0}
   trapActivateVFX: {fileID: 0}
-  summonVFX: {fileID: 1545806602296978, guid: 9e4577abe56a95f4a91d29a0473cd30c, type: 3}
+  summonVFX: {fileID: 0}
   fusionVFX: {fileID: 0}
   tributeVFX: {fileID: 0}
   attackVFX: {fileID: 0}
@@ -30248,7 +30248,7 @@ MonoBehaviour:
   reflectVFX: {fileID: 0}
   banishVFX: {fileID: 0}
   flipVFX: {fileID: 0}
-  damageVFX: {fileID: 1947871717301538, guid: a990e3ac1318b834488c784d851f42a9, type: 3}
+  damageVFX: {fileID: 0}
   defenseSuccessVFX: {fileID: 0}
   spellSound: {fileID: 0}
   trapSound: {fileID: 0}
