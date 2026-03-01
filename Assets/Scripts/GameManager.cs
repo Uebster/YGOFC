@@ -363,34 +363,20 @@ public class GameManager : MonoBehaviour
         UpdatePileVisuals();
     }
 
-    void ShuffleDeck()
+    public void ShuffleDeck(bool isPlayer)
     {
+        List<CardData> deck = isPlayer ? playerDeck : opponentDeck;
         System.Random rng = new System.Random();
-        int n = playerDeck.Count;
+        int n = deck.Count;
         while (n > 1)
         {
             n--;
             int k = rng.Next(n + 1);
-            CardData value = playerDeck[k];
-            playerDeck[k] = playerDeck[n];
-            playerDeck[n] = value;
+            CardData value = deck[k];
+            deck[k] = deck[n];
+            deck[n] = value;
         }
-        Debug.Log("Deck embaralhado.");
-        UpdatePileVisuals();
-    }
-
-    void ShuffleOpponentDeck()
-    {
-        System.Random rng = new System.Random();
-        int n = opponentDeck.Count;
-        while (n > 1)
-        {
-            n--;
-            int k = rng.Next(n + 1);
-            CardData value = opponentDeck[k];
-            opponentDeck[k] = opponentDeck[n];
-            opponentDeck[n] = value;
-        }
+        Debug.Log($"Deck do {(isPlayer ? "Player" : "Oponente")} embaralhado.");
         UpdatePileVisuals();
     }
 
@@ -499,6 +485,51 @@ public class GameManager : MonoBehaviour
         Destroy(card.gameObject);
         UpdatePileVisuals();
         Debug.Log($"{data.name} retornada ao deck (Topo: {toTop}).");
+    }
+
+    // --- NOVAS AÇÕES PADRONIZADAS ---
+
+    public void TributeCard(CardDisplay card)
+    {
+        if (card == null) return;
+
+        // Efeito Visual
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayTributeEffect(card);
+
+        // Remove modificadores
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
+
+        // Envia para o GY (Lógica de dados)
+        SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+
+        // Destrói o objeto visual
+        Destroy(card.gameObject);
+    }
+
+    public bool PayLifePoints(bool isPlayer, int amount)
+    {
+        int currentLP = isPlayer ? playerLP : opponentLP;
+        if (currentLP < amount) return false; // Não pode pagar
+
+        if (isPlayer) playerLP -= amount;
+        else opponentLP -= amount;
+        
+        UpdateLPUI();
+        Debug.Log($"{(isPlayer ? "Player" : "Oponente")} pagou {amount} LP.");
+        return true;
+    }
+
+    public void GainLifePoints(bool isPlayer, int amount)
+    {
+        if (isPlayer) playerLP += amount;
+        else opponentLP += amount;
+        
+        UpdateLPUI();
+        Debug.Log($"{(isPlayer ? "Player" : "Oponente")} ganhou {amount} LP.");
+        
+        // Notifica sistema de efeitos (Ex: Fire Princess)
+        if (CardEffectManager.Instance != null)
+            CardEffectManager.Instance.OnLifePointsGained(isPlayer, amount);
     }
 
     // Helper para adicionar carta à mão visualmente (usado por ReturnToHand e Search)

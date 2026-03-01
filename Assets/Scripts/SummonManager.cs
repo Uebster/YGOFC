@@ -176,9 +176,7 @@ public class SummonManager : MonoBehaviour
     {
         foreach (var monster in currentSelectedTributes)
         {
-            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayTributeEffect(monster);
-            GameManager.Instance.SendToGraveyard(monster.CurrentCardData, true);
-            Destroy(monster.gameObject);
+            GameManager.Instance.TributeCard(monster);
         }
 
         isSelectingTributes = false;
@@ -224,11 +222,7 @@ public class SummonManager : MonoBehaviour
         {
             if (tributed >= count) break;
 
-            // Efeito visual de tributo
-            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayTributeEffect(monster);
-
-            GameManager.Instance.SendToGraveyard(monster.CurrentCardData, isPlayer);
-            Destroy(monster.gameObject);
+            GameManager.Instance.TributeCard(monster);
             tributed++;
         }
     }

@@ -170,6 +170,19 @@ public partial class CardEffectManager
         // Mystic Tomato (83011278) - Lógica de busca seria aqui
     }
 
+    public void OnLifePointsGained(bool isPlayer, int amount)
+    {
+        // Fire Princess (64752646)
+        // Se você ganhar LP, causa 500 de dano ao oponente.
+        CheckActiveCards("64752646", (card) => {
+            if (card.isPlayerCard == isPlayer)
+            {
+                Debug.Log("Fire Princess: Dano por cura.");
+                Effect_DirectDamage(card, 500);
+            }
+        });
+    }
+
     // Helper para iterar cartas ativas no campo
     private void CheckActiveCards(string cardId, System.Action<CardDisplay> action)
     {
@@ -264,17 +277,12 @@ public partial class CardEffectManager
 
     void Effect_GainLP(CardDisplay source, int amount)
     {
-        if (source.isPlayerCard) GameManager.Instance.playerLP += amount;
-        else GameManager.Instance.opponentLP += amount;
-        // TODO: Atualizar UI de LP
-        Debug.Log($"{source.CurrentCardData.name}: Ganhou {amount} LP.");
+        GameManager.Instance.GainLifePoints(source.isPlayerCard, amount);
     }
 
     void Effect_PayLP(CardDisplay source, int amount)
     {
-        if (source.isPlayerCard) GameManager.Instance.DamagePlayer(amount);
-        // Nota: Oponente geralmente não paga custo em scripts automáticos, mas se precisar:
-        // else GameManager.Instance.DamageOpponent(amount);
+        GameManager.Instance.PayLifePoints(source.isPlayerCard, amount);
     }
 
     void Effect_DestroyType(CardDisplay source, string type)
