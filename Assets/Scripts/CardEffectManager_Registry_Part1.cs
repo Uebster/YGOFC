@@ -853,246 +853,246 @@ public partial class CardEffectManager
         AddEffect("0400", Effect_0400_DarkBladeTheDragonKnight);
 
         // 0401 - Dark Cat with White Tail (FLIP: Bounce)
-        AddEffect("0401", c => Debug.Log("Dark Cat with White Tail: Retorna monstros para a mão."));
+        AddEffect("0401", Effect_0401_DarkCatWithWhiteTail);
 
         // 0402 - Dark Catapulter (Counters -> Destroy S/T)
-        AddEffect("0402", c => Debug.Log("Dark Catapulter: Remove contadores para destruir S/T."));
+        AddEffect("0402", Effect_0402_DarkCatapulter);
 
         // 0404 - Dark Coffin (Destroyed -> Discard/Destroy)
-        AddEffect("0404", c => Debug.Log("Dark Coffin: Oponente descarta ou destrói monstro."));
+        AddEffect("0404", Effect_0404_DarkCoffin);
 
         // 0405 - Dark Core (Discard 1 -> Banish Face-up)
-        AddEffect("0405", c => Debug.Log("Dark Core: Descarta 1 para banir monstro face-up."));
+        AddEffect("0405", Effect_0405_DarkCore);
 
         // 0406 - Dark Designator (Add from Deck)
-        AddEffect("0406", c => Debug.Log("Dark Designator: Adiciona carta do deck do oponente à mão dele."));
+        AddEffect("0406", Effect_0406_DarkDesignator);
 
         // 0407 - Dark Driceratops (Piercing)
-        AddEffect("0407", c => Debug.Log("Dark Driceratops: Dano perfurante."));
+        AddEffect("0407", Effect_0407_DarkDriceratops);
 
         // 0408 - Dark Dust Spirit (Spirit / Nuke face-up)
-        AddEffect("0408", c => Debug.Log("Dark Dust Spirit: Destrói face-up na invocação. Retorna para mão."));
+        AddEffect("0408", Effect_0408_DarkDustSpirit);
 
         // 0409 - Dark Elf (Attack Cost)
-        AddEffect("0409", c => Debug.Log("Dark Elf: Paga 1000 LP para atacar."));
+        AddEffect("0409", Effect_0409_DarkElf);
 
         // 0410 - Dark Energy (Equip Fiend +300)
-        AddEffect("0410", c => Effect_Equip(c, 300, 300, "Fiend"));
+        AddEffect("0410", Effect_0410_DarkEnergy);
 
         // 0411 - Dark Factory of Mass Production (Recycle 2 Normal)
-        AddEffect("0411", c => Debug.Log("Dark Factory: Recupera 2 Monstros Normais."));
+        AddEffect("0411", Effect_0411_DarkFactoryOfMassProduction);
 
         // 0412 - Dark Flare Knight (No Battle Damage / SS Mirage Knight)
-        AddEffect("0412", c => Debug.Log("Dark Flare Knight: Sem dano de batalha. Invoca Mirage Knight."));
+        AddEffect("0412", Effect_0412_DarkFlareKnight);
         
         // 0414 - Dark Hole (Destroy all monsters)
-        AddEffect("0414", Effect_DarkHole);
+        AddEffect("0414", Effect_0414_DarkHole);
 
         // 0415 - Dark Jeroid (Debuff -800)
-        AddEffect("0415", c => Debug.Log("Dark Jeroid: Reduz ATK de um monstro em 800."));
+        AddEffect("0415", Effect_0415_DarkJeroid);
 
         // 0417 - Dark Magic Attack (Destroy S/T if DM)
-        AddEffect("0417", c => Debug.Log("Dark Magic Attack: Destrói S/T do oponente se controlar Dark Magician."));
+        AddEffect("0417", Effect_0417_DarkMagicAttack);
 
         // 0418 - Dark Magic Curtain (Pay half LP -> SS DM)
-        AddEffect("0418", c => Debug.Log("Dark Magic Curtain: Paga metade LP para invocar Dark Magician."));
+        AddEffect("0418", Effect_0418_DarkMagicCurtain);
 
         // 0420 - Dark Magician Girl (Buff per DM/MoBC in GY)
-        AddEffect("0420", c => Debug.Log("Dark Magician Girl: Ganha ATK por Dark Magician no GY."));
+        AddEffect("0420", Effect_0420_DarkMagicianGirl);
 
         // 0421 - Dark Magician Knight (Destroy 1 card)
-        AddEffect("0421", c => Debug.Log("Dark Magician Knight: Destrói 1 carta."));
+        AddEffect("0421", Effect_0421_DarkMagicianKnight);
 
         // 0422 - Dark Magician of Chaos (Recycle Spell / Banish)
-        AddEffect("0422", c => Debug.Log("DMoC: Recupera Magia. Bane monstros destruídos."));
+        AddEffect("0422", Effect_0422_DarkMagicianOfChaos);
 
         // 0423 - Dark Master - Zorc (Dice destroy)
-        AddEffect("0423", c => Debug.Log("Dark Master - Zorc: Rola dado para destruir monstros."));
+        AddEffect("0423", Effect_0423_DarkMasterZorc);
 
         // 0424 - Dark Mimic LV1 (Flip Draw / Level Up)
-        AddEffect("0424", c => Debug.Log("Dark Mimic LV1: Flip compra 1. Level Up na Standby."));
+        AddEffect("0424", Effect_0424_DarkMimicLV1);
 
         // 0425 - Dark Mimic LV3 (Draw on destroy)
-        AddEffect("0425", c => Debug.Log("Dark Mimic LV3: Compra 1 (ou 2) ao ser destruído."));
+        AddEffect("0425", Effect_0425_DarkMimicLV3);
 
         // 0426 - Dark Mirror Force (Banish Defense)
-        AddEffect("0426", c => Debug.Log("Dark Mirror Force: Bane monstros em defesa."));
+        AddEffect("0426", Effect_0426_DarkMirrorForce);
 
         // 0427 - Dark Necrofear (SS Condition / Snatch Steal)
-        AddEffect("0427", c => Debug.Log("Dark Necrofear: Controla monstro do oponente ao ser destruído."));
+        AddEffect("0427", Effect_0427_DarkNecrofear);
 
         // 0428 - Dark Paladin (Negate Spell / Buff)
-        AddEffect("0428", c => Debug.Log("Dark Paladin: Nega magia. Ganha ATK por Dragões."));
+        AddEffect("0428", Effect_0428_DarkPaladin);
 
         // 0432 - Dark Room of Nightmare (Burn bonus)
-        AddEffect("0432", c => Debug.Log("Dark Room of Nightmare: Causa 300 dano extra."));
+        AddEffect("0432", Effect_0432_DarkRoomOfNightmare);
 
         // 0433 - Dark Ruler Ha Des (Negate effects of destroyed)
-        AddEffect("0433", c => Debug.Log("Dark Ruler Ha Des: Nega efeitos de monstros destruídos por Fiends."));
+        AddEffect("0433", Effect_0433_DarkRulerHaDes);
 
         // 0434 - Dark Sage (Search Spell)
-        AddEffect("0434", c => Debug.Log("Dark Sage: Busca Magia no deck."));
+        AddEffect("0434", Effect_0434_DarkSage);
 
         // 0435 - Dark Scorpion - Chick the Yellow (Bounce/TopDeck)
-        AddEffect("0435", c => Debug.Log("Chick the Yellow: Efeito ao causar dano."));
+        AddEffect("0435", Effect_0435_DarkScorpionChickTheYellow);
 
         // 0436 - Dark Scorpion - Cliff the Trap Remover (Destroy S/T / Mill)
-        AddEffect("0436", c => Debug.Log("Cliff the Trap Remover: Efeito ao causar dano."));
+        AddEffect("0436", Effect_0436_DarkScorpionCliffTheTrapRemover);
 
         // 0437 - Dark Scorpion - Gorg the Strong (Bounce/Mill)
-        AddEffect("0437", c => Debug.Log("Gorg the Strong: Efeito ao causar dano."));
+        AddEffect("0437", Effect_0437_DarkScorpionGorgTheStrong);
 
         // 0438 - Dark Scorpion - Meanae the Thorn (Search/Recycle)
-        AddEffect("0438", c => Debug.Log("Meanae the Thorn: Efeito ao causar dano."));
+        AddEffect("0438", Effect_0438_DarkScorpionMeanaeTheThorn);
 
         // 0439 - Dark Scorpion Burglars (Mill Spell)
-        AddEffect("0439", c => Debug.Log("Dark Scorpion Burglars: Oponente envia Magia do deck ao GY."));
+        AddEffect("0439", Effect_0439_DarkScorpionBurglars);
 
         // 0440 - Dark Scorpion Combination (Direct Attack)
-        AddEffect("0440", c => Debug.Log("Dark Scorpion Combination: Ataque direto com todos."));
+        AddEffect("0440", Effect_0440_DarkScorpionCombination);
 
         // 0442 - Dark Snake Syndrome (Progressive Burn)
-        AddEffect("0442", c => Debug.Log("Dark Snake Syndrome: Dano progressivo na Standby."));
+        AddEffect("0442", Effect_0442_DarkSnakeSyndrome);
 
         // 0443 - Dark Spirit of the Silent (Redirect Attack)
-        AddEffect("0443", c => Debug.Log("Dark Spirit of the Silent: Nega ataque e obriga outro monstro a atacar."));
+        AddEffect("0443", Effect_0443_DarkSpiritOfTheSilent);
 
         // 0446 - Dark Zebra (Change to Defense)
-        AddEffect("0446", c => Debug.Log("Dark Zebra: Muda para defesa se for o único."));
+        AddEffect("0446", Effect_0446_DarkZebra);
 
         // 0447 - Dark-Eyes Illusionist (Flip: Freeze)
-        AddEffect("0447", c => Debug.Log("Dark-Eyes Illusionist: Impede ataque do alvo."));
+        AddEffect("0447", Effect_0447_DarkEyesIllusionist);
 
         // 0448 - Dark-Piercing Light (Flip all face-up)
-        AddEffect("0448", c => Debug.Log("Dark-Piercing Light: Vira todos os monstros face-down para face-up."));
+        AddEffect("0448", Effect_0448_DarkPiercingLight);
 
         // 0449 - Darkbishop Archfiend (Protect Archfiends)
-        AddEffect("0449", c => Debug.Log("Darkbishop Archfiend: Protege Archfiends de alvo."));
+        AddEffect("0449", Effect_0449_DarkbishopArchfiend);
 
         // 0453 - Darklord Marie (Gain LP in GY)
-        AddEffect("0453", c => Debug.Log("Darklord Marie: Ganha 200 LP na Standby se estiver no GY."));
+        AddEffect("0453", Effect_0453_DarklordMarie);
 
         // 0454 - Darkness Approaches (Face-down)
-        AddEffect("0454", c => Debug.Log("Darkness Approaches: Vira monstro face-down (mesmo em ataque)."));
+        AddEffect("0454", Effect_0454_DarknessApproaches);
 
         // 0456 - De-Fusion (Return to Extra)
-        AddEffect("0456", c => Debug.Log("De-Fusion: Retorna fusão e invoca materiais."));
+        AddEffect("0456", Effect_0456_DeFusion);
 
         // 0457 - De-Spell (Destroy Spell)
-        AddEffect("0457", c => Debug.Log("De-Spell: Destrói carta de magia."));
+        AddEffect("0457", Effect_0457_DeSpell);
 
         // 0458 - Deal of Phantom (Buff)
-        AddEffect("0458", c => Debug.Log("Deal of Phantom: Buff baseado no GY."));
+        AddEffect("0458", Effect_0458_DealOfPhantom);
 
         // 0459 - Decayed Commander (Hand Destruction)
-        AddEffect("0459", c => Debug.Log("Decayed Commander: Descarte ao atacar direto."));
+        AddEffect("0459", Effect_0459_DecayedCommander);
 
         // 0460 - Deck Devastation Virus (Destroy low ATK)
-        AddEffect("0460", c => Debug.Log("Deck Devastation Virus: Destrói monstros fracos na mão/deck."));
+        AddEffect("0460", Effect_0460_DeckDevastationVirus);
 
         // 0461 - Dedication through Light and Darkness (SS DMoC)
-        AddEffect("0461", c => Debug.Log("Dedication: Tributa DM para invocar DMoC."));
+        AddEffect("0461", Effect_0461_DedicationThroughLightAndDarkness);
 
         // 0463 - Deepsea Warrior (Immune to Spells)
-        AddEffect("0463", c => Debug.Log("Deepsea Warrior: Imune a magias com Umi."));
+        AddEffect("0463", Effect_0463_DeepseaWarrior);
 
         // 0464 - Dekoichi the Battlechanted Locomotive (Draw 1+)
-        AddEffect("0464", c => Debug.Log("Dekoichi: Flip compra 1 (mais por Bokoichi)."));
+        AddEffect("0464", Effect_0464_DekoichiTheBattlechantedLocomotive);
 
         // 0465 - Delinquent Duo (Discard 2)
-        AddEffect("0465", c => Debug.Log("Delinquent Duo: Paga 1000, oponente descarta 2."));
+        AddEffect("0465", Effect_0465_DelinquentDuo);
 
         // 0466 - Delta Attacker (Direct Attack)
-        AddEffect("0466", c => Debug.Log("Delta Attacker: Ataque direto com 3 normais iguais."));
+        AddEffect("0466", Effect_0466_DeltaAttacker);
 
         // 0467 - Demotion (Level -2)
-        AddEffect("0467", c => Debug.Log("Demotion: Reduz nível em 2."));
+        AddEffect("0467", Effect_0467_Demotion);
 
         // 0468 - Des Counterblow (Destroy direct attacker)
-        AddEffect("0468", c => Debug.Log("Des Counterblow: Destrói quem ataca direto."));
+        AddEffect("0468", Effect_0468_DesCounterblow);
 
         // 0469 - Des Croaking (Nuke)
-        AddEffect("0469", c => Debug.Log("Des Croaking: Destrói tudo se tiver 3 Des Frogs."));
+        AddEffect("0469", Effect_0469_DesCroaking);
 
         // 0470 - Des Dendle (Equip/Token)
-        AddEffect("0470", c => Debug.Log("Des Dendle: Union para Vampiric Orchis."));
+        AddEffect("0470", Effect_0470_DesDendle);
 
         // 0471 - Des Feral Imp (Recycle)
-        AddEffect("0471", c => Debug.Log("Des Feral Imp: Retorna carta do GY para o Deck."));
+        AddEffect("0471", Effect_0471_DesFeralImp);
 
         // 0472 - Des Frog (Swarm)
-        AddEffect("0472", c => Debug.Log("Des Frog: Invoca cópias baseado em T.A.D.P.O.L.E."));
+        AddEffect("0472", Effect_0472_DesFrog);
 
         // 0473 - Des Kangaroo (Defensive Destroy)
-        AddEffect("0473", c => Debug.Log("Des Kangaroo: Destrói atacante se ATK < DEF."));
+        AddEffect("0473", Effect_0473_DesKangaroo);
 
         // 0474 - Des Koala (Burn)
-        AddEffect("0474", c => Debug.Log("Des Koala: Dano por cartas na mão do oponente."));
+        AddEffect("0474", Effect_0474_DesKoala);
 
         // 0475 - Des Lacooda (Draw)
-        AddEffect("0475", c => Debug.Log("Des Lacooda: Flip compra 1."));
+        AddEffect("0475", Effect_0475_DesLacooda);
 
         // 0476 - Des Volstgalph (Burn/Buff)
-        AddEffect("0476", c => Debug.Log("Des Volstgalph: Dano ao destruir monstro. Buff por magia."));
+        AddEffect("0476", Effect_0476_DesVolstgalph);
 
         // 0477 - Des Wombat (No Effect Damage)
-        AddEffect("0477", c => Debug.Log("Des Wombat: Protege contra dano de efeito."));
+        AddEffect("0477", Effect_0477_DesWombat);
 
         // 0478 - Desert Sunlight (Position Change)
-        AddEffect("0478", c => Debug.Log("Desert Sunlight: Coloca monstros em defesa face-up."));
+        AddEffect("0478", Effect_0478_DesertSunlight);
 
         // 0479 - Desertapir (Flip Face-down)
-        AddEffect("0479", c => Debug.Log("Desertapir: Vira monstro face-down."));
+        AddEffect("0479", Effect_0479_Desertapir);
 
         // 0480 - Despair from the Dark (SS if milled)
-        AddEffect("0480", c => Debug.Log("Despair from the Dark: Invoca se enviado do deck/mão ao GY."));
+        AddEffect("0480", Effect_0480_DespairFromTheDark);
 
         // 0481 - Desrook Archfiend (Revive Terrorking)
-        AddEffect("0481", c => Debug.Log("Desrook Archfiend: Envia da mão para reviver Terrorking."));
+        AddEffect("0481", Effect_0481_DesrookArchfiend);
 
         // 0482 - Destiny Board (Win Condition)
-        AddEffect("0482", c => Debug.Log("Destiny Board: Condição de vitória em 5 turnos."));
+        AddEffect("0482", Effect_0482_DestinyBoard);
 
         // 0484 - Destruction Punch (Destroy Attacker)
-        AddEffect("0484", c => Debug.Log("Destruction Punch: Destrói atacante se ATK < DEF."));
+        AddEffect("0484", Effect_0484_DestructionPunch);
 
         // 0485 - Destruction Ring (Burn)
-        AddEffect("0485", c => Debug.Log("Destruction Ring: Destrói monstro e causa dano a ambos."));
+        AddEffect("0485", Effect_0485_DestructionRing);
 
         // 0487 - Dian Keto the Cure Master (Heal 1000)
-        AddEffect("0487", c => Effect_GainLP(c, 1000));
+        AddEffect("0487", Effect_0487_DianKetoTheCureMaster);
 
         // 0489 - Dice Jar (Dice Burn)
-        AddEffect("0489", c => Debug.Log("Dice Jar: Rola dados, perdedor toma dano massivo."));
+        AddEffect("0489", Effect_0489_DiceJar);
 
         // 0490 - Dice Re-Roll (Reroll)
-        AddEffect("0490", c => Debug.Log("Dice Re-Roll: Permite rolar dado novamente."));
+        AddEffect("0490", Effect_0490_DiceReRoll);
 
         // 0491 - Different Dimension Capsule (Search Delayed)
-        AddEffect("0491", c => Debug.Log("Different Dimension Capsule: Busca carta, adiciona em 2 turnos."));
+        AddEffect("0491", Effect_0491_DifferentDimensionCapsule);
 
         // 0492 - Different Dimension Dragon (Protection)
-        AddEffect("0492", c => Debug.Log("Different Dimension Dragon: Imune a destruição por S/T que não dão alvo."));
+        AddEffect("0492", Effect_0492_DifferentDimensionDragon);
 
         // 0493 - Different Dimension Gate (Banish 2)
-        AddEffect("0493", c => Debug.Log("Different Dimension Gate: Bane 1 monstro de cada lado."));
+        AddEffect("0493", Effect_0493_DifferentDimensionGate);
 
         // 0494 - Diffusion Wave-Motion (Attack All)
-        AddEffect("0494", c => Debug.Log("Diffusion Wave-Motion: Mago Nível 7+ ataca todos."));
+        AddEffect("0494", Effect_0494_DiffusionWaveMotion);
 
         // 0496 - Dimension Distortion (Revive Banished)
-        AddEffect("0496", c => Debug.Log("Dimension Distortion: Invoca monstro banido se GY vazio."));
+        AddEffect("0496", Effect_0496_DimensionDistortion);
 
         // 0497 - Dimension Fusion (Mass Revive)
-        AddEffect("0497", c => Debug.Log("Dimension Fusion: Paga 2000, ambos invocam banidos."));
+        AddEffect("0497", Effect_0497_DimensionFusion);
 
         // 0498 - Dimension Jar (Banish GY)
-        AddEffect("0498", c => Debug.Log("Dimension Jar: Bane cartas do GY do oponente."));
+        AddEffect("0498", Effect_0498_DimensionJar);
 
         // 0499 - Dimension Wall (Reflect Damage)
-        AddEffect("0499", c => Debug.Log("Dimension Wall: Oponente toma dano de batalha."));
+        AddEffect("0499", Effect_0499_DimensionWall);
 
         // 0500 - Dimensionhole (Blink)
-        AddEffect("0500", c => Debug.Log("Dimensionhole: Remove monstro até a próxima Standby Phase."));
+        AddEffect("0500", Effect_0500_Dimensionhole);
     }
 }
