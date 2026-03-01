@@ -394,6 +394,141 @@ public class GameManager : MonoBehaviour
         UpdatePileVisuals();
     }
 
+    // --- AÇÕES DE JOGO PADRONIZADAS (GAME ACTIONS) ---
+
+    public void BanishCard(CardDisplay card)
+    {
+        if (card == null) return;
+
+        // Efeito Visual
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayBanishEffect(card);
+
+        // Remove da lista da mão se estiver lá
+        if (card.isPlayerCard) playerHand.Remove(card.gameObject);
+        else opponentHand.Remove(card.gameObject);
+
+        // Adiciona à lista de removidas
+        RemoveFromPlay(card.CurrentCardData, card.isPlayerCard);
+
+        // Remove modificadores que esta carta gerou em outras
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
+
+        // Destrói o objeto visual
+        Destroy(card.gameObject);
+    }
+
+    public void MillCards(bool isPlayer, int amount)
+    {
+        List<CardData> deck = isPlayer ? playerDeck : opponentDeck;
+        int count = Mathf.Min(amount, deck.Count);
+
+        for (int i = 0; i < count; i++)
+        {
+            CardData card = deck[0];
+            deck.RemoveAt(0);
+            SendToGraveyard(card, isPlayer);
+            Debug.Log($"Mill: {card.name}");
+        }
+        UpdatePileVisuals();
+    }
+
+    public void DiscardCard(CardDisplay card)
+    {
+        if (card == null) return;
+
+        if (card.isPlayerCard) playerHand.Remove(card.gameObject);
+        else opponentHand.Remove(card.gameObject);
+
+        SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+        
+        // Remove modificadores (caso raro de efeito na mão, mas seguro)
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
+
+        Destroy(card.gameObject);
+    }
+
+    public void DiscardRandomHand(bool isPlayer, int amount)
+    {
+        List<GameObject> hand = isPlayer ? playerHand : opponentHand;
+        if (hand.Count == 0) return;
+
+        int count = Mathf.Min(amount, hand.Count);
+        
+        for (int i = 0; i < count; i++)
+        {
+            if (hand.Count == 0) break;
+            int rnd = Random.Range(0, hand.Count);
+            GameObject cardGO = hand[rnd];
+            CardDisplay cd = cardGO.GetComponent<CardDisplay>();
+            DiscardCard(cd);
+        }
+    }
+
+    public void ReturnToHand(CardDisplay card)
+    {
+        if (card == null) return;
+
+        CardData data = card.CurrentCardData;
+        bool isPlayer = card.isPlayerCard;
+
+        // Remove modificadores
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
+
+        // Destrói objeto do campo
+        Destroy(card.gameObject);
+
+        // Adiciona à mão
+        AddCardToHand(data, isPlayer);
+        Debug.Log($"{data.name} retornada para a mão.");
+    }
+
+    public void ReturnToDeck(CardDisplay card, bool toTop)
+    {
+        if (card == null) return;
+
+        CardData data = card.CurrentCardData;
+        bool isPlayer = card.isPlayerCard;
+        List<CardData> deck = isPlayer ? playerDeck : opponentDeck;
+
+        if (toTop) deck.Insert(0, data);
+        else deck.Add(data);
+
+        // Remove modificadores
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
+
+        Destroy(card.gameObject);
+        UpdatePileVisuals();
+        Debug.Log($"{data.name} retornada ao deck (Topo: {toTop}).");
+    }
+
+    // Helper para adicionar carta à mão visualmente (usado por ReturnToHand e Search)
+    public void AddCardToHand(CardData cardData, bool isPlayer)
+    {
+        Transform handTransform = isPlayer ? playerHandLayoutGroup : opponentHandLayoutGroup;
+        if (cardPrefab == null || handTransform == null) return;
+
+        GameObject newCardGO = Instantiate(cardPrefab, handTransform);
+        CardDisplay newCardDisplay = newCardGO.GetComponent<CardDisplay>();
+        if (newCardDisplay == null) newCardDisplay = newCardGO.AddComponent<CardDisplay>();
+
+        newCardGO.transform.localScale = handCardScale;
+        newCardDisplay.hoverYOffset = isPlayer ? playerHandHoverYOffset : opponentHandHoverYOffset;
+        newCardDisplay.isInteractable = true;
+        newCardDisplay.isPlayerCard = isPlayer;
+
+        if (isPlayer)
+        {
+            newCardDisplay.SetCard(cardData, cardBackTexture);
+            playerHand.Add(newCardGO);
+        }
+        else
+        {
+            newCardGO.transform.localRotation = Quaternion.Euler(0, 0, 180);
+            newCardDisplay.SetCard(cardData, cardBackTexture, showOpponentHand);
+            opponentHand.Add(newCardGO);
+        }
+    }
+
     public void DrawCard(bool ignoreLimit = false)
     {
         if (playerDeck.Count == 0)
