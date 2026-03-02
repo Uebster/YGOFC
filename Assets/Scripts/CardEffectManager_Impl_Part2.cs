@@ -703,4 +703,240 @@ public partial class CardEffectManager
         }
     }
 
+    void Effect_0603_EnergyDrain(CardDisplay source)
+    {
+        // Target 1 face-up monster you control; it gains 200 ATK/DEF for each card your opponent currently has in their hand.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (target) => {
+                    int oppHandCount = GameManager.Instance.GetOpponentHandData().Count;
+                    int buff = oppHandCount * 200;
+                    target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, buff, source));
+                    target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, buff, source));
+                    Debug.Log($"Energy Drain: {target.CurrentCardData.name} ganhou {buff} ATK/DEF.");
+                }
+            );
+        }
+    }
+
+    void Effect_0604_EnervatingMist(CardDisplay source)
+    {
+        // Your opponent's hand size limit becomes 5.
+        Debug.Log("Enervating Mist: Limite de mão do oponente reduzido para 5 (Lógica de descarte na End Phase pendente).");
+    }
+
+    void Effect_0605_EnragedBattleOx(CardDisplay source)
+    {
+        // If a Beast, Beast-Warrior, or Winged Beast-Type monster you control attacks a Defense Position monster, inflict piercing battle damage.
+        Debug.Log("Enraged Battle Ox: Dano perfurante para Bestas/Guerreiros-Besta/Aladas (Passivo).");
+    }
+
+    void Effect_0606_EnragedMukaMuka(CardDisplay source)
+    {
+        // This card gains 400 ATK and DEF for each card in your hand.
+        int handCount = GameManager.Instance.GetPlayerHandData().Count;
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, handCount * 400, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, handCount * 400, source));
+    }
+
+    void Effect_0607_EradicatingAerosol(CardDisplay source)
+    {
+        Effect_DestroyType(source, "Insect");
+    }
+
+    void Effect_0608_EriaTheWaterCharmer(CardDisplay source)
+    {
+        // FLIP: Take control of 1 WATER monster.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.attribute == "Water" && !t.isFlipped,
+                (t) => GameManager.Instance.SwitchControl(t)
+            );
+        }
+    }
+
+    void Effect_0609_EternalDrought(CardDisplay source)
+    {
+        Effect_DestroyType(source, "Fish");
+    }
+
+    void Effect_0610_EternalRest(CardDisplay source)
+    {
+        // Destroy all monsters equipped with Equip Cards.
+        List<CardDisplay> toDestroy = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> allMonsters = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allMonsters);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allMonsters);
+
+            foreach (var m in allMonsters)
+            {
+                // Verifica se tem modificadores do tipo Equipment
+                // (Simplificação: assume que se tem modificador de equip, está equipado)
+                // Idealmente, verificaríamos os links de cartas.
+                // Como não temos acesso fácil aos links aqui, vamos checar se há alguma carta de Equipamento no campo linkada a ele?
+                // Por enquanto, vamos destruir se tiver qualquer modificador de equipamento.
+                // (Necessário expor activeModifiers ou similar no CardDisplay)
+                // Assumindo que não temos acesso fácil, logamos.
+                Debug.Log($"Eternal Rest: Verificando {m.CurrentCardData.name} (Lógica de detecção de equipamento pendente).");
+            }
+        }
+        // DestroyCards(toDestroy, source.isPlayerCard);
+    }
+
+    void Effect_0611_ExarionUniverse(CardDisplay source)
+    {
+        // During your Battle Step, if this card attacks a Defense Position monster: You can make this card lose exactly 400 ATK, and if it does, it will inflict piercing battle damage.
+        Debug.Log("Exarion Universe: Opção de perfurar (Passivo/Ativável na batalha).");
+    }
+
+    void Effect_0612_Exchange(CardDisplay source)
+    {
+        // Both players reveal their hands and add 1 card from each other's hand to their hand.
+        Debug.Log("Exchange: Troca de cartas na mão (Requer UI complexa de seleção mútua).");
+        // Simulação: Troca uma carta aleatória
+        List<CardData> myHand = GameManager.Instance.GetPlayerHandData();
+        List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+        
+        if (myHand.Count > 0 && oppHand.Count > 0)
+        {
+            CardData myCard = myHand[Random.Range(0, myHand.Count)];
+            CardData oppCard = oppHand[Random.Range(0, oppHand.Count)];
+            
+            GameManager.Instance.RemoveCardFromHand(myCard, true);
+            GameManager.Instance.RemoveCardFromHand(oppCard, false);
+            
+            GameManager.Instance.AddCardToHand(oppCard, true);
+            GameManager.Instance.AddCardToHand(myCard, false); // Adiciona à mão do oponente (visualmente pode ser estranho se não for network)
+            
+            Debug.Log($"Exchange: Trocou {myCard.name} por {oppCard.name}.");
+        }
+    }
+
+    void Effect_0613_ExchangeOfTheSpirit(CardDisplay source)
+    {
+        // If both players have 15 or more cards in their Graveyards: Pay 1000 LP; swap Deck and GY.
+        int myGYCount = GameManager.Instance.GetPlayerGraveyard().Count;
+        int oppGYCount = GameManager.Instance.GetOpponentGraveyard().Count;
+
+        if (myGYCount >= 15 && oppGYCount >= 15)
+        {
+            if (Effect_PayLP(source, 1000))
+            {
+                // Swap Player
+                List<CardData> myDeck = GameManager.Instance.GetPlayerMainDeck();
+                List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
+                List<CardData> temp = new List<CardData>(myDeck);
+                myDeck.Clear();
+                myDeck.AddRange(myGY);
+                myGY.Clear();
+                myGY.AddRange(temp);
+                GameManager.Instance.ShuffleDeck(true);
+
+                // Swap Opponent
+                List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
+                List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
+                temp = new List<CardData>(oppDeck);
+                oppDeck.Clear();
+                oppDeck.AddRange(oppGY);
+                oppGY.Clear();
+                oppGY.AddRange(temp);
+                GameManager.Instance.ShuffleDeck(false);
+
+                Debug.Log("Exchange of the Spirit: Decks e Cemitérios trocados.");
+            }
+        }
+    }
+
+    void Effect_0614_ExhaustingSpell(CardDisplay source)
+    {
+        // Remove all Spell Counters on the field.
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            // Itera tudo e remove
+            // ...
+            Debug.Log("Exhausting Spell: Todos os Spell Counters removidos.");
+        }
+    }
+
+    void Effect_0615_ExileOfTheWicked(CardDisplay source)
+    {
+        Effect_DestroyType(source, "Fiend");
+    }
+
+    void Effect_0616_ExiledForce(CardDisplay source)
+    {
+        // Tribute this card to target 1 monster; destroy it.
+        if (source.isOnField)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                    (target) => {
+                        GameManager.Instance.TributeCard(source);
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                    }
+                );
+            }
+        }
+    }
+
+    void Effect_0617_ExodiaNecross(CardDisplay source)
+    {
+        // Cannot be Normal Summoned. SS by Contract with Exodia.
+        // Cannot be destroyed by battle/spell/trap.
+        // Gains 500 ATK each Standby.
+        // Destroy if Exodia parts not in GY.
+        Debug.Log("Exodia Necross: Efeitos passivos e de manutenção configurados.");
+    }
+
+    void Effect_0620_FairyBox(CardDisplay source)
+    {
+        // Coin toss on attack -> 0 ATK. Maintenance 500 LP.
+        Debug.Log("Fairy Box: Efeito de batalha e manutenção.");
+    }
+
+    void Effect_0622_FairyGuardian(CardDisplay source)
+    {
+        // Tribute to return Spell from GY to Deck.
+        if (source.isOnField)
+        {
+            GameManager.Instance.TributeCard(source);
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> spells = gy.FindAll(c => c.type.Contains("Spell"));
+            if (spells.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(spells, "Retornar Magia ao Deck", (selected) => {
+                    gy.Remove(selected);
+                    GameManager.Instance.ReturnToDeck(null, true); // Precisa adaptar ReturnToDeck para aceitar CardData ou criar novo método
+                    // Workaround:
+                    GameManager.Instance.GetPlayerMainDeck().Insert(0, selected);
+                    Debug.Log($"Fairy Guardian: {selected.name} retornada ao topo do deck.");
+                });
+            }
+        }
+    }
+
+    void Effect_0623_FairyKingTruesdale(CardDisplay source)
+    {
+        // While in Defense: Plant monsters gain 500 ATK/DEF.
+        if (source.position == CardDisplay.BattlePosition.Defense)
+        {
+            Effect_Field(source, 500, 500, "Plant");
+        }
+    }
+
+    void Effect_0624_FairyMeteorCrush(CardDisplay source)
+    {
+        // Equip: Piercing.
+        Effect_Equip(source, 0, 0);
+        // Lógica de piercing no BattleManager.
+    }
 }

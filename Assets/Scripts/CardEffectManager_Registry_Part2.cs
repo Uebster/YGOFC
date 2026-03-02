@@ -235,49 +235,61 @@ public partial class CardEffectManager
         AddEffect("0602", Effect_EnemyController);
 
         // 0603 - Energy Drain (Buff)
-        AddEffect("0603", c => Debug.Log("Energy Drain: Buff por cartas na mão do oponente."));
+        AddEffect("0603", Effect_0603_EnergyDrain);
 
         // 0604 - Enervating Mist (Hand limit 5)
-        AddEffect("0604", c => Debug.Log("Enervating Mist: Limite de mão 5."));
+        AddEffect("0604", Effect_0604_EnervatingMist);
+
+        // 0605 - Enraged Battle Ox (Piercing for Beast/Beast-Warrior/Winged Beast)
+        AddEffect("0605", Effect_0605_EnragedBattleOx);
+
+        // 0606 - Enraged Muka Muka (Buff per hand)
+        AddEffect("0606", Effect_0606_EnragedMukaMuka);
 
         // 0607 - Eradicating Aerosol (Destroy Insects)
-        AddEffect("0607", c => Effect_DestroyType(c, "Insect"));
+        AddEffect("0607", Effect_0607_EradicatingAerosol);
 
         // 0608 - Eria the Water Charmer (Flip: Control Water)
-        AddEffect("0608", c => Debug.Log("Eria: Controlar monstro WATER."));
+        AddEffect("0608", Effect_0608_EriaTheWaterCharmer);
 
         // 0609 - Eternal Drought (Destroy Fish)
-        AddEffect("0609", c => Effect_DestroyType(c, "Fish"));
+        AddEffect("0609", Effect_0609_EternalDrought);
 
         // 0610 - Eternal Rest (Destroy Equipped)
-        AddEffect("0610", c => Debug.Log("Eternal Rest: Destruir monstros equipados."));
+        AddEffect("0610", Effect_0610_EternalRest);
+
+        // 0611 - Exarion Universe (Piercing option)
+        AddEffect("0611", Effect_0611_ExarionUniverse);
 
         // 0612 - Exchange (Swap card in hand)
-        AddEffect("0612", c => Debug.Log("Exchange: Trocar cartas da mão."));
+        AddEffect("0612", Effect_0612_Exchange);
 
         // 0613 - Exchange of the Spirit (Swap Deck/GY)
-        AddEffect("0613", c => Debug.Log("Exchange of the Spirit: Trocar Deck e GY."));
+        AddEffect("0613", Effect_0613_ExchangeOfTheSpirit);
 
         // 0614 - Exhausting Spell (Remove Spell Counters)
-        AddEffect("0614", c => Debug.Log("Exhausting Spell: Remover contadores."));
+        AddEffect("0614", Effect_0614_ExhaustingSpell);
 
         // 0615 - Exile of the Wicked (Destroy Fiends)
-        AddEffect("0615", c => Effect_DestroyType(c, "Fiend"));
+        AddEffect("0615", Effect_0615_ExileOfTheWicked);
 
         // 0616 - Exiled Force (Tribute to destroy)
-        AddEffect("0616", c => Debug.Log("Exiled Force: Tributar para destruir."));
+        AddEffect("0616", Effect_0616_ExiledForce);
 
         // 0617 - Exodia Necross (SS condition)
-        AddEffect("0617", c => Debug.Log("Exodia Necross: Imune e ganha ATK."));
+        AddEffect("0617", Effect_0617_ExodiaNecross);
 
         // 0620 - Fairy Box (Coin toss 0 ATK)
-        AddEffect("0620", c => Debug.Log("Fairy Box: Moeda para zerar ATK."));
+        AddEffect("0620", Effect_0620_FairyBox);
 
         // 0622 - Fairy Guardian (Recycle Spell)
-        AddEffect("0622", c => Debug.Log("Fairy Guardian: Reciclar Magia."));
+        AddEffect("0622", Effect_0622_FairyGuardian);
+
+        // 0623 - Fairy King Truesdale (Buff Plants)
+        AddEffect("0623", Effect_0623_FairyKingTruesdale);
 
         // 0624 - Fairy Meteor Crush (Equip Piercing)
-        AddEffect("0624", c => Effect_Equip(c, 0, 0));
+        AddEffect("0624", Effect_0624_FairyMeteorCrush);
 
         // 0626 - Fairy of the Spring (Recycle Equip)
         AddEffect("0626", c => Debug.Log("Fairy of the Spring: Reciclar Equip Spell."));
