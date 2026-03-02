@@ -85,6 +85,17 @@ public partial class CardEffectManager
         });
     }
 
+    partial void OnSummonImpl(CardDisplay card)
+    {
+        // B.E.S. Big Core (0124) & Crystal Core (0125)
+        // Coloca 3 contadores na invocação Normal
+        if (card.CurrentCardData.id == "0124" || card.CurrentCardData.id == "0125")
+        {
+            // Assumindo que summonedThisTurn + isOnField logo após criação indica invocação recente
+            card.AddSpellCounter(3);
+        }
+    }
+
     public void OnDamageTaken(bool isPlayer, int amount)
     {
         // Numinous Healer (1360), Attack and Receive (0117) - Geralmente são Traps ativáveis, não automáticas.
@@ -182,6 +193,17 @@ public partial class CardEffectManager
                  Effect_GainLP(attacker, heal);
              }
         }
+
+        // B.E.S. Big Core (0124) & Crystal Core (0125)
+        // Remove contador no fim da batalha ou destrói
+        if (attacker != null && (attacker.CurrentCardData.id == "0124" || attacker.CurrentCardData.id == "0125"))
+        {
+            HandleBESCounter(attacker);
+        }
+        if (target != null && (target.CurrentCardData.id == "0124" || target.CurrentCardData.id == "0125"))
+        {
+            HandleBESCounter(target);
+        }
     }
 
     public void OnLifePointsGained(bool isPlayer, int amount)
@@ -257,6 +279,22 @@ public partial class CardEffectManager
                 }
             }
         });
+
+        // Armor Exe (0102)
+        CheckActiveCards("0102", (card) => {
+            // Remove 1 contador do seu campo (qualquer carta)
+            // Se não puder, destrói Armor Exe
+            if (!RemoveSpellCounters(1, card.isPlayerCard))
+            {
+                Debug.Log("Armor Exe: Não foi possível remover contador de manutenção. Destruindo.");
+                GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                Destroy(card.gameObject);
+            }
+            else
+            {
+                Debug.Log("Armor Exe: Manutenção paga (1 contador removido).");
+            }
+        });
     }
 
     private void CleanAllExpiredModifiers()
@@ -273,6 +311,20 @@ public partial class CardEffectManager
             {
                 cd.CleanExpiredModifiers();
             }
+        }
+    }
+
+    private void HandleBESCounter(CardDisplay card)
+    {
+        if (card.spellCounters > 0)
+        {
+            card.RemoveSpellCounter(1);
+        }
+        else
+        {
+            Debug.Log($"{card.CurrentCardData.name}: Sem contadores após batalha. Destruído.");
+            GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+            Destroy(card.gameObject);
         }
     }
 

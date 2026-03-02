@@ -61,6 +61,13 @@ public class BattleManager : MonoBehaviour
             return false;
         }
 
+        // Armor Exe (0102) - Não pode atacar no turno que foi invocado
+        if (attacker.CurrentCardData.id == "0102" && attacker.summonedThisTurn)
+        {
+            Debug.Log("Ataque impedido: Armor Exe não pode atacar no turno de invocação.");
+            return false;
+        }
+
         // Para Alligator's Sword Dragon e Amphibious Bugroth MK-3:
         if (attacker.CurrentCardData.id == "0037" || attacker.CurrentCardData.id == "0053") // IDs
         {
@@ -211,6 +218,9 @@ public class BattleManager : MonoBehaviour
 
     private void ResolveDamage(CardDisplay attacker, CardDisplay target, int atk, int def)
     {
+        // B.E.S. Immunity (0124, 0125)
+        bool targetIsBES = target.CurrentCardData.id == "0124" || target.CurrentCardData.id == "0125";
+
         if (target.position == CardDisplay.BattlePosition.Attack)
         {
             // Ataque vs Ataque
@@ -219,8 +229,11 @@ public class BattleManager : MonoBehaviour
                 int damage = atk - def;
                 Debug.Log($"Vitória do Atacante! Oponente toma {damage} de dano. Alvo destruído.");
                 GameManager.Instance.DamageOpponent(damage);
-                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-                Destroy(target.gameObject);
+                if (!targetIsBES)
+                {
+                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                    Destroy(target.gameObject);
+                }
             }
             else if (atk < def)
             {

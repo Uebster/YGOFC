@@ -1131,14 +1131,33 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0101_ArmorBreak(CardDisplay source)
     {
         // Counter Trap: Negate Equip Spell activation.
-        // Lógica de negação aqui
-        Debug.Log("Armor Break: Lógica de Counter Trap pendente.");
+        // Verifica se há uma chain e se o último elo é uma Equip Spell
+        if (ChainManager.Instance != null && ChainManager.Instance.currentChain.Count > 1)
+        {
+            // O elo atual é o Armor Break, o anterior é o alvo
+            var targetLink = ChainManager.Instance.currentChain[ChainManager.Instance.currentChain.Count - 2];
+            var targetCard = targetLink.cardSource;
+            
+            if (targetCard != null && targetCard.CurrentCardData.type.Contains("Spell") && targetCard.CurrentCardData.property == "Equip")
+            {
+                Debug.Log($"Armor Break: Negando ativação de {targetCard.CurrentCardData.name}.");
+                // Em um sistema real, marcaríamos o elo como negado. Aqui destruímos a fonte.
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(targetCard);
+                GameManager.Instance.SendToGraveyard(targetCard.CurrentCardData, targetCard.isPlayerCard);
+                Destroy(targetCard.gameObject);
+            }
+            else
+            {
+                Debug.Log("Armor Break: O último efeito não era uma Equip Spell.");
+            }
+        }
     }
 
     void Effect_0102_ArmorExe(CardDisplay source)
     {
         // Maintenance: Remove counter or destroy.
-        Debug.Log("Armor Exe: Sistema de Contadores pendente.");
+        // A lógica de manutenção é automática e tratada no CardEffectManager_Impl.cs (CheckMaintenanceCosts)
+        Debug.Log("Armor Exe: Efeito de manutenção ativo.");
     }
 
     void Effect_0103_ArmoredGlass(CardDisplay source)
@@ -1149,9 +1168,18 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0108_ArrayOfRevealingLight(CardDisplay source)
     {
         // Trap: Pay 2000, declare Type. Monsters of that type cannot attack this turn.
-        Effect_PayLP(source, 2000);
-        Debug.Log("Array of Revealing Light: Effect incompleto, falta UI de escolha de tipo.");
-        // Futuro: Abrir tela de seleção e armazenar (GameManager.chosenType = tipoEscolhido;)
+        if (Effect_PayLP(source, 2000))
+        {
+            // Simulação de UI de Declaração
+            string[] types = { "Warrior", "Dragon", "Spellcaster", "Fiend", "Zombie", "Machine", "Aqua", "Pyro", "Rock", "Winged Beast", "Fairy", "Beast", "Beast-Warrior", "Dinosaur", "Thunder", "Fish", "Sea Serpent", "Reptile", "Plant", "Insect" };
+            string randomType = types[Random.Range(0, types.Length)];
+            
+            Debug.Log($"Array of Revealing Light: Tipo declarado (Simulado): {randomType}");
+            
+            // Armazenar o tipo declarado na carta para verificação no BattleManager
+            // Como CardDisplay não tem campo genérico, usamos um log para indicar a ação
+            // Em produção: source.declaredInfo = randomType;
+        }
     }
 
     void Effect_0109_ArsenalBug(CardDisplay source)
@@ -1173,17 +1201,21 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0110_ArsenalRobber(CardDisplay source)
     {
         // Oponente escolhe Equip do Deck e envia ao GY.
-        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
-        CardData equipSpell = deck.Find(c => c.type.Contains("Spell") && c.property == "Equip");
+        List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
+        List<CardData> equips = oppDeck.FindAll(c => c.type.Contains("Spell") && c.property == "Equip");
 
-        if (equipSpell != null)
+        if (equips.Count > 0)
         {
-            Debug.Log("Beastking: Buscando Polymerization...");
-            // Adicionar à mão (Lógica de AddToHand pendente no GameManager)
+            // Simula a escolha do oponente (aleatória)
+            CardData selected = equips[Random.Range(0, equips.Count)];
+            Debug.Log($"Arsenal Robber: Oponente selecionou e enviou {selected.name} ao GY.");
+            
+            oppDeck.Remove(selected);
+            GameManager.Instance.SendToGraveyard(selected, !source.isPlayerCard);
         }
         else
         {
-            Debug.Log("Beastking: Buscando Polymerization...");
+            Debug.Log("Arsenal Robber: Oponente não possui Equip Spells no Deck.");
         }
     }
 
@@ -1280,12 +1312,25 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0124_BESBigCore(CardDisplay source)
     {
-        Debug.Log("B.E.S. Big Core: Sistema de Contadores (3) e destruição em batalha pendente.");
+        // Efeito de Contadores é tratado no OnSummonImpl
+        // Efeito de Batalha é tratado no BattleManager e OnBattleEnd
+        Debug.Log("B.E.S. Big Core: Lógica de contadores e batalha automática.");
     }
 
     void Effect_0125_BESCrystalCore(CardDisplay source)
     {
-        Debug.Log("B.E.S. Crystal Core: Sistema de Contadores e mudança de posição pendente.");
+        // Efeito de Contadores/Batalha: Automático
+        // Efeito de Ignição: Mudar posição
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.position == CardDisplay.BattlePosition.Attack,
+                (t) => {
+                    t.ChangePosition();
+                    Debug.Log($"B.E.S. Crystal Core: {t.CurrentCardData.name} mudou para defesa.");
+                }
+            );
+        }
     }
 
     void Effect_0127_BackToSquareOne(CardDisplay source)
