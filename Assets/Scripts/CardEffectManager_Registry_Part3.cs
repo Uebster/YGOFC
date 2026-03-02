@@ -672,40 +672,52 @@ public partial class CardEffectManager
         AddEffect("1325", Effect_1325_NeedleBall);
 
         // 1326 - Needle Burrower (Burn on destroy)
-        AddEffect("1326", c => Debug.Log("Needle Burrower: Dano igual Nível x 500."));
+        AddEffect("1326", Effect_1326_NeedleBurrower);
 
         // 1327 - Needle Ceiling (Destroy all if 4+)
-        AddEffect("1327", c => Debug.Log("Needle Ceiling: Destrói todos monstros se houver 4 ou mais."));
+        AddEffect("1327", Effect_1327_NeedleCeiling);
+
+        // 1328 - Needle Wall (Dice destroy)
+        AddEffect("1328", Effect_1328_NeedleWall);
 
         // 1329 - Needle Worm (Mill 5)
-        AddEffect("1329", c => Debug.Log("Needle Worm: Oponente descarta 5 do topo do deck."));
+        AddEffect("1329", Effect_1329_NeedleWorm);
 
         // 1330 - Negate Attack (Negate & End Battle)
-        AddEffect("1330", c => Debug.Log("Negate Attack: Nega ataque e encerra Battle Phase."));
+        AddEffect("1330", Effect_1330_NegateAttack);
 
         // 1331 - Neko Mane King (End Turn)
-        AddEffect("1331", c => Debug.Log("Neko Mane King: Encerra o turno do oponente."));
+        AddEffect("1331", Effect_1331_NekoManeKing);
 
         // 1338 - Newdoria (Destroy on destroy)
-        AddEffect("1338", c => Debug.Log("Newdoria: Destrói 1 monstro ao ser destruído."));
+        AddEffect("1338", Effect_1338_Newdoria);
 
         // 1339 - Night Assailant (Flip Destroy / Recycle)
-        AddEffect("1339", c => Debug.Log("Night Assailant: Flip destrói monstro. Recupera Flip do GY."));
+        AddEffect("1339", Effect_1339_NightAssailant);
 
         // 1341 - Nightmare Horse (Direct Attack)
-        AddEffect("1341", c => Debug.Log("Nightmare Horse: Ataque direto."));
+        AddEffect("1341", Effect_1341_NightmareHorse);
 
         // 1342 - Nightmare Penguin (Buff Water / Bounce)
-        AddEffect("1342", c => Debug.Log("Nightmare Penguin: Buff Water. Flip retorna carta."));
+        AddEffect("1342", Effect_1342_NightmarePenguin);
 
         // 1344 - Nightmare Wheel (Lock & Burn)
-        AddEffect("1344", c => Debug.Log("Nightmare Wheel: Prende monstro e causa 500 dano."));
+        AddEffect("1344", Effect_1344_NightmareWheel);
 
         // 1345 - Nightmare's Steelcage (Stall)
-        AddEffect("1345", c => Debug.Log("Nightmare's Steelcage: Ninguém ataca por 2 turnos."));
+        AddEffect("1345", Effect_1345_NightmaresSteelcage);
 
         // 1346 - Nimble Momonga (Heal & SS)
-        AddEffect("1346", c => { Effect_GainLP(c, 1000); Debug.Log("Nimble Momonga: SS cópias do deck."); });
+        AddEffect("1346", Effect_1346_NimbleMomonga);
+
+        // 1348 - Ninja Grandmaster Sasuke (Destroy Face-up Defense)
+        AddEffect("1348", Effect_1348_NinjaGrandmasterSasuke);
+
+        // 1349 - Ninjitsu Art of Decoy (Protect Ninja)
+        AddEffect("1349", Effect_1349_NinjitsuArtOfDecoy);
+
+        // 1350 - Ninjitsu Art of Transformation (SS Beast/Winged Beast/Insect)
+        AddEffect("1350", Effect_1350_NinjitsuArtOfTransformation);
 
         // 1353 - Nobleman of Crossout (Banish Face-down)
         AddEffect("1353", c => Debug.Log("Nobleman of Crossout: Destrói e bane face-down."));

@@ -3256,4 +3256,203 @@ public partial class CardEffectManager
             Effect_DirectDamage(source, 1000);
         }
     }
+
+    // 1326 - Needle Burrower
+    void Effect_1326_NeedleBurrower(CardDisplay source)
+    {
+        // Effect: If destroys monster by battle and sends to GY: Inflict damage = Level x 500.
+        // Lógica no OnBattleEnd.
+        Debug.Log("Needle Burrower: Efeito de dano configurado.");
+    }
+
+    // 1327 - Needle Ceiling
+    void Effect_1327_NeedleCeiling(CardDisplay source)
+    {
+        // Effect: If 4 or more monsters on field: Destroy all face-up monsters.
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if(z.childCount > 0) count++;
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) count++;
+        }
+
+        if (count >= 4)
+        {
+            List<CardDisplay> toDestroy = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                List<CardDisplay> all = new List<CardDisplay>();
+                CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+                foreach(var m in all) if(!m.isFlipped) toDestroy.Add(m);
+            }
+            DestroyCards(toDestroy, source.isPlayerCard);
+            Debug.Log("Needle Ceiling: Monstros face-up destruídos.");
+        }
+        else
+        {
+            Debug.Log("Needle Ceiling: Requer 4 ou mais monstros.");
+        }
+    }
+
+    // 1328 - Needle Wall
+    void Effect_1328_NeedleWall(CardDisplay source)
+    {
+        // Continuous Trap. Standby Phase logic.
+        Debug.Log("Needle Wall: Ativo.");
+    }
+
+    // 1329 - Needle Worm
+    void Effect_1329_NeedleWorm(CardDisplay source)
+    {
+        // FLIP: Send top 5 cards of opponent's Deck to GY.
+        GameManager.Instance.MillCards(!source.isPlayerCard, 5);
+    }
+
+    // 1330 - Negate Attack
+    void Effect_1330_NegateAttack(CardDisplay source)
+    {
+        // Target attacking monster; negate attack, end Battle Phase.
+        if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+        {
+            Debug.Log("Negate Attack: Ataque negado e Battle Phase encerrada.");
+            // Lógica de encerrar fase
+            if (PhaseManager.Instance != null) PhaseManager.Instance.ChangePhase(GamePhase.Main2);
+        }
+    }
+
+    // 1331 - Neko Mane King
+    void Effect_1331_NekoManeKing(CardDisplay source)
+    {
+        // Effect: Opponent's turn, sent to GY by opponent's effect -> End Turn.
+        // Logic in OnCardSentToGraveyard.
+        Debug.Log("Neko Mane King: Efeito de encerrar turno configurado.");
+    }
+
+    // 1338 - Newdoria
+    void Effect_1338_Newdoria(CardDisplay source)
+    {
+        // Effect: Destroyed by battle -> Destroy 1 monster.
+        // Logic in OnCardSentToGraveyard.
+        Debug.Log("Newdoria: Efeito de destruição configurado.");
+    }
+
+    // 1339 - Night Assailant
+    void Effect_1339_NightAssailant(CardDisplay source)
+    {
+        // FLIP: Destroy 1 monster opp controls.
+        // Sent from hand to GY: Return Flip monster from GY to hand.
+        if (source.isFlipped)
+        {
+            Effect_FlipDestroy(source, TargetType.Monster);
+        }
+        // Hand effect in OnCardDiscarded/SentToGraveyard
+    }
+
+    // 1341 - Nightmare Horse
+    void Effect_1341_NightmareHorse(CardDisplay source)
+    {
+        // Direct attack.
+        Debug.Log("Nightmare Horse: Ataque direto habilitado.");
+    }
+
+    // 1342 - Nightmare Penguin
+    void Effect_1342_NightmarePenguin(CardDisplay source)
+    {
+        // Water +200 ATK. FLIP: Return 1 card opp controls to hand.
+        Effect_Field(source, 200, 0, "", "Water");
+        if (source.isFlipped)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isPlayerCard,
+                    (t) => GameManager.Instance.ReturnToHand(t)
+                );
+            }
+        }
+    }
+
+    // 1344 - Nightmare Wheel
+    void Effect_1344_NightmareWheel(CardDisplay source)
+    {
+        // Target 1 monster; cannot attack/change pos. Standby: 500 damage.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (t) => {
+                    Debug.Log($"Nightmare Wheel: Alvejando {t.CurrentCardData.name}.");
+                    GameManager.Instance.CreateCardLink(source, t, CardLink.LinkType.Continuous);
+                    // Lock logic in BattleManager
+                }
+            );
+        }
+    }
+
+    // 1345 - Nightmare's Steelcage
+    void Effect_1345_NightmaresSteelcage(CardDisplay source)
+    {
+        // No attacks for 2 turns. Destroy after 2 turns.
+        Debug.Log("Nightmare's Steelcage: Ativado. Contagem de turnos iniciada.");
+        source.spellCounters = 2; // Usa contadores para rastrear turnos
+    }
+
+    // 1346 - Nimble Momonga
+    void Effect_1346_NimbleMomonga(CardDisplay source)
+    {
+        // Destroyed by battle: Gain 1000 LP, SS up to 2 from Deck.
+        // Logic in OnCardSentToGraveyard.
+        Debug.Log("Nimble Momonga: Efeito de cura e invocação configurado.");
+    }
+
+    // 1348 - Ninja Grandmaster Sasuke
+    void Effect_1348_NinjaGrandmasterSasuke(CardDisplay source)
+    {
+        // Attack face-up Defense -> Destroy.
+        // Logic in OnDamageCalculation.
+        Debug.Log("Ninja Grandmaster Sasuke: Efeito de destruição configurado.");
+    }
+
+    // 1349 - Ninjitsu Art of Decoy
+    void Effect_1349_NinjitsuArtOfDecoy(CardDisplay source)
+    {
+        // Target Ninja; cannot be destroyed by battle.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name.Contains("Ninja"),
+                (t) => {
+                    Debug.Log($"Ninjitsu Art of Decoy: {t.CurrentCardData.name} protegido de batalha.");
+                    // Add protection modifier/flag
+                }
+            );
+        }
+    }
+
+    // 1350 - Ninjitsu Art of Transformation
+    void Effect_1350_NinjitsuArtOfTransformation(CardDisplay source)
+    {
+        // Tribute Ninja; SS Beast/Winged Beast/Insect Lv <= Level+3.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name.Contains("Ninja"),
+                (tribute) => {
+                    int limit = tribute.CurrentCardData.level + 3;
+                    GameManager.Instance.TributeCard(tribute);
+                    
+                    List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+                    List<CardData> targets = deck.FindAll(c => (c.race == "Beast" || c.race == "Winged Beast" || c.race == "Insect") && c.level <= limit);
+                    
+                    if (targets.Count > 0)
+                    {
+                        GameManager.Instance.OpenCardSelection(targets, "Invocar Transformação", (selected) => {
+                            GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                        });
+                    }
+                }
+            );
+        }
+    }
 }

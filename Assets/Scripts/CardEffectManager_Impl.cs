@@ -328,6 +328,41 @@ public partial class CardEffectManager
                     Debug.Log("Mucus Yolk: +1000 ATK.");
                 }
             });
+
+            // 1328 - Needle Wall
+            CheckActiveCards("1328", (card) => {
+                if (card.isPlayerCard)
+                {
+                    int roll = Random.Range(1, 7);
+                    Debug.Log($"Needle Wall: Rolou {roll}.");
+                    // Lógica de destruir monstro na zona correspondente (requer mapeamento de zonas)
+                }
+            });
+
+            // 1344 - Nightmare Wheel
+            CheckActiveCards("1344", (card) => {
+                // Dano ao controlador do monstro alvo
+                // Requer saber quem é o alvo (via CardLink)
+                CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+                foreach(var link in links)
+                {
+                    if (link.source == card && link.target != null)
+                    {
+                        Effect_DirectDamage(card, 500);
+                    }
+                }
+            });
+
+            // 1345 - Nightmare's Steelcage
+            CheckActiveCards("1345", (card) => {
+                card.spellCounters--; // Usa contadores para turnos
+                if (card.spellCounters <= 0)
+                {
+                    Debug.Log("Nightmare's Steelcage: Expirou.");
+                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                    Destroy(card.gameObject);
+                }
+            });
         }
         else if (phase == GamePhase.Standby)
         {
@@ -456,6 +491,46 @@ public partial class CardEffectManager
                 Debug.Log("Morale Boost: 1000 de dano por Equip removido.");
             });
         }
+
+        // 1331 - Neko Mane King
+        if (card.id == "1331" && !isOwnerPlayer && !GameManager.Instance.isPlayerTurn) // Enviado pelo oponente no turno dele
+        {
+            Debug.Log("Neko Mane King: Encerrando turno do oponente.");
+            if (PhaseManager.Instance != null) PhaseManager.Instance.ChangePhase(GamePhase.End);
+        }
+
+        // 1338 - Newdoria
+        if (card.id == "1338" && !isOwnerPlayer) // Destruído por batalha
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                    (t) => {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                        GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                        Destroy(t.gameObject);
+                        Debug.Log("Newdoria: Destruiu alvo.");
+                    }
+                );
+            }
+        }
+
+        // 1346 - Nimble Momonga
+        if (card.id == "1346" && !isOwnerPlayer) // Destruído por batalha
+        {
+            GameManager.Instance.GainLifePoints(true, 1000); // Assume dono é player
+            List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+            List<CardData> momongas = deck.FindAll(c => c.name == "Nimble Momonga");
+            int max = Mathf.Min(2, momongas.Count);
+            for(int i=0; i<max; i++)
+            {
+                GameManager.Instance.SpecialSummonFromData(momongas[i], true, false, true); // Face-down Defense
+                deck.Remove(momongas[i]);
+            }
+            GameManager.Instance.ShuffleDeck(true);
+            Debug.Log("Nimble Momonga: Curou e invocou cópias.");
+        }
     }
 
     public void OnCardDiscarded(CardDisplay card)
@@ -487,6 +562,17 @@ public partial class CardEffectManager
             if (!GameManager.Instance.isPlayerTurn)
             {
                 GameManager.Instance.DamageOpponent(1000);
+            }
+        }
+
+        // 1339 - Night Assailant (Discarded from hand)
+        if (card.CurrentCardData.id == "1339")
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> flips = gy.FindAll(c => c.description.Contains("FLIP:") && c.id != "1339");
+            if (flips.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(flips, "Recuperar Flip", (c) => GameManager.Instance.AddCardToHand(c, true));
             }
         }
     }
@@ -843,6 +929,17 @@ public partial class CardEffectManager
             }
         }
     }
+            // 1348 - Ninja Grandmaster Sasuke
+        if (attacker != null && target != null && target.isFlipped && target.position == CardDisplay.BattlePosition.Defense) // Face-up Defense
+        {
+            if (attacker.CurrentCardData.id == "1348")
+            {
+                Debug.Log("Ninja Grandmaster Sasuke: Destruindo defesa face-up.");
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                Destroy(target.gameObject);
+            }
+        }
 }
 
     public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
@@ -906,6 +1003,14 @@ public partial class CardEffectManager
             // Requer lógica de mover do GY para o Deck (Topo)
             Debug.Log("Mystical Knight of Jackal: Monstro retornado ao topo do deck.");
             // GameManager.Instance.ReturnToDeck(target, true);
+        }
+
+        // 1326 - Needle Burrower
+        if (attacker != null && attacker.CurrentCardData.id == "1326" && target != null)
+        {
+            int dmg = target.CurrentCardData.level * 500;
+            Effect_DirectDamage(attacker, dmg);
+            Debug.Log($"Needle Burrower: {dmg} de dano.");
         }
 
         // 1322 - Necklace of Command
