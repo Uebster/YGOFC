@@ -358,43 +358,43 @@ public partial class CardEffectManager
         AddEffect("1175", Effect_1175_MaskedBeastDesGardius);
 
         // 1177 - Masked Dragon (Float into Dragon)
-        AddEffect("1177", c => Debug.Log("Masked Dragon: Invoca Dragão <= 1500 do deck."));
+        AddEffect("1177", Effect_1177_MaskedDragon);
 
         // 1178 - Masked Sorcerer (Draw on damage)
-        AddEffect("1178", c => Debug.Log("Masked Sorcerer: Compra 1 ao causar dano."));
+        AddEffect("1178", Effect_1178_MaskedSorcerer);
 
         // 1179 - Mass Driver (Tribute -> 400 dmg)
-        AddEffect("1179", c => Effect_TributeToBurn(c, 1, 400));
+        AddEffect("1179", Effect_1179_MassDriver);
 
         // 1182 - Master Monk (Double Attack)
-        AddEffect("1182", c => Debug.Log("Master Monk: Ataque duplo."));
+        AddEffect("1182", Effect_1182_MasterMonk);
 
         // 1184 - Mataza the Zapper (Double Attack, No Control Switch)
-        AddEffect("1184", c => Debug.Log("Mataza: Ataque duplo, controle fixo."));
+        AddEffect("1184", Effect_1184_MatazaTheZapper);
 
         // 1186 - Maximum Six (Roll die -> Gain ATK)
-        AddEffect("1186", c => Debug.Log("Maximum Six: Ganha ATK no dado."));
+        AddEffect("1186", Effect_1186_MaximumSix);
 
         // 1187 - Mazera DeVille (Hand Destruction)
-        AddEffect("1187", c => Debug.Log("Mazera DeVille: Oponente descarta 3."));
+        AddEffect("1187", Effect_1187_MazeraDeVille);
 
         // 1190 - Mecha-Dog Marron (Burn on destroy)
-        AddEffect("1190", c => Debug.Log("Mecha-Dog Marron: 1000 dano."));
+        AddEffect("1190", Effect_1190_MechaDogMarron);
 
         // 1192 - Mechanical Hound (No Spells)
-        AddEffect("1192", c => Debug.Log("Mechanical Hound: Oponente não ativa magias se você não tiver mão."));
+        AddEffect("1192", Effect_1192_MechanicalHound);
 
         // 1196 - Medusa Worm (Flip Destroy, Cycle)
-        AddEffect("1196", c => Debug.Log("Medusa Worm: Destrói monstro, vira face-down."));
+        AddEffect("1196", Effect_1196_MedusaWorm);
 
         // 1197 - Mefist the Infernal General (Piercing, Discard)
-        AddEffect("1197", c => Debug.Log("Mefist: Perfurante e descarte."));
+        AddEffect("1197", Effect_1197_MefistTheInfernalGeneral);
 
         // 1199 - Mega Ton Magical Cannon (Remove 10 counters -> Nuke)
-        AddEffect("1199", c => Debug.Log("Mega Ton Magical Cannon: Remove 10 contadores, destrói tudo do oponente."));
+        AddEffect("1199", Effect_1199_MegaTonMagicalCannon);
 
         // 1200 - Megamorph (Double/Halve ATK)
-        AddEffect("1200", c => Debug.Log("Megamorph: Dobra ou divide ATK baseado no LP."));
+        AddEffect("1200", Effect_1200_Megamorph);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 1201 - 1300)

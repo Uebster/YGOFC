@@ -1084,4 +1084,113 @@ public partial class CardEffectManager
         // If sent to GY: Equip "The Mask of Remnants" from Deck/Hand to opp monster and take control.
         Debug.Log("Des Gardius: Efeito de controle ao morrer.");
     }
+
+    void Effect_1177_MaskedDragon(CardDisplay source)
+    {
+        // Effect: Destroyed by battle -> SS Dragon with ATK <= 1500 from Deck.
+        Effect_SearchDeck(source, "Dragon", "Monster", 1500); // Simplificado para busca
+    }
+
+    void Effect_1178_MaskedSorcerer(CardDisplay source)
+    {
+        // Effect: If inflicts battle damage: Draw 1 card.
+        // Lógica no OnDamageDealtImpl.
+        Debug.Log("Masked Sorcerer: Efeito de compra configurado.");
+    }
+
+    void Effect_1179_MassDriver(CardDisplay source)
+    {
+        // Effect: Tribute 1 monster; inflict 400 damage.
+        Effect_TributeToBurn(source, 1, 400);
+    }
+
+    void Effect_1182_MasterMonk(CardDisplay source)
+    {
+        // Effect: Cannot be Normal Summoned. SS by tributing Monk Fighter. Can attack twice.
+        Debug.Log("Master Monk: Ataque duplo (Passivo).");
+    }
+
+    void Effect_1184_MatazaTheZapper(CardDisplay source)
+    {
+        // Effect: Can attack twice. Control cannot switch.
+        Debug.Log("Mataza: Ataque duplo e controle fixo (Passivo).");
+    }
+
+    void Effect_1186_MaximumSix(CardDisplay source)
+    {
+        // Effect: When Tribute Summoned: Roll die. Gain ATK = result * 200.
+        if (source.isOnField)
+        {
+            GameManager.Instance.TossCoin(1, (heads) => { // Simula dado
+                int roll = Random.Range(1, 7);
+                int buff = roll * 200;
+                source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, buff, source));
+                Debug.Log($"Maximum Six: Rolou {roll}. +{buff} ATK.");
+            });
+        }
+    }
+
+    void Effect_1187_MazeraDeVille(CardDisplay source)
+    {
+        // Effect: Cannot be Normal Summoned. SS by tributing Warrior of Zera while Pandemonium is on field. Opponent discards 3 random cards.
+        if (source.isOnField)
+        {
+            GameManager.Instance.DiscardRandomHand(false, 3);
+            Debug.Log("Mazera DeVille: Oponente descartou 3 cartas.");
+        }
+    }
+
+    void Effect_1190_MechaDogMarron(CardDisplay source)
+    {
+        // Effect: If destroyed by battle: Both players take 1000 damage.
+        // Lógica no OnBattleEnd.
+        Debug.Log("Mecha-Dog Marron: Dano mútuo ao morrer.");
+    }
+
+    void Effect_1192_MechanicalHound(CardDisplay source)
+    {
+        // Effect: If you have no cards in hand, opponent cannot activate Spells.
+        Debug.Log("Mechanical Hound: Bloqueio de Magias (Passivo).");
+    }
+
+    void Effect_1196_MedusaWorm(CardDisplay source)
+    {
+        // Effect: Flip: Destroy 1 monster opp controls. Can flip face-down once per turn.
+        if (source.isFlipped)
+        {
+            Effect_FlipDestroy(source, TargetType.Monster);
+        }
+        else
+        {
+            Effect_TurnSet(source);
+        }
+    }
+
+    void Effect_1197_MefistTheInfernalGeneral(CardDisplay source)
+    {
+        // Effect: Piercing damage. If inflicts battle damage: Opponent discards 1 random card.
+        // Lógica de piercing no BattleManager. Lógica de descarte no OnDamageDealtImpl.
+        Debug.Log("Mefist: Efeitos de batalha configurados.");
+    }
+
+    void Effect_1199_MegaTonMagicalCannon(CardDisplay source)
+    {
+        // Effect: Remove 10 Spell Counters from your field; destroy all cards opponent controls.
+        if (RemoveSpellCounters(10, source.isPlayerCard))
+        {
+            DestroyAllMonsters(true, false);
+            Effect_HarpiesFeatherDuster(source);
+            Debug.Log("Mega Ton Magical Cannon: Campo do oponente limpo.");
+        }
+    }
+
+    void Effect_1200_Megamorph(CardDisplay source)
+    {
+        // Effect: Equip. If LP < Opp LP, ATK x2. If LP > Opp LP, ATK / 2.
+        Effect_Equip(source, 0, 0);
+        // Lógica de modificação dinâmica de stats deve ser no RecalculateStats do CardDisplay ou um update constante.
+        // Como o sistema de stats é por eventos, aplicamos um modificador especial que checa LP.
+        // Simplificação: Aplica no momento da ativação (não dinâmico).
+        // Em produção: Criar StatModifier do tipo 'Dynamic' que recebe um delegate.
+    }
 }
