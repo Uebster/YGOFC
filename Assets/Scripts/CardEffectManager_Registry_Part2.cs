@@ -554,63 +554,58 @@ public partial class CardEffectManager
         AddEffect("0775", Effect_0775_GoblinKing);
 
         // 0776 - Goblin Thief (Damage/Heal)
-        AddEffect("0776", c => { Effect_DirectDamage(c, 500); Effect_GainLP(c, 500); });
+        AddEffect("0776", Effect_0776_GoblinThief);
 
         // 0777 - Goblin Zombie (Mill/Search)
-        AddEffect("0777", c => Debug.Log("Goblin Zombie: Mill e Busca."));
+        AddEffect("0777", Effect_0777_GoblinZombie);
 
         // 0778 - Goblin of Greed (No discard cost)
-        AddEffect("0778", c => Debug.Log("Goblin of Greed: Impede custos."));
+        AddEffect("0778", Effect_0778_GoblinOfGreed);
 
         // 0779 - Goblin's Secret Remedy (Heal 600)
-        AddEffect("0779", c => Effect_GainLP(c, 600));
+        AddEffect("0779", Effect_0779_GoblinsSecretRemedy);
 
         // 0780 - Goddess of Whim (Coin ATK)
-        AddEffect("0780", c => Debug.Log("Goddess of Whim: Modifica ATK."));
+        AddEffect("0780", Effect_0780_GoddessOfWhim);
 
         // 0781 - Goddess with the Third Eye (Fusion Sub)
-        AddEffect("0781", c => Debug.Log("Goddess with the Third Eye: Substituto."));
+        AddEffect("0781", Effect_0781_GoddessWithTheThirdEye);
 
         // 0784 - Golem Sentry (Flip Bounce)
-        AddEffect("0784", c => Effect_FlipReturn(c, TargetType.Monster));
+        AddEffect("0784", Effect_0784_GolemSentry);
 
         // 0786 - Good Goblin Housekeeping (Draw/Return)
-        AddEffect("0786", c => Debug.Log("Good Goblin Housekeeping: Draw e return."));
+        AddEffect("0786", Effect_0786_GoodGoblinHousekeeping);
 
         // 0787 - Gora Turtle (Lock 1900+)
-        AddEffect("0787", c => Debug.Log("Gora Turtle: Bloqueia 1900+."));
+        AddEffect("0787", Effect_0787_GoraTurtle);
 
         // 0788 - Gora Turtle of Illusion (Negate Target)
-        AddEffect("0788", c => Debug.Log("Gora Turtle of Illusion: Nega alvo S/T."));
+        AddEffect("0788", Effect_0788_GoraTurtleOfIllusion);
 
         // 0790 - Gorgon's Eye (Negate Defense)
-        AddEffect("0790", c => Debug.Log("Gorgon's Eye: Nega efeitos defesa."));
+        AddEffect("0790", Effect_0790_GorgonsEye);
 
         // 0791 - Graceful Charity (Draw 3 Discard 2)
-        AddEffect("0791", c => { 
-            GameManager.Instance.DrawCard(); 
-            GameManager.Instance.DrawCard(); 
-            GameManager.Instance.DrawCard(); 
-            Debug.Log("Graceful Charity: Descarte 2 cartas."); 
-        });
+        AddEffect("0791", Effect_0791_GracefulCharity);
 
         // 0792 - Graceful Dice (Roll Buff)
-        AddEffect("0792", c => Debug.Log("Graceful Dice: Buff por dado."));
+        AddEffect("0792", Effect_0792_GracefulDice);
 
         // 0794 - Gradius' Option (Token)
-        AddEffect("0794", c => Debug.Log("Gradius' Option: Token."));
+        AddEffect("0794", Effect_0794_GradiusOption);
 
         // 0795 - Granadora (Heal/Damage)
-        AddEffect("0795", c => { Effect_GainLP(c, 1000); Debug.Log("Granadora: Dano ao morrer."); });
+        AddEffect("0795", Effect_0795_Granadora);
 
         // 0797 - Granmarg the Rock Monarch (Destroy Set)
-        AddEffect("0797", c => Debug.Log("Granmarg: Destrói setada."));
+        AddEffect("0797", Effect_0797_GranmargTheRockMonarch);
 
         // 0799 - Grave Lure (Reveal)
-        AddEffect("0799", c => Debug.Log("Grave Lure: Revela topo."));
+        AddEffect("0799", Effect_0799_GraveLure);
 
         // 0800 - Grave Ohja (Damage on Flip)
-        AddEffect("0800", c => Debug.Log("Grave Ohja: Dano em Flip Summon."));
+        AddEffect("0800", Effect_0800_GraveOhja);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 0801 - 0900)

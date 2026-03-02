@@ -1830,4 +1830,201 @@ public partial class CardEffectManager
         source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, count * 500, source));
         source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, count * 500, source));
     }
+
+    void Effect_0776_GoblinThief(CardDisplay source)
+    {
+        Effect_DirectDamage(source, 500);
+        Effect_GainLP(source, 500);
+    }
+
+    void Effect_0777_GoblinZombie(CardDisplay source)
+    {
+        // Effect 1: Battle Damage -> Mill (Handled in OnDamageDealtImpl)
+        // Effect 2: Sent to GY -> Search Zombie <= 1200 DEF (Handled in OnCardSentToGraveyard)
+        Debug.Log("Goblin Zombie: Efeitos passivos/gatilho configurados.");
+    }
+
+    void Effect_0778_GoblinOfGreed(CardDisplay source)
+    {
+        // Passive: Cannot discard for costs.
+        Debug.Log("Goblin of Greed: Impede descarte como custo.");
+    }
+
+    void Effect_0779_GoblinsSecretRemedy(CardDisplay source)
+    {
+        Effect_GainLP(source, 600);
+    }
+
+    void Effect_0780_GoddessOfWhim(CardDisplay source)
+    {
+        // Once per turn: Toss coin. Heads: Double ATK. Tails: Halve ATK.
+        GameManager.Instance.TossCoin(1, (heads) => {
+            if (heads == 1)
+                source.ModifyStats(source.currentAtk, 0); // Double (Add current)
+            else
+                source.ModifyStats(-source.currentAtk / 2, 0); // Halve (Subtract half)
+        });
+    }
+
+    void Effect_0781_GoddessWithTheThirdEye(CardDisplay source)
+    {
+        // Fusion Substitute.
+        Debug.Log("Goddess with the Third Eye: Substituto de fusão.");
+    }
+
+    void Effect_0784_GolemSentry(CardDisplay source)
+    {
+        // Ignition: Flip face-down.
+        // Trigger (Flip): Return opp monster to hand.
+        if (source.isFlipped)
+        {
+            // Flip Effect
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                    (t) => GameManager.Instance.ReturnToHand(t)
+                );
+            }
+        }
+        else
+        {
+            // Ignition
+            Effect_TurnSet(source);
+        }
+    }
+
+    void Effect_0786_GoodGoblinHousekeeping(CardDisplay source)
+    {
+        // Draw cards = copies in GY + 1, then return 1 to bottom of deck.
+        int copies = GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.name == "Good Goblin Housekeeping").Count;
+        int drawCount = copies + 1;
+        
+        for(int i=0; i<drawCount; i++) GameManager.Instance.DrawCard();
+        
+        // Return 1 to bottom (Simulated: Select from hand to return)
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Retornar ao Fundo do Deck", (selected) => {
+                GameManager.Instance.RemoveCardFromHand(selected, source.isPlayerCard);
+                GameManager.Instance.ReturnToDeck(null, false); // false = bottom. Need CardDisplay dummy or refactor ReturnToDeck.
+                // Workaround for ReturnToDeck needing CardDisplay:
+                GameManager.Instance.GetPlayerMainDeck().Add(selected);
+                Debug.Log($"Good Goblin Housekeeping: {selected.name} retornado ao fundo.");
+            });
+        }
+    }
+
+    void Effect_0787_GoraTurtle(CardDisplay source)
+    {
+        // Monsters with ATK >= 1900 cannot attack.
+        Debug.Log("Gora Turtle: Bloqueio de ataque >= 1900 (Passivo).");
+    }
+
+    void Effect_0788_GoraTurtleOfIllusion(CardDisplay source)
+    {
+        // Negate Spell/Trap targeting this card.
+        Debug.Log("Gora Turtle of Illusion: Imune a alvos S/T.");
+    }
+
+    void Effect_0790_GorgonsEye(CardDisplay source)
+    {
+        // Negate effects of Defense Position monsters.
+        Debug.Log("Gorgon's Eye: Nega efeitos em defesa (Passivo).");
+    }
+
+    void Effect_0791_GracefulCharity(CardDisplay source)
+    {
+        // Draw 3, Discard 2.
+        GameManager.Instance.DrawCard();
+        GameManager.Instance.DrawCard();
+        GameManager.Instance.DrawCard();
+        
+        // Discard 2 (Simulated: Random or First 2 if no UI)
+        // In real game, needs Multi-Select from Hand.
+        GameManager.Instance.DiscardRandomHand(source.isPlayerCard, 2); 
+        Debug.Log("Graceful Charity: Comprou 3, descartou 2.");
+    }
+
+    void Effect_0792_GracefulDice(CardDisplay source)
+    {
+        // Roll die. All your monsters gain ATK/DEF = result * 100.
+        GameManager.Instance.TossCoin(1, (heads) => { // Simulating Die with Coin logic or Random
+             int roll = Random.Range(1, 7);
+             int buff = roll * 100;
+             Debug.Log($"Graceful Dice: Rolou {roll}. Buff {buff}.");
+             
+             if (GameManager.Instance.duelFieldUI != null)
+             {
+                 foreach(var zone in GameManager.Instance.duelFieldUI.playerMonsterZones)
+                 {
+                     if (zone.childCount > 0)
+                     {
+                         var m = zone.GetChild(0).GetComponent<CardDisplay>();
+                         if (m != null)
+                         {
+                             m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, buff, source));
+                             m.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, buff, source));
+                         }
+                     }
+                 }
+             }
+        });
+    }
+
+    void Effect_0794_GradiusOption(CardDisplay source)
+    {
+        // Cannot be Normal Summoned. SS if Gradius exists. Stats = Gradius stats.
+        if (!source.isOnField)
+        {
+            // Check Gradius
+            bool hasGradius = GameManager.Instance.IsCardActiveOnField("Gradius") || GameManager.Instance.IsCardActiveOnField("1095"); // ID Gradius
+            if (hasGradius)
+            {
+                GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                // Apply stats logic (needs reference to Gradius on field)
+            }
+        }
+    }
+
+    void Effect_0795_Granadora(CardDisplay source)
+    {
+        // Summon: Gain 1000 LP. Destroy: Take 2000 damage.
+        if (source.isOnField)
+        {
+            Effect_GainLP(source, 1000);
+        }
+        // Destroy logic in OnCardLeavesField
+    }
+
+    void Effect_0797_GranmargTheRockMonarch(CardDisplay source)
+    {
+        // Tribute Summon: Destroy 1 Set card.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isFlipped == false,
+                (t) => {
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                    GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                    Destroy(t.gameObject);
+                }
+            );
+        }
+    }
+
+    void Effect_0799_GraveLure(CardDisplay source)
+    {
+        // Turn top card of opp deck face-up.
+        Debug.Log("Grave Lure: Revelando topo do deck oponente.");
+        // Logic to peek/reveal top card
+    }
+
+    void Effect_0800_GraveOhja(CardDisplay source)
+    {
+        // Flip Summon: 300 damage to opp.
+        Effect_DirectDamage(source, 300);
+    }
 }
