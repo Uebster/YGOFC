@@ -3049,4 +3049,158 @@ public partial class CardEffectManager
             );
         }
     }
+    // 1301 - Mystic Lamp
+    void Effect_1301_MysticLamp(CardDisplay source)
+    {
+        // Effect: Can attack directly.
+        Debug.Log("Mystic Lamp: Ataque direto habilitado.");
+        // Lógica de ataque direto tratada no BattleManager
+    }
+
+    // 1302 - Mystic Plasma Zone
+    void Effect_1302_MysticPlasmaZone(CardDisplay source)
+    {
+        Effect_Field(source, 500, -400, "", "Dark");
+    }
+
+    // 1303 - Mystic Probe
+    void Effect_1303_MysticProbe(CardDisplay source)
+    {
+        // Effect: Negate Continuous Spell.
+        Debug.Log("Mystic Probe: Negação de Spell Contínua (Requer Chain).");
+    }
+
+    // 1304 - Mystic Swordsman LV2
+    void Effect_1304_MysticSwordsmanLV2(CardDisplay source)
+    {
+        // Effect: At start of Damage Step, if attacking face-down Defense: Destroy it.
+        // Lógica no OnDamageCalculation (CardEffectManager_Impl.cs).
+        // Level Up na End Phase (OnPhaseStart).
+        Debug.Log("Mystic Swordsman LV2: Efeito de destruição automática configurado.");
+    }
+
+    // 1305 - Mystic Swordsman LV4
+    void Effect_1305_MysticSwordsmanLV4(CardDisplay source)
+    {
+        // Effect: Cannot be Normal Summoned. Start of Damage Step: Destroy face-down Defense.
+        // Lógica no OnDamageCalculation.
+        // Level Up na End Phase.
+        Debug.Log("Mystic Swordsman LV4: Efeito de destruição automática configurado.");
+    }
+
+    // 1306 - Mystic Swordsman LV6
+    void Effect_1306_MysticSwordsmanLV6(CardDisplay source)
+    {
+        // Effect: Destroy face-down Defense. If done, place on top of Deck.
+        // Lógica no OnDamageCalculation.
+        Debug.Log("Mystic Swordsman LV6: Efeito de destruição e topo do deck configurado.");
+    }
+
+    // 1307 - Mystic Tomato
+    void Effect_1307_MysticTomato(CardDisplay source)
+    {
+        // Effect: Destroyed by battle -> SS 1 DARK <= 1500 ATK from Deck.
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        List<CardData> targets = deck.FindAll(c => c.attribute == "Dark" && c.atk <= 1500 && c.type.Contains("Monster"));
+        
+        if (targets.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(targets, "Invocar DARK <= 1500", (selected) => {
+                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                deck.Remove(selected);
+                GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+            });
+        }
+    }
+
+    // 1308 - Mystical Beast of Serket
+    void Effect_1308_MysticalBeastOfSerket(CardDisplay source)
+    {
+        // Effect: Destroy if no Temple. Banish destroyed monsters. Gain 500 ATK.
+        if (!GameManager.Instance.IsCardActiveOnField("Temple of the Kings") && !GameManager.Instance.IsCardActiveOnField("1829"))
+        {
+            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
+            Destroy(source.gameObject);
+        }
+        // Outros efeitos no OnBattleEnd.
+    }
+
+    // 1311 - Mystical Knight of Jackal
+    void Effect_1311_MysticalKnightOfJackal(CardDisplay source)
+    {
+        // Effect: Send destroyed monster to top of Deck.
+        // Lógica no OnBattleEnd.
+        Debug.Log("Mystical Knight of Jackal: Efeito de topo do deck configurado.");
+    }
+
+    // 1312 - Mystical Moon
+    void Effect_1312_MysticalMoon(CardDisplay source)
+    {
+        Effect_Equip(source, 300, 300, "Beast-Warrior");
+    }
+
+    // 1313 - Mystical Refpanel
+    void Effect_1313_MysticalRefpanel(CardDisplay source)
+    {
+        Debug.Log("Mystical Refpanel: Redireciona efeito de Spell (Requer Chain).");
+    }
+
+    // 1315 - Mystical Sheep #1
+    void Effect_1315_MysticalSheep1(CardDisplay source)
+    {
+        Debug.Log("Mystical Sheep #1: Substituto de Fusão.");
+    }
+
+    // 1318 - Mystical Space Typhoon
+    void Effect_1318_MysticalSpaceTyphoon(CardDisplay source)
+    {
+        Effect_MST(source);
+    }
+
+    // 1319 - Mystik Wok
+    void Effect_1319_MystikWok(CardDisplay source)
+    {
+        // Effect: Tribute 1 monster; gain LP equal to ATK or DEF.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (tribute) => {
+                    int val = Mathf.Max(tribute.currentAtk, tribute.currentDef); // Simplificado: Pega o maior
+                    GameManager.Instance.TributeCard(tribute);
+                    Effect_GainLP(source, val);
+                    Debug.Log($"Mystik Wok: Ganhou {val} LP.");
+                }
+            );
+        }
+    }
+
+    // 1320 - Narrow Pass
+    void Effect_1320_NarrowPass(CardDisplay source)
+    {
+        Debug.Log("Narrow Pass: Limita invocações (Passivo).");
+    }
+
+    // 1322 - Necklace of Command
+    void Effect_1322_NecklaceOfCommand(CardDisplay source)
+    {
+        Debug.Log("Necklace of Command: Efeito de destruição.");
+    }
+
+    // 1324 - Necrovalley
+    void Effect_1324_Necrovalley(CardDisplay source)
+    {
+        Effect_Field(source, 500, 500, "Gravekeeper's");
+        Debug.Log("Necrovalley: Bloqueio de GY ativo (Passivo).");
+    }
+
+    // 1325 - Needle Ball
+    void Effect_1325_NeedleBall(CardDisplay source)
+    {
+        // FLIP: Pay 2000 LP; inflict 1000 damage.
+        if (Effect_PayLP(source, 2000))
+        {
+            Effect_DirectDamage(source, 1000);
+        }
+    }
 }

@@ -787,27 +787,10 @@ public partial class CardEffectManager
         {
             // 1. Seleciona monstro do oponente para destruir
             SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
-                (oppMonster) => {
-                    // 2. Seleciona monstro do jogador para dar o controle
-                    SpellTrapManager.Instance.StartTargetSelection(
-                        (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
-                        (myMonster) => {
-                            // Executa o efeito
-                            Debug.Log($"Mystic Box: Destruindo {oppMonster.CurrentCardData.name} e trocando controle de {myMonster.CurrentCardData.name}.");
-                            
-                            // Destrói o do oponente
-                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(oppMonster);
-                            GameManager.Instance.SendToGraveyard(oppMonster.CurrentCardData, oppMonster.isPlayerCard);
-                            Destroy(oppMonster.gameObject);
-
-                            // Troca o controle do seu
-                            GameManager.Instance.SwitchControl(myMonster);
-                        }
-                    );
-                }
             );
-        }    // 1298 - Mystic Box
+        }    
+    
+        // 1298 - Mystic Box
     void Effect_1298_MysticBox(CardDisplay source)
     {
         // Target opp monster, target own monster. Destroy opp, give control of own.

@@ -618,40 +618,58 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 1301 - Mystic Lamp (Direct Attack)
-        AddEffect("1301", c => Debug.Log("Mystic Lamp: Ataque direto."));
+        AddEffect("1301", Effect_1301_MysticLamp);
 
         // 1302 - Mystic Plasma Zone (Field Dark +500/-400)
-        AddEffect("1302", c => Effect_Field(c, 500, -400, "", "Dark"));
+        AddEffect("1302", Effect_1302_MysticPlasmaZone);
 
         // 1303 - Mystic Probe (Negate Continuous Spell)
-        AddEffect("1303", c => Debug.Log("Mystic Probe: Nega Spell Contínua."));
+        AddEffect("1303", Effect_1303_MysticProbe);
 
         // 1304 - Mystic Swordsman LV2 (Destroy Face-down)
-        AddEffect("1304", c => Debug.Log("Mystic Swordsman LV2: Destrói face-down sem flip."));
+        AddEffect("1304", Effect_1304_MysticSwordsmanLV2);
 
         // 1305 - Mystic Swordsman LV4 (Destroy Face-down)
-        AddEffect("1305", c => Debug.Log("Mystic Swordsman LV4: Destrói face-down sem flip."));
+        AddEffect("1305", Effect_1305_MysticSwordsmanLV4);
 
         // 1306 - Mystic Swordsman LV6 (Destroy Face-down / Top Deck)
-        AddEffect("1306", c => Debug.Log("Mystic Swordsman LV6: Destrói face-down e põe no topo."));
+        AddEffect("1306", Effect_1306_MysticSwordsmanLV6);
 
         // 1307 - Mystic Tomato (Search Dark)
-        AddEffect("1307", c => Effect_SearchDeck(c, "Dark"));
+        AddEffect("1307", Effect_1307_MysticTomato);
 
         // 1308 - Mystical Beast of Serket (Eat Monster)
-        AddEffect("1308", c => Debug.Log("Serket: Destrói monstro batalhado e ganha 500 ATK."));
+        AddEffect("1308", Effect_1308_MysticalBeastOfSerket);
+
+        // 1311 - Mystical Knight of Jackal (Spin destroyed)
+        AddEffect("1311", Effect_1311_MysticalKnightOfJackal);
+
+        // 1312 - Mystical Moon (Equip Beast-Warrior)
+        AddEffect("1312", Effect_1312_MysticalMoon);
+
+        // 1313 - Mystical Refpanel (Redirect)
+        AddEffect("1313", Effect_1313_MysticalRefpanel);
+
+        // 1315 - Mystical Sheep #1 (Fusion Sub)
+        AddEffect("1315", Effect_1315_MysticalSheep1);
 
         // 1318 - Mystical Space Typhoon (Destroy S/T)
-        AddEffect("1318", Effect_MST);
+        AddEffect("1318", Effect_1318_MysticalSpaceTyphoon);
 
         // 1319 - Mystik Wok (Tribute -> Heal)
-        AddEffect("1319", c => Debug.Log("Mystik Wok: Tributa monstro para ganhar LP (ATK ou DEF)."));
+        AddEffect("1319", Effect_1319_MystikWok);
+
+        // 1320 - Narrow Pass (Limit Summons)
+        AddEffect("1320", Effect_1320_NarrowPass);
+
+        // 1322 - Necklace of Command (Draw/Discard on destroy)
+        AddEffect("1322", Effect_1322_NecklaceOfCommand);
 
         // 1324 - Necrovalley (Field GK +500, GY Lock)
-        AddEffect("1324", c => { Effect_Field(c, 500, 500, "Gravekeeper's"); Debug.Log("Necrovalley: Bloqueia efeitos no GY."); });
+        AddEffect("1324", Effect_1324_Necrovalley);
 
         // 1325 - Needle Ball (Flip Burn)
-        AddEffect("1325", c => { Effect_PayLP(c, 2000); Effect_DirectDamage(c, 1000); });
+        AddEffect("1325", Effect_1325_NeedleBall);
 
         // 1326 - Needle Burrower (Burn on destroy)
         AddEffect("1326", c => Debug.Log("Needle Burrower: Dano igual Nível x 500."));
