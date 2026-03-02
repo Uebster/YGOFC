@@ -70,6 +70,43 @@ public partial class CardEffectManager
                 }
             });
 
+            // Bowganian (0235): 600 dano na Standby
+            CheckActiveCards("0235", (card) => {
+                if (card.isPlayerCard) Effect_DirectDamage(card, 600);
+            });
+
+            // Brain Jacker (0238): Ganha 500 LP na Standby do oponente
+            CheckActiveCards("0238", (card) => {
+                // Se está no campo do oponente (foi equipado e trocou controle), o dono original ganha LP?
+                // Texto: "During your opponent's Standby Phase, gain 500 Life Points." (Referindo-se ao controlador do monstro equipado/efeito)
+                // Como Brain Jacker vira Equip, ele fica na S/T zone.
+                if (!card.isPlayerCard) // É a vez do oponente
+                {
+                    Effect_GainLP(card, 500);
+                }
+            });
+
+            // Burning Land (0248): 500 dano na Standby
+            CheckActiveCards("0248", (card) => {
+                // Dano para o jogador do turno
+                if (card.isPlayerCard) GameManager.Instance.DamagePlayer(500);
+                else GameManager.Instance.DamageOpponent(500);
+            });
+
+            // Bottomless Shifting Sand (0232): Destrói se mão <= 4
+            CheckActiveCards("0232", (card) => {
+                if (card.isPlayerCard)
+                {
+                    int handCount = GameManager.Instance.GetPlayerHandData().Count;
+                    if (handCount <= 4)
+                    {
+                        Debug.Log("Bottomless Shifting Sand: Mão <= 4. Auto-destruição.");
+                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
+                        Destroy(card.gameObject);
+                    }
+                }
+            });
+
             // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
             // (Na verdade é End Phase, movido para lá se fosse o caso)
         }
@@ -85,6 +122,32 @@ public partial class CardEffectManager
             if (GameManager.Instance.duelFieldUI != null)
             {
                 CleanAllExpiredModifiers();
+            }
+
+            // Bottomless Shifting Sand (0232): Destrói maior ATK na End Phase do oponente
+            // (Se phase == End e é o turno do oponente)
+            // Nota: OnPhaseStart é chamado para o turno atual. Precisamos saber de quem é o turno.
+            // Assumindo que OnPhaseStart roda no cliente para o estado atual do jogo.
+            // Se for End Phase do oponente:
+            bool isOpponentTurn = !GameManager.Instance.canPlacePlayerCards; // Simplificação
+            if (isOpponentTurn)
+            {
+                CheckActiveCards("0232", (card) => {
+                    if (card.isPlayerCard)
+                    {
+                        Debug.Log("Bottomless Shifting Sand: Destruindo monstro(s) com maior ATK.");
+                        // Encontrar maior ATK
+                        int maxAtk = -1;
+                        List<CardDisplay> targets = new List<CardDisplay>();
+                        CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, targets);
+                        CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, targets);
+                        
+                        foreach(var m in targets) if (m.currentAtk > maxAtk) maxAtk = m.currentAtk;
+                        
+                        List<CardDisplay> toDestroy = targets.FindAll(m => m.currentAtk == maxAtk);
+                        DestroyCards(toDestroy, true);
+                    }
+                });
             }
         }
     }
@@ -148,6 +211,28 @@ public partial class CardEffectManager
             GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
             Destroy(card.gameObject);
         }
+
+        // Breaker the Magical Warrior (0240): Add counter on Normal Summon
+        if (card.CurrentCardData.id == "0240")
+        {
+            // Assumindo Normal Summon
+            card.AddSpellCounter(1);
+        }
+
+        // Byser Shock (0255): Return Set cards
+        if (card.CurrentCardData.id == "0255")
+        {
+            Debug.Log("Byser Shock: Retornando cartas setadas.");
+            List<CardDisplay> toReturn = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                // Coleta todas as cartas do campo
+                CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, toReturn);
+                CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, toReturn);
+                // Filtra apenas as setadas (isFlipped = true no CardDisplay significa verso)
+                foreach(var c in toReturn) if (c.isFlipped) GameManager.Instance.ReturnToHand(c);
+            }
+        }
     }
 
     public void OnCardLeavesField(CardDisplay card)
@@ -170,6 +255,14 @@ public partial class CardEffectManager
             // Difícil detectar "by effect" aqui sem contexto. 
             // Assumindo trigger genérico ao sair do campo para protótipo.
             Debug.Log("Blast with Chain: Destruído. (Selecione carta para destruir - Pendente).");
+        }
+
+        // Butterfly Dagger - Elma (0254): Return to hand if destroyed
+        if (card.CurrentCardData.id == "0254")
+        {
+            // Deveria checar se foi destruída enquanto equipada
+            Debug.Log("Butterfly Dagger - Elma: Retornando para a mão.");
+            GameManager.Instance.AddCardToHand(card.CurrentCardData, card.isPlayerCard);
         }
 
         // Remove quaisquer modificadores que esta carta tenha aplicado em outras
@@ -266,6 +359,20 @@ public partial class CardEffectManager
         }
 
         // Injection Fairy Lily (79575620) - Lógica de pagar LP seria aqui
+
+        // Buster Rancher (0253)
+        // Se equipado batalhar com monstro >= 2500 ATK, ganha ATK
+        // Precisamos achar quem tem Buster Rancher equipado.
+        // Simplificação: Verifica se o atacante tem o modificador de Buster Rancher ou checa links
+        // Como não temos acesso fácil aos links aqui, verificamos se o atacante tem o ID 0253 nos modificadores? Não.
+        // Vamos checar se existe Buster Rancher ativo e se está linkado ao atacante.
+        // (Lógica complexa para este escopo, simplificando para log)
+        if (attacker.currentAtk <= 1000 || attacker.activeModifiers.Exists(m => m.source != null && m.source.CurrentCardData.id == "0253"))
+        {
+             // Se o alvo for forte
+             int targetAtk = (target != null && target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : (target != null ? target.currentDef : 0);
+             if (targetAtk >= 2500) Debug.Log("Buster Rancher: Ativando buff massivo!");
+        }
     }
 
     public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
