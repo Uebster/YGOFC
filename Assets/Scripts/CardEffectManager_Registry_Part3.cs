@@ -57,149 +57,149 @@ public partial class CardEffectManager
         AddEffect("1025", Effect_1025_Koitsu);
 
         // 1028 - Kotodama (Destroy duplicates)
-        AddEffect("1028", c => Debug.Log("Kotodama: Destrói monstros com mesmo nome."));
+        AddEffect("1028", Effect_1028_Kotodama);
 
         // 1031 - Kozaky's Self-Destruct Button (Damage on destroy)
-        AddEffect("1031", c => Debug.Log("Kozaky's Self-Destruct Button: 1000 dano."));
+        AddEffect("1031", Effect_1031_KozakysSelfDestructButton);
 
         // 1033 - Kryuel (Coin destroy)
-        AddEffect("1033", c => Debug.Log("Kryuel: Moeda para destruir."));
+        AddEffect("1033", Effect_1033_Kryuel);
 
         // 1035 - Kunai with Chain (Mode change / Buff)
-        AddEffect("1035", c => Debug.Log("Kunai with Chain: Vira defesa ou +500 ATK."));
+        AddEffect("1035", Effect_1035_KunaiWithChain);
 
         // 1037 - Kuriboh (Negate damage)
-        AddEffect("1037", c => Debug.Log("Kuriboh: Descarta para 0 dano."));
+        AddEffect("1037", Effect_1037_Kuriboh);
 
         // 1040 - Kycoo the Ghost Destroyer (Banish GY)
-        AddEffect("1040", c => Debug.Log("Kycoo: Bane do GY ao causar dano."));
+        AddEffect("1040", Effect_1040_KycooTheGhostDestroyer);
 
         // 1046 - Labyrinth of Nightmare (Change positions)
-        AddEffect("1046", c => Debug.Log("Labyrinth of Nightmare: Muda posições na End Phase."));
+        AddEffect("1046", Effect_1046_LabyrinthOfNightmare);
 
         // 1047 - Lady Assailant of Flames (Flip Banish/Burn)
-        AddEffect("1047", c => Debug.Log("Lady Assailant: Bane topo do deck e causa dano."));
+        AddEffect("1047", Effect_1047_LadyAssailantOfFlames);
 
         // 1048 - Lady Ninja Yae (Bounce S/T)
-        AddEffect("1048", c => Debug.Log("Lady Ninja Yae: Descarta Wind para retornar S/T."));
+        AddEffect("1048", Effect_1048_LadyNinjaYae);
 
         // 1049 - Lady Panther (Recycle)
-        AddEffect("1049", c => Debug.Log("Lady Panther: Recupera monstro destruído."));
+        AddEffect("1049", Effect_1049_LadyPanther);
 
         // 1051 - Larvae Moth (SS Condition)
-        AddEffect("1051", c => Debug.Log("Larvae Moth: SS via Petit Moth."));
+        AddEffect("1051", Effect_1051_LarvaeMoth);
 
         // 1053 - Laser Cannon Armor (Equip Insect +300)
-        AddEffect("1053", c => Effect_Equip(c, 300, 300, "Insect"));
+        AddEffect("1053", Effect_1053_LaserCannonArmor);
 
         // 1054 - Last Day of Witch (Destroy Spellcasters)
-        AddEffect("1054", c => Effect_DestroyType(c, "Spellcaster"));
+        AddEffect("1054", Effect_1054_LastDayOfWitch);
 
         // 1055 - Last Turn (Win Condition)
-        AddEffect("1055", c => Debug.Log("Last Turn: Evento especial de vitória."));
+        AddEffect("1055", Effect_1055_LastTurn);
 
         // 1056 - Last Will (SS from Deck)
-        AddEffect("1056", c => Debug.Log("Last Will: Invoca do deck se monstro foi enviado ao GY."));
+        AddEffect("1056", Effect_1056_LastWill);
 
         // 1059 - Lava Battleguard (Buff)
-        AddEffect("1059", c => Debug.Log("Lava Battleguard: Buff por Swamp Battleguard."));
+        AddEffect("1059", Effect_1059_LavaBattleguard);
 
         // 1060 - Lava Golem (Tribute 2 Opp, Burn)
-        AddEffect("1060", c => Debug.Log("Lava Golem: Tributa 2 do oponente, causa dano."));
+        AddEffect("1060", Effect_1060_LavaGolem);
 
         // 1063 - Legacy Hunter (Hand Shuffle)
-        AddEffect("1063", c => Debug.Log("Legacy Hunter: Oponente embaralha carta da mão no deck."));
+        AddEffect("1063", Effect_1063_LegacyHunter);
 
         // 1064 - Legacy of Yata-Garasu (Draw)
-        AddEffect("1064", c => { GameManager.Instance.DrawCard(); Debug.Log("Legacy of Yata-Garasu: Compra 1 (ou 2)."); });
+        AddEffect("1064", Effect_1064_LegacyOfYataGarasu);
 
         // 1065 - Legendary Black Belt (Burn DEF)
-        AddEffect("1065", c => Debug.Log("Legendary Black Belt: Dano igual DEF."));
+        AddEffect("1065", Effect_1065_LegendaryBlackBelt);
 
         // 1066 - Legendary Fiend (Gain ATK)
-        AddEffect("1066", c => Debug.Log("Legendary Fiend: Ganha 700 ATK na Standby."));
+        AddEffect("1066", Effect_1066_LegendaryFiend);
 
         // 1067 - Legendary Flame Lord (Ritual)
-        AddEffect("1067", c => Debug.Log("Legendary Flame Lord: Ritual."));
+        AddEffect("1067", Effect_1067_LegendaryFlameLord);
 
         // 1068 - Legendary Jujitsu Master (Spin)
-        AddEffect("1068", c => Debug.Log("Legendary Jujitsu Master: Retorna atacante ao topo do deck."));
+        AddEffect("1068", Effect_1068_LegendaryJujitsuMaster);
 
         // 1069 - Legendary Sword (Equip Warrior +300)
-        AddEffect("1069", c => Effect_Equip(c, 300, 300, "Warrior"));
+        AddEffect("1069", Effect_1069_LegendarySword);
 
         // 1070 - Leghul (Direct Attack)
-        AddEffect("1070", c => Debug.Log("Leghul: Ataque direto."));
+        AddEffect("1070", Effect_1070_Leghul);
 
         // 1071 - Lekunga (SS Token)
-        AddEffect("1071", c => Debug.Log("Lekunga: Bane Water para invocar Token."));
+        AddEffect("1071", Effect_1071_Lekunga);
 
         // 1075 - Lesser Fiend (Banish destroyed)
-        AddEffect("1075", c => Debug.Log("Lesser Fiend: Bane monstros destruídos."));
+        AddEffect("1075", Effect_1075_LesserFiend);
 
         // 1076 - Level Conversion Lab (Change Level)
-        AddEffect("1076", c => Debug.Log("Level Conversion Lab: Muda nível."));
+        AddEffect("1076", Effect_1076_LevelConversionLab);
 
         // 1077 - Level Limit - Area B (Defense Position)
-        AddEffect("1077", c => Debug.Log("Level Limit - Area B: Nível 4+ em defesa."));
+        AddEffect("1077", Effect_1077_LevelLimitAreaB);
 
         // 1078 - Level Up! (SS LV monster)
-        AddEffect("1078", c => Debug.Log("Level Up!: Evolui monstro LV."));
+        AddEffect("1078", Effect_1078_LevelUp);
 
         // 1079 - Levia-Dragon - Daedalus (Nuke)
-        AddEffect("1079", c => Debug.Log("Daedalus: Envia Umi para destruir tudo."));
+        AddEffect("1079", Effect_1079_LeviaDragonDaedalus);
 
         // 1080 - Life Absorbing Machine (Heal)
-        AddEffect("1080", c => Debug.Log("Life Absorbing Machine: Recupera metade do LP pago."));
+        AddEffect("1080", Effect_1080_LifeAbsorbingMachine);
 
         // 1081 - Light of Intervention (No Set)
-        AddEffect("1081", c => Debug.Log("Light of Intervention: Monstros não podem ser setados."));
+        AddEffect("1081", Effect_1081_LightOfIntervention);
 
         // 1082 - Light of Judgment (Hand/Field destruction)
-        AddEffect("1082", c => Debug.Log("Light of Judgment: Descarta ou destrói."));
+        AddEffect("1082", Effect_1082_LightOfJudgment);
 
         // 1083 - Lighten the Load (Reload high level)
-        AddEffect("1083", c => Debug.Log("Lighten the Load: Embaralha Nível 7+ para comprar."));
+        AddEffect("1083", Effect_1083_LightenTheLoad);
 
         // 1084 - Lightforce Sword (Banish hand)
-        AddEffect("1084", c => Debug.Log("Lightforce Sword: Bane carta da mão temporariamente."));
+        AddEffect("1084", Effect_1084_LightforceSword);
 
         // 1085 - Lightning Blade (Equip Warrior +800)
-        AddEffect("1085", c => Effect_Equip(c, 800, 0, "Warrior"));
+        AddEffect("1085", Effect_1085_LightningBlade);
 
         // 1087 - Lightning Vortex (Destroy Face-up)
-        AddEffect("1087", c => Debug.Log("Lightning Vortex: Descarta 1, destrói face-up do oponente."));
+        AddEffect("1087", Effect_1087_LightningVortex);
 
         // 1088 - Limiter Removal (Double Machine ATK)
-        AddEffect("1088", c => Debug.Log("Limiter Removal: Dobra ATK de Máquinas."));
+        AddEffect("1088", Effect_1088_LimiterRemoval);
 
         // 1091 - Little Chimera (Field Fire +500, Water -400)
-        AddEffect("1091", c => Effect_Field(c, 500, -400, "", "Fire"));
+        AddEffect("1091", Effect_1091_LittleChimera);
 
         // 1093 - Little-Winguard (Change Pos)
-        AddEffect("1093", c => Debug.Log("Little-Winguard: Muda posição na End Phase."));
+        AddEffect("1093", Effect_1093_LittleWinguard);
 
         // 1096 - Lone Wolf (Immunity)
-        AddEffect("1096", c => Debug.Log("Lone Wolf: Imunidade para monstros específicos."));
+        AddEffect("1096", Effect_1096_LoneWolf);
 
         // 1097 - Lord Poison (Revive Plant)
-        AddEffect("1097", c => Debug.Log("Lord Poison: Revive Planta ao ser destruído."));
+        AddEffect("1097", Effect_1097_LordPoison);
 
         // 1098 - Lord of D. (Protect Dragons)
-        AddEffect("1098", c => Debug.Log("Lord of D.: Protege Dragões de alvo."));
+        AddEffect("1098", Effect_1098_LordOfD);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 1101 - 1200)
         // =========================================================================================
 
         // 1101 - Lost Guardian (DEF = banished Rock * 700)
-        AddEffect("1101", c => Debug.Log("Lost Guardian: DEF baseado em Rocks banidos."));
+        AddEffect("1101", Effect_1101_LostGuardian);
 
         // 1103 - Luminous Soldier (Buff vs Dark)
-        AddEffect("1103", c => Debug.Log("Luminous Soldier: +500 ATK contra DARK."));
+        AddEffect("1103", Effect_1103_LuminousSoldier);
 
         // 1104 - Luminous Spark (Field Light +500/-400)
-        AddEffect("1104", c => Effect_Field(c, 500, -400, "", "Light"));
+        AddEffect("1104", Effect_1104_LuminousSpark);
 
         // 1112 - Machine Conversion Factory (Equip Machine +300/300)
         AddEffect("1112", c => Effect_Equip(c, 300, 300, "Machine"));
