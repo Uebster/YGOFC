@@ -121,6 +121,18 @@ public partial class CardEffectManager
                 card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, monstersInGY * 300, card));
             });
 
+            // Coach Goblin (0309): End Phase, return Normal Monster to deck to draw 1
+            CheckActiveCards("0309", (card) => {
+                if (card.isPlayerCard)
+                {
+                    // Simplificado: Se tiver Normal Monster na mão, troca automaticamente (ou abre UI)
+                    // Para protótipo, vamos apenas logar a possibilidade
+                    Debug.Log("Coach Goblin: Efeito de troca de mão disponível.");
+                    // Em um sistema completo:
+                    // GameManager.Instance.OpenCardSelection(handNormals, "Retornar ao Deck", (selected) => { ... });
+                }
+            });
+
             // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
             // (Na verdade é End Phase, movido para lá se fosse o caso)
         }
@@ -224,6 +236,22 @@ public partial class CardEffectManager
                 GameManager.Instance.DrawCard();
             }
         });
+
+        // Cloning (0307): SS Clone Token quando oponente invoca
+        if (!summonedCard.isPlayerCard) // Oponente invocou
+        {
+            // Verifica se o jogador tem Cloning setada
+            // (Simplificado: Verifica se está ativa no campo, mas deveria ser Trap setada)
+            // Como Cloning é Trap Normal, ela seria ativada em resposta.
+            // Aqui simulamos o efeito se ela já tivesse sido ativada em chain ou se fosse Continuous.
+            // Para Trap Normal, o correto é o SpellTrapManager detectar o evento de Summon e oferecer ativação.
+            // Mas se assumirmos que este método é chamado APÓS a resolução da chain de invocação:
+            
+            // Vamos usar CheckActiveCards para simular que o efeito foi ativado e está pendente
+            // Ou melhor, o SpellTrapManager deve lidar com o gatilho.
+            // Deixaremos aqui apenas o log de que o evento ocorreu.
+            // Debug.Log($"Oponente invocou {summonedCard.CurrentCardData.name}. Verificar Cloning.");
+        }
     }
 
     partial void OnSummonImpl(CardDisplay card)
@@ -267,6 +295,13 @@ public partial class CardEffectManager
                 foreach(var c in toReturn) if (c.isFlipped) GameManager.Instance.ReturnToHand(c);
             }
         }
+
+        // Command Knight (0318): Buff Warriors
+        if (card.CurrentCardData.id == "0318")
+        {
+            // Aplica buff global (simplificado, idealmente seria aura)
+            Effect_Field(card, 400, 0, "Warrior");
+        }
     }
 
     public void OnCardLeavesField(CardDisplay card)
@@ -297,6 +332,13 @@ public partial class CardEffectManager
             // Deveria checar se foi destruída enquanto equipada
             Debug.Log("Butterfly Dagger - Elma: Retornando para a mão.");
             GameManager.Instance.AddCardToHand(card.CurrentCardData, card.isPlayerCard);
+        }
+
+        // Cockroach Knight (0312): Return to top of deck if sent to GY
+        if (card.CurrentCardData.id == "0312")
+        {
+            Debug.Log("Cockroach Knight: Retornando ao topo do deck.");
+            GameManager.Instance.ReturnToDeck(card, true);
         }
 
         // Centrifugal Field (0278): Se Fusão destruída por efeito, invoca material
@@ -423,6 +465,26 @@ public partial class CardEffectManager
              Debug.Log("Cat's Ear Tribe: ATK do atacante torna-se 200.");
              attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 200, target));
         }
+
+        // Cipher Soldier (0305)
+        // Se batalhar com Warrior, +2000 ATK/DEF
+        if (attacker.CurrentCardData.id == "0305" && target != null && target.CurrentCardData.race == "Warrior")
+        {
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 2000, attacker));
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 2000, attacker));
+        }
+        if (target != null && target.CurrentCardData.id == "0305" && attacker.CurrentCardData.race == "Warrior")
+        {
+            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 2000, target));
+            target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 2000, target));
+        }
+
+        // Continuous Destruction Punch (0323)
+        // Lógica complexa de destruição pré/pós cálculo.
+        // Se atacante ATK < defensor DEF (e defensor em defesa), destrói atacante.
+        // Se atacante ATK > defensor DEF (e defensor em defesa), destrói defensor.
+        // Isso já é a regra padrão de batalha, exceto que CDP destrói o atacante se ele falhar (normalmente só toma dano).
+        // Vamos implementar no BattleManager ou aqui se pudermos forçar destruição.
     }
 
     public void OnBattleEnd(CardDisplay attacker, CardDisplay target)

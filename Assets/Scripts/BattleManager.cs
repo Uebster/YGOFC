@@ -101,6 +101,16 @@ public class BattleManager : MonoBehaviour
             if (!hasOtherDragon) return false;
         }
 
+        // Command Knight (0318)
+        // Se controlar outro monstro, não pode ser atacado.
+        // Esta verificação é no alvo, não no atacante.
+        // Deve ser feita no SelectTarget ou CanAttackTarget (se existisse).
+        // Como CanAttack verifica se o atacante pode atacar, vamos adicionar uma verificação de alvo no SelectTarget.
+
+        // Cold Wave (0315)
+        // Se ativa, não pode setar/ativar S/T. (Verificado no SpellTrapManager)
+        // Mas não impede ataque.
+
         // Para Alligator's Sword Dragon e Amphibious Bugroth MK-3:
         if (attacker.CurrentCardData.id == "0037" || attacker.CurrentCardData.id == "0053") // IDs
         {
@@ -147,6 +157,33 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
+        // Command Knight (0318)
+        if (target.CurrentCardData.id == "0318")
+        {
+            bool hasOtherMonster = false;
+            Transform[] targetZones = target.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach(var zone in targetZones)
+            {
+                if (zone.childCount > 0)
+                {
+                    var cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (cd != null && cd != target) hasOtherMonster = true;
+                }
+            }
+            if (hasOtherMonster)
+            {
+                Debug.Log("Command Knight não pode ser atacado enquanto houver outro monstro.");
+                return;
+            }
+        }
+
+        UIManager.Instance.ShowConfirmation($"Atacar {target.CurrentCardData.name}?", () => CheckTrapsAndBattle(currentAttacker, target));
+        currentTarget = target;
+    }
+
+    private bool HasDirectAttackCondition()
+    {
+            return;
         UIManager.Instance.ShowConfirmation($"Atacar {target.CurrentCardData.name}?", () => CheckTrapsAndBattle(currentAttacker, target));
         currentTarget = target;
     }
@@ -331,6 +368,15 @@ public class BattleManager : MonoBehaviour
                 Debug.Log($"Defesa Sólida! Atacante toma {damage} de dano.");
                 GameManager.Instance.DamagePlayer(damage);
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayAttackFail(attacker);
+
+                // Continuous Destruction Punch (0323)
+                // Se defesa > ataque, destrói o atacante.
+                if (GameManager.Instance.IsCardActiveOnField("0323"))
+                {
+                    Debug.Log("Continuous Destruction Punch: Destruindo atacante.");
+                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+                    Destroy(attacker.gameObject);
+                }
             }
             else
             {
