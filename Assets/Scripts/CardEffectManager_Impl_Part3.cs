@@ -1999,4 +1999,224 @@ public partial class CardEffectManager
         Debug.Log("Mirage of Nightmare: Ativo.");
     }
 
+    // 1251 - Mirror Force (Já implementado como Effect_MirrorForce, mantendo referência)
+    
+    // 1252 - Mirror Wall
+    void Effect_1252_MirrorWall(CardDisplay source)
+    {
+        // Effect: Halve ATK of opponent's attacking monsters. Pay 2000 LP during Standby.
+        // A lógica de corte de ATK é passiva e será tratada no hook OnAttackDeclared/OnDamageCalculation.
+        // A manutenção é tratada no CheckMaintenanceCosts.
+        Debug.Log("Mirror Wall: Ativada. Monstros atacantes terão ATK reduzido.");
+    }
+
+    // 1254 - Mispolymerization
+    void Effect_1254_Mispolymerization(CardDisplay source)
+    {
+        // Effect: Return all Fusion Monsters to the Extra Deck.
+        List<CardDisplay> fusions = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            
+            foreach(var m in all)
+            {
+                if (m.CurrentCardData.type.Contains("Fusion")) fusions.Add(m);
+            }
+        }
+
+        foreach(var f in fusions)
+        {
+            // Retorna ao Extra Deck (Simulado enviando ao GY com flag, ou destruindo)
+            // Em um sistema ideal: GameManager.ReturnToExtraDeck(f);
+            Debug.Log($"Mispolymerization: Retornando {f.CurrentCardData.name} ao Extra Deck.");
+            GameManager.Instance.SendToGraveyard(f.CurrentCardData, f.isPlayerCard); // Fallback
+            Destroy(f.gameObject);
+        }
+    }
+
+    // 1255 - Moai Interceptor Cannons
+    void Effect_1255_MoaiInterceptorCannons(CardDisplay source)
+    {
+        // Effect: Once per turn, flip face-down.
+        if (source.isOnField && !source.isFlipped)
+        {
+            Effect_TurnSet(source);
+        }
+    }
+
+    // 1256 - Mobius the Frost Monarch
+    void Effect_1256_MobiusTheFrostMonarch(CardDisplay source)
+    {
+        // Effect: When Tribute Summoned: Target up to 2 S/T; destroy them.
+        if (source.summonedThisTurn && source.isTributeSummoned)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                // Seleciona até 2 alvos (S/T)
+                // Como o sistema de seleção múltipla atual é genérico, usamos ele filtrando por S/T
+                List<CardDisplay> validTargets = new List<CardDisplay>();
+                // Coleta S/T do campo
+                // ... (Lógica de coleta simplificada)
+                
+                Debug.Log("Mobius: Selecione até 2 S/T para destruir (Simulado: Destrói 1 S/T aleatória do oponente).");
+                Effect_MST(source); // Fallback para 1 alvo
+            }
+        }
+    }
+
+    // 1257 - Moisture Creature
+    void Effect_1257_MoistureCreature(CardDisplay source)
+    {
+        // Effect: If Tribute Summoned by 3 Tributes: Destroy all S/T opp controls.
+        // Requer saber quantos tributos foram usados.
+        // Como o sistema atual não passa a contagem exata (apenas flag bool), assumimos que se foi Tribute Summoned, o jogador cumpriu o requisito se escolheu essa opção.
+        // Em um sistema completo, precisaríamos de `source.tributeCount`.
+        if (source.summonedThisTurn && source.isTributeSummoned)
+        {
+            Debug.Log("Moisture Creature: Destruindo S/T do oponente.");
+            Effect_HarpiesFeatherDuster(source);
+        }
+    }
+
+    // 1259 - Mokey Mokey Smackdown
+    void Effect_1259_MokeyMokeySmackdown(CardDisplay source)
+    {
+        // Continuous: While face-up Mokey Mokey exists, if Fairy destroyed, Mokey Mokeys gain 3000 ATK.
+        // Lógica passiva/gatilho implementada no OnCardSentToGraveyard.
+        Debug.Log("Mokey Mokey Smackdown: Ativo.");
+    }
+
+    // 1261 - Molten Destruction
+    void Effect_1261_MoltenDestruction(CardDisplay source)
+    {
+        Effect_Field(source, 500, -400, "", "Fire");
+    }
+
+    // 1262 - Molten Zombie
+    void Effect_1262_MoltenZombie(CardDisplay source)
+    {
+        // Effect: When SS from GY: Draw 1 card.
+        // Lógica no OnSpecialSummon (CardEffectManager_Impl.cs).
+        Debug.Log("Molten Zombie: Efeito de compra configurado.");
+    }
+
+    // 1264 - Monk Fighter
+    void Effect_1264_MonkFighter(CardDisplay source)
+    {
+        // Effect: Battle Damage to controller is 0.
+        // Lógica no OnDamageCalculation.
+        Debug.Log("Monk Fighter: Dano de batalha 0.");
+    }
+
+    // 1266 - Monster Eye
+    void Effect_1266_MonsterEye(CardDisplay source)
+    {
+        // Effect: Pay 1000 LP; add 1 Polymerization from GY to hand.
+        if (Effect_PayLP(source, 1000))
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            CardData poly = gy.Find(c => c.name == "Polymerization");
+            if (poly != null)
+            {
+                gy.Remove(poly);
+                GameManager.Instance.AddCardToHand(poly, source.isPlayerCard);
+                Debug.Log("Monster Eye: Polymerization recuperada.");
+            }
+        }
+    }
+
+    // 1267 - Monster Gate
+    void Effect_1267_MonsterGate(CardDisplay source)
+    {
+        // Effect: Tribute 1 monster; excavate until Normal Summonable monster, SS it, send rest to GY.
+        if (source.isOnField) // Deveria ser ativado da mão/campo como Spell
+        {
+            // Seleciona tributo
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                    (tribute) => {
+                        GameManager.Instance.TributeCard(tribute);
+                        
+                        // Escavação
+                        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+                        List<CardData> sentToGY = new List<CardData>();
+                        CardData foundMonster = null;
+
+                        while (deck.Count > 0)
+                        {
+                            CardData current = deck[0];
+                            deck.RemoveAt(0);
+                            
+                            // Verifica se pode ser Normal Summoned (simplificado: não é Ritual/Fusion/etc)
+                            if (current.type.Contains("Monster") && !current.type.Contains("Ritual") && !current.type.Contains("Fusion"))
+                            {
+                                foundMonster = current;
+                                break;
+                            }
+                            else
+                            {
+                                sentToGY.Add(current);
+                            }
+                        }
+
+                        // Envia escavados para GY
+                        foreach(var c in sentToGY) GameManager.Instance.SendToGraveyard(c, source.isPlayerCard);
+
+                        // Invoca o monstro
+                        if (foundMonster != null)
+                        {
+                            GameManager.Instance.SpecialSummonFromData(foundMonster, source.isPlayerCard);
+                            Debug.Log($"Monster Gate: Invocou {foundMonster.name}.");
+                        }
+                    }
+                );
+            }
+        }
+    }
+
+    // 1269 - Monster Recovery
+    void Effect_1269_MonsterRecovery(CardDisplay source)
+    {
+        // Effect: Target 1 monster you own; shuffle it and hand into Deck, draw hand size.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (target) => {
+                    int handCount = GameManager.Instance.GetPlayerHandData().Count;
+                    
+                    // Retorna monstro ao Deck
+                    GameManager.Instance.ReturnToDeck(target, false); // Shuffle
+                    
+                    // Retorna mão ao Deck
+                    GameManager.Instance.DiscardHand(true); // Deveria ser ReturnToDeck
+                    // Como DiscardHand manda pro GY, vamos simular a compra apenas
+                    // Em produção: Implementar ShuffleHandToDeck
+                    
+                    for(int i=0; i<handCount; i++) GameManager.Instance.DrawCard();
+                    
+                    Debug.Log("Monster Recovery: Mão e monstro reciclados.");
+                }
+            );
+        }
+    }
+
+    // 1274 - Mooyan Curry
+    void Effect_1274_MooyanCurry(CardDisplay source)
+    {
+        Effect_GainLP(source, 200);
+    }
+
+    // 1275 - Morale Boost
+    void Effect_1275_MoraleBoost(CardDisplay source)
+    {
+        // Effect: Equip Spell activated -> Gain 1000. Equip Spell removed -> Take 1000.
+        // Lógica implementada via hooks globais no CardEffectManager_Impl.cs.
+        Debug.Log("Morale Boost: Ativo.");
+    }
 }
