@@ -2209,4 +2209,164 @@ public partial class CardEffectManager
         // SS Condition (Petit Moth + Cocoon for 4 turns).
         Debug.Log("Great Moth: Invocação especial complexa.");
     }
+
+    void Effect_0826_GreatPhantomThief(CardDisplay source)
+    {
+        // When this card inflicts Battle Damage: Declare 1 card name; look at opponent's hand and discard it if present.
+        // Lógica no OnDamageDealtImpl.
+        Debug.Log("Great Phantom Thief: Efeito de dano configurado.");
+    }
+
+    void Effect_0828_Greed(CardDisplay source)
+    {
+        // Continuous Trap: Each time a player draws cards due to a card effect, they take 500 damage per card during the End Phase.
+        Debug.Log("Greed: Dano por compra de efeito (Lógica de rastreamento de draws pendente).");
+    }
+
+    void Effect_0829_GreenGadget(CardDisplay source)
+    {
+        // When Normal/Special Summoned: Add Red Gadget from Deck to hand.
+        Effect_SearchDeck(source, "Red Gadget");
+    }
+
+    void Effect_0831_Greenkappa(CardDisplay source)
+    {
+        // FLIP: Select 2 Set Spell/Trap cards; destroy them.
+        if (SpellTrapManager.Instance != null)
+        {
+            // Seleção múltipla (2 alvos)
+            // Simplificado: Seleciona 1 e depois outro, ou usa lógica automática se houver apenas 2
+            Debug.Log("Greenkappa: Destruindo 2 S/T setadas (Simulado).");
+            // TODO: Implementar seleção múltipla de alvos no campo
+        }
+    }
+
+    void Effect_0832_GrenMajuDaEiza(CardDisplay source)
+    {
+        // ATK/DEF = Removed Cards * 400.
+        int removedCount = GameManager.Instance.GetPlayerRemovedCount();
+        int stats = removedCount * 400;
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, stats, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, stats, source));
+    }
+
+    void Effect_0834_Griggle(CardDisplay source)
+    {
+        // If control shifts to opponent: Gain 3000 LP.
+        // Lógica no SwitchControl (GameManager).
+        Debug.Log("Griggle: Ganha 3000 LP ao trocar controle.");
+    }
+
+    void Effect_0836_GroundCollapse(CardDisplay source)
+    {
+        // Select 2 Monster Card Zones; they cannot be used.
+        Debug.Log("Ground Collapse: Bloqueio de zonas (Visual pendente).");
+    }
+
+    void Effect_0838_GryphonWing(CardDisplay source)
+    {
+        // When Harpie's Feather Duster is activated: Negate and destroy opp S/T.
+        // Requer Chain.
+        Debug.Log("Gryphon Wing: Counter de Harpie's Feather Duster.");
+    }
+
+    void Effect_0839_GryphonsFeatherDuster(CardDisplay source)
+    {
+        // Destroy all S/T you control; gain 500 LP for each.
+        List<CardDisplay> myST = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, myST);
+            CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.playerFieldSpell }, myST);
+        }
+        
+        int count = myST.Count;
+        DestroyCards(myST, true);
+        Effect_GainLP(source, count * 500);
+    }
+
+    void Effect_0840_GuardianAngelJoan(CardDisplay source)
+    {
+        // When destroys monster by battle: Gain LP = Original ATK.
+        // Lógica no OnBattleEnd.
+        Debug.Log("Guardian Angel Joan: Efeito de cura configurado.");
+    }
+
+    void Effect_0841_GuardianBaou(CardDisplay source)
+    {
+        // If destroys monster by battle: ATK +1000. Negate effects of destroyed monsters.
+        // Lógica no OnBattleEnd.
+        Debug.Log("Guardian Baou: Efeito de batalha configurado.");
+    }
+
+    void Effect_0842_GuardianCeal(CardDisplay source)
+    {
+        // Send Equip Spell equipped to this card to GY; destroy 1 monster.
+        // Requer verificar equips.
+        Debug.Log("Guardian Ceal: Envia equip para destruir monstro.");
+    }
+
+    void Effect_0843_GuardianElma(CardDisplay source)
+    {
+        // When Summoned: Equip "Butterfly Dagger - Elma" from GY.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        CardData elma = gy.Find(c => c.name == "Butterfly Dagger - Elma");
+        
+        if (elma != null)
+        {
+            // Simula equipar do GY
+            Debug.Log("Guardian Elma: Equipando Butterfly Dagger do GY.");
+            gy.Remove(elma);
+            // Adicionar lógica visual de equipar
+            Effect_Equip(source, 300, 0); // Aplica stats
+        }
+    }
+
+    void Effect_0844_GuardianGrarl(CardDisplay source)
+    {
+        // If "Gravity Axe - Grarl" is on field, can SS from hand.
+        if (!source.isOnField)
+        {
+            if (GameManager.Instance.IsCardActiveOnField("Gravity Axe - Grarl") || GameManager.Instance.IsCardActiveOnField("0816"))
+            {
+                GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+            }
+        }
+    }
+
+    void Effect_0845_GuardianKayest(CardDisplay source)
+    {
+        // Cannot be targeted for attacks. Unaffected by Spells.
+        Debug.Log("Guardian Kay'est: Imunidade ativa.");
+    }
+
+    void Effect_0846_GuardianSphinx(CardDisplay source)
+    {
+        // Flip: Return all opponent's monsters to hand.
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> oppMonsters = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, oppMonsters);
+            
+            foreach(var m in oppMonsters)
+            {
+                GameManager.Instance.ReturnToHand(m);
+            }
+            Debug.Log("Guardian Sphinx: Campo do oponente limpo.");
+        }
+    }
+
+    void Effect_0847_GuardianStatue(CardDisplay source)
+    {
+        // Flip: Return 1 opponent's monster to hand.
+        Effect_FlipReturn(source, TargetType.Monster);
+    }
+
+    void Effect_0848_GuardianTryce(CardDisplay source)
+    {
+        // If destroyed: SS the material used for Tribute Summon from GY.
+        // Requer rastreamento de tributo.
+        Debug.Log("Guardian Tryce: Efeito de flutuação (Requer rastreamento de tributo).");
+    }
 }

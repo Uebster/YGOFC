@@ -675,58 +675,58 @@ public partial class CardEffectManager
         AddEffect("0825", Effect_0825_GreatMoth);
 
         // 0826 - Great Phantom Thief (Hand destruction)
-        AddEffect("0826", c => Debug.Log("Great Phantom Thief: Descarte ao causar dano."));
+        AddEffect("0826", Effect_0826_GreatPhantomThief);
 
         // 0828 - Greed (Burn on Draw)
-        AddEffect("0828", c => Debug.Log("Greed: Dano ao comprar por efeito."));
+        AddEffect("0828", Effect_0828_Greed);
 
         // 0829 - Green Gadget (Search Red Gadget)
-        AddEffect("0829", c => Effect_SearchDeck(c, "Red Gadget"));
+        AddEffect("0829", Effect_0829_GreenGadget);
 
         // 0831 - Greenkappa (Flip Destroy 2 S/T)
-        AddEffect("0831", c => Debug.Log("Greenkappa: Destrói 2 S/T setadas."));
+        AddEffect("0831", Effect_0831_Greenkappa);
 
         // 0832 - Gren Maju Da Eiza (Stats = Banished * 400)
-        AddEffect("0832", c => Debug.Log("Gren Maju: ATK por banidas."));
+        AddEffect("0832", Effect_0832_GrenMajuDaEiza);
 
         // 0834 - Griggle (Heal on control switch)
-        AddEffect("0834", c => Debug.Log("Griggle: Ganha 3000 LP ao trocar controle."));
+        AddEffect("0834", Effect_0834_Griggle);
 
         // 0836 - Ground Collapse (Block Zones)
-        AddEffect("0836", c => Debug.Log("Ground Collapse: Bloqueia zonas."));
+        AddEffect("0836", Effect_0836_GroundCollapse);
 
         // 0838 - Gryphon Wing (Anti-Harpie Duster)
-        AddEffect("0838", c => Debug.Log("Gryphon Wing: Nega Duster e destrói."));
+        AddEffect("0838", Effect_0838_GryphonWing);
 
         // 0839 - Gryphon's Feather Duster (Destroy own S/T -> Heal)
-        AddEffect("0839", c => Debug.Log("Gryphon's Feather Duster: Destrói próprias S/T e cura."));
+        AddEffect("0839", Effect_0839_GryphonsFeatherDuster);
 
         // 0840 - Guardian Angel Joan (Heal on destroy)
-        AddEffect("0840", c => Debug.Log("Guardian Angel Joan: Cura igual ATK do destruído."));
+        AddEffect("0840", Effect_0840_GuardianAngelJoan);
 
         // 0841 - Guardian Baou (Negate effects / Buff)
-        AddEffect("0841", c => Debug.Log("Guardian Baou: Nega efeitos e ganha ATK."));
+        AddEffect("0841", Effect_0841_GuardianBaou);
 
         // 0842 - Guardian Ceal (Send Equip -> Destroy Monster)
-        AddEffect("0842", c => Debug.Log("Guardian Ceal: Envia equip para destruir monstro."));
+        AddEffect("0842", Effect_0842_GuardianCeal);
 
         // 0843 - Guardian Elma (Recycle Equip)
-        AddEffect("0843", c => Debug.Log("Guardian Elma: Recupera equip do GY."));
+        AddEffect("0843", Effect_0843_GuardianElma);
 
         // 0844 - Guardian Grarl (SS Condition)
-        AddEffect("0844", c => Debug.Log("Guardian Grarl: SS se tiver Gravity Axe."));
+        AddEffect("0844", Effect_0844_GuardianGrarl);
 
         // 0845 - Guardian Kay'est (Immune to Spells)
-        AddEffect("0845", c => Debug.Log("Guardian Kay'est: Imune a magias."));
+        AddEffect("0845", Effect_0845_GuardianKayest);
 
         // 0846 - Guardian Sphinx (Flip Bounce All)
-        AddEffect("0846", c => Debug.Log("Guardian Sphinx: Retorna todos monstros do oponente."));
+        AddEffect("0846", Effect_0846_GuardianSphinx);
 
         // 0847 - Guardian Statue (Flip Bounce 1)
-        AddEffect("0847", c => Effect_FlipReturn(c, TargetType.Monster));
+        AddEffect("0847", Effect_0847_GuardianStatue);
 
         // 0848 - Guardian Tryce (SS on destroy)
-        AddEffect("0848", c => Debug.Log("Guardian Tryce: Invoca material do GY."));
+        AddEffect("0848", Effect_0848_GuardianTryce);
 
         // 0851 - Gust (Destroy S/T on S destruction)
         AddEffect("0851", c => Debug.Log("Gust: Destrói S/T se magia destruída."));
