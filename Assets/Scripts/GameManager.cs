@@ -516,6 +516,22 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Novo método para Mind Crush e similares
+    public void DiscardCardsByName(bool isPlayer, string cardName)
+    {
+        List<GameObject> hand = isPlayer ? playerHand : opponentHand;
+        // Itera de trás para frente para remover com segurança
+        for (int i = hand.Count - 1; i >= 0; i--)
+        {
+            GameObject go = hand[i];
+            CardDisplay cd = go.GetComponent<CardDisplay>();
+            if (cd != null && cd.CurrentCardData.name == cardName)
+            {
+                DiscardCard(cd);
+            }
+        }
+    }
+
     public void DiscardHand(bool isPlayer)
     {
         List<GameObject> hand = isPlayer ? playerHand : opponentHand;

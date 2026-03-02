@@ -14,6 +14,27 @@ public class BattleManager : MonoBehaviour
     public bool gravekeepersProtected = false; // Charm of Shabti
     public bool dimensionWallActive = false; // Dimension Wall
 
+    // Verifica se a ativação de armadilhas está bloqueada (ex: Mirage Dragon)
+    public bool IsTrapActivationBlocked(bool isPlayer)
+    {
+        if (!isBattlePhase) return false;
+
+        // Verifica se o oponente controla Mirage Dragon (1248)
+        bool oppHasMirage = false;
+        Transform[] oppZones = isPlayer ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+        
+        foreach(var z in oppZones)
+        {
+            if(z.childCount > 0)
+            {
+                var m = z.GetChild(0).GetComponent<CardDisplay>();
+                if(m != null && m.CurrentCardData.id == "1248" && !m.isFlipped) oppHasMirage = true;
+            }
+        }
+
+        return oppHasMirage;
+    }
+
     void Awake()
     {
         Instance = this;

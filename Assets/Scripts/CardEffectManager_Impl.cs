@@ -182,6 +182,36 @@ public partial class CardEffectManager
                 }
             });
 
+            // 1244 - Minor Goblin Official
+            CheckActiveCards("1244", (card) => {
+                if (GameManager.Instance.opponentLP <= 3000 && !card.isPlayerCard) // Turno do oponente
+                {
+                    Effect_DirectDamage(card, 500);
+                }
+            });
+
+            // 1250 - Mirage of Nightmare
+            CheckActiveCards("1250", (card) => {
+                if (!card.isPlayerCard) // Standby do Oponente: Compra até 4
+                {
+                    int handCount = GameManager.Instance.GetPlayerHandData().Count;
+                    if (handCount < 4)
+                    {
+                        int toDraw = 4 - handCount;
+                        for(int i=0; i<toDraw; i++) GameManager.Instance.DrawCard();
+                        card.spellCounters = toDraw; // Armazena quantos comprou
+                    }
+                }
+                else // Sua Standby: Descarta
+                {
+                    if (card.spellCounters > 0)
+                    {
+                        GameManager.Instance.DiscardRandomHand(true, card.spellCounters);
+                        card.spellCounters = 0;
+                    }
+                }
+            });
+
             // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
             // (Na verdade é End Phase, movido para lá se fosse o caso)
         }
@@ -262,6 +292,15 @@ public partial class CardEffectManager
                 // Simplified: Just log availability
                 Debug.Log("Manticore of Darkness (GY): Pode reviver enviando Besta.");
             }
+
+            // 1249 - Mirage Knight (Banish if battled)
+            CheckActiveCards("1249", (card) => {
+                if (card.battledThisTurn)
+                {
+                    Debug.Log("Mirage Knight: Banido após batalha.");
+                    GameManager.Instance.BanishCard(card);
+                }
+            });
         }
         else if (phase == GamePhase.Standby)
         {
@@ -358,6 +397,13 @@ public partial class CardEffectManager
                 }
             }
         }
+
+        // 1241 - Mine Golem
+        if (card.id == "1241" && !isOwnerPlayer)
+        {
+            // Assume destruído por batalha
+            GameManager.Instance.DamageOpponent(500);
+        }
     }
 
     public void OnCardDiscarded(CardDisplay card)
@@ -381,6 +427,15 @@ public partial class CardEffectManager
                     Effect_DirectDamage(thorn, 500);
                 }
             });
+        }
+
+        // 1235 - Minar
+        if (card.CurrentCardData.id == "1235" && !card.isPlayerCard) // Se descartado pelo oponente
+        {
+            if (!GameManager.Instance.isPlayerTurn)
+            {
+                GameManager.Instance.DamageOpponent(1000);
+            }
         }
     }
 
@@ -624,6 +679,14 @@ public partial class CardEffectManager
                 target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Multiply, 0.5f, target));
             }
         }
+
+        // 1249 - Mirage Knight
+        if (attacker.CurrentCardData.id == "1249" && target != null)
+        {
+            int bonus = target.currentAtk;
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, bonus, attacker));
+            Debug.Log($"Mirage Knight: +{bonus} ATK.");
+        }
     }
 
     public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
@@ -649,6 +712,13 @@ public partial class CardEffectManager
         if (attacker != null && attacker.CurrentCardData.id == "1178" && amount > 0)
         {
             if (attacker.isPlayerCard) GameManager.Instance.DrawCard();
+        }
+
+        // 1232 - Millennium Scorpion
+        if (attacker != null && attacker.CurrentCardData.id == "1232" && target != null)
+        {
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, attacker));
+            Debug.Log("Millennium Scorpion: +500 ATK.");
         }
 
         // Mefist the Infernal General (1197): Opponent discards 1
