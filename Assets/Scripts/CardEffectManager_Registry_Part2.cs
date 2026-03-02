@@ -956,79 +956,79 @@ public partial class CardEffectManager
         AddEffect("0950", Effect_0950_InsectPrincess);
 
         // 0951 - Insect Queen (Buff, Token)
-        AddEffect("0951", c => Debug.Log("Insect Queen: Buff por Insetos. Gera Token."));
+        AddEffect("0951", Effect_0951_InsectQueen);
 
         // 0952 - Insect Soldiers of the Sky (Buff vs Wind)
-        AddEffect("0952", c => Debug.Log("Insect Soldiers: +1000 ATK contra Wind."));
+        AddEffect("0952", Effect_0952_InsectSoldiersOfTheSky);
 
         // 0953 - Inspection (Look Hand)
-        AddEffect("0953", c => { Effect_PayLP(c, 500); Debug.Log("Inspection: Olhar carta da mão."); });
+        AddEffect("0953", Effect_0953_Inspection);
 
         // 0954 - Interdimensional Matter Transporter (Banish until End Phase)
-        AddEffect("0954", c => Debug.Log("Interdimensional Matter Transporter: Banir temporariamente."));
+        AddEffect("0954", Effect_0954_InterdimensionalMatterTransporter);
 
         // 0956 - Invader of Darkness (No Quick-Play)
-        AddEffect("0956", c => Debug.Log("Invader of Darkness: Bloqueia Quick-Play Spells."));
+        AddEffect("0956", Effect_0956_InvaderOfDarkness);
 
         // 0957 - Invader of the Throne (Flip Swap)
-        AddEffect("0957", c => Debug.Log("Invader of the Throne: Troca controle."));
+        AddEffect("0957", Effect_0957_InvaderOfTheThrone);
 
         // 0958 - Invasion of Flames (No Traps)
-        AddEffect("0958", c => Debug.Log("Invasion of Flames: Sem traps na invocação."));
+        AddEffect("0958", Effect_0958_InvasionOfFlames);
 
         // 0959 - Invigoration (Equip Earth +400/-200)
-        AddEffect("0959", c => Effect_Equip(c, 400, -200, "", "Earth"));
+        AddEffect("0959", Effect_0959_Invigoration);
 
         // 0960 - Invitation to a Dark Sleep (Lock Attack)
-        AddEffect("0960", c => Debug.Log("Invitation to a Dark Sleep: Impede ataque."));
+        AddEffect("0960", Effect_0960_InvitationToADarkSleep);
 
         // 0961 - Iron Blacksmith Kotetsu (Flip Add Equip)
-        AddEffect("0961", c => Effect_SearchDeck(c, "Equip"));
+        AddEffect("0961", Effect_0961_IronBlacksmithKotetsu);
 
         // 0964 - Jade Insect Whistle (Opponent Search Insect)
-        AddEffect("0964", c => Debug.Log("Jade Insect Whistle: Oponente busca Inseto para o topo."));
+        AddEffect("0964", Effect_0964_JadeInsectWhistle);
 
         // 0965 - Jam Breeding Machine (Token)
-        AddEffect("0965", c => Debug.Log("Jam Breeding Machine: Gera Slime Token."));
+        AddEffect("0965", Effect_0965_JamBreedingMachine);
 
         // 0966 - Jam Defender (Redirect)
-        AddEffect("0966", c => Debug.Log("Jam Defender: Redireciona ataque para Revival Jam."));
+        AddEffect("0966", Effect_0966_JamDefender);
 
         // 0967 - Jar Robber (Negate Pot)
-        AddEffect("0967", c => Debug.Log("Jar Robber: Nega Pot of Greed e você compra."));
+        AddEffect("0967", Effect_0967_JarRobber);
 
         // 0968 - Jar of Greed (Draw 1)
-        AddEffect("0968", c => { GameManager.Instance.DrawCard(); Debug.Log("Jar of Greed: Comprou 1 carta."); });
+        AddEffect("0968", Effect_0968_JarOfGreed);
 
         // 0973 - Jetroid (Trap from Hand)
-        AddEffect("0973", c => Debug.Log("Jetroid: Pode ativar Trap da mão se atacado."));
+        AddEffect("0973", Effect_0973_Jetroid);
 
         // 0974 - Jigen Bakudan (Flip Nuke)
-        AddEffect("0974", c => Debug.Log("Jigen Bakudan: Destrói tudo e causa dano."));
+        AddEffect("0974", Effect_0974_JigenBakudan);
 
         // 0975 - Jinzo (Negate Traps)
-        AddEffect("0975", c => Debug.Log("Jinzo: Nega todas as Armadilhas."));
+        AddEffect("0975", Effect_0975_Jinzo);
 
         // 0976 - Jinzo #7 (Direct Attack)
-        AddEffect("0976", c => Debug.Log("Jinzo #7: Ataque direto."));
+        AddEffect("0976", Effect_0976_Jinzo7);
 
         // 0977 - Jirai Gumo (Coin Toss Attack)
-        AddEffect("0977", c => Debug.Log("Jirai Gumo: Moeda ao atacar."));
+        AddEffect("0977", Effect_0977_JiraiGumo);
 
         // 0979 - Jowgen the Spiritualist (Destroy SS / Prevent SS)
-        AddEffect("0979", c => Debug.Log("Jowgen: Destrói SS e impede novas SS."));
+        AddEffect("0979", Effect_0979_JowgenTheSpiritualist);
 
         // 0980 - Jowls of Dark Demise (Flip Control)
-        AddEffect("0980", c => Debug.Log("Jowls: Toma controle até End Phase."));
+        AddEffect("0980", Effect_0980_JowlsOfDarkDemise);
 
         // 0982 - Judgment of Anubis (Counter S/T Destroy)
-        AddEffect("0982", c => Debug.Log("Judgment of Anubis: Nega destruição de S/T, destrói monstro e causa dano."));
+        AddEffect("0982", Effect_0982_JudgmentOfAnubis);
 
         // 0983 - Judgment of the Desert (Lock Position)
-        AddEffect("0983", c => Debug.Log("Judgment of the Desert: Trava posição de batalha."));
+        AddEffect("0983", Effect_0983_JudgmentOfTheDesert);
 
         // 0984 - Judgment of the Pharaoh (Lock/Negate)
-        AddEffect("0984", c => Debug.Log("Judgment of the Pharaoh: Bloqueia invocação ou S/T."));
+        AddEffect("0984", Effect_0984_JudgmentOfThePharaoh);
 
         // 0985 - Just Desserts (Burn 500 per monster)
         AddEffect("0985", c => {

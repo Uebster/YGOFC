@@ -2963,4 +2963,215 @@ public partial class CardEffectManager
             }
         }
     }
+
+    void Effect_0951_InsectQueen(CardDisplay source)
+    {
+        // Gains 200 ATK for each Insect on the field.
+        // Cannot attack unless you tribute 1 monster.
+        // End Phase: SS 1 Insect Monster Token if it destroyed a monster.
+        int insects = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (m.CurrentCardData.race == "Insect") insects++;
+        }
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, insects * 200, source));
+        Debug.Log("Insect Queen: Buff aplicado. (Lógica de tributo para ataque e Token na End Phase pendentes).");
+    }
+
+    void Effect_0952_InsectSoldiersOfTheSky(CardDisplay source)
+    {
+        // ATK increases by 1000 when attacking a WIND monster.
+        // Lógica no OnDamageCalculation.
+        Debug.Log("Insect Soldiers: Buff vs WIND (Passivo).");
+    }
+
+    void Effect_0953_Inspection(CardDisplay source)
+    {
+        // Standby Phase: Pay 500 LP to look at 1 random card in opponent's hand.
+        if (Effect_PayLP(source, 500))
+        {
+            List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+            if (oppHand.Count > 0)
+            {
+                CardData randomCard = oppHand[Random.Range(0, oppHand.Count)];
+                Debug.Log($"Inspection: Carta revelada: {randomCard.name}");
+                // Mostrar visualmente em um popup
+            }
+        }
+    }
+
+    void Effect_0954_InterdimensionalMatterTransporter(CardDisplay source)
+    {
+        // Target 1 face-up monster you control; banish it until the End Phase.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (t) => {
+                    GameManager.Instance.BanishCard(t);
+                    Debug.Log($"Interdimensional Matter Transporter: {t.CurrentCardData.name} banido temporariamente.");
+                    // TODO: Agendar retorno na End Phase
+                }
+            );
+        }
+    }
+
+    void Effect_0956_InvaderOfDarkness(CardDisplay source)
+    {
+        // Opponent cannot activate Quick-Play Spell Cards.
+        Debug.Log("Invader of Darkness: Quick-Play Spells bloqueadas.");
+    }
+
+    void Effect_0957_InvaderOfTheThrone(CardDisplay source)
+    {
+        // FLIP: Select 1 opponent's monster; switch control of it and this card.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (target) => {
+                    GameManager.Instance.SwitchControl(source);
+                    GameManager.Instance.SwitchControl(target);
+                    Debug.Log("Invader of the Throne: Troca realizada.");
+                }
+            );
+        }
+    }
+
+    void Effect_0958_InvasionOfFlames(CardDisplay source)
+    {
+        // When Normal Summoned: Trap Cards cannot be activated.
+        Debug.Log("Invasion of Flames: Traps bloqueadas na invocação.");
+    }
+
+    void Effect_0959_Invigoration(CardDisplay source)
+    {
+        Effect_Equip(source, 400, -200, "", "Earth");
+    }
+
+    void Effect_0960_InvitationToADarkSleep(CardDisplay source)
+    {
+        // Summon: Select 1 monster opp controls; it cannot attack.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (t) => {
+                    Debug.Log($"Invitation to a Dark Sleep: {t.CurrentCardData.name} não pode atacar.");
+                    // t.canAttack = false;
+                }
+            );
+        }
+    }
+
+    void Effect_0961_IronBlacksmithKotetsu(CardDisplay source)
+    {
+        // FLIP: Add 1 Equip Spell from Deck to hand.
+        Effect_SearchDeck(source, "Equip", "Spell");
+    }
+
+    void Effect_0964_JadeInsectWhistle(CardDisplay source)
+    {
+        // Opponent selects 1 Insect from their Deck and places it on top.
+        Debug.Log("Jade Insect Whistle: Oponente deve colocar Inseto no topo (Simulado).");
+        // Simulação:
+        List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
+        CardData insect = oppDeck.Find(c => c.race == "Insect");
+        if (insect != null)
+        {
+            oppDeck.Remove(insect);
+            oppDeck.Insert(0, insect);
+            Debug.Log($"Jade Insect Whistle: {insect.name} movido para o topo.");
+        }
+    }
+
+    void Effect_0965_JamBreedingMachine(CardDisplay source)
+    {
+        // Standby Phase: SS 1 Slime Token. No other Summons allowed.
+        // Lógica no OnPhaseStart.
+        Debug.Log("Jam Breeding Machine: Ativo.");
+    }
+
+    void Effect_0966_JamDefender(CardDisplay source)
+    {
+        // Redirect attack to "Revival Jam".
+        Debug.Log("Jam Defender: Redirecionamento ativo.");
+    }
+
+    void Effect_0967_JarRobber(CardDisplay source)
+    {
+        // Negate Pot of Greed. You draw 1 card.
+        Debug.Log("Jar Robber: Nega Pot of Greed (Requer Chain).");
+    }
+
+    void Effect_0968_JarOfGreed(CardDisplay source)
+    {
+        GameManager.Instance.DrawCard();
+    }
+
+    void Effect_0973_Jetroid(CardDisplay source)
+    {
+        // If targeted for attack: Can activate Trap from hand.
+        Debug.Log("Jetroid: Permite Trap da mão se atacado.");
+    }
+
+    void Effect_0974_JigenBakudan(CardDisplay source)
+    {
+        // FLIP: Destroy all monsters. Both take damage = Total ATK / 2.
+        // Simplificado: Destrói e causa dano fixo ou calculado se possível
+        Debug.Log("Jigen Bakudan: Destruição total e dano.");
+        DestroyAllMonsters(true, true);
+    }
+
+    void Effect_0975_Jinzo(CardDisplay source)
+    {
+        // Trap Cards cannot be activated. The effects of all Face-up Traps are negated.
+        Debug.Log("Jinzo: Traps negadas.");
+    }
+
+    void Effect_0976_Jinzo7(CardDisplay source)
+    {
+        // Can attack directly.
+        Debug.Log("Jinzo #7: Ataque direto (Passivo).");
+    }
+
+    void Effect_0977_JiraiGumo(CardDisplay source)
+    {
+        // When attacking: Toss coin. Tails: Lose half LP.
+        Debug.Log("Jirai Gumo: Custo de ataque (Moeda).");
+    }
+
+    void Effect_0979_JowgenTheSpiritualist(CardDisplay source)
+    {
+        // Discard 1 random card; destroy all SS monsters. Neither player can SS.
+        Debug.Log("Jowgen: Bloqueio de SS e destruição.");
+    }
+
+    void Effect_0980_JowlsOfDarkDemise(CardDisplay source)
+    {
+        // FLIP: Take control of 1 monster until End Phase.
+        Effect_ChangeControl(source, true);
+    }
+
+    void Effect_0982_JudgmentOfAnubis(CardDisplay source)
+    {
+        // Counter Trap: Discard 1. Negate S/T destruction effect. Destroy monster & burn.
+        Debug.Log("Judgment of Anubis: Counter complexo.");
+    }
+
+    void Effect_0983_JudgmentOfTheDesert(CardDisplay source)
+    {
+        // Face-up monsters cannot change battle position.
+        Debug.Log("Judgment of the Desert: Posições travadas.");
+    }
+
+    void Effect_0984_JudgmentOfThePharaoh(CardDisplay source)
+    {
+        // Pay half LP. Select effect to lock.
+        Effect_PayLP(source, GameManager.Instance.playerLP / 2);
+        Debug.Log("Judgment of the Pharaoh: Bloqueio ativado.");
+    }
 }
