@@ -1382,4 +1382,161 @@ public partial class CardEffectManager
         // If Wind, Water, Fire, Earth on field: Apply 1 effect.
         Debug.Log("Fuh-Rin-Ka-Zan: Efeito poderoso (Raigeki/Harpie/Duo/Pot).");
     }
+
+    void Effect_0701_FuhmaShuriken(CardDisplay source)
+    {
+        // Equip: +700 ATK. If sent to GY, 700 damage.
+        Effect_Equip(source, 700, 0);
+        // Lógica de dano ao ir pro GY deve ser no OnCardSentToGraveyard
+    }
+
+    void Effect_0702_FulfillmentOfTheContract(CardDisplay source)
+    {
+        // Pay 800 LP; Select Ritual Monster in GY; SS it and equip this card.
+        if (Effect_PayLP(source, 800))
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> rituals = gy.FindAll(c => c.type.Contains("Ritual") && c.type.Contains("Monster"));
+            
+            if (rituals.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(rituals, "Reviver Ritual", (selected) => {
+                    GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                    // Equipar lógica (simulada)
+                    Debug.Log("Fulfillment: Equipado ao monstro revivido.");
+                });
+            }
+        }
+    }
+
+    void Effect_0704_FushiNoTori(CardDisplay source)
+    {
+        // Spirit. If inflicts battle damage, gain LP equal to damage.
+        Debug.Log("Fushi No Tori: Spirit. Cura por dano.");
+    }
+
+    void Effect_0705_FushiohRichie(CardDisplay source)
+    {
+        // Flip: SS 1 Zombie from GY.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> zombies = gy.FindAll(c => c.race == "Zombie");
+        
+        if (zombies.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(zombies, "Reviver Zumbi", (selected) => {
+                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+            });
+        }
+    }
+
+    void Effect_0706_FusilierDragon(CardDisplay source)
+    {
+        // Can be Normal Summoned without Tribute (ATK/DEF halved).
+        Debug.Log("Fusilier Dragon: Opção de invocação sem tributo.");
+    }
+
+    void Effect_0707_FusionGate(CardDisplay source)
+    {
+        // Field Spell: Fusion Summon without Polymerization (banish materials).
+        Debug.Log("Fusion Gate: Fusão por banimento.");
+    }
+
+    void Effect_0708_FusionRecovery(CardDisplay source)
+    {
+        // Target 1 Polymerization and 1 Fusion Material in GY; add to hand.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        CardData poly = gy.Find(c => c.name == "Polymerization");
+        List<CardData> monsters = gy.FindAll(c => c.type.Contains("Monster"));
+        
+        if (poly != null && monsters.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(monsters, "Recuperar Material", (material) => {
+                gy.Remove(poly);
+                gy.Remove(material);
+                GameManager.Instance.AddCardToHand(poly, source.isPlayerCard);
+                GameManager.Instance.AddCardToHand(material, source.isPlayerCard);
+                Debug.Log($"Fusion Recovery: Recuperou Polymerization e {material.name}.");
+            });
+        }
+    }
+
+    void Effect_0709_FusionSage(CardDisplay source)
+    {
+        Effect_SearchDeck(source, "Polymerization");
+    }
+
+    void Effect_0710_FusionSwordMurasameBlade(CardDisplay source)
+    {
+        Effect_Equip(source, 800, 0, "Warrior");
+    }
+
+    void Effect_0711_FusionWeapon(CardDisplay source)
+    {
+        // Equip: Fusion Monster Lv6 or lower. +1500 ATK/DEF.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Fusion") && t.CurrentCardData.level <= 6,
+                (t) => {
+                    t.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, 1500, source));
+                    t.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, 1500, source));
+                    Debug.Log("Fusion Weapon: Equipado.");
+                }
+            );
+        }
+    }
+
+    void Effect_0715_GaiaPower(CardDisplay source)
+    {
+        Effect_Field(source, 500, -400, "", "Earth");
+    }
+
+    void Effect_0716_GaiaSoul(CardDisplay source)
+    {
+        // Tribute up to 2 Pyro monsters; this card gains 1000 ATK for each.
+        Debug.Log("Gaia Soul: Tributo para ATK.");
+    }
+
+    void Effect_0719_GaleDogra(CardDisplay source)
+    {
+        // Pay 3000 LP; send 1 monster from Extra Deck to GY.
+        if (Effect_PayLP(source, 3000))
+        {
+            List<CardData> extra = GameManager.Instance.GetPlayerExtraDeck();
+            if (extra.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(extra, "Enviar ao GY", (selected) => {
+                    extra.Remove(selected);
+                    GameManager.Instance.SendToGraveyard(selected, source.isPlayerCard);
+                    Debug.Log($"Gale Dogra: {selected.name} enviado ao GY.");
+                });
+            }
+        }
+    }
+
+    void Effect_0720_GaleLizard(CardDisplay source)
+    {
+        Effect_FlipReturn(source, TargetType.Monster);
+    }
+
+    void Effect_0721_Gamble(CardDisplay source)
+    {
+        // Coin toss. Heads: Draw 5. Tails: Skip next turn.
+        GameManager.Instance.TossCoin(1, (heads) => {
+            if (heads == 1)
+            {
+                Debug.Log("Gamble: Cara! Compra 5.");
+                for(int i=0; i<5; i++) GameManager.Instance.DrawCard();
+            }
+            else
+            {
+                Debug.Log("Gamble: Coroa! Pula próximo turno.");
+            }
+        });
+    }
+
+    void Effect_0725_GarmaSwordOath(CardDisplay source)
+    {
+        Debug.Log("Garma Sword Oath: Ritual.");
+    }
 }

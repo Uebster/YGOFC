@@ -425,52 +425,52 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 0701 - Fuhma Shuriken (Equip Ninja +700, Burn 700 on GY)
-        AddEffect("0701", c => { Effect_Equip(c, 700, 0); Debug.Log("Fuhma Shuriken: Dano se for pro GY."); });
+        AddEffect("0701", Effect_0701_FuhmaShuriken);
 
         // 0702 - Fulfillment of the Contract (Pay 800, Revive Ritual)
-        AddEffect("0702", c => { Effect_PayLP(c, 800); Debug.Log("Fulfillment: Reviver Ritual."); });
+        AddEffect("0702", Effect_0702_FulfillmentOfTheContract);
 
         // 0704 - Fushi No Tori (Spirit, Heal damage)
-        AddEffect("0704", c => Debug.Log("Fushi No Tori: Spirit. Cura igual ao dano."));
+        AddEffect("0704", Effect_0704_FushiNoTori);
 
         // 0705 - Fushioh Richie (Flip, Negate, SS Zombie)
-        AddEffect("0705", c => Debug.Log("Fushioh Richie: Flip SS Zombie."));
+        AddEffect("0705", Effect_0705_FushiohRichie);
 
         // 0706 - Fusilier Dragon (NS no tribute)
-        AddEffect("0706", c => Debug.Log("Fusilier Dragon: NS sem tributo (stats metade)."));
+        AddEffect("0706", Effect_0706_FusilierDragon);
 
         // 0707 - Fusion Gate (Field Fusion)
-        AddEffect("0707", c => Debug.Log("Fusion Gate: Fusão banindo."));
+        AddEffect("0707", Effect_0707_FusionGate);
 
         // 0708 - Fusion Recovery (Add Poly + Material)
-        AddEffect("0708", c => Debug.Log("Fusion Recovery: Recuperar Poly e Material."));
+        AddEffect("0708", Effect_0708_FusionRecovery);
 
         // 0709 - Fusion Sage (Search Poly)
-        AddEffect("0709", c => Effect_SearchDeck(c, "Polymerization"));
+        AddEffect("0709", Effect_0709_FusionSage);
 
         // 0710 - Fusion Sword Murasame Blade (Equip Warrior +800)
-        AddEffect("0710", c => Effect_Equip(c, 800, 0, "Warrior"));
+        AddEffect("0710", Effect_0710_FusionSwordMurasameBlade);
 
         // 0711 - Fusion Weapon (Equip Fusion Lv6- +1500)
-        AddEffect("0711", c => Debug.Log("Fusion Weapon: +1500 para Fusão Lv6-."));
+        AddEffect("0711", Effect_0711_FusionWeapon);
 
         // 0715 - Gaia Power (Field Earth +500/-400)
-        AddEffect("0715", c => Effect_Field(c, 500, -400, "", "Earth"));
+        AddEffect("0715", Effect_0715_GaiaPower);
 
         // 0716 - Gaia Soul (Tribute Pyro buff)
-        AddEffect("0716", c => Debug.Log("Gaia Soul: Tributar Pyro para ATK."));
+        AddEffect("0716", Effect_0716_GaiaSoul);
 
         // 0719 - Gale Dogra (Pay 3000 dump Extra)
-        AddEffect("0719", c => { Effect_PayLP(c, 3000); Debug.Log("Gale Dogra: Enviar do Extra para GY."); });
+        AddEffect("0719", Effect_0719_GaleDogra);
 
         // 0720 - Gale Lizard (Flip Return)
-        AddEffect("0720", c => Effect_FlipReturn(c, TargetType.Monster));
+        AddEffect("0720", Effect_0720_GaleLizard);
 
         // 0721 - Gamble (Coin toss)
-        AddEffect("0721", c => Debug.Log("Gamble: Moeda."));
+        AddEffect("0721", Effect_0721_Gamble);
 
         // 0725 - Garma Sword Oath (Ritual)
-        AddEffect("0725", c => Debug.Log("Garma Sword Oath: Ritual."));
+        AddEffect("0725", Effect_0725_GarmaSwordOath);
 
         // 0728 - Garuda the Wind Spirit (SS Banish Wind)
         AddEffect("0728", c => Debug.Log("Garuda: SS banindo Wind."));
