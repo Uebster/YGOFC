@@ -4,7 +4,6 @@ public partial class CardEffectManager
 {
     void InitializeEffects_Part2()
     {
-        /*
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 0501 - 0600)
         // =========================================================================================
@@ -1036,6 +1035,5 @@ public partial class CardEffectManager
 
         // 0998 - Kaminote Blow (Destroy with Monk)
         AddEffect("0998", c => Debug.Log("Kaminote Blow: Destrói monstro que batalhou com Monk."));
-        */
     }
 }
