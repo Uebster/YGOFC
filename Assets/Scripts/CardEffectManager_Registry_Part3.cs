@@ -4,7 +4,6 @@ public partial class CardEffectManager
 {
     void InitializeEffects_Part3()
     {
-        /*
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 1001 - 1100)
         // =========================================================================================
@@ -937,6 +936,5 @@ public partial class CardEffectManager
 
         // 1500 - Recycle (Pay 300 Recycle)
         AddEffect("1500", c => { Effect_PayLP(c, 300); Debug.Log("Recycle: Retorna carta do GY ao deck."); });
-        */
     }
 }
