@@ -9,52 +9,52 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 1001 - Kangaroo Champ (Change to Defense)
-        AddEffect("1001", c => Debug.Log("Kangaroo Champ: Vira defesa após batalha."));
+        AddEffect("1001", Effect_1001_KangarooChamp);
 
         // 1004 - Karakuri Spider (Destroy Dark)
-        AddEffect("1004", c => Debug.Log("Karakuri Spider: Destrói DARK se atacar."));
+        AddEffect("1004", Effect_1004_KarakuriSpider);
 
         // 1005 - Karate Man (Double ATK)
-        AddEffect("1005", c => Debug.Log("Karate Man: Dobra ATK, morre na End Phase."));
+        AddEffect("1005", Effect_1005_KarateMan);
 
         // 1008 - Kazejin (Zero ATK)
-        AddEffect("1008", c => Debug.Log("Kazejin: Zera ATK do atacante."));
+        AddEffect("1008", Effect_1008_Kazejin);
 
         // 1009 - Kelbek (Bounce attacker)
-        AddEffect("1009", c => Debug.Log("Kelbek: Retorna atacante para mão."));
+        AddEffect("1009", Effect_1009_Kelbek);
 
         // 1010 - Keldo (Shuffle GY into Deck)
-        AddEffect("1010", c => Debug.Log("Keldo: Retorna 2 do GY do oponente para o Deck."));
+        AddEffect("1010", Effect_1010_Keldo);
 
         // 1014 - King Dragun (SS Dragon)
-        AddEffect("1014", c => Debug.Log("King Dragun: Invoca Dragão da mão."));
+        AddEffect("1014", Effect_1014_KingDragun);
 
         // 1016 - King Tiger Wanghu (Destroy weak summon)
-        AddEffect("1016", c => Debug.Log("King Tiger Wanghu: Destrói invocação <= 1400 ATK."));
+        AddEffect("1016", Effect_1016_KingTigerWanghu);
 
         // 1018 - King of the Skull Servants (Stats / Revive)
-        AddEffect("1018", c => Debug.Log("King of the Skull Servants: ATK por Skull Servants."));
+        AddEffect("1018", Effect_1018_KingOfTheSkullServants);
 
         // 1019 - King of the Swamp (Search Poly)
         AddEffect("1019", c => Effect_SearchDeck(c, "Polymerization"));
 
         // 1020 - King's Knight (SS Jack's Knight)
-        AddEffect("1020", c => Debug.Log("King's Knight: Invoca Jack's Knight."));
+        AddEffect("1020", Effect_1020_KingsKnight);
 
         // 1021 - Kiryu (Union)
-        AddEffect("1021", c => Debug.Log("Kiryu: Union para Dark Blade."));
+        AddEffect("1021", Effect_1021_Kiryu);
 
         // 1022 - Kiseitai (Equip on attack)
-        AddEffect("1022", c => Debug.Log("Kiseitai: Equipa no atacante e cura."));
+        AddEffect("1022", Effect_1022_Kiseitai);
 
         // 1023 - Kishido Spirit (Battle protection)
-        AddEffect("1023", c => Debug.Log("Kishido Spirit: Protege se ATK igual."));
+        AddEffect("1023", Effect_1023_KishidoSpirit);
 
         // 1024 - Knight's Title (SS Dark Magician Knight)
-        AddEffect("1024", c => Debug.Log("Knight's Title: Invoca Dark Magician Knight."));
+        AddEffect("1024", Effect_1024_KnightsTitle);
 
         // 1025 - Koitsu (Union)
-        AddEffect("1025", c => Debug.Log("Koitsu: Union para Aitsu."));
+        AddEffect("1025", Effect_1025_Koitsu);
 
         // 1028 - Kotodama (Destroy duplicates)
         AddEffect("1028", c => Debug.Log("Kotodama: Destrói monstros com mesmo nome."));
