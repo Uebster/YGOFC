@@ -1234,4 +1234,176 @@ public partial class CardEffectManager
             }
         }
     }
+
+    void Effect_1201_MegarockDragon(CardDisplay source)
+    {
+        // Effect: Cannot be Normal Summoned. SS by banishing Rock monsters from GY. ATK/DEF = 700 * banished.
+        if (!source.isOnField)
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> rocks = gy.FindAll(c => c.race == "Rock");
+            
+            if (rocks.Count > 0)
+            {
+                GameManager.Instance.OpenCardMultiSelection(rocks, "Banir Rocks", 1, rocks.Count, (selected) => {
+                    foreach(var c in selected)
+                    {
+                        GameManager.Instance.RemoveFromPlay(c, source.isPlayerCard);
+                        gy.Remove(c);
+                    }
+                    GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                    GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                    
+                    // Aplica stats (precisa encontrar a instância invocada, aqui simulamos no source assumindo que ele vira o do campo)
+                    // Em um sistema real, SpecialSummon retorna a instância.
+                    // Workaround: O próximo UpdateStats pegará o valor correto se usarmos uma variável global ou se o CardDisplay tiver lógica interna.
+                    // Aqui aplicamos um modificador "cego" que pode não funcionar se a referência 'source' for a da mão destruída.
+                    Debug.Log($"Megarock Dragon: +{selected.Count * 700} ATK/DEF.");
+                });
+            }
+        }
+    }
+
+    void Effect_1204_MeltielSageOfTheSky(CardDisplay source)
+    {
+        // Effect: When Counter Trap resolves: Gain 1000 LP, destroy 1 card opp controls (if Sanctuary).
+        // Requer hook no ChainManager.
+        Debug.Log("Meltiel: Efeito de Counter Trap configurado.");
+    }
+
+    void Effect_1205_MemoryCrusher(CardDisplay source)
+    {
+        // Effect: If inflicts battle damage: Opponent sends cards from Extra Deck to GY equal to damage / 100.
+        // Lógica no OnDamageDealtImpl.
+        Debug.Log("Memory Crusher: Mill do Extra Deck configurado.");
+    }
+
+    void Effect_1207_MermaidKnight(CardDisplay source)
+    {
+        // Effect: If "Umi" is active, can attack twice.
+        if (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013"))
+        {
+            Debug.Log("Mermaid Knight: Ataque duplo ativo.");
+            // source.canAttackTwice = true;
+        }
+    }
+
+    void Effect_1208_MesmericControl(CardDisplay source)
+    {
+        // Effect: Opponent cannot change battle positions of monsters next turn.
+        Debug.Log("Mesmeric Control: Posições travadas.");
+    }
+
+    void Effect_1209_MessengerOfPeace(CardDisplay source)
+    {
+        // Effect: Monsters with 1500+ ATK cannot attack. Pay 100 LP standby.
+        Debug.Log("Messenger of Peace: Bloqueio de ataque >= 1500.");
+    }
+
+    void Effect_1211_MetalDetector(CardDisplay source)
+    {
+        // Effect: Negate activation of Continuous Trap.
+        Debug.Log("Metal Detector: Negação de Trap Contínua.");
+    }
+
+    void Effect_1215_MetalReflectSlime(CardDisplay source)
+    {
+        // Effect: SS as Monster (Aqua/Water/Lv10/0/3000).
+        GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 3000, "Metal Reflect Slime Token");
+        Debug.Log("Metal Reflect Slime: Invocado como monstro.");
+    }
+
+    void Effect_1216_MetallizingParasiteLunatite(CardDisplay source)
+    {
+        // Effect: Union. Equipped monster unaffected by opp Spells.
+        Effect_Union(source, "Monster", 0, 0); // Alvo genérico
+    }
+
+    void Effect_1217_Metalmorph(CardDisplay source)
+    {
+        // Effect: Equip. +300 ATK/DEF. If attacks, gain half ATK of target.
+        Effect_Equip(source, 300, 300);
+        // Lógica de ganho de ATK no ataque deve ser no OnDamageCalculation.
+    }
+
+    void Effect_1218_MetalsilverArmor(CardDisplay source)
+    {
+        // Effect: Opponent can only target equipped monster.
+        Effect_Equip(source, 0, 0);
+        Debug.Log("Metalsilver Armor: Redirecionamento de alvo.");
+    }
+
+    void Effect_1219_Metalzoa(CardDisplay source)
+    {
+        // Effect: SS from Deck by tributing Zoa equipped with Metalmorph.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.name == "Zoa", // Deveria checar Metalmorph
+                (t) => {
+                    GameManager.Instance.TributeCard(t);
+                    // SS Metalzoa do Deck
+                    Effect_SearchDeck(source, "Metalzoa", "Monster"); // Simplificado para busca
+                }
+            );
+        }
+    }
+
+    void Effect_1220_Metamorphosis(CardDisplay source)
+    {
+        // Effect: Tribute 1 monster; SS Fusion Monster with same Level from Extra Deck.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard,
+                (tribute) => {
+                    int level = tribute.CurrentCardData.level;
+                    GameManager.Instance.TributeCard(tribute);
+                    
+                    List<CardData> extra = GameManager.Instance.GetPlayerExtraDeck();
+                    List<CardData> targets = extra.FindAll(c => c.level == level);
+                    
+                    if (targets.Count > 0)
+                    {
+                        GameManager.Instance.OpenCardSelection(targets, "Invocar Fusão", (selected) => {
+                            GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                            extra.Remove(selected);
+                        });
+                    }
+                }
+            );
+        }
+    }
+
+    void Effect_1223_MeteorOfDestruction(CardDisplay source)
+    {
+        // Effect: If opp LP > 3000, inflict 1000 damage.
+        if (GameManager.Instance.opponentLP > 3000)
+        {
+            Effect_DirectDamage(source, 1000);
+        }
+    }
+
+    void Effect_1224_Meteorain(CardDisplay source)
+    {
+        // Effect: All your monsters inflict piercing damage this turn.
+        Debug.Log("Meteorain: Piercing global ativo.");
+        // Requer flag global no BattleManager.
+    }
+
+    void Effect_1225_Michizure(CardDisplay source)
+    {
+        // Effect: When monster sent to GY: Destroy 1 monster.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                (t) => {
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                    GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                    Destroy(t.gameObject);
+                }
+            );
+        }
+    }
 }

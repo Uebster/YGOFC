@@ -401,46 +401,52 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 1201 - Megarock Dragon (SS Banish Rocks)
-        AddEffect("1201", c => Debug.Log("Megarock Dragon: SS banindo Rocks. Stats = qtd * 700."));
+        AddEffect("1201", Effect_1201_MegarockDragon);
+
+        // 1204 - Meltiel, Sage of the Sky (Gain LP / Destroy)
+        AddEffect("1204", Effect_1204_MeltielSageOfTheSky);
+
+        // 1205 - Memory Crusher (Mill Extra Deck)
+        AddEffect("1205", Effect_1205_MemoryCrusher);
 
         // 1207 - Mermaid Knight (Double Attack with Umi)
-        AddEffect("1207", c => Debug.Log("Mermaid Knight: Ataque duplo com Umi."));
+        AddEffect("1207", Effect_1207_MermaidKnight);
 
         // 1208 - Mesmeric Control (Lock Battle Position)
-        AddEffect("1208", c => Debug.Log("Mesmeric Control: Oponente não muda posição no próximo turno."));
+        AddEffect("1208", Effect_1208_MesmericControl);
 
         // 1209 - Messenger of Peace (Lock Attack >= 1500)
-        AddEffect("1209", c => Debug.Log("Messenger of Peace: Monstros >= 1500 ATK não atacam."));
+        AddEffect("1209", Effect_1209_MessengerOfPeace);
 
         // 1211 - Metal Detector (Negate Continuous Trap)
-        AddEffect("1211", c => Debug.Log("Metal Detector: Nega Trap Contínua."));
+        AddEffect("1211", Effect_1211_MetalDetector);
 
         // 1215 - Metal Reflect Slime (Trap Monster)
-        AddEffect("1215", c => Debug.Log("Metal Reflect Slime: Vira monstro com 3000 DEF."));
+        AddEffect("1215", Effect_1215_MetalReflectSlime);
 
         // 1216 - Metallizing Parasite - Lunatite (Union Protect)
-        AddEffect("1216", c => Debug.Log("Lunatite: Union. Protege de magias."));
+        AddEffect("1216", Effect_1216_MetallizingParasiteLunatite);
 
         // 1217 - Metalmorph (Trap Equip)
-        AddEffect("1217", c => Debug.Log("Metalmorph: +300 ATK/DEF. Ganha metade do ATK do alvo ao atacar."));
+        AddEffect("1217", Effect_1217_Metalmorph);
 
         // 1218 - Metalsilver Armor (Redirect Target)
-        AddEffect("1218", c => Debug.Log("Metalsilver Armor: Redireciona alvos para o equipado."));
+        AddEffect("1218", Effect_1218_MetalsilverArmor);
 
         // 1219 - Metalzoa (SS from Deck)
-        AddEffect("1219", c => Debug.Log("Metalzoa: Invoca do deck tributando Zoa com Metalmorph."));
+        AddEffect("1219", Effect_1219_Metalzoa);
 
         // 1220 - Metamorphosis (Tribute -> Fusion)
-        AddEffect("1220", c => Debug.Log("Metamorphosis: Tributa 1 para invocar Fusão de mesmo nível."));
+        AddEffect("1220", Effect_1220_Metamorphosis);
 
         // 1223 - Meteor of Destruction (Burn 1000)
-        AddEffect("1223", c => { if(GameManager.Instance.opponentLP > 3000) Effect_DirectDamage(c, 1000); });
+        AddEffect("1223", Effect_1223_MeteorOfDestruction);
 
         // 1224 - Meteorain (Piercing for all)
-        AddEffect("1224", c => Debug.Log("Meteorain: Dano perfurante para todos seus monstros."));
+        AddEffect("1224", Effect_1224_Meteorain);
 
         // 1225 - Michizure (Destroy on destroy)
-        AddEffect("1225", c => Debug.Log("Michizure: Destrói monstro quando o seu morre."));
+        AddEffect("1225", Effect_1225_Michizure);
 
         // 1226 - Micro Ray (DEF 0)
         AddEffect("1226", c => Debug.Log("Micro Ray: DEF do alvo vira 0."));
