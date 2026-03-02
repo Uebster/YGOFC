@@ -689,9 +689,9 @@ public partial class CardEffectManager
 
     public void OnLifePointsGained(bool isPlayer, int amount)
     {
-        // Fire Princess (64752646)
+        // Fire Princess (0659)
         // Se você ganhar LP, causa 500 de dano ao oponente.
-        CheckActiveCards("64752646", (card) => {
+        CheckActiveCards("0659", (card) => {
             if (card.isPlayerCard == isPlayer)
             {
                 Debug.Log("Fire Princess: Dano por cura.");

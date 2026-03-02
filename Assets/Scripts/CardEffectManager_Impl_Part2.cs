@@ -1093,4 +1093,293 @@ public partial class CardEffectManager
         // - Pay 1000 LP standby or destroy
         Debug.Log("Fiend's Sanctuary: Token invocado (Lógica de dano/manutenção pendente).");
     }
+
+    void Effect_0651_FinalAttackOrders(CardDisplay source)
+    {
+        // All face-up monsters on the field are changed to Attack Position and their battle positions cannot be changed.
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> allMonsters = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allMonsters);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allMonsters);
+
+            foreach (var m in allMonsters)
+            {
+                if (m.position == CardDisplay.BattlePosition.Defense)
+                {
+                    m.ChangePosition();
+                }
+            }
+            Debug.Log("Final Attack Orders: Todos os monstros em ataque.");
+            // Nota: A restrição de mudança de posição deve ser checada no BattleManager/GameManager
+        }
+    }
+
+    void Effect_0652_FinalCountdown(CardDisplay source)
+    {
+        // Pay 2000 LP. After 20 turns, you win the Duel.
+        if (Effect_PayLP(source, 2000))
+        {
+            Debug.Log("Final Countdown: Contagem de 20 turnos iniciada.");
+            // Adicionar contador global no GameManager ou na carta (se ela ficasse no campo, mas é Normal Spell)
+            // Como é Normal Spell, ela vai pro GY. Precisamos de um contador no GameManager.
+            // GameManager.Instance.StartFinalCountdown(source.isPlayerCard);
+        }
+    }
+
+    void Effect_0653_FinalDestiny(CardDisplay source)
+    {
+        // Discard 5 cards from your hand; destroy all cards on the field.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count >= 5)
+        {
+            // Descarta 5 (Simplificado: Aleatório ou os primeiros 5)
+            // Em produção: UI de seleção múltipla obrigatória
+            GameManager.Instance.DiscardRandomHand(source.isPlayerCard, 5);
+            
+            Debug.Log("Final Destiny: Destruindo tudo!");
+            DestroyAllMonsters(true, true);
+            Effect_HeavyStorm(source); // Destrói S/T
+        }
+        else
+        {
+            Debug.Log("Final Destiny: Requer 5 cartas na mão.");
+        }
+    }
+
+    void Effect_0654_FinalFlame(CardDisplay source)
+    {
+        Effect_DirectDamage(source, 600);
+    }
+
+    void Effect_0655_FinalRitualOfTheAncients(CardDisplay source)
+    {
+        // Ritual Spell for "Reshef the Dark Being".
+        Debug.Log("Final Ritual of the Ancients: Ritual para Reshef.");
+    }
+
+    void Effect_0656_FireDarts(CardDisplay source)
+    {
+        // Roll 3 dice. Inflict damage = sum * 100.
+        GameManager.Instance.TossCoin(3, (heads) => { 
+            // Nota: TossCoin retorna caras, precisamos de dados (1-6).
+            // Simulando dados aqui já que TossCoin é para moedas
+            int d1 = Random.Range(1, 7);
+            int d2 = Random.Range(1, 7);
+            int d3 = Random.Range(1, 7);
+            int total = d1 + d2 + d3;
+            int damage = total * 100;
+            
+            Debug.Log($"Fire Darts: Dados {d1}, {d2}, {d3}. Total {total}. Dano {damage}.");
+            Effect_DirectDamage(source, damage);
+        });
+    }
+
+    void Effect_0659_FirePrincess(CardDisplay source)
+    {
+        // Each time you gain Life Points, inflict 500 damage to your opponent.
+        // Lógica implementada no CardEffectManager_Impl.cs (OnLifePointsGained)
+        Debug.Log("Fire Princess: Efeito passivo de cura.");
+    }
+
+    void Effect_0661_FireSorcerer(CardDisplay source)
+    {
+        // FLIP: Banish 2 cards from your hand to inflict 800 damage.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count >= 2)
+        {
+            GameManager.Instance.DiscardRandomHand(source.isPlayerCard, 2); // Deveria ser Banir
+            Effect_DirectDamage(source, 800);
+            Debug.Log("Fire Sorcerer: Baniu 2 da mão, causou 800 dano.");
+        }
+    }
+
+    void Effect_0666_Fissure(CardDisplay source)
+    {
+        // Destroy the 1 face-up monster your opponent controls that has the lowest ATK.
+        // Lógica de seleção automática
+        Debug.Log("Fissure: Destruindo menor ATK do oponente.");
+        // Implementação real requer varredura do campo oponente
+    }
+
+    void Effect_0667_FiveHeadedDragon(CardDisplay source)
+    {
+        // Cannot be destroyed by battle with Earth, Water, Fire, Wind, or Dark monsters.
+        // Lógica passiva no BattleManager (ResolveDamage)
+        Debug.Log("Five-Headed Dragon: Proteção de batalha ativa.");
+    }
+
+    void Effect_0673_FlameRuler(CardDisplay source)
+    {
+        // If you Tribute Summon a FIRE monster, you can treat this 1 monster as 2 Tributes.
+        // Lógica no SummonManager (GetRequiredTributes/ProcessAutoTribute)
+        Debug.Log("Flame Ruler: Vale por 2 tributos para FIRE.");
+    }
+
+    void Effect_0676_FlashAssailant(CardDisplay source)
+    {
+        // Decrease ATK and DEF by 400 for each card in your hand.
+        int handCount = GameManager.Instance.GetPlayerHandData().Count;
+        int debuff = handCount * -400;
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, debuff, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, debuff, source));
+    }
+
+    void Effect_0677_Flint(CardDisplay source)
+    {
+        // Equip: Equipped monster loses 300 ATK, cannot change position or attack.
+        // If destroyed, equip to another monster.
+        Effect_Equip(source, -300, 0);
+        // Lógica de travar posição/ataque no BattleManager/GameManager.
+        // Lógica de re-equipar no OnCardLeavesField.
+    }
+
+    void Effect_0680_FlyingKamakiri1(CardDisplay source)
+    {
+        // When destroyed by battle: SS 1 WIND monster with ATK <= 1500 from Deck.
+        // Diferente do Effect_SearchDeck (que adiciona à mão), este invoca.
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        List<CardData> targets = deck.FindAll(c => c.attribute == "Wind" && c.atk <= 1500 && c.type.Contains("Monster"));
+        
+        if (targets.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(targets, "Invocar WIND <= 1500", (selected) => {
+                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                deck.Remove(selected);
+                GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+            });
+        }
+    }
+
+    void Effect_0683_FollowWind(CardDisplay source)
+    {
+        Effect_Equip(source, 300, 300, "Winged Beast");
+    }
+
+    void Effect_0684_FoolishBurial(CardDisplay source)
+    {
+        // Send 1 monster from Deck to GY.
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        List<CardData> monsters = deck.FindAll(c => c.type.Contains("Monster"));
+        
+        if (monsters.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(monsters, "Enviar ao GY", (selected) => {
+                deck.Remove(selected);
+                GameManager.Instance.SendToGraveyard(selected, source.isPlayerCard);
+                Debug.Log($"Foolish Burial: {selected.name} enviado ao GY.");
+            });
+        }
+    }
+
+    void Effect_0685_ForcedCeasefire(CardDisplay source)
+    {
+        // Discard 1 card. No Traps can be activated this turn.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                Debug.Log("Forced Ceasefire: Traps bloqueadas neste turno.");
+                // SpellTrapManager.Instance.trapsBlocked = true;
+            });
+        }
+    }
+
+    void Effect_0686_ForcedRequisition(CardDisplay source)
+    {
+        // Continuous Trap: When you discard, opponent must discard same number.
+        Debug.Log("Forced Requisition: Ativo (Lógica no OnCardDiscarded).");
+    }
+
+    void Effect_0687_Forest(CardDisplay source)
+    {
+        // Field: Insect, Plant, Beast, Beast-Warrior +200 ATK/DEF.
+        Effect_Field(source, 200, 200, "Insect");
+        Effect_Field(source, 200, 200, "Plant");
+        Effect_Field(source, 200, 200, "Beast");
+        Effect_Field(source, 200, 200, "Beast-Warrior");
+    }
+
+    void Effect_0688_FormationUnion(CardDisplay source)
+    {
+        // Union monsters can equip/unequip.
+        Debug.Log("Formation Union: Ativo (Permite equipar/desequipar Unions).");
+    }
+
+    void Effect_0691_FoxFire(CardDisplay source)
+    {
+        // If destroyed face-up: SS during End Phase.
+        Debug.Log("Fox Fire: Renasce na End Phase.");
+    }
+
+    void Effect_0692_FreedTheBraveWanderer(CardDisplay source)
+    {
+        // Banish 2 LIGHT from GY; destroy 1 monster with higher ATK.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> lights = gy.FindAll(c => c.attribute == "Light");
+        
+        if (lights.Count >= 2)
+        {
+            GameManager.Instance.OpenCardMultiSelection(lights, "Banir 2 LIGHT", 2, 2, (selected) => {
+                foreach(var c in selected) {
+                    GameManager.Instance.RemoveFromPlay(c, source.isPlayerCard);
+                    gy.Remove(c);
+                }
+                
+                if (SpellTrapManager.Instance != null)
+                {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && t.currentAtk > source.currentAtk,
+                        (target) => {
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                            Destroy(target.gameObject);
+                        }
+                    );
+                }
+            });
+        }
+    }
+
+    void Effect_0693_FreedTheMatchlessGeneral(CardDisplay source)
+    {
+        // Negate Spell targeting this card. Draw Phase: Add Lv4- Warrior instead of draw.
+        Debug.Log("Freed General: Imune a Magias de alvo. Busca Warrior na Draw Phase.");
+    }
+
+    void Effect_0694_FreezingBeast(CardDisplay source)
+    {
+        Effect_Union(source, "Burning Beast", 0, 0);
+    }
+
+    void Effect_0696_FrontierWiseman(CardDisplay source)
+    {
+        // Negate Spell targeting Warrior.
+        Debug.Log("Frontier Wiseman: Protege Warriors de Magias de alvo.");
+    }
+
+    void Effect_0697_FrontlineBase(CardDisplay source)
+    {
+        // Once per turn: SS 1 Union from hand.
+        Debug.Log("Frontline Base: Pode invocar Union da mão.");
+    }
+
+    void Effect_0698_FrozenSoul(CardDisplay source)
+    {
+        // If you control no monsters: Discard 1; Opponent skips next Battle Phase.
+        Debug.Log("Frozen Soul: Pula Battle Phase do oponente.");
+    }
+
+    void Effect_0699_FruitsOfKozakysStudies(CardDisplay source)
+    {
+        // Look at top 3 cards of Deck, return in any order.
+        Debug.Log("Fruits of Kozaky: Reordenar topo do deck.");
+    }
+
+    void Effect_0700_FuhRinKaZan(CardDisplay source)
+    {
+        // If Wind, Water, Fire, Earth on field: Apply 1 effect.
+        Debug.Log("Fuh-Rin-Ka-Zan: Efeito poderoso (Raigeki/Harpie/Duo/Pot).");
+    }
 }

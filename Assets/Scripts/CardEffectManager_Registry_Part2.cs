@@ -334,88 +334,91 @@ public partial class CardEffectManager
         AddEffect("0650", Effect_0650_FiendsSanctuary);
 
         // 0651 - Final Attack Orders (Force Attack)
-        AddEffect("0651", c => Debug.Log("Final Attack Orders: Forçar ataque."));
+        AddEffect("0651", Effect_0651_FinalAttackOrders);
 
         // 0652 - Final Countdown (Win in 20)
-        AddEffect("0652", c => { Effect_PayLP(c, 2000); Debug.Log("Final Countdown: Contagem iniciada."); });
+        AddEffect("0652", Effect_0652_FinalCountdown);
 
         // 0653 - Final Destiny (Discard 5 Nuke)
-        AddEffect("0653", c => Debug.Log("Final Destiny: Descartar 5 para destruir tudo."));
+        AddEffect("0653", Effect_0653_FinalDestiny);
 
         // 0654 - Final Flame (Burn 600)
-        AddEffect("0654", c => Effect_DirectDamage(c, 600));
+        AddEffect("0654", Effect_0654_FinalFlame);
+
+        // 0655 - Final Ritual of the Ancients (Ritual Spell)
+        AddEffect("0655", Effect_0655_FinalRitualOfTheAncients);
 
         // 0656 - Fire Darts (Dice Burn)
-        AddEffect("0656", c => Debug.Log("Fire Darts: Dano de dados."));
+        AddEffect("0656", Effect_0656_FireDarts);
 
         // 0659 - Fire Princess (Burn on Heal)
-        AddEffect("0659", c => Debug.Log("Fire Princess: Dano ao curar."));
+        AddEffect("0659", Effect_0659_FirePrincess);
 
         // 0661 - Fire Sorcerer (Banish Hand Burn)
-        AddEffect("0661", c => Debug.Log("Fire Sorcerer: Banir da mão para dano."));
-
-        // 0662 - Firebird (Gain ATK)
-        AddEffect("0662", c => Debug.Log("Firebird: Ganha ATK."));
+        AddEffect("0661", Effect_0661_FireSorcerer);
 
         // 0666 - Fissure (Destroy lowest ATK)
-        AddEffect("0666", c => Debug.Log("Fissure: Destruir menor ATK."));
+        AddEffect("0666", Effect_0666_Fissure);
+
+        // 0667 - Five-Headed Dragon (Battle Protection)
+        AddEffect("0667", Effect_0667_FiveHeadedDragon);
 
         // 0673 - Flame Ruler (2 Tributes Fire)
-        AddEffect("0673", c => Debug.Log("Flame Ruler: 2 tributos para Fire."));
+        AddEffect("0673", Effect_0673_FlameRuler);
 
         // 0676 - Flash Assailant (Debuff hand)
-        AddEffect("0676", c => Debug.Log("Flash Assailant: Debuff por cartas na mão."));
+        AddEffect("0676", Effect_0676_FlashAssailant);
 
         // 0677 - Flint (Lock)
-        AddEffect("0677", c => Debug.Log("Flint: Travar monstro."));
+        AddEffect("0677", Effect_0677_Flint);
 
         // 0680 - Flying Kamakiri #1 (Search Wind)
-        AddEffect("0680", c => Effect_SearchDeck(c, "WIND"));
+        AddEffect("0680", Effect_0680_FlyingKamakiri1);
 
         // 0683 - Follow Wind (Equip +300)
-        AddEffect("0683", c => Effect_Equip(c, 300, 300, "Winged Beast"));
+        AddEffect("0683", Effect_0683_FollowWind);
 
         // 0684 - Foolish Burial (Mill)
-        AddEffect("0684", c => Debug.Log("Foolish Burial: Enviar do deck ao GY."));
+        AddEffect("0684", Effect_0684_FoolishBurial);
 
         // 0685 - Forced Ceasefire (No Traps)
-        AddEffect("0685", c => Debug.Log("Forced Ceasefire: Impedir Traps."));
+        AddEffect("0685", Effect_0685_ForcedCeasefire);
 
         // 0686 - Forced Requisition (Discard)
-        AddEffect("0686", c => Debug.Log("Forced Requisition: Descarte forçado."));
+        AddEffect("0686", Effect_0686_ForcedRequisition);
 
         // 0687 - Forest (Field Buff)
-        AddEffect("0687", c => Effect_Field(c, 200, 200, "Insect"));
+        AddEffect("0687", Effect_0687_Forest);
 
         // 0688 - Formation Union (Union)
-        AddEffect("0688", c => Debug.Log("Formation Union: Equipar/Desequipar Union."));
+        AddEffect("0688", Effect_0688_FormationUnion);
 
         // 0691 - Fox Fire (Revive)
-        AddEffect("0691", c => Debug.Log("Fox Fire: Reviver."));
+        AddEffect("0691", Effect_0691_FoxFire);
 
         // 0692 - Freed the Brave Wanderer (Banish Light Destroy)
-        AddEffect("0692", c => Debug.Log("Freed: Banir 2 Light para destruir."));
+        AddEffect("0692", Effect_0692_FreedTheBraveWanderer);
 
         // 0693 - Freed the Matchless General (Search Warrior)
-        AddEffect("0693", c => Debug.Log("Freed General: Buscar Warrior."));
+        AddEffect("0693", Effect_0693_FreedTheMatchlessGeneral);
 
         // 0694 - Freezing Beast (Union)
-        AddEffect("0694", c => Debug.Log("Freezing Beast: Union."));
+        AddEffect("0694", Effect_0694_FreezingBeast);
 
         // 0696 - Frontier Wiseman (Negate Target)
-        AddEffect("0696", c => Debug.Log("Frontier Wiseman: Negar alvo em Warrior."));
+        AddEffect("0696", Effect_0696_FrontierWiseman);
 
         // 0697 - Frontline Base (SS Union)
-        AddEffect("0697", c => Debug.Log("Frontline Base: SS Union."));
+        AddEffect("0697", Effect_0697_FrontlineBase);
 
         // 0698 - Frozen Soul (Skip Battle)
-        AddEffect("0698", c => Debug.Log("Frozen Soul: Pular Battle Phase."));
+        AddEffect("0698", Effect_0698_FrozenSoul);
 
         // 0699 - Fruits of Kozaky's Studies (Reorder)
-        AddEffect("0699", c => Debug.Log("Fruits of Kozaky: Reordenar deck."));
+        AddEffect("0699", Effect_0699_FruitsOfKozakysStudies);
 
         // 0700 - Fuh-Rin-Ka-Zan (4 Elements)
-        AddEffect("0700", c => Debug.Log("Fuh-Rin-Ka-Zan: Efeito poderoso se 4 elementos."));
+        AddEffect("0700", Effect_0700_FuhRinKaZan);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 0701 - 0800)
