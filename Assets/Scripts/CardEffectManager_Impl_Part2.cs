@@ -1539,4 +1539,154 @@ public partial class CardEffectManager
     {
         Debug.Log("Garma Sword Oath: Ritual.");
     }
+
+    void Effect_0728_GarudaTheWindSpirit(CardDisplay source)
+    {
+        // SS by banishing 1 WIND. Change battle position of opp monster.
+        if (!source.isOnField)
+        {
+            // Lógica de SS da mão
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> winds = gy.FindAll(c => c.attribute == "Wind");
+            
+            if (winds.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(winds, "Banir 1 WIND", (selected) => {
+                    GameManager.Instance.RemoveFromPlay(selected, source.isPlayerCard);
+                    GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                    GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                });
+            }
+        }
+        else
+        {
+            // Efeito em campo: Mudar posição (End Phase do oponente)
+            // Requer TurnObserver
+            Debug.Log("Garuda: Efeito de mudança de posição (End Phase do oponente).");
+        }
+    }
+
+    void Effect_0731_GateGuardian(CardDisplay source)
+    {
+        // SS by Tributing Sanga, Kazejin, Suijin.
+        Debug.Log("Gate Guardian: Invocação complexa (Requer 3 tributos específicos).");
+    }
+
+    void Effect_0733_GatherYourMind(CardDisplay source)
+    {
+        Effect_SearchDeck(source, "Gather Your Mind");
+    }
+
+    void Effect_0734_GatlingDragon(CardDisplay source)
+    {
+        // 3 Coins. Destroy monsters equal to Heads.
+        GameManager.Instance.TossCoin(3, (heads) => {
+            if (heads > 0)
+            {
+                Debug.Log($"Gatling Dragon: {heads} caras. Destruindo {heads} monstros.");
+                // Lógica de destruição múltipla (até 'heads' alvos)
+                // Requer UI de seleção múltipla no campo
+            }
+        });
+    }
+
+    void Effect_0736_GearGolemTheMovingFortress(CardDisplay source)
+    {
+        // Pay 800 LP; attack directly.
+        if (Effect_PayLP(source, 800))
+        {
+            Debug.Log("Gear Golem: Pode atacar diretamente este turno.");
+            // source.canAttackDirectly = true;
+        }
+    }
+
+    void Effect_0737_GearfriedTheIronKnight(CardDisplay source)
+    {
+        // If equipped, destroy equip card.
+        // Lógica passiva/trigger ao ser equipado.
+        Debug.Log("Gearfried: Destrói equipamentos automaticamente.");
+    }
+
+    void Effect_0738_GearfriedTheSwordmaster(CardDisplay source)
+    {
+        // If equipped, destroy 1 monster opp controls.
+        // Trigger ao ser equipado.
+        Debug.Log("Gearfried Swordmaster: Destrói monstro ao equipar.");
+    }
+
+    void Effect_0740_GeminiImps(CardDisplay source)
+    {
+        // Discard to negate effect that makes you discard.
+        Debug.Log("Gemini Imps: Nega efeito de descarte.");
+    }
+
+    void Effect_0742_GermInfection(CardDisplay source)
+    {
+        // Equip: Non-Machine loses 300 ATK each Standby.
+        Effect_Equip(source, 0, 0);
+        // Lógica de debuff progressivo no OnPhaseStart.
+    }
+
+    void Effect_0743_Gernia(CardDisplay source)
+    {
+        // If destroyed by effect: SS next Standby.
+        Debug.Log("Gernia: Renasce na próxima Standby.");
+    }
+
+    void Effect_0744_GetsuFuhma(CardDisplay source)
+    {
+        // Destroy Fiend/Zombie battled.
+        // Lógica no OnBattleEnd.
+        Debug.Log("Getsu Fuhma: Destrói Fiend/Zombie após batalha.");
+    }
+
+    void Effect_0745_GhostKnightOfJackal(CardDisplay source)
+    {
+        // SS opp monster destroyed by battle to your field in Def.
+        // Lógica no OnBattleEnd.
+        Debug.Log("Ghost Knight: Rouba monstro destruído.");
+    }
+
+    void Effect_0747_GiantAxeMummy(CardDisplay source)
+    {
+        // Flip face-down once per turn. If attacked face-down and ATK < DEF, destroy attacker.
+        Effect_TurnSet(source);
+        // Lógica de destruição no BattleManager (ResolveDamage).
+    }
+
+    void Effect_0749_GiantGerm(CardDisplay source)
+    {
+        // Destroyed by battle: 500 dmg, SS up to 2 Giant Germs from Deck.
+        Effect_DirectDamage(source, 500);
+        
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        List<CardData> germs = deck.FindAll(c => c.name == "Giant Germ");
+        
+        if (germs.Count > 0)
+        {
+            int max = Mathf.Min(2, germs.Count);
+            // Auto-summon para simplificar ou abrir seleção
+            for(int i=0; i<max; i++)
+            {
+                GameManager.Instance.SpecialSummonFromData(germs[i], source.isPlayerCard);
+                deck.Remove(germs[i]);
+            }
+            GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+        }
+    }
+
+    void Effect_0750_GiantKozaky(CardDisplay source)
+    {
+        // If no face-up Kozaky, destroy this. If destroyed, damage = orig ATK (2500).
+        if (!GameManager.Instance.IsCardActiveOnField("1030")) // Kozaky ID
+        {
+            Debug.Log("Giant Kozaky: Sem Kozaky. Auto-destruição.");
+            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
+            Destroy(source.gameObject);
+            
+            // Dano ao dono
+            if (source.isPlayerCard) GameManager.Instance.DamagePlayer(2500);
+            else GameManager.Instance.DamageOpponent(2500);
+        }
+    }
 }

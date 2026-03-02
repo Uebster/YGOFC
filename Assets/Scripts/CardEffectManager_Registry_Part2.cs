@@ -473,49 +473,49 @@ public partial class CardEffectManager
         AddEffect("0725", Effect_0725_GarmaSwordOath);
 
         // 0728 - Garuda the Wind Spirit (SS Banish Wind)
-        AddEffect("0728", c => Debug.Log("Garuda: SS banindo Wind."));
+        AddEffect("0728", Effect_0728_GarudaTheWindSpirit);
 
         // 0731 - Gate Guardian (SS Tributes)
-        AddEffect("0731", c => Debug.Log("Gate Guardian: SS complexo."));
+        AddEffect("0731", Effect_0731_GateGuardian);
 
         // 0733 - Gather Your Mind (Search self)
-        AddEffect("0733", c => Effect_SearchDeck(c, "Gather Your Mind"));
+        AddEffect("0733", Effect_0733_GatherYourMind);
 
         // 0734 - Gatling Dragon (Coin destroy)
-        AddEffect("0734", c => Debug.Log("Gatling Dragon: Moedas para destruir."));
+        AddEffect("0734", Effect_0734_GatlingDragon);
 
         // 0736 - Gear Golem the Moving Fortress (Pay 800 Direct)
-        AddEffect("0736", c => { Effect_PayLP(c, 800); Debug.Log("Gear Golem: Ataque direto."); });
+        AddEffect("0736", Effect_0736_GearGolemTheMovingFortress);
 
         // 0737 - Gearfried the Iron Knight (Destroy Equip)
-        AddEffect("0737", c => Debug.Log("Gearfried: Destrói equipamentos."));
+        AddEffect("0737", Effect_0737_GearfriedTheIronKnight);
 
         // 0738 - Gearfried the Swordmaster (Destroy on Equip)
-        AddEffect("0738", c => Debug.Log("Gearfried Swordmaster: Destrói monstro ao equipar."));
+        AddEffect("0738", Effect_0738_GearfriedTheSwordmaster);
 
         // 0740 - Gemini Imps (Negate discard)
-        AddEffect("0740", c => Debug.Log("Gemini Imps: Nega descarte."));
+        AddEffect("0740", Effect_0740_GeminiImps);
 
         // 0742 - Germ Infection (Equip Debuff)
-        AddEffect("0742", c => Debug.Log("Germ Infection: -300 ATK por turno."));
+        AddEffect("0742", Effect_0742_GermInfection);
 
         // 0743 - Gernia (SS on destroy)
-        AddEffect("0743", c => Debug.Log("Gernia: Renasce na Standby."));
+        AddEffect("0743", Effect_0743_Gernia);
 
         // 0744 - Getsu Fuhma (Destroy Fiend/Zombie)
-        AddEffect("0744", c => Debug.Log("Getsu Fuhma: Destrói Fiend/Zombie."));
+        AddEffect("0744", Effect_0744_GetsuFuhma);
 
         // 0745 - Ghost Knight of Jackal (SS opp monster)
-        AddEffect("0745", c => Debug.Log("Ghost Knight: Rouba monstro."));
+        AddEffect("0745", Effect_0745_GhostKnightOfJackal);
 
         // 0747 - Giant Axe Mummy (Flip, Destroy weak attacker)
-        AddEffect("0747", c => Debug.Log("Giant Axe Mummy: Destrói atacante fraco."));
+        AddEffect("0747", Effect_0747_GiantAxeMummy);
 
         // 0749 - Giant Germ (Burn, SS)
-        AddEffect("0749", c => { Effect_DirectDamage(c, 500); Debug.Log("Giant Germ: SS cópias."); });
+        AddEffect("0749", Effect_0749_GiantGerm);
 
         // 0750 - Giant Kozaky (Destroy if no Kozaky)
-        AddEffect("0750", c => Debug.Log("Giant Kozaky: Dano se destruído."));
+        AddEffect("0750", Effect_0750_GiantKozaky);
 
         // 0752 - Giant Orc (Defense after attack)
         AddEffect("0752", c => Debug.Log("Giant Orc: Vira defesa."));
