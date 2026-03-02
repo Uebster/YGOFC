@@ -3,12 +3,20 @@ using System.Collections.Generic;
 
 public partial class CardEffectManager
 {
+    // Flags globais para efeitos de turno
+    public bool negateContinuousSpells = false;
+    public bool redirectSpellTarget = false;
+
     // --- MÉTODOS UTILITÁRIOS COMUNS (REAPROVEITADOS) ---
 
     // --- SISTEMA DE EVENTOS E FASES (TURNOBSERVER) ---
 
     public void OnPhaseStart(GamePhase phase)
     {
+        // Reset flags de turno
+        negateContinuousSpells = false;
+        redirectSpellTarget = false;
+
         Debug.Log($"CardEffectManager: Processando efeitos da fase {phase}...");
 
         if (phase == GamePhase.Draw)
@@ -900,6 +908,17 @@ public partial class CardEffectManager
             // GameManager.Instance.ReturnToDeck(target, true);
         }
 
+        // 1322 - Necklace of Command
+        // Verifica se algum monstro destruído tinha Necklace of Command equipado
+        if (target != null && (target.currentAtk < attacker.currentAtk || target.position == CardDisplay.BattlePosition.Defense)) // Target destroyed
+        {
+             CheckNecklaceOfCommand(target);
+        }
+        if (attacker != null && attacker.currentAtk < target.currentAtk && target.position == CardDisplay.BattlePosition.Attack) // Attacker destroyed
+        {
+             CheckNecklaceOfCommand(attacker);
+        }
+
         // Mefist the Infernal General (1197): Opponent discards 1
         if (attacker != null && attacker.CurrentCardData.id == "1197" && amount > 0)
         {
@@ -1181,16 +1200,47 @@ public partial class CardEffectManager
     }
 
     // --- FIM DO SISTEMA DE EVENTOS ---
-
     void Effect_DirectDamage(CardDisplay source, int amount)
     {
-        if (source.isPlayerCard) GameManager.Instance.DamageOpponent(amount);
+        bool targetOpponent = source.isPlayerCard;
+        
+        // Mystical Refpanel Logic (1313)
+        if (redirectSpellTarget && source.CurrentCardData.type.Contains("Spell"))
+        {
+            targetOpponent = !targetOpponent; // Inverte o alvo
+            Debug.Log("Effect_DirectDamage: Alvo redirecionado por Mystical Refpanel.");
         }
-    void Effect_DirectDamage(CardDisplay source, int amount)
-    {
-        if (source.isPlayerCard) GameManager.Instance.DamageOpponent(amount);
+
+        if (targetOpponent) GameManager.Instance.DamageOpponent(amount);
         else GameManager.Instance.DamagePlayer(amount);
+        
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDamageEffect(Vector3.zero);
+    }
+
+    private void CheckNecklaceOfCommand(CardDisplay destroyedMonster)
+    {
+        // Verifica se o monstro destruído tinha Necklace of Command (1322) equipado
+        CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        foreach(var link in links)
+        {
+            if (link.target == destroyedMonster && link.type == CardLink.LinkType.Equipment)
+            {
+                if (link.source != null && link.source.CurrentCardData.id == "1322")
+                {
+                    Debug.Log("Necklace of Command: Ativado após destruição do monstro equipado.");
+                    
+                    // Effect: Draw 1 OR Discard 1 random from opp hand
+                    // Como é opcional, abrimos um diálogo simples
+                    if (UIManager.Instance != null)
+                    {
+                        UIManager.Instance.ShowConfirmation("Necklace of Command: Comprar 1 carta (Sim) ou Descartar do oponente (Não)?", 
+                            () => GameManager.Instance.DrawCard(),
+                            () => GameManager.Instance.DiscardRandomHand(!link.source.isPlayerCard, 1)
+                        );
+                    }
+                }
+            }
+        }
     }
 
     void Effect_GainLP(CardDisplay source, int amount)

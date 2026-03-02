@@ -50,6 +50,13 @@ public class ChainManager : MonoBehaviour
         // Se SpellTrapManager encontrar uma resposta automática, ele adicionaria aqui.
     }
 
+    // Retorna o último elo da corrente (para Counter Traps e efeitos de resposta)
+    public ChainLink GetLastChainLink()
+    {
+        if (currentChain.Count > 0) return currentChain[currentChain.Count - 1];
+        return null;
+    }
+
     // Inicia a resolução da corrente
     public void ResolveChain()
     {

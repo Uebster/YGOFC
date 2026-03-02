@@ -3067,7 +3067,19 @@ public partial class CardEffectManager
     void Effect_1303_MysticProbe(CardDisplay source)
     {
         // Effect: Negate Continuous Spell.
-        Debug.Log("Mystic Probe: Negação de Spell Contínua (Requer Chain).");
+        if (ChainManager.Instance != null)
+        {
+            var lastLink = ChainManager.Instance.GetLastChainLink();
+            if (lastLink != null && lastLink.cardSource.CurrentCardData.type.Contains("Spell") && lastLink.cardSource.CurrentCardData.property == "Continuous")
+            {
+                Debug.Log("Mystic Probe: Ativado. Magias Contínuas negadas neste turno.");
+                CardEffectManager.Instance.negateContinuousSpells = true;
+            }
+            else
+            {
+                Debug.Log("Mystic Probe: Falhou. Última carta não é Magia Contínua.");
+            }
+        }
     }
 
     // 1304 - Mystic Swordsman LV2
@@ -3142,7 +3154,25 @@ public partial class CardEffectManager
     // 1313 - Mystical Refpanel
     void Effect_1313_MysticalRefpanel(CardDisplay source)
     {
-        Debug.Log("Mystical Refpanel: Redireciona efeito de Spell (Requer Chain).");
+        // Activate only when a Spell Card that targets 1 player is activated. Effect applied to other player.
+        if (ChainManager.Instance != null)
+        {
+            var lastLink = ChainManager.Instance.GetLastChainLink();
+            if (lastLink != null && lastLink.cardSource.CurrentCardData.type.Contains("Spell"))
+            {
+                // Simulação de verificação de alvo (player)
+                string id = lastLink.cardSource.CurrentCardData.id;
+                if (id == "1715" || id == "1382" || id == "0654" || id == "0895") // Sparks, Ookazi, Final Flame, Hinotama
+                {
+                    Debug.Log("Mystical Refpanel: Redirecionando efeito para o outro jogador.");
+                    CardEffectManager.Instance.redirectSpellTarget = true;
+                }
+                else
+                {
+                    Debug.Log("Mystical Refpanel: Alvo inválido (apenas magias de dano direto simples suportadas no protótipo).");
+                }
+            }
+        }
     }
 
     // 1315 - Mystical Sheep #1
@@ -3178,13 +3208,36 @@ public partial class CardEffectManager
     // 1320 - Narrow Pass
     void Effect_1320_NarrowPass(CardDisplay source)
     {
-        Debug.Log("Narrow Pass: Limita invocações (Passivo).");
+        // Activate when both players have 2 monsters or less.
+        int myCount = 0;
+        int oppCount = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if(z.childCount > 0) myCount++;
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) oppCount++;
+        }
+
+        if (myCount <= 2 && oppCount <= 2)
+        {
+            Debug.Log("Narrow Pass: Ativado. Limite de invocações aplicado.");
+            if (SummonManager.Instance != null)
+            {
+                SummonManager.Instance.narrowPassActive = true;
+                SummonManager.Instance.narrowPassSummonCount = 0;
+            }
+        }
+        else
+        {
+            Debug.Log("Narrow Pass: Condição não atendida (ambos devem ter <= 2 monstros).");
+        }
     }
 
     // 1322 - Necklace of Command
     void Effect_1322_NecklaceOfCommand(CardDisplay source)
     {
-        Debug.Log("Necklace of Command: Efeito de destruição.");
+        // Equip Spell. Effect triggers when destroyed.
+        Effect_Equip(source, 0, 0);
+        Debug.Log("Necklace of Command: Equipado. (Efeito ao ser destruído configurado).");
     }
 
     // 1324 - Necrovalley

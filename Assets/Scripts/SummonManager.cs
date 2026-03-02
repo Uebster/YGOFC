@@ -12,6 +12,10 @@ public class SummonManager : MonoBehaviour
     [Header("Configuração")]
     public bool enableAutoTribute = false; // Switch para alternar entre tributo automático e manual
 
+    // Narrow Pass (1320)
+    public bool narrowPassActive = false;
+    public int narrowPassSummonCount = 0;
+
     // Estado da Seleção Manual de Tributo
     [HideInInspector] public bool isSelectingTributes = false;
     private GameObject pendingCardGO;
@@ -44,6 +48,7 @@ public class SummonManager : MonoBehaviour
     public void ResetTurnStats()
     {
         hasPerformedNormalSummon = false;
+        narrowPassSummonCount = 0;
         // Resetar contadores de special summon se necessário (geralmente não há limite por turno para special, mas podemos querer rastrear)
     }
 
@@ -85,7 +90,16 @@ public class SummonManager : MonoBehaviour
         // Se for Normal Summon, verifica limite e tributos
         if (!isSpecial)
         {
-            if (!CanNormalSummon())
+            // Narrow Pass Check
+            if (narrowPassActive)
+            {
+                if (narrowPassSummonCount >= 2)
+                {
+                    Debug.LogWarning("Narrow Pass: Limite de 2 invocações adicionais atingido.");
+                    return false;
+                }
+            }
+            else if (!CanNormalSummon())
             {
                 Debug.LogWarning("Já realizou Normal Summon neste turno.");
                 return false;
@@ -111,7 +125,11 @@ public class SummonManager : MonoBehaviour
                 }
             }
 
-            if (isPlayer) hasPerformedNormalSummon = true;
+            if (isPlayer) 
+            {
+                hasPerformedNormalSummon = true;
+                if (narrowPassActive) narrowPassSummonCount++;
+            }
         }
         else
         {
