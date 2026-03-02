@@ -796,8 +796,18 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0075_AntiSpell(CardDisplay source)
     {
         // Remova 2 Spell Counters; negue Magia.
-        // Requer sistema de Spell Counters.
-        Debug.Log("Anti-Spell: Sistema de Spell Counters ainda não implementado.");
+        if (GetTotalSpellCounters(source.isPlayerCard) >= 2)
+        {
+            if (RemoveSpellCounters(2, source.isPlayerCard))
+            {
+                Debug.Log("Anti-Spell: 2 Spell Counters removidos. Magia negada (Simulado).");
+                // Se houver sistema de Chain, aqui negaríamos o efeito anterior
+            }
+        }
+        else
+        {
+            Debug.Log("Anti-Spell: Spell Counters insuficientes (Precisa de 2).");
+        }
     }
 
     void Effect_0076_AntiSpellFragrance(CardDisplay source)

@@ -58,6 +58,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public int currentAtk;
     [HideInInspector] public int currentDef;
 
+    // Sistema de Spell Counters
+    [HideInInspector] public int spellCounters = 0;
+
     // Lista de modificadores ativos nesta carta
     private List<StatModifier> activeModifiers = new List<StatModifier>();
 
@@ -202,6 +205,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         currentDef = card.def;
 
         activeModifiers.Clear(); // Limpa modificadores antigos ao resetar a carta
+        spellCounters = 0; // Reseta contadores
 
         originalScale = transform.localScale; // Salva a escala inicial definida pelo GameManager
         
@@ -377,6 +381,21 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         
         // Se for Spell/Trap, pode ser que precise ficar revelada ou ir pro GY dependendo do tipo (Continuous vs Normal)
         // Isso será tratado pelo GameManager/SpellTrapManager na resolução da chain.
+    }
+
+    // --- SISTEMA DE SPELL COUNTERS ---
+
+    public void AddSpellCounter(int amount = 1)
+    {
+        spellCounters += amount;
+        Debug.Log($"{currentCardData.name} ganhou {amount} Spell Counter(s). Total: {spellCounters}");
+        // TODO: Adicionar visualização (ícone ou texto sobre a carta)
+    }
+
+    public void RemoveSpellCounter(int amount = 1)
+    {
+        spellCounters = Mathf.Max(0, spellCounters - amount);
+        Debug.Log($"{currentCardData.name} perdeu {amount} Spell Counter(s). Total: {spellCounters}");
     }
 
     // --- SISTEMA DE MODIFICADORES DE STATS ---
