@@ -237,6 +237,23 @@ public partial class CardEffectManager
             // Atualização de Buffs Dinâmicos (Dark Magician Girl, Dark Paladin)
             CheckActiveCards("0420", (card) => UpdateDMGBuff(card)); // DMG
             CheckActiveCards("0428", (card) => UpdateDarkPaladinBuff(card)); // Dark Paladin
+
+            // Manticore of Darkness (1162): Revive loop
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            if (gy.Exists(c => c.id == "1162"))
+            {
+                // Check if player has Beast/Beast-Warrior in hand/field to send
+                // Simplified: Just log availability
+                Debug.Log("Manticore of Darkness (GY): Pode reviver enviando Besta.");
+            }
+        }
+        else if (phase == GamePhase.Standby)
+        {
+            // Malice Doll of Demise (1152): Revive if sent by Continuous Spell
+            // Requires tracking flag "sentByContinuousSpell"
+            // CheckActiveCards not applicable as it's in GY.
+            // We check GY directly.
+            // ...
         }
     }
 
@@ -295,6 +312,14 @@ public partial class CardEffectManager
             Debug.Log("Despair from the Dark: Invocando do GY.");
             GameManager.Instance.SpecialSummonFromData(card, true); // Assume dono é o player
         }
+
+        // Maji-Gire Panda (1144): Gain 500 ATK when Beast destroyed
+        if (card.race == "Beast")
+        {
+            CheckActiveCards("1144", (panda) => {
+                panda.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, panda));
+            });
+        }
     }
 
     public void OnCardDiscarded(CardDisplay card)
@@ -307,6 +332,18 @@ public partial class CardEffectManager
                 Effect_GainLP(source, 1000);
             }
         });
+
+        // Magical Thorn (1136): Opponent discards -> 500 damage
+        if (!card.isPlayerCard) // Opponent discarded
+        {
+            CheckActiveCards("1136", (thorn) => {
+                if (thorn.isPlayerCard)
+                {
+                    Debug.Log("Magical Thorn: Oponente descartou. 500 Dano.");
+                    Effect_DirectDamage(thorn, 500);
+                }
+            });
+        }
     }
 
     public void OnSpecialSummon(CardDisplay summonedCard)

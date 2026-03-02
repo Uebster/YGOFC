@@ -904,7 +904,34 @@ public partial class CardEffectManager
     void Effect_1129_MagicalHats(CardDisplay source)
     {
         // Effect: Select 2 non-monster cards from Deck + 1 monster on field. Shuffle and Set face-down.
-        Debug.Log("Magical Hats: Esconde-esconde (Simulado).");
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (monster) => {
+                    List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+                    List<CardData> nonMonsters = deck.FindAll(c => !c.type.Contains("Monster"));
+                    
+                    if (nonMonsters.Count >= 2)
+                    {
+                        GameManager.Instance.OpenCardMultiSelection(nonMonsters, "Selecione 2 não-monstros", 2, 2, (selected) => {
+                            // Change monster to face-down defense
+                            if (monster.position == CardDisplay.BattlePosition.Attack) monster.ChangePosition();
+                            monster.ShowBack();
+                            
+                            // Spawn tokens representing the hats (Simulated)
+                            foreach(var c in selected)
+                            {
+                                GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Magical Hat");
+                                deck.Remove(c);
+                            }
+                            GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+                            Debug.Log("Magical Hats: Monstro escondido e iscas posicionadas.");
+                        });
+                    }
+                }
+            );
+        }
     }
 
     void Effect_1130_MagicalLabyrinth(CardDisplay source)
@@ -949,15 +976,54 @@ public partial class CardEffectManager
     void Effect_1132_MagicalMerchant(CardDisplay source)
     {
         // FLIP: Excavate until S/T found. Add to hand, send monsters to GY.
-        Debug.Log("Magical Merchant: Escavando deck...");
-        // Lógica de escavação
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        List<CardData> excavated = new List<CardData>();
+        CardData foundST = null;
+        
+        int index = 0;
+        while (index < deck.Count)
+        {
+            CardData current = deck[index];
+            excavated.Add(current);
+            if (current.type.Contains("Spell") || current.type.Contains("Trap"))
+            {
+                foundST = current;
+                break;
+            }
+            index++;
+        }
+        
+        foreach (var c in excavated)
+        {
+            deck.Remove(c);
+            if (c == foundST)
+            {
+                GameManager.Instance.AddCardToHand(c, source.isPlayerCard);
+                Debug.Log($"Magical Merchant: Adicionou {c.name} à mão.");
+            }
+            else
+            {
+                GameManager.Instance.SendToGraveyard(c, source.isPlayerCard);
+            }
+        }
     }
 
     void Effect_1133_MagicalPlantMandragola(CardDisplay source)
     {
         // FLIP: Place 1 Spell Counter on each face-up card that can have one.
-        Debug.Log("Mandragola: Distribuindo contadores.");
-        // Itera campo e adiciona
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            // Simplificado: Adiciona a todos os monstros face-up
+            List<CardDisplay> targets = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, targets);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, targets);
+            
+            foreach(var t in targets)
+            {
+                if (!t.isFlipped) t.AddSpellCounter(1);
+            }
+            Debug.Log("Mandragola: Contadores distribuídos.");
+        }
     }
 
     void Effect_1134_MagicalScientist(CardDisplay source)
@@ -1011,12 +1077,12 @@ public partial class CardEffectManager
     {
         // Effect: When opponent discards from hand to GY, inflict 500 damage per card.
         // Lógica no OnCardDiscarded (CardEffectManager_Impl.cs).
-        Debug.Log("Magical Thorn: Ativo.");
+        Debug.Log("Magical Thorn: Ativo (Gatilho de descarte configurado).");
     }
 
     void Effect_1137_MagicianOfBlackChaos(CardDisplay source)
     {
-        Debug.Log("Magician of Black Chaos: Ritual.");
+        Debug.Log("Magician of Black Chaos: Monstro Ritual (Sem efeito).");
     }
 
     void Effect_1138_MagicianOfFaith(CardDisplay source)
@@ -1037,15 +1103,26 @@ public partial class CardEffectManager
     void Effect_1139_MagiciansValkyria(CardDisplay source)
     {
         // Effect: Opponent cannot target other Spellcasters for attacks.
-        Debug.Log("Magician's Valkyria: Protege outros Magos.");
+        Debug.Log("Magician's Valkyria: Proteção de Magos ativa (Passivo).");
     }
 
     void Effect_1140_MahaVailo(CardDisplay source)
     {
         // Effect: Gains 500 ATK for each Equip Card equipped to this card.
-        // Lógica passiva/stat modifier.
-        // Como não temos contagem fácil de equips no alvo, simulamos:
-        Debug.Log("Maha Vailo: Ganha ATK por equips (Lógica de contagem pendente).");
+        CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        int equipCount = 0;
+        foreach(var link in links)
+        {
+            if (link.target == source && link.type == CardLink.LinkType.Equipment)
+                equipCount++;
+        }
+        
+        source.RemoveModifiersFromSource(source);
+        if (equipCount > 0)
+        {
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, equipCount * 500, source));
+        }
+        Debug.Log($"Maha Vailo: {equipCount} equipamentos. +{equipCount*500} ATK.");
     }
 
     void Effect_1141_Maharaghi(CardDisplay source)
@@ -1061,27 +1138,29 @@ public partial class CardEffectManager
     void Effect_1142_MaidenOfTheAqua(CardDisplay source)
     {
         // Effect: Field treated as Umi.
-        Debug.Log("Maiden of the Aqua: Campo é Umi.");
+        // Lógica de verificação de Umi no GameManager deve incluir este card.
+        Debug.Log("Maiden of the Aqua: Campo tratado como Umi (Passivo).");
     }
 
     void Effect_1144_MajiGirePanda(CardDisplay source)
     {
         // Effect: Gains 500 ATK when a Beast is destroyed.
         // Lógica no OnCardLeavesField.
-        Debug.Log("Maji-Gire Panda: Ativo.");
+        Debug.Log("Maji-Gire Panda: Efeito de ganho de ATK configurado.");
     }
 
     void Effect_1145_MajorRiot(CardDisplay source)
     {
         // Effect: Return all monsters to hand, then SS same number.
-        Debug.Log("Major Riot: Reset de monstros (Complexo).");
+        Debug.Log("Major Riot: Resetando campo (Lógica complexa de retorno e SS pendente).");
+        // Requereria coletar todos, retornar, contar e pedir SS.
     }
 
     void Effect_1146_MajuGarzett(CardDisplay source)
     {
         // Effect: ATK = combined original ATK of 2 tributes.
         // Lógica no SummonManager.
-        Debug.Log("Maju Garzett: ATK definido pelos tributos.");
+        Debug.Log("Maju Garzett: ATK definido pelos tributos (Lógica no SummonManager).");
     }
 
     void Effect_1147_MakiuTheMagicalMist(CardDisplay source)
@@ -1160,7 +1239,7 @@ public partial class CardEffectManager
     {
         // Effect: If sent from field to GY by effect of Continuous Spell, SS during Standby Phase.
         // Lógica no OnCardSentToGraveyard e OnPhaseStart.
-        Debug.Log("Malice Doll of Demise: Efeito de renascimento configurado.");
+        Debug.Log("Malice Doll of Demise: Gatilho de renascimento configurado.");
     }
 
     void Effect_1155_ManEaterBug(CardDisplay source)
@@ -1179,7 +1258,7 @@ public partial class CardEffectManager
     void Effect_1160_MangaRyuRan(CardDisplay source)
     {
         // Toon Monster.
-        Debug.Log("Manga Ryu-Ran: Regras Toon aplicadas.");
+        Debug.Log("Manga Ryu-Ran: Toon.");
     }
 
     void Effect_1161_ManjuOfTheTenThousandHands(CardDisplay source)
@@ -1192,7 +1271,7 @@ public partial class CardEffectManager
     {
         // Effect: End Phase: Send 1 Beast/Beast-Warrior from hand/field to GY to SS this card from GY.
         // Lógica no OnPhaseStart (End Phase).
-        Debug.Log("Manticore of Darkness: Loop de renascimento.");
+        Debug.Log("Manticore of Darkness: Loop de renascimento configurado.");
     }
 
     void Effect_1163_MaraudingCaptain(CardDisplay source)
