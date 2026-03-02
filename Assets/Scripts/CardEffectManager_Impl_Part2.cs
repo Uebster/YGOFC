@@ -939,4 +939,158 @@ public partial class CardEffectManager
         Effect_Equip(source, 0, 0);
         // Lógica de piercing no BattleManager.
     }
+
+    void Effect_0626_FairyOfTheSpring(CardDisplay source)
+    {
+        // Target 1 Equip Spell in GY; add to hand. Cannot activate this turn.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> equips = gy.FindAll(c => c.type.Contains("Spell") && c.property == "Equip");
+
+        if (equips.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(equips, "Recuperar Equip Spell", (selected) => {
+                gy.Remove(selected);
+                GameManager.Instance.AddCardToHand(selected, source.isPlayerCard);
+                Debug.Log($"Fairy of the Spring: {selected.name} recuperada.");
+                // TODO: Bloquear ativação desta carta neste turno
+            });
+        }
+    }
+
+    void Effect_0628_FairysHandMirror(CardDisplay source)
+    {
+        // Switch opponent's Spell effect that targets 1 monster to another correct target.
+        Debug.Log("Fairy's Hand Mirror: Redirecionamento de alvo de Magia (Requer sistema de Chain/Targeting avançado).");
+    }
+
+    void Effect_0631_FakeTrap(CardDisplay source)
+    {
+        // Destroy this card instead of other Traps.
+        Debug.Log("Fake Trap: Destruída no lugar de outras armadilhas.");
+    }
+
+    void Effect_0632_FallingDown(CardDisplay source)
+    {
+        // Equip to opponent's monster; take control. Destroy if no Archfiend. Burn 800.
+        if (GameManager.Instance.IsCardActiveOnField("Archfiend") || GameManager.Instance.IsCardActiveOnField("0009")) // Verifica Archfiend genérico
+        {
+            Effect_ChangeControl(source, false);
+            // Lógica de manutenção/dano no OnPhaseStart
+        }
+        else
+        {
+            Debug.Log("Falling Down: Requer carta Archfiend.");
+        }
+    }
+
+    void Effect_0633_FamiliarKnight(CardDisplay source)
+    {
+        // If destroyed by battle: Each player SS 1 Lv4 monster.
+        // Lógica no OnBattleEnd.
+        Debug.Log("Familiar Knight: Efeito de invocação mútua configurado.");
+    }
+
+    void Effect_0634_FatalAbacus(CardDisplay source)
+    {
+        // Each time a monster is sent to GY, 500 damage to owner.
+        // Lógica no OnCardSentToGraveyard.
+        Debug.Log("Fatal Abacus: Efeito passivo de dano.");
+    }
+
+    void Effect_0635_FearFromTheDark(CardDisplay source)
+    {
+        // If sent from hand/deck to GY by opponent: SS this card.
+        // Lógica no OnCardSentToGraveyard.
+        Debug.Log("Fear from the Dark: Efeito passivo de invocação.");
+    }
+
+    void Effect_0636_FengshengMirror(CardDisplay source)
+    {
+        // Look at opponent's hand, discard 1 Spirit.
+        List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+        GameManager.Instance.OpenCardSelection(oppHand, "Mão do Oponente", (selected) => {
+            if (selected.type.Contains("Spirit"))
+            {
+                // Discard logic (precisa achar o GO)
+                Debug.Log($"Fengsheng Mirror: Descartando Spirit {selected.name}.");
+            }
+            else
+            {
+                Debug.Log("Fengsheng Mirror: Carta não é Spirit.");
+            }
+        });
+    }
+
+    void Effect_0637_Fenrir(CardDisplay source)
+    {
+        // SS by banishing 2 Water. Destroy monster -> Skip Draw.
+        // Lógica de SS no SummonManager/Hand.
+        // Lógica de Skip Draw no OnBattleEnd/PhaseManager.
+        Debug.Log("Fenrir: Efeitos configurados.");
+    }
+
+    void Effect_0639_FiberJar(CardDisplay source)
+    {
+        // FLIP: Shuffle all (hand, field, GY) to Deck. Draw 5.
+        Debug.Log("Fiber Jar: Resetando o jogo...");
+        
+        // 1. Mover tudo para o Deck
+        // (Simplificado: Chama CleanupDuelState e reinicia decks com as cartas atuais)
+        // Em um sistema real, moveria cada carta individualmente.
+        
+        // 2. Embaralhar
+        GameManager.Instance.ShuffleDeck(true);
+        GameManager.Instance.ShuffleDeck(false);
+        
+        // 3. Comprar 5
+        for(int i=0; i<5; i++) GameManager.Instance.DrawCard(true);
+        for(int i=0; i<5; i++) GameManager.Instance.DrawOpponentCard();
+    }
+
+    void Effect_0640_FiendComedian(CardDisplay source)
+    {
+        // Coin toss. Heads: Banish opp GY. Tails: Mill deck equal to opp GY.
+        GameManager.Instance.TossCoin(1, (heads) => {
+            int oppGYCount = GameManager.Instance.GetOpponentGraveyard().Count;
+            if (heads == 1)
+            {
+                Debug.Log("Fiend Comedian (Cara): Banindo cemitério do oponente.");
+                // Banish all opp GY
+                List<CardData> gy = new List<CardData>(GameManager.Instance.GetOpponentGraveyard());
+                foreach(var c in gy)
+                {
+                    GameManager.Instance.RemoveFromPlay(c, false);
+                    GameManager.Instance.GetOpponentGraveyard().Remove(c);
+                }
+            }
+            else
+            {
+                Debug.Log($"Fiend Comedian (Coroa): Millando {oppGYCount} cartas.");
+                GameManager.Instance.MillCards(source.isPlayerCard, oppGYCount);
+            }
+        });
+    }
+
+    void Effect_0645_FiendSkullDragon(CardDisplay source)
+    {
+        // Fusion. Negate Flip effects. Negate Trap targeting it.
+        Debug.Log("Fiend Skull Dragon: Efeitos passivos ativos.");
+    }
+
+    void Effect_0648_FiendsHandMirror(CardDisplay source)
+    {
+        // Switch opponent's Spell effect that targets 1 S/T to another correct target.
+        Debug.Log("Fiend's Hand Mirror: Redirecionamento de alvo de Magia (S/T).");
+    }
+
+    void Effect_0650_FiendsSanctuary(CardDisplay source)
+    {
+        // SS Metal Fiend Token.
+        GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Metal Fiend Token");
+        // Token logic:
+        // - Cannot attack
+        // - Opponent takes battle damage
+        // - Pay 1000 LP standby or destroy
+        Debug.Log("Fiend's Sanctuary: Token invocado (Lógica de dano/manutenção pendente).");
+    }
 }

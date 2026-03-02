@@ -292,43 +292,46 @@ public partial class CardEffectManager
         AddEffect("0624", Effect_0624_FairyMeteorCrush);
 
         // 0626 - Fairy of the Spring (Recycle Equip)
-        AddEffect("0626", c => Debug.Log("Fairy of the Spring: Reciclar Equip Spell."));
+        AddEffect("0626", Effect_0626_FairyOfTheSpring);
 
         // 0628 - Fairy's Hand Mirror (Redirect Spell)
-        AddEffect("0628", c => Debug.Log("Fairy's Hand Mirror: Redirecionar alvo de Magia."));
+        AddEffect("0628", Effect_0628_FairysHandMirror);
 
         // 0631 - Fake Trap (Protect Traps)
-        AddEffect("0631", c => Debug.Log("Fake Trap: Proteger armadilhas."));
+        AddEffect("0631", Effect_0631_FakeTrap);
 
         // 0632 - Falling Down (Snatch Steal Archfiend)
-        AddEffect("0632", c => Debug.Log("Falling Down: Snatch Steal para Archfiends."));
+        AddEffect("0632", Effect_0632_FallingDown);
 
         // 0633 - Familiar Knight (SS on destroy)
-        AddEffect("0633", c => Debug.Log("Familiar Knight: SS da mão ao ser destruído."));
+        AddEffect("0633", Effect_0633_FamiliarKnight);
 
         // 0634 - Fatal Abacus (Burn on GY)
-        AddEffect("0634", c => Debug.Log("Fatal Abacus: Dano por monstro enviado ao GY."));
+        AddEffect("0634", Effect_0634_FatalAbacus);
 
         // 0635 - Fear from the Dark (SS on discard)
-        AddEffect("0635", c => Debug.Log("Fear from the Dark: SS se descartado."));
+        AddEffect("0635", Effect_0635_FearFromTheDark);
 
         // 0636 - Fengsheng Mirror (Discard Spirit)
-        AddEffect("0636", c => Debug.Log("Fengsheng Mirror: Olhar mão e descartar Spirit."));
+        AddEffect("0636", Effect_0636_FengshengMirror);
 
         // 0637 - Fenrir (Skip Draw)
-        AddEffect("0637", c => Debug.Log("Fenrir: Skip Draw Phase."));
+        AddEffect("0637", Effect_0637_Fenrir);
 
         // 0639 - Fiber Jar (Reset Duel)
-        AddEffect("0639", c => Debug.Log("Fiber Jar: Reset total do duelo."));
+        AddEffect("0639", Effect_0639_FiberJar);
 
         // 0640 - Fiend Comedian (Banish/Mill)
-        AddEffect("0640", c => Debug.Log("Fiend Comedian: Banir GY ou millar."));
+        AddEffect("0640", Effect_0640_FiendComedian);
+
+        // 0645 - Fiend Skull Dragon (Fusion Negate)
+        AddEffect("0645", Effect_0645_FiendSkullDragon);
 
         // 0648 - Fiend's Hand Mirror (Redirect Spell)
-        AddEffect("0648", c => Debug.Log("Fiend's Hand Mirror: Redirecionar alvo de Magia (S/T)."));
+        AddEffect("0648", Effect_0648_FiendsHandMirror);
 
         // 0650 - Fiend's Sanctuary (SS Token)
-        AddEffect("0650", c => Debug.Log("Fiend's Sanctuary: SS Token."));
+        AddEffect("0650", Effect_0650_FiendsSanctuary);
 
         // 0651 - Final Attack Orders (Force Attack)
         AddEffect("0651", c => Debug.Log("Final Attack Orders: Forçar ataque."));
