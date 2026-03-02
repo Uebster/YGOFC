@@ -50,6 +50,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool hasAttackedThisTurn = false;
     [HideInInspector] public bool hasChangedPositionThisTurn = false;
     [HideInInspector] public bool summonedThisTurn = false;
+    [HideInInspector] public bool battledThisTurn = false;
     
     // Stats em Tempo Real (Modificados por efeitos)
     [HideInInspector] public int originalAtk;

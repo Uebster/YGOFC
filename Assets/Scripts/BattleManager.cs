@@ -10,6 +10,7 @@ public class BattleManager : MonoBehaviour
     public CardDisplay currentTarget;
     public bool isBattlePhase = false;
     public bool cannotAttackFaceDown = false;
+    public bool forceDirectAttack = false;
 
     void Awake()
     {
@@ -113,6 +114,7 @@ public class BattleManager : MonoBehaviour
     private bool HasDirectAttackCondition()
     {
         // Verifica se o oponente não tem monstros
+        if (forceDirectAttack) return true;
         if (GameManager.Instance.duelFieldUI == null) return false;
         foreach (Transform zone in GameManager.Instance.duelFieldUI.opponentMonsterZones)
         {
@@ -188,6 +190,9 @@ public class BattleManager : MonoBehaviour
         {
             CardEffectManager.Instance.OnDamageCalculation(attacker, target);
         }
+
+        attacker.battledThisTurn = true;
+        target.battledThisTurn = true;
 
         int atkPoints = attacker.currentAtk; // Usa currentAtk
         int targetPoints = (target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : target.currentDef;

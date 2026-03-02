@@ -121,8 +121,7 @@ public partial class CardEffectManager
         }
     }
 
-
-void Effect_0010_AFeatherOfThePhoenix(CardDisplay source)
+    void Effect_0010_AFeatherOfThePhoenix(CardDisplay source)
     {
         // Descarte 1 carta, selecione 1 carta do GY e coloque no topo do Deck
         // TODO: UI de descarte
@@ -156,7 +155,6 @@ void Effect_0010_AFeatherOfThePhoenix(CardDisplay source)
             }
         });
     }
-
 
     void Effect_0011_AFeintPlan(CardDisplay source)
     {
@@ -241,8 +239,7 @@ void Effect_0010_AFeatherOfThePhoenix(CardDisplay source)
                 (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.race == "Dragon" && t.CurrentCardData.level >= 5,
                 (t) => {
                     // Retorna para mão
-                    // GameManager.Instance.ReturnToHand(t);
-                    Destroy(t.gameObject); // Simplificado
+                    GameManager.Instance.ReturnToHand(t);
                     Debug.Log("Wingbeat: Dragão retornado.");
                     
                     // Destrói S/T
@@ -258,9 +255,8 @@ void Effect_0010_AFeatherOfThePhoenix(CardDisplay source)
         // Custo: Tributar a si mesmo.
         if (source.isOnField)
         {
-            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
-            Destroy(source.gameObject);
-            Debug.Log("A-Team: Tributado para negar Trap.");
+            GameManager.Instance.TributeCard(source);
+            Debug.Log("A-Team: Tributado. (Lógica de negar Trap simulada).");
         }
     }
 
@@ -268,7 +264,7 @@ void Effect_0010_AFeatherOfThePhoenix(CardDisplay source)
     {
         // Neste turno, ataques do oponente tornam-se ataques diretos.
         Debug.Log("Absolute End: Seus monstros não podem ser atacados, oponente ataca direto.");
-        // BattleManager.Instance.forceDirectAttack = true;
+        if (BattleManager.Instance != null) BattleManager.Instance.forceDirectAttack = true;
     }
 
     void Effect_0019_AbsorbingKidFromTheSky(CardDisplay source)
@@ -281,16 +277,30 @@ void Effect_0010_AFeatherOfThePhoenix(CardDisplay source)
     void Effect_0021_AbyssSoldier(CardDisplay source)
     {
         // Descarte 1 Water; devolva 1 carta do campo para a mão.
-        Debug.Log("Abyss Soldier: Descarte Water (pendente).");
-        if (SpellTrapManager.Instance != null)
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        List<CardData> waterMonsters = hand.FindAll(c => c.attribute == "Water");
+
+        if (waterMonsters.Count > 0)
         {
-            SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField,
-                (t) => {
-                    Debug.Log($"Abyss Soldier: {t.CurrentCardData.name} retornada para a mão.");
-                    Destroy(t.gameObject); // Simplificado (deveria ir para mão)
+             GameManager.Instance.OpenCardSelection(waterMonsters, "Descarte 1 monstro WATER", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                Debug.Log($"Abyss Soldier: Descartou {discarded.name}.");
+                
+                if (SpellTrapManager.Instance != null)
+                {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField,
+                        (t) => {
+                            Debug.Log($"Abyss Soldier: {t.CurrentCardData.name} retornada para a mão.");
+                            GameManager.Instance.ReturnToHand(t);
+                        }
+                    );
                 }
-            );
+             });
+        }
+        else
+        {
+             Debug.Log("Abyss Soldier: Nenhum monstro WATER na mão para descartar.");
         }
     }
 
@@ -298,7 +308,24 @@ void Effect_0010_AFeatherOfThePhoenix(CardDisplay source)
     {
         // Pague 1000 LP; declare Tipo e Atributo. Oponente envia 1 monstro correspondente da mão/deck ao GY.
         Effect_PayLP(source, 1000);
-        Debug.Log("Abyssal Designator: Declare Tipo/Atributo (UI Pendente). Oponente envia ao GY.");
+        Debug.Log("Abyssal Designator: Declarando Tipo/Atributo (Simulado: Dark/Fiend).");
+        
+        // Simulação: Oponente envia 1 Dark/Fiend
+        List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
+        // Nota: Não temos acesso fácil à mão do oponente como dados brutos aqui sem expor, usando deck para simular efeito
+        
+        CardData target = oppDeck.Find(c => c.attribute == "Dark" && c.race == "Fiend");
+        
+        if (target != null)
+        {
+             Debug.Log($"Abyssal Designator: Oponente enviou {target.name} ao GY.");
+             GameManager.Instance.SendToGraveyard(target, !source.isPlayerCard);
+             oppDeck.Remove(target);
+        }
+        else
+        {
+             Debug.Log("Abyssal Designator: Oponente não possui monstro correspondente no Deck.");
+        }
     }
 
     void Effect_0024_AcidRain(CardDisplay source)
@@ -331,19 +358,57 @@ void Effect_0010_AFeatherOfThePhoenix(CardDisplay source)
         }
     }
 
-    void Effect_0027_AdhesionTrapHole(CardDisplay source)
+     void Effect_0027_AdhesionTrapHole(CardDisplay source)
     {
         // Quando oponente invoca: Corta ATK pela metade original.
-        // Requer Trigger no SummonManager.
-        Debug.Log("Adhesion Trap Hole: ATK do monstro invocado reduzido pela metade.");
+        // Procura o monstro invocado neste turno no campo do oponente
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+             foreach(var zone in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+             {
+                 if(zone.childCount > 0)
+                 {
+                     var monster = zone.GetChild(0).GetComponent<CardDisplay>();
+                     if(monster != null && monster.summonedThisTurn)
+                     {
+                         Debug.Log($"Adhesion Trap Hole: {monster.CurrentCardData.name} ATK reduzido pela metade.");
+                         monster.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Multiply, 0.5f, source));
+                     }
+                 }
+             }
+        }
     }
 
     void Effect_0028_AfterTheStruggle(CardDisplay source)
     {
         // Main Phase 1: Destrói todos monstros que batalharam no turno anterior? Não, texto:
         // "Destroy all face-up monsters on the field that were involved in damage calculation..."
-        // Requer histórico de batalha no BattleManager.
-        Debug.Log("After the Struggle: Destruindo monstros que batalharam (Lógica de histórico pendente).");
+        Debug.Log("After the Struggle: Destruindo monstros que batalharam.");
+        List<CardDisplay> toDestroy = new List<CardDisplay>();
+        
+        void CheckZones(Transform[] zones)
+        {
+            foreach(var z in zones)
+            {
+                if(z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if(m != null && m.battledThisTurn) toDestroy.Add(m);
+                }
+            }
+        }
+        
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            CheckZones(GameManager.Instance.duelFieldUI.playerMonsterZones);
+            CheckZones(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+        }
+        
+        foreach(var m in toDestroy)
+        {
+            GameManager.Instance.SendToGraveyard(m.CurrentCardData, m.isPlayerCard);
+            Destroy(m.gameObject);
+        }
     }
 
     void Effect_0029_Agido(CardDisplay source)

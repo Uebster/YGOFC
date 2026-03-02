@@ -168,6 +168,20 @@ public partial class CardEffectManager
     {
         // D.D. Warrior Lady (7572887) - Lógica de banir seria aqui
         // Mystic Tomato (83011278) - Lógica de busca seria aqui
+
+        // 0019 - Absorbing Kid from the Sky
+        if (attacker != null && attacker.CurrentCardData.id == "0019" && target != null)
+        {
+             // Verifica se o alvo foi destruído (está no cemitério)
+             if (GameManager.Instance.GetOpponentGraveyard().Contains(target.CurrentCardData) || 
+                 GameManager.Instance.GetPlayerGraveyard().Contains(target.CurrentCardData))
+             {
+                 int level = target.CurrentCardData.level;
+                 int heal = level * 300;
+                 Debug.Log($"Absorbing Kid: Destruiu monstro Lv{level}. Ganha {heal} LP.");
+                 Effect_GainLP(attacker, heal);
+             }
+        }
     }
 
     public void OnLifePointsGained(bool isPlayer, int amount)
