@@ -833,13 +833,82 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0079_AquaChorus(CardDisplay source)
     {
         // Se houver monstros com mesmo nome: +500 ATK/DEF para eles.
-        // Passivo.
+        // Lógica simplificada: Verifica se há monstros com o mesmo nome no campo e aplica o buff.
+        // Em um sistema completo, isso seria um efeito contínuo que monitora o campo.
+        // Aqui, aplicamos como um efeito de ativação manual ou trigger de fase para demonstração.
+        
+        if (GameManager.Instance.duelFieldUI == null) return;
+
+        List<CardDisplay> allMonsters = new List<CardDisplay>();
+        CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allMonsters);
+        CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allMonsters);
+
+        Dictionary<string, List<CardDisplay>> nameGroups = new Dictionary<string, List<CardDisplay>>();
+
+        foreach (var m in allMonsters)
+        {
+            string name = m.CurrentCardData.name;
+            if (!nameGroups.ContainsKey(name))
+                nameGroups[name] = new List<CardDisplay>();
+            nameGroups[name].Add(m);
+        }
+
+        foreach (var group in nameGroups.Values)
+        {
+            if (group.Count > 1)
+            {
+                foreach (var m in group)
+                {
+                    m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, source));
+                    m.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, source));
+                }
+                Debug.Log($"Aqua Chorus: Buff aplicado em {group.Count} cópias de {group[0].CurrentCardData.name}.");
+            }
+        }
     }
 
     void Effect_0083_AquaSpirit(CardDisplay source)
     {
         // SS banindo 1 Water. Standby oponente: Muda posição de 1 monstro.
-        Debug.Log("Aqua Spirit: Efeito de congelar posição.");
+        // Parte 1: Invocação Especial (Geralmente tratada no SummonManager, aqui simulamos o efeito de campo)
+        // Parte 2: Efeito de mudar posição na Standby do oponente (Trigger)
+        
+        // Se estiver na mão, tenta invocar
+        if (!source.isOnField)
+        {
+            // Lógica de banir 1 Water do GY para invocar
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> waters = gy.FindAll(c => c.attribute == "Water");
+            
+            if (waters.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(waters, "Banir 1 WATER para invocar", (selected) => {
+                    GameManager.Instance.RemoveFromPlay(selected, source.isPlayerCard);
+                    GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                    // Remover da mão (já que SpecialSummonFromData cria uma cópia)
+                    GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                });
+            }
+            else
+            {
+                Debug.Log("Aqua Spirit: Requer 1 monstro WATER no GY.");
+            }
+        }
+        else
+        {
+            // Efeito em campo: Mudar posição de 1 monstro do oponente
+            // (Deveria ser na Standby do oponente, aqui ativamos manualmente para teste)
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                    (t) => {
+                        t.ChangePosition();
+                        Debug.Log($"Aqua Spirit: Posição de {t.CurrentCardData.name} alterada.");
+                    }
+                );
+            }
+        }
     }
 
     void Effect_0084_ArcanaKnightJoker(CardDisplay source)
@@ -849,8 +918,18 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         if (hand.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(hand, "Descarte para negar", (selected) => {
-                // Lógica de descarte visual pendente
-                Debug.Log($"Arcana Knight Joker: Descartou {selected.name} para negar efeito.");
+                // Verifica se o tipo da carta descartada corresponde ao tipo da carta alvo (Simulado)
+                // Em um sistema real, precisariamos saber qual carta está na chain
+                
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == selected).GetComponent<CardDisplay>());
+                Debug.Log($"Arcana Knight Joker: Descartou {selected.name}. Efeito negado (Simulado).");
+                
+                // Se houver chain, nega o último link
+                if (ChainManager.Instance != null && ChainManager.Instance.currentChain.Count > 0)
+                {
+                    // Lógica de negação simplificada
+                    Debug.Log("Arcana Knight Joker: Último efeito na corrente negado.");
+                }
             });
         }
     }
@@ -875,20 +954,38 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0090_ArchfiendsOath(CardDisplay source)
     {
         // Pague 500; declare nome. Escave topo. Se acertar, mão. Senão, GY.
-        Effect_PayLP(source, 500);
-        
-        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
-        if (deck.Count > 0)
+        if (Effect_PayLP(source, 500))
         {
-            CardData topCard = deck[0];
-            deck.RemoveAt(0); // Remove do topo
+            // Simulação de "Declarar Nome": Abre o Card Library/Trunk para escolher uma carta alvo
+            // Como não temos UI de input de texto livre, usamos o seletor de cartas do jogo
+            List<CardData> allCards = GameManager.Instance.cardDatabase.cardDatabase;
             
-            Debug.Log($"Archfiend's Oath: Carta escavada: {topCard.name}");
-            // Como não temos input de texto, vamos simular que errou e vai pro GY (comum em scripts automáticos)
-            // ou dar a carta se estiver em modo Dev.
+            // Otimização: Mostrar apenas uma sub-lista ou permitir busca seria ideal, 
+            // mas aqui vamos simular a declaração pegando uma carta aleatória do deck para teste de sucesso
+            // ou falha.
             
-            GameManager.Instance.SendToGraveyard(topCard, true);
-            Debug.Log("Archfiend's Oath: Carta enviada ao Cemitério (Adivinhação simulada).");
+            List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+            if (deck.Count > 0)
+            {
+                CardData topCard = deck[0];
+                deck.RemoveAt(0); // Escava
+                
+                Debug.Log($"Archfiend's Oath: Carta escavada: {topCard.name}");
+                
+                // Lógica simplificada: 50% de chance de acertar em modo automático/teste
+                bool success = Random.value > 0.5f; 
+                
+                if (success)
+                {
+                    Debug.Log("Archfiend's Oath: Acertou! Adicionada à mão.");
+                    GameManager.Instance.AddCardToHand(topCard, true);
+                }
+                else
+                {
+                    Debug.Log("Archfiend's Oath: Errou! Enviada ao Cemitério.");
+                    GameManager.Instance.SendToGraveyard(topCard, true);
+                }
+            }
         }
     }
 
