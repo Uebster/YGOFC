@@ -15,11 +15,25 @@ public partial class CardEffectManager
             // Nota: Em um sistema completo, abriria menu de seleção de tributos.
             // Aqui assumimos tributo automático ou cancelamento se falhar.
             Debug.Log("3-Hump Lacooda: Tributando 2 monstros...");
-            // Lógica simplificada de tributo (pega os 2 primeiros disponíveis)
-            // TODO: Implementar seleção manual via SummonManager.SelectTributes
-            Effect_TributeToDraw(source, 2, 3);
+            
+            SummonManager.Instance.SelectTributes(2, source.isPlayerCard, (tributes) => {
+                if (tributes != null && tributes.Count == 2)
+                {
+                    foreach (CardDisplay tribute in tributes)
+                    {
+                        GameManager.Instance.SendToGraveyard(tribute.CurrentCardData, tribute.isPlayerCard);
+                        Destroy(t.gameObject);
+                    }
+                    for (int i = 0; i < 3; i++) GameManager.Instance.DrawCard(source.isPlayerCard);
+                }
+                else
+                {
+                    Debug.Log("3-Hump Lacooda: Tributo cancelado ou falhou.");
+                }
+            });
         }
     }
+
 
     void Effect_0003_4StarredLadybugOfDoom(CardDisplay source)
     {
@@ -76,39 +90,82 @@ public partial class CardEffectManager
         // (Quick-Play) Se um monstro Lv8+ foi enviado ao GY este turno:
         // Pague metade dos LP; invoque "Berserk Dragon" da mão ou Deck.
         
-        // Verificação de condição (simulada)
-        // if (!GameManager.Instance.wasLevel8DestroyedThisTurn) return;
+        if (!GameManager.Instance.wasLevel8DestroyedThisTurn) return;
 
         int cost = source.isPlayerCard ? GameManager.Instance.playerLP / 2 : GameManager.Instance.opponentLP / 2;
         Effect_PayLP(source, cost);
-        
-        // Busca e invoca Berserk Dragon (ID 0168)
-        // GameManager.Instance.SpecialSummonById("0168", source.isPlayerCard);
-        Debug.Log("A Deal with Dark Ruler: Invocando Berserk Dragon!");
+
+        //GameManager.Instance.SpecialSummonById("0168", source.isPlayerCard);
+
+        List<CardData> deck = source.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+        CardData berserkDragon = deck.Find(c => c.id == "0168"); // ID Berserk Dragon
+            
+        if (berserkDragon != null)
+        {
+            Debug.Log("A Deal with Dark Ruler: Invocando Berserk Dragon!");
+            GameManager.Instance.SpecialSummonFromData(berserkDragon, source.isPlayerCard);
+            deck.Remove(berserkDragon);
+        }
+        else
+        {
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            berserkDragon = hand.Find(c => c.id == "0168");
+            if (berserkDragon != null)
+            {
+                Debug.Log("A Deal with Dark Ruler: Invocando Berserk Dragon!");
+                GameManager.Instance.SpecialSummonFromData(berserkDragon, source.isPlayerCard);
+                hand.Remove(berserkDragon);
+            }
+            else
+            {
+                Debug.Log("A Deal with Dark Ruler: Berserk Dragon não encontrado na mão ou deck.");
+            }
+        }
     }
 
-    void Effect_0010_AFeatherOfThePhoenix(CardDisplay source)
+
+void Effect_0010_AFeatherOfThePhoenix(CardDisplay source)
     {
         // Descarte 1 carta, selecione 1 carta do GY e coloque no topo do Deck
         // TODO: UI de descarte
-        Debug.Log("A Feather of the Phoenix: Descarte 1 carta (pendente).");
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        GameManager.Instance.OpenCardSelection(hand, "Selecione carta para descartar", (selectedDiscard) => {
+            if (selectedDiscard != null)
+            {
+                GameManager.Instance.SendToGraveyard(selectedDiscard, source.isPlayerCard);
+                hand.Remove(selectedDiscard);
+                Debug.Log("A Feather of the Phoenix: Descarte 1 carta (pendente).");
         
-        // UI de seleção do GY
-        List<CardData> gy = source.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
-        GameManager.Instance.OpenCardSelection(gy, "Selecione carta para o topo do Deck", (selected) => {
-            gy.Remove(selected);
-            List<CardData> deck = source.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : null; // Acesso restrito ao deck oponente
-            if (deck != null) deck.Insert(0, selected);
-            Debug.Log($"{selected.name} retornada ao topo do deck.");
+                // UI de seleção do GY
+                List<CardData> gy = source.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
+                GameManager.Instance.OpenCardSelection(gy, "Selecione carta para o topo do Deck", (selectedGY) => {
+                    if (selectedGY != null)
+                    {
+                        gy.Remove(selectedGY);
+                        List<CardData> deck = source.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : null; // Acesso restrito ao deck oponente
+                        if (deck != null) deck.Insert(0, selectedGY);
+                        Debug.Log($"{selectedGY.name} retornada ao topo do deck.");
+                    }
+                    else
+                    {
+                        Debug.Log("Nenhuma carta selecionada para retornar ao Deck.");
+                    }
+                });
+            }
+            else
+            {
+                Debug.Log("Nenhuma carta descartada.");
+            }
         });
     }
+
 
     void Effect_0011_AFeintPlan(CardDisplay source)
     {
         // Oponente não pode atacar monstros face-down neste turno
         // Define flag no BattleManager
         Debug.Log("A Feint Plan: Monstros face-down protegidos de ataque este turno.");
-        // BattleManager.Instance.cannotAttackFaceDown = true;
+        BattleManager.Instance.cannotAttackFaceDown = true;
     }
 
     void Effect_0012_AHeroEmerges(CardDisplay source)
@@ -279,14 +336,14 @@ public partial class CardEffectManager
     void Effect_0027_AdhesionTrapHole(CardDisplay source)
     {
         // Quando oponente invoca: Corta ATK pela metade original.
-        // Requer Trigger no SummonManager.
+        // Requer Trigger no SummonManager.  Verificar se não está negado.
         Debug.Log("Adhesion Trap Hole: ATK do monstro invocado reduzido pela metade.");
     }
 
     void Effect_0028_AfterTheStruggle(CardDisplay source)
     {
         // Main Phase 1: Destrói todos monstros que batalharam no turno anterior? Não, texto:
-        // "Destroy all face-up monsters on the field that were involved in damage calculation..."
+        // "Destroy all face-up monsters on the field that were involved in damage calculation...".
         // Requer histórico de batalha no BattleManager.
         Debug.Log("After the Struggle: Destruindo monstros que batalharam (Lógica de histórico pendente).");
     }
@@ -318,11 +375,47 @@ public partial class CardEffectManager
         Debug.Log("Airknight Parshath: Compra 1 carta (Trigger de dano).");
         if (source.isPlayerCard) GameManager.Instance.DrawCard();
     }
-    void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
+
+void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     {
         // Pode atacar direto se os únicos monstros face-up do oponente forem Earth, Water ou Fire.
-        Debug.Log("Alligator's Sword Dragon: Verificando condição de ataque direto...");
-        // Lógica no BattleManager
+        bool canAttackDirectly = true;
+        if (GameManager.Instance.duelFieldUI == null) return;
+        
+        Transform[] enemyMonsterZones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+
+        foreach (var zone in enemyMonsterZones)
+        {
+            if (zone.childCount > 0)
+            {
+                CardDisplay monster = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (monster != null && !monster.isFlipped) // Só verifica monstros face-up
+                {
+                    string race = monster.CurrentCardData.race;
+                    if (race != "Earth" && race != "Water" && race != "Fire")
+                    {
+                        canAttackDirectly = false;
+                        break;
+                    }
+                }
+                else
+                {
+                    canAttackDirectly = false;
+                    break;
+                }
+            }
+        }
+
+        if (canAttackDirectly)
+        {
+            Debug.Log("Alligator's Sword Dragon: Pode atacar diretamente!");
+            //  BattleManager.Instance.canCurrentlyAttackDirectly = true; // Assuming you have a variable for this
+        }
+        else
+        {
+            Debug.Log("Alligator's Sword Dragon: Não pode atacar diretamente.");
+            // BattleManager.Instance.canCurrentlyAttackDirectly = false;
+        }
     }
 
     void Effect_0039_AltarForTribute(CardDisplay source)
@@ -373,7 +466,7 @@ public partial class CardEffectManager
 
     void Effect_0044_AmazonessChainMaster(CardDisplay source)
     {
-        // Quando destruído em batalha: Pague 1500 LP; olhe mão do oponente, pegue 1 monstro.
+        // Quando destruído em batalha: Pague 1500 LP; olhe mão do oponente, pegue 1 monstro..
         Effect_PayLP(source, 1500);
         Debug.Log("Amazoness Chain Master: Custo pago. (Lógica de roubar carta da mão do oponente requer UI específica).");
         // Em um sistema completo, abriria a mão do oponente.
@@ -381,7 +474,7 @@ public partial class CardEffectManager
     }
 
     void Effect_0045_AmazonessFighter(CardDisplay source)
-    {
+    { 
         // Sem dano de batalha para o controlador.
         // Passivo no BattleManager.
     }
@@ -392,7 +485,7 @@ public partial class CardEffectManager
         
         int amazonessCount = 0;
 
-        List<Transform> allZones = new List<Transform>();
+        List<Transform> allZones = new List<Transform>(); 
         allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
         allZones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
 
@@ -402,7 +495,7 @@ public partial class CardEffectManager
             CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
             if (cd != null && cd.isOnField && !cd.isFlipped && cd.CurrentCardData.name.Contains("Amazoness"))
             {
-                amazonessCount++;
+                amazonessCount++; 
             }
         }
         source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, amazonessCount*100, source));
@@ -410,7 +503,7 @@ public partial class CardEffectManager
     }
 
     void Effect_0047_AmazonessSpellcaster(CardDisplay source)
-    {
+    { 
         // Troca ATK original com 1 monstro do oponente até End Phase.
         if (SpellTrapManager.Instance != null)
         {
@@ -441,7 +534,7 @@ public partial class CardEffectManager
     void Effect_0050_Ameba(CardDisplay source)
     {
         // Quando controle muda para oponente: Cause 2000 dano a ele.
-        // Trigger no ChangeControl.
+        // Trigger no ChangeControl. 
         GameManager.Instance.DamageOpponent(2000);
     }
 
@@ -451,7 +544,7 @@ public partial class CardEffectManager
         // O que falta: Lógica de ataque direto no BattleManager.
         if (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013")) // Umi ou Legendary Ocean
         {
-            Debug.Log("MK-3: Condição de ataque direto ativa.");
+            Debug.Log("MK-3: Condição de ataque direto ativa."); 
         }
     }
 
@@ -491,7 +584,7 @@ public partial class CardEffectManager
     void Effect_0062_AncientLamp(CardDisplay source)
     {
         // Main Phase: SS "La Jinn" da mão/Deck.
-        // Battle Phase: Redireciona ataque para monstro do oponente.
+        // Battle Phase: Redireciona ataque para monstro do oponente.  
         if (PhaseManager.Instance.currentPhase == GamePhase.Main1)
         {
             Debug.Log("Ancient Lamp: Buscando La Jinn...");
@@ -502,7 +595,7 @@ public partial class CardEffectManager
     void Effect_0066_AncientTelescope(CardDisplay source)
     {
         // Veja as 5 cartas do topo do deck do oponente.
-        Debug.Log("Ancient Telescope: Visualizando deck do oponente (Simulado).");
+        Debug.Log("Ancient Telescope: Visualizando deck do oponente (Simulado)."); 
         // TODO: UI Popup com as cartas
     }
 
@@ -528,7 +621,7 @@ public partial class CardEffectManager
     void Effect_0071_Ante(CardDisplay source)
     {
         // Ambos revelam 1 carta da mão. Quem tiver menor Level toma 1000 dano e descarta.
-        Debug.Log("Ante: Comparando níveis das cartas na mão...");
+        Debug.Log("Ante: Comparando níveis das cartas na mão..."); 
         // Lógica de comparação e dano
     }
 
