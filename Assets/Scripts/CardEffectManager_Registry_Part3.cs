@@ -202,107 +202,106 @@ public partial class CardEffectManager
         AddEffect("1104", Effect_1104_LuminousSpark);
 
         // 1112 - Machine Conversion Factory (Equip Machine +300/300)
-        AddEffect("1112", c => Effect_Equip(c, 300, 300, "Machine"));
+        AddEffect("1112", Effect_1112_MachineConversionFactory);
 
         // 1113 - Machine Duplication (SS duplicates)
-        AddEffect("1113", c => Debug.Log("Machine Duplication: Invoca cópias do deck."));
+        AddEffect("1113", Effect_1113_MachineDuplication);
 
         // 1114 - Machine King (Buff per Machine)
-        AddEffect("1114", c => Debug.Log("Machine King: +100 ATK por Machine."));
+        AddEffect("1114", Effect_1114_MachineKing);
 
         // 1117 - Mad Sword Beast (Piercing)
-        AddEffect("1117", c => Debug.Log("Mad Sword Beast: Dano perfurante."));
+        AddEffect("1117", Effect_1117_MadSwordBeast);
 
         // 1119 - Mage Power (Equip Buff per S/T)
         AddEffect("1119", Effect_MagePower);
 
         // 1120 - Magic Cylinder (Negate & Burn)
         AddEffect("1120", Effect_MagicCylinder);
-        AddEffect("1120", c => Debug.Log("Magic Cylinder: Nega ataque e causa dano igual ATK."));
 
         // 1121 - Magic Drain (Counter Spell)
-        AddEffect("1121", c => Debug.Log("Magic Drain: Nega magia se oponente não descartar."));
+        AddEffect("1121", Effect_1121_MagicDrain);
 
         // 1122 - Magic Formula (Equip DM +700, Heal)
-        AddEffect("1122", c => { Effect_Equip(c, 700, 0, "Spellcaster"); Debug.Log("Magic Formula: Cura 1000 se for pro GY."); });
+        AddEffect("1122", Effect_1122_MagicFormula);
 
         // 1123 - Magic Jammer (Discard 1, Negate Spell)
-        AddEffect("1123", c => Debug.Log("Magic Jammer: Descarta 1 para negar magia."));
+        AddEffect("1123", Effect_1123_MagicJammer);
 
         // 1124 - Magic Reflector (Counter on Spell)
-        AddEffect("1124", c => Debug.Log("Magic Reflector: Protege magia com contador."));
+        AddEffect("1124", Effect_1124_MagicReflector);
 
         // 1125 - Magical Arm Shield (Redirect Attack)
-        AddEffect("1125", c => Debug.Log("Magical Arm Shield: Redireciona ataque para monstro do oponente."));
+        AddEffect("1125", Effect_1125_MagicalArmShield);
 
         // 1126 - Magical Dimension (Tribute SS Destroy)
-        AddEffect("1126", c => Debug.Log("Magical Dimension: Tributa, Invoca Mago, Destrói."));
+        AddEffect("1126", Effect_1126_MagicalDimension);
 
         // 1127 - Magical Explosion (Burn per Spell in GY)
-        AddEffect("1127", c => Debug.Log("Magical Explosion: Dano por magias no GY."));
+        AddEffect("1127", Effect_1127_MagicalExplosion);
 
         // 1129 - Magical Hats (Hide monster)
-        AddEffect("1129", c => Debug.Log("Magical Hats: Esconde monstro e invoca 2 S/T como monstros."));
+        AddEffect("1129", Effect_1129_MagicalHats);
 
         // 1130 - Magical Labyrinth (Equip Wall, SS Shadow)
-        AddEffect("1130", c => Debug.Log("Magical Labyrinth: Invoca Wall Shadow."));
+        AddEffect("1130", Effect_1130_MagicalLabyrinth);
 
         // 1131 - Magical Marionette (Counters, Destroy)
-        AddEffect("1131", c => Debug.Log("Magical Marionette: Remove contadores para destruir monstros."));
+        AddEffect("1131", Effect_1131_MagicalMarionette);
 
         // 1132 - Magical Merchant (Excavate)
-        AddEffect("1132", c => Debug.Log("Magical Merchant: Escava até achar S/T."));
+        AddEffect("1132", Effect_1132_MagicalMerchant);
 
         // 1133 - Magical Plant Mandragola (Counters)
-        AddEffect("1133", c => Debug.Log("Mandragola: Coloca contadores em tudo."));
+        AddEffect("1133", Effect_1133_MagicalPlantMandragola);
 
         // 1134 - Magical Scientist (Pay 1000 SS Fusion)
-        AddEffect("1134", c => { Effect_PayLP(c, 1000); Debug.Log("Magical Scientist: Invoca Fusão Lv6-."); });
+        AddEffect("1134", Effect_1134_MagicalScientist);
 
         // 1135 - Magical Stone Excavation (Discard 2, Add Spell)
-        AddEffect("1135", c => Debug.Log("Magical Stone Excavation: Recupera magia do GY."));
+        AddEffect("1135", Effect_1135_MagicalStoneExcavation);
 
         // 1136 - Magical Thorn (Burn on discard)
-        AddEffect("1136", c => Debug.Log("Magical Thorn: Dano quando oponente descarta."));
+        AddEffect("1136", Effect_1136_MagicalThorn);
 
         // 1137 - Magician of Black Chaos (Ritual)
-        AddEffect("1137", c => Debug.Log("Magician of Black Chaos: Ritual."));
+        AddEffect("1137", Effect_1137_MagicianOfBlackChaos);
 
         // 1138 - Magician of Faith (Flip Add Spell)
-        AddEffect("1138", c => Debug.Log("Magician of Faith: Recupera magia do GY."));
+        AddEffect("1138", Effect_1138_MagicianOfFaith);
 
         // 1139 - Magician's Valkyria (Protect Spellcasters)
-        AddEffect("1139", c => Debug.Log("Magician's Valkyria: Oponente não pode atacar outros Magos."));
+        AddEffect("1139", Effect_1139_MagiciansValkyria);
 
         // 1140 - Maha Vailo (Buff per Equip)
-        AddEffect("1140", c => Debug.Log("Maha Vailo: Ganha ATK por equipamentos."));
+        AddEffect("1140", Effect_1140_MahaVailo);
 
         // 1141 - Maharaghi (Spirit, Peek)
-        AddEffect("1141", c => Debug.Log("Maharaghi: Olha topo do deck."));
+        AddEffect("1141", Effect_1141_Maharaghi);
 
         // 1142 - Maiden of the Aqua (Umi field)
-        AddEffect("1142", c => Debug.Log("Maiden of the Aqua: Trata campo como Umi."));
+        AddEffect("1142", Effect_1142_MaidenOfTheAqua);
 
         // 1144 - Maji-Gire Panda (Buff per Beast destroyed)
-        AddEffect("1144", c => Debug.Log("Maji-Gire Panda: Ganha ATK quando Besta é destruída."));
+        AddEffect("1144", Effect_1144_MajiGirePanda);
 
         // 1145 - Major Riot (Return -> SS)
-        AddEffect("1145", c => Debug.Log("Major Riot: Reset de monstros."));
+        AddEffect("1145", Effect_1145_MajorRiot);
 
         // 1146 - Maju Garzett (ATK = Tributes)
-        AddEffect("1146", c => Debug.Log("Maju Garzett: ATK igual soma dos tributos."));
+        AddEffect("1146", Effect_1146_MajuGarzett);
 
         // 1147 - Makiu, the Magical Mist (Destroy DEF < ATK)
-        AddEffect("1147", c => Debug.Log("Makiu: Destrói monstros com DEF baixa."));
+        AddEffect("1147", Effect_1147_MakiuTheMagicalMist);
 
         // 1148 - Makyura the Destructor (Trap from hand)
-        AddEffect("1148", c => Debug.Log("Makyura: Ativar Traps da mão."));
+        AddEffect("1148", Effect_1148_MakyuraTheDestructor);
 
         // 1149 - Malevolent Catastrophe (Destroy S/T on attack)
-        AddEffect("1149", c => Debug.Log("Malevolent Catastrophe: Destrói todas as S/T."));
+        AddEffect("1149", Effect_1149_MalevolentCatastrophe);
 
         // 1150 - Malevolent Nuzzler (Equip +700)
-        AddEffect("1150", c => Effect_Equip(c, 700, 0));
+        AddEffect("1150", Effect_1150_MalevolentNuzzler);
 
         // 1151 - Malice Dispersion (Discard 1, Destroy Continuous Traps)
         AddEffect("1151", c => Debug.Log("Malice Dispersion: Destrói Traps Contínuas."));

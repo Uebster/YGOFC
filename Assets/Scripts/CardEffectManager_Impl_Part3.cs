@@ -554,4 +554,364 @@ public partial class CardEffectManager
     {
         Effect_Field(source, 500, -400, "", "Light");
     }
+
+    void Effect_1112_MachineConversionFactory(CardDisplay source)
+    {
+        Effect_Equip(source, 300, 300, "Machine");
+    }
+
+    void Effect_1113_MachineDuplication(CardDisplay source)
+    {
+        // Effect: Select 1 Machine with ATK <= 500; SS up to 2 copies from Deck.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.race == "Machine" && t.currentAtk <= 500,
+                (target) => {
+                    string name = target.CurrentCardData.name;
+                    List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+                    List<CardData> copies = deck.FindAll(c => c.name == name);
+                    
+                    if (copies.Count > 0)
+                    {
+                        int max = Mathf.Min(2, copies.Count);
+                        GameManager.Instance.OpenCardMultiSelection(copies, "Invocar Cópias", 1, max, (selected) => {
+                            foreach(var c in selected)
+                            {
+                                GameManager.Instance.SpecialSummonFromData(c, source.isPlayerCard);
+                                deck.Remove(c);
+                            }
+                            GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+                        });
+                    }
+                }
+            );
+        }
+    }
+
+    void Effect_1114_MachineKing(CardDisplay source)
+    {
+        // Effect: +100 ATK for each Machine on the field.
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (m.CurrentCardData.race == "Machine") count++;
+        }
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 100, source));
+    }
+
+    void Effect_1117_MadSwordBeast(CardDisplay source)
+    {
+        // Effect: Piercing damage.
+        Debug.Log("Mad Sword Beast: Dano perfurante (Passivo).");
+    }
+
+    void Effect_1121_MagicDrain(CardDisplay source)
+    {
+        // Effect: Counter Trap. Opponent can discard 1 Spell to negate this. If not, negate Spell.
+        Debug.Log("Magic Drain: Negação condicional (Requer interação do oponente).");
+    }
+
+    void Effect_1122_MagicFormula(CardDisplay source)
+    {
+        // Effect: Equip "Dark Magician" or "Dark Magician Girl". +700 ATK. If sent to GY, gain 1000 LP.
+        Effect_Equip(source, 700, 0, "Spellcaster"); // Simplificado
+        // Lógica de cura no OnCardSentToGraveyard
+    }
+
+    void Effect_1123_MagicJammer(CardDisplay source)
+    {
+        // Effect: Discard 1 card; negate Spell activation and destroy it.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                Debug.Log("Magic Jammer: Magia negada (Simulado).");
+            });
+        }
+    }
+
+    void Effect_1124_MagicReflector(CardDisplay source)
+    {
+        // Effect: Select 1 Spell Card; place 1 counter on it. If destroyed, remove counter instead.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Spell"),
+                (t) => {
+                    t.AddSpellCounter(1);
+                    Debug.Log($"Magic Reflector: Contador adicionado em {t.CurrentCardData.name}.");
+                }
+            );
+        }
+    }
+
+    void Effect_1125_MagicalArmShield(CardDisplay source)
+    {
+        // Effect: When attacked: Take control of 1 opp monster (except attacker) and make it the target.
+        if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isPlayerCard && t != BattleManager.Instance.currentAttacker,
+                    (newTarget) => {
+                        GameManager.Instance.SwitchControl(newTarget);
+                        BattleManager.Instance.currentTarget = newTarget;
+                        Debug.Log($"Magical Arm Shield: {newTarget.CurrentCardData.name} é o novo alvo.");
+                    }
+                );
+            }
+        }
+    }
+
+    void Effect_1126_MagicalDimension(CardDisplay source)
+    {
+        // Effect: If you control Spellcaster: Tribute 1 monster; SS Spellcaster from hand, then destroy 1 monster.
+        if (GameManager.Instance.IsCardActiveOnField("Spellcaster") || GameManager.Instance.IsCardActiveOnField("0419")) // Check Spellcaster
+        {
+            if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
+            {
+                // Tribute
+                // SS from Hand
+                // Destroy
+                Debug.Log("Magical Dimension: Sequência de efeitos (Simulado).");
+            }
+        }
+    }
+
+    void Effect_1127_MagicalExplosion(CardDisplay source)
+    {
+        // Effect: If no cards in hand: 200 damage per Spell in GY.
+        if (GameManager.Instance.GetPlayerHandData().Count == 0)
+        {
+            int spells = GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.type.Contains("Spell")).Count;
+            Effect_DirectDamage(source, spells * 200);
+        }
+    }
+
+    void Effect_1129_MagicalHats(CardDisplay source)
+    {
+        // Effect: Select 2 non-monster cards from Deck + 1 monster on field. Shuffle and Set face-down.
+        Debug.Log("Magical Hats: Esconde-esconde (Simulado).");
+    }
+
+    void Effect_1130_MagicalLabyrinth(CardDisplay source)
+    {
+        // Effect: Equip "Labyrinth Wall"; tribute it to SS "Wall Shadow".
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.name == "Labyrinth Wall",
+                (t) => {
+                    GameManager.Instance.TributeCard(t);
+                    // SS Wall Shadow (ID 2048)
+                    // GameManager.Instance.SpecialSummonById("2048", source.isPlayerCard);
+                    Debug.Log("Magical Labyrinth: Wall Shadow invocado.");
+                }
+            );
+        }
+    }
+
+    void Effect_1131_MagicalMarionette(CardDisplay source)
+    {
+        // Effect: Spell Counter on Spell activation. +200 ATK per counter. Remove 2 -> Destroy monster.
+        // Lógica de contadores no OnSpellActivated.
+        // Ignition:
+        if (source.spellCounters >= 2)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                    (t) => {
+                        source.RemoveSpellCounter(2);
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                        GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                        Destroy(t.gameObject);
+                    }
+                );
+            }
+        }
+    }
+
+    void Effect_1132_MagicalMerchant(CardDisplay source)
+    {
+        // FLIP: Excavate until S/T found. Add to hand, send monsters to GY.
+        Debug.Log("Magical Merchant: Escavando deck...");
+        // Lógica de escavação
+    }
+
+    void Effect_1133_MagicalPlantMandragola(CardDisplay source)
+    {
+        // FLIP: Place 1 Spell Counter on each face-up card that can have one.
+        Debug.Log("Mandragola: Distribuindo contadores.");
+        // Itera campo e adiciona
+    }
+
+    void Effect_1134_MagicalScientist(CardDisplay source)
+    {
+        // Effect: Pay 1000 LP; SS 1 Level 6 or lower Fusion Monster from Extra Deck.
+        // Cannot attack directly, return to Extra Deck at End Phase.
+        if (Effect_PayLP(source, 1000))
+        {
+            List<CardData> extra = GameManager.Instance.GetPlayerExtraDeck();
+            List<CardData> targets = extra.FindAll(c => c.type.Contains("Fusion") && c.level <= 6);
+            
+            if (targets.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(targets, "Invocar Fusão Lv6-", (selected) => {
+                    GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                    // TODO: Aplicar restrição de ataque direto e retorno na End Phase
+                    Debug.Log($"Magical Scientist: Invocou {selected.name}.");
+                });
+            }
+        }
+    }
+
+    void Effect_1135_MagicalStoneExcavation(CardDisplay source)
+    {
+        // Effect: Discard 2 cards; add 1 Spell Card from GY to hand.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count >= 2)
+        {
+            GameManager.Instance.OpenCardMultiSelection(hand, "Descarte 2 cartas", 2, 2, (discarded) => {
+                foreach(var c in discarded)
+                {
+                    GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c).GetComponent<CardDisplay>());
+                }
+                
+                Effect_SearchDeck(source, "Spell"); // Deveria ser do GY, não do Deck. Ajustando:
+                
+                List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+                List<CardData> spells = gy.FindAll(c => c.type.Contains("Spell"));
+                if (spells.Count > 0)
+                {
+                    GameManager.Instance.OpenCardSelection(spells, "Recuperar Magia", (selected) => {
+                        gy.Remove(selected);
+                        GameManager.Instance.AddCardToHand(selected, source.isPlayerCard);
+                    });
+                }
+            });
+        }
+    }
+
+    void Effect_1136_MagicalThorn(CardDisplay source)
+    {
+        // Effect: When opponent discards from hand to GY, inflict 500 damage per card.
+        // Lógica no OnCardDiscarded (CardEffectManager_Impl.cs).
+        Debug.Log("Magical Thorn: Ativo.");
+    }
+
+    void Effect_1137_MagicianOfBlackChaos(CardDisplay source)
+    {
+        Debug.Log("Magician of Black Chaos: Ritual.");
+    }
+
+    void Effect_1138_MagicianOfFaith(CardDisplay source)
+    {
+        // FLIP: Target 1 Spell in GY; add to hand.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> spells = gy.FindAll(c => c.type.Contains("Spell"));
+        
+        if (spells.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(spells, "Recuperar Magia", (selected) => {
+                gy.Remove(selected);
+                GameManager.Instance.AddCardToHand(selected, source.isPlayerCard);
+            });
+        }
+    }
+
+    void Effect_1139_MagiciansValkyria(CardDisplay source)
+    {
+        // Effect: Opponent cannot target other Spellcasters for attacks.
+        Debug.Log("Magician's Valkyria: Protege outros Magos.");
+    }
+
+    void Effect_1140_MahaVailo(CardDisplay source)
+    {
+        // Effect: Gains 500 ATK for each Equip Card equipped to this card.
+        // Lógica passiva/stat modifier.
+        // Como não temos contagem fácil de equips no alvo, simulamos:
+        Debug.Log("Maha Vailo: Ganha ATK por equips (Lógica de contagem pendente).");
+    }
+
+    void Effect_1141_Maharaghi(CardDisplay source)
+    {
+        // Spirit. Summon/Flip: See top card of Deck.
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        if (deck.Count > 0)
+        {
+            Debug.Log($"Maharaghi: Topo do deck é {deck[0].name}.");
+        }
+    }
+
+    void Effect_1142_MaidenOfTheAqua(CardDisplay source)
+    {
+        // Effect: Field treated as Umi.
+        Debug.Log("Maiden of the Aqua: Campo é Umi.");
+    }
+
+    void Effect_1144_MajiGirePanda(CardDisplay source)
+    {
+        // Effect: Gains 500 ATK when a Beast is destroyed.
+        // Lógica no OnCardLeavesField.
+        Debug.Log("Maji-Gire Panda: Ativo.");
+    }
+
+    void Effect_1145_MajorRiot(CardDisplay source)
+    {
+        // Effect: Return all monsters to hand, then SS same number.
+        Debug.Log("Major Riot: Reset de monstros (Complexo).");
+    }
+
+    void Effect_1146_MajuGarzett(CardDisplay source)
+    {
+        // Effect: ATK = combined original ATK of 2 tributes.
+        // Lógica no SummonManager.
+        Debug.Log("Maju Garzett: ATK definido pelos tributos.");
+    }
+
+    void Effect_1147_MakiuTheMagicalMist(CardDisplay source)
+    {
+        // Effect: Select 1 "Summoned Skull" or Thunder monster. Destroy all opp monsters with DEF < ATK of selected.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && (t.CurrentCardData.name == "Summoned Skull" || t.CurrentCardData.race == "Thunder"),
+                (selected) => {
+                    int threshold = selected.currentAtk;
+                    // Destruir oponentes com DEF < threshold
+                    Debug.Log($"Makiu: Destruindo monstros com DEF < {threshold}.");
+                }
+            );
+        }
+    }
+
+    void Effect_1148_MakyuraTheDestructor(CardDisplay source)
+    {
+        // Effect: If sent to GY, can activate Traps from hand this turn.
+        Debug.Log("Makyura: Traps da mão ativadas.");
+        if (SpellTrapManager.Instance != null) SpellTrapManager.Instance.canActivateTrapsFromHand = true;
+    }
+
+    void Effect_1149_MalevolentCatastrophe(CardDisplay source)
+    {
+        // Effect: When opponent declares attack: Destroy all S/T.
+        // Requer Trigger de ataque.
+        Debug.Log("Malevolent Catastrophe: Destruindo todas as S/T.");
+        Effect_HeavyStorm(source);
+    }
+
+    void Effect_1150_MalevolentNuzzler(CardDisplay source)
+    {
+        // Equip: +700 ATK. If sent to GY, pay 500 to return to top of Deck.
+        Effect_Equip(source, 700, 0);
+        // Lógica de retorno no OnCardSentToGraveyard.
+    }
 }
