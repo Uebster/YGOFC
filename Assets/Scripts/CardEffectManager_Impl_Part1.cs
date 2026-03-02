@@ -511,8 +511,31 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0042_AmazonessArchers(CardDisplay source)
     {
         // Ative quando oponente ataca. Todos monstros oponente viram face-up Attack, -500 ATK. Devem atacar.
-        Debug.Log("Amazoness Archers: Debuff global e ataque forçado.");
-        // Iterar monstros oponente, mudar posição, reduzir ATK.
+        Debug.Log("Amazoness Archers: Forçando ataque e aplicando debuff.");
+        
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var zone in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+            {
+                if (zone.childCount > 0)
+                {
+                    var monster = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (monster != null)
+                    {
+                        // Vira para Ataque (sem ativar Flip effects)
+                        if (monster.position == CardDisplay.BattlePosition.Defense || monster.isFlipped)
+                        {
+                            monster.position = CardDisplay.BattlePosition.Attack;
+                            monster.ShowFront();
+                            monster.isFlipped = false; // Define como revelado manualmente para não disparar trigger de Flip
+                        }
+                        // Reduz 500 ATK
+                        monster.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -500, source));
+                    }
+                }
+            }
+        }
+        // Nota: A obrigatoriedade de ataque deve ser tratada no BattleManager (flag forceAllAttack)
     }
 
     void Effect_0043_AmazonessBlowpiper(CardDisplay source)
@@ -530,10 +553,22 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0044_AmazonessChainMaster(CardDisplay source)
     {
         // Quando destruído em batalha: Pague 1500 LP; olhe mão do oponente, pegue 1 monstro.
-        Effect_PayLP(source, 1500);
-        Debug.Log("Amazoness Chain Master: Custo pago. (Lógica de roubar carta da mão do oponente requer UI específica).");
-        // Em um sistema completo, abriria a mão do oponente.
-        // Por enquanto, apenas o custo é aplicado.
+        if (Effect_PayLP(source, 1500))
+        {
+            List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+            if (oppHand.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(oppHand, "Roubar Monstro do Oponente", (selected) => {
+                    if (selected != null && selected.type.Contains("Monster"))
+                    {
+                        Debug.Log($"Amazoness Chain Master: Roubou {selected.name}.");
+                        // Lógica simplificada: Adiciona cópia à sua mão (remover da mão do oponente requereria referência ao GameObject específico)
+                        GameManager.Instance.AddCardToHand(selected, true);
+                        // TODO: Remover carta real da mão do oponente
+                    }
+                });
+            }
+        }
     }
 
     void Effect_0045_AmazonessFighter(CardDisplay source)
@@ -571,12 +606,22 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && !t.isPlayerCard,
-                (t) => {
-                    int myAtk = source.CurrentCardData.atk;
-                    int oppAtk = t.CurrentCardData.atk;
-                    // Troca lógica (precisa de suporte a modificadores temporários)
-                    Debug.Log($"Amazoness Spellcaster: Trocando {myAtk} com {oppAtk}.");
+                (myMonster) => myMonster.isOnField && myMonster.isPlayerCard && myMonster.CurrentCardData.name.Contains("Amazoness"),
+                (myMonster) => {
+                    // Seleciona oponente
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (oppMonster) => oppMonster.isOnField && !oppMonster.isPlayerCard && oppMonster.CurrentCardData.type.Contains("Monster"),
+                        (oppMonster) => {
+                            int myOriginal = myMonster.originalAtk;
+                            int oppOriginal = oppMonster.originalAtk;
+
+                            // Troca usando modificadores 'Set'
+                            myMonster.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, oppOriginal, source));
+                            oppMonster.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, myOriginal, source));
+
+                            Debug.Log($"Amazoness Spellcaster: Trocou ATK original de {myMonster.CurrentCardData.name} e {oppMonster.CurrentCardData.name}.");
+                        }
+                    );
                 }
             );
         }
@@ -615,7 +660,16 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     {
         // Equip Jinzo. Jinzo do controlador não nega Traps do controlador.
         // O que falta: Verificar se o alvo é Jinzo e lógica de imunidade.
-        Effect_Equip(source, 0, 0, "Machine"); // Simplificado
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.name == "Jinzo",
+                (t) => {
+                    Effect_Equip(source, 0, 0); // Realiza o equip visual
+                    Debug.Log("Amplifier: Equipado em Jinzo. (Lógica de imunidade de Trap deve ser verificada no SpellTrapManager).");
+                }
+            );
+        }
     }
 
     void Effect_0055_AnOwlOfLuck(CardDisplay source)
@@ -650,8 +704,23 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         // Battle Phase: Redireciona ataque para monstro do oponente.
         if (PhaseManager.Instance.currentPhase == GamePhase.Main1)
         {
-            Debug.Log("Ancient Lamp: Buscando La Jinn...");
-            // Busca e invoca
+            // Busca La Jinn no Deck ou Mão
+            List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+            CardData laJinn = deck.Find(c => c.name.Contains("La Jinn"));
+            
+            if (laJinn != null)
+            {
+                GameManager.Instance.SpecialSummonFromData(laJinn, source.isPlayerCard);
+                deck.Remove(laJinn);
+                Debug.Log("Ancient Lamp: La Jinn invocado do Deck.");
+            }
+            else
+            {
+                // Tenta na mão
+                List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+                // ... lógica similar para mão
+                Debug.Log("Ancient Lamp: La Jinn não encontrado no Deck.");
+            }
         }
     }
 
@@ -659,7 +728,13 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     {
         // Veja as 5 cartas do topo do deck do oponente.
         Debug.Log("Ancient Telescope: Visualizando deck do oponente (Simulado).");
-        // TODO: UI Popup com as cartas
+        List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
+        if (oppDeck.Count > 0)
+        {
+            int count = Mathf.Min(5, oppDeck.Count);
+            List<CardData> topCards = oppDeck.GetRange(0, count);
+            GameManager.Instance.OpenCardSelection(topCards, "Topo do Deck do Oponente", (c) => { }); // Apenas visualização
+        }
     }
 
     void Effect_0069_AndroSphinx(CardDisplay source)
@@ -684,15 +759,32 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0071_Ante(CardDisplay source)
     {
         // Ambos revelam 1 carta da mão. Quem tiver menor Level toma 1000 dano e descarta.
-        Debug.Log("Ante: Comparando níveis das cartas na mão...");
-        // Lógica de comparação e dano
+        List<CardData> myHand = GameManager.Instance.GetPlayerHandData();
+        if (myHand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(myHand, "Selecione carta para Ante", (myCard) => {
+                // Simula escolha do oponente (aleatória)
+                List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+                if (oppHand.Count > 0)
+                {
+                    CardData oppCard = oppHand[Random.Range(0, oppHand.Count)];
+                    Debug.Log($"Ante: Você ({myCard.name} Lv{myCard.level}) vs Oponente ({oppCard.name} Lv{oppCard.level})");
+                    
+                    if (myCard.level > oppCard.level) GameManager.Instance.DamageOpponent(1000);
+                    else if (oppCard.level > myCard.level) GameManager.Instance.DamagePlayer(1000);
+                    else Debug.Log("Ante: Empate.");
+                }
+            });
+        }
     }
 
     void Effect_0073_AntiRaigeki(CardDisplay source)
     {
         // Quando oponente ativa Raigeki: Negue, destrua todos monstros do oponente.
-        Debug.Log("Anti Raigeki: Counter ativado!");
-        DestroyAllMonsters(true, false); // Destrói oponente
+        // Verifica se a última carta na chain foi Raigeki do oponente
+        // (Lógica simplificada, assume que ChainManager tem histórico)
+        Debug.Log("Anti Raigeki: Destruindo monstros do oponente (Lógica de Counter pendente).");
+        DestroyAllMonsters(true, false);
     }
 
     void Effect_0074_AntiAircraftFlower(CardDisplay source)
@@ -704,6 +796,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0075_AntiSpell(CardDisplay source)
     {
         // Remova 2 Spell Counters; negue Magia.
+        // Requer sistema de Spell Counters.
         Debug.Log("Anti-Spell: Sistema de Spell Counters ainda não implementado.");
     }
 

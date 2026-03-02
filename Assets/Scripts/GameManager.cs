@@ -1467,6 +1467,8 @@ public class GameManager : MonoBehaviour
     public List<CardData> GetPlayerGraveyard() { return playerGraveyard; }
     public List<CardData> GetOpponentGraveyard() { return opponentGraveyard; }
     public List<CardData> GetPlayerHandData() { return playerHand.Select(g => g.GetComponent<CardDisplay>().CurrentCardData).ToList(); }
+    public List<CardData> GetOpponentHandData() { return opponentHand.Select(g => g.GetComponent<CardDisplay>().CurrentCardData).ToList(); }
+    public List<CardData> GetOpponentMainDeck() { return opponentDeck; }
 
     
     public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
