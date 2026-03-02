@@ -181,7 +181,7 @@ public class SummonManager : MonoBehaviour
 
         isSelectingTributes = false;
         if (GameManager.Instance != null)
-            GameManager.Instance.FinalizeSummon(pendingCardGO, pendingCardData, pendingIsSet, true, pendingIsSet);
+            GameManager.Instance.FinalizeSummon(pendingCardGO, pendingCardData, pendingIsSet, true, pendingIsSet, true);
     }
 
     public void CancelTributeSelection()
@@ -225,5 +225,9 @@ public class SummonManager : MonoBehaviour
             GameManager.Instance.TributeCard(monster);
             tributed++;
         }
+        
+        // Finaliza como Tribute Summon
+        // Nota: O fluxo original chamava FinalizeSummon no GameManager.TrySummonMonster.
+        // Precisamos garantir que a flag seja passada corretamente lá também se for automático.
     }
 }

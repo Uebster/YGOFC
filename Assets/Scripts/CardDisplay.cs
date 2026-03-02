@@ -51,6 +51,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool hasChangedPositionThisTurn = false;
     [HideInInspector] public bool summonedThisTurn = false;
     [HideInInspector] public bool battledThisTurn = false;
+    [HideInInspector] public bool isTributeSummoned = false; // Novo: Rastreia Invocação por Tributo
     
     // Stats em Tempo Real (Modificados por efeitos)
     [HideInInspector] public int originalAtk;

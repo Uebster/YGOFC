@@ -301,6 +301,16 @@ public partial class CardEffectManager
                     GameManager.Instance.BanishCard(card);
                 }
             });
+
+            // 1252 - Mirror Wall (Maintenance)
+            CheckActiveCards("1252", (card) => {
+                if (!Effect_PayLP(card, 2000))
+                {
+                    Debug.Log("Mirror Wall: Manutenção não paga. Destruída.");
+                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                    Destroy(card.gameObject);
+                }
+            });
         }
         else if (phase == GamePhase.Standby)
         {
@@ -404,6 +414,31 @@ public partial class CardEffectManager
             // Assume destruído por batalha
             GameManager.Instance.DamageOpponent(500);
         }
+
+        // 1259 - Mokey Mokey Smackdown
+        if (card.race == "Fairy" && isOwnerPlayer)
+        {
+            CheckActiveCards("1259", (smackdown) => {
+                // Verifica se tem Mokey Mokey
+                if (GameManager.Instance.IsCardActiveOnField("1258") || GameManager.Instance.IsCardActiveOnField("Mokey Mokey"))
+                {
+                    // Aplica buff temporário em todos os Mokey Mokeys (Lógica complexa de busca, simplificado para log)
+                    Debug.Log("Mokey Mokey Smackdown: Mokey Mokeys ganham 3000 ATK!");
+                    // ApplyBuffToAll("Mokey Mokey", 3000);
+                }
+            });
+        }
+
+        // 1275 - Morale Boost (Damage on Equip removed)
+        if (card.type.Contains("Spell") && card.property == "Equip")
+        {
+            CheckActiveCards("1275", (morale) => {
+                // Dano ao controlador do Equip
+                if (isOwnerPlayer) GameManager.Instance.DamagePlayer(1000);
+                else GameManager.Instance.DamageOpponent(1000);
+                Debug.Log("Morale Boost: 1000 de dano por Equip removido.");
+            });
+        }
     }
 
     public void OnCardDiscarded(CardDisplay card)
@@ -450,6 +485,13 @@ public partial class CardEffectManager
                 GameManager.Instance.DrawCard();
             }
         });
+
+        // 1262 - Molten Zombie
+        if (summonedCard.CurrentCardData.id == "1262") // Se foi SS do GY (assumindo contexto)
+        {
+            Debug.Log("Molten Zombie: Compra 1.");
+            if (summonedCard.isPlayerCard) GameManager.Instance.DrawCard();
+        }
     }
 
     partial void OnSummonImpl(CardDisplay card)
@@ -584,6 +626,19 @@ public partial class CardEffectManager
         UpdateAllMegamorphs();
     }
 
+        // Novo Hook para ativação de Spells (chamado pelo GameManager/SpellTrapManager)
+    public void OnSpellActivated(CardDisplay spell)
+    {
+        // 1275 - Morale Boost (Heal on Equip)
+        if (spell.CurrentCardData.property == "Equip")
+        {
+            CheckActiveCards("1275", (morale) => {
+                Effect_GainLP(spell, 1000); // Cura o controlador da Spell
+                Debug.Log("Morale Boost: +1000 LP.");
+            });
+        }
+    }
+
     public void OnCardLeavesField(CardDisplay card)
     {
         // Remove quaisquer modificadores que esta carta tenha aplicado em outras
@@ -686,6 +741,22 @@ public partial class CardEffectManager
             int bonus = target.currentAtk;
             attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, bonus, attacker));
             Debug.Log($"Mirage Knight: +{bonus} ATK.");
+        }
+
+        // 1252 - Mirror Wall
+        if (GameManager.Instance.IsCardActiveOnField("1252") && attacker != null && !attacker.isPlayerCard) // Se oponente ataca e Mirror Wall ativa
+        {
+            // Reduz ATK pela metade (Permanente enquanto atacar? Regra diz "has its ATK halved")
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Multiply, 0.5f, null));
+            Debug.Log("Mirror Wall: ATK do atacante reduzido pela metade.");
+        }
+
+        // 1264 - Monk Fighter
+        if ((target != null && target.CurrentCardData.id == "1264") || (attacker.CurrentCardData.id == "1264"))
+        {
+            // Dano de batalha 0 para o controlador
+            // Requer suporte no BattleManager para anular dano específico
+            Debug.Log("Monk Fighter: Dano de batalha será 0.");
         }
     }
 

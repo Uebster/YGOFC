@@ -1230,7 +1230,9 @@ public class GameManager : MonoBehaviour
 
         // Se passou por tudo (ou foi auto-tribute), finaliza
         // Normal Summon/Set: Se isSet=true, é Face-Down Defense. Se false, é Face-Up Attack.
-        FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet); 
+        // Nota: Se houve tributo automático, SummonManager deveria ter lidado, mas aqui assumimos fluxo simples ou 0 tributos
+        bool wasTribute = (cardData.level >= 5); // Simplificação para Auto-Tribute implícito se passou pelo SummonManager
+        FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, wasTribute); 
     }
 
     // Novo método para Special Summon que pede a posição
@@ -1249,7 +1251,7 @@ public class GameManager : MonoBehaviour
 
     // Novo método público para finalizar a invocação (chamado pelo SummonManager após tributo manual)
     // Atualizado para suportar Face-Down explicitamente
-    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false)
+    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false, bool isTributeSummon = false)
     {
         // 2. Encontrar Zona Livre
         Transform targetZone = isPlayer ? GetFreePlayerMonsterZone() : GetFreeOpponentMonsterZone();
@@ -1278,6 +1280,7 @@ public class GameManager : MonoBehaviour
             {
                 display.position = CardDisplay.BattlePosition.Defense;
                 display.summonedThisTurn = true; // Marca invocação
+                display.isTributeSummoned = isTributeSummon;
                 // Modo Defesa (Set): Virado para baixo e Rotacionado 90 graus
                 float zRotation = isPlayer ? 90f : -90f;
                 
@@ -1288,6 +1291,7 @@ public class GameManager : MonoBehaviour
             {
                 display.position = CardDisplay.BattlePosition.Attack;
                 display.summonedThisTurn = true; // Marca invocação
+                display.isTributeSummoned = isTributeSummon;
                 // Modo Ataque: Virado para cima e Reto
                 float zRotation = isPlayer ? 0f : 180f;
                 display.ShowFront();
