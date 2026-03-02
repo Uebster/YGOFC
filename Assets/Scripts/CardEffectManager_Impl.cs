@@ -492,6 +492,14 @@ public partial class CardEffectManager
             Debug.Log("Molten Zombie: Compra 1.");
             if (summonedCard.isPlayerCard) GameManager.Instance.DrawCard();
         }
+
+        // 1296 - Mysterious Puppeteer (Gain 500 LP on Summon)
+        // Verifica se existe algum Mysterious Puppeteer face-up no campo
+        CheckActiveCards("1296", (puppeteer) => {
+            // O efeito ativa para invocações de qualquer jogador
+            Effect_GainLP(puppeteer, 500);
+            Debug.Log($"Mysterious Puppeteer: {puppeteer.CurrentCardData.name} gerou +500 LP.");
+        });
     }
 
     partial void OnSummonImpl(CardDisplay card)
