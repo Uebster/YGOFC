@@ -38,6 +38,11 @@ public partial class CardEffectManager
                 }
             }
 
+            // Balloon Lizard (0132): Add counter
+            CheckActiveCards("0132", (card) => {
+                if (card.isPlayerCard) card.AddSpellCounter(1);
+            });
+
             // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
             // (Na verdade é End Phase, movido para lá se fosse o caso)
         }
@@ -93,6 +98,37 @@ public partial class CardEffectManager
         {
             // Assumindo que summonedThisTurn + isOnField logo após criação indica invocação recente
             card.AddSpellCounter(3);
+        }
+    }
+
+    public void OnCardLeavesField(CardDisplay card)
+    {
+        // Balloon Lizard (0132): Dano ao ser destruído (baseado em contadores)
+        if (card.CurrentCardData.id == "0132" && card.spellCounters > 0)
+        {
+            int damage = card.spellCounters * 400;
+            Debug.Log($"Balloon Lizard destruído com {card.spellCounters} contadores. Dano: {damage}");
+            // O dono do Balloon Lizard é quem ativou o efeito, mas o dano vai para quem destruiu?
+            // Texto: "inflict damage to the controller of the card that destroyed it"
+            // Simplificação: Causa dano ao oponente do dono da carta (assumindo que o oponente destruiu)
+            if (card.isPlayerCard) GameManager.Instance.DamageOpponent(damage);
+            else GameManager.Instance.DamagePlayer(damage);
+        }
+
+        // Remove quaisquer modificadores que esta carta tenha aplicado em outras
+        // Ex: Se um Equip Spell for destruído, o monstro perde o buff
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<Transform> allZones = new List<Transform>();
+            allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
+            allZones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+
+            foreach (var zone in allZones)
+            {
+                if (zone.childCount == 0) continue;
+                CardDisplay target = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (target != null) target.RemoveModifiersFromSource(card);
+            }
         }
     }
 
@@ -203,6 +239,16 @@ public partial class CardEffectManager
         if (target != null && (target.CurrentCardData.id == "0124" || target.CurrentCardData.id == "0125"))
         {
             HandleBESCounter(target);
+        }
+
+        // BLS - Envoy (0189): Ataque duplo se destruir monstro
+        if (attacker != null && attacker.CurrentCardData.id == "0189" && target != null)
+        {
+            // Verifica se o alvo foi destruído
+            // Nota: O BattleManager já marcou hasAttackedThisTurn = true.
+            // Precisamos de uma flag especial ou resetar hasAttackedThisTurn condicionalmente.
+            Debug.Log("BLS - Envoy: Ativando segundo ataque (Lógica pendente no BattleManager para permitir ataque extra).");
+            // attacker.canAttackAgain = true; // Necessário suporte no CardDisplay
         }
     }
 

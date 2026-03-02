@@ -1384,13 +1384,39 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0131_BaitDoll(CardDisplay source)
     {
-        // Target 1 Set card; reveal it. If Trap, force activation. If not, return to Set.
-        Debug.Log("Bait Doll: Seleção de carta setada pendente.");
+        // Target 1 Set card; reveal it. If Trap, force activation (destroy). If not, return to Set.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")) && t.isFlipped == false,
+                (t) => {
+                    t.RevealCard();
+                    if (t.CurrentCardData.type.Contains("Trap"))
+                    {
+                        Debug.Log($"Bait Doll: {t.CurrentCardData.name} é uma Armadilha! Forçando ativação (Destruindo).");
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                        GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                        Destroy(t.gameObject);
+                    }
+                    else
+                    {
+                        Debug.Log($"Bait Doll: {t.CurrentCardData.name} não é Armadilha. Retornando para face-down.");
+                        t.ShowBack();
+                    }
+                    
+                    // Bait Doll vai para o Deck
+                    GameManager.Instance.ReturnToDeck(source, false); // false = Fundo (ou shuffle)
+                    GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+                }
+            );
+        }
     }
 
     void Effect_0132_BalloonLizard(CardDisplay source)
     {
-        Debug.Log("Balloon Lizard: Acumula contadores a cada Standby.");
+        // Acumula contadores a cada Standby (Lógica no CardEffectManager_Impl.cs -> OnPhaseStart)
+        // Dano ao destruir (Lógica no CardEffectManager_Impl.cs -> OnCardLeavesField)
+        Debug.Log($"Balloon Lizard: Contadores atuais: {source.spellCounters}");
     }
 
     void Effect_0133_BanisherOfTheLight(CardDisplay source)
@@ -1457,7 +1483,25 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0152_BazooTheSoulEater(CardDisplay source)
     {
         // Banish up to 3 from GY; +300 ATK per card.
-        Debug.Log("Bazoo: Banir cartas do GY para buff (UI Multi-Select pendente).");
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.type.Contains("Monster"));
+        if (gy.Count > 0)
+        {
+            int max = Mathf.Min(3, gy.Count);
+            GameManager.Instance.OpenCardMultiSelection(gy, "Banir até 3 monstros", 1, max, (selected) => {
+                int count = selected.Count;
+                foreach(var c in selected)
+                {
+                    GameManager.Instance.RemoveFromPlay(c, source.isPlayerCard);
+                    GameManager.Instance.GetPlayerGraveyard().Remove(c); // Remove do GY manualmente pois RemoveFromPlay não altera a lista de origem
+                }
+                // Atualiza visual
+                GameManager.Instance.playerGraveyardDisplay.UpdatePile(GameManager.Instance.GetPlayerGraveyard(), GameManager.Instance.GetCardBackTexture());
+                
+                int buff = count * 300;
+                source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, buff, source));
+                Debug.Log($"Bazoo: Baniu {count} monstros. Ganhou {buff} ATK.");
+            });
+        }
     }
 
     void Effect_0155_BeastFangs(CardDisplay source)
@@ -1508,7 +1552,32 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0163_BeckoningLight(CardDisplay source)
     {
         // Discard entire hand; add Light monsters from GY equal to discarded amount.
-        Debug.Log("Beckoning Light: Troca de mão por Luz (Lógica complexa de contagem).");
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        int discardCount = hand.Count;
+        
+        if (discardCount > 0)
+        {
+            // Descarta toda a mão
+            // Nota: Precisamos iterar sobre uma cópia ou usar DiscardRandomHand repetidamente
+            // Como não temos acesso fácil aos GameObjects da mão aqui, usamos DiscardRandomHand que limpa tudo
+            GameManager.Instance.DiscardRandomHand(source.isPlayerCard, discardCount);
+            
+            // Seleciona LIGHTs do GY
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> lights = gy.FindAll(c => c.attribute == "Light" && c.type.Contains("Monster"));
+            
+            if (lights.Count >= discardCount) 
+            {
+                 GameManager.Instance.OpenCardMultiSelection(lights, $"Selecione {discardCount} LIGHTs", discardCount, discardCount, (selected) => {
+                     foreach(var c in selected) {
+                         gy.Remove(c);
+                         GameManager.Instance.AddCardToHand(c, source.isPlayerCard);
+                     }
+                     // Atualiza visual do GY
+                     GameManager.Instance.playerGraveyardDisplay.UpdatePile(gy, GameManager.Instance.GetCardBackTexture());
+                 });
+            }
+        }
     }
 
     void Effect_0164_BegoneKnave(CardDisplay source)
@@ -1562,7 +1631,20 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0174_BigEye(CardDisplay source)
     {
         // FLIP: Look at top 5, arrange them.
-        Debug.Log("Big Eye: Reordenar deck (UI complexa pendente).");
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        if (deck.Count > 0)
+        {
+            int count = Mathf.Min(5, deck.Count);
+            List<CardData> topCards = deck.GetRange(0, count);
+            
+            // Usa a seleção múltipla para simular a reordenação (A ordem de seleção define a nova ordem)
+            GameManager.Instance.OpenCardMultiSelection(topCards, "Selecione a ordem (1º = Topo)", count, count, (ordered) => {
+                deck.RemoveRange(0, count);
+                // Insere de volta no topo na ordem escolhida
+                deck.InsertRange(0, ordered);
+                Debug.Log("Big Eye: Deck reordenado.");
+            });
+        }
     }
 
     void Effect_0177_BigShieldGardna(CardDisplay source)
@@ -1626,8 +1708,23 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0189_BLSEnvoy(CardDisplay source)
     {
         // Banish 1 monster OR Double Attack.
-        // O que falta: UI de escolha de efeito.
-        Debug.Log("BLS Envoy: Escolha efeito (Banir ou Ataque Duplo).");
+        // Efeito de Ignição: Banir monstro (Custo: Não atacar)
+        if (source.hasAttackedThisTurn) 
+        {
+            Debug.Log("BLS: Já atacou, não pode usar efeito de banir.");
+            return;
+        }
+
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                (t) => {
+                    GameManager.Instance.BanishCard(t);
+                    source.hasAttackedThisTurn = true; // Impede ataque neste turno
+                }
+            );
+        }
     }
 
     void Effect_0191_BlackPendant(CardDisplay source)
