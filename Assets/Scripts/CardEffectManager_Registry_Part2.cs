@@ -802,52 +802,52 @@ public partial class CardEffectManager
         AddEffect("0875", Effect_0875_HayabusaKnight);
 
         // 0877 - Heart of Clear Water (Equip Protect)
-        AddEffect("0877", c => Debug.Log("Heart of Clear Water: Protege monstro fraco."));
+        AddEffect("0877", Effect_0877_HeartOfClearWater);
 
         // 0878 - Heart of the Underdog (Draw Normal -> Draw again)
-        AddEffect("0878", c => Debug.Log("Heart of the Underdog: Compra extra se comprar Normal Monster."));
+        AddEffect("0878", Effect_0878_HeartOfTheUnderdog);
 
         // 0879 - Heavy Mech Support Platform (Union)
-        AddEffect("0879", c => Debug.Log("Heavy Mech Support Platform: Union."));
+        AddEffect("0879", Effect_0879_HeavyMechSupportPlatform);
 
         // 0880 - Heavy Slump (Hand shuffle draw 2)
-        AddEffect("0880", c => Debug.Log("Heavy Slump: Oponente compra 2 se tiver 8+."));
+        AddEffect("0880", Effect_0880_HeavySlump);
 
         // 0881 - Heavy Storm (Destroy all S/T)
         AddEffect("0881", Effect_HeavyStorm);
 
         // 0882 - Helping Robo for Combat (Draw/BottomDeck)
-        AddEffect("0882", c => Debug.Log("Helping Robo: Compra 1, retorna 1."));
+        AddEffect("0882", Effect_0882_HelpingRoboForCombat);
 
         // 0883 - Helpoemer (Discard on Battle Phase)
-        AddEffect("0883", c => Debug.Log("Helpoemer: Oponente descarta na Battle Phase."));
+        AddEffect("0883", Effect_0883_Helpoemer);
 
         // 0885 - Hero Signal (SS HERO on destroy)
-        AddEffect("0885", c => Debug.Log("Hero Signal: Invoca HERO do deck."));
+        AddEffect("0885", Effect_0885_HeroSignal);
 
         // 0888 - Hidden Soldiers (SS Dark on Opp Summon)
-        AddEffect("0888", c => Debug.Log("Hidden Soldiers: Invoca DARK da mão."));
+        AddEffect("0888", Effect_0888_HiddenSoldiers);
 
         // 0889 - Hidden Spellbook (Recycle 2 Spells)
-        AddEffect("0889", c => Debug.Log("Hidden Spellbook: Recicla 2 magias."));
+        AddEffect("0889", Effect_0889_HiddenSpellbook);
 
         // 0890 - Hieracosphinx (Protect Face-down)
-        AddEffect("0890", c => Debug.Log("Hieracosphinx: Oponente não pode atacar face-down."));
+        AddEffect("0890", Effect_0890_Hieracosphinx);
 
         // 0891 - Hieroglyph Lithograph (Hand limit 7)
-        AddEffect("0891", c => { Effect_PayLP(c, 1000); Debug.Log("Hieroglyph Lithograph: Limite de mão 7."); });
+        AddEffect("0891", Effect_0891_HieroglyphLithograph);
 
         // 0893 - Hiita the Fire Charmer (Flip Control Fire)
-        AddEffect("0893", c => Debug.Log("Hiita: Controlar monstro FIRE."));
+        AddEffect("0893", Effect_0893_HiitaTheFireCharmer);
 
         // 0894 - Hino-Kagu-Tsuchi (Hand Destruction)
-        AddEffect("0894", c => Debug.Log("Hino-Kagu-Tsuchi: Oponente descarta mão na Draw Phase."));
+        AddEffect("0894", Effect_0894_HinoKaguTsuchi);
 
         // 0895 - Hinotama (Burn 500)
-        AddEffect("0895", c => Effect_DirectDamage(c, 500));
+        AddEffect("0895", Effect_0895_Hinotama);
 
         // 0897 - Hiro's Shadow Scout (Flip Draw 3 / Discard Spells)
-        AddEffect("0897", c => Debug.Log("Hiro's Shadow Scout: Oponente compra 3, descarta magias."));
+        AddEffect("0897", Effect_0897_HirosShadowScout);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 0901 - 1000)
