@@ -9,49 +9,49 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 0501 - Disappear (Remove from play 1 card from opponent's Graveyard)
-        AddEffect("0501", c => Debug.Log("Disappear: Banir 1 carta do cemitério do oponente."));
+        AddEffect("0501", Effect_0501_Disappear);
 
         // 0502 - Disarmament (Destroy all Equip Cards)
-        AddEffect("0502", c => Debug.Log("Disarmament: Destruir todas as cartas de Equipamento."));
+        AddEffect("0502", Effect_0502_Disarmament);
 
         // 0503 - Disc Fighter (Destroy Defense Position monster with DEF >= 2000)
-        AddEffect("0503", c => Debug.Log("Disc Fighter: Destrói monstro em defesa com DEF >= 2000 sem cálculo de dano."));
+        AddEffect("0503", Effect_0503_DiscFighter);
 
         // 0506 - Disturbance Strategy (Opponent shuffles hand, draws same number)
-        AddEffect("0506", c => Debug.Log("Disturbance Strategy: Oponente embaralha mão e compra o mesmo número."));
+        AddEffect("0506", Effect_0506_DisturbanceStrategy);
 
         // 0508 - Divine Wrath (Discard 1, negate monster effect, destroy)
-        AddEffect("0508", c => Debug.Log("Divine Wrath: Descarte 1 para negar efeito de monstro e destruir."));
+        AddEffect("0508", Effect_0508_DivineWrath);
 
         // 0510 - Doitsu (Union)
-        AddEffect("0510", c => Debug.Log("Doitsu: Union para Soitsu."));
+        AddEffect("0510", Effect_0510_Doitsu);
 
         // 0512 - Dokurorider (Ritual)
-        AddEffect("0512", c => Debug.Log("Dokurorider: Ritual."));
+        AddEffect("0512", Effect_0512_Dokurorider);
 
         // 0515 - Don Turtle (SS Don Turtle)
-        AddEffect("0515", c => Debug.Log("Don Turtle: Invocar cópias da mão."));
+        AddEffect("0515", Effect_0515_DonTurtle);
 
         // 0516 - Don Zaloog (Hand destruction / Mill)
-        AddEffect("0516", c => Debug.Log("Don Zaloog: Descarte ou Mill ao causar dano."));
+        AddEffect("0516", Effect_0516_DonZaloog);
 
         // 0517 - Dora of Fate (Damage on summon)
-        AddEffect("0517", c => Debug.Log("Dora of Fate: Dano ao invocar monstro de nível menor."));
+        AddEffect("0517", Effect_0517_DoraOfFate);
 
         // 0519 - Doriado's Blessing (Ritual Spell)
-        AddEffect("0519", c => Debug.Log("Doriado's Blessing: Ritual."));
+        AddEffect("0519", Effect_0519_DoriadosBlessing);
 
         // 0522 - Double Attack (Discard monster -> Double attack)
-        AddEffect("0522", c => Debug.Log("Double Attack: Descarte monstro para dar ataque duplo a outro de nível menor."));
+        AddEffect("0522", Effect_0522_DoubleAttack);
 
         // 0523 - Double Coston (2 Tributes for DARK)
-        AddEffect("0523", c => Debug.Log("Double Coston: Vale por 2 tributos para DARK."));
+        AddEffect("0523", Effect_0523_DoubleCoston);
 
         // 0524 - Double Snare (Destroy Jinzo/Royal Decree)
-        AddEffect("0524", c => Debug.Log("Double Snare: Destrói carta que nega Traps."));
+        AddEffect("0524", Effect_0524_DoubleSnare);
 
         // 0525 - Double Spell (Discard Spell -> Use Opp Spell)
-        AddEffect("0525", c => Debug.Log("Double Spell: Copiar magia do cemitério do oponente."));
+        AddEffect("0525", Effect_0525_DoubleSpell);
 
         // 0526 - Dragged Down into the Grave (Hand destruction/Draw)
         AddEffect("0526", c => Debug.Log("Dragged Down: Ambos descartam e compram 1."));
