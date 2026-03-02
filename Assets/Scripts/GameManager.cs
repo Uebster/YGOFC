@@ -1171,6 +1171,9 @@ public class GameManager : MonoBehaviour
         CardDisplay display = cardGO.GetComponent<CardDisplay>();
         bool isPlayer = display != null ? display.isPlayerCard : true;
 
+        // Chain Energy (0284)
+        if (!CheckChainEnergyCost(isPlayer)) return;
+
         // 0. Validação de Regras de Invocação (SummonManager)
         if (SummonManager.Instance != null)
         {
@@ -1306,6 +1309,9 @@ public class GameManager : MonoBehaviour
     {
         CardDisplay display = cardGO.GetComponent<CardDisplay>();
         bool isPlayer = display != null ? display.isPlayerCard : true;
+
+        // Chain Energy (0284)
+        if (!CheckChainEnergyCost(isPlayer)) return;
 
         // 0.5 Validação de Armadilha
         if (!devMode && isPlayer && cardData.type.Contains("Trap") && !isSet)
@@ -1484,6 +1490,21 @@ public class GameManager : MonoBehaviour
     public List<CardData> GetOpponentHandData() { return opponentHand.Select(g => g.GetComponent<CardDisplay>().CurrentCardData).ToList(); }
     public List<CardData> GetOpponentMainDeck() { return opponentDeck; }
 
+    public int GetPlayerRemovedCount() { return playerRemoved.Count; }
+    public List<CardData> GetPlayerRemoved() { return playerRemoved; }
+
+    public bool CheckChainEnergyCost(bool isPlayer)
+    {
+        if (IsCardActiveOnField("0284")) // Chain Energy
+        {
+            if (!PayLifePoints(isPlayer, 500))
+            {
+                Debug.Log("Chain Energy: LP insuficientes para realizar a ação.");
+                return false;
+            }
+        }
+        return true;
+    }
     
     public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
     {

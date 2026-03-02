@@ -114,6 +114,13 @@ public partial class CardEffectManager
                 Effect_Field(card, 200, 200, "Zombie");
             });
 
+            // Chaos Necromancer (0292): Atualiza ATK
+            CheckActiveCards("0292", (card) => {
+                int monstersInGY = GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.type.Contains("Monster")).Count;
+                // Usa Set para atualizar o valor base
+                card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, monstersInGY * 300, card));
+            });
+
             // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
             // (Na verdade é End Phase, movido para lá se fosse o caso)
         }
@@ -156,6 +163,9 @@ public partial class CardEffectManager
                     }
                 });
             }
+
+            // Reseta flags de turno
+            if (BattleManager.Instance != null) BattleManager.Instance.gravekeepersProtected = false;
         }
     }
 
@@ -171,6 +181,23 @@ public partial class CardEffectManager
                     Effect_DirectDamage(source, 300);
                 }
             });
+        }
+
+        // Chimera the Flying Mythical Beast (0299): Revive material
+        if (card.id == "0299" && isOwnerPlayer)
+        {
+            // Verifica se foi destruído (está no GY)
+            // A lógica aqui é simplificada, assume que o evento dispara quando entra no GY
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> targets = gy.FindAll(c => c.name == "Berfomet" || c.name == "Gazelle the King of Mythical Beasts");
+            
+            if (targets.Count > 0)
+            {
+                Debug.Log("Chimera destruída. Revivendo material...");
+                GameManager.Instance.OpenCardSelection(targets, "Reviver Material", (selected) => {
+                    GameManager.Instance.SpecialSummonFromData(selected, true);
+                });
+            }
         }
     }
 

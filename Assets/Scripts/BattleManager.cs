@@ -11,6 +11,7 @@ public class BattleManager : MonoBehaviour
     public bool isBattlePhase = false;
     public bool cannotAttackFaceDown = false;
     public bool forceDirectAttack = false;
+    public bool gravekeepersProtected = false; // Charm of Shabti
 
     void Awake()
     {
@@ -287,8 +288,16 @@ public class BattleManager : MonoBehaviour
                 GameManager.Instance.DamageOpponent(damage);
                 if (!targetIsBES)
                 {
-                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-                    Destroy(target.gameObject);
+                    // Charm of Shabti (0296)
+                    if (gravekeepersProtected && target.CurrentCardData.name.Contains("Gravekeeper"))
+                    {
+                        Debug.Log("Gravekeeper protegido por Charm of Shabti.");
+                    }
+                    else
+                    {
+                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                    }
                 }
             }
             else if (atk < def)
@@ -344,6 +353,8 @@ public class BattleManager : MonoBehaviour
     {
         currentAttacker = null;
         currentTarget = null;
+        gravekeepersProtected = false; // Reseta no fim da batalha ou turno? Regra diz "until End Phase".
+        // Se for até End Phase, deve ser resetado no PhaseManager ou CardEffectManager.
     }
 
     // Chamado pelo clique direito no monstro
