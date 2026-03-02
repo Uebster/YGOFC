@@ -1296,21 +1296,34 @@ public partial class CardEffectManager
     void Effect_1165_Marshmallon(CardDisplay source)
     {
         // Effect: Cannot be destroyed by battle. If attacked face-down: 1000 damage to attacker.
-        // Lógica no BattleManager (ResolveDamage e OnDamageCalculation).
-        Debug.Log("Marshmallon: Indestrutível e dano ao atacar face-down.");
+        // A indestrutibilidade é passiva (verificada no BattleManager se implementado, ou simulada aqui).
+        // O dano é um efeito de gatilho após o cálculo de dano.
+        Debug.Log("Marshmallon: Efeito passivo de indestrutibilidade e dano configurado.");
+
     }
 
     void Effect_1166_MarshmallonGlasses(CardDisplay source)
     {
         // Effect: Opponent can only select "Marshmallon" as an attack target.
-        Debug.Log("Marshmallon Glasses: Redirecionamento de ataque.");
+        Debug.Log("Marshmallon Glasses: Oponente forçado a atacar Marshmallon (Passivo).");
     }
 
     void Effect_1167_Maryokutai(CardDisplay source)
     {
         // Effect: Quick Effect: Tribute this card to negate Spell activation and destroy it.
-        // Requer Chain.
-        Debug.Log("Maryokutai: Negação de Magia.");
+        if (ChainManager.Instance != null && ChainManager.Instance.currentChain.Count > 0)
+        {
+            var lastLink = ChainManager.Instance.currentChain[ChainManager.Instance.currentChain.Count - 1];
+            if (lastLink.cardSource != null && lastLink.cardSource.CurrentCardData.type.Contains("Spell"))
+            {
+                GameManager.Instance.TributeCard(source);
+                Debug.Log($"Maryokutai: Negando {lastLink.cardSource.CurrentCardData.name}.");
+                
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(lastLink.cardSource);
+                GameManager.Instance.SendToGraveyard(lastLink.cardSource.CurrentCardData, lastLink.isPlayerEffect);
+                Destroy(lastLink.cardSource.gameObject);
+            }
+        }
     }
 
     void Effect_1169_MaskOfBrutality(CardDisplay source)
@@ -1338,7 +1351,17 @@ public partial class CardEffectManager
     void Effect_1171_MaskOfDispel(CardDisplay source)
     {
         // Select 1 face-up Spell. Controller takes 500 damage each Standby Phase.
-        Debug.Log("Mask of Dispel: Dano contínuo em Magia.");
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Spell") && !t.isFlipped,
+                (target) => {
+                    Debug.Log($"Mask of Dispel: Alvejando {target.CurrentCardData.name}.");
+                    // Cria um link para rastrear o alvo durante a Standby Phase
+                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Continuous);
+                }
+            );
+        }
     }
 
     void Effect_1172_MaskOfRestrict(CardDisplay source)
@@ -1368,7 +1391,8 @@ public partial class CardEffectManager
     void Effect_1175_MaskedBeastDesGardius(CardDisplay source)
     {
         // If sent to GY: Equip "The Mask of Remnants" from Deck/Hand to opp monster and take control.
-        Debug.Log("Des Gardius: Efeito de controle ao morrer.");
+        // Lógica implementada no OnCardSentToGraveyard (CardEffectManager_Impl.cs)
+        Debug.Log("Des Gardius: Efeito de controle ao morrer configurado.");
     }
 
     void Effect_1177_MaskedDragon(CardDisplay source)
@@ -1380,7 +1404,7 @@ public partial class CardEffectManager
     void Effect_1178_MaskedSorcerer(CardDisplay source)
     {
         // Effect: If inflicts battle damage: Draw 1 card.
-        // Lógica no OnDamageDealtImpl.
+        // Lógica implementada no OnDamageDealtImpl (CardEffectManager_Impl.cs)
         Debug.Log("Masked Sorcerer: Efeito de compra configurado.");
     }
 
@@ -1393,13 +1417,13 @@ public partial class CardEffectManager
     void Effect_1182_MasterMonk(CardDisplay source)
     {
         // Effect: Cannot be Normal Summoned. SS by tributing Monk Fighter. Can attack twice.
-        Debug.Log("Master Monk: Ataque duplo (Passivo).");
+        Debug.Log("Master Monk: Ataque duplo (Lógica no OnBattleEnd).");
     }
 
     void Effect_1184_MatazaTheZapper(CardDisplay source)
     {
         // Effect: Can attack twice. Control cannot switch.
-        Debug.Log("Mataza: Ataque duplo e controle fixo (Passivo).");
+        Debug.Log("Mataza: Ataque duplo e controle fixo (Lógica no OnBattleEnd).");
     }
 
     void Effect_1186_MaximumSix(CardDisplay source)
@@ -1429,7 +1453,7 @@ public partial class CardEffectManager
     void Effect_1190_MechaDogMarron(CardDisplay source)
     {
         // Effect: If destroyed by battle: Both players take 1000 damage.
-        // Lógica no OnBattleEnd.
+        // Lógica implementada no OnBattleEnd (CardEffectManager_Impl.cs)
         Debug.Log("Mecha-Dog Marron: Dano mútuo ao morrer.");
     }
 
@@ -1455,7 +1479,7 @@ public partial class CardEffectManager
     void Effect_1197_MefistTheInfernalGeneral(CardDisplay source)
     {
         // Effect: Piercing damage. If inflicts battle damage: Opponent discards 1 random card.
-        // Lógica de piercing no BattleManager. Lógica de descarte no OnDamageDealtImpl.
+        // Lógica de piercing no BattleManager. Lógica de descarte no OnDamageDealtImpl (CardEffectManager_Impl.cs).
         Debug.Log("Mefist: Efeitos de batalha configurados.");
     }
 

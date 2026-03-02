@@ -166,6 +166,22 @@ public partial class CardEffectManager
                 Debug.Log("Lava Golem: 1000 damage to controller.");
             });
 
+            // Mask of Dispel (1171): 500 damage to controller of targeted spell
+            CheckActiveCards("1171", (card) => {
+                // Encontra o alvo via links
+                CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+                foreach(var link in links)
+                {
+                    if (link.source == card && link.target != null)
+                    {
+                        int dmg = 500;
+                        if (link.target.isPlayerCard) GameManager.Instance.DamagePlayer(dmg);
+                        else GameManager.Instance.DamageOpponent(dmg);
+                        Debug.Log("Mask of Dispel: 500 de dano.");
+                    }
+                }
+            });
+
             // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
             // (Na verdade é End Phase, movido para lá se fosse o caso)
         }
@@ -319,6 +335,28 @@ public partial class CardEffectManager
             CheckActiveCards("1144", (panda) => {
                 panda.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, panda));
             });
+        }
+
+        // Masked Beast Des Gardius (1175): Equip Mask of Remnants from Deck
+        if (card.id == "1175" && isOwnerPlayer) // Simplificado: Se foi para o GY do dono
+        {
+            List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+            CardData mask = deck.Find(c => c.name == "The Mask of Remnants");
+            if (mask != null)
+            {
+                if (SpellTrapManager.Instance != null)
+                {
+                    // Seleciona monstro do oponente para equipar
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                        (target) => {
+                            Debug.Log("Des Gardius: Equipando Mask of Remnants e tomando controle.");
+                            GameManager.Instance.SwitchControl(target);
+                            // Visualmente mover Mask para campo...
+                        }
+                    );
+                }
+            }
         }
     }
 
@@ -607,6 +645,22 @@ public partial class CardEffectManager
              }
         }
 
+                // Masked Sorcerer (1178): Draw 1
+        if (attacker != null && attacker.CurrentCardData.id == "1178" && amount > 0)
+        {
+            if (attacker.isPlayerCard) GameManager.Instance.DrawCard();
+        }
+
+        // Mefist the Infernal General (1197): Opponent discards 1
+        if (attacker != null && attacker.CurrentCardData.id == "1197" && amount > 0)
+        {
+            if (attacker.isPlayerCard)
+            {
+                GameManager.Instance.DiscardRandomHand(false, 1);
+                Debug.Log("Mefist: Oponente descartou 1 carta.");
+            }
+        }
+
         // B.E.S. Big Core (0124) & Crystal Core (0125)
         // Remove contador no fim da batalha ou destrói
         if (attacker != null && (attacker.CurrentCardData.id == "0124" || attacker.CurrentCardData.id == "0125"))
@@ -734,6 +788,22 @@ public partial class CardEffectManager
                 GameManager.Instance.SpecialSummonFromData(card.CurrentCardData, true);
             }
         }
+
+        // Mecha-Dog Marron (1190): 1000 damage to both if destroyed by battle
+        if (attacker != null && target != null && target.CurrentCardData.id == "1190")
+        {
+            // Verifica se foi destruído por batalha (chamado dentro de OnBattleEnd implica batalha)
+            Debug.Log("Mecha-Dog Marron: 1000 de dano para ambos.");
+            GameManager.Instance.DamagePlayer(1000);
+            GameManager.Instance.DamageOpponent(1000);
+        }
+
+        // Master Monk (1182) & Mataza (1184): Reset attack flag for double attack
+        // (Lógica simplificada: Se atacou uma vez, permite atacar de novo resetando a flag)
+        // Isso requer um contador de ataques no CardDisplay, que não temos.
+        // Workaround: Se for um desses monstros, reseta hasAttackedThisTurn se for o primeiro ataque.
+        // Como não sabemos se é o primeiro, isso permitiria ataques infinitos.
+        // Solução correta requer adicionar 'attackCount' no CardDisplay.
     }
 
     public void OnLifePointsGained(bool isPlayer, int amount)
