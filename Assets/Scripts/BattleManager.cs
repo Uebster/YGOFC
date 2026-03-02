@@ -9,6 +9,7 @@ public class BattleManager : MonoBehaviour
     public CardDisplay currentAttacker;
     public CardDisplay currentTarget;
     public bool isBattlePhase = false;
+    public bool cannotAttackFaceDown = false;
 
     void Awake()
     {
@@ -70,13 +71,18 @@ public class BattleManager : MonoBehaviour
 
     public bool CanAttack(CardDisplay attacker)
     {
-        // Gravity Bind (85742772)
         if (GameManager.Instance.IsCardActiveOnField("85742772") && attacker.CurrentCardData.level >= 4)
         {
         // Messenger of Peace (44656491)
         if (GameManager.Instance.IsCardActiveOnField("44656491") && attacker.currentAtk >= 1500)
         {
             Debug.Log("Ataque impedido por Messenger of Peace!");
+            return false;
+        }
+
+        if (cannotAttackFaceDown && currentTarget != null && currentTarget.isFlipped)
+        {
+            Debug.Log("Ataque impedido por A Feint Plan: Não pode atacar monstros face-down neste turno.");
             return false;
         }
 
@@ -88,6 +94,7 @@ public class BattleManager : MonoBehaviour
 
         return true;
     }
+
     }
 
     public void SelectTarget(CardDisplay target)

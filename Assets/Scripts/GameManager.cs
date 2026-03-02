@@ -181,7 +181,19 @@ public class GameManager : MonoBehaviour
             DrawInitialHand(5);
         }
     }
-    
+    public void RemoveCardFromHand(CardData card, bool isPlayer)
+    {
+        List<CardData> hand = isPlayer ? playerHandDisplay.pileData : opponentHandDisplay.pileData;
+        if (hand.Contains(card))
+        {
+            hand.Remove(card);
+             if(isPlayer) playerHandDisplay.DisplayCards();
+             else opponentHandDisplay.DisplayCards();
+        } else
+        {
+            Debug.LogWarning("Esta carta não está na mão.");
+        }
+    }
     public void SetPlayerProfile(string newName, string newSaveID)
     {
         playerName = newName;
