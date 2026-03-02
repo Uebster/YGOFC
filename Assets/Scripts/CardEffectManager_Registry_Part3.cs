@@ -304,58 +304,58 @@ public partial class CardEffectManager
         AddEffect("1150", Effect_1150_MalevolentNuzzler);
 
         // 1151 - Malice Dispersion (Discard 1, Destroy Continuous Traps)
-        AddEffect("1151", c => Debug.Log("Malice Dispersion: Destrói Traps Contínuas."));
+        AddEffect("1151", Effect_1151_MaliceDispersion);
 
         // 1152 - Malice Doll of Demise (Revive)
-        AddEffect("1152", c => Debug.Log("Malice Doll: Renasce se enviado por Continuous Spell."));
+        AddEffect("1152", Effect_1152_MaliceDollOfDemise);
 
         // 1155 - Man-Eater Bug (Flip Destroy)
-        AddEffect("1155", c => Effect_FlipDestroy(c, TargetType.Monster));
+        AddEffect("1155", Effect_1155_ManEaterBug);
 
         // 1159 - Man-Thro' Tro' (Tribute Normal -> 800 dmg)
-        AddEffect("1159", c => Effect_TributeToBurn(c, 1, 800));
+        AddEffect("1159", Effect_1159_ManThroTro);
 
         // 1160 - Manga Ryu-Ran (Toon)
-        AddEffect("1160", c => Debug.Log("Manga Ryu-Ran: Toon."));
+        AddEffect("1160", Effect_1160_MangaRyuRan);
 
         // 1161 - Manju of the Ten Thousand Hands (Search Ritual)
-        AddEffect("1161", c => Effect_SearchDeck(c, "Ritual"));
+        AddEffect("1161", Effect_1161_ManjuOfTheTenThousandHands);
 
         // 1162 - Manticore of Darkness (Revive loop)
-        AddEffect("1162", c => Debug.Log("Manticore: Revive enviando besta."));
+        AddEffect("1162", Effect_1162_ManticoreOfDarkness);
 
         // 1163 - Marauding Captain (SS from hand, Lock attack)
-        AddEffect("1163", c => Debug.Log("Marauding Captain: Invoca da mão, protege Warriors."));
+        AddEffect("1163", Effect_1163_MaraudingCaptain);
 
         // 1165 - Marshmallon (Indestructible, Burn)
-        AddEffect("1165", c => Debug.Log("Marshmallon: Indestrutível em batalha, 1000 dano."));
+        AddEffect("1165", Effect_1165_Marshmallon);
 
         // 1166 - Marshmallon Glasses (Redirect attack)
-        AddEffect("1166", c => Debug.Log("Marshmallon Glasses: Ataques devem ser no Marshmallon."));
+        AddEffect("1166", Effect_1166_MarshmallonGlasses);
 
         // 1167 - Maryokutai (Negate Spell)
-        AddEffect("1167", c => Debug.Log("Maryokutai: Nega magia."));
+        AddEffect("1167", Effect_1167_Maryokutai);
 
         // 1169 - Mask of Brutality (Equip +1000/-1000)
-        AddEffect("1169", c => Effect_Equip(c, 1000, -1000));
+        AddEffect("1169", Effect_1169_MaskOfBrutality);
 
         // 1170 - Mask of Darkness (Flip Add Trap)
-        AddEffect("1170", c => Debug.Log("Mask of Darkness: Recupera Trap do GY."));
+        AddEffect("1170", Effect_1170_MaskOfDarkness);
 
         // 1171 - Mask of Dispel (Burn 500)
-        AddEffect("1171", c => Debug.Log("Mask of Dispel: Dano por turno."));
+        AddEffect("1171", Effect_1171_MaskOfDispel);
 
         // 1172 - Mask of Restrict (No Tributes)
-        AddEffect("1172", c => Debug.Log("Mask of Restrict: Ninguém pode tributar."));
+        AddEffect("1172", Effect_1172_MaskOfRestrict);
 
         // 1173 - Mask of Weakness (Debuff -700)
-        AddEffect("1173", c => Debug.Log("Mask of Weakness: -700 ATK."));
+        AddEffect("1173", Effect_1173_MaskOfWeakness);
 
         // 1174 - Mask of the Accursed (Lock Attack, Burn)
-        AddEffect("1174", c => Debug.Log("Mask of the Accursed: Trava ataque e causa dano."));
+        AddEffect("1174", Effect_1174_MaskOfTheAccursed);
 
         // 1175 - Masked Beast Des Gardius (Snatch Steal on death)
-        AddEffect("1175", c => Debug.Log("Des Gardius: Equipa Mask of Remnants ao morrer."));
+        AddEffect("1175", Effect_1175_MaskedBeastDesGardius);
 
         // 1177 - Masked Dragon (Float into Dragon)
         AddEffect("1177", c => Debug.Log("Masked Dragon: Invoca Dragão <= 1500 do deck."));

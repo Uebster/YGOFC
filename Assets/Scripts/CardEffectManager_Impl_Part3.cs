@@ -914,4 +914,174 @@ public partial class CardEffectManager
         Effect_Equip(source, 700, 0);
         // Lógica de retorno no OnCardSentToGraveyard.
     }
+
+    void Effect_1151_MaliceDispersion(CardDisplay source)
+    {
+        // Effect: Discard 1 card; destroy all face-up Continuous Trap Cards.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                
+                List<CardDisplay> toDestroy = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null)
+                {
+                    List<Transform> zones = new List<Transform>();
+                    zones.AddRange(GameManager.Instance.duelFieldUI.playerSpellZones);
+                    zones.AddRange(GameManager.Instance.duelFieldUI.opponentSpellZones);
+                    
+                    foreach(var z in zones)
+                    {
+                        if (z.childCount > 0)
+                        {
+                            var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                            if (cd != null && !cd.isFlipped && cd.CurrentCardData.type.Contains("Trap") && cd.CurrentCardData.property == "Continuous")
+                            {
+                                toDestroy.Add(cd);
+                            }
+                        }
+                    }
+                }
+                DestroyCards(toDestroy, source.isPlayerCard);
+                Debug.Log("Malice Dispersion: Traps Contínuas destruídas.");
+            });
+        }
+    }
+
+    void Effect_1152_MaliceDollOfDemise(CardDisplay source)
+    {
+        // Effect: If sent from field to GY by effect of Continuous Spell, SS during Standby Phase.
+        // Lógica no OnCardSentToGraveyard e OnPhaseStart.
+        Debug.Log("Malice Doll of Demise: Efeito de renascimento configurado.");
+    }
+
+    void Effect_1155_ManEaterBug(CardDisplay source)
+    {
+        // FLIP: Target 1 monster on the field; destroy it.
+        Effect_FlipDestroy(source, TargetType.Monster);
+    }
+
+    void Effect_1159_ManThroTro(CardDisplay source)
+    {
+        // Effect: Tribute 1 Normal Monster; inflict 800 damage.
+        // Simplificado: Usa helper genérico, mas idealmente filtraria por Normal Monster.
+        Effect_TributeToBurn(source, 1, 800);
+    }
+
+    void Effect_1160_MangaRyuRan(CardDisplay source)
+    {
+        // Toon Monster.
+        Debug.Log("Manga Ryu-Ran: Regras Toon aplicadas.");
+    }
+
+    void Effect_1161_ManjuOfTheTenThousandHands(CardDisplay source)
+    {
+        // Effect: When Normal/Flip Summoned: Add 1 Ritual Monster or Ritual Spell from Deck.
+        Effect_SearchDeck(source, "Ritual");
+    }
+
+    void Effect_1162_ManticoreOfDarkness(CardDisplay source)
+    {
+        // Effect: End Phase: Send 1 Beast/Beast-Warrior from hand/field to GY to SS this card from GY.
+        // Lógica no OnPhaseStart (End Phase).
+        Debug.Log("Manticore of Darkness: Loop de renascimento.");
+    }
+
+    void Effect_1163_MaraudingCaptain(CardDisplay source)
+    {
+        // Effect: Normal Summon -> SS 1 Lv4 or lower monster from hand. Opponent cannot target other Warriors for attacks.
+        if (source.isOnField && source.summonedThisTurn)
+        {
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            List<CardData> targets = hand.FindAll(c => c.level <= 4 && c.type.Contains("Monster"));
+            
+            if (targets.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(targets, "Invocar Lv4-", (selected) => {
+                    GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                    GameManager.Instance.RemoveCardFromHand(selected, source.isPlayerCard);
+                });
+            }
+        }
+        // Proteção de ataque é passiva no BattleManager.
+    }
+
+    void Effect_1165_Marshmallon(CardDisplay source)
+    {
+        // Effect: Cannot be destroyed by battle. If attacked face-down: 1000 damage to attacker.
+        // Lógica no BattleManager (ResolveDamage e OnDamageCalculation).
+        Debug.Log("Marshmallon: Indestrutível e dano ao atacar face-down.");
+    }
+
+    void Effect_1166_MarshmallonGlasses(CardDisplay source)
+    {
+        // Effect: Opponent can only select "Marshmallon" as an attack target.
+        Debug.Log("Marshmallon Glasses: Redirecionamento de ataque.");
+    }
+
+    void Effect_1167_Maryokutai(CardDisplay source)
+    {
+        // Effect: Quick Effect: Tribute this card to negate Spell activation and destroy it.
+        // Requer Chain.
+        Debug.Log("Maryokutai: Negação de Magia.");
+    }
+
+    void Effect_1169_MaskOfBrutality(CardDisplay source)
+    {
+        // Equip: +1000 ATK, -1000 DEF. Pay 1000 LP each Standby Phase.
+        Effect_Equip(source, 1000, -1000);
+        // Manutenção no CheckMaintenanceCosts.
+    }
+
+    void Effect_1170_MaskOfDarkness(CardDisplay source)
+    {
+        // FLIP: Target 1 Trap in GY; add to hand.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> traps = gy.FindAll(c => c.type.Contains("Trap"));
+        
+        if (traps.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(traps, "Recuperar Trap", (selected) => {
+                gy.Remove(selected);
+                GameManager.Instance.AddCardToHand(selected, source.isPlayerCard);
+            });
+        }
+    }
+
+    void Effect_1171_MaskOfDispel(CardDisplay source)
+    {
+        // Select 1 face-up Spell. Controller takes 500 damage each Standby Phase.
+        Debug.Log("Mask of Dispel: Dano contínuo em Magia.");
+    }
+
+    void Effect_1172_MaskOfRestrict(CardDisplay source)
+    {
+        // Neither player can Tribute cards.
+        Debug.Log("Mask of Restrict: Tributos bloqueados.");
+        // Requer verificação no SummonManager.HasEnoughTributes e GameManager.TributeCard.
+    }
+
+    void Effect_1173_MaskOfWeakness(CardDisplay source)
+    {
+        // Target attacking monster; -700 ATK until end of turn.
+        if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+        {
+            BattleManager.Instance.currentAttacker.ModifyStats(-700, 0);
+            Debug.Log("Mask of Weakness: -700 ATK no atacante.");
+        }
+    }
+
+    void Effect_1174_MaskOfTheAccursed(CardDisplay source)
+    {
+        // Equip: Cannot attack. 500 damage to controller each Standby Phase.
+        Effect_Equip(source, 0, 0);
+        // Lógica de bloqueio e dano.
+    }
+
+    void Effect_1175_MaskedBeastDesGardius(CardDisplay source)
+    {
+        // If sent to GY: Equip "The Mask of Remnants" from Deck/Hand to opp monster and take control.
+        Debug.Log("Des Gardius: Efeito de controle ao morrer.");
+    }
 }
