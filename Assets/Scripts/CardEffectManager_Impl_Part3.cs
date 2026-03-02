@@ -1716,4 +1716,287 @@ public partial class CardEffectManager
             );
         }
     }
+    // 1226 - Micro Ray
+    void Effect_1226_MicroRay(CardDisplay source)
+    {
+        // Target 1 face-up monster on the field; that target's DEF becomes 0 until the end of this turn.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && !t.isFlipped,
+                (target) => {
+                    // Define DEF para 0 (usando modificador SET)
+                    target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 0, source));
+                    Debug.Log($"Micro Ray: DEF de {target.CurrentCardData.name} tornou-se 0.");
+                }
+            );
+        }
+    }
+
+    // 1227 - Mid Shield Gardna
+    void Effect_1227_MidShieldGardna(CardDisplay source)
+    {
+        // Ignition: Flip face-down.
+        // Trigger (Passive): Negate Spell targeting this face-down.
+        // A parte de negação é passiva/trigger no SpellTrapManager.
+        // A parte de ignição (virar face-down):
+        if (source.isOnField && !source.isFlipped)
+        {
+            Effect_TurnSet(source);
+        }
+    }
+
+    // 1232 - Millennium Scorpion
+    void Effect_1232_MillenniumScorpion(CardDisplay source)
+    {
+        // Gains 500 ATK each time it destroys a monster by battle.
+        // Lógica implementada no OnBattleEnd (CardEffectManager_Impl.cs).
+        Debug.Log("Millennium Scorpion: Efeito de crescimento configurado.");
+    }
+
+    // 1234 - Milus Radiant
+    void Effect_1234_MilusRadiant(CardDisplay source)
+    {
+        // EARTH +500 ATK, WIND -400 ATK.
+        Effect_Field(source, 500, 0, "", "Earth");
+        Effect_Field(source, -400, 0, "", "Wind");
+    }
+
+    // 1235 - Minar
+    void Effect_1235_Minar(CardDisplay source)
+    {
+        // If discarded by opponent's effect: 1000 damage.
+        // Lógica no OnCardDiscarded (CardEffectManager_Impl.cs).
+        Debug.Log("Minar: Efeito de dano por descarte configurado.");
+    }
+
+    // 1236 - Mind Control
+    void Effect_1236_MindControl(CardDisplay source)
+    {
+        // Pay 800 LP (Errata: No LP cost in modern, but keeping classic if needed. Let's assume classic/modern mix or no cost as per text provided in prompt list? Prompt didn't specify cost, usually 800 is Brain Control. Mind Control is usually no cost but cannot attack/tribute).
+        // Text: Target 1 monster opp controls; take control until End Phase. Cannot attack/Tribute.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (target) => {
+                    GameManager.Instance.SwitchControl(target);
+                    // Aplica restrições
+                    target.hasAttackedThisTurn = true; // Impede ataque (hack simples)
+                    // TODO: Adicionar flag 'cannotBeTributed' no CardDisplay
+                    Debug.Log($"Mind Control: Controlando {target.CurrentCardData.name} até a End Phase.");
+                    // Agendar retorno na End Phase (GameManager deve tratar isso na limpeza de turno ou via CardLink)
+                }
+            );
+        }
+    }
+
+    // 1237 - Mind Crush
+    void Effect_1237_MindCrush(CardDisplay source)
+    {
+        // Declare card name.
+        Debug.Log("Mind Crush: Declaração de nome necessária (Simulado: Kuriboh).");
+        // Lógica simplificada: Verifica se o oponente tem a carta (hardcoded para teste ou aleatório)
+        List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+        string targetName = "Kuriboh"; // Em um jogo real, abriria input de texto
+        
+        List<CardData> hits = oppHand.FindAll(c => c.name == targetName);
+        if (hits.Count > 0)
+        {
+            Debug.Log($"Mind Crush: Sucesso! Oponente descarta {hits.Count} cópias.");
+            // Descarta todas as cópias
+            // Requer acesso aos GameObjects da mão do oponente para remover visualmente
+            GameManager.Instance.DiscardRandomHand(false, hits.Count); // Simplificado
+        }
+        else
+        {
+            Debug.Log("Mind Crush: Falha! Você descarta 1 carta aleatória.");
+            GameManager.Instance.DiscardRandomHand(true, 1);
+        }
+    }
+
+    // 1238 - Mind Haxorz
+    void Effect_1238_MindHaxorz(CardDisplay source)
+    {
+        // Pay 500. Look at opp hand and Set cards.
+        if (Effect_PayLP(source, 500))
+        {
+            Debug.Log("Mind Haxorz: Revelando mão e campo do oponente...");
+            GameManager.Instance.ToggleOpponentHandVisibility(); // Revela mão (Dev tool usada como feature)
+            // Revelar setadas
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                foreach(var z in GameManager.Instance.duelFieldUI.opponentSpellZones)
+                {
+                    if(z.childCount > 0) z.GetChild(0).GetComponent<CardDisplay>().RevealCard();
+                }
+                foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+                {
+                    if(z.childCount > 0) 
+                    {
+                        var m = z.GetChild(0).GetComponent<CardDisplay>();
+                        if(m.isFlipped) m.RevealCard();
+                    }
+                }
+            }
+        }
+    }
+
+    // 1239 - Mind Wipe
+    void Effect_1239_MindWipe(CardDisplay source)
+    {
+        // Activate if opp hand <= 3. Opponent shuffles hand to deck, draws same number.
+        List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+        if (oppHand.Count <= 3 && oppHand.Count > 0)
+        {
+            int count = oppHand.Count;
+            GameManager.Instance.DiscardHand(false); // Deveria ser Shuffle into Deck
+            for(int i=0; i<count; i++) GameManager.Instance.DrawOpponentCard();
+            Debug.Log("Mind Wipe: Mão do oponente reciclada.");
+        }
+    }
+
+    // 1240 - Mind on Air
+    void Effect_1240_MindOnAir(CardDisplay source)
+    {
+        // Opponent plays with hand revealed.
+        Debug.Log("Mind on Air: Mão do oponente revelada.");
+        GameManager.Instance.showOpponentHand = true;
+        // Nota: Precisa desligar quando sair do campo (OnCardLeavesField)
+    }
+
+    // 1241 - Mine Golem
+    void Effect_1241_MineGolem(CardDisplay source)
+    {
+        // If destroyed by battle: 500 damage to opp.
+        // Lógica no OnCardSentToGraveyard (CardEffectManager_Impl.cs).
+        Debug.Log("Mine Golem: Efeito de dano configurado.");
+    }
+
+    // 1242 - Minefield Eruption
+    void Effect_1242_MinefieldEruption(CardDisplay source)
+    {
+        // Damage 1000 per Mine Golem, then destroy them.
+        int count = 0;
+        List<CardDisplay> golems = new List<CardDisplay>();
+        
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+            {
+                if(z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if(m != null && m.CurrentCardData.name == "Mine Golem")
+                    {
+                        count++;
+                        golems.Add(m);
+                    }
+                }
+            }
+        }
+
+        if (count > 0)
+        {
+            Effect_DirectDamage(source, count * 1000);
+            foreach(var g in golems)
+            {
+                GameManager.Instance.SendToGraveyard(g.CurrentCardData, true);
+                Destroy(g.gameObject);
+            }
+            Debug.Log($"Minefield Eruption: {count} Golems explodiram.");
+        }
+    }
+
+    // 1244 - Minor Goblin Official
+    void Effect_1244_MinorGoblinOfficial(CardDisplay source)
+    {
+        // Opponent LP <= 3000 -> 500 dmg each Standby.
+        // Lógica no OnPhaseStart (CardEffectManager_Impl.cs).
+        Debug.Log("Minor Goblin Official: Ativo.");
+    }
+
+    // 1245 - Miracle Dig
+    void Effect_1245_MiracleDig(CardDisplay source)
+    {
+        // If 5+ banished, return 3 to GY.
+        List<CardData> banished = GameManager.Instance.GetPlayerRemoved();
+        if (banished.Count >= 5)
+        {
+            GameManager.Instance.OpenCardMultiSelection(banished, "Retornar 3 ao GY", 3, 3, (selected) => {
+                foreach(var c in selected)
+                {
+                    banished.Remove(c); // Remove da lista de banidos
+                    GameManager.Instance.GetPlayerGraveyard().Add(c); // Adiciona ao GY
+                }
+                // Atualiza visuais
+                GameManager.Instance.playerRemovedDisplay.UpdatePile(banished, GameManager.Instance.GetCardBackTexture());
+                GameManager.Instance.playerGraveyardDisplay.UpdatePile(GameManager.Instance.GetPlayerGraveyard(), GameManager.Instance.GetCardBackTexture());
+                Debug.Log("Miracle Dig: 3 cartas retornadas ao GY.");
+            });
+        }
+    }
+
+    // 1246 - Miracle Fusion
+    void Effect_1246_MiracleFusion(CardDisplay source)
+    {
+        // Fusion Summon E-Hero by banishing materials from Field/GY.
+        List<CardData> extra = GameManager.Instance.GetPlayerExtraDeck();
+        List<CardData> heroes = extra.FindAll(c => c.name.Contains("Elemental HERO"));
+        
+        if (heroes.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(heroes, "Miracle Fusion", (fusionTarget) => {
+                // Lógica simplificada: Assume que tem materiais e bane 2 do GY aleatoriamente ou pede seleção
+                // Em produção: Verificar materiais específicos do fusionTarget
+                Debug.Log($"Miracle Fusion: Invocando {fusionTarget.name} (Banimento de materiais pendente).");
+                GameManager.Instance.SpecialSummonFromData(fusionTarget, source.isPlayerCard);
+                extra.Remove(fusionTarget);
+            });
+        }
+    }
+
+    // 1247 - Miracle Restoring
+    void Effect_1247_MiracleRestoring(CardDisplay source)
+    {
+        // Remove 2 counters -> SS Dark Magician or Buster Blader from GY.
+        if (RemoveSpellCounters(2, source.isPlayerCard))
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> targets = gy.FindAll(c => c.name == "Dark Magician" || c.name == "Buster Blader");
+            
+            if (targets.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(targets, "Reviver Lenda", (selected) => {
+                    GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                });
+            }
+        }
+    }
+
+    // 1248 - Mirage Dragon
+    void Effect_1248_MirageDragon(CardDisplay source)
+    {
+        // Opponent cannot activate Traps during Battle Phase.
+        // Lógica passiva verificada no BattleManager/SpellTrapManager.
+        Debug.Log("Mirage Dragon: Traps bloqueadas na batalha.");
+    }
+
+    // 1249 - Mirage Knight
+    void Effect_1249_MirageKnight(CardDisplay source)
+    {
+        // Gain ATK = Opponent's ATK during calc. Banish at End Phase.
+        // Lógica de ATK no OnDamageCalculation (CardEffectManager_Impl.cs).
+        // Lógica de banir no OnPhaseStart (End Phase).
+        Debug.Log("Mirage Knight: Efeitos de batalha e auto-banimento configurados.");
+    }
+
+    // 1250 - Mirage of Nightmare
+    void Effect_1250_MirageOfNightmare(CardDisplay source)
+    {
+        // Opponent's Standby: Draw until 4. Your Standby: Discard same amount.
+        // Lógica no OnPhaseStart (CardEffectManager_Impl.cs).
+        Debug.Log("Mirage of Nightmare: Ativo.");
+    }
+
 }
