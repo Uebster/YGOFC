@@ -2666,4 +2666,138 @@ public partial class CardEffectManager
         }
         Debug.Log("Hiro's Shadow Scout: Oponente comprou 3. (Lógica de descarte de Spell pendente).");
     }
+
+    void Effect_0901_HomunculusTheAlchemicBeing(CardDisplay source)
+    {
+        // Once per turn, you can change the Attribute of this card.
+        Debug.Log("Homunculus: Atributo alterado (Simulado).");
+        // Requer UI para escolher atributo
+    }
+
+    void Effect_0903_HornOfHeaven(CardDisplay source)
+    {
+        // Tribute 1 monster; negate the Summon of a monster and destroy it.
+        if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
+        {
+            // Seleção de tributo simplificada
+            GameManager.Instance.TributeCard(source); // Teria que selecionar outro monstro
+            Debug.Log("Horn of Heaven: Invocação negada.");
+        }
+    }
+
+    void Effect_0904_HornOfLight(CardDisplay source)
+    {
+        // Equip: +800 DEF. If sent to GY, can pay 500 LP to return to top of Deck.
+        Effect_Equip(source, 0, 800);
+        // Lógica de retorno ao deck no OnCardSentToGraveyard
+    }
+
+    void Effect_0905_HornOfTheUnicorn(CardDisplay source)
+    {
+        // Equip: +700 ATK/DEF. If sent to GY, returns to top of Deck.
+        Effect_Equip(source, 700, 700);
+        // Lógica de retorno ao deck no OnCardSentToGraveyard
+    }
+
+    void Effect_0908_HorusTheBlackFlameDragonLV8(CardDisplay source)
+    {
+        // Cannot be Normal Summoned. Must be SS by LV6. Negate Spell activation.
+        Debug.Log("Horus LV8: Negação de Magias ativa.");
+    }
+
+    void Effect_0909_HorusServant(CardDisplay source)
+    {
+        // Your opponent cannot target "Horus the Black Flame Dragon" monsters with Spell/Trap or card effects.
+        Debug.Log("Horus' Servant: Proteção de Horus ativa.");
+    }
+
+    void Effect_0910_Hoshiningen(CardDisplay source)
+    {
+        Effect_Field(source, 500, -400, "", "Light");
+    }
+
+    void Effect_0911_HourglassOfCourage(CardDisplay source)
+    {
+        // Normal Summon: ATK halved. Standby Phase: ATK doubled.
+        if (source.summonedThisTurn)
+        {
+            source.ModifyStats(-source.originalAtk / 2, 0);
+        }
+        // Lógica de dobrar na Standby (OnPhaseStart)
+    }
+
+    void Effect_0913_HouseOfAdhesiveTape(CardDisplay source)
+    {
+        // If opponent Summons monster with DEF <= 500: Destroy it.
+        Debug.Log("House of Adhesive Tape: Armadilha ativa.");
+    }
+
+    void Effect_0914_HowlingInsect(CardDisplay source)
+    {
+        // Destroyed by battle: SS 1 Insect with ATK <= 1500 from Deck.
+        Effect_SearchDeck(source, "Insect", "Monster", 1500); // Simplificado para busca
+    }
+
+    void Effect_0915_HugeRevolution(CardDisplay source)
+    {
+        // Main Phase: If you control People Running About, Oppressed People, and United Resistance: Destroy all cards in opponent's hand and field.
+        bool hasPeople = GameManager.Instance.IsCardActiveOnField("People Running About") || GameManager.Instance.IsCardActiveOnField("1415");
+        bool hasOppressed = GameManager.Instance.IsCardActiveOnField("Oppressed People") || GameManager.Instance.IsCardActiveOnField("1386");
+        bool hasUnited = GameManager.Instance.IsCardActiveOnField("United Resistance") || GameManager.Instance.IsCardActiveOnField("2022");
+
+        if (hasPeople && hasOppressed && hasUnited)
+        {
+            Debug.Log("Huge Revolution: Destruição total!");
+            DestroyAllMonsters(true, false);
+            Effect_HarpiesFeatherDuster(source);
+            GameManager.Instance.DiscardHand(false);
+        }
+        else
+        {
+            Debug.Log("Huge Revolution: Requer o trio da revolução.");
+        }
+    }
+
+    void Effect_0916_HumanWaveTactics(CardDisplay source)
+    {
+        // End Phase: SS Lv2 or lower Normal Monsters from Deck equal to number of your Lv2 or lower Normal Monsters destroyed by battle this turn.
+        Debug.Log("Human-Wave Tactics: Invocação em massa na End Phase.");
+    }
+
+    void Effect_0922_Hyena(CardDisplay source)
+    {
+        // Destroyed by battle: SS any number of "Hyena" from Deck.
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        List<CardData> hyenas = deck.FindAll(c => c.name == "Hyena");
+        
+        if (hyenas.Count > 0)
+        {
+            GameManager.Instance.OpenCardMultiSelection(hyenas, "Invocar Hyenas", 1, hyenas.Count, (selected) => {
+                foreach(var c in selected)
+                {
+                    GameManager.Instance.SpecialSummonFromData(c, source.isPlayerCard);
+                    deck.Remove(c);
+                }
+                GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+            });
+        }
+    }
+
+    void Effect_0926_HyperHammerhead(CardDisplay source)
+    {
+        // If battles opponent monster and opponent monster is not destroyed: Return opponent monster to hand.
+        // Lógica no OnBattleEnd.
+        Debug.Log("Hyper Hammerhead: Efeito de bounce configurado.");
+    }
+
+    void Effect_0927_HystericFairy(CardDisplay source)
+    {
+        // Tribute 2 monsters; gain 1000 LP.
+        if (SummonManager.Instance.HasEnoughTributes(2, source.isPlayerCard))
+        {
+            // Seleção de tributos simplificada
+            Effect_TributeToBurn(source, 2, 0); // Reusa lógica de tributo, mas sem dano
+            Effect_GainLP(source, 1000);
+        }
+    }
 }

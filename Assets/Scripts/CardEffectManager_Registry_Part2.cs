@@ -854,16 +854,16 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 0901 - Homunculus the Alchemic Being (Change Attribute)
-        AddEffect("0901", c => Debug.Log("Homunculus: Mudar atributo."));
+        AddEffect("0901", Effect_0901_HomunculusTheAlchemicBeing);
 
         // 0903 - Horn of Heaven (Negate Summon)
-        AddEffect("0903", c => Debug.Log("Horn of Heaven: Tributar 1 para negar invocação."));
+        AddEffect("0903", Effect_0903_HornOfHeaven);
 
         // 0904 - Horn of Light (Equip +800 DEF, Recycle)
-        AddEffect("0904", c => Effect_Equip(c, 0, 800));
+        AddEffect("0904", Effect_0904_HornOfLight);
 
         // 0905 - Horn of the Unicorn (Equip +700/700, Recycle)
-        AddEffect("0905", c => Effect_Equip(c, 700, 700));
+        AddEffect("0905", Effect_0905_HornOfTheUnicorn);
 
         // 0906 - Horus the Black Flame Dragon LV4 (Level Up)
         AddEffect("0906", c => Effect_LevelUp(c, "0907")); // LV6
@@ -872,37 +872,37 @@ public partial class CardEffectManager
         AddEffect("0907", c => Effect_LevelUp(c, "0908")); // LV8
 
         // 0908 - Horus the Black Flame Dragon LV8 (Negate Spells)
-        AddEffect("0908", c => Debug.Log("Horus LV8: Negar ativação de Magia."));
+        AddEffect("0908", Effect_0908_HorusTheBlackFlameDragonLV8);
 
         // 0909 - Horus' Servant (Protect Horus)
-        AddEffect("0909", c => Debug.Log("Horus' Servant: Protege Horus de alvo."));
+        AddEffect("0909", Effect_0909_HorusServant);
 
         // 0910 - Hoshiningen (Field Light +500, Dark -400)
-        AddEffect("0910", c => Effect_Field(c, 500, -400, "", "Light"));
+        AddEffect("0910", Effect_0910_Hoshiningen);
 
         // 0911 - Hourglass of Courage (Stats Halved/Doubled)
-        AddEffect("0911", c => Debug.Log("Hourglass of Courage: Stats metade/dobro."));
+        AddEffect("0911", Effect_0911_HourglassOfCourage);
 
         // 0913 - House of Adhesive Tape (Destroy Summon DEF <= 500)
-        AddEffect("0913", c => Debug.Log("House of Adhesive Tape: Destrói invocação com DEF <= 500."));
+        AddEffect("0913", Effect_0913_HouseOfAdhesiveTape);
 
         // 0914 - Howling Insect (Search Insect <= 1500)
-        AddEffect("0914", c => Effect_SearchDeck(c, "Insect"));
+        AddEffect("0914", Effect_0914_HowlingInsect);
 
         // 0915 - Huge Revolution (Nuke Hand/Field)
-        AddEffect("0915", c => Debug.Log("Huge Revolution: Destrói tudo se tiver trio da revolução."));
+        AddEffect("0915", Effect_0915_HugeRevolution);
 
         // 0916 - Human-Wave Tactics (SS Normal Monsters)
-        AddEffect("0916", c => Debug.Log("Human-Wave Tactics: Invoca Normais na End Phase."));
+        AddEffect("0916", Effect_0916_HumanWaveTactics);
 
         // 0922 - Hyena (SS Hyena)
-        AddEffect("0922", c => Effect_SearchDeck(c, "Hyena"));
+        AddEffect("0922", Effect_0922_Hyena);
 
         // 0926 - Hyper Hammerhead (Bounce)
-        AddEffect("0926", c => Debug.Log("Hyper Hammerhead: Retorna oponente para mão após batalha."));
+        AddEffect("0926", Effect_0926_HyperHammerhead);
 
         // 0927 - Hysteric Fairy (Tribute 2 -> Gain 1000 LP)
-        AddEffect("0927", c => { Debug.Log("Hysteric Fairy: Tributa 2 para ganhar 1000 LP."); Effect_GainLP(c, 1000); });
+        AddEffect("0927", Effect_0927_HystericFairy);
 
         // 0931 - Impenetrable Formation (Buff DEF)
         AddEffect("0931", c => Debug.Log("Impenetrable Formation: +700 DEF."));
