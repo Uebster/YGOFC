@@ -54,178 +54,178 @@ public partial class CardEffectManager
         AddEffect("0525", Effect_0525_DoubleSpell);
 
         // 0526 - Dragged Down into the Grave (Hand destruction/Draw)
-        AddEffect("0526", c => Debug.Log("Dragged Down: Ambos descartam e compram 1."));
+        AddEffect("0526", Effect_0526_DraggedDownIntoTheGrave);
 
         // 0527 - Dragon Capture Jar (Dragons to Defense)
-        AddEffect("0527", c => Debug.Log("Dragon Capture Jar: Dragões em defesa."));
+        AddEffect("0527", Effect_0527_DragonCaptureJar);
 
         // 0528 - Dragon Manipulator (Flip: Control Dragon)
-        AddEffect("0528", c => Debug.Log("Dragon Manipulator: Controlar Dragão."));
+        AddEffect("0528", Effect_0528_DragonManipulator);
 
         // 0529 - Dragon Master Knight (Fusion)
-        AddEffect("0529", c => Debug.Log("Dragon Master Knight: +500 ATK por Dragão."));
+        AddEffect("0529", Effect_0529_DragonMasterKnight);
 
         // 0530 - Dragon Piper (Flip: Destroy Jar, Dragons to Attack)
-        AddEffect("0530", c => Debug.Log("Dragon Piper: Destrói Jarra, Dragões para Ataque."));
+        AddEffect("0530", Effect_0530_DragonPiper);
 
         // 0531 - Dragon Seeker (Destroy Dragon)
-        AddEffect("0531", c => Debug.Log("Dragon Seeker: Destrói Dragão ao ser invocado."));
+        AddEffect("0531", Effect_0531_DragonSeeker);
 
         // 0533 - Dragon Treasure (Equip Dragon +300/300)
-        AddEffect("0533", c => Effect_Equip(c, 300, 300, "Dragon"));
+        AddEffect("0533", Effect_0533_DragonTreasure);
 
         // 0535 - Dragon's Gunfire (Damage or Destroy)
-        AddEffect("0535", c => Debug.Log("Dragon's Gunfire: 800 dano ou destruir monstro com DEF <= 800."));
+        AddEffect("0535", Effect_0535_DragonsGunfire);
 
         // 0536 - Dragon's Mirror (Fusion Banish)
-        AddEffect("0536", c => Debug.Log("Dragon's Mirror: Fusão de Dragão banindo do GY."));
+        AddEffect("0536", Effect_0536_DragonsMirror);
 
         // 0537 - Dragon's Rage (Piercing for Dragons)
-        AddEffect("0537", c => Debug.Log("Dragon's Rage: Dano perfurante para Dragões."));
+        AddEffect("0537", Effect_0537_DragonsRage);
 
         // 0539 - Dragonic Attack (Equip Warrior -> Dragon +500)
-        AddEffect("0539", c => Debug.Log("Dragonic Attack: Warrior vira Dragon e ganha 500."));
+        AddEffect("0539", Effect_0539_DragonicAttack);
 
         // 0540 - Draining Shield (Negate attack, Gain LP)
-        AddEffect("0540", c => Debug.Log("Draining Shield: Negar ataque e ganhar LP."));
+        AddEffect("0540", Effect_0540_DrainingShield);
 
         // 0541 - Dramatic Rescue (Return Amazoness, SS)
-        AddEffect("0541", c => Debug.Log("Dramatic Rescue: Salvar Amazoness e invocar outro."));
+        AddEffect("0541", Effect_0541_DramaticRescue);
 
         // 0542 - Dream Clown (Destroy on Defense)
-        AddEffect("0542", c => Debug.Log("Dream Clown: Destruir monstro ao mudar para defesa."));
+        AddEffect("0542", Effect_0542_DreamClown);
 
         // 0543 - Dreamsprite (Redirect attack)
-        AddEffect("0543", c => Debug.Log("Dreamsprite: Redirecionar ataque."));
+        AddEffect("0543", Effect_0543_Dreamsprite);
 
         // 0544 - Drill Bug (Parasite Paracide effect)
-        AddEffect("0544", c => Debug.Log("Drill Bug: Colocar Parasite Paracide no deck do oponente."));
+        AddEffect("0544", Effect_0544_DrillBug);
 
         // 0545 - Drillago (Direct attack condition)
-        AddEffect("0545", c => Debug.Log("Drillago: Ataque direto se oponente tiver monstros >= 1600 ATK."));
+        AddEffect("0545", Effect_0545_Drillago);
 
         // 0546 - Drillroid (Destroy Defense)
-        AddEffect("0546", c => Debug.Log("Drillroid: Destrói monstro em defesa antes do cálculo."));
+        AddEffect("0546", Effect_0546_Drillroid);
 
         // 0547 - Driving Snow (Destroy S/T)
-        AddEffect("0547", c => Debug.Log("Driving Snow: Destruir S/T quando Trap é destruída."));
+        AddEffect("0547", Effect_0547_DrivingSnow);
 
         // 0550 - Drop Off (Discard draw)
-        AddEffect("0550", c => Debug.Log("Drop Off: Oponente descarta carta comprada."));
+        AddEffect("0550", Effect_0550_DropOff);
 
         // 0551 - Dummy Golem (Flip: Swap control)
-        AddEffect("0551", c => Debug.Log("Dummy Golem: Trocar controle com monstro do oponente."));
+        AddEffect("0551", Effect_0551_DummyGolem);
 
         // 0554 - Dust Barrier (Normal Monster immune to Spells)
-        AddEffect("0554", c => Debug.Log("Dust Barrier: Monstros Normais imunes a Magia por 2 turnos."));
+        AddEffect("0554", Effect_0554_DustBarrier);
 
         // 0555 - Dust Tornado (Destroy S/T, Set)
-        AddEffect("0555", c => Debug.Log("Dust Tornado: Destruir S/T e setar carta."));
+        AddEffect("0555", Effect_0555_DustTornado);
 
         // 0556 - Eagle Eye (No Traps on Summon)
-        AddEffect("0556", c => Debug.Log("Eagle Eye: Sem traps na invocação."));
+        AddEffect("0556", Effect_0556_EagleEye);
 
         // 0557 - Earth Chant (Ritual Spell)
-        AddEffect("0557", c => Debug.Log("Earth Chant: Ritual EARTH."));
+        AddEffect("0557", Effect_0557_EarthChant);
 
         // 0559 - Earthquake (Change to Defense)
-        AddEffect("0559", c => Debug.Log("Earthquake: Mudar todos face-up para defesa."));
+        AddEffect("0559", Effect_0559_Earthquake);
 
         // 0560 - Earthshaker (Attribute destroy)
-        AddEffect("0560", c => Debug.Log("Earthshaker: Destruir monstros de atributos específicos."));
+        AddEffect("0560", Effect_0560_Earthshaker);
 
         // 0561 - Eatgaboon (Destroy low ATK summon)
-        AddEffect("0561", c => Debug.Log("Eatgaboon: Destruir invocação com ATK <= 500."));
+        AddEffect("0561", Effect_0561_Eatgaboon);
 
         // 0562 - Ebon Magician Curran (Burn)
-        AddEffect("0562", c => Debug.Log("Curran: Dano por monstros do oponente."));
+        AddEffect("0562", Effect_0562_EbonMagicianCurran);
 
         // 0563 - Ectoplasmer (Tribute to burn)
-        AddEffect("0563", c => Debug.Log("Ectoplasmer: Tributar para causar dano."));
+        AddEffect("0563", Effect_0563_Ectoplasmer);
 
         // 0564 - Ekibyo Drakmord (Lock attack, destroy)
-        AddEffect("0564", c => Debug.Log("Ekibyo Drakmord: Impede ataque, destrói após 2 turnos."));
+        AddEffect("0564", Effect_0564_EkibyoDrakmord);
 
         // 0566 - Electric Lizard (Stun Zombie attacker)
-        AddEffect("0566", c => Debug.Log("Electric Lizard: Atacante não-Zumbi não ataca no próximo turno."));
+        AddEffect("0566", Effect_0566_ElectricLizard);
 
         // 0567 - Electric Snake (Draw 2 on discard)
-        AddEffect("0567", c => Debug.Log("Electric Snake: Compre 2 se descartado pelo oponente."));
+        AddEffect("0567", Effect_0567_ElectricSnake);
 
         // 0568 - Electro-Whip (Equip Thunder +300/300)
-        AddEffect("0568", c => Effect_Equip(c, 300, 300, "Thunder"));
+        AddEffect("0568", Effect_0568_ElectroWhip);
 
         // 0569 - Electromagnetic Bagworm (Flip: Control Machine)
-        AddEffect("0569", c => Debug.Log("Electromagnetic Bagworm: Controlar Máquina."));
+        AddEffect("0569", Effect_0569_ElectromagneticBagworm);
 
         // 0570 - Elegant Egotist (SS Harpie)
-        AddEffect("0570", c => Debug.Log("Elegant Egotist: Invocar Harpie Lady."));
+        AddEffect("0570", Effect_0570_ElegantEgotist);
 
         // 0571 - Element Doom (Attribute effects)
-        AddEffect("0571", c => Debug.Log("Element Doom: Efeitos por atributo."));
+        AddEffect("0571", Effect_0571_ElementDoom);
 
         // 0572 - Element Dragon (Attribute effects)
-        AddEffect("0572", c => Debug.Log("Element Dragon: Efeitos por atributo."));
+        AddEffect("0572", Effect_0572_ElementDragon);
 
         // 0573 - Element Magician (Attribute effects)
-        AddEffect("0573", c => Debug.Log("Element Magician: Efeitos por atributo."));
+        AddEffect("0573", Effect_0573_ElementMagician);
 
         // 0574 - Element Saurus (Attribute effects)
-        AddEffect("0574", c => Debug.Log("Element Saurus: Efeitos por atributo."));
+        AddEffect("0574", Effect_0574_ElementSaurus);
 
         // 0575 - Element Soldier (Attribute effects)
-        AddEffect("0575", c => Debug.Log("Element Soldier: Efeitos por atributo."));
+        AddEffect("0575", Effect_0575_ElementSoldier);
 
         // 0576 - Element Valkyrie (Attribute effects)
-        AddEffect("0576", c => Debug.Log("Element Valkyrie: Efeitos por atributo."));
+        AddEffect("0576", Effect_0576_ElementValkyrie);
 
         // 0577 - Elemental Burst (Tribute 4 -> Nuke)
-        AddEffect("0577", c => Debug.Log("Elemental Burst: Destruir tudo do oponente."));
+        AddEffect("0577", Effect_0577_ElementalBurst);
 
         // 0579 - Elemental HERO Bubbleman (SS, Draw 2)
-        AddEffect("0579", c => Debug.Log("Bubbleman: SS se mão vazia, compra 2 se campo vazio."));
+        AddEffect("0579", Effect_0579_ElementalHEROBubbleman);
 
         // 0582 - Elemental HERO Flame Wingman (Burn on destroy)
-        AddEffect("0582", c => Debug.Log("Flame Wingman: Dano igual ATK do monstro destruído."));
+        AddEffect("0582", Effect_0582_ElementalHEROFlameWingman);
 
         // 0584 - Elemental HERO Thunder Giant (Discard -> Destroy)
-        AddEffect("0584", c => Debug.Log("Thunder Giant: Descarte para destruir monstro."));
+        AddEffect("0584", Effect_0584_ElementalHEROThunderGiant);
 
         // 0585 - Elemental Mistress Doriado (Ritual)
-        AddEffect("0585", c => Debug.Log("Doriado: Ritual."));
+        AddEffect("0585", Effect_0585_ElementalMistressDoriado);
 
         // 0586 - Elephant Statue of Blessing (Gain LP on discard)
-        AddEffect("0586", c => Debug.Log("Elephant Statue of Blessing: Ganha 2000 LP se descartado pelo oponente."));
+        AddEffect("0586", Effect_0586_ElephantStatueOfBlessing);
 
         // 0587 - Elephant Statue of Disaster (Damage on discard)
-        AddEffect("0587", c => Debug.Log("Elephant Statue of Disaster: 2000 dano se descartado pelo oponente."));
+        AddEffect("0587", Effect_0587_ElephantStatueOfDisaster);
 
         // 0588 - Elf's Light (Equip LIGHT +400/-200)
-        AddEffect("0588", c => Effect_Equip(c, 400, -200, "", "Light"));
+        AddEffect("0588", Effect_0588_ElfsLight);
 
         // 0589 - Emblem of Dragon Destroyer (Search Buster Blader)
-        AddEffect("0589", c => Effect_SearchDeck(c, "Buster Blader"));
+        AddEffect("0589", Effect_0589_EmblemOfDragonDestroyer);
 
         // 0590 - Embodiment of Apophis (Trap Monster)
-        AddEffect("0590", c => Debug.Log("Embodiment of Apophis: Vira monstro."));
+        AddEffect("0590", Effect_0590_EmbodimentOfApophis);
 
         // 0592 - Emergency Provisions (Send S/T -> Gain LP)
-        AddEffect("0592", c => Debug.Log("Emergency Provisions: Envia S/T para ganhar 1000 LP cada."));
+        AddEffect("0592", Effect_0592_EmergencyProvisions);
 
         // 0593 - Emes the Infinity (Gain ATK)
-        AddEffect("0593", c => Debug.Log("Emes the Infinity: Ganha 700 ATK ao destruir monstro."));
+        AddEffect("0593", Effect_0593_EmesTheInfinity);
 
         // 0594 - Emissary of the Afterlife (Search Normal)
-        AddEffect("0594", c => Debug.Log("Emissary of the Afterlife: Busca Normal Monster Lv3 ou menor."));
+        AddEffect("0594", Effect_0594_EmissaryOfTheAfterlife);
 
         // 0595 - Emissary of the Oasis (Protect Normal)
-        AddEffect("0595", c => Debug.Log("Emissary of the Oasis: Protege Normal Monster Lv3 ou menor."));
+        AddEffect("0595", Effect_0595_EmissaryOfTheOasis);
 
         // 0599 - Enchanted Javelin (Gain LP equal to ATK)
-        AddEffect("0599", c => Debug.Log("Enchanted Javelin: Ganha LP igual ao ATK do atacante."));
+        AddEffect("0599", Effect_0599_EnchantedJavelin);
 
         // 0600 - Enchanting Fitting Room (Pay 800, Excavate)
-        AddEffect("0600", c => Debug.Log("Enchanting Fitting Room: Paga 800, escava 4, invoca Normais Lv3 ou menor."));
+        AddEffect("0600", Effect_0600_EnchantingFittingRoom);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 0601 - 0700)
