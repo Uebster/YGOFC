@@ -612,67 +612,67 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 0801 - Grave Protector (Shuffle destroyed into Deck)
-        AddEffect("0801", c => Debug.Log("Grave Protector: Monstros destruídos voltam ao deck."));
+        AddEffect("0801", Effect_0801_GraveProtector);
 
         // 0802 - Gravedigger Ghoul (Banish 2 from Opp GY)
-        AddEffect("0802", c => Debug.Log("Gravedigger Ghoul: Banir 2 do GY do oponente."));
+        AddEffect("0802", Effect_0802_GravediggerGhoul);
 
         // 0803 - Gravekeeper's Assailant (Change battle pos with Necrovalley)
-        AddEffect("0803", c => Debug.Log("Gravekeeper's Assailant: Muda posição se Necrovalley."));
+        AddEffect("0803", Effect_0803_GravekeepersAssailant);
 
         // 0804 - Gravekeeper's Cannonholder (Tribute GK -> 700 dmg)
-        AddEffect("0804", c => Effect_TributeToBurn(c, 1, 700, "Spellcaster")); // Simplificado para Spellcaster/GK
+        AddEffect("0804", Effect_0804_GravekeepersCannonholder);
 
         // 0805 - Gravekeeper's Chief (Revive GK)
-        AddEffect("0805", c => Debug.Log("Gravekeeper's Chief: Reviver Gravekeeper."));
+        AddEffect("0805", Effect_0805_GravekeepersChief);
 
         // 0806 - Gravekeeper's Curse (Burn 500 on Summon)
-        AddEffect("0806", c => Effect_DirectDamage(c, 500));
+        AddEffect("0806", Effect_0806_GravekeepersCurse);
 
         // 0807 - Gravekeeper's Guard (Flip Bounce)
-        AddEffect("0807", c => Effect_FlipReturn(c, TargetType.Monster));
+        AddEffect("0807", Effect_0807_GravekeepersGuard);
 
         // 0808 - Gravekeeper's Servant (Mill to attack)
-        AddEffect("0808", c => Debug.Log("Gravekeeper's Servant: Oponente milla para atacar."));
+        AddEffect("0808", Effect_0808_GravekeepersServant);
 
         // 0809 - Gravekeeper's Spear Soldier (Piercing)
-        AddEffect("0809", c => Debug.Log("Gravekeeper's Spear Soldier: Dano perfurante."));
+        AddEffect("0809", Effect_0809_GravekeepersSpearSoldier);
 
         // 0810 - Gravekeeper's Spy (Flip SS GK)
-        AddEffect("0810", c => Effect_SearchDeck(c, "Gravekeeper's"));
+        AddEffect("0810", Effect_0810_GravekeepersSpy);
 
         // 0811 - Gravekeeper's Vassal (Effect Damage)
-        AddEffect("0811", c => Debug.Log("Gravekeeper's Vassal: Dano de batalha vira efeito."));
+        AddEffect("0811", Effect_0811_GravekeepersVassal);
 
         // 0812 - Gravekeeper's Watcher (Negate discard effect)
-        AddEffect("0812", c => Debug.Log("Gravekeeper's Watcher: Nega efeito de descarte."));
+        AddEffect("0812", Effect_0812_GravekeepersWatcher);
 
         // 0813 - Graverobber (Use Opp Spell)
-        AddEffect("0813", c => Debug.Log("Graverobber: Usar magia do oponente."));
+        AddEffect("0813", Effect_0813_Graverobber);
 
         // 0814 - Graverobber's Retribution (Burn per banished)
-        AddEffect("0814", c => Debug.Log("Graverobber's Retribution: Dano por banidas."));
+        AddEffect("0814", Effect_0814_GraverobbersRetribution);
 
         // 0816 - Gravity Axe - Grarl (Equip +500, Lock pos)
-        AddEffect("0816", c => Effect_Equip(c, 500, 0));
+        AddEffect("0816", Effect_0816_GravityAxeGrarl);
 
         // 0817 - Gravity Bind (Level 4+ no attack)
-        AddEffect("0817", c => Debug.Log("Gravity Bind: Nível 4+ não ataca."));
+        AddEffect("0817", Effect_0817_GravityBind);
 
         // 0818 - Gray Wing (Discard -> Double Attack)
-        AddEffect("0818", c => Debug.Log("Gray Wing: Ataque duplo."));
+        AddEffect("0818", Effect_0818_GrayWing);
 
         // 0821 - Great Dezard (Negate / SS Fushioh)
-        AddEffect("0821", c => Debug.Log("Great Dezard: Nega alvo / Invoca Fushioh."));
+        AddEffect("0821", Effect_0821_GreatDezard);
 
         // 0822 - Great Long Nose (Skip Battle Phase)
-        AddEffect("0822", c => Debug.Log("Great Long Nose: Pula Battle Phase do oponente."));
+        AddEffect("0822", Effect_0822_GreatLongNose);
 
         // 0823 - Great Maju Garzett (Double Tribute ATK)
-        AddEffect("0823", c => Debug.Log("Great Maju Garzett: ATK = 2x Tributo."));
+        AddEffect("0823", Effect_0823_GreatMajuGarzett);
 
         // 0825 - Great Moth (SS Condition)
-        AddEffect("0825", c => Debug.Log("Great Moth: Invocar via Petit Moth."));
+        AddEffect("0825", Effect_0825_GreatMoth);
 
         // 0826 - Great Phantom Thief (Hand destruction)
         AddEffect("0826", c => Debug.Log("Great Phantom Thief: Descarte ao causar dano."));

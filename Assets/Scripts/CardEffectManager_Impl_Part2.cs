@@ -2027,4 +2027,186 @@ public partial class CardEffectManager
         // Flip Summon: 300 damage to opp.
         Effect_DirectDamage(source, 300);
     }
+
+    void Effect_0801_GraveProtector(CardDisplay source)
+    {
+        // Monsters destroyed by battle are shuffled into the Deck instead of going to the GY.
+        Debug.Log("Grave Protector: Monstros destruídos voltam ao deck (Passivo).");
+    }
+
+    void Effect_0802_GravediggerGhoul(CardDisplay source)
+    {
+        // Select up to 2 cards from opponent's GY; banish them.
+        List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
+        if (oppGY.Count > 0)
+        {
+            int max = Mathf.Min(2, oppGY.Count);
+            GameManager.Instance.OpenCardMultiSelection(oppGY, "Banir do Oponente", 1, max, (selected) => {
+                foreach(var c in selected)
+                {
+                    GameManager.Instance.RemoveFromPlay(c, !source.isPlayerCard);
+                    oppGY.Remove(c);
+                }
+                Debug.Log($"Gravedigger Ghoul: Baniu {selected.Count} cartas.");
+            });
+        }
+    }
+
+    void Effect_0803_GravekeepersAssailant(CardDisplay source)
+    {
+        // If Necrovalley is on the field, when this card attacks, change battle position of opponent's monster.
+        if (GameManager.Instance.IsCardActiveOnField("1324")) // Necrovalley
+        {
+            Debug.Log("Gravekeeper's Assailant: Necrovalley ativo. Efeito de mudança de posição disponível no ataque.");
+            // Lógica de trigger no ataque (OnAttackDeclared)
+        }
+    }
+
+    void Effect_0804_GravekeepersCannonholder(CardDisplay source)
+    {
+        // Tribute 1 Gravekeeper's monster; inflict 700 damage.
+        // Simplificado: Tributa qualquer Spellcaster/GK
+        Effect_TributeToBurn(source, 1, 700);
+    }
+
+    void Effect_0805_GravekeepersChief(CardDisplay source)
+    {
+        // When Tribute Summoned: Target 1 Gravekeeper's in GY; SS it.
+        if (source.isOnField) // Assumindo que foi Tribute Summoned
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> targets = gy.FindAll(c => c.name.Contains("Gravekeeper") && c.type.Contains("Monster"));
+            
+            if (targets.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(targets, "Reviver Gravekeeper", (selected) => {
+                    GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                });
+            }
+        }
+    }
+
+    void Effect_0806_GravekeepersCurse(CardDisplay source)
+    {
+        // When Summoned: Inflict 500 damage.
+        Effect_DirectDamage(source, 500);
+    }
+
+    void Effect_0807_GravekeepersGuard(CardDisplay source)
+    {
+        // Flip: Target 1 monster opponent controls; return to hand.
+        Effect_FlipReturn(source, TargetType.Monster);
+    }
+
+    void Effect_0808_GravekeepersServant(CardDisplay source)
+    {
+        // Opponent must send top card of Deck to GY to declare an attack.
+        Debug.Log("Gravekeeper's Servant: Custo de ataque para o oponente (Passivo).");
+    }
+
+    void Effect_0809_GravekeepersSpearSoldier(CardDisplay source)
+    {
+        // Piercing damage.
+        Debug.Log("Gravekeeper's Spear Soldier: Dano perfurante (Passivo).");
+    }
+
+    void Effect_0810_GravekeepersSpy(CardDisplay source)
+    {
+        // Flip: SS 1 Gravekeeper's with 1500 or less ATK from Deck.
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        List<CardData> targets = deck.FindAll(c => c.name.Contains("Gravekeeper") && c.atk <= 1500 && c.type.Contains("Monster"));
+        
+        if (targets.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(targets, "Invocar Gravekeeper", (selected) => {
+                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                deck.Remove(selected);
+                GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+            });
+        }
+    }
+
+    void Effect_0811_GravekeepersVassal(CardDisplay source)
+    {
+        // Battle Damage treated as Effect Damage.
+        Debug.Log("Gravekeeper's Vassal: Dano de batalha é tratado como efeito.");
+    }
+
+    void Effect_0812_GravekeepersWatcher(CardDisplay source)
+    {
+        // Discard to negate "discard" effect.
+        Debug.Log("Gravekeeper's Watcher: Hand Trap (Nega descarte).");
+    }
+
+    void Effect_0813_Graverobber(CardDisplay source)
+    {
+        // Select 1 Spell in opponent's GY; use it or add to hand.
+        List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
+        List<CardData> spells = oppGY.FindAll(c => c.type.Contains("Spell"));
+        
+        if (spells.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(spells, "Roubar Magia", (selected) => {
+                oppGY.Remove(selected);
+                GameManager.Instance.AddCardToHand(selected, source.isPlayerCard);
+                Debug.Log($"Graverobber: Roubou {selected.name}.");
+            });
+        }
+    }
+
+    void Effect_0814_GraverobbersRetribution(CardDisplay source)
+    {
+        // Standby Phase: Inflict 100 damage per opponent's banished monster.
+        Debug.Log("Graverobber's Retribution: Dano por banidas (Passivo/Standby).");
+    }
+
+    void Effect_0816_GravityAxeGrarl(CardDisplay source)
+    {
+        // Equip +500 ATK. Monsters opponent controls cannot change battle position.
+        Effect_Equip(source, 500, 0);
+    }
+
+    void Effect_0817_GravityBind(CardDisplay source)
+    {
+        // Level 4 or higher monsters cannot attack.
+        Debug.Log("Gravity Bind: Bloqueio de ataque Nível 4+ (Passivo).");
+    }
+
+    void Effect_0818_GrayWing(CardDisplay source)
+    {
+        // Discard 1 card; this card can attack twice.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                Debug.Log("Gray Wing: Ataque duplo ativado.");
+                // source.canAttackTwice = true;
+            });
+        }
+    }
+
+    void Effect_0821_GreatDezard(CardDisplay source)
+    {
+        // If destroys monster: Negate effects / SS Fushioh Richie (after 2 kills).
+        Debug.Log("Great Dezard: Efeitos de batalha e evolução.");
+    }
+
+    void Effect_0822_GreatLongNose(CardDisplay source)
+    {
+        // If deals battle damage: Opponent skips next Battle Phase.
+        Debug.Log("Great Long Nose: Pula Battle Phase do oponente se causar dano.");
+    }
+
+    void Effect_0823_GreatMajuGarzett(CardDisplay source)
+    {
+        // ATK = 2x original ATK of tributed monster.
+        Debug.Log("Great Maju Garzett: ATK definido pelo tributo (Lógica no SummonManager).");
+    }
+
+    void Effect_0825_GreatMoth(CardDisplay source)
+    {
+        // SS Condition (Petit Moth + Cocoon for 4 turns).
+        Debug.Log("Great Moth: Invocação especial complexa.");
+    }
 }
