@@ -69,7 +69,7 @@ public partial class CardEffectManager
         AddEffect("1035", Effect_1035_KunaiWithChain);
 
         // 1037 - Kuriboh (Negate damage)
-        AddEffect("1037", Effect_1037_Kuriboh);
+        AddEffect("1037", Effect_1037_Kuriboh); // Já estava registrado, mas vamos garantir que a implementação esteja correta
 
         // 1040 - Kycoo the Ghost Destroyer (Banish GY)
         AddEffect("1040", Effect_1040_KycooTheGhostDestroyer);

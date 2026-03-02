@@ -157,6 +157,15 @@ public partial class CardEffectManager
                 }
             });
 
+            // Lava Golem (1060): 1000 damage to controller
+            CheckActiveCards("1060", (card) => {
+                // The controller takes damage.
+                // If card.isPlayerCard is true, it means the player controls it.
+                if (card.isPlayerCard) GameManager.Instance.DamagePlayer(1000);
+                else GameManager.Instance.DamageOpponent(1000);
+                Debug.Log("Lava Golem: 1000 damage to controller.");
+            });
+
             // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
             // (Na verdade é End Phase, movido para lá se fosse o caso)
         }
