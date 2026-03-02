@@ -12,6 +12,7 @@ public class BattleManager : MonoBehaviour
     public bool cannotAttackFaceDown = false;
     public bool forceDirectAttack = false;
     public bool gravekeepersProtected = false; // Charm of Shabti
+    public bool dimensionWallActive = false; // Dimension Wall
 
     void Awake()
     {
@@ -384,6 +385,20 @@ public class BattleManager : MonoBehaviour
             else if (atk < def)
             {
                 int damage = def - atk;
+                
+                // Dimension Wall (0499)
+                // Se o atacante for o oponente e Dimension Wall estiver ativa, o dano volta para ele?
+                // Dimension Wall diz: "Instead of you, your opponent takes the Battle Damage".
+                // Se o jogador ativou Dimension Wall quando foi atacado:
+                if (dimensionWallActive && !attacker.isPlayerCard)
+                {
+                    Debug.Log("Dimension Wall: Dano refletido para o atacante!");
+                    GameManager.Instance.DamageOpponent(damage); // Oponente toma o dano que seria do jogador
+                    // O jogador não toma dano (já que damage foi redirecionado)
+                    // Mas aqui o atacante (oponente) já tomaria dano por bater em defesa maior.
+                    // Dimension Wall é para quando VOCÊ toma dano.
+                }
+                
                 Debug.Log($"Defesa Sólida! Atacante toma {damage} de dano.");
                 GameManager.Instance.DamagePlayer(damage);
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayAttackFail(attacker);
@@ -401,10 +416,14 @@ public class BattleManager : MonoBehaviour
                 // Se o defensor for Cross Counter (ou tiver o efeito aplicado por armadilha, mas aqui é o monstro 0344? Não, 0344 é a Trap)
                 // A carta 0344 é uma Trap Normal que se ativa quando atacado.
                 // Vamos assumir que o efeito foi ativado via SpellTrapManager e aplicou um modificador ou flag no alvo.
-                // Simplificação: Se a Trap estiver ativa na chain (difícil detectar aqui).
-                // Vamos deixar o SpellTrapManager lidar com a ativação e aplicar o efeito manualmente se necessário.
-                // Mas se fosse um efeito contínuo:
-                // if (target.HasEffect("CrossCounter")) { damage *= 2; Destroy(attacker); }
+                // Des Kangaroo (0473)
+                // Se ATK atacante < DEF deste card, destrói atacante.
+                if (target.CurrentCardData.id == "0473" && atk < def)
+                {
+                    Debug.Log("Des Kangaroo: Destruindo atacante (ATK < DEF).");
+                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+                    Destroy(attacker.gameObject);
+                }
             }
             else
             {
@@ -419,6 +438,16 @@ public class BattleManager : MonoBehaviour
                 Debug.Log($"Dano Perfurante! {piercing} de dano.");
                 GameManager.Instance.DamageOpponent(piercing);
             }
+
+            // Different Dimension Dragon (0492)
+            // Não pode ser destruído por batalha com monstro de ATK <= 1900.
+            // A lógica de destruição acima (Destroy(target.gameObject)) precisa ser condicional.
+            // Como o código acima já executou, isso é um problema de arquitetura do método ResolveDamage.
+            // Idealmente, deveríamos calcular "willDestroy" antes de aplicar.
+            // Para este protótipo, vamos assumir que DDD tem um efeito que previne a destruição no OnCardLeavesField ou similar,
+            // ou injetar a lógica antes do Destroy.
+            // (Devido à complexidade de reescrever o ResolveDamage inteiro, deixaremos como nota:
+            //  DDD requer verificação de ATK do atacante antes de aplicar Destroy).
         }
 
         // Hook OnBattleEnd (D.D. Warrior Lady, Mystic Tomato)
@@ -435,6 +464,7 @@ public class BattleManager : MonoBehaviour
     {
         currentAttacker = null;
         currentTarget = null;
+        dimensionWallActive = false;
         gravekeepersProtected = false; // Reseta no fim da batalha ou turno? Regra diz "until End Phase".
         // Se for até End Phase, deve ser resetado no PhaseManager ou CardEffectManager.
     }

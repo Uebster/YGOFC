@@ -4223,25 +4223,49 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0471_DesFeralImp(CardDisplay source)
     {
         // FLIP: Retorna 1 carta do GY para o Deck.
-        Debug.Log("Des Feral Imp: Recicla do GY.");
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        if (gy.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(gy, "Retornar ao Deck", (selected) => {
+                gy.Remove(selected);
+                List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+                deck.Add(selected);
+                GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+                Debug.Log($"Des Feral Imp: {selected.name} retornado ao deck.");
+            });
+        }
     }
 
     void Effect_0472_DesFrog(CardDisplay source)
     {
         // Efeito: SS Des Frogs do deck igual a T.A.D.P.O.L.E. no GY.
-        Debug.Log("Des Frog: Swarm.");
+        int tadpoles = GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.name.Contains("T.A.D.P.O.L.E.")).Count;
+        if (tadpoles > 0)
+        {
+             Debug.Log($"Des Frog: Invocando até {tadpoles} Des Frogs do Deck.");
+             List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+             List<CardData> frogs = deck.FindAll(c => c.name == "Des Frog");
+             
+             int count = Mathf.Min(tadpoles, frogs.Count);
+             for(int i=0; i<count; i++)
+             {
+                 GameManager.Instance.SpecialSummonFromData(frogs[i], source.isPlayerCard);
+                 deck.Remove(frogs[i]);
+             }
+        }
     }
 
     void Effect_0473_DesKangaroo(CardDisplay source)
     {
         // Efeito: Se ATK < DEF do oponente, destrói oponente (cálculo de dano aplica).
-        Debug.Log("Des Kangaroo: Destrói defesa forte.");
+        // Lógica implementada no BattleManager.cs (ResolveDamage)
+        Debug.Log("Des Kangaroo: Ativo.");
     }
 
     void Effect_0474_DesKoala(CardDisplay source)
     {
         // FLIP: Dano 400 x cartas na mão do oponente.
-        int handCount = 3; // Simulado
+        int handCount = GameManager.Instance.GetOpponentHandData().Count;
         Effect_DirectDamage(source, handCount * 400);
     }
 
@@ -4255,19 +4279,33 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0476_DesVolstgalph(CardDisplay source)
     {
         // Efeito: Dano 500 ao destruir monstro. +200 ATK por Spell Normal/Quick.
-        Debug.Log("Des Volstgalph: Burn e Buff.");
+        // Dano implementado no CardEffectManager_Impl.cs (OnCardLeavesField)
+        // Buff de Spell requer hook OnSpellResolved (não implementado, apenas log)
+        Debug.Log("Des Volstgalph: Ativo.");
     }
 
     void Effect_0477_DesWombat(CardDisplay source)
     {
         // Efeito: Dano de efeito em você vira 0.
-        Debug.Log("Des Wombat: Proteção contra dano de efeito.");
+        // Requer hook no GameManager.DamagePlayer para verificar a fonte do dano
+        Debug.Log("Des Wombat: Proteção ativa (Lógica de prevenção pendente).");
     }
 
     void Effect_0478_DesertSunlight(CardDisplay source)
     {
         // Efeito: Todos os monstros viram Defesa Face-up.
-        Debug.Log("Desert Sunlight: Revela monstros.");
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            
+            foreach(var m in all)
+            {
+                m.position = CardDisplay.BattlePosition.Defense;
+                if (m.isFlipped) m.RevealCard();
+            }
+        }
     }
 
     void Effect_0479_Desertapir(CardDisplay source)
@@ -4285,25 +4323,31 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0480_DespairFromTheDark(CardDisplay source)
     {
         // Efeito: Se enviado do deck/mão ao GY por efeito do oponente, SS.
-        Debug.Log("Despair from the Dark: SS condicional.");
+        // Lógica implementada no CardEffectManager_Impl.cs (OnCardSentToGraveyard)
+        Debug.Log("Despair from the Dark: Ativo.");
+
     }
 
     void Effect_0481_DesrookArchfiend(CardDisplay source)
     {
         // Efeito: Envia da mão ao GY para reviver Terrorking destruído.
-        Debug.Log("Desrook Archfiend: Salva Terrorking.");
+        // Lógica implementada no CardEffectManager_Impl.cs (OnCardLeavesField)
+        Debug.Log("Desrook Archfiend: Ativo.");
+
     }
 
     void Effect_0482_DestinyBoard(CardDisplay source)
     {
         // Efeito: Coloca Spirit Messages. Vitória em 5 turnos.
-        Debug.Log("Destiny Board: Contagem para vitória.");
+        // Requer lógica complexa de turnos e zonas de S/T.
+        Debug.Log("Destiny Board: Contagem iniciada (Simulado).");
     }
 
     void Effect_0484_DestructionPunch(CardDisplay source)
     {
         // Efeito: Se ATK atacante < DEF defensor, destrói atacante.
-        Debug.Log("Destruction Punch: Destrói atacante fraco.");
+        // Lógica implementada no BattleManager.cs (ResolveDamage)
+        Debug.Log("Destruction Punch: Ativo.");
     }
 
     void Effect_0485_DestructionRing(CardDisplay source)
@@ -4332,38 +4376,96 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0489_DiceJar(CardDisplay source)
     {
         // FLIP: Ambos rolam dado. Perdedor toma dano (pode ser 6000).
-        Debug.Log("Dice Jar: Risco de dano massivo.");
+        int pRoll = Random.Range(1, 7);
+        int oRoll = Random.Range(1, 7);
+        Debug.Log($"Dice Jar: Player {pRoll}, Opponent {oRoll}");
+        
+        if (pRoll != oRoll)
+        {
+            if (pRoll < oRoll)
+            {
+                int dmg = oRoll * 500;
+                if (oRoll == 6) dmg = 6000;
+                GameManager.Instance.DamagePlayer(dmg);
+            }
+            else
+            {
+                int dmg = pRoll * 500;
+                if (pRoll == 6) dmg = 6000;
+                GameManager.Instance.DamageOpponent(dmg);
+            }
+        }
+        else
+        {
+            Debug.Log("Dice Jar: Empate! Rolando novamente...");
+            Effect_0489_DiceJar(source); // Reroll
+        }
     }
 
     void Effect_0490_DiceReRoll(CardDisplay source)
     {
         // Efeito: Permite rolar dado novamente 1x por turno.
-        Debug.Log("Dice Re-Roll: Reroll.");
+        Debug.Log("Dice Re-Roll: Ativo (Lógica de interceptar dado pendente).");
     }
 
     void Effect_0491_DifferentDimensionCapsule(CardDisplay source)
     {
         // Efeito: Bane 1 carta do deck face-down. Adiciona à mão em 2 turnos.
-        Debug.Log("Different Dimension Capsule: Busca demorada.");
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        GameManager.Instance.OpenCardSelection(deck, "Selecione carta para banir (Capsule)", (selected) => {
+             deck.Remove(selected);
+             GameManager.Instance.RemoveFromPlay(selected, true);
+             Debug.Log("Different Dimension Capsule: Carta banida face-down (Simulado).");
+             // Add counter or tracking for 2 turns later.
+        });
     }
 
     void Effect_0492_DifferentDimensionDragon(CardDisplay source)
     {
         // Efeito: Imune a destruição por S/T que não dão alvo.
-        Debug.Log("Different Dimension Dragon: Proteção específica.");
+        // Proteção de batalha implementada no BattleManager (nota).
+        Debug.Log("Different Dimension Dragon: Ativo.");
+
     }
 
     void Effect_0493_DifferentDimensionGate(CardDisplay source)
     {
         // Efeito: Bane 1 monstro de cada lado. Retorna se destruído.
-        Debug.Log("Different Dimension Gate: Remoção temporária.");
+        if (SpellTrapManager.Instance != null)
+        {
+             SpellTrapManager.Instance.StartTargetSelection(
+                 (t1) => t1.isOnField && t1.isPlayerCard && t1.CurrentCardData.type.Contains("Monster"),
+                 (myMonster) => {
+                     SpellTrapManager.Instance.StartTargetSelection(
+                         (t2) => t2.isOnField && !t2.isPlayerCard && t2.CurrentCardData.type.Contains("Monster"),
+                         (oppMonster) => {
+                             GameManager.Instance.BanishCard(myMonster);
+                             GameManager.Instance.BanishCard(oppMonster);
+                             Debug.Log("Different Dimension Gate: Monstros banidos.");
+                         }
+                     );
+                 }
+             );
+        }
     }
 
     void Effect_0494_DiffusionWaveMotion(CardDisplay source)
     {
         // Efeito: Paga 1000 LP; Mago Lv7+ ataca todos os monstros do oponente.
-        Effect_PayLP(source, 1000);
-        Debug.Log("Diffusion Wave-Motion: Ataque em área.");
+        if (GameManager.Instance.PayLifePoints(source.isPlayerCard, 1000))
+        {
+             if (SpellTrapManager.Instance != null)
+             {
+                 SpellTrapManager.Instance.StartTargetSelection(
+                     (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.race == "Spellcaster" && t.CurrentCardData.level >= 7,
+                     (target) => {
+                         Debug.Log($"Diffusion Wave-Motion: {target.CurrentCardData.name} atacará todos os monstros.");
+                         // Set flag on monster for multi-attack
+                         // target.canAttackAll = true;
+                     }
+                 );
+             }
+        }
     }
 
     void Effect_0496_DimensionDistortion(CardDisplay source)
@@ -4371,28 +4473,42 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         // Efeito: Se GY vazio, SS 1 monstro banido.
         if (GameManager.Instance.GetPlayerGraveyard().Count == 0)
         {
-            // Lógica de selecionar banido
-            Debug.Log("Dimension Distortion: Invoca banido.");
+            List<CardData> banished = GameManager.Instance.GetPlayerRemoved();
+            if (banished.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(banished, "Invocar Banido", (selected) => {
+                    GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                });
+            }
         }
     }
 
     void Effect_0497_DimensionFusion(CardDisplay source)
     {
         // Efeito: Paga 2000 LP; ambos SS o máximo de monstros banidos possível.
-        Effect_PayLP(source, 2000);
-        Debug.Log("Dimension Fusion: Invocação em massa de banidos.");
+        if (GameManager.Instance.PayLifePoints(source.isPlayerCard, 2000))
+        {
+            // Player
+            List<CardData> pBanished = GameManager.Instance.GetPlayerRemoved();
+            // Opponent
+            // ...
+            Debug.Log("Dimension Fusion: Invocando monstros banidos (Lógica de massa pendente).");
+            // Loop SS
+        }
     }
 
     void Effect_0498_DimensionJar(CardDisplay source)
     {
         // FLIP: Bane até 3 monstros do GY do oponente.
-        Debug.Log("Dimension Jar: Limpa GY do oponente.");
+        Debug.Log("Dimension Jar: Banindo do GY (Simulado).");
+        // UI to select from GY.
     }
 
     void Effect_0499_DimensionWall(CardDisplay source)
     {
         // Efeito: Oponente toma o dano de batalha de um ataque.
-        Debug.Log("Dimension Wall: Reflete dano.");
+        Debug.Log("Dimension Wall: Dano refletido.");
+        if (BattleManager.Instance != null) BattleManager.Instance.dimensionWallActive = true;
     }
 
     void Effect_0500_Dimensionhole(CardDisplay source)

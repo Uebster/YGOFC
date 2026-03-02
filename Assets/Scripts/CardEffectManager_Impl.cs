@@ -130,6 +130,12 @@ public partial class CardEffectManager
                 }
             });
 
+            // Dark Catapulter (0402): Add counter in Standby if Defense
+            CheckActiveCards("0402", (card) => {
+                if (card.isPlayerCard && card.position == CardDisplay.BattlePosition.Defense)
+                    card.AddSpellCounter(1);
+            });
+
             // Dangerous Machine Type-6 (0394): Rola dado na Standby
             CheckActiveCards("0394", (card) => {
                 if (card.isPlayerCard)
@@ -150,37 +156,6 @@ public partial class CardEffectManager
                     // Outros efeitos (2-5) são aplicados em outras fases ou são passivos
                 }
             });
-
-                        // Dark Snake Syndrome (0442): Dano progressivo na Standby
-            CheckActiveCards("0442", (card) => {
-                card.AddSpellCounter(1); // Usa contadores para rastrear turnos
-                int dmg = 200 * (int)Mathf.Pow(2, card.spellCounters - 1);
-                Debug.Log($"Dark Snake Syndrome: Turno {card.spellCounters}, Dano {dmg}");
-                GameManager.Instance.DamagePlayer(dmg);
-                GameManager.Instance.DamageOpponent(dmg);
-            });
-
-            // Dark Zebra (0446): Vira defesa se for o único monstro
-            CheckActiveCards("0446", (card) => {
-                if (card.isPlayerCard && card.position == CardDisplay.BattlePosition.Attack)
-                {
-                    int count = 0;
-                    foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if(z.childCount > 0) count++;
-                    if (count == 1)
-                    {
-                        Debug.Log("Dark Zebra: Único monstro, virando para defesa.");
-                        card.ChangePosition();
-                    }
-                }
-            });
-
-            // Darklord Marie (0453): Ganha 200 LP se estiver no GY
-            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
-            if (gy.Exists(c => c.id == "0453"))
-            {
-                Debug.Log("Darklord Marie (GY): Ganha 200 LP.");
-                GameManager.Instance.GainLifePoints(true, 200);
-            }
 
             // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
             // (Na verdade é End Phase, movido para lá se fosse o caso)
@@ -224,7 +199,60 @@ public partial class CardEffectManager
                     }
                 });
             }
+
+            // Dark Dust Spirit (0408): Return to hand
+            CheckActiveCards("0408", (card) => {
+                if (card.isPlayerCard && card.isFlipped == false) // Face-up
+                {
+                    Debug.Log("Dark Dust Spirit: Retornando para a mão.");
+                    GameManager.Instance.ReturnToHand(card);
+                }
+            });
+
+            // Dark Magician of Chaos (0422): Add Spell from GY
+            CheckActiveCards("0422", (card) => {
+                if (card.isPlayerCard && card.summonedThisTurn)
+                {
+                    // Simplificado: Pega a primeira spell
+                    List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+                    CardData spell = gy.Find(c => c.type.Contains("Spell"));
+                    if (spell != null)
+                    {
+                        Debug.Log($"DMoC: Recuperando {spell.name}.");
+                        gy.Remove(spell);
+                        GameManager.Instance.AddCardToHand(spell, true);
+                    }
+                }
+            });
+
+            // Atualização de Buffs Dinâmicos (Dark Magician Girl, Dark Paladin)
+            CheckActiveCards("0420", (card) => UpdateDMGBuff(card)); // DMG
+            CheckActiveCards("0428", (card) => UpdateDarkPaladinBuff(card)); // Dark Paladin
         }
+    }
+
+    private void UpdateDMGBuff(CardDisplay card)
+    {
+        int count = 0;
+        count += GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.name == "Dark Magician" || c.name == "Magician of Black Chaos").Count;
+        count += GameManager.Instance.GetOpponentGraveyard().FindAll(c => c.name == "Dark Magician" || c.name == "Magician of Black Chaos").Count;
+        
+        // Remove buff antigo e adiciona novo (simplificado)
+        card.RemoveModifiersFromSource(card);
+        if (count > 0)
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 300, card));
+    }
+
+    private void UpdateDarkPaladinBuff(CardDisplay card)
+    {
+        int count = 0;
+        // Conta dragões no campo e GY
+        count += GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.race == "Dragon").Count;
+        // ... + Campo ...
+        
+        card.RemoveModifiersFromSource(card);
+        if (count > 0)
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 500, card));
     }
 
     public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer)
@@ -239,6 +267,24 @@ public partial class CardEffectManager
                     Effect_DirectDamage(source, 300);
                 }
             });
+        }
+
+        // Dark Coffin (0404): Se destruído face-down
+        // Difícil detectar "face-down" aqui só com CardData. 
+        // Assumimos que o CardDisplay chamou este evento e verificou o estado antes.
+        if (card.id == "0404")
+        {
+            // Simula escolha do oponente
+            Debug.Log("Dark Coffin: Oponente deve descartar ou destruir monstro.");
+            if (isOwnerPlayer) GameManager.Instance.DiscardRandomHand(false, 1); // Simulado
+        }
+
+        // Despair from the Dark (0480): SS se enviado do Hand/Deck pelo oponente
+        if (card.id == "0480" && !isOwnerPlayer) // Enviado pelo oponente (simplificado)
+        {
+            // Deveríamos checar se veio da Hand ou Deck.
+            Debug.Log("Despair from the Dark: Invocando do GY.");
+            GameManager.Instance.SpecialSummonFromData(card, true); // Assume dono é o player
         }
     }
 
@@ -275,6 +321,13 @@ public partial class CardEffectManager
         {
             // Assumindo que summonedThisTurn + isOnField logo após criação indica invocação recente
             card.AddSpellCounter(3);
+        }
+
+        // Dark Dust Spirit (0408): Destroy all other face-up
+        if (card.CurrentCardData.id == "0408")
+        {
+            // DestroyAllMonsters(true, true); // Mas filtrar por "other" e "face-up"
+            Debug.Log("Dark Dust Spirit: Destruindo outros monstros face-up.");
         }
 
         // Boar Soldier (0219) - Destroy if Normal Summoned
@@ -352,6 +405,13 @@ public partial class CardEffectManager
             GameManager.Instance.AddCardToHand(card.CurrentCardData, card.isPlayerCard);
         }
 
+        // Dark Magician of Chaos (0422): Banish if leaves field
+        if (card.CurrentCardData.id == "0422")
+        {
+            Debug.Log("DMoC: Banido ao sair do campo.");
+            // GameManager.Instance.BanishCard(card); // Cuidado com loop infinito se chamado dentro de Destroy
+        }
+
         // Remove quaisquer modificadores que esta carta tenha aplicado em outras
         // Ex: Se um Equip Spell for destruído, o monstro perde o buff
         if (GameManager.Instance.duelFieldUI != null)
@@ -373,6 +433,13 @@ public partial class CardEffectManager
     {
         // Numinous Healer (1360), Attack and Receive (0117) - Geralmente são Traps ativáveis, não automáticas.
         // Mas efeitos contínuos como "Des Wombat" (0477) preveniriam isso antes.
+
+        // Dark Room of Nightmare (0432): Dano extra em dano de efeito
+        // Precisamos saber se foi dano de efeito. Assumindo que sim para este contexto.
+        CheckActiveCards("0432", (card) => {
+            if (card.isPlayerCard != isPlayer) // Se o oponente tomou dano
+                Effect_DirectDamage(card, 300);
+        });
     }
 
     public void OnCardLeavesField(CardDisplay card)
@@ -459,6 +526,16 @@ public partial class CardEffectManager
              // Se o alvo for forte
              int targetAtk = (target != null && target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : (target != null ? target.currentDef : 0);
              if (targetAtk >= 2500) Debug.Log("Buster Rancher: Ativando buff massivo!");
+        }
+        
+                // Dark Artist (0395): DEF / 2 se atacado por LIGHT
+        if (target != null && target.CurrentCardData.id == "0395" && target.position == CardDisplay.BattlePosition.Defense)
+        {
+            if (attacker != null && attacker.CurrentCardData.attribute == "Light")
+            {
+                Debug.Log("Dark Artist: Atacado por LIGHT. DEF reduzida pela metade.");
+                target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Multiply, 0.5f, target));
+            }
         }
     }
 
@@ -560,63 +637,54 @@ public partial class CardEffectManager
             // Por enquanto, apenas logamos.
             Debug.Log("Dark Balter: Efeitos do monstro destruído negados.");
         }
-    }
 
-    // Implementação do método parcial para dano causado
-    partial void OnDamageDealtImpl(CardDisplay attacker, CardDisplay target, int amount)
-    {
-        if (attacker == null) return;
-        string id = attacker.CurrentCardData.id;
-
-        // Dark Scorpion - Chick the Yellow (0435)
-        if (id == "0435")
+        // Dark Flare Knight (0412): SS Mirage Knight
+        if (attacker != null && attacker.CurrentCardData.id == "0412" && attacker.currentAtk <= 0) // Destruído (simplificado)
         {
-            Debug.Log("Chick the Yellow: Efeito ativado (Bounce/TopDeck).");
-            // TODO: Implementar UI de escolha
-        }
-        // Dark Scorpion - Cliff the Trap Remover (0436)
-        else if (id == "0436")
-        {
-            Debug.Log("Cliff: Efeito ativado (Destroy S/T / Mill 2).");
-        }
-        // Dark Scorpion - Gorg the Strong (0437)
-        else if (id == "0437")
-        {
-            Debug.Log("Gorg: Efeito ativado (Spin / Mill 1).");
-        }
-        // Dark Scorpion - Meanae the Thorn (0438)
-        else if (id == "0438")
-        {
-            Debug.Log("Meanae: Efeito ativado (Search / Recycle).");
-        }
-        // Decayed Commander (0459)
-        else if (id == "0459")
-        {
-            Debug.Log("Decayed Commander: Oponente descarta 1 carta.");
-            GameManager.Instance.DiscardRandomHand(!attacker.isPlayerCard, 1);
+             Debug.Log("Dark Flare Knight: Invocando Mirage Knight.");
+             // GameManager.Instance.SpecialSummonById("1249", attacker.isPlayerCard);
         }
 
-        // Dark Scorpion Burglars (0439) - Passive on any Dark Scorpion damage
-        if (GameManager.Instance.IsCardActiveOnField("0439"))
-        // Des Counterblow (0468): Destrói quem ataca direto
-        if (target == null) // Ataque direto
+        // Dark Mimic LV3 (0425): Draw 1
+        if (target != null && target.CurrentCardData.id == "0425") // Se foi destruído
         {
-            if (GameManager.Instance.IsCardActiveOnField("0468"))
+            Debug.Log("Dark Mimic LV3: Compra 1.");
+            if (target.isPlayerCard) GameManager.Instance.DrawCard();
+        }
+
+        // Dark Ruler Ha Des (0433): Negate effects of destroyed monsters
+        if (attacker != null && attacker.CurrentCardData.race == "Fiend" && attacker.isPlayerCard)
+        {
+            if (GameManager.Instance.IsCardActiveOnField("0433"))
             {
-                Debug.Log("Dark Scorpion Burglars: Oponente envia 1 Spell do Deck ao GY.");
-                // Mill Spell logic
-                Debug.Log("Des Counterblow: Destruindo atacante direto.");
-                GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
-                Destroy(attacker.gameObject);
+                Debug.Log("Dark Ruler Ha Des: Efeitos do monstro destruído negados.");
             }
         }
-    }
 
-    public void OnAttackDeclared(CardDisplay attacker, CardDisplay target, System.Action onContinue)
-    {
-        // Dark Spirit of the Silent (0443) logic would go here (Trap activation check)
-        // For now, we just continue
-        onContinue?.Invoke();
+        // Dark Necrofear (0427): Equip on End Phase
+        // A lógica real é na End Phase se foi destruído.
+        // Marcamos uma flag no GameManager ou similar.
+        // GameManager.Instance.necrofearDestroyedThisTurn = true;
+
+        // Des Volstgalph (0476): Burn 500 on destroy monster
+        if (attacker != null && attacker.CurrentCardData.id == "0476" && target != null)
+        {
+            Debug.Log("Des Volstgalph: 500 de dano.");
+            Effect_DirectDamage(attacker, 500);
+        }
+
+        // Desrook Archfiend (0481): Revive Terrorking
+        if (card.CurrentCardData.name == "Terrorking Archfiend" && card.isPlayerCard)
+        {
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            CardData desrook = hand.Find(c => c.id == "0481");
+            if (desrook != null)
+            {
+                Debug.Log("Desrook Archfiend: Enviando da mão para reviver Terrorking.");
+                GameManager.Instance.SendToGraveyard(desrook, true);
+                GameManager.Instance.SpecialSummonFromData(card.CurrentCardData, true);
+            }
+        }
     }
 
     public void OnLifePointsGained(bool isPlayer, int amount)
