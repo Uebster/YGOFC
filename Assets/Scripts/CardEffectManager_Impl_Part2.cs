@@ -1689,4 +1689,145 @@ public partial class CardEffectManager
             else GameManager.Instance.DamageOpponent(2500);
         }
     }
+
+    void Effect_0752_GiantOrc(CardDisplay source)
+    {
+        // Changes to Defense Position at the end of the Battle Phase.
+        // Lógica no OnPhaseStart (End of Battle) ou OnBattleEnd.
+        Debug.Log("Giant Orc: Vira defesa após atacar (Lógica passiva).");
+    }
+
+    void Effect_0753_GiantRat(CardDisplay source)
+    {
+        // When destroyed by battle: SS 1 Earth monster with ATK <= 1500 from Deck.
+        Effect_SearchDeck(source, "Earth", "Monster", 1500); // Simplificado para busca, idealmente SS
+    }
+
+    void Effect_0757_GiantTrunade(CardDisplay source)
+    {
+        // Return all Spell/Trap Cards on the field to the hand.
+        List<CardDisplay> toReturn = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, toReturn);
+            CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, toReturn);
+            CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.playerFieldSpell, GameManager.Instance.duelFieldUI.opponentFieldSpell }, toReturn);
+        }
+        
+        foreach(var c in toReturn)
+        {
+            GameManager.Instance.ReturnToHand(c);
+        }
+        Debug.Log("Giant Trunade: Todas as S/T retornadas para a mão.");
+    }
+
+    void Effect_0759_GiftOfTheMysticalElf(CardDisplay source)
+    {
+        // Gain 300 LP for each monster on the field.
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null) {
+            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if(z.childCount > 0) count++;
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) count++;
+        }
+        Effect_GainLP(source, count * 300);
+    }
+
+    void Effect_0760_GiftOfTheMartyr(CardDisplay source)
+    {
+        // Tribute 1 monster; select 1 monster you control, it gains ATK equal to original ATK of tributed monster until End Phase.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (tribute) => {
+                    int atk = tribute.originalAtk;
+                    GameManager.Instance.TributeCard(tribute);
+                    
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (target) => target.isOnField && target.isPlayerCard && target.CurrentCardData.type.Contains("Monster"),
+                        (target) => {
+                            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, atk, source));
+                            Debug.Log($"Gift of the Martyr: +{atk} ATK para {target.CurrentCardData.name}.");
+                        }
+                    );
+                }
+            );
+        }
+    }
+
+    void Effect_0763_Gigantes(CardDisplay source)
+    {
+        // SS by banishing 1 Earth. If destroyed by battle, destroy all S/T.
+        if (!source.isOnField)
+        {
+            // SS Logic
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> earths = gy.FindAll(c => c.attribute == "Earth");
+            if (earths.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(earths, "Banir 1 EARTH", (selected) => {
+                    GameManager.Instance.RemoveFromPlay(selected, source.isPlayerCard);
+                    GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                    GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                });
+            }
+        }
+        else
+        {
+            // Destroy S/T logic (OnBattleEnd)
+            Debug.Log("Gigantes: Efeito de destruição S/T configurado.");
+        }
+    }
+
+    void Effect_0767_Gilasaurus(CardDisplay source)
+    {
+        // You can Special Summon this card from your hand. If you do, opponent can SS 1 monster from their GY.
+        if (!source.isOnField)
+        {
+            GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+            GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+            Debug.Log("Gilasaurus: Invocado. (Oponente pode invocar do GY - Pendente).");
+        }
+    }
+
+    void Effect_0768_GilfordTheLightning(CardDisplay source)
+    {
+        // If Tribute Summoned by Tributing 3 monsters: Destroy all monsters opponent controls.
+        // Lógica no OnSummonImpl (verificar tributos).
+        Debug.Log("Gilford the Lightning: Raigeki se 3 tributos.");
+    }
+
+    void Effect_0771_GoblinAttackForce(CardDisplay source)
+    {
+        // Changes to Defense Position at the end of the Battle Phase.
+        Debug.Log("Goblin Attack Force: Vira defesa após atacar.");
+    }
+
+    void Effect_0773_GoblinEliteAttackForce(CardDisplay source)
+    {
+        // Changes to Defense Position at the end of the Battle Phase.
+        Debug.Log("Goblin Elite Attack Force: Vira defesa após atacar.");
+    }
+
+    void Effect_0774_GoblinFan(CardDisplay source)
+    {
+        // Destroy Lv2 or lower Flip monster when flipped.
+        Debug.Log("Goblin Fan: Ativo (Destrói Flip Lv2-).");
+    }
+
+    void Effect_0775_GoblinKing(CardDisplay source)
+    {
+        // ATK/DEF = Fiends x 500. Cannot be attacked if another Fiend exists.
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (m.CurrentCardData.race == "Fiend") count++;
+        }
+        
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, count * 500, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, count * 500, source));
+    }
 }

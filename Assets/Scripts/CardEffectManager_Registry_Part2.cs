@@ -518,47 +518,40 @@ public partial class CardEffectManager
         AddEffect("0750", Effect_0750_GiantKozaky);
 
         // 0752 - Giant Orc (Defense after attack)
-        AddEffect("0752", c => Debug.Log("Giant Orc: Vira defesa."));
+        AddEffect("0752", Effect_0752_GiantOrc);
 
         // 0753 - Giant Rat (Recycle Earth)
-        AddEffect("0753", c => Debug.Log("Giant Rat: Busca Earth <= 1500."));
+        AddEffect("0753", Effect_0753_GiantRat);
 
         // 0757 - Giant Trunade (Bounce S/T)
-        AddEffect("0757", c => Debug.Log("Giant Trunade: Retorna S/T."));
+        AddEffect("0757", Effect_0757_GiantTrunade);
 
         // 0759 - Gift of The Mystical Elf (Gain LP)
-        AddEffect("0759", c => {
-            int count = 0;
-            if (GameManager.Instance.duelFieldUI != null) {
-                foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if(z.childCount > 0) count++;
-                foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) count++;
-            }
-            Effect_GainLP(c, count * 300);
-        });
+        AddEffect("0759", Effect_0759_GiftOfTheMysticalElf);
 
         // 0760 - Gift of the Martyr (Buff)
-        AddEffect("0760", c => Debug.Log("Gift of the Martyr: Buff ATK."));
+        AddEffect("0760", Effect_0760_GiftOfTheMartyr);
 
         // 0763 - Gigantes (SS Banish Earth, Heavy Storm)
-        AddEffect("0763", c => Debug.Log("Gigantes: SS Earth. Destrói S/T."));
+        AddEffect("0763", Effect_0763_Gigantes);
 
         // 0767 - Gilasaurus (SS, Opp SS)
-        AddEffect("0767", c => Debug.Log("Gilasaurus: SS da mão."));
+        AddEffect("0767", Effect_0767_Gilasaurus);
 
         // 0768 - Gilford the Lightning (3 Tribute Raigeki)
-        AddEffect("0768", c => Debug.Log("Gilford: Raigeki se 3 tributos."));
+        AddEffect("0768", Effect_0768_GilfordTheLightning);
 
         // 0771 - Goblin Attack Force (Defense after attack)
-        AddEffect("0771", c => Debug.Log("Goblin Attack Force: Vira defesa."));
+        AddEffect("0771", Effect_0771_GoblinAttackForce);
 
         // 0773 - Goblin Elite Attack Force (Defense after attack)
-        AddEffect("0773", c => Debug.Log("Goblin Elite: Vira defesa."));
+        AddEffect("0773", Effect_0773_GoblinEliteAttackForce);
 
         // 0774 - Goblin Fan (Destroy Flip)
-        AddEffect("0774", c => Debug.Log("Goblin Fan: Destrói Flip Lv2-."));
+        AddEffect("0774", Effect_0774_GoblinFan);
 
         // 0775 - Goblin King (Stats)
-        AddEffect("0775", c => Debug.Log("Goblin King: Stats por Fiends."));
+        AddEffect("0775", Effect_0775_GoblinKing);
 
         // 0776 - Goblin Thief (Damage/Heal)
         AddEffect("0776", c => { Effect_DirectDamage(c, 500); Effect_GainLP(c, 500); });
