@@ -1790,21 +1790,19 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0201_BlastSphere(CardDisplay source)
     {
         // Efeito: Se atacado face-down, equipa no atacante e destrói na próxima Standby.
-        // O que falta: Sistema de Trigger de Batalha (OnAttack) que permita equipar monstros como se fossem Spells, e um TurnObserver para contar a Standby Phase.
-        Debug.Log("Blast Sphere: Lógica de equipar ao atacante pendente.");
+        // Lógica principal tratada no BattleManager (Equip) e CardEffectManager_Impl (Standby).
+        Debug.Log("Blast Sphere: Efeito passivo de batalha/standby.");
     }
 
     void Effect_0202_BlastWithChain(CardDisplay source)
     {
         // Efeito: Equip +500. Se destruído por efeito, destrói 1 carta.
-        // O que falta: Sistema de Trigger de Destruição (OnDestroyed) para cartas S/T.
         Effect_Equip(source, 500, 0);
     }
 
     void Effect_0203_BlastingTheRuins(CardDisplay source)
     {
         // Efeito: Se houver 30+ cartas no GY, causa 3000 de dano.
-        int gyCount = source.isPlayerCard ? GameManager.Instance.playerGraveyardDisplay.pileData.Count : GameManager.Instance.opponentGraveyardDisplay.pileData.Count;
         int gyCount = source.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard().Count : GameManager.Instance.GetOpponentGraveyard().Count;
         if (gyCount >= 30) 
         {
@@ -1819,21 +1817,21 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0205_BlessingsOfTheNile(CardDisplay source)
     {
         // Efeito Contínuo: Ganha 1000 LP cada vez que cartas são descartadas da mão para o GY por efeito.
-        // O que falta: Sistema de Eventos Globais (GlobalEventManager) que dispare 'OnCardDiscarded' para cartas contínuas ouvirem.
-        Debug.Log("Blessings of the Nile: Ativo. (Aguardando sistema de eventos de descarte).");
+        // Tratado no CardEffectManager_Impl.cs (OnCardDiscarded).
+        Debug.Log("Blessings of the Nile: Ativo.");
     }
 
     void Effect_0206_BlindDestruction(CardDisplay source)
     {
         // Efeito Contínuo: Na Standby Phase, rola dado. Destrói monstros com Nível = Dado.
-        // O que falta: TurnObserver para disparar efeitos automáticos na Standby Phase.
-        Debug.Log("Blind Destruction: Ativo. (Aguardando sistema de fases automático).");
+        // Tratado no CardEffectManager_Impl.cs (OnPhaseStart).
+        Debug.Log("Blind Destruction: Ativo.");
     }
 
     void Effect_0207_BlindlyLoyalGoblin(CardDisplay source)
     {
         // Efeito Contínuo: Controle não pode mudar.
-        // O que falta: Flag 'cannotChangeControl' no CardDisplay ou StatModifier.
+        // Tratado no GameManager.cs (SwitchControl).
         Debug.Log("Blindly Loyal Goblin: Imune a troca de controle.");
     }
 
@@ -1855,8 +1853,8 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0210_BloodSucker(CardDisplay source)
     {
         // Efeito: Quando causa dano de batalha, oponente envia topo do deck ao GY.
-        // O que falta: Hook no BattleManager 'OnDamageDealt' para monstros específicos.
-        Debug.Log("Blood Sucker: Efeito de mill configurado no BattleManager (pendente).");
+        // Tratado no CardEffectManager_Impl.cs (OnDamageDealtImpl).
+        Debug.Log("Blood Sucker: Efeito de mill passivo.");
     }
 
     void Effect_0211_BlowbackDragon(CardDisplay source)
@@ -1874,38 +1872,109 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0214_BlueEyesShiningDragon(CardDisplay source)
     {
         // Efeito: SS tributando Blue-Eyes Ultimate. Ganha 300 ATK por Dragão no GY. Nega efeitos que dão alvo.
-        // O que falta: Sistema de Invocação Especial complexo (tributo específico) e sistema de Negação de Chain.
-        Debug.Log("Blue-Eyes Shining Dragon: Requer tributo específico e lógica de negação.");
+        if (!source.isOnField)
+        {
+            // Lógica de Invocação da Mão
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "Blue-Eyes Ultimate Dragon",
+                    (t) => {
+                        GameManager.Instance.TributeCard(t);
+                        GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                        // Remove da mão
+                        GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                    }
+                );
+            }
+        }
+        else
+        {
+            // Efeito em campo: Buff
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            int dragons = gy.FindAll(c => c.race == "Dragon").Count;
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, dragons * 300, source));
+            Debug.Log($"Blue-Eyes Shining Dragon: +{dragons * 300} ATK.");
+        }
     }
 
     void Effect_0215_BlueEyesToonDragon(CardDisplay source)
     {
         // Efeito: Toon (Ataca direto se oponente não tiver Toon, etc).
-        // O que falta: Classe base ou Tag 'Toon' que o BattleManager reconheça para aplicar regras de Toon globalmente.
+        // Regras Toon tratadas no BattleManager.
         Debug.Log("Blue-Eyes Toon Dragon: Regras de Toon aplicadas.");
     }
 
     void Effect_0219_BoarSoldier(CardDisplay source)
     {
         // Efeito: Se invocado Normal, destrói a si mesmo. Se oponente tiver monstros, diminui ATK.
-        // O que falta: Detecção do tipo de invocação no momento que ela ocorre (OnSummon).
-        Debug.Log("Boar Soldier: Auto-destruição se Normal Summon.");
+        // Auto-destruição tratada no OnSummonImpl.
+        // Debuff:
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            bool oppHasMonsters = false;
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) oppHasMonsters = true;
+            
+            if (oppHasMonsters)
+            {
+                source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -1000, source));
+            }
+        }
     }
 
     void Effect_0223_BombardmentBeetle(CardDisplay source)
     {
-        // Efeito: Flip 1 monstro face-down do oponente. Se for efeito, vira face-down de novo.
-        // O que falta: Lógica condicional baseada no tipo da carta revelada (Effect vs Normal).
-        Debug.Log("Bombardment Beetle: Revelar face-down (Lógica condicional pendente).");
+        // Efeito: Flip 1 monstro face-down do oponente. Se for efeito, vira face-down de novo. Se Normal, destrói.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.isFlipped, // Face-down
+                (t) => {
+                    t.RevealCard();
+                    if (t.CurrentCardData.type.Contains("Effect"))
+                    {
+                        Debug.Log("Bombardment Beetle: É Effect Monster. Virando face-down.");
+                        t.ShowBack();
+                    }
+                    else
+                    {
+                        Debug.Log("Bombardment Beetle: É Normal Monster. Destruindo.");
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                        GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                        Destroy(t.gameObject);
+                    }
+                }
+            );
+        }
     }
 
     void Effect_0227_BookOfLife(CardDisplay source)
     {
         // Efeito: SS 1 Zumbi do seu GY e bane 1 monstro do GY do oponente.
-        // O que falta: Seleção dupla (1 alvo no seu GY, 1 alvo no GY do oponente) em sequência.
-        Debug.Log("Book of Life: Reviver Zumbi e Banir oponente.");
-        Effect_Revive(source, false); // Parte 1: Revive
-        // Parte 2: Banir (Pendente UI de seleção de GY oponente)
+        List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> zombies = myGY.FindAll(c => c.race == "Zombie");
+        
+        List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
+        List<CardData> oppMonsters = oppGY.FindAll(c => c.type.Contains("Monster"));
+
+        if (zombies.Count > 0 && oppMonsters.Count > 0)
+        {
+            // Passo 1: Seleciona Zumbi
+            GameManager.Instance.OpenCardSelection(zombies, "Reviver Zumbi", (myZombie) => {
+                // Passo 2: Seleciona monstro do oponente para banir
+                GameManager.Instance.OpenCardSelection(oppMonsters, "Banir do Oponente", (oppMonster) => {
+                    // Executa
+                    GameManager.Instance.SpecialSummonFromData(myZombie, source.isPlayerCard);
+                    GameManager.Instance.RemoveFromPlay(oppMonster, !source.isPlayerCard);
+                    oppGY.Remove(oppMonster); // Remove manual pois RemoveFromPlay não altera lista de origem
+                    Debug.Log($"Book of Life: Reviveu {myZombie.name} e baniu {oppMonster.name}.");
+                });
+            });
+        }
+        else
+        {
+            Debug.Log("Book of Life: Requer Zumbi no seu GY e Monstro no GY do oponente.");
+        }
     }
 
     void Effect_0228_BookOfMoon(CardDisplay source)
