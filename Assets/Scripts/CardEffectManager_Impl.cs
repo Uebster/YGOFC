@@ -133,6 +133,11 @@ public partial class CardEffectManager
                 }
             });
 
+            // Cure Mermaid (0347): Ganha 800 LP na Standby
+            CheckActiveCards("0347", (card) => {
+                if (card.isPlayerCard) Effect_GainLP(card, 800);
+            });
+
             // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
             // (Na verdade é End Phase, movido para lá se fosse o caso)
         }
@@ -334,19 +339,26 @@ public partial class CardEffectManager
             GameManager.Instance.AddCardToHand(card.CurrentCardData, card.isPlayerCard);
         }
 
-        // Cockroach Knight (0312): Return to top of deck if sent to GY
-        if (card.CurrentCardData.id == "0312")
-        {
-            Debug.Log("Cockroach Knight: Retornando ao topo do deck.");
-            GameManager.Instance.ReturnToDeck(card, true);
-        }
-
+        // Criosphinx (0343): Se monstro voltar para a mão, oponente descarta
+        // Este hook deveria ser OnCardReturnedToHand, mas como não temos, usamos OnCardLeavesField
+        // e verificamos se foi para a mão (difícil sem contexto).
+        // Vamos assumir que o GameManager chama um evento específico ou simulamos aqui.
+        // Como não temos o evento OnCardReturnedToHand no GameManager, vamos adicionar um log.
+        // Em um sistema real, GameManager.ReturnToHand chamaria CardEffectManager.OnCardReturnedToHand.
+        
         // Centrifugal Field (0278): Se Fusão destruída por efeito, invoca material
         if (card.CurrentCardData.type.Contains("Fusion"))
         {
             // Deveríamos checar se foi por efeito, mas assumimos sim para o protótipo se houver o campo
             if (GameManager.Instance.IsCardActiveOnField("0278"))
                 Debug.Log("Centrifugal Field: Fusão destruída. (Lógica de reviver material pendente).");
+        }
+
+        // Cockroach Knight (0312): Return to top of deck if sent to GY
+        if (card.CurrentCardData.id == "0312")
+        {
+            Debug.Log("Cockroach Knight: Retornando ao topo do deck.");
+            GameManager.Instance.ReturnToDeck(card, true);
         }
 
         // Remove quaisquer modificadores que esta carta tenha aplicado em outras
@@ -370,6 +382,18 @@ public partial class CardEffectManager
     {
         // Numinous Healer (1360), Attack and Receive (0117) - Geralmente são Traps ativáveis, não automáticas.
         // Mas efeitos contínuos como "Des Wombat" (0477) preveniriam isso antes.
+    }
+
+    public void OnSpellActivated(CardDisplay spellCard)
+    {
+        // Curse of Darkness (0350): Dano ao ativar Spell
+        if (GameManager.Instance.IsCardActiveOnField("0350"))
+        {
+            Debug.Log("Curse of Darkness: Dano por ativação de Spell.");
+            // Quem ativou toma dano
+            if (spellCard.isPlayerCard) GameManager.Instance.DamagePlayer(1000);
+            else GameManager.Instance.DamageOpponent(1000);
+        }
     }
 
     public void OnCardLeavesField(CardDisplay card)
@@ -484,7 +508,15 @@ public partial class CardEffectManager
         // Se atacante ATK < defensor DEF (e defensor em defesa), destrói atacante.
         // Se atacante ATK > defensor DEF (e defensor em defesa), destrói defensor.
         // Isso já é a regra padrão de batalha, exceto que CDP destrói o atacante se ele falhar (normalmente só toma dano).
-        // Vamos implementar no BattleManager ou aqui se pudermos forçar destruição.
+        
+        // Cross Counter (0344)
+        // Se atacado em defesa e DEF > ATK: Dano dobrado, destrói atacante.
+        if (target != null && target.CurrentCardData.id == "0344" && target.position == CardDisplay.BattlePosition.Defense)
+        {
+            // A lógica de dano dobrado e destruição deve ser tratada no BattleManager.ResolveDamage
+            // Aqui apenas logamos ou marcamos.
+            Debug.Log("Cross Counter: Preparado para contra-ataque.");
+        }
     }
 
     public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
@@ -525,6 +557,21 @@ public partial class CardEffectManager
             // Precisamos de uma flag especial ou resetar hasAttackedThisTurn condicionalmente.
             Debug.Log("BLS - Envoy: Ativando segundo ataque (Lógica pendente no BattleManager para permitir ataque extra).");
             // attacker.canAttackAgain = true; // Necessário suporte no CardDisplay
+        }
+    }
+
+    public void OnBattlePositionChangedImpl(CardDisplay card)
+    {
+        // Crass Clown (0334): Se mudado de Defesa para Ataque, retorna monstro do oponente
+        if (card.CurrentCardData.id == "0334" && card.position == CardDisplay.BattlePosition.Attack)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard != card.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                    (t) => GameManager.Instance.ReturnToHand(t)
+                );
+            }
         }
     }
 

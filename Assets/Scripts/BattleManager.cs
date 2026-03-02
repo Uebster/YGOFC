@@ -377,6 +377,15 @@ public class BattleManager : MonoBehaviour
                     GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
                     Destroy(attacker.gameObject);
                 }
+
+                // Cross Counter (0344)
+                // Se o defensor for Cross Counter (ou tiver o efeito aplicado por armadilha, mas aqui é o monstro 0344? Não, 0344 é a Trap)
+                // A carta 0344 é uma Trap Normal que se ativa quando atacado.
+                // Vamos assumir que o efeito foi ativado via SpellTrapManager e aplicou um modificador ou flag no alvo.
+                // Simplificação: Se a Trap estiver ativa na chain (difícil detectar aqui).
+                // Vamos deixar o SpellTrapManager lidar com a ativação e aplicar o efeito manualmente se necessário.
+                // Mas se fosse um efeito contínuo:
+                // if (target.HasEffect("CrossCounter")) { damage *= 2; Destroy(attacker); }
             }
             else
             {

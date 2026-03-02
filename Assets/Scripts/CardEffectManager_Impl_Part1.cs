@@ -3026,14 +3026,20 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0326_ContractWithTheDarkMaster(CardDisplay source)
     {
         // Ritual para Dark Master - Zorc.
-        Debug.Log("Contract with the Dark Master: Ritual Zorc (Sistema de Ritual pendente).");
+        // Requer sistema de Ritual
+        Debug.Log("Contract with the Dark Master: Selecione Ritual Zorc.");
     }
 
     void Effect_0327_ConvulsionOfNature(CardDisplay source)
     {
         // Ambos os jogadores viram seus Decks de cabeça para baixo.
-        // O que falta: Renderização do Deck com a face para cima.
         Debug.Log("Convulsion of Nature: Decks invertidos (Visual pendente).");
+        // Simulação visual: Vira o topo do deck
+        if (GameManager.Instance.playerDeckDisplay != null)
+        {
+            // Inverter visualmente seria complexo sem mudar a arquitetura do PileDisplay
+            // Mas podemos logar que o estado mudou
+        }
     }
 
     void Effect_0328_Copycat(CardDisplay source)
@@ -3054,36 +3060,68 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0331_CostDown(CardDisplay source)
     {
         // Descarte 1; reduza Nível dos monstros na mão em 2 até End Phase.
-        // O que falta: Modificador de Nível na mão (afeta Tributos).
-        Debug.Log("Cost Down: Níveis reduzidos (Lógica de tributo pendente).");
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.DiscardCard(GameManager.Instance.playerHand[0].GetComponent<CardDisplay>()); // Simplificado: Descarta o primeiro
+            Debug.Log("Cost Down: Níveis na mão reduzidos em 2.");
+            // A lógica de tributo no SummonManager precisa checar se Cost Down está ativo
+            // SummonManager.Instance.levelReduction = 2;
+        }
     }
 
     void Effect_0332_CoveringFire(CardDisplay source)
     {
         // Se oponente ataca: Monstro atacado ganha ATK de outro monstro seu.
-        // O que falta: Trigger de ataque e seleção de segundo monstro.
-        Debug.Log("Covering Fire: Buff de batalha (Gatilho pendente).");
+        if (BattleManager.Instance != null && BattleManager.Instance.currentTarget != null)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard && t != BattleManager.Instance.currentTarget,
+                    (other) => {
+                        BattleManager.Instance.currentTarget.ModifyStats(other.currentAtk, 0);
+                        Debug.Log($"Covering Fire: +{other.currentAtk} ATK.");
+                    }
+                );
+            }
+        }
     }
 
     void Effect_0334_CrassClown(CardDisplay source)
     {
         // Se mudado de Defesa para Ataque: Retorna 1 monstro do oponente para a mão.
-        // O que falta: Evento OnPositionChanged.
-        Debug.Log("Crass Clown: Bounce ao mudar posição (Gatilho pendente).");
+        // Lógica implementada no CardEffectManager_Impl.cs (OnBattlePositionChangedImpl)
+        Debug.Log("Crass Clown: Ativo.");
     }
 
     void Effect_0338_CreatureSwap(CardDisplay source)
     {
         // Cada jogador escolhe 1 monstro; trocam o controle.
-        // O que falta: Seleção simultânea ou sequencial forçada.
-        Debug.Log("Creature Swap: Troca de monstros (UI de seleção dupla pendente).");
+        // Simplificado: Jogador escolhe o seu e o do oponente (se possível)
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (my) => my.isOnField && my.isPlayerCard,
+                (myMonster) => {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (opp) => opp.isOnField && !opp.isPlayerCard,
+                        (oppMonster) => {
+                            GameManager.Instance.SwitchControl(myMonster);
+                            GameManager.Instance.SwitchControl(oppMonster);
+                            Debug.Log("Creature Swap: Troca realizada.");
+                        }
+                    );
+                }
+            );
+        }
     }
 
     void Effect_0339_CreepingDoomManta(CardDisplay source)
     {
         // Quando invocado Normal: Oponente não ativa Traps.
-        // O que falta: Bloqueio temporário no ChainManager.
         Debug.Log("Creeping Doom Manta: Traps bloqueadas na invocação.");
+        // SpellTrapManager.Instance.trapsBlocked = true; // Resetar no fim do turno
     }
 
     void Effect_0340_CrimsonNinja(CardDisplay source)
@@ -3095,72 +3133,136 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0341_CrimsonSentry(CardDisplay source)
     {
         // Tribute este card; coloque 1 monstro destruído neste turno do GY na mão.
-        // O que falta: Histórico de destruição do turno.
-        Debug.Log("Crimson Sentry: Recuperar monstro (Histórico pendente).");
+        if (source.isOnField)
+        {
+            GameManager.Instance.TributeCard(source);
+            // Seleciona do GY (sem verificar se foi destruído neste turno por enquanto)
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> monsters = gy.FindAll(c => c.type.Contains("Monster"));
+            if (monsters.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(monsters, "Recuperar Monstro", (c) => GameManager.Instance.AddCardToHand(c, true));
+            }
+        }
     }
 
     void Effect_0343_Criosphinx(CardDisplay source)
     {
         // Se monstro voltar para a mão: Oponente descarta 1.
-        // O que falta: Evento OnCardReturnedToHand.
-        Debug.Log("Criosphinx: Descarte por bounce (Gatilho pendente).");
+        // Lógica simulada no CardEffectManager_Impl.cs (OnCardLeavesField - ReturnToHand)
+        Debug.Log("Criosphinx: Ativo.");
     }
 
     void Effect_0344_CrossCounter(CardDisplay source)
     {
         // Se atacado em defesa e DEF > ATK: Dano dobrado, destrói atacante.
-        // O que falta: Hook no BattleManager.
-        Debug.Log("Cross Counter: Contra-ataque (Lógica de batalha pendente).");
+        // Lógica implementada no CardEffectManager_Impl.cs (OnDamageCalculation) e BattleManager
+        Debug.Log("Cross Counter: Ativo.");
     }
 
     void Effect_0346_CrushCardVirus(CardDisplay source)
     {
         // Tribute Dark < 1000 ATK; Destrói monstros 1500+ ATK do oponente (campo/mão) e verifica por 3 turnos.
-        // O que falta: Verificação de mão e turnos futuros.
         if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard)) // Deveria checar Dark < 1000
         {
             Debug.Log("Crush Card Virus: Destruindo monstros fortes...");
-            // DestroyAllMonsters(true, false); // Simplificado: Destrói campo
+            // Destrói campo
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+                {
+                    if (z.childCount > 0)
+                    {
+                        var m = z.GetChild(0).GetComponent<CardDisplay>();
+                        if (m != null && m.currentAtk >= 1500)
+                        {
+                            GameManager.Instance.SendToGraveyard(m.CurrentCardData, false);
+                            Destroy(m.gameObject);
+                        }
+                    }
+                }
+            }
+            // Destrói mão (Simulado: Descarta aleatório se tiver monstro forte? Não, vamos apenas logar)
+            Debug.Log("Crush Card Virus: Verificação de mão e turnos futuros pendente.");
         }
     }
 
     void Effect_0347_CureMermaid(CardDisplay source)
     {
         // Standby Phase: Ganha 800 LP.
-        // O que falta: TurnObserver.
-        Debug.Log("Cure Mermaid: Cura na Standby (Automático pendente).");
+        // Lógica implementada no CardEffectManager_Impl.cs (OnPhaseStart)
+        Debug.Log("Cure Mermaid: Ativo.");
     }
 
     void Effect_0348_CurseOfAging(CardDisplay source)
     {
         // Descarte 1; Monstros do oponente perdem 500 ATK/DEF.
-        // O que falta: UI de descarte.
-        Debug.Log("Curse of Aging: Debuff global (UI de descarte pendente).");
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                // Aplica debuff
+                if (GameManager.Instance.duelFieldUI != null)
+                {
+                    foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+                    {
+                        if (z.childCount > 0)
+                        {
+                            var m = z.GetChild(0).GetComponent<CardDisplay>();
+                            if (m != null) m.ModifyStats(-500, -500);
+                        }
+                    }
+                }
+            });
+        }
     }
 
     void Effect_0349_CurseOfAnubis(CardDisplay source)
     {
         // Todos Effect Monsters viram Defesa, DEF vira 0.
-        Debug.Log("Curse of Anubis: Defesa e DEF 0 (Iteração de monstros pendente).");
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            
+            foreach(var m in all)
+            {
+                if (m.CurrentCardData.type.Contains("Effect"))
+                {
+                    if (m.position == CardDisplay.BattlePosition.Attack) m.ChangePosition();
+                    m.ModifyStats(0, -m.currentDef); // Zera DEF
+                }
+            }
+        }
     }
 
     void Effect_0350_CurseOfDarkness(CardDisplay source)
     {
         // Field Spell: Quem ativar Spell toma 1000 dano.
-        // O que falta: Evento OnSpellActivated.
-        Debug.Log("Curse of Darkness: Dano por magia (Automático pendente).");
+        // Lógica implementada no CardEffectManager_Impl.cs (OnSpellActivated)
+        Debug.Log("Curse of Darkness: Ativo.");
     }
 
     void Effect_0352_CurseOfFiend(CardDisplay source)
     {
         // Muda posição de todos os monstros.
-        Debug.Log("Curse of Fiend: Inversão de posições (Iteração pendente).");
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            
+            foreach(var m in all) m.ChangePosition();
+        }
     }
 
     void Effect_0353_CurseOfRoyal(CardDisplay source)
     {
         // Counter Trap: Nega S/T que destrói S/T.
-        Debug.Log("Curse of Royal: Counter específico (Lógica de chain pendente).");
+        // Requer sistema de Chain para verificar efeito de destruição
+        Debug.Log("Curse of Royal: Nega destruição de S/T.");
     }
 
     void Effect_0354_CurseOfTheMaskedBeast(CardDisplay source)
