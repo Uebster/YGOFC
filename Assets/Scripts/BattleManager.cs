@@ -83,6 +83,23 @@ public class BattleManager : MonoBehaviour
             }
         }
 
+        // Cave Dragon (0274)
+        if (attacker.CurrentCardData.id == "0274")
+        {
+            // Não pode atacar a menos que controle outro Dragão
+            bool hasOtherDragon = false;
+            Transform[] myZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach(var zone in myZones)
+            {
+                if (zone.childCount > 0)
+                {
+                    var cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (cd != null && cd != attacker && cd.CurrentCardData.race == "Dragon") hasOtherDragon = true;
+                }
+            }
+            if (!hasOtherDragon) return false;
+        }
+
         // Para Alligator's Sword Dragon e Amphibious Bugroth MK-3:
         if (attacker.CurrentCardData.id == "0037" || attacker.CurrentCardData.id == "0053") // IDs
         {

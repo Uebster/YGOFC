@@ -107,6 +107,13 @@ public partial class CardEffectManager
                 }
             });
 
+            // Castle of Dark Illusions (0270): Buff progressivo em Zumbis
+            CheckActiveCards("0270", (card) => {
+                // Ganha +200 a cada Standby (acumulativo via modificador permanente ou contador)
+                // Vamos usar o método de campo para aplicar +200 a todos os zumbis novamente
+                Effect_Field(card, 200, 200, "Zombie");
+            });
+
             // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
             // (Na verdade é End Phase, movido para lá se fosse o caso)
         }
@@ -265,6 +272,14 @@ public partial class CardEffectManager
             GameManager.Instance.AddCardToHand(card.CurrentCardData, card.isPlayerCard);
         }
 
+        // Centrifugal Field (0278): Se Fusão destruída por efeito, invoca material
+        if (card.CurrentCardData.type.Contains("Fusion"))
+        {
+            // Deveríamos checar se foi por efeito, mas assumimos sim para o protótipo se houver o campo
+            if (GameManager.Instance.IsCardActiveOnField("0278"))
+                Debug.Log("Centrifugal Field: Fusão destruída. (Lógica de reviver material pendente).");
+        }
+
         // Remove quaisquer modificadores que esta carta tenha aplicado em outras
         // Ex: Se um Equip Spell for destruído, o monstro perde o buff
         if (GameManager.Instance.duelFieldUI != null)
@@ -372,6 +387,14 @@ public partial class CardEffectManager
              // Se o alvo for forte
              int targetAtk = (target != null && target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : (target != null ? target.currentDef : 0);
              if (targetAtk >= 2500) Debug.Log("Buster Rancher: Ativando buff massivo!");
+        }
+
+        // Cat's Ear Tribe (0271)
+        // Se batalhar no turno do oponente, ATK do oponente vira 200
+        if (target != null && target.CurrentCardData.id == "0271" && !target.isPlayerCard) // Alvo é Cat's Ear (turno do oponente)
+        {
+             Debug.Log("Cat's Ear Tribe: ATK do atacante torna-se 200.");
+             attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 200, target));
         }
     }
 

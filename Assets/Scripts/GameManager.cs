@@ -512,6 +512,19 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void DiscardHand(bool isPlayer)
+    {
+        List<GameObject> hand = isPlayer ? playerHand : opponentHand;
+        // Cria uma cópia da lista para iterar com segurança enquanto removemos
+        List<GameObject> toDiscard = new List<GameObject>(hand);
+        
+        foreach (GameObject cardGO in toDiscard)
+        {
+            CardDisplay cd = cardGO.GetComponent<CardDisplay>();
+            if (cd != null) DiscardCard(cd);
+        }
+    }
+
     public void ReturnToHand(CardDisplay card)
     {
         if (card == null) return;
