@@ -730,60 +730,76 @@ public partial class CardEffectManager
 
         // 0851 - Gust (Destroy S/T on S destruction)
         AddEffect("0851", c => Debug.Log("Gust: Destrói S/T se magia destruída."));
+        AddEffect("0851", Effect_0851_Gust);
 
         // 0852 - Gust Fan (Equip Wind +400/-200)
         AddEffect("0852", c => Effect_Equip(c, 400, -200, "", "Wind"));
+        AddEffect("0852", Effect_0852_GustFan);
 
         // 0853 - Gyaku-Gire Panda (Buff per opp monster, Piercing)
         AddEffect("0853", c => Debug.Log("Gyaku-Gire Panda: Buff por monstros do oponente."));
+        AddEffect("0853", Effect_0853_GyakuGirePanda);
 
         // 0855 - Gyroid (Protect once)
         AddEffect("0855", c => Debug.Log("Gyroid: Protege 1x por turno."));
+        AddEffect("0855", Effect_0855_Gyroid);
 
         // 0856 - Hade-Hane (Flip Bounce 3)
         AddEffect("0856", c => Debug.Log("Hade-Hane: Retorna até 3 monstros."));
+        AddEffect("0856", Effect_0856_HadeHane);
 
         // 0857 - Hallowed Life Barrier (Discard -> No Damage)
         AddEffect("0857", c => Debug.Log("Hallowed Life Barrier: Sem dano neste turno."));
+        AddEffect("0857", Effect_0857_HallowedLifeBarrier);
 
         // 0858 - Hamburger Recipe (Ritual)
         AddEffect("0858", c => Debug.Log("Hamburger Recipe: Ritual."));
+        AddEffect("0858", Effect_0858_HamburgerRecipe);
 
         // 0859 - Hammer Shot (Destroy highest ATK)
         AddEffect("0859", c => Debug.Log("Hammer Shot: Destrói maior ATK em ataque."));
+        AddEffect("0859", Effect_0859_HammerShot);
 
         // 0860 - Hand of Nephthys (Tribute 2 -> SS Phoenix)
         AddEffect("0860", c => Debug.Log("Hand of Nephthys: Invoca Sacred Phoenix."));
+        AddEffect("0860", Effect_0860_HandOfNephthys);
 
         // 0861 - Hane-Hane (Flip Bounce 1)
         AddEffect("0861", c => Effect_FlipReturn(c, TargetType.Monster));
 
         // 0863 - Hannibal Necromancer (Counter -> Destroy Trap)
         AddEffect("0863", c => Debug.Log("Hannibal Necromancer: Remove contador para destruir Trap."));
+        AddEffect("0863", Effect_0863_HannibalNecromancer);
 
         // 0868 - Harpie Lady 1 (Buff Wind)
         AddEffect("0868", c => Effect_Field(c, 300, 0, "", "Wind"));
 
         // 0869 - Harpie Lady 2 (Negate Flip)
         AddEffect("0869", c => Debug.Log("Harpie Lady 2: Nega efeitos de Flip."));
+        AddEffect("0869", Effect_0869_HarpieLady2);
 
         // 0870 - Harpie Lady 3 (Lock Attack)
         AddEffect("0870", c => Debug.Log("Harpie Lady 3: Bloqueia ataque do oponente por 2 turnos."));
+        AddEffect("0870", Effect_0870_HarpieLady3);
 
         // 0871 - Harpie Lady Sisters (SS Condition)
         AddEffect("0871", c => Debug.Log("Harpie Lady Sisters: SS via Elegant Egotist."));
+        AddEffect("0871", Effect_0871_HarpieLadySisters);
 
         // 0872 - Harpie's Feather Duster (Destroy Opp S/T)
         AddEffect("0872", Effect_HarpiesFeatherDuster);
 
         // 0873 - Harpie's Pet Dragon (Buff per Harpie)
         AddEffect("0873", c => Debug.Log("Harpie's Pet Dragon: Ganha ATK por Harpies."));
+        AddEffect("0873", Effect_0873_HarpiesPetDragon);
 
         // 0874 - Harpies' Hunting Ground (Field Buff / Destroy S/T)
         AddEffect("0874", c => { Effect_Field(c, 200, 200, "Winged Beast"); Debug.Log("Hunting Ground: Destrói S/T na invocação de Harpie."); });
+        AddEffect("0874", Effect_0874_HarpiesHuntingGround);
 
         // 0875 - Hayabusa Knight (Double Attack)
         AddEffect("0875", c => Debug.Log("Hayabusa Knight: Ataque duplo."));
+        AddEffect("0875", Effect_0875_HayabusaKnight);
 
         // 0877 - Heart of Clear Water (Equip Protect)
         AddEffect("0877", c => Debug.Log("Heart of Clear Water: Protege monstro fraco."));

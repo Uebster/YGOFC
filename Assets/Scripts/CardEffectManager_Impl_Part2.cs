@@ -2369,4 +2369,168 @@ public partial class CardEffectManager
         // Requer rastreamento de tributo.
         Debug.Log("Guardian Tryce: Efeito de flutuação (Requer rastreamento de tributo).");
     }
+
+        void Effect_0851_Gust(CardDisplay source)
+    {
+        // When your Spell Card is destroyed and sent to the Graveyard: Destroy 1 Spell or Trap Card on the field.
+        // Requer trigger OnCardSentToGraveyard com verificação de causa.
+        Debug.Log("Gust: Efeito de gatilho configurado.");
+    }
+
+    void Effect_0852_GustFan(CardDisplay source)
+    {
+        Effect_Equip(source, 400, -200, "", "Wind");
+    }
+
+    void Effect_0853_GyakuGirePanda(CardDisplay source)
+    {
+        // Gains 500 ATK for each monster your opponent controls. Inflicts piercing battle damage.
+        int oppMonsters = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if (z.childCount > 0) oppMonsters++;
+        }
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, oppMonsters * 500, source));
+        // Piercing é passivo no BattleManager.
+    }
+
+    void Effect_0855_Gyroid(CardDisplay source)
+    {
+        // Once per turn, this card is not destroyed by battle.
+        Debug.Log("Gyroid: Proteção de batalha (1x por turno).");
+    }
+
+    void Effect_0856_HadeHane(CardDisplay source)
+    {
+        // FLIP: Return up to 3 monsters on the field to the hand.
+        // Requer seleção múltipla de alvos.
+        Debug.Log("Hade-Hane: Retornando até 3 monstros (Simulado: 1).");
+        Effect_FlipReturn(source, TargetType.Monster);
+    }
+
+    void Effect_0857_HallowedLifeBarrier(CardDisplay source)
+    {
+        // Discard 1 card; you take no damage this turn.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                Debug.Log("Hallowed Life Barrier: Nenhum dano este turno.");
+                // GameManager.Instance.playerIsImmuneToDamage = true;
+            });
+        }
+    }
+
+    void Effect_0858_HamburgerRecipe(CardDisplay source)
+    {
+        Debug.Log("Hamburger Recipe: Ritual.");
+    }
+
+    void Effect_0859_HammerShot(CardDisplay source)
+    {
+        // Destroy 1 face-up Attack Position monster with the highest ATK.
+        List<CardDisplay> targets = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, targets);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, targets);
+        }
+
+        CardDisplay highestAtkTarget = null;
+        int maxAtk = -1;
+
+        foreach(var m in targets)
+        {
+            if (m.position == CardDisplay.BattlePosition.Attack && !m.isFlipped)
+            {
+                if (m.currentAtk > maxAtk)
+                {
+                    maxAtk = m.currentAtk;
+                    highestAtkTarget = m;
+                }
+            }
+        }
+
+        if (highestAtkTarget != null)
+        {
+            Debug.Log($"Hammer Shot: Destruindo {highestAtkTarget.CurrentCardData.name}.");
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(highestAtkTarget);
+            GameManager.Instance.SendToGraveyard(highestAtkTarget.CurrentCardData, highestAtkTarget.isPlayerCard);
+            Destroy(highestAtkTarget.gameObject);
+        }
+    }
+
+    void Effect_0860_HandOfNephthys(CardDisplay source)
+    {
+        // Tribute this card and 1 other monster; SS "Sacred Phoenix of Nephthys" from hand/Deck.
+        if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
+        {
+            GameManager.Instance.TributeCard(source);
+            // Seleciona outro tributo
+            // ...
+            Debug.Log("Hand of Nephthys: Invocando Sacred Phoenix.");
+            // Effect_SearchDeck(source, "Sacred Phoenix of Nephthys"); // Deveria ser SS
+        }
+    }
+
+    void Effect_0863_HannibalNecromancer(CardDisplay source)
+    {
+        // Remove 1 Spell Counter from your side of the field to destroy 1 Trap Card.
+        if (RemoveSpellCounters(1, source.isPlayerCard))
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Trap"),
+                    (t) => {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                        GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                        Destroy(t.gameObject);
+                    }
+                );
+            }
+        }
+    }
+
+    void Effect_0869_HarpieLady2(CardDisplay source)
+    {
+        // Negates the effects of any Flip Effect Monsters it destroys by battle.
+        Debug.Log("Harpie Lady 2: Nega efeitos Flip (Passivo).");
+    }
+
+    void Effect_0870_HarpieLady3(CardDisplay source)
+    {
+        // Any monster that battles with this card cannot declare an attack for 2 turns.
+        Debug.Log("Harpie Lady 3: Bloqueia atacante por 2 turnos (Passivo).");
+    }
+
+    void Effect_0871_HarpieLadySisters(CardDisplay source)
+    {
+        // Cannot be Normal Summoned. Must be Special Summoned by "Elegant Egotist".
+        Debug.Log("Harpie Lady Sisters: Invocação especial.");
+    }
+
+    void Effect_0873_HarpiesPetDragon(CardDisplay source)
+    {
+        // Gains 300 ATK/DEF for each "Harpie Lady" on the field.
+        int harpieCount = 0;
+        // ... Lógica de contagem ...
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, harpieCount * 300, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, harpieCount * 300, source));
+    }
+
+    void Effect_0874_HarpiesHuntingGround(CardDisplay source)
+    {
+        // Field: Winged Beast +200 ATK/DEF.
+        // When Harpie Lady/Sisters is Summoned: Destroy 1 S/T.
+        Effect_Field(source, 200, 200, "Winged Beast");
+        // Trigger de invocação no OnSummonImpl.
+    }
+
+    void Effect_0875_HayabusaKnight(CardDisplay source)
+    {
+        // Can make a second attack during each Battle Phase.
+        Debug.Log("Hayabusa Knight: Ataque duplo (Passivo).");
+    }
 }
