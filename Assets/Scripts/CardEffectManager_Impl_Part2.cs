@@ -3174,4 +3174,65 @@ public partial class CardEffectManager
         Effect_PayLP(source, GameManager.Instance.playerLP / 2);
         Debug.Log("Judgment of the Pharaoh: Bloqueio ativado.");
     }
+
+    void Effect_0985_JustDesserts(CardDisplay source)
+    {
+        // Inflict 500 damage to opponent for each monster they control.
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null) {
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) count++;
+        }
+        Effect_DirectDamage(source, count * 500);
+    }
+
+    void Effect_0986_KA2DesScissors(CardDisplay source)
+    {
+        // When destroys monster by battle and sends to GY: Inflict damage = Level * 500.
+        // Lógica no OnBattleEnd.
+        Debug.Log("KA-2 Des Scissors: Efeito de dano configurado.");
+    }
+
+    void Effect_0990_Kaibaman(CardDisplay source)
+    {
+        // Tribute this card; SS 1 Blue-Eyes White Dragon from hand.
+        if (source.isOnField)
+        {
+            GameManager.Instance.TributeCard(source);
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            CardData blueEyes = hand.Find(c => c.name == "Blue-Eyes White Dragon");
+            
+            if (blueEyes != null)
+            {
+                GameManager.Instance.SpecialSummonFromData(blueEyes, source.isPlayerCard);
+            }
+        }
+    }
+
+    void Effect_0992_KaiserColosseum(CardDisplay source)
+    {
+        // If there is a monster on your side, opponent cannot place monsters if they have >= your number.
+        // Lógica de restrição de invocação no SummonManager.
+        Debug.Log("Kaiser Colosseum: Restrição de invocação ativa.");
+    }
+
+    void Effect_0994_KaiserGlider(CardDisplay source)
+    {
+        // Not destroyed by battle with same ATK. If destroyed: Return 1 monster to hand.
+        // Lógica de retorno no OnCardLeavesField.
+        Debug.Log("Kaiser Glider: Efeito de bounce ao ser destruído.");
+    }
+
+    void Effect_0995_KaiserSeaHorse(CardDisplay source)
+    {
+        // 2 Tributes for LIGHT monster.
+        // Lógica no SummonManager.
+        Debug.Log("Kaiser Sea Horse: Vale por 2 tributos para LIGHT.");
+    }
+
+    void Effect_0998_KaminoteBlow(CardDisplay source)
+    {
+        // If "Chu-Ske the Mouse Fighter", "Monk Fighter", or "Master Monk" battles, destroy opponent's monster at start of Damage Step.
+        // Lógica no OnDamageCalculation.
+        Debug.Log("Kaminote Blow: Destruição automática para Monks.");
+    }
 }

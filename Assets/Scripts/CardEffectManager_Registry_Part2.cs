@@ -1031,30 +1031,24 @@ public partial class CardEffectManager
         AddEffect("0984", Effect_0984_JudgmentOfThePharaoh);
 
         // 0985 - Just Desserts (Burn 500 per monster)
-        AddEffect("0985", c => {
-            int count = 0;
-            if (GameManager.Instance.duelFieldUI != null) {
-                foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) count++;
-            }
-            Effect_DirectDamage(c, count * 500);
-        });
+        AddEffect("0985", Effect_0985_JustDesserts);
 
         // 0986 - KA-2 Des Scissors (Burn on destroy)
-        AddEffect("0986", c => Debug.Log("KA-2 Des Scissors: Dano igual nível x 500."));
+        AddEffect("0986", Effect_0986_KA2DesScissors);
 
         // 0990 - Kaibaman (Tribute -> SS Blue-Eyes)
-        AddEffect("0990", c => Debug.Log("Kaibaman: Invoca Blue-Eyes da mão."));
+        AddEffect("0990", Effect_0990_Kaibaman);
 
         // 0992 - Kaiser Colosseum (Limit Monsters)
-        AddEffect("0992", c => Debug.Log("Kaiser Colosseum: Limita número de monstros do oponente."));
+        AddEffect("0992", Effect_0992_KaiserColosseum);
 
         // 0994 - Kaiser Glider (Bounce on destroy)
-        AddEffect("0994", c => Debug.Log("Kaiser Glider: Retorna monstro para mão."));
+        AddEffect("0994", Effect_0994_KaiserGlider);
 
         // 0995 - Kaiser Sea Horse (2 Tributes Light)
-        AddEffect("0995", c => Debug.Log("Kaiser Sea Horse: 2 tributos para Light."));
+        AddEffect("0995", Effect_0995_KaiserSeaHorse);
 
         // 0998 - Kaminote Blow (Destroy with Monk)
-        AddEffect("0998", c => Debug.Log("Kaminote Blow: Destrói monstro que batalhou com Monk."));
+        AddEffect("0998", Effect_0998_KaminoteBlow);
     }
 }
