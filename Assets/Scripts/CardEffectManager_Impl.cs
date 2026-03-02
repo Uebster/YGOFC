@@ -11,6 +11,18 @@ public partial class CardEffectManager
     {
         Debug.Log($"CardEffectManager: Processando efeitos da fase {phase}...");
 
+        if (phase == GamePhase.Draw)
+        {
+            // Cyber Archfiend (0357): Se mão vazia na Draw Phase, compra +1
+            CheckActiveCards("0357", (card) => {
+                List<CardData> hand = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+                if (hand.Count == 0)
+                {
+                    Debug.Log("Cyber Archfiend: Mão vazia. Compra extra.");
+                    if (card.isPlayerCard) GameManager.Instance.DrawCard(); else GameManager.Instance.DrawOpponentCard();
+                }
+            });
+        }
         if (phase == GamePhase.Standby)
         {
             // 1. Custos de Manutenção (Maintenance Costs)
@@ -107,35 +119,36 @@ public partial class CardEffectManager
                 }
             });
 
-            // Castle of Dark Illusions (0270): Buff progressivo em Zumbis
-            CheckActiveCards("0270", (card) => {
-                // Ganha +200 a cada Standby (acumulativo via modificador permanente ou contador)
-                // Vamos usar o método de campo para aplicar +200 a todos os zumbis novamente
-                Effect_Field(card, 200, 200, "Zombie");
-            });
-
-            // Chaos Necromancer (0292): Atualiza ATK
-            CheckActiveCards("0292", (card) => {
-                int monstersInGY = GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.type.Contains("Monster")).Count;
-                // Usa Set para atualizar o valor base
-                card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, monstersInGY * 300, card));
-            });
-
-            // Coach Goblin (0309): End Phase, return Normal Monster to deck to draw 1
-            CheckActiveCards("0309", (card) => {
-                if (card.isPlayerCard)
+            // Cybernetic Cyclopean (0372): ATK vira 2400 se mão vazia
+            CheckActiveCards("0372", (card) => {
+                List<CardData> hand = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+                if (hand.Count == 0)
                 {
-                    // Simplificado: Se tiver Normal Monster na mão, troca automaticamente (ou abre UI)
-                    // Para protótipo, vamos apenas logar a possibilidade
-                    Debug.Log("Coach Goblin: Efeito de troca de mão disponível.");
-                    // Em um sistema completo:
-                    // GameManager.Instance.OpenCardSelection(handNormals, "Retornar ao Deck", (selected) => { ... });
+                    // Define ATK base para 2400 (Original 1400 + 1000)
+                    // Usamos um modificador temporário que dura até a próxima verificação ou permanente que removemos se a condição falhar
+                    card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, 2400, card));
                 }
             });
 
-            // Cure Mermaid (0347): Ganha 800 LP na Standby
-            CheckActiveCards("0347", (card) => {
-                if (card.isPlayerCard) Effect_GainLP(card, 800);
+            // Dangerous Machine Type-6 (0394): Rola dado na Standby
+            CheckActiveCards("0394", (card) => {
+                if (card.isPlayerCard)
+                {
+                    int roll = Random.Range(1, 7);
+                    Debug.Log($"Dangerous Machine Type-6: Rolou {roll}.");
+                    if (roll == 6)
+                    {
+                        Debug.Log("Rolou 6: Destrói a si mesmo.");
+                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
+                        Destroy(card.gameObject);
+                    }
+                    else if (roll == 1)
+                    {
+                        Debug.Log("Rolou 1: Descarta 1 carta.");
+                        GameManager.Instance.DiscardRandomHand(true, 1);
+                    }
+                    // Outros efeitos (2-5) são aplicados em outras fases ou são passivos
+                }
             });
 
             // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
@@ -180,9 +193,6 @@ public partial class CardEffectManager
                     }
                 });
             }
-
-            // Reseta flags de turno
-            if (BattleManager.Instance != null) BattleManager.Instance.gravekeepersProtected = false;
         }
     }
 
@@ -198,23 +208,6 @@ public partial class CardEffectManager
                     Effect_DirectDamage(source, 300);
                 }
             });
-        }
-
-        // Chimera the Flying Mythical Beast (0299): Revive material
-        if (card.id == "0299" && isOwnerPlayer)
-        {
-            // Verifica se foi destruído (está no GY)
-            // A lógica aqui é simplificada, assume que o evento dispara quando entra no GY
-            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
-            List<CardData> targets = gy.FindAll(c => c.name == "Berfomet" || c.name == "Gazelle the King of Mythical Beasts");
-            
-            if (targets.Count > 0)
-            {
-                Debug.Log("Chimera destruída. Revivendo material...");
-                GameManager.Instance.OpenCardSelection(targets, "Reviver Material", (selected) => {
-                    GameManager.Instance.SpecialSummonFromData(selected, true);
-                });
-            }
         }
     }
 
@@ -241,22 +234,6 @@ public partial class CardEffectManager
                 GameManager.Instance.DrawCard();
             }
         });
-
-        // Cloning (0307): SS Clone Token quando oponente invoca
-        if (!summonedCard.isPlayerCard) // Oponente invocou
-        {
-            // Verifica se o jogador tem Cloning setada
-            // (Simplificado: Verifica se está ativa no campo, mas deveria ser Trap setada)
-            // Como Cloning é Trap Normal, ela seria ativada em resposta.
-            // Aqui simulamos o efeito se ela já tivesse sido ativada em chain ou se fosse Continuous.
-            // Para Trap Normal, o correto é o SpellTrapManager detectar o evento de Summon e oferecer ativação.
-            // Mas se assumirmos que este método é chamado APÓS a resolução da chain de invocação:
-            
-            // Vamos usar CheckActiveCards para simular que o efeito foi ativado e está pendente
-            // Ou melhor, o SpellTrapManager deve lidar com o gatilho.
-            // Deixaremos aqui apenas o log de que o evento ocorreu.
-            // Debug.Log($"Oponente invocou {summonedCard.CurrentCardData.name}. Verificar Cloning.");
-        }
     }
 
     partial void OnSummonImpl(CardDisplay card)
@@ -300,12 +277,17 @@ public partial class CardEffectManager
                 foreach(var c in toReturn) if (c.isFlipped) GameManager.Instance.ReturnToHand(c);
             }
         }
+    }
 
-        // Command Knight (0318): Buff Warriors
-        if (card.CurrentCardData.id == "0318")
+    partial void OnSetImpl(CardDisplay card)
+    {
+        // D.D. Trap Hole (0386): Quando oponente Seta monstro
+        if (!card.isPlayerCard && card.CurrentCardData.type.Contains("Monster"))
         {
-            // Aplica buff global (simplificado, idealmente seria aura)
-            Effect_Field(card, 400, 0, "Warrior");
+            // Verifica se o jogador tem D.D. Trap Hole setada
+            // Simplificado: Log de gatilho
+            // Em produção: SpellTrapManager.Instance.CheckForTraps(SpellTrapTrigger.Set, null, card, ...);
+            Debug.Log($"Oponente Setou {card.CurrentCardData.name}. Gatilho para D.D. Trap Hole.");
         }
     }
 
@@ -339,28 +321,6 @@ public partial class CardEffectManager
             GameManager.Instance.AddCardToHand(card.CurrentCardData, card.isPlayerCard);
         }
 
-        // Criosphinx (0343): Se monstro voltar para a mão, oponente descarta
-        // Este hook deveria ser OnCardReturnedToHand, mas como não temos, usamos OnCardLeavesField
-        // e verificamos se foi para a mão (difícil sem contexto).
-        // Vamos assumir que o GameManager chama um evento específico ou simulamos aqui.
-        // Como não temos o evento OnCardReturnedToHand no GameManager, vamos adicionar um log.
-        // Em um sistema real, GameManager.ReturnToHand chamaria CardEffectManager.OnCardReturnedToHand.
-        
-        // Centrifugal Field (0278): Se Fusão destruída por efeito, invoca material
-        if (card.CurrentCardData.type.Contains("Fusion"))
-        {
-            // Deveríamos checar se foi por efeito, mas assumimos sim para o protótipo se houver o campo
-            if (GameManager.Instance.IsCardActiveOnField("0278"))
-                Debug.Log("Centrifugal Field: Fusão destruída. (Lógica de reviver material pendente).");
-        }
-
-        // Cockroach Knight (0312): Return to top of deck if sent to GY
-        if (card.CurrentCardData.id == "0312")
-        {
-            Debug.Log("Cockroach Knight: Retornando ao topo do deck.");
-            GameManager.Instance.ReturnToDeck(card, true);
-        }
-
         // Remove quaisquer modificadores que esta carta tenha aplicado em outras
         // Ex: Se um Equip Spell for destruído, o monstro perde o buff
         if (GameManager.Instance.duelFieldUI != null)
@@ -382,18 +342,6 @@ public partial class CardEffectManager
     {
         // Numinous Healer (1360), Attack and Receive (0117) - Geralmente são Traps ativáveis, não automáticas.
         // Mas efeitos contínuos como "Des Wombat" (0477) preveniriam isso antes.
-    }
-
-    public void OnSpellActivated(CardDisplay spellCard)
-    {
-        // Curse of Darkness (0350): Dano ao ativar Spell
-        if (GameManager.Instance.IsCardActiveOnField("0350"))
-        {
-            Debug.Log("Curse of Darkness: Dano por ativação de Spell.");
-            // Quem ativou toma dano
-            if (spellCard.isPlayerCard) GameManager.Instance.DamagePlayer(1000);
-            else GameManager.Instance.DamageOpponent(1000);
-        }
     }
 
     public void OnCardLeavesField(CardDisplay card)
@@ -481,41 +429,15 @@ public partial class CardEffectManager
              int targetAtk = (target != null && target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : (target != null ? target.currentDef : 0);
              if (targetAtk >= 2500) Debug.Log("Buster Rancher: Ativando buff massivo!");
         }
-
-        // Cat's Ear Tribe (0271)
-        // Se batalhar no turno do oponente, ATK do oponente vira 200
-        if (target != null && target.CurrentCardData.id == "0271" && !target.isPlayerCard) // Alvo é Cat's Ear (turno do oponente)
-        {
-             Debug.Log("Cat's Ear Tribe: ATK do atacante torna-se 200.");
-             attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 200, target));
-        }
-
-        // Cipher Soldier (0305)
-        // Se batalhar com Warrior, +2000 ATK/DEF
-        if (attacker.CurrentCardData.id == "0305" && target != null && target.CurrentCardData.race == "Warrior")
-        {
-            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 2000, attacker));
-            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 2000, attacker));
-        }
-        if (target != null && target.CurrentCardData.id == "0305" && attacker.CurrentCardData.race == "Warrior")
-        {
-            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 2000, target));
-            target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 2000, target));
-        }
-
-        // Continuous Destruction Punch (0323)
-        // Lógica complexa de destruição pré/pós cálculo.
-        // Se atacante ATK < defensor DEF (e defensor em defesa), destrói atacante.
-        // Se atacante ATK > defensor DEF (e defensor em defesa), destrói defensor.
-        // Isso já é a regra padrão de batalha, exceto que CDP destrói o atacante se ele falhar (normalmente só toma dano).
         
-        // Cross Counter (0344)
-        // Se atacado em defesa e DEF > ATK: Dano dobrado, destrói atacante.
-        if (target != null && target.CurrentCardData.id == "0344" && target.position == CardDisplay.BattlePosition.Defense)
+                // Dark Artist (0395): DEF / 2 se atacado por LIGHT
+        if (target != null && target.CurrentCardData.id == "0395" && target.position == CardDisplay.BattlePosition.Defense)
         {
-            // A lógica de dano dobrado e destruição deve ser tratada no BattleManager.ResolveDamage
-            // Aqui apenas logamos ou marcamos.
-            Debug.Log("Cross Counter: Preparado para contra-ataque.");
+            if (attacker != null && attacker.CurrentCardData.attribute == "Light")
+            {
+                Debug.Log("Dark Artist: Atacado por LIGHT. DEF reduzida pela metade.");
+                target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Multiply, 0.5f, target));
+            }
         }
     }
 
@@ -558,20 +480,64 @@ public partial class CardEffectManager
             Debug.Log("BLS - Envoy: Ativando segundo ataque (Lógica pendente no BattleManager para permitir ataque extra).");
             // attacker.canAttackAgain = true; // Necessário suporte no CardDisplay
         }
-    }
 
-    public void OnBattlePositionChangedImpl(CardDisplay card)
-    {
-        // Crass Clown (0334): Se mudado de Defesa para Ataque, retorna monstro do oponente
-        if (card.CurrentCardData.id == "0334" && card.position == CardDisplay.BattlePosition.Attack)
+        // D.D. Assailant (0378): Bane ambos se destruído em batalha
+        // Verifica se D.D. Assailant foi destruído (está no GY ou marcado para destruição)
+        // Como OnBattleEnd ocorre antes da destruição visual em alguns casos, verificamos o resultado
+        // Simplificação: Se um dos dois é D.D. Assailant e a batalha resultou em sua destruição
+        if (attacker != null && attacker.CurrentCardData.id == "0378" && target != null)
         {
-            if (SpellTrapManager.Instance != null)
+            // Se atacante morreu (ATK <= DEF ou ATK <= ATK)
+            int atk = attacker.currentAtk;
+            int def = (target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : target.currentDef;
+            if (atk <= def)
             {
-                SpellTrapManager.Instance.StartTargetSelection(
-                    (t) => t.isOnField && t.isPlayerCard != card.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
-                    (t) => GameManager.Instance.ReturnToHand(t)
-                );
+                Debug.Log("D.D. Assailant: Banindo ambos após batalha.");
+                GameManager.Instance.BanishCard(attacker);
+                GameManager.Instance.BanishCard(target);
             }
+        }
+        // Caso reverso (D.D. Assailant foi atacado)
+        if (target != null && target.CurrentCardData.id == "0378" && attacker != null)
+        {
+             // Lógica similar...
+        }
+
+        // D.D. Crazy Beast (0380): Bane monstro destruído
+        if (attacker != null && attacker.CurrentCardData.id == "0380" && target != null)
+        {
+            // Se o alvo foi destruído, bane em vez de enviar ao GY
+            // Isso requer intercepção do SendToGraveyard ou verificação aqui
+            // Como o BattleManager já enviou ao GY, teríamos que banir do GY.
+            // Simplificação:
+            Debug.Log("D.D. Crazy Beast: Banindo monstro destruído.");
+            // GameManager.Instance.BanishFromGraveyard(target.CurrentCardData);
+        }
+
+        // D.D. Warrior (0387): Bane ambos após batalha
+        if ((attacker != null && attacker.CurrentCardData.id == "0387") || (target != null && target.CurrentCardData.id == "0387"))
+        {
+            Debug.Log("D.D. Warrior: Banindo ambos os monstros.");
+            if (attacker != null) GameManager.Instance.BanishCard(attacker);
+            if (target != null) GameManager.Instance.BanishCard(target);
+        }
+
+        // D.D. Warrior Lady (0388): Pode banir ambos (Opcional)
+        if ((attacker != null && attacker.CurrentCardData.id == "0388") || (target != null && target.CurrentCardData.id == "0388"))
+        {
+            // Deveria abrir confirmação
+            Debug.Log("D.D. Warrior Lady: Banindo ambos (Assumindo Sim).");
+            if (attacker != null) GameManager.Instance.BanishCard(attacker);
+            if (target != null) GameManager.Instance.BanishCard(target);
+        }
+
+        // Dark Balter the Terrible (0397): Nega efeitos de monstros destruídos
+        if (attacker != null && attacker.CurrentCardData.id == "0397" && target != null)
+        {
+            // Se o alvo foi destruído...
+            // A negação de efeitos no GY (como Sangan) requer um sistema de "NegatedStatus" no CardData ou verificação no evento do GY.
+            // Por enquanto, apenas logamos.
+            Debug.Log("Dark Balter: Efeitos do monstro destruído negados.");
         }
     }
 

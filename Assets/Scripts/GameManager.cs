@@ -120,6 +120,9 @@ public class GameManager : MonoBehaviour
     private List<CardData> playerRemoved = new List<CardData>(); // Novo
     private List<CardData> opponentRemoved = new List<CardData>(); // Novo
 
+    // Lista de nomes de cartas proibidas para o duelo atual (ex: Cursed Seal)
+    public List<string> forbiddenSpells = new List<string>();
+
     [Header("Current Duel Info")]
     public CharacterData currentOpponent; // Oponente atual carregado
     public int currentDuelIndex = -1; // Índice do duelo atual na campanha (para salvar progresso)
@@ -287,6 +290,7 @@ public class GameManager : MonoBehaviour
         opponentExtraDeck.Clear();
         playerRemoved.Clear();
         opponentRemoved.Clear();
+        forbiddenSpells.Clear();
 
         // Atualiza visuais das pilhas e limpa o viewer
         UpdatePileVisuals();

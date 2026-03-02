@@ -101,6 +101,15 @@ public class BattleManager : MonoBehaviour
             if (!hasOtherDragon) return false;
         }
 
+        // D.D. Borderline (0379)
+        // Se não houver Spells no seu GY, não pode atacar.
+        if (GameManager.Instance.IsCardActiveOnField("0379"))
+        {
+            List<CardData> gy = attacker.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
+            bool hasSpell = gy.Exists(c => c.type.Contains("Spell"));
+            if (!hasSpell) return false;
+        }
+
         // Command Knight (0318)
         // Se controlar outro monstro, não pode ser atacado.
         // Esta verificação é no alvo, não no atacante.
