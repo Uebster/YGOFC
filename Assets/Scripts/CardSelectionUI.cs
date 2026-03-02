@@ -21,6 +21,7 @@ public class CardSelectionUI : MonoBehaviour
 
     // Cache de objetos instanciados para performance
     private List<GameObject> spawnedObjects = new List<GameObject>();
+    private Dictionary<CardDisplay, GameObject> badges = new Dictionary<CardDisplay, GameObject>();
 
     void Awake()
     {
@@ -53,6 +54,7 @@ public class CardSelectionUI : MonoBehaviour
         // Limpa visualização anterior
         foreach (var obj in spawnedObjects) Destroy(obj);
         spawnedObjects.Clear();
+        badges.Clear();
 
         if (sourceList == null || cardItemPrefab == null) return;
 
@@ -111,7 +113,11 @@ public class CardSelectionUI : MonoBehaviour
             }
         }
         
-        UpdateCardVisual(card, display);
+        // Se a ordem importa (seleção múltipla), atualizamos todos para garantir que os números (1, 2, 3) fiquem corretos
+        // Ex: Se desmarcar o 1, o 2 vira 1.
+        if (maxSelection > 1) RefreshAllVisuals();
+        else UpdateCardVisual(card, display);
+
         UpdateConfirmButton();
     }
 
@@ -120,6 +126,70 @@ public class CardSelectionUI : MonoBehaviour
         bool isSelected = selectedCards.Contains(card);
         // Usa o efeito de "Tribute Highlight" (azul/ciano) para indicar seleção
         display.SetTributeHighlight(isSelected);
+
+        // Lógica de Ordem Visual (Badges)
+        if (isSelected && maxSelection > 1)
+        {
+            int order = selectedCards.IndexOf(card) + 1;
+            ShowSelectionBadge(display, order);
+        }
+        else
+        {
+            HideSelectionBadge(display);
+        }
+    }
+
+    void ShowSelectionBadge(CardDisplay display, int order)
+    {
+        if (!badges.ContainsKey(display) || badges[display] == null)
+        {
+            // Cria o badge se não existir
+            GameObject badge = new GameObject("OrderBadge", typeof(RectTransform), typeof(Image));
+            badge.transform.SetParent(display.transform, false);
+            
+            // Configura Imagem (Fundo Azul)
+            Image img = badge.GetComponent<Image>();
+            img.color = new Color(0f, 0.5f, 1f, 0.9f); // Azul semitransparente
+            
+            RectTransform rect = badge.GetComponent<RectTransform>();
+            // Posiciona no canto superior direito
+            rect.anchorMin = new Vector2(0.75f, 0.75f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            
+            // Configura Texto
+            GameObject textObj = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+            textObj.transform.SetParent(badge.transform, false);
+            
+            TextMeshProUGUI txt = textObj.GetComponent<TextMeshProUGUI>();
+            txt.alignment = TextAlignmentOptions.Center;
+            txt.fontSize = 14; // Tamanho base, o AutoSizing ajusta
+            txt.color = Color.white;
+            txt.enableAutoSizing = true;
+            txt.fontStyle = FontStyles.Bold;
+            
+            RectTransform textRect = textObj.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
+            
+            badges[display] = badge;
+        }
+        
+        GameObject b = badges[display];
+        b.SetActive(true);
+        b.GetComponentInChildren<TextMeshProUGUI>().text = order.ToString();
+        b.transform.SetAsLastSibling(); // Garante que fique por cima da carta
+    }
+
+    void HideSelectionBadge(CardDisplay display)
+    {
+        if (badges.ContainsKey(display) && badges[display] != null)
+        {
+            badges[display].SetActive(false);
+        }
     }
 
     void RefreshAllVisuals()

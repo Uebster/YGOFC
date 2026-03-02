@@ -43,6 +43,33 @@ public partial class CardEffectManager
                 if (card.isPlayerCard) card.AddSpellCounter(1);
             });
 
+            // Blast Sphere (0201): Destroy equipped and burn
+            CheckActiveCards("0201", (card) => {
+                // Se tiver contador (marcado no BattleManager), é a standby phase seguinte
+                if (card.spellCounters > 0)
+                {
+                    // Encontra quem ele está equipando (via CardLink ou lógica simplificada)
+                    // Simplificação: Destrói o card e causa dano igual ao ATK dele (ou do alvo, regra diz ATK do alvo)
+                    // Como não temos referência fácil ao alvo aqui sem iterar links, vamos simular dano fixo ou do próprio card
+                    Debug.Log("Blast Sphere: Detonando!");
+                    Effect_DirectDamage(card, card.currentAtk); // Simplificado
+                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                    Destroy(card.gameObject);
+                }
+            });
+
+            // Blind Destruction (0206)
+            CheckActiveCards("0206", (card) => {
+                if (card.isPlayerCard)
+                {
+                    int roll = Random.Range(1, 7);
+                    Debug.Log($"Blind Destruction: Rolou {roll}.");
+                    // Destrói monstros face-up com nível = roll
+                    // Requer iteração no campo
+                    // DestroyMonstersByLevel(roll); // Helper method needed
+                }
+            });
+
             // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
             // (Na verdade é End Phase, movido para lá se fosse o caso)
         }
@@ -77,6 +104,18 @@ public partial class CardEffectManager
         }
     }
 
+    public void OnCardDiscarded(CardDisplay card)
+    {
+        // Blessings of the Nile (0205)
+        CheckActiveCards("0205", (source) => {
+            if (source.isPlayerCard)
+            {
+                Debug.Log("Blessings of the Nile: Carta descartada. +1000 LP.");
+                Effect_GainLP(source, 1000);
+            }
+        });
+    }
+
     public void OnSpecialSummon(CardDisplay summonedCard)
     {
         // Card of Safe Return (0266): Compra 1 quando monstro é invocado do GY
@@ -99,6 +138,16 @@ public partial class CardEffectManager
             // Assumindo que summonedThisTurn + isOnField logo após criação indica invocação recente
             card.AddSpellCounter(3);
         }
+
+        // Boar Soldier (0219) - Destroy if Normal Summoned
+        if (card.CurrentCardData.id == "0219")
+        {
+            // Como saber se foi Normal? SummonManager.PerformSummon seta summonedThisTurn.
+            // Assumimos Normal por padrão se não for Special.
+            Debug.Log("Boar Soldier: Auto-destruição.");
+            GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+            Destroy(card.gameObject);
+        }
     }
 
     public void OnCardLeavesField(CardDisplay card)
@@ -113,6 +162,14 @@ public partial class CardEffectManager
             // Simplificação: Causa dano ao oponente do dono da carta (assumindo que o oponente destruiu)
             if (card.isPlayerCard) GameManager.Instance.DamageOpponent(damage);
             else GameManager.Instance.DamagePlayer(damage);
+        }
+
+        // Blast with Chain (0202): Destroy 1 card if destroyed by effect
+        if (card.CurrentCardData.id == "0202")
+        {
+            // Difícil detectar "by effect" aqui sem contexto. 
+            // Assumindo trigger genérico ao sair do campo para protótipo.
+            Debug.Log("Blast with Chain: Destruído. (Selecione carta para destruir - Pendente).");
         }
 
         // Remove quaisquer modificadores que esta carta tenha aplicado em outras

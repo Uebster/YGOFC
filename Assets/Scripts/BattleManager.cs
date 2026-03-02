@@ -68,6 +68,21 @@ public class BattleManager : MonoBehaviour
             return false;
         }
 
+        // Blue-Eyes Toon Dragon (0215) & Toons
+        if (attacker.CurrentCardData.race == "Toon" || attacker.CurrentCardData.id == "0215")
+        {
+            if (attacker.summonedThisTurn)
+            {
+                Debug.Log("Toon: Não pode atacar no turno que foi invocado.");
+                return false;
+            }
+            if (!GameManager.Instance.PayLifePoints(attacker.isPlayerCard, 500))
+            {
+                Debug.Log("Toon: LP insuficientes para atacar (500).");
+                return false;
+            }
+        }
+
         // Para Alligator's Sword Dragon e Amphibious Bugroth MK-3:
         if (attacker.CurrentCardData.id == "0037" || attacker.CurrentCardData.id == "0053") // IDs
         {
@@ -125,7 +140,17 @@ public class BattleManager : MonoBehaviour
         if (GameManager.Instance.duelFieldUI == null) return false;
         foreach (Transform zone in GameManager.Instance.duelFieldUI.opponentMonsterZones)
         {
-            if (zone.childCount > 0) return false;
+            if (zone.childCount > 0)
+            {
+                // Toon Logic: Can attack direct if opponent has no Toons
+                if (currentAttacker != null && (currentAttacker.CurrentCardData.race == "Toon" || currentAttacker.CurrentCardData.id == "0215"))
+                {
+                    CardDisplay defender = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (defender != null && defender.CurrentCardData.race == "Toon") return false; // Has toon, must attack it
+                    continue; // Not a toon, ignore for direct attack condition
+                }
+                return false;
+            }
         }
         return true;
     }
@@ -196,6 +221,20 @@ public class BattleManager : MonoBehaviour
         if (CardEffectManager.Instance != null)
         {
             CardEffectManager.Instance.OnDamageCalculation(attacker, target);
+        }
+
+        // Blast Sphere (0201) - Antes do cálculo de dano
+        if (target.CurrentCardData.id == "0201" && target.isFlipped) // Face-down (isFlipped=true means back is showing in CardDisplay logic usually, but let's assume standard logic: isFlipped=true means Face-Down in this context based on previous code)
+        {
+            // Nota: No CardDisplay, isFlipped=true significa VERSO (Face-Down).
+            Debug.Log("Blast Sphere: Atacado face-down. Equipando ao atacante...");
+            target.RevealCard();
+            // Move Blast Sphere para S/T do dono do Blast Sphere e equipa no atacante
+            // Simplificação: Apenas cria o link e destrói o objeto visual do monstro para simular que virou equip
+            // Em um sistema completo, moveria para a zona de S/T.
+            GameManager.Instance.CreateCardLink(target, attacker, CardLink.LinkType.Equipment);
+            target.AddSpellCounter(1); // Marca para destruir na Standby
+            return; // Cancela batalha
         }
 
         attacker.battledThisTurn = true;

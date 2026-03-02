@@ -490,6 +490,7 @@ public class GameManager : MonoBehaviour
         
         // Remove modificadores (caso raro de efeito na mão, mas seguro)
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardDiscarded(card);
 
         Destroy(card.gameObject);
     }
@@ -1564,6 +1565,13 @@ public class GameManager : MonoBehaviour
     // Troca de Controle (Change of Heart, Snatch Steal)
     public void SwitchControl(CardDisplay card)
     {
+        // 0207 - Blindly Loyal Goblin
+        if (card.CurrentCardData.id == "0207")
+        {
+            Debug.Log("Blindly Loyal Goblin: Imune a troca de controle.");
+            return;
+        }
+
         bool newOwnerIsPlayer = !card.isPlayerCard;
         Transform newZone = newOwnerIsPlayer ? GetFreePlayerMonsterZone() : GetFreeOpponentMonsterZone();
 

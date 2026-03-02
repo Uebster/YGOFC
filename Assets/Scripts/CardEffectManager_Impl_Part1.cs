@@ -1637,10 +1637,12 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
             int count = Mathf.Min(5, deck.Count);
             List<CardData> topCards = deck.GetRange(0, count);
             
-            // Usa a seleção múltipla para simular a reordenação (A ordem de seleção define a nova ordem)
+            // Usa a seleção múltipla para simular a reordenação
+            // A lista 'ordered' virá na ordem que o jogador clicou (1, 2, 3...)
             GameManager.Instance.OpenCardMultiSelection(topCards, "Selecione a ordem (1º = Topo)", count, count, (ordered) => {
                 deck.RemoveRange(0, count);
                 // Insere de volta no topo na ordem escolhida
+                // InsertRange(0, ordered) coloca a lista no topo. O índice 0 da lista vira o topo do deck.
                 deck.InsertRange(0, ordered);
                 Debug.Log("Big Eye: Deck reordenado.");
             });
