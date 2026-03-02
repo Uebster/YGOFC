@@ -11,7 +11,7 @@ public partial class CardEffectManager
     {
         // Effect: If this card attacks or is attacked, change it to Defense Position at the end of the Damage Step.
         // Lógica no OnBattleEnd.
-        Debug.Log("Kangaroo Champ: Vira defesa após batalha (Passivo).");
+        Debug.Log("Kangaroo Champ: Efeito de mudança de posição configurado (OnBattleEnd).");
     }
 
     void Effect_1004_KarakuriSpider(CardDisplay source)
@@ -36,21 +36,21 @@ public partial class CardEffectManager
     {
         // Effect: Once while face-up, make attacking monster's ATK 0 during damage calculation.
         // Lógica no OnDamageCalculation.
-        Debug.Log("Kazejin: Zera ATK do atacante (Passivo/Ativável).");
+        Debug.Log("Kazejin: Efeito de zerar ATK configurado (OnDamageCalculation).");
     }
 
     void Effect_1009_Kelbek(CardDisplay source)
     {
         // Effect: If attacked, return attacking monster to hand.
         // Lógica no OnBattleEnd.
-        Debug.Log("Kelbek: Retorna atacante para mão (Passivo).");
+        Debug.Log("Kelbek: Efeito de bounce configurado (OnBattleEnd).");
     }
 
     void Effect_1010_Keldo(CardDisplay source)
     {
         // Effect: When sent to GY by battle: Select 2 cards in opp GY, shuffle into Deck.
         // Lógica no OnCardSentToGraveyard.
-        Debug.Log("Keldo: Recicla GY do oponente (Passivo).");
+        Debug.Log("Keldo: Efeito de reciclagem configurado (OnCardSentToGraveyard).");
     }
 
     void Effect_1014_KingDragun(CardDisplay source)
@@ -75,15 +75,37 @@ public partial class CardEffectManager
     {
         // Effect: When monster with ATK <= 1400 is Summoned, destroy it.
         // Lógica no OnSummonImpl (Global Trigger).
-        Debug.Log("King Tiger Wanghu: Destrói invocações fracas (Passivo).");
+        Debug.Log("King Tiger Wanghu: Efeito de destruição automática configurado (OnSummonImpl).");
     }
 
     void Effect_1018_KingOfTheSkullServants(CardDisplay source)
     {
         // Effect: ATK = Skull Servants/King of Skull Servants in GY * 1000. Revive by banishing 1 Skull Servant.
-        // Lógica de ATK no OnPhaseStart/UpdateStats.
-        // Lógica de Revive no OnCardSentToGraveyard.
-        Debug.Log("King of the Skull Servants: Stats dinâmicos e ressurreição.");
+        if (source.isOnField)
+        {
+            // Lógica de ATK
+            int count = 0;
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            count += gy.FindAll(c => c.name == "Skull Servant" || c.name == "King of the Skull Servants").Count;
+            
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, count * 1000, source));
+        }
+        else if (source.isInPile) // No GY
+        {
+            // Lógica de Revive (Simplificado: Trigger manual do GY não é suportado nativamente, seria um efeito de ignição se estivesse na mão ou campo, mas aqui é GY trigger)
+            // Vamos simular como se fosse ativado ao ser destruído
+            Debug.Log("King of the Skull Servants: Efeito de reviver (Requer sistema de efeitos no GY).");
+        }
+    }
+
+    void Effect_1019_KingOfTheSwamp(CardDisplay source)
+    {
+        // Effect: Discard to add Polymerization. Substitute for Fusion Material.
+        if (!source.isOnField) // Da mão
+        {
+            GameManager.Instance.DiscardCard(source);
+            Effect_SearchDeck(source, "Polymerization");
+        }
     }
 
     void Effect_1020_KingsKnight(CardDisplay source)
@@ -105,14 +127,14 @@ public partial class CardEffectManager
     {
         // Effect: If attacked face-down, equip to attacker. Gain LP equal to half attacker's ATK each Standby.
         // Lógica no BattleManager (Equip on attack) e OnPhaseStart (Gain LP).
-        Debug.Log("Kiseitai: Efeito de parasita configurado.");
+        Debug.Log("Kiseitai: Efeito de parasita configurado (BattleManager/OnPhaseStart).");
     }
 
     void Effect_1023_KishidoSpirit(CardDisplay source)
     {
         // Effect: Monsters not destroyed by battle if ATK is equal.
         // Lógica no BattleManager (ResolveDamage).
-        Debug.Log("Kishido Spirit: Proteção em empate de ATK.");
+        Debug.Log("Kishido Spirit: Proteção em empate de ATK configurada (BattleManager).");
     }
 
     void Effect_1024_KnightsTitle(CardDisplay source)
@@ -143,14 +165,14 @@ public partial class CardEffectManager
         // Effect: As long as this card remains face-up on the field, monsters with the same name cannot exist on the field.
         // If a monster with the same name is Summoned, it is destroyed.
         // Lógica no OnSummonImpl (Global Trigger).
-        Debug.Log("Kotodama: Regra de unicidade ativa.");
+        Debug.Log("Kotodama: Regra de unicidade ativa (OnSummonImpl).");
     }
 
     void Effect_1031_KozakysSelfDestructButton(CardDisplay source)
     {
         // Effect: When "Kozaky" is destroyed and sent to the Graveyard, inflict 1000 damage to the controller of this card.
         // Lógica no OnCardSentToGraveyard.
-        Debug.Log("Kozaky's Self-Destruct Button: Dano ao destruir Kozaky.");
+        Debug.Log("Kozaky's Self-Destruct Button: Efeito de dano configurado (OnCardSentToGraveyard).");
     }
 
     void Effect_1033_Kryuel(CardDisplay source)

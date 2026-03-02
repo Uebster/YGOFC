@@ -36,7 +36,7 @@ public partial class CardEffectManager
         AddEffect("1018", Effect_1018_KingOfTheSkullServants);
 
         // 1019 - King of the Swamp (Search Poly)
-        AddEffect("1019", c => Effect_SearchDeck(c, "Polymerization"));
+        AddEffect("1019", Effect_1019_KingOfTheSwamp);
 
         // 1020 - King's Knight (SS Jack's Knight)
         AddEffect("1020", Effect_1020_KingsKnight);
