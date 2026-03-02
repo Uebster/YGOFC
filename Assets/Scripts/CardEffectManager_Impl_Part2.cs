@@ -2800,4 +2800,167 @@ public partial class CardEffectManager
             Effect_GainLP(source, 1000);
         }
     }
+
+    void Effect_0931_ImpenetrableFormation(CardDisplay source)
+    {
+        // Target 1 face-up monster; it gains 700 DEF until end of turn.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                (t) => {
+                    t.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 700, source));
+                    Debug.Log($"Impenetrable Formation: +700 DEF para {t.CurrentCardData.name}.");
+                }
+            );
+        }
+    }
+
+    void Effect_0932_ImperialOrder(CardDisplay source)
+    {
+        // Negate all Spell effects. Pay 700 LP standby.
+        Debug.Log("Imperial Order: Ativado. Magias negadas.");
+        // Lógica de negação global deve ser verificada no SpellTrapManager/CardEffectManager
+        // Lógica de manutenção já está no CheckMaintenanceCosts
+    }
+
+    void Effect_0933_InabaWhiteRabbit(CardDisplay source)
+    {
+        // Spirit. Cannot be Special Summoned. Can attack direct.
+        Debug.Log("Inaba White Rabbit: Ataque direto (Passivo).");
+        // source.canAttackDirectly = true;
+    }
+
+    void Effect_0935_IndomitableFighterLeiLei(CardDisplay source)
+    {
+        // Changes to Defense Position at the end of the Battle Phase.
+        Debug.Log("Lei Lei: Vira defesa após atacar (Passivo).");
+    }
+
+    void Effect_0936_InfernalFlameEmperor(CardDisplay source)
+    {
+        // Cannot be Special Summoned. When Tribute Summoned: Banish up to 5 FIRE from GY; destroy S/T equal to banished.
+        if (source.isOnField)
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> fires = gy.FindAll(c => c.attribute == "Fire");
+            
+            if (fires.Count > 0)
+            {
+                int max = Mathf.Min(5, fires.Count);
+                GameManager.Instance.OpenCardMultiSelection(fires, "Banir FIRE", 1, max, (selected) => {
+                    foreach(var c in selected)
+                    {
+                        GameManager.Instance.RemoveFromPlay(c, source.isPlayerCard);
+                        gy.Remove(c);
+                    }
+                    int count = selected.Count;
+                    Debug.Log($"Infernal Flame Emperor: Baniu {count}. Destrua {count} S/T.");
+                    // Lógica de destruição múltipla de S/T pendente
+                });
+            }
+        }
+    }
+
+    void Effect_0937_InfernalqueenArchfiend(CardDisplay source)
+    {
+        // Standby Phase: Target 1 Archfiend; it gains 1000 ATK until End Phase.
+        // Lógica no OnPhaseStart.
+        Debug.Log("Infernalqueen Archfiend: Buff na Standby.");
+    }
+
+    void Effect_0938_Inferno(CardDisplay source)
+    {
+        // SS by banishing 1 FIRE. If destroys monster: 1500 damage.
+        // Lógica de SS na mão. Lógica de dano no OnBattleEnd.
+        Debug.Log("Inferno: Efeitos configurados.");
+    }
+
+    void Effect_0939_InfernoFireBlast(CardDisplay source)
+    {
+        // Target 1 Red-Eyes B. Dragon; inflict damage equal to original ATK. Red-Eyes cannot attack.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "Red-Eyes B. Dragon",
+                (t) => {
+                    Effect_DirectDamage(source, t.originalAtk);
+                    t.hasAttackedThisTurn = true; // Impede ataque
+                    Debug.Log($"Inferno Fire Blast: {t.originalAtk} de dano.");
+                }
+            );
+        }
+    }
+
+    void Effect_0940_InfernoHammer(CardDisplay source)
+    {
+        // If destroys monster: Flip 1 face-up monster opponent controls to face-down Defense.
+        // Lógica no OnBattleEnd.
+        Debug.Log("Inferno Hammer: Efeito de flip configurado.");
+    }
+
+    void Effect_0941_InfernoTempest(CardDisplay source)
+    {
+        // Activate when you take 3000+ Battle Damage. Remove all monsters in both Decks and GYs.
+        // Trigger no OnDamageTaken.
+        Debug.Log("Inferno Tempest: Gatilho de dano massivo.");
+    }
+
+    void Effect_0942_InfiniteCards(CardDisplay source)
+    {
+        // No hand limit.
+        Debug.Log("Infinite Cards: Limite de mão removido.");
+    }
+
+    void Effect_0943_InfiniteDismissal(CardDisplay source)
+    {
+        // Destroy Lv3 or lower monsters that attack.
+        Debug.Log("Infinite Dismissal: Destrói atacantes fracos.");
+    }
+
+    void Effect_0944_InjectionFairyLily(CardDisplay source)
+    {
+        // Pay 2000 LP during damage calc -> +3000 ATK.
+        // Lógica no OnDamageCalculation.
+        Debug.Log("Injection Fairy Lily: Efeito de batalha (Paga 2000 LP).");
+    }
+
+    void Effect_0946_InsectArmorWithLaserCannon(CardDisplay source)
+    {
+        Effect_Equip(source, 700, 0, "Insect");
+    }
+
+    void Effect_0947_InsectBarrier(CardDisplay source)
+    {
+        // Opponent's Insect monsters cannot attack.
+        Debug.Log("Insect Barrier: Bloqueia ataque de Insetos.");
+    }
+
+    void Effect_0948_InsectImitation(CardDisplay source)
+    {
+        // Tribute 1 monster; SS 1 Insect Lv+1 from Deck.
+        if (source.isOnField) // Deveria ser da mão/campo como Spell
+        {
+            // Seleção de tributo
+            // ...
+            Debug.Log("Insect Imitation: Evolução de Inseto.");
+        }
+    }
+
+    void Effect_0950_InsectPrincess(CardDisplay source)
+    {
+        // All opponent Insects changed to Attack Position.
+        // If destroys Insect: +500 ATK.
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+            {
+                if (z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && m.CurrentCardData.race == "Insect" && m.position == CardDisplay.BattlePosition.Defense) m.ChangePosition();
+                }
+            }
+        }
+    }
 }

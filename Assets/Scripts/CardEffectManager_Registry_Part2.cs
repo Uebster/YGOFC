@@ -905,56 +905,55 @@ public partial class CardEffectManager
         AddEffect("0927", Effect_0927_HystericFairy);
 
         // 0931 - Impenetrable Formation (Buff DEF)
-        AddEffect("0931", c => Debug.Log("Impenetrable Formation: +700 DEF."));
+        AddEffect("0931", Effect_0931_ImpenetrableFormation);
 
         // 0932 - Imperial Order (Negate Spells)
-        AddEffect("0932", c => Debug.Log("Imperial Order: Nega todas as Magias."));
-        AddEffect("0932", c => Debug.Log("Imperial Order ativado. Manutenção de 700 LP na Standby Phase."));
+        AddEffect("0932", Effect_0932_ImperialOrder);
 
         // 0933 - Inaba White Rabbit (Direct Attack)
-        AddEffect("0933", c => Debug.Log("Inaba White Rabbit: Ataque direto, retorna para mão."));
+        AddEffect("0933", Effect_0933_InabaWhiteRabbit);
 
         // 0935 - Indomitable Fighter Lei Lei (Attack -> Defense)
-        AddEffect("0935", c => Debug.Log("Lei Lei: Vira defesa após atacar."));
+        AddEffect("0935", Effect_0935_IndomitableFighterLeiLei);
 
         // 0936 - Infernal Flame Emperor (Banish Fire -> Destroy S/T)
-        AddEffect("0936", c => Debug.Log("Infernal Flame Emperor: Bane Fire para destruir S/T."));
+        AddEffect("0936", Effect_0936_InfernalFlameEmperor);
 
         // 0937 - Infernalqueen Archfiend (Buff Archfiend)
-        AddEffect("0937", c => Debug.Log("Infernalqueen: +1000 ATK para um Archfiend."));
+        AddEffect("0937", Effect_0937_InfernalqueenArchfiend);
 
         // 0938 - Inferno (SS Banish Fire, Burn)
-        AddEffect("0938", c => Debug.Log("Inferno: SS banindo Fire. 1500 dano ao destruir monstro."));
+        AddEffect("0938", Effect_0938_Inferno);
 
         // 0939 - Inferno Fire Blast (Red-Eyes Burn)
-        AddEffect("0939", c => Debug.Log("Inferno Fire Blast: Dano igual ATK do Red-Eyes."));
+        AddEffect("0939", Effect_0939_InfernoFireBlast);
 
         // 0940 - Inferno Hammer (Flip Face-down)
-        AddEffect("0940", c => Debug.Log("Inferno Hammer: Vira monstro do oponente face-down."));
+        AddEffect("0940", Effect_0940_InfernoHammer);
 
         // 0941 - Inferno Tempest (Banish Decks/GYs)
-        AddEffect("0941", c => Debug.Log("Inferno Tempest: Bane monstros dos Decks e GYs."));
+        AddEffect("0941", Effect_0941_InfernoTempest);
 
         // 0942 - Infinite Cards (No Hand Limit)
-        AddEffect("0942", c => Debug.Log("Infinite Cards: Sem limite de mão."));
+        AddEffect("0942", Effect_0942_InfiniteCards);
 
         // 0943 - Infinite Dismissal (Destroy Lv3-)
-        AddEffect("0943", c => Debug.Log("Infinite Dismissal: Destrói Lv3 ou menor na End Phase."));
+        AddEffect("0943", Effect_0943_InfiniteDismissal);
 
         // 0944 - Injection Fairy Lily (Pay 2000 -> +3000 ATK)
-        AddEffect("0944", c => Debug.Log("Injection Fairy Lily: Paga 2000 LP para ganhar 3000 ATK."));
+        AddEffect("0944", Effect_0944_InjectionFairyLily);
 
         // 0946 - Insect Armor with Laser Cannon (Equip Insect +700)
-        AddEffect("0946", c => Effect_Equip(c, 700, 0, "Insect"));
+        AddEffect("0946", Effect_0946_InsectArmorWithLaserCannon);
 
         // 0947 - Insect Barrier (Block Insect Attacks)
-        AddEffect("0947", c => Debug.Log("Insect Barrier: Insetos do oponente não atacam."));
+        AddEffect("0947", Effect_0947_InsectBarrier);
 
         // 0948 - Insect Imitation (Tribute -> SS Insect Lv+1)
-        AddEffect("0948", c => Debug.Log("Insect Imitation: Evoluir Inseto."));
+        AddEffect("0948", Effect_0948_InsectImitation);
 
         // 0950 - Insect Princess (Attack Pos, Buff)
-        AddEffect("0950", c => Debug.Log("Insect Princess: Insetos oponente em ataque. Ganha ATK."));
+        AddEffect("0950", Effect_0950_InsectPrincess);
 
         // 0951 - Insect Queen (Buff, Token)
         AddEffect("0951", c => Debug.Log("Insect Queen: Buff por Insetos. Gera Token."));
