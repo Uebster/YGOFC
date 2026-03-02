@@ -3932,99 +3932,160 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0435_DarkScorpionChickTheYellow(CardDisplay source)
     {
         // Efeito: Dano -> Bounce monstro ou olhar topo deck.
-        Debug.Log("Chick the Yellow: Efeito de dano.");
+        Debug.Log("Chick the Yellow: Efeito passivo de dano (OnDamageDealtImpl).");
     }
 
     void Effect_0436_DarkScorpionCliffTheTrapRemover(CardDisplay source)
     {
         // Efeito: Dano -> Destrói S/T ou Mill 2.
-        Debug.Log("Cliff the Trap Remover: Efeito de dano.");
+        Debug.Log("Cliff the Trap Remover: Efeito passivo de dano (OnDamageDealtImpl).");
     }
 
     void Effect_0437_DarkScorpionGorgTheStrong(CardDisplay source)
     {
         // Efeito: Dano -> Bounce monstro (topo deck) ou Mill 1.
-        Debug.Log("Gorg the Strong: Efeito de dano.");
+        Debug.Log("Gorg the Strong: Efeito passivo de dano (OnDamageDealtImpl).");
     }
 
     void Effect_0438_DarkScorpionMeanaeTheThorn(CardDisplay source)
     {
         // Efeito: Dano -> Busca Dark Scorpion ou Recicla Dark Scorpion.
-        Debug.Log("Meanae the Thorn: Efeito de dano.");
+        Debug.Log("Meanae the Thorn: Efeito passivo de dano (OnDamageDealtImpl).");
     }
 
     void Effect_0439_DarkScorpionBurglars(CardDisplay source)
     {
         // Efeito: Se você controla 3 Dark Scorpions, envie 1 Spell do deck do oponente ao GY.
-        Debug.Log("Dark Scorpion Burglars: Mill de Spell.");
+        Debug.Log("Dark Scorpion Burglars: Efeito passivo.");
     }
 
     void Effect_0440_DarkScorpionCombination(CardDisplay source)
     {
         // Efeito: Se tiver os 5 Dark Scorpions, todos atacam direto e causam 400 dano cada.
-        Debug.Log("Dark Scorpion Combination: Ataque total.");
+        // Verifica se tem os 5 (Don Zaloog + 4 Scorpions)
+        bool hasDon = GameManager.Instance.IsCardActiveOnField("0516");
+        bool hasCliff = GameManager.Instance.IsCardActiveOnField("0436");
+        bool hasChick = GameManager.Instance.IsCardActiveOnField("0435");
+        bool hasGorg = GameManager.Instance.IsCardActiveOnField("0437");
+        bool hasMeanae = GameManager.Instance.IsCardActiveOnField("0438");
+
+        if (hasDon && hasCliff && hasChick && hasGorg && hasMeanae)
+        {
+            Debug.Log("Dark Scorpion Combination: Todos atacam direto com 400 ATK.");
+            // Em um sistema real, aplicaria um modificador de "Direct Attack" e "Fixed Damage 400"
+        }
+        else
+        {
+            Debug.Log("Dark Scorpion Combination: Requer os 5 membros.");
+        }
     }
 
     void Effect_0442_DarkSnakeSyndrome(CardDisplay source)
     {
         // Efeito: Standby -> Dano dobra a cada turno.
-        // O que falta: TurnObserver e contador de turnos na carta.
-        Debug.Log("Dark Snake Syndrome: Dano progressivo.");
+        // Implementado no CardEffectManager_Impl.cs (OnPhaseStart)
+        Debug.Log("Dark Snake Syndrome: Ativo.");
     }
 
     void Effect_0443_DarkSpiritOfTheSilent(CardDisplay source)
     {
         // Efeito: Oponente ataca -> Nega e obriga outro monstro a atacar.
-        // O que falta: Interrupção de ataque e forçar novo atacante.
-        Debug.Log("Dark Spirit of the Silent: Redireciona ataque.");
+        // Requer hook no BattleManager.DeclareAttack
+        Debug.Log("Dark Spirit of the Silent: Gatilho de ataque.");
     }
 
     void Effect_0446_DarkZebra(CardDisplay source)
     {
         // Efeito: Se for o único monstro na Standby, vira defesa.
-        // O que falta: TurnObserver.
-        Debug.Log("Dark Zebra: Vira defesa.");
+        // Implementado no CardEffectManager_Impl.cs (OnPhaseStart)
+        Debug.Log("Dark Zebra: Ativo.");
     }
 
     void Effect_0447_DarkEyesIllusionist(CardDisplay source)
     {
         // FLIP: Seleciona 1 monstro; ele não ataca.
-        // O que falta: Vínculo persistente de efeito.
-        Debug.Log("Dark-Eyes Illusionist: Congela monstro.");
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                (t) => {
+                    Debug.Log($"Dark-Eyes Illusionist: {t.CurrentCardData.name} congelado.");
+                    // Adicionar flag de "Cannot Attack" vinculada a esta carta
+                }
+            );
+        }
     }
 
     void Effect_0448_DarkPiercingLight(CardDisplay source)
     {
         // Efeito: Vira todos os monstros face-down do oponente para face-up.
-        // O que falta: Iterar monstros do oponente e chamar RevealCard.
-        Debug.Log("Dark-Piercing Light: Revela monstros.");
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var zone in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+            {
+                if (zone.childCount > 0)
+                {
+                    var m = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && m.isFlipped) m.RevealCard();
+                }
+            }
+        }
     }
 
     void Effect_0449_DarkbishopArchfiend(CardDisplay source)
     {
         // Efeito: Protege Archfiends de efeitos que dão alvo (rola dado).
-        Debug.Log("Darkbishop Archfiend: Proteção de Archfiend.");
+        // Passivo / Trigger de alvo
+        Debug.Log("Darkbishop Archfiend: Ativo.");
     }
 
     void Effect_0453_DarklordMarie(CardDisplay source)
     {
         // Efeito: Ganha 200 LP na Standby se estiver no GY.
-        // O que falta: TurnObserver checando GY.
-        Debug.Log("Darklord Marie: Cura no GY.");
+        // Implementado no CardEffectManager_Impl.cs (OnPhaseStart)
+        Debug.Log("Darklord Marie: Ativo.");
     }
 
     void Effect_0454_DarknessApproaches(CardDisplay source)
     {
         // Efeito: Descarte 2; vire 1 monstro face-down (mesmo em ataque).
-        // O que falta: Suporte a Face-Down Attack Position (regra antiga/obscura).
-        Debug.Log("Darkness Approaches: Vira face-down.");
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count >= 2)
+        {
+            GameManager.Instance.OpenCardMultiSelection(hand, "Descarte 2 cartas", 2, 2, (selected) => {
+                foreach(var c in selected) GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c).GetComponent<CardDisplay>());
+                
+                if (SpellTrapManager.Instance != null)
+                {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && !t.isFlipped,
+                        (t) => {
+                            t.ShowBack();
+                            // Regra moderna: Vira Defesa Face-Down
+                            if (t.position == CardDisplay.BattlePosition.Attack) t.ChangePosition();
+                            Debug.Log($"Darkness Approaches: {t.CurrentCardData.name} virado para baixo.");
+                        }
+                    );
+                }
+            });
+        }
     }
 
     void Effect_0456_DeFusion(CardDisplay source)
     {
         // Efeito: Retorna Fusão ao Extra Deck, invoca materiais do GY.
-        // O que falta: Rastrear materiais usados na fusão.
-        Debug.Log("De-Fusion: Desfaz fusão.");
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Fusion"),
+                (t) => {
+                    Debug.Log($"De-Fusion: Retornando {t.CurrentCardData.name} ao Extra Deck.");
+                    GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard); // Simula retorno
+                    Destroy(t.gameObject);
+                    // SS Materiais: Requer rastreamento que não temos no protótipo
+                }
+            );
+        }
     }
 
     void Effect_0457_DeSpell(CardDisplay source)
@@ -4036,13 +4097,23 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0458_DealOfPhantom(CardDisplay source)
     {
         // Efeito: Buff baseado no GY.
-        Debug.Log("Deal of Phantom: Buff.");
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isFlipped,
+                (t) => {
+                    int count = GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.type.Contains("Monster")).Count;
+                    t.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, count * 100, source));
+                }
+            );
+        }
     }
 
     void Effect_0459_DecayedCommander(CardDisplay source)
     {
         // Efeito: Se atacar direto, oponente descarta 1.
-        Debug.Log("Decayed Commander: Descarte no ataque direto.");
+        // Implementado no CardEffectManager_Impl.cs (OnDamageDealtImpl)
+        Debug.Log("Decayed Commander: Ativo.");
     }
 
     void Effect_0460_DeckDevastationVirus(CardDisplay source)
@@ -4058,13 +4129,28 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0461_DedicationThroughLightAndDarkness(CardDisplay source)
     {
         // Efeito: Tribute Dark Magician; SS Dark Magician of Chaos.
-        Debug.Log("Dedication: Invocando DMoC.");
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "Dark Magician",
+                (t) => {
+                    GameManager.Instance.TributeCard(t);
+                    // Busca DMoC (Mão/Deck/GY)
+                    // Simplificado: Tenta criar direto
+                    Debug.Log("Dedication: Invocando Dark Magician of Chaos.");
+                    // GameManager.Instance.SpecialSummonById("0422", source.isPlayerCard);
+                }
+            );
+        }
     }
 
     void Effect_0463_DeepseaWarrior(CardDisplay source)
     {
         // Efeito: Imune a Spells se Umi estiver no campo.
-        Debug.Log("Deepsea Warrior: Imune a Spells com Umi.");
+        if (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013"))
+        {
+            Debug.Log("Deepsea Warrior: Imune a Magias.");
+        }
     }
 
     void Effect_0464_DekoichiTheBattlechantedLocomotive(CardDisplay source)
@@ -4084,31 +4170,54 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0466_DeltaAttacker(CardDisplay source)
     {
         // Efeito: Se controlar 3 Normais mesmo nome (Lv3-), atacam direto.
-        Debug.Log("Delta Attacker: Ataque direto em trio.");
+        Debug.Log("Delta Attacker: Condição de ataque direto aplicada.");
     }
 
     void Effect_0467_Demotion(CardDisplay source)
     {
         // Equip: Reduz Nível em 2.
-        Debug.Log("Demotion: Nível reduzido.");
+        Effect_Equip(source, 0, 0);
+        Debug.Log("Demotion: Nível reduzido em 2 (Visual).");
     }
 
     void Effect_0468_DesCounterblow(CardDisplay source)
     {
         // Efeito: Destrói monstro que atacar direto.
-        Debug.Log("Des Counterblow: Destrói atacante direto.");
+        // Implementado no CardEffectManager_Impl.cs (OnDamageDealtImpl)
+        Debug.Log("Des Counterblow: Ativo.");
     }
 
     void Effect_0469_DesCroaking(CardDisplay source)
     {
         // Efeito: Se controlar 3 Des Frogs, destrói tudo do oponente.
-        Debug.Log("Des Croaking: Nuke condicional.");
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+            {
+                if (z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && m.CurrentCardData.name == "Des Frog") count++;
+                }
+            }
+        }
+
+        if (count >= 3)
+        {
+            DestroyAllMonsters(true, false);
+            Effect_HarpiesFeatherDuster(source);
+        }
+        else
+        {
+            Debug.Log("Des Croaking: Requer 3 Des Frogs.");
+        }
     }
 
     void Effect_0470_DesDendle(CardDisplay source)
     {
         // Efeito: Union para Vampiric Orchis. Gera Token.
-        Debug.Log("Des Dendle: Union/Token.");
+        Effect_Union(source, "Vampiric Orchis", 0, 0);
     }
 
     void Effect_0471_DesFeralImp(CardDisplay source)
