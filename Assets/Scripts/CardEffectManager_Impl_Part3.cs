@@ -1186,11 +1186,52 @@ public partial class CardEffectManager
 
     void Effect_1200_Megamorph(CardDisplay source)
     {
-        // Effect: Equip. If LP < Opp LP, ATK x2. If LP > Opp LP, ATK / 2.
-        Effect_Equip(source, 0, 0);
-        // Lógica de modificação dinâmica de stats deve ser no RecalculateStats do CardDisplay ou um update constante.
-        // Como o sistema de stats é por eventos, aplicamos um modificador especial que checa LP.
-        // Simplificação: Aplica no momento da ativação (não dinâmico).
-        // Em produção: Criar StatModifier do tipo 'Dynamic' que recebe um delegate.
+        // Effect: Equip. While your Life Points are lower than your opponent's, double the original ATK of the equipped monster. While your Life Points are higher, halve the original ATK of the equipped monster.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (target) => target.isOnField && target.CurrentCardData.type.Contains("Monster"),
+                (target) => 
+                {
+                    Debug.Log($"{source.CurrentCardData.name} equipada em {target.CurrentCardData.name}");
+                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
+                    UpdateMegamorphStats(source, target);
+                }
+            );
+        }
+    }
+
+    void UpdateMegamorphStats(CardDisplay megamorph, CardDisplay target)
+    {
+        // Remove modificadores anteriores desta fonte para recalcular
+        target.RemoveModifiersFromSource(megamorph);
+
+        int controllerLP = megamorph.isPlayerCard ? GameManager.Instance.playerLP : GameManager.Instance.opponentLP;
+        int enemyLP = megamorph.isPlayerCard ? GameManager.Instance.opponentLP : GameManager.Instance.playerLP;
+
+        if (controllerLP < enemyLP)
+        {
+            // Dobra o ATK original
+            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Set, target.originalAtk * 2, megamorph));
+        }
+        else if (controllerLP > enemyLP)
+        {
+            // Divide o ATK original pela metade
+            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Set, target.originalAtk / 2, megamorph));
+        }
+        // Se LP igual, não aplica modificador (ATK permanece inalterado)
+    }
+
+    public void UpdateAllMegamorphs()
+    {
+        // Encontra todos os links de equipamento ativos para atualizar Megamorphs
+        CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        foreach (var link in links)
+        {
+            if (link.source != null && link.source.CurrentCardData.id == "1200" && link.target != null)
+            {
+                UpdateMegamorphStats(link.source, link.target);
+            }
+        }
     }
 }

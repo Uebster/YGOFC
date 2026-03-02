@@ -440,6 +440,9 @@ public partial class CardEffectManager
             if (card.isPlayerCard != isPlayer) // Se o oponente tomou dano
                 Effect_DirectDamage(card, 300);
         });
+
+        // Atualiza Megamorph (1200)
+        UpdateAllMegamorphs();
     }
 
     public void OnCardLeavesField(CardDisplay card)
@@ -698,6 +701,9 @@ public partial class CardEffectManager
                 Effect_DirectDamage(card, 500);
             }
         });
+
+        // Atualiza Megamorph (1200)
+        UpdateAllMegamorphs();
     }
 
     // Helper para iterar cartas ativas no campo
