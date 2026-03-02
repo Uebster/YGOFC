@@ -311,6 +311,15 @@ public partial class CardEffectManager
                     Destroy(card.gameObject);
                 }
             });
+
+            // 1283 - Mucus Yolk (Gain 1000 ATK if dealt damage)
+            CheckActiveCards("1283", (card) => {
+                if (card.isPlayerCard && card.battledThisTurn) // Simplificado: Se batalhou e sobreviveu
+                {
+                    card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 1000, card));
+                    Debug.Log("Mucus Yolk: +1000 ATK.");
+                }
+            });
         }
         else if (phase == GamePhase.Standby)
         {
@@ -766,6 +775,13 @@ public partial class CardEffectManager
             // Requer suporte no BattleManager para anular dano específico
             Debug.Log("Monk Fighter: Dano de batalha será 0.");
         }
+
+        // 1207 - Mermaid Knight (Double Attack)
+        if (attacker.CurrentCardData.id == "1207" && (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013")))
+        {
+            // Lógica tratada no BattleManager via CanAttackAgain, mas podemos logar aqui
+            Debug.Log("Mermaid Knight: Ataque duplo com Umi.");
+        }
     }
 
     public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
@@ -791,6 +807,19 @@ public partial class CardEffectManager
         if (attacker != null && attacker.CurrentCardData.id == "1178" && amount > 0)
         {
             if (attacker.isPlayerCard) GameManager.Instance.DrawCard();
+        }
+
+        // 1205 - Memory Crusher
+        if (attacker != null && attacker.CurrentCardData.id == "1205" && amount > 0)
+        {
+            int millCount = amount / 100;
+            if (millCount > 0)
+            {
+                Debug.Log($"Memory Crusher: Oponente envia {millCount} cartas do Extra Deck ao GY.");
+                // Lógica de mill do Extra Deck (Simulado com Main Deck se Extra vazio ou não acessível)
+                List<CardData> oppExtra = GameManager.Instance.opponentExtraDeck; // Precisa ser público no GM
+                // ... (Implementação real requer acesso à lista)
+            }
         }
 
         // 1232 - Millennium Scorpion

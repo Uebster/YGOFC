@@ -13,6 +13,8 @@ public class BattleManager : MonoBehaviour
     public bool forceDirectAttack = false;
     public bool gravekeepersProtected = false; // Charm of Shabti
     public bool dimensionWallActive = false; // Dimension Wall
+    public bool globalPiercing = false; // Meteorain
+    public bool battlePositionsLocked = false; // Mesmeric Control
 
     // Verifica se a ativação de armadilhas está bloqueada (ex: Mirage Dragon)
     public bool IsTrapActivationBlocked(bool isPlayer)
@@ -55,7 +57,12 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
-        if (attacker.hasAttackedThisTurn)
+        // Verifica ataque duplo (Mermaid Knight, etc)
+        bool canAttackAgain = false;
+        if (attacker.CurrentCardData.id == "1207" && (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013"))) canAttackAgain = true;
+        // Adicionar outras lógicas de ataque duplo aqui
+
+        if (attacker.hasAttackedThisTurn && !canAttackAgain)
         {
             Debug.LogWarning("Este monstro já atacou neste turno.");
             return;
@@ -181,6 +188,13 @@ public class BattleManager : MonoBehaviour
         // Hook para outros efeitos (Swords of Revealing Light, etc)
         if (CardEffectManager.Instance != null && CardEffectManager.Instance.IsAttackRestricted(attacker))
         {
+            return false;
+        }
+
+        // Messenger of Peace (1209)
+        if (GameManager.Instance.IsCardActiveOnField("1209") && attacker.currentAtk >= 1500)
+        {
+            Debug.Log("Ataque impedido por Messenger of Peace (ATK >= 1500).");
             return false;
         }
 
@@ -453,7 +467,8 @@ public class BattleManager : MonoBehaviour
             }
 
             // Piercing Damage (Dark Driceratops 0407, etc)
-            if (atk > def && (attacker.CurrentCardData.id == "0407" || attacker.CurrentCardData.id == "0059")) // Ancient Gear Golem
+            // Adicionado Meteorain (globalPiercing)
+            if (atk > def && (attacker.CurrentCardData.id == "0407" || attacker.CurrentCardData.id == "0059" || globalPiercing)) 
             {
                 int piercing = atk - def;
                 Debug.Log($"Dano Perfurante! {piercing} de dano.");
@@ -514,6 +529,12 @@ public class BattleManager : MonoBehaviour
         if (PhaseManager.Instance.currentPhase != GamePhase.Main1 && PhaseManager.Instance.currentPhase != GamePhase.Main2)
         {
             Debug.LogWarning("Mudança de posição só permitida na Main Phase.");
+            return;
+        }
+
+        if (battlePositionsLocked)
+        {
+            Debug.LogWarning("Mudança de posição bloqueada por efeito (ex: Mesmeric Control).");
             return;
         }
 
