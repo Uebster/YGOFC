@@ -449,158 +449,169 @@ public partial class CardEffectManager
         AddEffect("1225", Effect_1225_Michizure);
 
         // 1226 - Micro Ray (DEF 0)
-        AddEffect("1226", c => Debug.Log("Micro Ray: DEF do alvo vira 0."));
+        AddEffect("1226", Effect_1226_MicroRay);
 
         // 1227 - Mid Shield Gardna (Flip Negate Spell)
-        AddEffect("1227", c => Debug.Log("Mid Shield Gardna: Nega magia que dá alvo."));
+        AddEffect("1227", Effect_1227_MidShieldGardna);
 
         // 1232 - Millennium Scorpion (Gain ATK on kill)
-        AddEffect("1232", c => Debug.Log("Millennium Scorpion: +500 ATK por destruição."));
+        AddEffect("1232", Effect_1232_MillenniumScorpion);
 
         // 1234 - Milus Radiant (Field Earth +500, Wind -400)
-        AddEffect("1234", c => Effect_Field(c, 500, -400, "", "Earth"));
+        AddEffect("1234", Effect_1234_MilusRadiant);
 
         // 1235 - Minar (Burn on discard)
-        AddEffect("1235", c => Debug.Log("Minar: 1000 dano se descartado pelo oponente."));
+        AddEffect("1235", Effect_1235_Minar);
 
         // 1236 - Mind Control (Take Control)
-        AddEffect("1236", Effect_BrainControl); // Reusa lógica similar
+        AddEffect("1236", Effect_1236_MindControl);
 
         // 1237 - Mind Crush (Hand Destruction)
-        AddEffect("1237", c => Debug.Log("Mind Crush: Declara carta, verifica mão."));
+        AddEffect("1237", Effect_1237_MindCrush);
 
         // 1238 - Mind Haxorz (Peek Hand/Set)
-        AddEffect("1238", c => { Effect_PayLP(c, 500); Debug.Log("Mind Haxorz: Ver mão e setadas."); });
+        AddEffect("1238", Effect_1238_MindHaxorz);
 
         // 1239 - Mind Wipe (Hand Refresh)
-        AddEffect("1239", c => Debug.Log("Mind Wipe: Embaralha mão e compra (se <= 3)."));
+        AddEffect("1239", Effect_1239_MindWipe);
 
         // 1240 - Mind on Air (Reveal Hand)
-        AddEffect("1240", c => Debug.Log("Mind on Air: Mão do oponente revelada."));
+        AddEffect("1240", Effect_1240_MindOnAir);
 
         // 1241 - Mine Golem (Burn on destroy)
-        AddEffect("1241", c => Debug.Log("Mine Golem: 500 dano ao morrer."));
+        AddEffect("1241", Effect_1241_MineGolem);
 
         // 1242 - Minefield Eruption (Burn per Golem)
-        AddEffect("1242", c => Debug.Log("Minefield Eruption: Dano por Mine Golem."));
+        AddEffect("1242", Effect_1242_MinefieldEruption);
 
         // 1244 - Minor Goblin Official (Burn Standby)
-        AddEffect("1244", c => Debug.Log("Minor Goblin Official: 500 dano na Standby se LP <= 3000."));
+        AddEffect("1244", Effect_1244_MinorGoblinOfficial);
 
         // 1245 - Miracle Dig (Recycle Banished)
-        AddEffect("1245", c => Debug.Log("Miracle Dig: Retorna 3 banidas ao GY."));
+        AddEffect("1245", Effect_1245_MiracleDig);
 
         // 1246 - Miracle Fusion (Fusion Banish GY)
-        AddEffect("1246", c => Debug.Log("Miracle Fusion: Fusão HERO banindo do GY."));
+        AddEffect("1246", Effect_1246_MiracleFusion);
 
         // 1247 - Miracle Restoring (Revive DM/BB)
-        AddEffect("1247", c => Debug.Log("Miracle Restoring: Remove contadores para reviver DM ou BB."));
+        AddEffect("1247", Effect_1247_MiracleRestoring);
 
         // 1248 - Mirage Dragon (No Traps Battle)
-        AddEffect("1248", c => Debug.Log("Mirage Dragon: Sem Traps na Battle Phase."));
+        AddEffect("1248", Effect_1248_MirageDragon);
 
         // 1249 - Mirage Knight (Battle Logic)
-        AddEffect("1249", c => Debug.Log("Mirage Knight: Ganha ATK do oponente."));
+        AddEffect("1249", Effect_1249_MirageKnight);
 
         // 1250 - Mirage of Nightmare (Draw/Discard)
-        AddEffect("1250", c => Debug.Log("Mirage of Nightmare: Compra até 4, descarta na Standby."));
+        AddEffect("1250", Effect_1250_MirageOfNightmare);
 
         // 1251 - Mirror Force (Destroy Attack Pos)
-        AddEffect("1251", Effect_MirrorForce);
+        AddEffect("1251", Effect_1251_MirrorForce);
 
         // 1252 - Mirror Wall (Halve ATK)
-        AddEffect("1252", c => Debug.Log("Mirror Wall: Corta ATK pela metade. Custo de manutenção."));
+        AddEffect("1252", Effect_1252_MirrorWall);
 
         // 1254 - Mispolymerization (Return Fusion)
-        AddEffect("1254", c => Debug.Log("Mispolymerization: Retorna Fusão ao Extra."));
+        AddEffect("1254", Effect_1254_Mispolymerization);
 
         // 1255 - Moai Interceptor Cannons (Flip Face-down)
-        AddEffect("1255", c => Debug.Log("Moai Interceptor Cannons: Vira face-down 1x por turno."));
+        AddEffect("1255", Effect_1255_MoaiInterceptorCannons);
 
         // 1256 - Mobius the Frost Monarch (Destroy 2 S/T)
-        AddEffect("1256", c => Debug.Log("Mobius: Destrói até 2 S/T ao tributar."));
+        AddEffect("1256", Effect_1256_MobiusTheFrostMonarch);
 
         // 1257 - Moisture Creature (Destroy S/T)
-        AddEffect("1257", c => Debug.Log("Moisture Creature: Destrói S/T se 3 tributos."));
+        AddEffect("1257", Effect_1257_MoistureCreature);
 
         // 1259 - Mokey Mokey Smackdown (Buff)
-        AddEffect("1259", c => Debug.Log("Mokey Mokey Smackdown: ATK 3000 se Fada destruída."));
+        AddEffect("1259", Effect_1259_MokeyMokeySmackdown);
 
         // 1261 - Molten Destruction (Field Fire +500/-400)
-        AddEffect("1261", c => Effect_Field(c, 500, -400, "", "Fire"));
+        AddEffect("1261", Effect_1261_MoltenDestruction);
 
         // 1262 - Molten Zombie (Draw on SS)
-        AddEffect("1262", c => Debug.Log("Molten Zombie: Compra 1 se invocado do GY."));
+        AddEffect("1262", Effect_1262_MoltenZombie);
 
         // 1264 - Monk Fighter (No Battle Damage)
-        AddEffect("1264", c => Debug.Log("Monk Fighter: Sem dano de batalha."));
+        AddEffect("1264", Effect_1264_MonkFighter);
 
         // 1266 - Monster Eye (Recycle Poly)
-        AddEffect("1266", c => { Effect_PayLP(c, 1000); Debug.Log("Monster Eye: Recupera Polymerization."); });
+        AddEffect("1266", Effect_1266_MonsterEye);
 
         // 1267 - Monster Gate (Excavate SS)
-        AddEffect("1267", c => Debug.Log("Monster Gate: Tributa 1, escava e invoca."));
+        AddEffect("1267", Effect_1267_MonsterGate);
 
-        // 1268 - Monster Reborn (Revive) - Já existente, mas reforçando
-        AddEffect("1268", c => Effect_Revive(c, true)); // true = qualquer GY
-        AddEffect("1268", Effect_MonsterReborn);
+        // 1268 - Monster Reborn (Revive)
+        AddEffect("1268", Effect_1268_MonsterReborn);
 
         // 1269 - Monster Recovery (Shuffle Hand/Field)
-        AddEffect("1269", c => Debug.Log("Monster Recovery: Embaralha monstro e mão, compra nova mão."));
+        AddEffect("1269", Effect_1269_MonsterRecovery);
 
         // 1274 - Mooyan Curry (Gain 200 LP)
-        AddEffect("1274", c => Effect_GainLP(c, 200));
+        AddEffect("1274", Effect_1274_MooyanCurry);
 
         // 1275 - Morale Boost (Gain/Lose LP on Equip)
-        AddEffect("1275", c => Debug.Log("Morale Boost: Ganha/Perde LP com Equips."));
+        AddEffect("1275", Effect_1275_MoraleBoost);
+
+        // 1276 - Morinphen (Normal)
+        AddEffect("1276", Effect_1276_Morinphen);
 
         // 1277 - Morphing Jar (Hand Reset)
-        AddEffect("1277", c => Debug.Log("Morphing Jar: Ambos descartam e compram 5."));
+        AddEffect("1277", Effect_1277_MorphingJar);
 
         // 1278 - Morphing Jar #2 (Deck Reset)
-        AddEffect("1278", c => Debug.Log("Morphing Jar #2: Embaralha monstros e invoca novos."));
+        AddEffect("1278", Effect_1278_MorphingJar2);
 
         // 1279 - Mother Grizzly (Search Water)
-        AddEffect("1279", c => Effect_SearchDeck(c, "Water"));
+        AddEffect("1279", Effect_1279_MotherGrizzly);
 
         // 1280 - Mountain (Field Dragon/WingedBeast/Thunder +200)
-        AddEffect("1280", c => { Effect_Field(c, 200, 200, "Dragon"); Effect_Field(c, 200, 200, "Winged Beast"); Effect_Field(c, 200, 200, "Thunder"); });
+        AddEffect("1280", Effect_1280_Mountain);
+
+        // 1281 - Mountain Warrior (Normal)
+        AddEffect("1281", Effect_1281_MountainWarrior);
+
+        // 1282 - Mr. Volcano (Normal)
+        AddEffect("1282", Effect_1282_MrVolcano);
 
         // 1283 - Mucus Yolk (Direct Attack / Gain ATK)
-        AddEffect("1283", c => Debug.Log("Mucus Yolk: Ataque direto, ganha 1000 ATK."));
+        AddEffect("1283", Effect_1283_MucusYolk);
 
         // 1284 - Mudora (Buff per Fairy)
-        AddEffect("1284", c => Debug.Log("Mudora: Ganha ATK por Fadas no GY."));
+        AddEffect("1284", Effect_1284_Mudora);
 
         // 1285 - Muka Muka (Buff per Hand)
-        AddEffect("1285", Effect_MukaMuka);
+        AddEffect("1285", Effect_1285_MukaMuka);
 
         // 1286 - Muko (Anti-Draw)
-        AddEffect("1286", c => Debug.Log("Muko: Descarta cartas compradas."));
+        AddEffect("1286", Effect_1286_Muko);
 
         // 1287 - Multiplication of Ants (Tokens)
-        AddEffect("1287", c => Debug.Log("Multiplication of Ants: Tributa Inseto, cria 2 Tokens."));
+        AddEffect("1287", Effect_1287_MultiplicationOfAnts);
 
         // 1288 - Multiply (Kuriboh Tokens)
-        AddEffect("1288", c => Debug.Log("Multiply: Tributa Kuriboh, enche campo de Tokens."));
+        AddEffect("1288", Effect_1288_Multiply);
 
         // 1291 - Mushroom Man #2 (Burn Control)
-        AddEffect("1291", c => Debug.Log("Mushroom Man #2: Dano na Standby, paga para passar controle."));
+        AddEffect("1291", Effect_1291_MushroomMan2);
+
+        // 1292 - Musician King (Fusion)
+        AddEffect("1292", Effect_1292_MusicianKing);
 
         // 1293 - Mustering of the Dark Scorpions (Swarm)
-        AddEffect("1293", c => Debug.Log("Mustering: Invoca Dark Scorpions se tiver Don Zaloog."));
+        AddEffect("1293", Effect_1293_MusteringOfTheDarkScorpions);
 
         // 1294 - My Body as a Shield (Negate Destroy)
-        AddEffect("1294", c => { Effect_PayLP(c, 1500); Debug.Log("My Body as a Shield: Nega destruição."); });
+        AddEffect("1294", Effect_1294_MyBodyAsAShield);
 
         // 1295 - Mysterious Guard (Flip Bounce)
-        AddEffect("1295", c => Debug.Log("Mysterious Guard: Retorna monstro ao topo do deck."));
+        AddEffect("1295", Effect_1295_MysteriousGuard);
 
         // 1296 - Mysterious Puppeteer (Gain LP on Summon)
-        AddEffect("1296", c => Debug.Log("Mysterious Puppeteer: Ganha 500 LP por invocação."));
+        AddEffect("1296", Effect_1296_MysteriousPuppeteer);
 
         // 1298 - Mystic Box (Destroy & Swap)
-        AddEffect("1298", Effect_MysticBox);
+        AddEffect("1298", Effect_1298_MysticBox);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 1301 - 1400)
