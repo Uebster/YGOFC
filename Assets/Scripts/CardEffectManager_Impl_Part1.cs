@@ -2295,8 +2295,33 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0260_CallOfTheMummy(CardDisplay source)
     {
         // Efeito: Se não controlar monstros, SS 1 Zumbi da mão.
-        // O que falta: Verificar contagem de monstros no campo.
-        Debug.Log("Call of the Mummy: SS Zumbi da mão (Verificação pendente).");
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            int monsterCount = 0;
+            foreach (var zone in GameManager.Instance.duelFieldUI.playerMonsterZones) if (zone.childCount > 0) monsterCount++;
+            
+            if (monsterCount == 0)
+            {
+                List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+                List<CardData> zombies = hand.FindAll(c => c.race == "Zombie" && c.type.Contains("Monster"));
+                
+                if (zombies.Count > 0)
+                {
+                    GameManager.Instance.OpenCardSelection(zombies, "Invocar Zumbi", (selected) => {
+                        GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                        GameManager.Instance.RemoveCardFromHand(selected, source.isPlayerCard);
+                    });
+                }
+                else
+                {
+                    Debug.Log("Call of the Mummy: Nenhum Zumbi na mão.");
+                }
+            }
+            else
+            {
+                Debug.Log("Call of the Mummy: Você já controla monstros.");
+            }
+        }
     }
 
     void Effect_0262_CannonSoldier(CardDisplay source)
