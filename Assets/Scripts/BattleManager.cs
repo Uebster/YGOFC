@@ -110,6 +110,16 @@ public class BattleManager : MonoBehaviour
             if (!hasSpell) return false;
         }
 
+        // Dark Elf (0409)
+        if (attacker.CurrentCardData.id == "0409")
+        {
+            if (!GameManager.Instance.PayLifePoints(attacker.isPlayerCard, 1000))
+            {
+                Debug.Log("Dark Elf: LP insuficientes para atacar (1000).");
+                return false;
+            }
+        }
+
         // Command Knight (0318)
         // Se controlar outro monstro, não pode ser atacado.
         // Esta verificação é no alvo, não no atacante.
@@ -400,6 +410,14 @@ public class BattleManager : MonoBehaviour
             {
                 Debug.Log("Empate (Defesa). Nada acontece.");
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayAttackFail(attacker);
+            }
+
+            // Piercing Damage (Dark Driceratops 0407, etc)
+            if (atk > def && (attacker.CurrentCardData.id == "0407" || attacker.CurrentCardData.id == "0059")) // Ancient Gear Golem
+            {
+                int piercing = atk - def;
+                Debug.Log($"Dano Perfurante! {piercing} de dano.");
+                GameManager.Instance.DamageOpponent(piercing);
             }
         }
 
