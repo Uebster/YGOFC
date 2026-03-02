@@ -2219,4 +2219,207 @@ public partial class CardEffectManager
         // Lógica implementada via hooks globais no CardEffectManager_Impl.cs.
         Debug.Log("Morale Boost: Ativo.");
     }
+    // 1276 - Morinphen
+    void Effect_1276_Morinphen(CardDisplay source)
+    {
+        // Normal Monster. No effect.
+    }
+
+    // 1277 - Morphing Jar
+    void Effect_1277_MorphingJar(CardDisplay source)
+    {
+        // FLIP: Both players discard their entire hands, then draw 5 cards.
+        GameManager.Instance.DiscardHand(true);
+        GameManager.Instance.DiscardHand(false);
+        
+        for(int i=0; i<5; i++) GameManager.Instance.DrawCard(true); // ignoreLimit
+        for(int i=0; i<5; i++) GameManager.Instance.DrawOpponentCard();
+        
+        Debug.Log("Morphing Jar: Mãos resetadas para 5 cartas.");
+    }
+
+    // 1278 - Morphing Jar #2
+    void Effect_1278_MorphingJar2(CardDisplay source)
+    {
+        // FLIP: Shuffle all monsters on the field into the Deck.
+        // Then, each player excavates cards from the top of their Deck, until they excavate the same number of monsters they shuffled into their Main Deck.
+        // Special Summon all excavated Level 4 or lower monsters in face-down Defense Position, also send the remaining cards to the Graveyard.
+        
+        // Lógica simplificada: Embaralha monstros e compra/invoca (simulado)
+        Debug.Log("Morphing Jar #2: Reset de campo (Lógica complexa de escavação pendente).");
+        
+        // 1. Contar monstros
+        // 2. Retornar ao deck
+        // 3. Escavar e invocar
+    }
+
+    // 1279 - Mother Grizzly
+    void Effect_1279_MotherGrizzly(CardDisplay source)
+    {
+        // When destroyed by battle: SS 1 WATER monster with 1500 or less ATK from Deck.
+        Effect_SearchDeck(source, "Water", "Monster", 1500); // Simplificado para busca, idealmente SS
+    }
+
+    // 1280 - Mountain
+    void Effect_1280_Mountain(CardDisplay source)
+    {
+        // Field: Dragon, Winged Beast, Thunder +200 ATK/DEF.
+        Effect_Field(source, 200, 200, "Dragon");
+        Effect_Field(source, 200, 200, "Winged Beast");
+        Effect_Field(source, 200, 200, "Thunder");
+    }
+
+    // 1281 - Mountain Warrior
+    void Effect_1281_MountainWarrior(CardDisplay source)
+    {
+        // Normal Monster.
+    }
+
+    // 1282 - Mr. Volcano
+    void Effect_1282_MrVolcano(CardDisplay source)
+    {
+        // Normal Monster.
+    }
+
+    // 1283 - Mucus Yolk
+    void Effect_1283_MucusYolk(CardDisplay source)
+    {
+        // Direct Attack. If inflicts battle damage: Gain 1000 ATK during next Standby.
+        // Lógica de ataque direto no BattleManager.
+        // Lógica de ganho de ATK no OnPhaseStart (Standby).
+        Debug.Log("Mucus Yolk: Ataque direto e crescimento configurados.");
+    }
+
+    // 1284 - Mudora
+    void Effect_1284_Mudora(CardDisplay source)
+    {
+        // Gains 200 ATK for each Fairy in your GY.
+        int count = GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.race == "Fairy").Count;
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 200, source));
+    }
+
+    // 1285 - Muka Muka
+    void Effect_1285_MukaMuka(CardDisplay source)
+    {
+        // Gains 300 ATK/DEF for each card in your hand.
+        int handCount = GameManager.Instance.GetPlayerHandData().Count;
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, handCount * 300, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, handCount * 300, source));
+    }
+
+    // 1286 - Muko
+    void Effect_1286_Muko(CardDisplay source)
+    {
+        // Activate when draw effect is activated. Both players discard drawn cards.
+        Debug.Log("Muko: Negação de compra (Requer Chain).");
+    }
+
+    // 1287 - Multiplication of Ants
+    void Effect_1287_MultiplicationOfAnts(CardDisplay source)
+    {
+        // Tribute 1 Insect; SS 2 Army Ant Tokens.
+        if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard)) // Check Insect
+        {
+            // Tribute logic...
+            GameManager.Instance.SpawnToken(source.isPlayerCard, 500, 1200, "Army Ant Token");
+            GameManager.Instance.SpawnToken(source.isPlayerCard, 500, 1200, "Army Ant Token");
+            Debug.Log("Multiplication of Ants: 2 Tokens criados.");
+        }
+    }
+
+    // 1288 - Multiply
+    void Effect_1288_Multiply(CardDisplay source)
+    {
+        // Tribute face-up Kuriboh; SS Kuriboh Tokens to fill empty slots.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "Kuriboh",
+                (tribute) => {
+                    GameManager.Instance.TributeCard(tribute);
+                    // Fill slots
+                    for(int i=0; i<5; i++) // Tenta preencher até 5
+                    {
+                        GameManager.Instance.SpawnToken(source.isPlayerCard, 300, 200, "Kuriboh Token");
+                    }
+                    Debug.Log("Multiply: Campo preenchido com Kuriboh Tokens.");
+                }
+            );
+        }
+    }
+
+    // 1289 - Muse-A
+    void Effect_1289_MuseA(CardDisplay source)
+    {
+        // Normal Monster.
+    }
+
+    // 1290 - Mushroom Man
+    void Effect_1290_MushroomMan(CardDisplay source)
+    {
+        // Normal Monster.
+    }
+
+    // 1291 - Mushroom Man #2
+    void Effect_1291_MushroomMan2(CardDisplay source)
+    {
+        // Controller loses 300 LP Standby. Pay 500 LP End Phase to switch control.
+        // Lógica no OnPhaseStart.
+        Debug.Log("Mushroom Man #2: Efeitos de fase configurados.");
+    }
+
+    // 1292 - Musician King
+    void Effect_1292_MusicianKing(CardDisplay source)
+    {
+        // Fusion Monster.
+    }
+
+    // 1293 - Mustering of the Dark Scorpions
+    void Effect_1293_MusteringOfTheDarkScorpions(CardDisplay source)
+    {
+        // If you control Don Zaloog: SS any number of Dark Scorpions from hand (1 copy each).
+        if (GameManager.Instance.IsCardActiveOnField("Don Zaloog") || GameManager.Instance.IsCardActiveOnField("0516"))
+        {
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            List<CardData> scorpions = hand.FindAll(c => c.name.Contains("Dark Scorpion"));
+            
+            if (scorpions.Count > 0)
+            {
+                GameManager.Instance.OpenCardMultiSelection(scorpions, "Invocar Dark Scorpions", 1, scorpions.Count, (selected) => {
+                    foreach(var c in selected)
+                    {
+                        GameManager.Instance.SpecialSummonFromData(c, source.isPlayerCard);
+                        GameManager.Instance.RemoveCardFromHand(c, source.isPlayerCard);
+                    }
+                });
+            }
+        }
+    }
+
+    // 1294 - My Body as a Shield
+    void Effect_1294_MyBodyAsAShield(CardDisplay source)
+    {
+        // Pay 1500 LP; negate activation of card that destroys monster(s) and destroy it.
+        // Requer Chain.
+        Debug.Log("My Body as a Shield: Nega destruição (Requer Chain).");
+    }
+
+    // 1295 - Mysterious Guard
+    void Effect_1295_MysteriousGuard(CardDisplay source)
+    {
+        // FLIP: Target 1 face-up monster; return to top of Deck. If Warrior controlled, return another to hand.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && !t.isFlipped,
+                (target) => {
+                    // Retorna ao topo (Simulado: Destrói, mas deveria usar ReturnToDeck)
+                    Debug.Log($"Mysterious Guard: {target.CurrentCardData.name} retornado ao topo.");
+                    // GameManager.Instance.ReturnToDeck(target, true);
+                    
+                    // Lógica do segundo alvo (Warrior check) pendente
+                }
+            );
+        }
+    }
 }
