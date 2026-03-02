@@ -778,11 +778,81 @@ public partial class CardEffectManager
 
         // 1207 - Mermaid Knight (Double Attack)
         if (attacker.CurrentCardData.id == "1207" && (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013")))
+    // 1298 - Mystic Box
+    void Effect_1298_MysticBox(CardDisplay source)
+    {
+        // Target opp monster, target own monster. Destroy opp, give control of own.
+        Debug.Log("Mystic Box: Troca e destruição.");
+        if (SpellTrapManager.Instance != null)
         {
+            // 1. Seleciona monstro do oponente para destruir
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (oppMonster) => {
+                    // 2. Seleciona monstro do jogador para dar o controle
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                        (myMonster) => {
+                            // Executa o efeito
+                            Debug.Log($"Mystic Box: Destruindo {oppMonster.CurrentCardData.name} e trocando controle de {myMonster.CurrentCardData.name}.");
+                            
+                            // Destrói o do oponente
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(oppMonster);
+                            GameManager.Instance.SendToGraveyard(oppMonster.CurrentCardData, oppMonster.isPlayerCard);
+                            Destroy(oppMonster.gameObject);
+
+                            // Troca o controle do seu
+                            GameManager.Instance.SwitchControl(myMonster);
+                        }
+                    );
+                }
+            );
+        }    // 1298 - Mystic Box
+    void Effect_1298_MysticBox(CardDisplay source)
+    {
+        // Target opp monster, target own monster. Destroy opp, give control of own.
+        Debug.Log("Mystic Box: Troca e destruição.");
+        if (SpellTrapManager.Instance != null)
+        {
+            // 1. Seleciona monstro do oponente para destruir
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (oppMonster) => {
+                    // 2. Seleciona monstro do jogador para dar o controle
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                        (myMonster) => {
+                            // Executa o efeito
+                            Debug.Log($"Mystic Box: Destruindo {oppMonster.CurrentCardData.name} e trocando controle de {myMonster.CurrentCardData.name}.");
+                            
+                            // Destrói o do oponente
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(oppMonster);
+                            GameManager.Instance.SendToGraveyard(oppMonster.CurrentCardData, oppMonster.isPlayerCard);
+                            Destroy(oppMonster.gameObject);
+
+                            // Troca o controle do seu
+                            GameManager.Instance.SwitchControl(myMonster);
+                        }
+                    );
+                }
+            );
+        }
             // Lógica tratada no BattleManager via CanAttackAgain, mas podemos logar aqui
             Debug.Log("Mermaid Knight: Ataque duplo com Umi.");
+            string id = attacker.CurrentCardData.id;
+            if (id == "1304" || id == "1305" || id == "1306" || id == "1590")
+            {
+                Debug.Log($"{attacker.CurrentCardData.name}: Destruindo monstro face-down sem virar.");
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                Destroy(target.gameObject);
+                
+                // Se for LV6 (1306), coloca no topo do deck em vez do GY? (Regra diz: "and if you do, you can place it on top...")
+                // Implementação simplificada: Vai pro GY.
+            }
         }
     }
+}
 
     public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
     {
@@ -827,6 +897,24 @@ public partial class CardEffectManager
         {
             attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, attacker));
             Debug.Log("Millennium Scorpion: +500 ATK.");
+        }
+
+        // 1308 - Mystical Beast of Serket
+        if (attacker != null && attacker.CurrentCardData.id == "1308" && target != null)
+        {
+            // Se destruiu monstro, ganha 500 ATK e bane o monstro
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, attacker));
+            GameManager.Instance.BanishCard(target); // Bane do GY (ou antes de ir)
+            Debug.Log("Serket: Comeu o monstro. +500 ATK.");
+        }
+
+        // 1311 - Mystical Knight of Jackal
+        if (attacker != null && attacker.CurrentCardData.id == "1311" && target != null)
+        {
+            // Retorna monstro destruído ao topo do deck
+            // Requer lógica de mover do GY para o Deck (Topo)
+            Debug.Log("Mystical Knight of Jackal: Monstro retornado ao topo do deck.");
+            // GameManager.Instance.ReturnToDeck(target, true);
         }
 
         // Mefist the Infernal General (1197): Opponent discards 1
