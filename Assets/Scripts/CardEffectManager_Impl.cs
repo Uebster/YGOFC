@@ -265,6 +265,18 @@ public partial class CardEffectManager
                     }
                 }
             });
+            
+            // 1859 - The Eye of Truth
+            CheckActiveCards("1859", (card) => {
+                if (!card.isPlayerCard) // Standby do oponente
+                {
+                    List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+                    if (oppHand.Exists(c => c.type.Contains("Spell")))
+                    {
+                        GameManager.Instance.GainLifePoints(false, 1000); // Oponente ganha LP
+                    }
+                }
+            });
 
             // 1046 - Labyrinth of Nightmare
             CheckActiveCards("1046", (card) => {
@@ -793,6 +805,12 @@ public partial class CardEffectManager
             // Assume que estava face-down se foi destruída por efeito (difícil rastrear aqui)
             Debug.Log("Statue of the Wicked: Invocando Wicked Token.");
             GameManager.Instance.SpawnToken(isOwnerPlayer, 1000, 1000, "Wicked Token");
+        }
+        
+        // 1870 - The Immortal of Thunder
+        if (card.id == "1870" && isOwnerPlayer)
+        {
+            GameManager.Instance.PayLifePoints(isOwnerPlayer, 5000);
         }
     }
 

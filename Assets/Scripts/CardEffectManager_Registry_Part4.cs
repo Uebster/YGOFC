@@ -753,55 +753,55 @@ public partial class CardEffectManager
         AddEffect("1851", c => Debug.Log("The Dark Door: Apenas 1 ataque por turno."));
 
         // 1853 - The Dragon's Bead (Discard Negate Trap)
-        AddEffect("1853", c => Debug.Log("The Dragon's Bead: Descarta para negar Trap que alvo Dragão."));
+        AddEffect("1853", Effect_1853_TheDragonsBead);
 
         // 1856 - The Earth - Hex-Sealed Fusion (Fusion Sub)
-        AddEffect("1856", c => Debug.Log("The Earth - Hex-Sealed Fusion: Substituto de fusão."));
+        AddEffect("1856", Effect_1856_TheEarthHexSealedFusion);
 
         // 1857 - The Emperor's Holiday (Negate Equips)
-        AddEffect("1857", c => Debug.Log("The Emperor's Holiday: Nega cartas de Equipamento."));
+        AddEffect("1857", Effect_1857_TheEmperorsHoliday);
 
         // 1858 - The End of Anubis (Negate GY)
-        AddEffect("1858", c => Debug.Log("The End of Anubis: Nega efeitos no GY."));
+        AddEffect("1858", Effect_1858_TheEndOfAnubis);
 
         // 1859 - The Eye of Truth (Reveal Hand, Heal)
-        AddEffect("1859", c => Debug.Log("The Eye of Truth: Revela mão do oponente, cura se tiver Magia."));
+        AddEffect("1859", Effect_1859_TheEyeOfTruth);
 
         // 1860 - The Fiend Megacyber (SS Condition)
-        AddEffect("1860", c => Debug.Log("The Fiend Megacyber: SS se oponente tiver mais monstros."));
+        AddEffect("1860", Effect_1860_TheFiendMegacyber);
 
         // 1861 - The First Sarcophagus (SS Spirit of Pharaoh)
-        AddEffect("1861", c => Debug.Log("The First Sarcophagus: Inicia contagem para Spirit of Pharaoh."));
+        AddEffect("1861", Effect_1861_TheFirstSarcophagus);
 
         // 1862 - The Flute of Summoning Dragon (SS 2 Dragons)
-        AddEffect("1862", c => Debug.Log("The Flute of Summoning Dragon: Invoca até 2 Dragões (requer Lord of D.)."));
+        AddEffect("1862", Effect_1862_TheFluteOfSummoningDragon);
 
         // 1863 - The Forceful Sentry (Look Hand, Return to Deck)
-        AddEffect("1863", c => Debug.Log("The Forceful Sentry: Retorna carta da mão do oponente ao deck."));
+        AddEffect("1863", Effect_1863_TheForcefulSentry);
 
         // 1864 - The Forgiving Maiden (Tribute Recycle)
-        AddEffect("1864", c => Debug.Log("The Forgiving Maiden: Recupera monstro destruído."));
+        AddEffect("1864", Effect_1864_TheForgivingMaiden);
 
         // 1866 - The Graveyard in the Fourth Dimension (Recycle LV)
-        AddEffect("1866", c => Debug.Log("The Graveyard in the Fourth Dimension: Recicla 2 monstros LV."));
+        AddEffect("1866", Effect_1866_TheGraveyardInTheFourthDimension);
 
         // 1868 - The Hunter with 7 Weapons (Declare Type +1000)
-        AddEffect("1868", c => Debug.Log("The Hunter with 7 Weapons: +1000 ATK contra tipo declarado."));
+        AddEffect("1868", Effect_1868_TheHunterWith7Weapons);
 
         // 1870 - The Immortal of Thunder (Flip +3000 LP, Lose 5000)
-        AddEffect("1870", c => { Effect_GainLP(c, 3000); Debug.Log("The Immortal of Thunder: Ganha 3000 LP (perde 5000 depois)."); });
+        AddEffect("1870", Effect_1870_TheImmortalOfThunder);
 
         // 1871 - The Inexperienced Spy (Look Hand)
-        AddEffect("1871", c => Debug.Log("The Inexperienced Spy: Olha 1 carta da mão do oponente."));
+        AddEffect("1871", Effect_1871_TheInexperiencedSpy);
 
         // 1873 - The Kick Man (Equip on SS)
-        AddEffect("1873", c => Debug.Log("The Kick Man: Equipa magia do GY ao ser invocado."));
+        AddEffect("1873", Effect_1873_TheKickMan);
 
         // 1874 - The Last Warrior from Another Planet (Lock Summons)
-        AddEffect("1874", c => Debug.Log("The Last Warrior: Impede invocações."));
+        AddEffect("1874", Effect_1874_TheLastWarriorFromAnotherPlanet);
 
         // 1875 - The Law of the Normal (Reset, Destroy)
-        AddEffect("1875", c => Debug.Log("The Law of the Normal: Destrói tudo, descarta mãos."));
+        AddEffect("1875", Effect_1875_TheLawOfTheNormal);
 
         // 1876 - The Legendary Fisherman (Immune Umi)
         AddEffect("1876", c => Debug.Log("The Legendary Fisherman: Imune a magia e ataque com Umi."));
