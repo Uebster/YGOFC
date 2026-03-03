@@ -1489,14 +1489,10 @@ public class GameManager : MonoBehaviour
                 if (ChainManager.Instance != null)
                 {
                     ChainManager.Instance.AddToChain(display, isPlayer);
-                    // Resolve imediatamente por enquanto (sem sistema de resposta manual implementado)
-                    ChainManager.Instance.ResolveChain();
-                    
-                    // Executa o efeito lógico da carta
-                    if (CardEffectManager.Instance != null)
-                    {
-                        CardEffectManager.Instance.ExecuteCardEffect(display);
-                    }
+                    // NÃO resolve imediatamente. O AddToChain agora chama CheckForResponse,
+                    // que eventualmente chamará ResolveChain.
+                    // A execução do efeito (ExecuteCardEffect) foi movida para dentro
+                    // do loop de resolução do ChainManager.
                 }
             }
         }
@@ -1538,13 +1534,8 @@ public class GameManager : MonoBehaviour
         if (ChainManager.Instance != null)
         {
             ChainManager.Instance.AddToChain(display, isPlayer);
-            ChainManager.Instance.ResolveChain();
-            
-            // Executa o efeito lógico da carta
-            if (CardEffectManager.Instance != null)
-            {
-                CardEffectManager.Instance.ExecuteCardEffect(display);
-            }
+            // A resolução e execução agora são controladas pelo ChainManager
+            // após verificar respostas.
         }
     }
 

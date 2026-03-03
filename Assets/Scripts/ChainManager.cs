@@ -12,6 +12,8 @@ public class ChainManager : MonoBehaviour
         public int linkNumber;
         public CardDisplay cardSource;
         public bool isPlayerEffect;
+        public bool isNegated; // Novo: Se o efeito foi negado
+        public CardDisplay target; // Novo: Alvo específico (se houver)
         // public EffectData effect; // Futuro: Lógica específica do efeito
     }
 
@@ -36,6 +38,8 @@ public class ChainManager : MonoBehaviour
         link.linkNumber = currentChain.Count + 1;
         link.cardSource = card;
         link.isPlayerEffect = isPlayer;
+        link.isNegated = false;
+        link.target = null; // Pode ser setado depois se o efeito tiver alvo
 
         currentChain.Add(link);
         Debug.Log($"Chain Link {link.linkNumber}: {card.CurrentCardData.name} ativado.");
@@ -46,8 +50,39 @@ public class ChainManager : MonoBehaviour
             // Poderíamos tocar um som de "Chain Link" aqui
         }
 
-        // TODO: Aqui verificaríamos se o oponente quer responder (Trigger/Fast Effect)
-        // Se SpellTrapManager encontrar uma resposta automática, ele adicionaria aqui.
+        // Verifica se o oponente quer responder (Janela de Resposta)
+        CheckForResponse(!isPlayer);
+    }
+
+    // Verifica se o jogador alvo tem alguma carta que pode ser encadeada
+    private void CheckForResponse(bool checkPlayer)
+    {
+        if (SpellTrapManager.Instance != null)
+        {
+            // Verifica se há alguma carta que pode responder ao último elo
+            // Por enquanto, simplificado para verificar qualquer Trap/Quick-Play
+            // Em um sistema completo, verificaria Spell Speed e condições de ativação
+            
+            ChainLink lastLink = GetLastChainLink();
+            
+            // Simula a verificação de resposta
+            // Se for o oponente (IA), pode ter uma lógica simples de chance ou prioridade
+            // Se for o jogador, abriria um popup "Deseja ativar uma carta?"
+            
+            // Para este protótipo, vamos apenas resolver a chain se não houver resposta imediata
+            // ou se a resposta for automática (ex: Counter Trap obrigatória)
+            
+            // Exemplo de resposta automática (Counter Trap)
+            if (SpellTrapManager.Instance.CheckChainResponse(lastLink))
+            {
+                // Se encontrou resposta, ela foi adicionada à chain dentro do CheckChainResponse
+                // e o fluxo continua recursivamente
+                return;
+            }
+        }
+
+        // Se ninguém respondeu, resolve a chain
+        ResolveChain();
     }
 
     // Retorna o último elo da corrente (para Counter Traps e efeitos de resposta)
@@ -75,16 +110,25 @@ public class ChainManager : MonoBehaviour
             ChainLink link = currentChain[i];
             Debug.Log($"Resolvendo Chain Link {link.linkNumber}: {link.cardSource.CurrentCardData.name}");
             
-            // Feedback Visual da Resolução
-            if (link.cardSource != null)
+            if (link.isNegated)
             {
-                // link.cardSource.Highlight(); // Exemplo
+                Debug.Log($"Chain Link {link.linkNumber} foi NEGADO e não resolverá.");
+            }
+            else
+            {
+                // Feedback Visual da Resolução
+                if (link.cardSource != null)
+                {
+                    // link.cardSource.Highlight(); // Exemplo
+                }
+
+                // --- EXECUÇÃO DO EFEITO ---
+                if (CardEffectManager.Instance != null)
+                {
+                    CardEffectManager.Instance.ExecuteCardEffect(link.cardSource);
+                }
             }
 
-            // --- EXECUÇÃO DO EFEITO ---
-            // Aqui chamaria o EffectManager.Execute(link.effect)
-            // Por enquanto, assumimos que o efeito "acontece" visualmente
-            
             yield return new WaitForSeconds(0.5f); // Delay para visualização e impacto
 
             // --- LIMPEZA PÓS-RESOLUÇÃO ---
@@ -106,6 +150,17 @@ public class ChainManager : MonoBehaviour
         currentChain.Clear();
         isChainResolving = false;
         Debug.Log("Corrente Resolvida.");
+    }
+
+    // Método para negar um elo específico da corrente
+    public void NegateLink(int linkIndex)
+    {
+        // O índice é baseado em 1 (Link 1, Link 2...)
+        // Mas a lista é 0-based.
+        if (linkIndex > 0 && linkIndex <= currentChain.Count)
+        {
+            currentChain[linkIndex - 1].isNegated = true;
+        }
     }
 
     private bool IsContinuousType(CardData card)

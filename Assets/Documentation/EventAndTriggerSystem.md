@@ -1,7 +1,7 @@
 # Sistema de Eventos e Gatilhos (Event & Trigger System)
 
 ## Visão Geral
-Este documento descreve a arquitetura de eventos globais e gatilhos utilizada no projeto para implementar efeitos de cartas complexos. O sistema permite que cartas "escutem" ações do jogo (como invocações, ataques, dano, fases) e reajam de acordo.
+Este documento descreve a arquitetura de eventos globais, gatilhos e sistemas de jogo complexos. O sistema permite que cartas "escutem" ações do jogo (como invocações, ataques, fases) e reajam de acordo, além de gerenciar mecânicas como Fusão, Ritual e Correntes.
 
 A maior parte da lógica reside no `CardEffectManager.cs` (e suas partes parciais), que atua como um hub central de eventos.
 
@@ -72,7 +72,77 @@ Estes eventos monitoram mudanças no estado do tabuleiro.
 | **Dano Tomado** | `OnDamageTaken` | Disparado quando um jogador perde LP (batalha ou efeito). | *Numinous Healer*, *Attack and Receive*, *Dark Room of Nightmare*. |
 | **Ganho de Vida** | `OnLifePointsGained` | Disparado quando um jogador ganha LP. | *Fire Princess*, *Bad Reaction to Simochi* (inverte). |
 
-## 5. Sistema de Modificadores de Stats (Stat Modifiers)
+## 5. Sistema de Fusão (Fusion System)
+
+Este sistema gerencia a Invocação-Fusão.
+
+| Componente | Responsabilidade |
+| :--- | :--- |
+| **`CardEffectManager`** | A carta de fusão (ex: *Polymerization*) chama `GameManager.BeginFusionSummon(sourceCard)`. |
+| **`GameManager`** | `BeginFusionSummon` abre a UI de fusão. `PerformFusionSummon` executa a lógica final. |
+| **`FusionUI`** | Apresenta ao jogador as opções de Monstros de Fusão do Extra Deck e os materiais disponíveis na mão e no campo. |
+| **`FusionManager`** | `ValidateFusion` verifica se os materiais selecionados são válidos para o monstro de fusão escolhido. |
+
+### Fluxo de Fusão
+1.  O jogador ativa uma carta como *Polymerization*.
+2.  `GameManager.BeginFusionSummon` é chamado.
+3.  `UIManager` exibe a `FusionUI`.
+4.  O jogador seleciona o Monstro de Fusão e os materiais. A UI chama `FusionManager.ValidateFusion` a cada seleção para habilitar/desabilitar o botão de confirmação.
+5.  Ao confirmar, `GameManager.PerformFusionSummon` é chamado.
+6.  Os materiais e a carta de magia são enviados para o cemitério.
+7.  O Monstro de Fusão é invocado do Extra Deck para o campo.
+
+## 6. Sistema de Ritual (Ritual System)
+
+Este sistema gerencia a Invocação-Ritual.
+
+| Componente | Responsabilidade |
+| :--- | :--- |
+| **`CardEffectManager`** | A Magia de Ritual (ex: *Black Luster Ritual*) chama `GameManager.BeginRitualSummon(sourceCard)`. |
+| **`GameManager`** | `BeginRitualSummon` abre a UI de ritual. `PerformRitualSummon` executa a invocação. |
+| **`RitualUI`** | Apresenta ao jogador os Monstros de Ritual na mão e os monstros disponíveis para tributo na mão e no campo. |
+| **`RitualManager`** | `ValidateRitual` verifica se a Magia de Ritual corresponde ao monstro e se a soma dos níveis dos tributos é suficiente. |
+
+### Fluxo de Ritual
+1.  O jogador ativa uma Magia de Ritual.
+2.  `GameManager.BeginRitualSummon` é chamado.
+3.  `UIManager` exibe a `RitualUI`.
+4.  O jogador seleciona o Monstro de Ritual da mão e os tributos. A UI chama `RitualManager.ValidateRitual` para validar a seleção.
+5.  Ao confirmar, `GameManager.PerformRitualSummon` é chamado.
+6.  A Magia de Ritual e os tributos são enviados para o cemitério.
+7.  O Monstro de Ritual é invocado da mão para o campo.
+
+## 7. Sistema de Corrente (Chain System)
+
+O `ChainManager` gerencia a pilha de ativação de efeitos, permitindo respostas e garantindo a ordem de resolução correta (LIFO - Last-In, First-Out).
+
+| Componente | Responsabilidade |
+| :--- | :--- |
+| **`ChainManager`** | Mantém a lista de `ChainLink`s. Controla a adição de elos e a resolução da corrente. |
+| **`ChainLink` (Classe)** | Representa um único elo na corrente. Contém a carta fonte, o jogador, e um estado `isNegated`. |
+| **`SpellTrapManager`** | `CheckChainResponse` verifica se o oponente tem uma carta válida para responder (encadear). |
+| **`GameManager`** | Inicia a corrente ao ativar uma carta, chamando `ChainManager.AddToChain`. |
+
+### Fluxo da Corrente
+1.  Jogador A ativa uma carta (ex: *Raigeki*). `GameManager` chama `ChainManager.AddToChain`. Isso cria o **Chain Link 1**.
+2.  O `ChainManager` pausa e chama `SpellTrapManager.CheckChainResponse` para o Jogador B.
+3.  O `SpellTrapManager` encontra uma *Counter Trap* setada (ex: *Magic Jammer*) e pergunta ao Jogador B se deseja ativar.
+4.  Jogador B confirma. `GameManager` ativa *Magic Jammer*, que chama `ChainManager.AddToChain`. Isso cria o **Chain Link 2**.
+5.  O `ChainManager` pausa novamente e verifica se o Jogador A tem uma resposta para o Link 2.
+6.  Nenhuma resposta é encontrada. A corrente começa a resolver.
+7.  **Resolução (LIFO):**
+    *   **Resolve Link 2:** O efeito do *Magic Jammer* é executado. Ele nega o Link 1 (`ChainManager.NegateLink(1)`).
+    *   **Resolve Link 1:** O `ChainManager` verifica o estado `isNegated` do Link 1. Como está negado, o efeito do *Raigeki* não acontece.
+8.  A corrente termina. As cartas usadas (que não são contínuas) são enviadas ao cemitério.
+
+## 8. Outros Sistemas de Suporte
+
+| Evento | Método | Descrição | Exemplos de Uso |
+| :--- | :--- | :--- | :--- |
+| **Dano Tomado** | `OnDamageTaken` | Disparado quando um jogador perde LP (batalha ou efeito). | *Numinous Healer*, *Attack and Receive*, *Dark Room of Nightmare*. |
+| **Ganho de Vida** | `OnLifePointsGained` | Disparado quando um jogador ganha LP. | *Fire Princess*, *Bad Reaction to Simochi* (inverte). |
+
+### Sistema de Modificadores de Stats (Stat Modifiers)
 
 O sistema de `StatModifier` permite alterações temporárias ou permanentes em ATK/DEF sem alterar os valores base originais.
 
@@ -80,7 +150,7 @@ O sistema de `StatModifier` permite alterações temporárias ou permanentes em 
 *   **Operações:** `Add` (soma), `Multiply` (multiplica), `Set` (define valor fixo).
 *   **Uso:** `card.AddStatModifier(new StatModifier(...))`
 
-## 6. Sistema de Seleção (Targeting)
+### Sistema de Seleção (Targeting)
 
 O `SpellTrapManager` e `GameManager` fornecem métodos para seleção interativa de alvos.
 
@@ -88,7 +158,7 @@ O `SpellTrapManager` e `GameManager` fornecem métodos para seleção interativa
 *   `OpenCardSelection(list, title, callback)`: Abre um modal com uma lista de cartas (do Deck, GY, Mão) para escolha.
 *   `OpenCardMultiSelection(...)`: Permite escolher múltiplas cartas de uma lista.
 
-## 7. Sistema de Moedas e Dados
+### Sistema de Moedas e Dados
 
 *   `GameManager.Instance.TossCoin(count, callback)`: Rola moedas e retorna o número de caras.
 *   `Random.Range(1, 7)`: Usado para rolar dados (D6).

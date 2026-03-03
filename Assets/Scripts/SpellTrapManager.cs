@@ -148,8 +148,50 @@ public class SpellTrapManager : MonoBehaviour
     // Verifica se há cartas que podem ser encadeadas (Chained)
     public bool CheckChainResponse(ChainManager.ChainLink lastLink)
     {
-        // Lógica futura: Verificar Trap Cards ou Quick-Play Spells que podem responder
-        // Ex: Se o oponente ativou algo, verificar minhas armadilhas
+        if (lastLink == null || lastLink.cardSource == null) return false;
+
+        // Determina quem deve responder (o oponente de quem ativou o último elo)
+        bool responderIsPlayer = !lastLink.isPlayerEffect;
+
+        // Procura por cartas setadas ou na mão (se permitido) que possam responder
+        // Simplificação: Verifica apenas Traps setadas no campo do respondedor
+        if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null)
+        {
+            Transform[] zones = responderIsPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+
+            foreach (Transform zone in zones)
+            {
+                if (zone.childCount > 0)
+                {
+                    CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                    // Verifica se é Trap e se está virada para baixo (Set)
+                    if (cd != null && cd.CurrentCardData.type.Contains("Trap") && cd.isFlipped)
+                    {
+                        // Lógica específica de Counter Trap ou resposta genérica
+                        // Exemplo: Magic Jammer vs Spell
+                        if (lastLink.cardSource.CurrentCardData.type.Contains("Spell") && cd.CurrentCardData.name == "Magic Jammer")
+                        {
+                            // Encontrou uma resposta válida!
+                            // Se for o jogador, pergunta. Se for IA, ativa.
+                            if (responderIsPlayer)
+                            {
+                                UIManager.Instance.ShowConfirmation($"Ativar {cd.CurrentCardData.name} em resposta?", () => {
+                                    GameManager.Instance.PlaySpellTrap(cd.gameObject, cd.CurrentCardData, false);
+                                });
+                                return true; // Interrompe a resolução automática para esperar o input do jogador
+                            }
+                            else
+                            {
+                                // IA responde
+                                Debug.Log($"IA responde com {cd.CurrentCardData.name}!");
+                                GameManager.Instance.PlaySpellTrap(cd.gameObject, cd.CurrentCardData, false);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         
         return false;
     }
