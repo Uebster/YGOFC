@@ -1088,6 +1088,27 @@ public partial class CardEffectManager
         }
     }
 
+        // Novo Hook para dano de batalha causado (chamado pelo BattleManager)
+    public void OnDamageDealtImpl(CardDisplay attacker, CardDisplay target, int amount)
+    {
+        // Robbin' Goblin (1543): Se um monstro seu causa dano, oponente descarta 1
+        CheckActiveCards("1543", (source) => {
+            if (source.isPlayerCard && attacker != null && attacker.isPlayerCard && amount > 0)
+            {
+                Debug.Log("Robbin' Goblin: Oponente descarta 1 carta aleatória.");
+                GameManager.Instance.DiscardRandomHand(false, 1);
+            }
+        });
+
+        // Robbin' Zombie (1544): Se um monstro seu causa dano, oponente envia carta do topo do Deck para o GY
+        CheckActiveCards("1544", (source) => {
+            if (source.isPlayerCard && attacker != null && attacker.isPlayerCard && amount > 0)
+            {
+                Debug.Log("Robbin' Zombie: Oponente envia 1 carta do topo do Deck para o GY.");
+                GameManager.Instance.MillCards(false, 1);
+            }
+        });
+    }
     public void OnDamageTaken(bool isPlayer, int amount)
     {
         // Numinous Healer (1360), Attack and Receive (0117) - Geralmente são Traps ativáveis, não automáticas.
@@ -1645,6 +1666,18 @@ public partial class CardEffectManager
             if (attacker != null) GameManager.Instance.BanishCard(attacker);
             if (target != null) GameManager.Instance.BanishCard(target);
         }
+    
+    // Rigorous Reaver (1532): Se destruído em batalha, o atacante perde 500 ATK/DEF
+    if (target != null && target.CurrentCardData.id == "1532")
+    {
+        // Verifica se o alvo foi destruído
+        if (attacker != null && attacker.currentAtk >= target.currentDef)
+        {
+            Debug.Log("Rigorous Reaver: Atacante perde 500 ATK/DEF.");
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, -500, target));
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, -500, target));
+        }
+    }
 
         // Dark Balter the Terrible (0397): Nega efeitos de monstros destruídos
         if (attacker != null && attacker.CurrentCardData.id == "0397" && target != null)

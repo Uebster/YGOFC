@@ -1165,6 +1165,12 @@ public class GameManager : MonoBehaviour
         {
             CardEffectManager.Instance.OnDamageTaken(false, amount);
         }
+
+        // Notifica dano de batalha causado (para Robbin' Goblin, etc)
+        if (CardEffectManager.Instance != null && BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+        {
+            CardEffectManager.Instance.OnDamageDealt(BattleManager.Instance.currentAttacker, null, amount);
+        }
     }
 
     // --- CONDIÇÕES DE VITÓRIA ESPECIAIS ---

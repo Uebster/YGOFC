@@ -12,73 +12,76 @@ public partial class CardEffectManager
         AddEffect("1502", c => Effect_SearchDeck(c, "Yellow Gadget"));
 
         // 1503 - Red Medicine (Gain 500 LP)
-        AddEffect("1503", c => Effect_GainLP(c, 500));
+        AddEffect("1503", Effect_1503_RedMedicine);
+
+        // 1504 - Red-Eyes B. Chick
+        AddEffect("1504", Effect_1504_RedEyesBChick);
 
         // 1507 - Reflect Bounder (Damage on attack)
-        AddEffect("1507", c => Debug.Log("Reflect Bounder: Dano igual ATK do atacante."));
+        AddEffect("1507", Effect_1507_ReflectBounder);
 
         // 1508 - Regenerating Mummy (Return to hand)
-        AddEffect("1508", c => Debug.Log("Regenerating Mummy: Retorna para a mão se descartado."));
+        AddEffect("1508", Effect_1508_RegeneratingMummy);
 
         // 1509 - Reinforcement of the Army (Search Warrior)
-        AddEffect("1509", c => Effect_SearchDeck(c, "Warrior"));
+        AddEffect("1509", Effect_1509_ReinforcementOfTheArmy);
 
         // 1510 - Reinforcements (Buff +500)
-        AddEffect("1510", c => Effect_BuffStats(c, 500, 0));
+        AddEffect("1510", Effect_1510_Reinforcements);
 
         // 1511 - Release Restraint (Tribute Gearfried -> SS Swordmaster)
-        AddEffect("1511", c => Debug.Log("Release Restraint: Invoca Gearfried Swordmaster."));
+        AddEffect("1511", Effect_1511_ReleaseRestraint);
 
         // 1512 - Relieve Monster (Return -> SS Lv4)
-        AddEffect("1512", c => Debug.Log("Relieve Monster: Retorna monstro, invoca Lv4 da mão."));
+        AddEffect("1512", Effect_1512_RelieveMonster);
 
         // 1513 - Relinquished (Ritual Absorb)
-        AddEffect("1513", c => Debug.Log("Relinquished: Absorve monstro do oponente."));
+        AddEffect("1513", Effect_1513_Relinquished);
 
         // 1514 - Reload (Shuffle Hand Draw)
-        AddEffect("1514", c => Debug.Log("Reload: Embaralha mão e compra o mesmo número."));
+        AddEffect("1514", Effect_1514_Reload);
 
         // 1515 - Remove Brainwashing (Control Reset)
-        AddEffect("1515", c => Debug.Log("Remove Brainwashing: Controle retorna aos donos."));
+        AddEffect("1515", Effect_1515_RemoveBrainwashing);
 
         // 1516 - Remove Trap (Destroy Face-up Trap)
-        AddEffect("1516", c => Effect_DestroyType(c, "Trap")); // Simplificado
+        AddEffect("1516", Effect_1516_RemoveTrap);
 
         // 1517 - Rescue Cat (Tribute -> SS 2 Beasts)
-        AddEffect("1517", c => Debug.Log("Rescue Cat: Invoca 2 Bestas Lv3 ou menor."));
+        AddEffect("1517", Effect_1517_RescueCat);
 
         // 1518 - Reshef the Dark Being (Discard Spell -> Control)
-        AddEffect("1518", c => Debug.Log("Reshef: Descarta Magia para controlar monstro."));
+        AddEffect("1518", Effect_1518_ReshefTheDarkBeing);
 
         // 1520 - Restructer Revolution (Burn per hand card)
-        AddEffect("1520", c => Debug.Log("Restructer Revolution: 200 dano por carta na mão do oponente."));
+        AddEffect("1520", Effect_1520_RestructerRevolution);
 
         // 1521 - Resurrection of Chakra (Ritual)
-        AddEffect("1521", c => Debug.Log("Resurrection of Chakra: Ritual."));
+        AddEffect("1521", Effect_1521_ResurrectionOfChakra);
 
         // 1522 - Return Zombie (Pay 500 Recycle)
-        AddEffect("1522", c => { Effect_PayLP(c, 500); Debug.Log("Return Zombie: Retorna do GY para mão."); });
+        AddEffect("1522", Effect_1522_ReturnZombie);
 
         // 1523 - Return from the Different Dimension (Pay half LP -> SS Banished)
-        AddEffect("1523", c => Debug.Log("Return from DD: Invoca monstros banidos."));
+        AddEffect("1523", Effect_1523_ReturnFromTheDifferentDimension);
 
         // 1524 - Return of the Doomed (Discard -> Recycle)
-        AddEffect("1524", c => Debug.Log("Return of the Doomed: Recupera monstro destruído."));
+        AddEffect("1524", Effect_1524_ReturnOfTheDoomed);
 
         // 1525 - Reversal Quiz (Swap LP)
-        AddEffect("1525", c => Debug.Log("Reversal Quiz: Troca LP com oponente."));
+        AddEffect("1525", Effect_1525_ReversalQuiz);
 
         // 1526 - Reverse Trap (Invert mods)
         AddEffect("1526", Effect_1526_ReverseTrap);
 
         // 1527 - Revival Jam (Pay 1000 Revive)
-        AddEffect("1527", Effect_1527_RevivalJam);
+        AddEffect("1527", c => Debug.Log("Revival Jam: Efeito de renascimento configurado."));
 
         // 1528 - Revival of Dokurorider (Ritual)
         AddEffect("1528", Effect_1528_RevivalOfDokurorider);
 
         // 1532 - Rigorous Reaver (Flip Discard)
-        AddEffect("1532", Effect_1532_RigorousReaver);
+        AddEffect("1532", c => Debug.Log("Rigorous Reaver: Efeitos de FLIP e batalha configurados."));
 
         // 1533 - Ring of Destruction (Destroy & Burn)
         AddEffect("1533", Effect_1533_RingOfDestruction);
@@ -90,7 +93,7 @@ public partial class CardEffectManager
         AddEffect("1535", Effect_1535_Riryoku);
 
         // 1536 - Riryoku Field (Negate Spell)
-        AddEffect("1536", Effect_1536_RiryokuField);
+        AddEffect("1536", c => Debug.Log("Riryoku Field: Negação de alvo (Requer Chain)."));
 
         // 1537 - Rising Air Current (Field Wind +500/-400)
         AddEffect("1537", Effect_1537_RisingAirCurrent);
@@ -105,43 +108,43 @@ public partial class CardEffectManager
         AddEffect("1540", Effect_1540_RitualWeapon);
 
         // 1541 - Rivalry of Warlords (Type Lock)
-        AddEffect("1541", Effect_1541_RivalryOfWarlords);
+        AddEffect("1541", c => Debug.Log("Rivalry of Warlords: Restrição de Tipo ativa (Lógica no SummonManager)."));
 
         // 1543 - Robbin' Goblin (Damage -> Discard)
-        AddEffect("1543", Effect_1543_RobbinGoblin);
+        AddEffect("1543", c => Debug.Log("Robbin' Goblin: Ativo."));
 
         // 1544 - Robbin' Zombie (Damage -> Mill)
-        AddEffect("1544", Effect_1544_RobbinZombie);
+        AddEffect("1544", c => Debug.Log("Robbin' Zombie: Ativo."));
 
         // 1548 - Roc from the Valley of Haze (Recycle)
-        AddEffect("1548", Effect_1548_RocFromTheValleyOfHaze);
+        AddEffect("1548", c => Debug.Log("Roc: Efeito de reciclagem configurado."));
 
         // 1549 - Rock Bombardment (Mill Rock -> 500 dmg)
         AddEffect("1549", Effect_1549_RockBombardment);
 
         // 1553 - Rocket Jumper (Direct Attack)
-        AddEffect("1553", Effect_1553_RocketJumper);
+        AddEffect("1553", c => Debug.Log("Rocket Jumper: Pode atacar diretamente se oponente só tiver defesa."));
 
         // 1554 - Rocket Warrior (Battle protection)
-        AddEffect("1554", Effect_1554_RocketWarrior);
+        AddEffect("1554", c => Debug.Log("Rocket Warrior: Efeitos de batalha configurados."));
 
         // 1555 - Rod of Silence - Kay'est (Equip +500 DEF)
         AddEffect("1555", Effect_1555_RodOfSilenceKayest);
 
         // 1556 - Rod of the Mind's Eye (Equip 1000 dmg)
-        AddEffect("1556", Effect_1556_RodOfTheMindsEye);
+        AddEffect("1556", c => Effect_Equip(c, 0, 0));
 
         // 1559 - Rope of Life (Discard -> Revive +800)
-        AddEffect("1559", Effect_1559_RopeOfLife);
+        AddEffect("1559", c => Debug.Log("Rope of Life: Armadilha de renascimento configurada."));
 
         // 1561 - Roulette Barrel (Dice Destroy)
         AddEffect("1561", Effect_1561_RouletteBarrel);
 
         // 1562 - Royal Command (Negate Flip)
-        AddEffect("1562", Effect_1562_RoyalCommand);
+        AddEffect("1562", c => Debug.Log("Royal Command: Efeitos Flip negados (Passivo)."));
 
         // 1563 - Royal Decree (Negate Traps)
-        AddEffect("1563", Effect_1563_RoyalDecree);
+        AddEffect("1563", c => Debug.Log("Royal Decree: Outras Traps negadas (Passivo)."));
 
         // 1565 - Royal Keeper (Flip +300)
         AddEffect("1565", Effect_1565_RoyalKeeper);
@@ -150,10 +153,10 @@ public partial class CardEffectManager
         AddEffect("1566", Effect_1566_RoyalMagicalLibrary);
 
         // 1567 - Royal Oppression (Pay 800 Negate SS)
-        AddEffect("1567", Effect_1567_RoyalOppression);
+        AddEffect("1567", c => Debug.Log("Royal Oppression: Negação de SS (Requer Chain)."));
 
         // 1568 - Royal Surrender (Negate Continuous Trap)
-        AddEffect("1568", Effect_1568_RoyalSurrender);
+        AddEffect("1568", c => Debug.Log("Royal Surrender: Nega Trap Contínua (Requer Chain)."));
 
         // 1569 - Royal Tribute (Necrovalley Discard)
         AddEffect("1569", Effect_1569_RoyalTribute);
@@ -162,70 +165,71 @@ public partial class CardEffectManager
         AddEffect("1571", Effect_1571_RushRecklessly);
 
         // 1572 - Ryu Kokki (Destroy Warrior/Spellcaster)
-        AddEffect("1572", Effect_1572_RyuKokki);
+        AddEffect("1572", c => Debug.Log("Ryu Kokki: Efeito de batalha configurado."));
 
         // 1573 - Ryu Senshi (Pay 1000 Negate Trap)
-        AddEffect("1573", Effect_1573_RyuSenshi);
+        AddEffect("1573", c => Debug.Log("Ryu Senshi: Efeitos de negação ativos."));
 
         // 1575 - Ryu-Kishin Clown (Change Pos)
         AddEffect("1575", Effect_1575_RyuKishinClown);
 
-        // 1578 - Sacred Crane (Draw on SS)
-        AddEffect("1578", c => { GameManager.Instance.DrawCard(); Debug.Log("Sacred Crane: Compra 1."); });
+        // 1576 - Sacred Crane (Draw on SS)
+        AddEffect("1576", c => Debug.Log("Sacred Crane: Efeito de compra no OnSpecialSummon."));
 
-        // 1579 - Sacred Phoenix of Nephthys (Revive/Nuke S/T)
-        AddEffect("1579", c => Debug.Log("Sacred Phoenix: Renasce e destrói S/T."));
+        // 1578 - Sacred Phoenix of Nephthys (Revive/Nuke S/T)
+        AddEffect("1578", c => Debug.Log("Sacred Phoenix: Renasce e destrói S/T."));
 
-        // 1580 - Sage's Stone (SS DM)
-        AddEffect("1580", c => Debug.Log("Sage's Stone: Invoca Dark Magician se tiver DMG."));
+        // 1579 - Sage's Stone (SS DM)
+        AddEffect("1579", Effect_1579_SagesStone);
 
-        // 1582 - Sakuretsu Armor (Destroy Attacker)
-        AddEffect("1582", c => Debug.Log("Sakuretsu Armor: Destrói monstro atacante."));
+        // 1581 - Sakuretsu Armor (Destroy Attacker)
+        AddEffect("1581", c => Debug.Log("Sakuretsu Armor: Destrói monstro atacante."));
 
-        // 1583 - Salamandra (Equip Fire +700)
-        AddEffect("1583", c => Effect_Equip(c, 700, 0, "Fire"));
+        // 1582 - Salamandra (Equip Fire +700)
+        AddEffect("1582", Effect_1582_Salamandra);
 
-        // 1584 - Salvage (Add 2 Water)
-        AddEffect("1584", c => Debug.Log("Salvage: Recupera 2 Water 1500- ATK."));
+        // 1583 - Salvage (Add 2 Water)
+        AddEffect("1583", Effect_1583_Salvage);
 
-        // 1585 - Sand Gambler (Coin Destroy)
-        AddEffect("1585", c => Debug.Log("Sand Gambler: Moedas para destruir monstros."));
+        // 1584 - Sand Gambler (Coin Destroy)
+        AddEffect("1584", Effect_1584_SandGambler);
 
-        // 1587 - Sanga of the Thunder (Zero ATK)
-        AddEffect("1587", c => Debug.Log("Sanga: Zera ATK do atacante."));
+        // 1586 - Sanga of the Thunder (Zero ATK)
+        AddEffect("1586", c => Debug.Log("Sanga: Zera ATK do atacante."));
 
-        // 1588 - Sangan (Search 1500-)
-        AddEffect("1588", c => Effect_SearchDeck(c, "Monster", "", 1500));
-        AddEffect("1588", c => Debug.Log("Sangan: Busca monstro 1500- ATK."));
+        // 1587 - Sangan (Search 1500-)
+        AddEffect("1587", c => Debug.Log("Sangan: Busca monstro 1500- ATK."));
 
-        // 1590 - Sasuke Samurai (Destroy Face-down)
-        AddEffect("1590", c => Debug.Log("Sasuke Samurai: Destrói face-down antes do cálculo."));
+        // 1589 - Sasuke Samurai (Destroy Face-down)
+        AddEffect("1589", c => Debug.Log("Sasuke Samurai: Destrói face-down antes do cálculo."));
 
-        // 1591 - Sasuke Samurai #2 (Pay 800 No S/T)
-        AddEffect("1591", c => { Effect_PayLP(c, 800); Debug.Log("Sasuke Samurai #2: Impede S/T."); });
+        // 1590 - Sasuke Samurai #2 (Pay 800 No S/T)
+        AddEffect("1590", c => Debug.Log("Sasuke Samurai #2: Bloqueio de S/T na batalha."));
 
-        // 1592 - Sasuke Samurai #3 (Hand Fill)
-        AddEffect("1592", c => Debug.Log("Sasuke Samurai #3: Oponente compra até ter 7 cartas."));
+        // 1591 - Sasuke Samurai #3 (Hand Fill)
+        AddEffect("1591", Effect_1591_SasukeSamurai3);
 
-        // 1593 - Sasuke Samurai #4 (Coin Destroy)
-        AddEffect("1593", c => Debug.Log("Sasuke Samurai #4: Moeda para destruir monstro."));
+        // 1592 - Sasuke Samurai #4 (Coin Destroy)
+        AddEffect("1592", c => Debug.Log("Sasuke Samurai #4: Moeda para destruir monstro."));
 
-        // 1594 - Satellite Cannon (Gain ATK)
-        AddEffect("1594", c => Debug.Log("Satellite Cannon: Ganha 1000 ATK por turno."));
+        // 1593 - Satellite Cannon (Gain ATK)
+        AddEffect("1593", c => Debug.Log("Satellite Cannon: Ganha 1000 ATK por turno."));
 
-        // 1595 - Scapegoat (SS 4 Tokens)
-        AddEffect("1595", Effect_Scapegoat);
-        AddEffect("1595", c => Debug.Log("Scapegoat: Invoca 4 Sheep Tokens."));
+        // 1594 - Scapegoat (SS 4 Tokens)
+        AddEffect("1594", Effect_1594_Scapegoat);
+
+        // 1595 - Scapeghost
+        AddEffect("1595", Effect_1595_Scapeghost);
 
         // 1597 - Scroll of Bewitchment (Equip Change Attribute)
-        AddEffect("1597", c => Debug.Log("Scroll of Bewitchment: Muda atributo."));
+        AddEffect("1597", Effect_1597_ScrollOfBewitchment);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 1601 - 1700)
         // =========================================================================================
 
         // 1601 - Seal of the Ancients (Pay 1000, Reveal Face-down)
-        AddEffect("1601", c => { Effect_PayLP(c, 1000); Debug.Log("Seal of the Ancients: Revela todas as cartas face-down do oponente."); });
+        AddEffect("1600", Effect_1600_SealOfTheAncients);
 
         // 1603 - Sebek's Blessing (Quick-Play: Gain LP = Damage)
         AddEffect("1603", c => Debug.Log("Sebek's Blessing: Ganha LP igual ao dano direto causado."));

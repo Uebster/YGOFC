@@ -97,8 +97,16 @@ public partial class CardEffectManager
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "Gearfried the Iron Knight",
                 (tribute) => {
+                    // Busca e invoca o Swordmaster do deck ou mão
+                    List<CardData> searchSpace = new List<CardData>();
+                    searchSpace.AddRange(GameManager.Instance.GetPlayerHandData());
+                    searchSpace.AddRange(GameManager.Instance.GetPlayerMainDeck());
+
+                    CardData swordmaster = searchSpace.Find(c => c.id == "0738"); // ID de Gearfried the Swordmaster
+                    if (swordmaster == null) return;
+
                     GameManager.Instance.TributeCard(tribute);
-                    Effect_SearchDeck(source, "Gearfried the Swordmaster", "Monster"); // Simplificado para busca, deveria ser SS
+                    GameManager.Instance.SpecialSummonFromData(swordmaster, source.isPlayerCard);
                 }
             );
         }
@@ -137,12 +145,14 @@ public partial class CardEffectManager
         if (source.isOnField)
         {
             if (SpellTrapManager.Instance != null)
-            {
+            {   
+                // Previne que o efeito seja usado mais de uma vez por turno (se necessário)
+                if (source.hasUsedEffectThisTurn) return;
+
                 SpellTrapManager.Instance.StartTargetSelection(
                     (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
                     (target) => {
                         Debug.Log($"Relinquished: Absorvendo {target.CurrentCardData.name}.");
-                        // Lógica de equipar (mover visualmente para S/T e linkar)
                         GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
                         
                         // Copia stats
@@ -151,7 +161,10 @@ public partial class CardEffectManager
                         
                         // Move visualmente
                         target.transform.SetParent(source.transform);
-                        target.transform.localPosition = new Vector3(0.2f, 0.2f, 0.1f);
+                        target.transform.localPosition = new Vector3(0.2f, 0.2f, -0.1f); // Ajuste de Z para ficar "atrás"
+                        target.transform.localRotation = Quaternion.identity;
+                        target.isInteractable = false; // Não pode ser clicado como se estivesse no campo
+                        source.hasUsedEffectThisTurn = true;
                     }
                 );
             }
@@ -162,10 +175,16 @@ public partial class CardEffectManager
     void Effect_1514_Reload(CardDisplay source)
     {
         // Add all cards in your hand to the Deck and shuffle it. Then, draw the same number of cards you added to the Deck.
-        int handCount = GameManager.Instance.GetPlayerHandData().Count;
+        List<GameObject> handObjects = new List<GameObject>(GameManager.Instance.playerHand);
+        int handCount = handObjects.Count;
+
         if (handCount > 0)
         {
-            GameManager.Instance.DiscardHand(true); // Simulado, deveria ser shuffle
+            foreach(var cardGO in handObjects)
+            {
+                GameManager.Instance.ReturnToDeck(cardGO.GetComponent<CardDisplay>(), false);
+            }
+            GameManager.Instance.ShuffleDeck(true);
             for(int i=0; i<handCount; i++) GameManager.Instance.DrawCard(true);
         }
     }
@@ -175,7 +194,16 @@ public partial class CardEffectManager
     {
         // Control of all monsters on the field returns to their original owners.
         Debug.Log("Remove Brainwashing: Controle de todos os monstros resetado.");
-        // Iterar todos os monstros e verificar se o dono é diferente do controlador.
+        List<CardDisplay> allMonsters = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allMonsters);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allMonsters);
+        }
+        foreach(var monster in allMonsters)
+        {
+            // Uma lógica de "dono original" seria necessária aqui.
+        }
     }
 
     // 1516 - Remove Trap
@@ -213,7 +241,11 @@ public partial class CardEffectManager
                     foreach(var c in selected)
                     {
                         GameManager.Instance.SpecialSummonFromData(c, source.isPlayerCard);
-                        deck.Remove(c);
+                        // TODO: Agendar destruição na End Phase
+                        // Uma forma simples é adicionar a uma lista no GameManager ou CardEffectManager
+                        // e processar essa lista na End Phase.
+                        // Ex: GameManager.Instance.ScheduleForDestruction(cardDisplay);
+                        deck.Remove(c); 
                         // TODO: Agendar destruição na End Phase
                     }
                     GameManager.Instance.ShuffleDeck(source.isPlayerCard);
@@ -289,11 +321,13 @@ public partial class CardEffectManager
         if (Effect_PayLP(source, cost))
         {
             List<CardData> banished = GameManager.Instance.GetPlayerRemoved();
-            foreach(var c in banished)
+            List<CardData> toSummon = new List<CardData>(banished);
+            banished.Clear();
+            foreach(var c in toSummon)
             {
+                // TODO: Agendar banimento na End Phase
                 GameManager.Instance.SpecialSummonFromData(c, source.isPlayerCard);
             }
-            banished.Clear();
         }
     }
 
@@ -347,6 +381,7 @@ public partial class CardEffectManager
             int oLP = GameManager.Instance.opponentLP;
             GameManager.Instance.playerLP = oLP;
             GameManager.Instance.opponentLP = pLP;
+            // TODO: Chamar método para atualizar a UI de LP
         }
     }
 
@@ -401,11 +436,9 @@ public partial class CardEffectManager
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
                     GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
                     Destroy(t.gameObject);
-                    
-                    Effect_DirectDamage(source, dmg); // Dano ao oponente (ou player se source for opp)
-                    // Dano ao dono da carta (source)
-                    if (source.isPlayerCard) GameManager.Instance.DamagePlayer(dmg);
-                    else GameManager.Instance.DamageOpponent(dmg);
+
+                    GameManager.Instance.DamagePlayer(dmg);
+                    GameManager.Instance.DamageOpponent(dmg);
                 }
             );
         }
@@ -778,7 +811,13 @@ public partial class CardEffectManager
         // If you control a face-up "Dark Magician Girl": Special Summon 1 "Dark Magician" from your hand or Deck.
         if (GameManager.Instance.IsCardActiveOnField("0420")) // Dark Magician Girl
         {
-            Effect_SearchDeck(source, "Dark Magician", "Monster"); // Simplificado para busca, deveria ser SS
+            List<CardData> searchSpace = new List<CardData>();
+            searchSpace.AddRange(GameManager.Instance.GetPlayerHandData());
+            searchSpace.AddRange(GameManager.Instance.GetPlayerMainDeck());
+
+            CardData darkMagician = searchSpace.Find(c => c.id == "0419"); // ID do Dark Magician
+            if (darkMagician == null) return;
+            GameManager.Instance.SpecialSummonFromData(darkMagician, source.isPlayerCard);
         }
     }
 
@@ -934,10 +973,12 @@ public partial class CardEffectManager
     void Effect_1600_SealOfTheAncients(CardDisplay source)
     {
         // Pay 1000 LP. Look at all cards your opponent has set on the field.
-        if (Effect_PayLP(source, 1000))
+        if (GameManager.Instance.PayLifePoints(source.isPlayerCard, 1000))
         {
             Debug.Log("Seal of the Ancients: Revelando cartas setadas do oponente.");
             // Lógica de revelar
+            // TODO: Implementar uma forma de "revelar" as cartas para o jogador
+            // sem ativar seus efeitos, talvez mostrando-as no CardViewer ao passar o mouse.
         }
     }
 }
