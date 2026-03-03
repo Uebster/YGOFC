@@ -146,7 +146,7 @@ public partial class CardEffectManager
     void Effect_0519_DoriadosBlessing(CardDisplay source)
     {
         // Ritual Spell for Doriado.
-        Debug.Log("Doriado's Blessing: Ritual.");
+        GameManager.Instance.BeginRitualSummon(source);
     }
 
     void Effect_0522_DoubleAttack(CardDisplay source)
@@ -471,7 +471,7 @@ public partial class CardEffectManager
     void Effect_0557_EarthChant(CardDisplay source)
     {
         // Ritual Spell for EARTH Ritual Monster.
-        Debug.Log("Earth Chant: Ritual de Terra.");
+        GameManager.Instance.BeginRitualSummon(source);
     }
 
     void Effect_0559_Earthquake(CardDisplay source)

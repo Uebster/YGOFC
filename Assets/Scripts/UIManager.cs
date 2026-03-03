@@ -49,6 +49,7 @@ public class UIManager : MonoBehaviour
     public PositionSelectionUI positionSelectionModal; // Novo modal específico
     public CardSelectionUI cardSelectionModal; // Novo modal de seleção múltipla
     public FusionUI fusionUI; // Novo modal para Fusão
+    public RitualUI ritualUI; // Novo modal para Ritual
 
     [Header("Debug")]
     public bool testDuelDirectly = false;
@@ -135,6 +136,7 @@ public class UIManager : MonoBehaviour
         if (positionSelectionModal != null) positionSelectionModal.gameObject.SetActive(false);
         if (cardSelectionModal != null) cardSelectionModal.gameObject.SetActive(false);
         if (fusionUI != null) fusionUI.gameObject.SetActive(false);
+        if (ritualUI != null) ritualUI.gameObject.SetActive(false);
 
         // 2. Ativa apenas a tela desejada
         if (screenToShow != null)
@@ -221,6 +223,18 @@ public class UIManager : MonoBehaviour
         else
         {
             Debug.LogError("UIManager: FusionUI não atribuído!");
+        }
+    }
+
+    public void ShowRitualUI(CardDisplay source)
+    {
+        if (ritualUI != null)
+        {
+            ritualUI.Show(source);
+        }
+        else
+        {
+            Debug.LogError("UIManager: RitualUI não atribuído!");
         }
     }
 

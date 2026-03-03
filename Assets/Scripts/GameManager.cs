@@ -186,19 +186,19 @@ public class GameManager : MonoBehaviour
             DrawInitialHand(5);
         }
     }
+
     public void RemoveCardFromHand(CardData card, bool isPlayer)
     {
-        List<CardData> hand = isPlayer ? playerHandDisplay.pileData : opponentHandDisplay.pileData;
-        if (hand.Contains(card))
+        if (card == null) return;
+        List<GameObject> hand = isPlayer ? playerHand : opponentHand;
+        GameObject cardToRemove = hand.FirstOrDefault(go => go.GetComponent<CardDisplay>().CurrentCardData == card);
+        if (cardToRemove != null)
         {
-            hand.Remove(card);
-             if(isPlayer) playerHandDisplay.DisplayCards();
-             else opponentHandDisplay.DisplayCards();
-        } else
-        {
-            Debug.LogWarning("Esta carta não está na mão.");
+            hand.Remove(cardToRemove);
+            Destroy(cardToRemove);
         }
     }
+
     public void SetPlayerProfile(string newName, string newSaveID)
     {
         playerName = newName;
@@ -260,7 +260,6 @@ public class GameManager : MonoBehaviour
         if (BattleManager.Instance == null) CreateManager<BattleManager>();
         if (SpellTrapManager.Instance == null) CreateManager<SpellTrapManager>();
         if (ChainManager.Instance == null) CreateManager<ChainManager>();
-        if (FusionManager.Instance == null) CreateManager<FusionManager>();
         if (CardEffectManager.Instance == null) CreateManager<CardEffectManager>();
         
         // Cria o gerenciador de testes se o modo estiver ativo
@@ -1337,6 +1336,59 @@ public class GameManager : MonoBehaviour
         return null;
     }
 
+        // --- SISTEMA DE RITUAL ---
+
+    public void BeginRitualSummon(CardDisplay sourceCard)
+    {
+        // 1. Verifica se tem Monstros de Ritual na mão
+        var ritualMonsters = GetPlayerHandData().Where(c => c.type.Contains("Ritual")).ToList();
+        if (ritualMonsters.Count == 0)
+        {
+            Debug.Log("Nenhum Monstro de Ritual na mão.");
+            return;
+        }
+
+        // 2. Abre a UI de Ritual
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowRitualUI(sourceCard);
+        }
+    }
+
+    public void PerformRitualSummon(CardDisplay sourceCard, CardData ritualMonster, List<CardData> tributes)
+    {
+        if (ritualMonster == null || tributes == null || tributes.Count == 0)
+        {
+            Debug.LogError("PerformRitualSummon: Dados inválidos.");
+            return;
+        }
+
+        Debug.Log($"Realizando Invocação-Ritual de {ritualMonster.name}...");
+
+        // 1. Envia a Magia de Ritual para o cemitério
+        SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard);
+        Destroy(sourceCard.gameObject);
+
+        // 2. Envia os tributos para o cemitério (da mão ou do campo)
+        foreach (var tribute in tributes)
+        {
+            var handObject = playerHand.FirstOrDefault(go => go.GetComponent<CardDisplay>().CurrentCardData == tribute);
+            if (handObject != null)
+            {
+                DiscardCard(handObject.GetComponent<CardDisplay>());
+            }
+            else
+            {
+                var fieldObject = FindCardOnField(tribute.id, true);
+                if (fieldObject != null) TributeCard(fieldObject);
+            }
+        }
+
+        // 3. Invoca o Monstro de Ritual da mão
+        RemoveCardFromHand(ritualMonster, sourceCard.isPlayerCard);
+        SpecialSummonFromData(ritualMonster, sourceCard.isPlayerCard);
+    }
+
     // --- LÓGICA DE SPELL / TRAP ---
 
     public void PlaySpellTrap(GameObject cardGO, CardData cardData, bool isSet)
@@ -1695,57 +1747,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // --- SISTEMA DE FUSÃO ---
-
-    public void BeginFusionSummon(CardDisplay sourceCard)
-    {
-        // 1. Verifica se tem monstros no Extra Deck
-        var fusionMonsters = GetPlayerExtraDeck().Where(c => c.type.Contains("Fusion")).ToList();
-        if (fusionMonsters.Count == 0)
-        {
-            Debug.Log("Nenhum Monstro de Fusão no Deck Extra.");
-            return;
-        }
-
-        // 2. Abre a UI de Fusão
-        if (UIManager.Instance != null)
-        {
-            UIManager.Instance.ShowFusionUI(sourceCard);
-        }
-    }
-
-    public void PerformFusionSummon(CardDisplay sourceCard, CardData fusionMonster, List<CardData> materials)
-    {
-        if (fusionMonster == null || materials == null || materials.Count == 0)
-        {
-            Debug.LogError("PerformFusionSummon: Dados inválidos.");
-            return;
-        }
-
-        Debug.Log($"Realizando Invocação-Fusão de {fusionMonster.name}...");
-
-        // 1. Envia a carta de fusão (ex: Polymerization) para o cemitério
-        SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard);
-        Destroy(sourceCard.gameObject);
-
-        // 2. Envia os materiais para o cemitério (da mão ou do campo)
-        foreach (var material in materials)
-        {
-            // Tenta remover da mão
-            var handObject = playerHand.FirstOrDefault(go => go.GetComponent<CardDisplay>().CurrentCardData == material);
-            if (handObject != null)
-            {
-                DiscardCard(handObject.GetComponent<CardDisplay>());
-            }
-            // TODO: Tenta remover do campo
-        }
-
-        // 3. Invoca o monstro de fusão do Deck Extra
-        SpecialSummonFromData(fusionMonster, sourceCard.isPlayerCard);
-        playerExtraDeck.Remove(fusionMonster);
-        UpdatePileVisuals();
-    }
-
     // Invocação Especial direta por dados (para Monster Reborn, etc)
     public void SpecialSummonFromData(CardData data, bool forPlayer, bool faceUp = true, bool defense = false)
     {
@@ -1778,6 +1779,23 @@ public class GameManager : MonoBehaviour
             CardEffectManager.Instance.OnSpecialSummon(display);
         }
     }
+
+        // Helper para encontrar um CardDisplay no campo pelo ID
+    private CardDisplay FindCardOnField(string cardId, bool isPlayer)
+    {
+        Transform[] zones = isPlayer ? duelFieldUI.playerMonsterZones : duelFieldUI.opponentMonsterZones;
+        foreach (var zone in zones)
+        {
+            if (zone.childCount > 0)
+            {
+                var display = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData.id == cardId)
+                {
+                    return display;
+                }
+            }
+        }
+        return null;
 
     // Ferramenta de Dev: Visualizar Deck
     public void ViewDeck(bool isPlayer)
