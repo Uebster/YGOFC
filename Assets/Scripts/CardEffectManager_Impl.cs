@@ -531,6 +531,28 @@ public partial class CardEffectManager
             GameManager.Instance.ShuffleDeck(true);
             Debug.Log("Nimble Momonga: Curou e invocou cópias.");
         }
+
+        // 1351 - Nitro Unit
+        // Verifica se o monstro destruído estava equipado com Nitro Unit
+        CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        foreach(var link in links)
+        {
+            if (link.target == card && link.type == CardLink.LinkType.Equipment)
+            {
+                if (link.source != null && link.source.CurrentCardData.id == "1351")
+                {
+                    // Dano ao oponente do dono da Nitro Unit (que é quem equipou)
+                    // Nitro Unit equipa no monstro do oponente. Se o monstro morre, o controlador do monstro toma dano?
+                    // Texto: "inflict damage to your opponent equal to the ATK".
+                    // "Your opponent" refere-se ao oponente do controlador da Nitro Unit.
+                    // Como Nitro Unit equipa no oponente, o "opponent" do controlador da Nitro Unit é o dono do monstro.
+                    int dmg = card.originalAtk;
+                    Debug.Log($"Nitro Unit: {dmg} de dano ao oponente.");
+                    if (link.source.isPlayerCard) GameManager.Instance.DamageOpponent(dmg);
+                    else GameManager.Instance.DamagePlayer(dmg);
+                }
+            }
+        }
     }
 
     public void OnCardDiscarded(CardDisplay card)
@@ -603,6 +625,14 @@ public partial class CardEffectManager
             Effect_GainLP(puppeteer, 500);
             Debug.Log($"Mysterious Puppeteer: {puppeteer.CurrentCardData.name} gerou +500 LP.");
         });
+
+        // 1362 - Nuvia the Wicked
+        if (summonedCard.CurrentCardData.id == "1362" && !summonedCard.isTributeSummoned) // Normal Summoned (assumindo flag)
+        {
+            Debug.Log("Nuvia the Wicked: Destruído por Invocação Normal.");
+            GameManager.Instance.SendToGraveyard(summonedCard.CurrentCardData, summonedCard.isPlayerCard);
+            Destroy(summonedCard.gameObject);
+        }
     }
 
     partial void OnSummonImpl(CardDisplay card)
@@ -732,6 +762,13 @@ public partial class CardEffectManager
             if (card.isPlayerCard != isPlayer) // Se o oponente tomou dano
                 Effect_DirectDamage(card, 300);
         });
+
+        // 1360 - Numinous Healer
+        // Activate only when you take damage.
+        // Como é Trap, deve ser ativada manualmente ou via CheckForTraps.
+        // Mas se já estiver ativa (ex: face-up?? Não, é Normal Trap).
+        // O efeito de "increase LP by 500 for each Numinous Healer in GY" é parte da resolução.
+        // Não é um efeito contínuo.
 
         // Atualiza Megamorph (1200)
         UpdateAllMegamorphs();
@@ -1011,6 +1048,14 @@ public partial class CardEffectManager
             int dmg = target.CurrentCardData.level * 500;
             Effect_DirectDamage(attacker, dmg);
             Debug.Log($"Needle Burrower: {dmg} de dano.");
+        }
+
+        // 1359 - Nubian Guard
+        if (attacker != null && attacker.CurrentCardData.id == "1359" && amount > 0)
+        {
+            // Return 1 Continuous Spell from GY to top of Deck
+            // Lógica simplificada: Apenas log, requer seleção do GY
+            Debug.Log("Nubian Guard: Pode retornar Continuous Spell do GY ao topo do Deck.");
         }
 
         // 1322 - Necklace of Command

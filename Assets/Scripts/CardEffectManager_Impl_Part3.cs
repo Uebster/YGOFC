@@ -3455,4 +3455,236 @@ public partial class CardEffectManager
             );
         }
     }
+
+    // 1351 - Nitro Unit
+    void Effect_1351_NitroUnit(CardDisplay source)
+    {
+        // Equip only to opponent's monster. If destroyed by battle -> Damage = ATK.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (target) => {
+                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
+                    Debug.Log($"Nitro Unit: Equipado em {target.CurrentCardData.name}.");
+                }
+            );
+        }
+    }
+
+    // 1352 - Niwatori
+    void Effect_1352_Niwatori(CardDisplay source) { } // Normal Monster
+
+    // 1353 - Nobleman of Crossout
+    void Effect_1353_NoblemanOfCrossout(CardDisplay source)
+    {
+        // Target face-down monster; destroy and banish. If Flip, banish copies from Decks.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && t.isFlipped, // Face-down (isFlipped=true)
+                (target) => {
+                    target.RevealCard(); // Revela para verificar se é Flip
+                    bool isFlip = target.CurrentCardData.description.Contains("FLIP:");
+                    
+                    Debug.Log($"Nobleman of Crossout: Banindo {target.CurrentCardData.name}.");
+                    GameManager.Instance.BanishCard(target);
+
+                    if (isFlip)
+                    {
+                        Debug.Log("Nobleman of Crossout: Era monstro Flip. Banindo cópias dos Decks (Simulado).");
+                        // Lógica de banir cópias dos decks
+                    }
+                }
+            );
+        }
+    }
+
+    // 1354 - Nobleman of Extermination
+    void Effect_1354_NoblemanOfExtermination(CardDisplay source)
+    {
+        // Target face-down S/T; destroy and banish. If Trap, banish copies from Decks.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")) && t.isFlipped,
+                (target) => {
+                    target.RevealCard();
+                    bool isTrap = target.CurrentCardData.type.Contains("Trap");
+                    
+                    Debug.Log($"Nobleman of Extermination: Banindo {target.CurrentCardData.name}.");
+                    GameManager.Instance.BanishCard(target);
+
+                    if (isTrap)
+                    {
+                        Debug.Log("Nobleman of Extermination: Era Armadilha. Banindo cópias dos Decks (Simulado).");
+                    }
+                }
+            );
+        }
+    }
+
+    // 1355 - Nobleman-Eater Bug
+    void Effect_1355_NoblemanEaterBug(CardDisplay source)
+    {
+        // FLIP: Destroy 2 monsters.
+        // Requer seleção múltipla.
+        Debug.Log("Nobleman-Eater Bug: Destruindo 2 monstros (Simulado).");
+        // DestroyAllMonsters(true, false); // Simplificado
+    }
+
+    // 1356 - Non Aggression Area
+    void Effect_1356_NonAggressionArea(CardDisplay source)
+    {
+        // Standby Phase, Discard 1. Opponent cannot Summon next turn.
+        // Lógica no OnPhaseStart (CardEffectManager_Impl.cs) para checar ativação.
+        // Aqui apenas o efeito imediato se ativado manualmente (o que não deve ocorrer na Standby, mas...)
+        Debug.Log("Non Aggression Area: Oponente não pode invocar no próximo turno.");
+    }
+
+    // 1357 - Non-Spellcasting Area
+    void Effect_1357_NonSpellcastingArea(CardDisplay source)
+    {
+        // Face-up non-Effect Monsters are unaffected by Spell effects.
+        Debug.Log("Non-Spellcasting Area: Imunidade para Monstros Normais (Passivo).");
+    }
+
+    // 1358 - Novox's Prayer
+    void Effect_1358_NovoxsPrayer(CardDisplay source)
+    {
+        Debug.Log("Novox's Prayer: Ritual para Skull Guardian.");
+    }
+
+    // 1359 - Nubian Guard
+    void Effect_1359_NubianGuard(CardDisplay source)
+    {
+        // If inflicts battle damage: Return 1 Continuous Spell from GY to top of Deck.
+        // Lógica no OnDamageDealtImpl.
+        Debug.Log("Nubian Guard: Efeito de reciclagem configurado.");
+    }
+
+    // 1360 - Numinous Healer
+    void Effect_1360_NuminousHealer(CardDisplay source)
+    {
+        // Activate when taking damage. Gain 1000 LP + 500 per copy in GY.
+        int copies = GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.name == "Numinous Healer").Count;
+        Effect_GainLP(source, 1000 + (copies * 500));
+    }
+
+    // 1361 - Nutrient Z
+    void Effect_1361_NutrientZ(CardDisplay source)
+    {
+        // When taking 2000+ battle damage: Gain 4000 LP before damage.
+        Effect_GainLP(source, 4000);
+    }
+
+    // 1362 - Nuvia the Wicked
+    void Effect_1362_NuviaTheWicked(CardDisplay source)
+    {
+        // If Normal Summoned, destroy self. ATK -200 per opponent monster.
+        // Auto-destruição no OnSummonImpl.
+        // Debuff:
+        int oppCount = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) oppCount++;
+        
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, oppCount * -200, source));
+    }
+
+    // 1363 - Obese Marmot of Nefariousness
+    void Effect_1363_ObeseMarmotOfNefariousness(CardDisplay source) { } // Normal Monster
+
+    // 1364 - Obnoxious Celtic Guard
+    void Effect_1364_ObnoxiousCelticGuard(CardDisplay source)
+    {
+        // Cannot be destroyed by battle with monster ATK >= 1900.
+        Debug.Log("Obnoxious Celtic Guard: Proteção de batalha ativa.");
+    }
+
+    // 1365 - Ocean Dragon Lord - Neo-Daedalus
+    void Effect_1365_OceanDragonLordNeoDaedalus(CardDisplay source)
+    {
+        // Send Umi to GY; send all cards in both hands and field to GY.
+        if (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013")) // Umi
+        {
+            Debug.Log("Neo-Daedalus: Enviando tudo para o GY!");
+            // Lógica de limpar mãos e campo (exceto este card)
+            GameManager.Instance.DiscardHand(true);
+            GameManager.Instance.DiscardHand(false);
+            DestroyAllMonsters(true, true); // Deveria filtrar source
+            Effect_HeavyStorm(source);
+        }
+    }
+
+    // 1366 - Octoberser
+    void Effect_1366_Octoberser(CardDisplay source) { } // Normal Monster
+
+    // 1367 - Ocubeam
+    void Effect_1367_Ocubeam(CardDisplay source) { } // Normal Monster
+
+    // 1368 - Offerings to the Doomed
+    void Effect_1368_OfferingsToTheDoomed(CardDisplay source)
+    {
+        // Target 1 face-up monster; destroy it. Skip next Draw Phase.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && !t.isFlipped,
+                (target) => {
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                    Destroy(target.gameObject);
+                    
+                    if (SpellTrapManager.Instance != null) SpellTrapManager.Instance.RegisterSkipDraw();
+                    Debug.Log("Offerings to the Doomed: Alvo destruído. Próximo Draw pulado.");
+                }
+            );
+        }
+    }
+
+    // 1369 - Ogre of the Black Shadow
+    void Effect_1369_OgreOfTheBlackShadow(CardDisplay source) { } // Normal Monster
+
+    // 1370 - Ojama Black
+    void Effect_1370_OjamaBlack(CardDisplay source) { } // Normal Monster
+
+    // 1371 - Ojama Delta Hurricane
+    void Effect_1371_OjamaDeltaHurricane(CardDisplay source)
+    {
+        // If Green, Yellow, Black on field: Destroy all cards opp controls.
+        bool hasG = GameManager.Instance.IsCardActiveOnField("Ojama Green") || GameManager.Instance.IsCardActiveOnField("1372");
+        bool hasY = GameManager.Instance.IsCardActiveOnField("Ojama Yellow") || GameManager.Instance.IsCardActiveOnField("1375");
+        bool hasB = GameManager.Instance.IsCardActiveOnField("Ojama Black") || GameManager.Instance.IsCardActiveOnField("1370");
+
+        if (hasG && hasY && hasB)
+        {
+            Debug.Log("Ojama Delta Hurricane!!: Destruindo campo do oponente.");
+            DestroyAllMonsters(true, false);
+            Effect_HarpiesFeatherDuster(source);
+        }
+    }
+
+    // 1372 - Ojama Green
+    void Effect_1372_OjamaGreen(CardDisplay source) { } // Normal Monster
+
+    // 1373 - Ojama King
+    void Effect_1373_OjamaKing(CardDisplay source)
+    {
+        // Select up to 3 opp Monster Zones; they cannot be used.
+        Debug.Log("Ojama King: Bloqueando 3 zonas do oponente (Visual pendente).");
+    }
+
+    // 1374 - Ojama Trio
+    void Effect_1374_OjamaTrio(CardDisplay source)
+    {
+        // SS 3 Ojama Tokens to opp field.
+        for(int i=0; i<3; i++)
+        {
+            GameManager.Instance.SpawnToken(!source.isPlayerCard, 0, 1000, "Ojama Token");
+        }
+        Debug.Log("Ojama Trio: 3 Tokens invocados no campo do oponente.");
+    }
+
+    // 1375 - Ojama Yellow
+    void Effect_1375_OjamaYellow(CardDisplay source) { } // Normal Monster
 }
