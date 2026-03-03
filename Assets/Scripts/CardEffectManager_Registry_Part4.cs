@@ -340,49 +340,49 @@ public partial class CardEffectManager
         AddEffect("1649", Effect_1649_SilverBowAndArrow);
 
         // 1651 - Sinister Serpent (Return to hand)
-        AddEffect("1651", c => Debug.Log("Sinister Serpent: Retorna do GY para a mão na Standby Phase."));
+        AddEffect("1651", Effect_1651_SinisterSerpent);
 
         // 1652 - Sixth Sense (Dice draw/mill)
-        AddEffect("1652", c => Debug.Log("Sixth Sense: Declara 2 números, rola dado. Acertou=Draw, Errou=Mill."));
+        AddEffect("1652", Effect_1652_SixthSense);
 
         // 1653 - Skelengel (Flip Draw)
-        AddEffect("1653", c => { GameManager.Instance.DrawCard(); Debug.Log("Skelengel: Compra 1 carta."); });
+        AddEffect("1653", Effect_1653_Skelengel);
 
         // 1655 - Skill Drain (Negate face-up effects)
-        AddEffect("1655", c => { Effect_PayLP(c, 1000); Debug.Log("Skill Drain: Nega efeitos de monstros face-up."); });
+        AddEffect("1655", Effect_1655_SkillDrain);
 
         // 1656 - Skilled Dark Magician (Counters -> SS DM)
-        AddEffect("1656", c => Debug.Log("Skilled Dark Magician: 3 contadores -> Invoca Dark Magician."));
+        AddEffect("1656", Effect_1656_SkilledDarkMagician);
 
         // 1657 - Skilled White Magician (Counters -> SS BB)
-        AddEffect("1657", c => Debug.Log("Skilled White Magician: 3 contadores -> Invoca Buster Blader."));
+        AddEffect("1657", Effect_1657_SkilledWhiteMagician);
 
         // 1658 - Skull Archfiend of Lightning (Maintenance, Dice negate)
-        AddEffect("1658", c => Debug.Log("Skull Archfiend: Manutenção e chance de negar alvo."));
+        AddEffect("1658", Effect_1658_SkullArchfiendOfLightning);
 
         // 1659 - Skull Dice (Dice debuff)
-        AddEffect("1659", c => Debug.Log("Skull Dice: Rola dado para reduzir ATK/DEF do oponente."));
+        AddEffect("1659", Effect_1659_SkullDice);
 
         // 1661 - Skull Guardian (Ritual)
-        AddEffect("1661", c => Debug.Log("Skull Guardian: Ritual."));
+        AddEffect("1661", Effect_1661_SkullGuardian);
 
         // 1662 - Skull Invitation (Burn on GY)
-        AddEffect("1662", c => Debug.Log("Skull Invitation: 300 dano por cada carta enviada ao GY."));
+        AddEffect("1662", Effect_1662_SkullInvitation);
 
         // 1664 - Skull Knight #2 (Tribute -> SS copy)
-        AddEffect("1664", c => Debug.Log("Skull Knight #2: Invoca cópia se tributado para Fiend."));
+        AddEffect("1664", Effect_1664_SkullKnight2);
 
         // 1665 - Skull Lair (Banish GY -> Destroy)
-        AddEffect("1665", c => Debug.Log("Skull Lair: Bane monstros do GY para destruir monstro face-up."));
+        AddEffect("1665", Effect_1665_SkullLair);
 
         // 1670 - Skull-Mark Ladybug (Heal on GY)
-        AddEffect("1670", c => { Effect_GainLP(c, 1000); Debug.Log("Skull-Mark Ladybug: Ganha 1000 LP."); });
+        AddEffect("1670", Effect_1670_SkullMarkLadybug);
 
         // 1674 - Skyscraper (Field: HERO +1000 on attack)
-        AddEffect("1674", c => Debug.Log("Skyscraper: E-HERO ganha 1000 ATK ao atacar monstro mais forte."));
+        AddEffect("1674", Effect_1674_Skyscraper);
 
         // 1675 - Slate Warrior (Flip buff, debuff killer)
-        AddEffect("1675", c => Debug.Log("Slate Warrior: Flip +500. Quem destruir perde 500."));
+        AddEffect("1675", Effect_1675_SlateWarrior);
 
         // 1679 - Smashing Ground (Destroy highest DEF)
         AddEffect("1679", c => Debug.Log("Smashing Ground: Destrói monstro do oponente com maior DEF."));

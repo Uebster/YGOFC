@@ -1430,4 +1430,238 @@ public partial class CardEffectManager
     {
         Effect_Equip(source, 300, 300, "Fairy");
     }
+
+    // 1651 - Sinister Serpent
+    void Effect_1651_SinisterSerpent(CardDisplay source)
+    {
+        // During your Standby Phase, if this card is in your GY: You can add it to your hand.
+        // Also banish 1 "Sinister Serpent" from your GY during your opponent's next End Phase.
+        if (source.isInPile) // In GY
+        {
+            GameManager.Instance.AddCardToHand(source.CurrentCardData, source.isPlayerCard);
+            GameManager.Instance.GetPlayerGraveyard().Remove(source.CurrentCardData);
+            // TODO: Agendar banimento na próxima End Phase do oponente
+            Debug.Log("Sinister Serpent: Retornou para a mão.");
+        }
+    }
+
+    // 1652 - Sixth Sense
+    void Effect_1652_SixthSense(CardDisplay source)
+    {
+        // Declare 2 numbers from 1 to 6. Opponent rolls die.
+        // If result is declared: Draw that many cards.
+        // Else: Send top X cards to GY (X = result).
+        // Simulação: Jogador declara 5 and 6 (comum).
+        int declared1 = 5;
+        int declared2 = 6;
+        
+        GameManager.Instance.TossCoin(1, (heads) => { // Usando TossCoin como proxy para dado por enquanto ou Random
+            int roll = Random.Range(1, 7);
+            Debug.Log($"Sixth Sense: Rolou {roll}.");
+            
+            if (roll == declared1 || roll == declared2)
+            {
+                Debug.Log($"Sixth Sense: Acertou! Comprando {roll} cartas.");
+                for(int i=0; i<roll; i++) GameManager.Instance.DrawCard();
+            }
+            else
+            {
+                Debug.Log($"Sixth Sense: Errou! Enviando {roll} cartas ao GY.");
+                GameManager.Instance.MillCards(source.isPlayerCard, roll);
+            }
+        });
+    }
+
+    // 1653 - Skelengel
+    void Effect_1653_Skelengel(CardDisplay source)
+    {
+        // FLIP: Draw 1 card.
+        GameManager.Instance.DrawCard();
+    }
+
+    // 1655 - Skill Drain
+    void Effect_1655_SkillDrain(CardDisplay source)
+    {
+        // Activate by paying 1000 LP. Negate effects of all face-up monsters.
+        if (Effect_PayLP(source, 1000))
+        {
+            Debug.Log("Skill Drain: Ativado. Efeitos de monstros negados.");
+            // Lógica de negação contínua deve ser verificada nos outros efeitos
+        }
+    }
+
+    // 1656 - Skilled Dark Magician
+    void Effect_1656_SkilledDarkMagician(CardDisplay source)
+    {
+        // Each time Spell is activated, place 1 Spell Counter (max 3).
+        // Tribute with 3 counters -> SS Dark Magician from Hand/Deck/GY.
+        if (SpellCounterManager.Instance.GetCount(source) >= 3)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                // Pergunta se quer tributar
+                UIManager.Instance.ShowConfirmation("Tributar para invocar Dark Magician?", () => {
+                    GameManager.Instance.TributeCard(source);
+                    
+                    List<CardData> sources = new List<CardData>();
+                    sources.AddRange(GameManager.Instance.GetPlayerHandData());
+                    sources.AddRange(GameManager.Instance.GetPlayerMainDeck());
+                    sources.AddRange(GameManager.Instance.GetPlayerGraveyard());
+                    
+                    CardData target = sources.Find(c => c.name == "Dark Magician");
+                    if (target != null)
+                    {
+                        GameManager.Instance.SpecialSummonFromData(target, source.isPlayerCard);
+                    }
+                });
+            }
+        }
+    }
+
+    // 1657 - Skilled White Magician
+    void Effect_1657_SkilledWhiteMagician(CardDisplay source)
+    {
+        // Same as Dark Magician but for Buster Blader.
+        if (SpellCounterManager.Instance.GetCount(source) >= 3)
+        {
+            UIManager.Instance.ShowConfirmation("Tributar para invocar Buster Blader?", () => {
+                GameManager.Instance.TributeCard(source);
+                
+                List<CardData> sources = new List<CardData>();
+                sources.AddRange(GameManager.Instance.GetPlayerHandData());
+                sources.AddRange(GameManager.Instance.GetPlayerMainDeck());
+                sources.AddRange(GameManager.Instance.GetPlayerGraveyard());
+                
+                CardData target = sources.Find(c => c.name == "Buster Blader");
+                if (target != null)
+                {
+                    GameManager.Instance.SpecialSummonFromData(target, source.isPlayerCard);
+                }
+            });
+        }
+    }
+
+    // 1658 - Skull Archfiend of Lightning
+    void Effect_1658_SkullArchfiendOfLightning(CardDisplay source)
+    {
+        // Maintenance 500 LP. Dice negate targeting effect.
+        // Lógica passiva/trigger.
+        Debug.Log("Skull Archfiend: Efeitos passivos ativos.");
+    }
+
+    // 1659 - Skull Dice
+    void Effect_1659_SkullDice(CardDisplay source)
+    {
+        // Roll die. All monsters opponent controls lose ATK/DEF = result * 100.
+        GameManager.Instance.TossCoin(1, (heads) => {
+            int roll = Random.Range(1, 7);
+            int debuff = roll * 100;
+            Debug.Log($"Skull Dice: Rolou {roll}. Debuff de {debuff}.");
+            
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                List<CardDisplay> oppMonsters = new List<CardDisplay>();
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, oppMonsters);
+                foreach(var m in oppMonsters)
+                {
+                    m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -debuff, source));
+                    m.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -debuff, source));
+                }
+            }
+        });
+    }
+
+    // 1661 - Skull Guardian
+    void Effect_1661_SkullGuardian(CardDisplay source)
+    {
+        // Ritual Monster.
+        Debug.Log("Skull Guardian: Monstro Ritual.");
+    }
+
+    // 1662 - Skull Invitation
+    void Effect_1662_SkullInvitation(CardDisplay source)
+    {
+        // Each time card is sent to GY, inflict 300 damage to owner.
+        // Lógica no OnCardSentToGraveyard.
+        Debug.Log("Skull Invitation: Ativo.");
+    }
+
+    // 1664 - Skull Knight #2
+    void Effect_1664_SkullKnight2(CardDisplay source)
+    {
+        // If Tribute Summoned by Tributing this monster: SS 1 Skull Knight #2 from Deck.
+        // Lógica no OnTribute (se existisse) ou OnCardSentToGraveyard verificando a causa.
+        // Simplificado: Se for tributado.
+        Debug.Log("Skull Knight #2: Efeito de invocação ao ser tributado.");
+    }
+
+    // 1665 - Skull Lair
+    void Effect_1665_SkullLair(CardDisplay source)
+    {
+        // Remove any number of monsters in GY to destroy 1 face-up monster with Level = number removed.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> monsters = gy.FindAll(c => c.type.Contains("Monster"));
+        
+        if (monsters.Count > 0)
+        {
+            // Seleção múltipla
+            // Simplificado: Pede para selecionar 1 monstro alvo primeiro para saber o nível?
+            // Ou seleciona monstros do GY e depois valida?
+            // Vamos selecionar o alvo primeiro.
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && !t.isFlipped,
+                    (target) => {
+                        int level = target.CurrentCardData.level;
+                        if (monsters.Count >= level)
+                        {
+                            GameManager.Instance.OpenCardMultiSelection(monsters, $"Banir {level} monstros", level, level, (selected) => {
+                                foreach(var c in selected)
+                                {
+                                    GameManager.Instance.RemoveFromPlay(c, source.isPlayerCard);
+                                    gy.Remove(c);
+                                }
+                                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                                Destroy(target.gameObject);
+                            });
+                        }
+                        else
+                        {
+                            Debug.Log("Skull Lair: Monstros insuficientes no GY.");
+                        }
+                    }
+                );
+            }
+        }
+    }
+
+    // 1670 - Skull-Mark Ladybug
+    void Effect_1670_SkullMarkLadybug(CardDisplay source)
+    {
+        // When sent to GY: Gain 1000 LP.
+        Effect_GainLP(source, 1000);
+    }
+
+    // 1674 - Skyscraper
+    void Effect_1674_Skyscraper(CardDisplay source)
+    {
+        // Field Spell. E-HERO gains 1000 ATK when attacking higher ATK.
+        // Lógica no OnDamageCalculation.
+        Debug.Log("Skyscraper: Ativo.");
+    }
+
+    // 1675 - Slate Warrior
+    void Effect_1675_SlateWarrior(CardDisplay source)
+    {
+        // FLIP: +500 ATK/DEF.
+        // Destroyed by battle: Destroyer loses 500 ATK/DEF.
+        if (source.isFlipped)
+        {
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, source));
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, source));
+        }
+        // Lógica de destruição no OnBattleEnd.
+    }
 }
