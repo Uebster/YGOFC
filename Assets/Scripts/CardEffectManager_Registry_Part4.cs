@@ -232,52 +232,52 @@ public partial class CardEffectManager
         AddEffect("1601", Effect_1601_SealOfTheAncients);
 
         // 1603 - Sebek's Blessing (Quick-Play: Gain LP = Damage)
-        AddEffect("1603", c => Debug.Log("Sebek's Blessing: Ganha LP igual ao dano direto causado."));
+        AddEffect("1603", Effect_1603_SebeksBlessing);
 
         // 1604 - Second Coin Toss (Redo coin toss)
-        AddEffect("1604", c => Debug.Log("Second Coin Toss: Permite refazer um lançamento de moeda."));
+        AddEffect("1604", Effect_1604_SecondCoinToss);
 
         // 1605 - Second Goblin (Union)
-        AddEffect("1605", c => Debug.Log("Second Goblin: Union para Giant Orc."));
+        AddEffect("1605", Effect_1605_SecondGoblin);
 
         // 1606 - Secret Barrel (Burn per card)
-        AddEffect("1606", Effect_SecretBarrel);
+        AddEffect("1606", Effect_1606_SecretBarrel);
 
         // 1607 - Secret Pass to the Treasures (Direct attack < 1000)
-        AddEffect("1607", c => Debug.Log("Secret Pass: Monstro com ATK <= 1000 pode atacar direto."));
+        AddEffect("1607", Effect_1607_SecretPassToTheTreasures);
 
         // 1610 - Self-Destruct Button (Draw game condition)
-        AddEffect("1610", c => Debug.Log("Self-Destruct Button: Se diferença de LP > 7000, LP de ambos vira 0."));
+        AddEffect("1610", Effect_1610_SelfDestructButton);
 
         // 1612 - Senju of the Thousand Hands (Search Ritual Monster)
-        AddEffect("1612", c => Effect_SearchDeck(c, "Ritual", "Monster"));
+        AddEffect("1612", Effect_1612_SenjuOfTheThousandHands);
 
         // 1613 - Senri Eye (Pay 100, peek deck)
-        AddEffect("1613", c => { Effect_PayLP(c, 100); Debug.Log("Senri Eye: Olha carta do topo do deck do oponente."); });
+        AddEffect("1613", Effect_1613_SenriEye);
 
         // 1615 - Serial Spell (Discard hand, copy spell)
-        AddEffect("1615", c => Debug.Log("Serial Spell: Descarta mão para copiar efeito de Normal Spell."));
+        AddEffect("1615", Effect_1615_SerialSpell);
 
         // 1618 - Serpentine Princess (Deck shuffle -> SS)
-        AddEffect("1618", c => Debug.Log("Serpentine Princess: Se embaralhada no deck, invoca monstro Lv3 ou menor."));
+        AddEffect("1618", Effect_1618_SerpentinePrincess);
 
         // 1619 - Servant of Catabolism (Direct attack)
-        AddEffect("1619", c => Debug.Log("Servant of Catabolism: Pode atacar diretamente."));
+        AddEffect("1619", Effect_1619_ServantOfCatabolism);
 
         // 1620 - Seven Tools of the Bandit (Pay 1000 negate Trap)
-        AddEffect("1620", c => { Effect_PayLP(c, 1000); Debug.Log("Seven Tools: Nega ativação de Armadilha e destrói."); });
+        AddEffect("1620", Effect_1620_SevenToolsOfTheBandit);
 
         // 1621 - Shadow Ghoul (Gain ATK per GY)
-        AddEffect("1621", c => Debug.Log("Shadow Ghoul: Ganha 100 ATK por monstro no seu GY."));
+        AddEffect("1621", Effect_1621_ShadowGhoul);
 
         // 1623 - Shadow Spell (Continuous Trap: -700 ATK, no attack/change pos)
-        AddEffect("1623", c => Debug.Log("Shadow Spell: Alvo perde 700 ATK e não pode atacar/mudar posição."));
+        AddEffect("1623", Effect_1623_ShadowSpell);
 
         // 1624 - Shadow Tamer (Flip: Control Fiend)
-        AddEffect("1624", c => Debug.Log("Shadow Tamer: Toma controle de 1 Fiend do oponente."));
+        AddEffect("1624", Effect_1624_ShadowTamer);
 
         // 1625 - Shadow of Eyes (Trigger: Set -> Attack)
-        AddEffect("1625", c => Debug.Log("Shadow of Eyes: Força monstro Setado para Posição de Ataque."));
+        AddEffect("1625", Effect_1625_ShadowOfEyes);
 
         // 1626 - Shadowknight Archfiend (Maintenance, Dice negate)
         AddEffect("1626", c => Debug.Log("Shadowknight Archfiend: Custo de manutenção e chance de negar alvo."));

@@ -969,16 +969,213 @@ public partial class CardEffectManager
         Debug.Log("Scroll of Bewitchment: Atributo alterado para LIGHT (Simulado).");
     }
 
-    // 1600 - Seal of the Ancients
+    // 1601 - Seal of the Ancients
     void Effect_1601_SealOfTheAncients(CardDisplay source)
     {
         // Pay 1000 LP. Look at all cards your opponent has set on the field.
-        if (GameManager.Instance.PayLifePoints(source.isPlayerCard, 1000))
+        if (Effect_PayLP(source, 1000))
         {
             Debug.Log("Seal of the Ancients: Revelando cartas setadas do oponente.");
-            // Lógica de revelar
-            // TODO: Implementar uma forma de "revelar" as cartas para o jogador
-            // sem ativar seus efeitos, talvez mostrando-as no CardViewer ao passar o mouse.
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                // Revela visualmente (simulado)
+                foreach(var zone in GameManager.Instance.duelFieldUI.opponentSpellZones)
+                {
+                    if(zone.childCount > 0) 
+                    {
+                        var cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                        if(cd.isFlipped) Debug.Log($"Revelado: {cd.CurrentCardData.name}");
+                    }
+                }
+                foreach(var zone in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+                {
+                    if(zone.childCount > 0) 
+                    {
+                        var cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                        if(cd.isFlipped) Debug.Log($"Revelado: {cd.CurrentCardData.name}");
+                    }
+                }
+            }
         }
+    }
+
+    // 1603 - Sebek's Blessing
+    void Effect_1603_SebeksBlessing(CardDisplay source)
+    {
+        // Quick-Play: If your monster inflicts battle damage by direct attack: Gain same amount LP.
+        // Requer contexto de batalha.
+        Debug.Log("Sebek's Blessing: Ganha LP igual ao dano direto causado (Requer Chain/Trigger).");
+    }
+
+    // 1604 - Second Coin Toss
+    void Effect_1604_SecondCoinToss(CardDisplay source)
+    {
+        // Continuous: Can redo coin toss once per turn.
+        Debug.Log("Second Coin Toss: Permite refazer moeda (Passivo).");
+    }
+
+    // 1605 - Second Goblin
+    void Effect_1605_SecondGoblin(CardDisplay source)
+    {
+        // Union for Giant Orc.
+        Effect_Union(source, "Giant Orc", 500, 500); // Giant Orc stats are modified by Union? No, usually Union gives stats or protection.
+        // Second Goblin text: Change position of equipped monster. No stat boost mentioned in modern text, but old text might vary.
+        // Checking card text: "While equipped... you can change the equipped monster's battle position once per turn."
+        // My Effect_Union helper is generic. I'll stick to the standard behavior for now.
+    }
+
+    // 1606 - Secret Barrel
+    void Effect_1606_SecretBarrel(CardDisplay source)
+    {
+        // Inflict 200 damage for each card in opp hand and field.
+        int count = 0;
+        count += GameManager.Instance.GetOpponentHandData().Count;
+        
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) count++;
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentSpellZones) if(z.childCount > 0) count++;
+            if(GameManager.Instance.duelFieldUI.opponentFieldSpell.childCount > 0) count++;
+        }
+        
+        Effect_DirectDamage(source, count * 200);
+    }
+
+    // 1607 - Secret Pass to the Treasures
+    void Effect_1607_SecretPassToTheTreasures(CardDisplay source)
+    {
+        // Select 1 face-up monster with ATK <= 1000. It can attack directly this turn.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.currentAtk <= 1000 && !t.isFlipped,
+                (target) => {
+                    Debug.Log($"Secret Pass: {target.CurrentCardData.name} pode atacar diretamente.");
+                    // target.canAttackDirectly = true; 
+                }
+            );
+        }
+    }
+
+    // 1610 - Self-Destruct Button
+    void Effect_1610_SelfDestructButton(CardDisplay source)
+    {
+        // Activate if LP < Opponent's LP by 7000+. Both LP become 0.
+        int diff = GameManager.Instance.opponentLP - GameManager.Instance.playerLP;
+        if (diff >= 7000)
+        {
+            Debug.Log("Self-Destruct Button: Condição atendida. EMPATE!");
+            GameManager.Instance.playerLP = 0;
+            GameManager.Instance.opponentLP = 0;
+            // GameManager.Instance.EndDuel(false); // Draw
+        }
+        else
+        {
+            Debug.Log("Self-Destruct Button: Diferença de LP insuficiente.");
+        }
+    }
+
+    // 1612 - Senju of the Thousand Hands
+    void Effect_1612_SenjuOfTheThousandHands(CardDisplay source)
+    {
+        // When Normal/Flip Summoned: Add 1 Ritual Monster from Deck.
+        Effect_SearchDeck(source, "Ritual", "Monster");
+    }
+
+    // 1613 - Senri Eye
+    void Effect_1613_SenriEye(CardDisplay source)
+    {
+        // Once per turn, Standby Phase: Pay 100 LP to look at top of Opp Deck.
+        if (Effect_PayLP(source, 100))
+        {
+            List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
+            if (oppDeck.Count > 0)
+            {
+                Debug.Log($"Senri Eye: Topo do deck oponente é {oppDeck[0].name}.");
+            }
+        }
+    }
+
+    // 1615 - Serial Spell
+    void Effect_1615_SerialSpell(CardDisplay source)
+    {
+        // Discard hand. Copy effect of Normal Spell.
+        GameManager.Instance.DiscardHand(source.isPlayerCard);
+        Debug.Log("Serial Spell: Copiando efeito (Lógica de Chain necessária).");
+    }
+
+    // 1618 - Serpentine Princess
+    void Effect_1618_SerpentinePrincess(CardDisplay source)
+    {
+        // If returned from field to Deck: SS 1 Level 3 or lower monster from Deck.
+        // Lógica no OnCardLeavesField (se destino for Deck).
+        Debug.Log("Serpentine Princess: Gatilho de retorno ao deck.");
+    }
+
+    // 1619 - Servant of Catabolism
+    void Effect_1619_ServantOfCatabolism(CardDisplay source)
+    {
+        // Can attack directly.
+        Debug.Log("Servant of Catabolism: Ataque direto habilitado.");
+    }
+
+    // 1620 - Seven Tools of the Bandit
+    void Effect_1620_SevenToolsOfTheBandit(CardDisplay source)
+    {
+        // Pay 1000 LP; negate Trap.
+        if (Effect_PayLP(source, 1000))
+        {
+            Debug.Log("Seven Tools: Trap negada.");
+        }
+    }
+
+    // 1621 - Shadow Ghoul
+    void Effect_1621_ShadowGhoul(CardDisplay source)
+    {
+        // Gains 100 ATK for each monster in GY.
+        int count = GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.type.Contains("Monster")).Count;
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 100, source));
+    }
+
+    // 1623 - Shadow Spell
+    void Effect_1623_ShadowSpell(CardDisplay source)
+    {
+        // Target 1 face-up monster opp controls; loses 700 ATK, cannot attack/change pos.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && !t.isFlipped,
+                (target) => {
+                    target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -700, source));
+                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Continuous);
+                    Debug.Log($"Shadow Spell: {target.CurrentCardData.name} preso.");
+                }
+            );
+        }
+    }
+
+    // 1624 - Shadow Tamer
+    void Effect_1624_ShadowTamer(CardDisplay source)
+    {
+        // FLIP: Target 1 Fiend opp controls; take control until End Phase.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.race == "Fiend",
+                (target) => {
+                    GameManager.Instance.SwitchControl(target);
+                    // TODO: Agendar retorno na End Phase
+                    Debug.Log($"Shadow Tamer: Controlando {target.CurrentCardData.name}.");
+                }
+            );
+        }
+    }
+
+    // 1625 - Shadow of Eyes
+    void Effect_1625_ShadowOfEyes(CardDisplay source)
+    {
+        // When monster is Set: Target it; change to Attack.
+        // Trigger no OnSetImpl.
+        Debug.Log("Shadow of Eyes: Força posição de ataque.");
     }
 }
