@@ -1796,6 +1796,7 @@ public class GameManager : MonoBehaviour
             }
         }
         return null;
+    }
 
     // Ferramenta de Dev: Visualizar Deck
     public void ViewDeck(bool isPlayer)
@@ -1847,7 +1848,4 @@ public class GameManager : MonoBehaviour
                 // Notifica sistema de efeitos (Ex: Fire Princess)
         CardEffectManager.Instance.OnDamageDealt(attacker, target, amount);
     }
-
-
-
 }
