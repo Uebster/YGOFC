@@ -174,46 +174,46 @@ public partial class CardEffectManager
         AddEffect("2075", Effect_2075_WhiteMagicalHat);
 
         // 2076 - White Magician Pikeru (Heal)
-        AddEffect("2076", c => Debug.Log("Pikeru: Cura na Standby."));
+        AddEffect("2076", Effect_2076_WhiteMagicianPikeru);
 
         // 2077 - White Ninja (Flip Destroy Defense)
-        AddEffect("2077", c => Debug.Log("White Ninja: Destrói monstro em defesa."));
+        AddEffect("2077", Effect_2077_WhiteNinja);
 
         // 2079 - Wicked-Breaking Flamberge - Baou (Equip +500, Negate)
-        AddEffect("2079", c => Debug.Log("Baou: +500 ATK, nega efeitos de monstros destruídos."));
+        AddEffect("2079", Effect_2079_WickedBreakingFlambergeBaou);
 
         // 2080 - Widespread Ruin (Destroy Highest ATK)
-        AddEffect("2080", c => Debug.Log("Widespread Ruin: Destrói atacante com maior ATK."));
+        AddEffect("2080", Effect_2080_WidespreadRuin);
 
         // 2081 - Wild Nature's Release (ATK+=DEF, Destroy)
-        AddEffect("2081", c => Debug.Log("Wild Nature's Release: ATK += DEF, destrói na End Phase."));
+        AddEffect("2081", Effect_2081_WildNaturesRelease);
 
         // 2083 - Windstorm of Etaqua (Change Positions)
-        AddEffect("2083", c => Debug.Log("Windstorm of Etaqua: Muda posições de batalha."));
+        AddEffect("2083", Effect_2083_WindstormOfEtaqua);
 
         // 2090 - Winged Kuriboh (No Battle Damage)
-        AddEffect("2090", c => Debug.Log("Winged Kuriboh: Sem dano de batalha no turno."));
+        AddEffect("2090", Effect_2090_WingedKuriboh);
 
         // 2091 - Winged Kuriboh LV10 (Nuke & Burn)
-        AddEffect("2091", c => Debug.Log("Winged Kuriboh LV10: Destrói ataque, causa dano."));
+        AddEffect("2091", Effect_2091_WingedKuribohLV10);
 
         // 2092 - Winged Minion (Tribute Buff Fiend)
-        AddEffect("2092", c => Debug.Log("Winged Minion: Tributa para dar +700 ATK/DEF a Fiend."));
+        AddEffect("2092", Effect_2092_WingedMinion);
 
         // 2093 - Winged Sage Falcos (Spin on Battle)
-        AddEffect("2093", c => Debug.Log("Winged Sage Falcos: Coloca monstro destruído no topo do deck."));
+        AddEffect("2093", Effect_2093_WingedSageFalcos);
 
         // 2096 - Witch Doctor of Chaos (Flip Banish GY)
-        AddEffect("2096", c => Debug.Log("Witch Doctor of Chaos: Bane monstro do GY."));
+        AddEffect("2096", Effect_2096_WitchDoctorOfChaos);
 
         // 2097 - Witch of the Black Forest (Search DEF <= 1500)
-        AddEffect("2097", c => Debug.Log("Witch of the Black Forest: Busca monstro com DEF <= 1500."));
+        AddEffect("2097", Effect_2097_WitchOfTheBlackForest);
 
         // 2098 - Witch's Apprentice (Field Dark +500, Light -400)
-        AddEffect("2098", c => Effect_Field(c, 500, -400, "", "Dark"));
+        AddEffect("2098", Effect_2098_WitchsApprentice);
 
         // 2100 - Wodan the Resident of the Forest (Buff per Plant)
-        AddEffect("2100", c => Debug.Log("Wodan: +100 ATK por Planta."));
+        AddEffect("2100", Effect_2100_WodanTheResidentOfTheForest);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 2101 - 2147)

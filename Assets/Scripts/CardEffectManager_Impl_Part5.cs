@@ -671,3 +671,236 @@
         // Battle Damage -> Opponent discards 1 random.
         Debug.Log("White Magical Hat: Efeito de descarte configurado (OnDamageDealtImpl).");
     }
+
+    // 2076 - White Magician Pikeru
+    void Effect_2076_WhiteMagicianPikeru(CardDisplay source)
+    {
+        // Standby Phase: Gain 400 LP per monster you control.
+        // Lógica no OnPhaseStart.
+        Debug.Log("White Magician Pikeru: Efeito de cura na Standby Phase configurado.");
+    }
+
+    // 2077 - White Ninja
+    void Effect_2077_WhiteNinja(CardDisplay source)
+    {
+        // FLIP: Destroy 1 Defense Position monster.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.position == CardDisplay.BattlePosition.Defense,
+                (target) => {
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                    Destroy(target.gameObject);
+                }
+            );
+        }
+    }
+
+    // 2079 - Wicked-Breaking Flamberge - Baou
+    void Effect_2079_WickedBreakingFlambergeBaou(CardDisplay source)
+    {
+        // Send 1 card from hand to GY to equip. +500 ATK. Negate effects of destroyed monsters.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0 && !source.isOnField)
+        {
+             GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                 GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                 Effect_Equip(source, 500, 0);
+             });
+        }
+        else if (source.isOnField)
+        {
+             // Already equipped logic handled by modifiers
+        }
+    }
+
+    // 2080 - Widespread Ruin
+    void Effect_2080_WidespreadRuin(CardDisplay source)
+    {
+        // Opponent attacks: Destroy Attack Pos monster with highest ATK.
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> oppMonsters = new List<CardDisplay>();
+            // Assuming source.isPlayerCard is true (player's trap), target opponent
+            Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+            
+            foreach(var z in zones)
+            {
+                if(z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if(m != null && m.position == CardDisplay.BattlePosition.Attack) oppMonsters.Add(m);
+                }
+            }
+
+            if (oppMonsters.Count > 0)
+            {
+                oppMonsters.Sort((a, b) => b.currentAtk.CompareTo(a.currentAtk)); // Descending
+                CardDisplay target = oppMonsters[0];
+                
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                Destroy(target.gameObject);
+                Debug.Log($"Widespread Ruin: Destruiu {target.CurrentCardData.name}.");
+            }
+        }
+    }
+
+    // 2081 - Wild Nature's Release
+    void Effect_2081_WildNaturesRelease(CardDisplay source)
+    {
+        // Target Beast/Beast-Warrior; ATK += DEF. Destroy at End Phase.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && (t.CurrentCardData.race == "Beast" || t.CurrentCardData.race == "Beast-Warrior"),
+                (target) => {
+                    int boost = target.currentDef;
+                    target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, boost, source));
+                    // TODO: Schedule destruction
+                    Debug.Log($"Wild Nature's Release: +{boost} ATK.");
+                }
+            );
+        }
+    }
+
+    // 2083 - Windstorm of Etaqua
+    void Effect_2083_WindstormOfEtaqua(CardDisplay source)
+    {
+        // Change battle positions of all face-up monsters opponent controls.
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+            foreach(var z in zones)
+            {
+                if(z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if(m != null && !m.isFlipped) m.ChangePosition();
+                }
+            }
+        }
+    }
+
+    // 2090 - Winged Kuriboh
+    void Effect_2090_WingedKuriboh(CardDisplay source)
+    {
+        // Destroyed -> No battle damage this turn.
+        // Logic in OnCardSentToGraveyard.
+        Debug.Log("Winged Kuriboh: Proteção de dano configurada.");
+    }
+
+    // 2091 - Winged Kuriboh LV10
+    void Effect_2091_WingedKuribohLV10(CardDisplay source)
+    {
+        // Tribute (Quick): Destroy all Attack Pos monsters opp controls, inflict damage = combined original ATK.
+        if (source.isOnField)
+        {
+            GameManager.Instance.TributeCard(source);
+            
+            List<CardDisplay> toDestroy = new List<CardDisplay>();
+            int totalDamage = 0;
+            
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+                foreach(var z in zones)
+                {
+                    if(z.childCount > 0)
+                    {
+                        var m = z.GetChild(0).GetComponent<CardDisplay>();
+                        if(m != null && m.position == CardDisplay.BattlePosition.Attack)
+                        {
+                            toDestroy.Add(m);
+                            totalDamage += m.originalAtk;
+                        }
+                    }
+                }
+            }
+            
+            foreach(var m in toDestroy)
+            {
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(m);
+                GameManager.Instance.SendToGraveyard(m.CurrentCardData, m.isPlayerCard);
+                Destroy(m.gameObject);
+            }
+            
+            Effect_DirectDamage(source, totalDamage);
+        }
+    }
+
+    // 2092 - Winged Minion
+    void Effect_2092_WingedMinion(CardDisplay source)
+    {
+        // Tribute: Target Fiend; +700 ATK/DEF.
+        if (source.isOnField)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.race == "Fiend" && t != source,
+                    (target) => {
+                        GameManager.Instance.TributeCard(source);
+                        target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 700, source));
+                        target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 700, source));
+                    }
+                );
+            }
+        }
+    }
+
+    // 2093 - Winged Sage Falcos
+    void Effect_2093_WingedSageFalcos(CardDisplay source)
+    {
+        // Battle damage -> Top of Deck. (Actually: If destroys Attack pos monster).
+        // Logic in OnBattleEnd.
+        Debug.Log("Winged Sage Falcos: Efeito de batalha configurado.");
+    }
+
+    // 2096 - Witch Doctor of Chaos
+    void Effect_2096_WitchDoctorOfChaos(CardDisplay source)
+    {
+        // FLIP: Banish 1 monster from GY.
+        List<CardData> targets = new List<CardData>();
+        targets.AddRange(GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.type.Contains("Monster")));
+        targets.AddRange(GameManager.Instance.GetOpponentGraveyard().FindAll(c => c.type.Contains("Monster")));
+        
+        if (targets.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(targets, "Banir do GY", (selected) => {
+                bool isPlayer = GameManager.Instance.GetPlayerGraveyard().Contains(selected);
+                GameManager.Instance.RemoveFromPlay(selected, isPlayer);
+                if (isPlayer) GameManager.Instance.GetPlayerGraveyard().Remove(selected);
+                else GameManager.Instance.GetOpponentGraveyard().Remove(selected);
+            });
+        }
+    }
+
+    // 2097 - Witch of the Black Forest
+    void Effect_2097_WitchOfTheBlackForest(CardDisplay source)
+    {
+        // Sent to GY: Add monster with DEF <= 1500.
+        // Logic in OnCardSentToGraveyard.
+        Debug.Log("Witch of the Black Forest: Efeito de busca configurado.");
+    }
+
+    // 2098 - Witch's Apprentice
+    void Effect_2098_WitchsApprentice(CardDisplay source)
+    {
+        Effect_Field(source, 500, -400, "", "Dark");
+    }
+
+    // 2100 - Wodan the Resident of the Forest
+    void Effect_2100_WodanTheResidentOfTheForest(CardDisplay source)
+    {
+        // +100 ATK per Plant.
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            // Assuming manual iteration
+            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if(z.childCount > 0) { var m = z.GetChild(0).GetComponent<CardDisplay>(); if(m && m.CurrentCardData.race == "Plant") count++; }
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) { var m = z.GetChild(0).GetComponent<CardDisplay>(); if(m && m.CurrentCardData.race == "Plant") count++; }
+        }
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 100, source));
+    }
