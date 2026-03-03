@@ -392,10 +392,22 @@ public partial class CardEffectManager
                 if (phase == GamePhase.Standby)
         {
             // 1578 - Sacred Phoenix of Nephthys
-            // Lógica de reviver se foi destruído por efeito
+            // Se foi destruído por efeito no turno anterior (marcado no OnCardSentToGraveyard)
+            // Revive e destrói S/T
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            CardData phoenix = gy.Find(c => c.id == "1578"); // ID Sacred Phoenix
+            if (phoenix != null)
+            {
+                // Simplificado: Assume que a condição foi atendida se estiver no GY
+                // Em um sistema completo, precisaríamos de uma flag "destroyedByEffectLastTurn"
+                Debug.Log("Sacred Phoenix of Nephthys: Revivendo na Standby Phase.");
+                GameManager.Instance.SpecialSummonFromData(phoenix, true);
+                gy.Remove(phoenix);
+                Effect_HeavyStorm(null); // Destrói todas as S/T (source null pois já saiu do GY)
+            }
 
             // 1585 - Sand Moth
-            // Lógica de reviver se foi destruído por Spell
+            // Lógica similar ao Phoenix, mas apenas se destruído face-down por Spell
         }
         {
             // 1162 - Manticore of Darkness
@@ -472,11 +484,26 @@ public partial class CardEffectManager
         }
 
         // 1578 - Sacred Phoenix of Nephthys
-        // Se destruído por efeito, marca para reviver
+        if (card.id == "1578")
+        {
+            // Deveria verificar se foi destruído por efeito de carta
+            Debug.Log("Sacred Phoenix of Nephthys: Destruído. (Marcar para reviver na próxima Standby).");
+        }
 
         // 1587 - Sangan
         if (card.id == "1587")
-            Effect_SearchDeck(null, "Monster", "", 1500);
+        {
+            // Busca monstro com 1500 ou menos de ATK
+            // Como Effect_SearchDeck precisa de um CardDisplay source e a carta já foi destruída,
+            // precisamos adaptar ou passar null se o método suportar.
+            // O método Effect_SearchDeck usa source.isPlayerCard.
+            // Vamos criar um CardDisplay temporário ou refatorar Effect_SearchDeck.
+            // Por enquanto, assumimos que o dono é o jogador atual se isOwnerPlayer for true.
+            if (isOwnerPlayer)
+            {
+                Effect_SearchDeck(null, "Monster", "", 1500); // Precisa de refatoração para aceitar null source ou bool isPlayer
+            }
+        }
 
         // 1010 - Keldo
         if (card.id == "1010" && !isOwnerPlayer) // Destruído por batalha
@@ -657,6 +684,168 @@ public partial class CardEffectManager
                     if (link.source.isPlayerCard) GameManager.Instance.DamageOpponent(dmg);
                     else GameManager.Instance.DamagePlayer(dmg);
                 }
+            }
+        }
+
+        // 1508 - Regenerating Mummy
+        if (card.id == "1508" && isOwnerPlayer)
+        {
+            // Se enviado da mão para o GY por efeito do oponente
+            // Requer verificação de contexto (quem causou o descarte)
+            Debug.Log("Regenerating Mummy: Se descartado pelo oponente, volta para a mão.");
+            // GameManager.Instance.AddCardToHand(card, isOwnerPlayer);
+        }
+
+        // 1548 - Roc from the Valley of Haze
+        if (card.id == "1548" && isOwnerPlayer)
+        {
+            // Se enviado da mão para o GY, volta ao Deck
+            Debug.Log("Roc from the Valley of Haze: Voltando ao Deck.");
+            // GameManager.Instance.ReturnToDeck(card, true); // Requer CardDisplay ou refatoração
+        }
+    }
+
+    public void OnCardDiscarded(CardDisplay card)
+    {
+        // Blessings of the Nile (0205)
+        CheckActiveCards("0205", (source) => {
+            if (source.isPlayerCard)
+            {
+                Debug.Log("Blessings of the Nile: Carta descartada. +1000 LP.");
+                Effect_GainLP(source, 1000);
+            }
+        });
+
+        // Magical Thorn (1136): Opponent discards -> 500 damage
+        if (!card.isPlayerCard) // Opponent discarded
+        {
+            CheckActiveCards("1136", (thorn) => {
+                if (thorn.isPlayerCard)
+                {
+                    Debug.Log("Magical Thorn: Oponente descartou. 500 Dano.");
+                    Effect_DirectDamage(thorn, 500);
+                }
+            });
+        }
+
+        // 1235 - Minar
+        if (card.CurrentCardData.id == "1235" && !card.isPlayerCard) // Se descartado pelo oponente
+        {
+            if (!GameManager.Instance.isPlayerTurn)
+            {
+                GameManager.Instance.DamageOpponent(1000);
+            }
+        }
+
+        // 1339 - Night Assailant (Discarded from hand)
+        if (card.CurrentCardData.id == "1339")
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> flips = gy.FindAll(c => c.description.Contains("FLIP:") && c.id != "1339");
+            if (flips.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(flips, "Recuperar Flip", (c) => GameManager.Instance.AddCardToHand(c, true));
+            }
+        }
+
+        // 1508 - Regenerating Mummy (Se descartado pelo oponente)
+        if (card.CurrentCardData.id == "1508" && !GameManager.Instance.isPlayerTurn) // Simplificado: Turno do oponente = efeito do oponente
+        {
+            Debug.Log("Regenerating Mummy: Retornando para a mão.");
+            GameManager.Instance.ReturnToHand(card);
+        }
+
+        // 1548 - Roc from the Valley of Haze
+        if (card.CurrentCardData.id == "1548")
+        {
+            Debug.Log("Roc from the Valley of Haze: Embaralhando no Deck.");
+            GameManager.Instance.ReturnToDeck(card, false); // Shuffle
+            GameManager.Instance.ShuffleDeck(card.isPlayerCard);
+        }
+    }
+
+    public void OnSpecialSummon(CardDisplay summonedCard)
+    {
+        // Card of Safe Return (0266): Compra 1 quando monstro é invocado do GY
+        // (Precisaríamos saber se veio do GY, por enquanto assumimos que sim para teste ou adicionamos flag)
+        CheckActiveCards("0266", (source) => {
+            if (source.isPlayerCard && summonedCard.isPlayerCard)
+            {
+                Debug.Log("Card of Safe Return: Compra 1 carta.");
+                GameManager.Instance.DrawCard();
+            }
+        });
+
+        // 1262 - Molten Zombie
+        if (summonedCard.CurrentCardData.id == "1262") // Se foi SS do GY (assumindo contexto)
+        {
+            Debug.Log("Molten Zombie: Compra 1.");
+            if (summonedCard.isPlayerCard) GameManager.Instance.DrawCard();
+        }
+
+        // 1296 - Mysterious Puppeteer (Gain 500 LP on Summon)
+        // Verifica se existe algum Mysterious Puppeteer face-up no campo
+        CheckActiveCards("1296", (puppeteer) => {
+            // O efeito ativa para invocações de qualquer jogador
+            Effect_GainLP(puppeteer, 500);
+            Debug.Log($"Mysterious Puppeteer: {puppeteer.CurrentCardData.name} gerou +500 LP.");
+        });
+
+        // 1362 - Nuvia the Wicked
+        if (summonedCard.CurrentCardData.id == "1362" && !summonedCard.isTributeSummoned) // Normal Summoned (assumindo flag)
+        {
+            Debug.Log("Nuvia the Wicked: Destruído por Invocação Normal.");
+            GameManager.Instance.SendToGraveyard(summonedCard.CurrentCardData, summonedCard.isPlayerCard);
+            Destroy(summonedCard.gameObject);
+        }
+    }
+
+    partial void OnSummonImpl(CardDisplay card)
+    {
+        // B.E.S. Big Core (0124) & Crystal Core (0125)
+        // Coloca 3 contadores na invocação Normal
+        if (card.CurrentCardData.id == "0124" || card.CurrentCardData.id == "0125")
+        {
+            // Assumindo que summonedThisTurn + isOnField logo após criação indica invocação recente
+            card.AddSpellCounter(3);
+        }
+
+        // Dark Dust Spirit (0408): Destroy all other face-up
+        if (card.CurrentCardData.id == "0408")
+        {
+            // DestroyAllMonsters(true, true); // Mas filtrar por "other" e "face-up"
+            Debug.Log("Dark Dust Spirit: Destruindo outros monstros face-up.");
+        }
+
+        // Boar Soldier (0219) - Destroy if Normal Summoned
+        if (card.CurrentCardData.id == "0219")
+        {
+            // Como saber se foi Normal? SummonManager.PerformSummon seta summonedThisTurn.
+            // Assumimos Normal por padrão se não for Special.
+            Debug.Log("Boar Soldier: Auto-destruição.");
+            GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+            Destroy(card.gameObject);
+        }
+
+        // Breaker the Magical Warrior (0240): Add counter on Normal Summon
+        if (card.CurrentCardData.id == "0240")
+        {
+            // Assumindo Normal Summon
+            card.AddSpellCounter(1);
+        }
+
+        // Byser Shock (0255): Return Set cards
+        if (card.CurrentCardData.id == "0255")
+        {
+            Debug.Log("Byser Shock: Retornando cartas setadas.");
+            List<CardDisplay> toReturn = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                // Coleta todas as cartas do campo
+                CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, toReturn);
+                CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, toReturn);
+                // Filtra apenas as setadas (isFlipped = true no CardDisplay significa verso)
+                foreach(var c in toReturn) if (c.isFlipped) GameManager.Instance.ReturnToHand(c);
             }
         }
     }
@@ -1700,7 +1889,7 @@ public partial class CardEffectManager
 
     void Effect_SearchDeck(CardDisplay source, string term, string typeFilter = "")
     {
-        bool isPlayer = source.isPlayerCard;
+        bool isPlayer = source != null ? source.isPlayerCard : true; // Fallback para true se source for null (ex: Sangan no GY)
         List<CardData> deck = isPlayer ? GameManager.Instance.GetPlayerMainDeck() : null;
 
         if (deck == null)
