@@ -3821,8 +3821,16 @@ public partial class CardEffectManager
     // 1404 - Parasite Paracide
     void Effect_1404_ParasiteParacide(CardDisplay source)
     {
-        // FLIP: Shuffle this card into your opponent's Deck. When opponent draws this, SS to their field.
-        Debug.Log("Parasite Paracide: Efeito de deck (Simulado).");
+        // FLIP: Shuffle this card into your opponent's Deck.
+        // Note: The draw trigger logic needs to be handled in GameManager.DrawCard or similar.
+        // For now, we move it to the opponent's deck.
+        List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
+        oppDeck.Add(source.CurrentCardData);
+        GameManager.Instance.ShuffleDeck(false);
+        
+        // Remove from current field (Visual)
+        Destroy(source.gameObject);
+        Debug.Log("Parasite Paracide: Embaralhado no deck do oponente.");
     }
 
     // 1405 - Parasitic Ticky
@@ -3832,7 +3840,9 @@ public partial class CardEffectManager
     void Effect_1406_PatricianOfDarkness(CardDisplay source)
     {
         // All monsters your opponent controls must attack this card, if able.
-        Debug.Log("Patrician of Darkness: Alvos de ataque forçados.");
+        // Errata/Actual Effect: You choose the attack targets for your opponent's attacks.
+        Debug.Log("Patrician of Darkness: Você escolhe os alvos dos ataques do oponente.");
+        if (BattleManager.Instance != null) BattleManager.Instance.patricianOfDarknessActive = true;
     }
 
     // 1407 - Patroid
@@ -3924,7 +3934,21 @@ public partial class CardEffectManager
     void Effect_1417_PerfectlyUltimateGreatMoth(CardDisplay source)
     {
         // Special Summoned by tributing "Petit Moth" equipped with "Cocoon of Evolution" for 4 or more of your turns.
-        Debug.Log("Perfectly Ultimate Great Moth: Invocado especialmente por tributar Petit Moth.");
+        if (!source.isOnField)
+        {
+             if (SpellTrapManager.Instance != null) {
+                 SpellTrapManager.Instance.StartTargetSelection(
+                     (t) => t.isOnField && t.CurrentCardData.name == "Petit Moth", // Should check for Cocoon equip
+                     (t) => {
+                         // Simplified: Assume conditions met if player selects Petit Moth
+                         GameManager.Instance.TributeCard(t);
+                         GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                         GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                         Debug.Log("Perfectly Ultimate Great Moth: Invocado!");
+                     }
+                 );
+             }
+        }
     }
 
     void Effect_1418_PerformanceOfSword(CardDisplay source)
@@ -3944,7 +3968,12 @@ public partial class CardEffectManager
     void Effect_1426_PharaohsTreasure(CardDisplay source)
     {
         // Shuffle all cards in your hand into your Deck, then draw 1 card. If that card is a Spell Card, you can add 1 Spell Card from your Graveyard to your hand.
-        Debug.Log("Pharaoh's Treasure: Embaralha todas as cartas na sua mão no Deck.");
+        // Note: The actual effect is "Shuffle this card face-up into your Deck...".
+        // Implementing the actual effect:
+        GameManager.Instance.ReturnToDeck(source, false); // Shuffle
+        GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+        // Logic to detect when drawn face-up is complex. Simplified to just shuffle.
+        Debug.Log("Pharaoh's Treasure: Embaralhado no deck (Efeito de compra pendente).");
     }
 
     void Effect_1428_PhoenixWingWindBlast(CardDisplay source)
@@ -3985,7 +4014,8 @@ public partial class CardEffectManager
             void Effect_1431_PikerusSecondSight(CardDisplay source)
     {
         // Reveal all cards drawn by your opponent during your opponent's next Draw Phase.
-        Debug.Log("Pikeru's Second Sight: Ver compras do oponente.");
+        Debug.Log("Pikeru's Second Sight: As compras do oponente serão reveladas.");
+        GameManager.Instance.revealOpponentDraw = true;
     }
 
     void Effect_1432_PinchHopper(CardDisplay source)
@@ -4081,7 +4111,8 @@ public partial class CardEffectManager
     void Effect_1443_PolePosition(CardDisplay source)
     {
         // The monster on the field with the highest ATK is unaffected by Spell Cards. If you control 2 or more monsters with the same ATK, apply this effect to all those monsters.
-       Debug.Log("Pole Position: maior ATK imune a magias"); 
+       Debug.Log("Pole Position: Monstro com maior ATK imune a magias (Lógica passiva).");
+       // Logic needs to be in SpellTrapManager.CanActivateCard or similar check
     }
 
     void Effect_1444_Polymerization(CardDisplay source)
@@ -4214,7 +4245,15 @@ public partial class CardEffectManager
     void Effect_1460_Prohibition(CardDisplay source)
     {
         // Declare card name. Cannot be used.
-        Debug.Log("Prohibition: Carta proibida.");
+        // Simulating declaration by picking a random card from DB or just logging
+        // In a real game, this needs a search UI.
+        List<CardData> allCards = GameManager.Instance.cardDatabase.cardDatabase;
+        if (allCards.Count > 0)
+        {
+            CardData randomCard = allCards[Random.Range(0, allCards.Count)];
+            GameManager.Instance.prohibitedCards.Add(randomCard.name);
+            Debug.Log($"Prohibition: '{randomCard.name}' foi declarada e não pode ser usada.");
+        }
     }
 
     // 1461 - Protective Soul Ailin
@@ -4288,7 +4327,37 @@ public partial class CardEffectManager
     void Effect_1476_Question(CardDisplay source)
     {
         // Opponent guesses bottom monster in GY. If wrong, SS it.
-        Debug.Log("Question: Adivinhe o monstro.");
+        // Simulating guess
+        List<CardData> gy = GameManager.Instance.GetOpponentGraveyard(); // Opponent guesses YOUR GY? "your Graveyard".
+        // Actually "When activating this card, your opponent cannot check cards in the Graveyard."
+        // "Your opponent calls the name of the first monster found at the bottom of your Graveyard."
+        
+        List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
+        if (myGY.Count > 0)
+        {
+            CardData bottomMonster = null;
+            // Find bottom-most monster (index 0 usually in List if added sequentially, or last? Assuming Add adds to end, index 0 is bottom)
+            // Actually List.Add appends to end. So index 0 is oldest (bottom).
+            foreach(var c in myGY) { if (c.type.Contains("Monster")) { bottomMonster = c; break; } }
+            
+            if (bottomMonster != null)
+            {
+                // Simulate guess (50/50)
+                bool correct = Random.value > 0.5f;
+                Debug.Log($"Question: Oponente chutou... {(correct ? "Correto" : "Errado")}!");
+                
+                if (correct)
+                {
+                    GameManager.Instance.RemoveFromPlay(bottomMonster, source.isPlayerCard);
+                    myGY.Remove(bottomMonster);
+                }
+                else
+                {
+                    GameManager.Instance.SpecialSummonFromData(bottomMonster, source.isPlayerCard);
+                    myGY.Remove(bottomMonster);
+                }
+            }
+        }
     }
 
     // 1478 - Rafflesia Seduction
@@ -4466,7 +4535,47 @@ public partial class CardEffectManager
     void Effect_1498_Reasoning(CardDisplay source)
     {
         // Opponent declares Level. Excavate until Normal Summonable. If Level matches, send to GY. Else SS.
-        Debug.Log("Reasoning: Adivinhe o nível.");
+        int declaredLevel = Random.Range(1, 13); // Simulated opponent declaration
+        Debug.Log($"Reasoning: Oponente declarou Nível {declaredLevel}.");
+        
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        List<CardData> excavated = new List<CardData>();
+        CardData foundMonster = null;
+        
+        while(deck.Count > 0)
+        {
+            CardData c = deck[0];
+            deck.RemoveAt(0);
+            excavated.Add(c);
+            
+            // Check if Normal Summonable (Simplified: Not Ritual/Fusion)
+            if (c.type.Contains("Monster") && !c.type.Contains("Ritual") && !c.type.Contains("Fusion"))
+            {
+                foundMonster = c;
+                break;
+            }
+        }
+        
+        if (foundMonster != null)
+        {
+            if (foundMonster.level == declaredLevel)
+            {
+                Debug.Log($"Reasoning: Nível {foundMonster.level} acertado! Enviado ao GY.");
+                foreach(var c in excavated) GameManager.Instance.SendToGraveyard(c, source.isPlayerCard);
+            }
+            else
+            {
+                Debug.Log($"Reasoning: Nível {foundMonster.level} errado! Invocando.");
+                GameManager.Instance.SpecialSummonFromData(foundMonster, source.isPlayerCard);
+                excavated.Remove(foundMonster); // Remove summoned one from list to send to GY
+                foreach(var c in excavated) GameManager.Instance.SendToGraveyard(c, source.isPlayerCard);
+            }
+        }
+        else
+        {
+             // No monster found, send all to GY
+             foreach(var c in excavated) GameManager.Instance.SendToGraveyard(c, source.isPlayerCard);
+        }
     }
 
     // 1499 - Reckless Greed

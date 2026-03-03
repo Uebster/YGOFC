@@ -122,6 +122,7 @@ public class GameManager : MonoBehaviour
 
     // Lista de nomes de cartas proibidas para o duelo atual (ex: Cursed Seal)
     public List<string> forbiddenSpells = new List<string>();
+    public List<string> prohibitedCards = new List<string>(); // Prohibition (1460)
 
     [Header("Current Duel Info")]
     public CharacterData currentOpponent; // Oponente atual carregado
@@ -138,6 +139,7 @@ public class GameManager : MonoBehaviour
     public Color themeHoverColor = Color.yellow; // Atualizado pelo DuelThemeManager
 
     private bool hasDrawnThisTurn = false; // Controle de draw por turno
+    public bool revealOpponentDraw = false; // Pikeru's Second Sight (1431)
     private UnityWebRequest backTextureRequest; // Para evitar memory leak
 
     void Awake()
@@ -768,6 +770,13 @@ public class GameManager : MonoBehaviour
             newCardDisplay.SetCard(drawnCard, cardBackTexture, startFaceUp);
             opponentHand.Add(newCardGO);
             
+            // Pikeru's Second Sight (1431)
+            if (revealOpponentDraw)
+            {
+                Debug.Log($"Pikeru's Second Sight: Oponente comprou {drawnCard.name}");
+                newCardDisplay.ShowFront(); // Revela temporariamente (ou permanentemente se a lógica exigir)
+            }
+
             if (devMode) Debug.Log($"Oponente comprou: {drawnCard.name}");
         }
         else

@@ -15,6 +15,7 @@ public class BattleManager : MonoBehaviour
     public bool dimensionWallActive = false; // Dimension Wall
     public bool globalPiercing = false; // Meteorain
     public bool battlePositionsLocked = false; // Mesmeric Control
+    public bool patricianOfDarknessActive = false; // Patrician of Darkness (1406)
 
     // Verifica se a ativação de armadilhas está bloqueada (ex: Mirage Dragon)
     public bool IsTrapActivationBlocked(bool isPlayer)
@@ -73,6 +74,13 @@ public class BattleManager : MonoBehaviour
 
         currentAttacker = attacker;
         Debug.Log($"Ataque declarado por {attacker.CurrentCardData.name}. Selecione um alvo.");
+
+        // Patrician of Darkness (1406): Se o defensor tiver Patrician, ele escolhe o alvo
+        if (patricianOfDarknessActive && !attacker.isPlayerCard)
+        {
+            Debug.Log("Patrician of Darkness: Você escolhe o alvo do ataque do oponente!");
+            // A UI deve permitir selecionar seus próprios monstros como alvo.
+        }
         
         // Aqui você pode ativar um modo de seleção visual (brilho nos alvos válidos)
         // Se o oponente não tiver monstros, pode atacar direto (Direct Attack)
@@ -186,41 +194,6 @@ public class BattleManager : MonoBehaviour
         return true;
     }
 
-    public bool CanAttack(CardDisplay attacker)
-    {
-        if (GameManager.Instance.IsCardActiveOnField("85742772") && attacker.CurrentCardData.level >= 4)
-        {
-        // Messenger of Peace (44656491)
-        if (GameManager.Instance.IsCardActiveOnField("44656491") && attacker.currentAtk >= 1500)
-        {
-            Debug.Log("Ataque impedido por Messenger of Peace!");
-            return false;
-        }
-
-        if (cannotAttackFaceDown && currentTarget != null && currentTarget.isFlipped)
-        {
-            Debug.Log("Ataque impedido por A Feint Plan: Não pode atacar monstros face-down neste turno.");
-            return false;
-        }
-
-        // Hook para outros efeitos (Swords of Revealing Light, etc)
-        if (CardEffectManager.Instance != null && CardEffectManager.Instance.IsAttackRestricted(attacker))
-        {
-            return false;
-        }
-
-        // Messenger of Peace (1209)
-        if (GameManager.Instance.IsCardActiveOnField("1209") && attacker.currentAtk >= 1500)
-        {
-            Debug.Log("Ataque impedido por Messenger of Peace (ATK >= 1500).");
-            return false;
-        }
-
-        return true;
-    }
-
-    }
-
     public void SelectTarget(CardDisplay target)
     {
         if (currentAttacker == null) return;
@@ -228,6 +201,13 @@ public class BattleManager : MonoBehaviour
         {
             Debug.LogWarning("Não pode atacar seu próprio monstro.");
             return;
+        }
+
+        // Exceção: Patrician of Darkness permite selecionar seus próprios monstros como alvo do ataque do oponente
+        if (patricianOfDarknessActive && !currentAttacker.isPlayerCard && target.isPlayerCard)
+        {
+            // Permite
+            Debug.Log("Patrician of Darkness: Alvo redirecionado.");
         }
 
         // Command Knight (0318)
@@ -250,13 +230,6 @@ public class BattleManager : MonoBehaviour
             }
         }
 
-        UIManager.Instance.ShowConfirmation($"Atacar {target.CurrentCardData.name}?", () => CheckTrapsAndBattle(currentAttacker, target));
-        currentTarget = target;
-    }
-
-    private bool HasDirectAttackCondition()
-    {
-            return;
         UIManager.Instance.ShowConfirmation($"Atacar {target.CurrentCardData.name}?", () => CheckTrapsAndBattle(currentAttacker, target));
         currentTarget = target;
     }
@@ -519,6 +492,7 @@ public class BattleManager : MonoBehaviour
         currentAttacker = null;
         currentTarget = null;
         dimensionWallActive = false;
+        // patricianOfDarknessActive = false; // Não reseta pois é contínuo enquanto o monstro estiver em campo
         gravekeepersProtected = false; // Reseta no fim da batalha ou turno? Regra diz "until End Phase".
         // Se for até End Phase, deve ser resetado no PhaseManager ou CardEffectManager.
     }
