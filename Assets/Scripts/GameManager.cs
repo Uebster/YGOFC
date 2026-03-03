@@ -134,6 +134,7 @@ public class GameManager : MonoBehaviour
     public int playerLP = 8000;
     public int opponentLP = 8000;
     public int turnCount = 0; // Contagem de turnos
+    public bool isPlayerTurn = true; // Rastreia de quem é o turno
 
     [Header("Runtime Theme Settings")]
     public Color themeHoverColor = Color.yellow; // Atualizado pelo DuelThemeManager
@@ -937,6 +938,13 @@ public class GameManager : MonoBehaviour
                 else display.ShowBack();
             }
         }
+    }
+
+    // Chamado para trocar o turno (ex: botão End Phase ou automático)
+    public void SwitchTurn()
+    {
+        isPlayerTurn = !isPlayerTurn;
+        if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
     }
 
     // Chamado pelo PhaseManager quando entra na Draw Phase

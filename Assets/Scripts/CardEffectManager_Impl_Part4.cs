@@ -3493,7 +3493,13 @@ public partial class CardEffectManager
     void Effect_1836_Teva(CardDisplay source)
     {
         // Spirit. If inflicts battle damage, opponent skips next Battle Phase.
-        Debug.Log("Teva: Efeito de pular Battle Phase configurado.");
+        // Nota: O efeito real de Teva é "When this card is Tribute Summoned successfully, your opponent cannot declare an attack during his/her next turn."
+        // O prompt pediu "Oponente pula a próxima Battle Phase".
+        if (source.isTributeSummoned && PhaseManager.Instance != null)
+        {
+            PhaseManager.Instance.RegisterSkipNextPhase(!source.isPlayerCard, GamePhase.Battle);
+            Debug.Log("Teva: Oponente pulará a próxima Battle Phase.");
+        }
     }
 
     // 1839 - The A. Forces
@@ -4396,8 +4402,13 @@ public partial class CardEffectManager
     void Effect_1926_ThunderOfRuler(CardDisplay source)
     {
         // Your opponent cannot conduct their next Battle Phase.
-        Debug.Log("Thunder of Ruler: Próxima Battle Phase do oponente pulada.");
-        // PhaseManager.Instance.opponentSkipsNextBattlePhase = true;
+        // Texto real: "During your opponent's Standby Phase... there is no Battle Phase this turn."
+        // Aplica ao turno ATUAL.
+        if (PhaseManager.Instance != null)
+        {
+            PhaseManager.Instance.skipBattlePhase = true;
+            Debug.Log("Thunder of Ruler: Battle Phase deste turno cancelada.");
+        }
     }
 
     // 1928 - Time Machine
@@ -4412,8 +4423,11 @@ public partial class CardEffectManager
     void Effect_1929_TimeSeal(CardDisplay source)
     {
         // Your opponent skips their next Draw Phase.
-        Debug.Log("Time Seal: Próxima Draw Phase do oponente pulada.");
-        // PhaseManager.Instance.opponentSkipsNextDrawPhase = true;
+        if (PhaseManager.Instance != null)
+        {
+            PhaseManager.Instance.RegisterSkipNextPhase(!source.isPlayerCard, GamePhase.Draw);
+            Debug.Log("Time Seal: Oponente pulará a próxima Draw Phase.");
+        }
     }
 
     // 1930 - Time Wizard
@@ -4447,8 +4461,12 @@ public partial class CardEffectManager
     void Effect_1931_Timeater(CardDisplay source)
     {
         // If this monster destroys an opponent's monster by battle: Your opponent skips their next Main Phase 1.
-        // Lógica no OnBattleEnd.
-        Debug.Log("Timeater: Efeito de pular Main Phase 1 configurado.");
+        // A lógica de gatilho deve estar no OnBattleEnd, mas aqui definimos a ação se chamada
+        if (PhaseManager.Instance != null)
+        {
+            PhaseManager.Instance.RegisterSkipNextPhase(!source.isPlayerCard, GamePhase.Main1);
+            Debug.Log("Timeater: Oponente pulará a próxima Main Phase 1.");
+        }
     }
 
     // 1932 - Timidity

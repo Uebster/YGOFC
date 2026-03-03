@@ -2144,6 +2144,14 @@ public partial class CardEffectManager
             // Effect_SearchDeck(null, "Troop Dragon"); // Requer adaptação para SS
         }
 
+        // 1931 - Timeater
+        if (attacker != null && attacker.CurrentCardData.id == "1931" && target != null)
+        {
+            // Se destruiu o monstro (target está no GY ou marcado para destruição)
+            // Chamamos o efeito registrado
+            ExecuteCardEffect(attacker);
+        }
+
         // Master Monk (1182) & Mataza (1184): Reset attack flag for double attack
         // (Lógica simplificada: Se atacou uma vez, permite atacar de novo resetando a flag)
         // Isso requer um contador de ataques no CardDisplay, que não temos.
