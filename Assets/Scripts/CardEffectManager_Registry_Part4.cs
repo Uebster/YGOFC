@@ -650,7 +650,7 @@ public partial class CardEffectManager
         AddEffect("1800", Effect_1800_SwarmOfLocusts);
 
         // =========================================================================================
-        // LÓGICA PARA AS CARTAS (ID 1801 - 1900)
+        // LÓGICA PARA AS CARTAS (ID 1801 - 1850)
         // =========================================================================================
 
         // 1801 - Swarm of Scarabs (Flip Destroy Monster)
@@ -705,49 +705,49 @@ public partial class CardEffectManager
         AddEffect("1824", Effect_1824_TalismanOfTrapSealing);
 
         // 1827 - Taunt (Force Attack Target)
-        AddEffect("1827", c => Debug.Log("Taunt: Força ataque em monstro específico."));
+        AddEffect("1827", Effect_1827_Taunt);
 
         // 1829 - Temple of the Kings (Trap turn set, SS Serket)
-        AddEffect("1829", c => Debug.Log("Temple of the Kings: Ativa Trap no turno que baixa."));
+        AddEffect("1829", Effect_1829_TempleOfTheKings);
 
         // 1833 - Terraforming (Search Field Spell)
-        AddEffect("1833", c => Effect_SearchDeck(c, "Field", "Spell"));
+        AddEffect("1833", Effect_1833_Terraforming);
 
         // 1834 - Terrorking Archfiend (Negate, Maintenance)
-        AddEffect("1834", c => Debug.Log("Terrorking Archfiend: Nega alvo, custo de manutenção."));
+        AddEffect("1834", Effect_1834_TerrorkingArchfiend);
 
         // 1836 - Teva (No Attack Next Turn)
-        AddEffect("1836", c => Debug.Log("Teva: Oponente não ataca no próximo turno."));
+        AddEffect("1836", Effect_1836_Teva);
 
         // 1839 - The A. Forces (Buff Warriors)
-        AddEffect("1839", c => Debug.Log("The A. Forces: +200 ATK por Warrior/Spellcaster."));
+        AddEffect("1839", Effect_1839_TheAForces);
 
         // 1840 - The Agent of Creation - Venus (Pay 500 SS Shine Ball)
-        AddEffect("1840", c => { Effect_PayLP(c, 500); Debug.Log("Venus: Invoca Shine Ball."); });
+        AddEffect("1840", Effect_1840_TheAgentOfCreationVenus);
 
         // 1841 - The Agent of Force - Mars (Immune Spell, ATK=LP Diff)
-        AddEffect("1841", c => Debug.Log("Mars: Imune a Magia, ATK = Diferença de LP."));
+        AddEffect("1841", Effect_1841_TheAgentOfForceMars);
 
         // 1842 - The Agent of Judgment - Saturn (Tribute Burn)
-        AddEffect("1842", c => Debug.Log("Saturn: Tributa para causar dano igual diferença de LP."));
+        AddEffect("1842", Effect_1842_TheAgentOfJudgmentSaturn);
 
         // 1843 - The Agent of Wisdom - Mercury (Draw if hand empty)
-        AddEffect("1843", c => Debug.Log("Mercury: Compra 1 se mão vazia na End Phase."));
+        AddEffect("1843", Effect_1843_TheAgentOfWisdomMercury);
 
         // 1846 - The Big March of Animals (Buff Beasts)
-        AddEffect("1846", c => Debug.Log("The Big March of Animals: +200 ATK por Besta."));
+        AddEffect("1846", Effect_1846_TheBigMarchOfAnimals);
 
         // 1847 - The Bistro Butcher (Draw 2 for Opp)
-        AddEffect("1847", c => Debug.Log("The Bistro Butcher: Oponente compra 2 ao tomar dano."));
+        AddEffect("1847", Effect_1847_TheBistroButcher);
 
         // 1848 - The Cheerful Coffin (Discard)
-        AddEffect("1848", c => Debug.Log("The Cheerful Coffin: Descarta até 3 monstros."));
+        AddEffect("1848", Effect_1848_TheCheerfulCoffin);
 
         // 1849 - The Creator Incarnate (Tribute SS Creator)
-        AddEffect("1849", c => Debug.Log("The Creator Incarnate: Invoca The Creator da mão."));
+        AddEffect("1849", Effect_1849_TheCreatorIncarnate);
 
         // 1850 - The Dark - Hex-Sealed Fusion (Fusion Sub)
-        AddEffect("1850", c => Debug.Log("The Dark - Hex-Sealed Fusion: Substituto de fusão."));
+        AddEffect("1850", Effect_1850_TheDarkHexSealedFusion);
 
         // 1851 - The Dark Door (One Attack)
         AddEffect("1851", c => Debug.Log("The Dark Door: Apenas 1 ataque por turno."));

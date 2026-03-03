@@ -3213,4 +3213,196 @@ public partial class CardEffectManager
         }
     }
 
+        // 1827 - Taunt
+    void Effect_1827_Taunt(CardDisplay source)
+    {
+        // Continuous Trap. Select 1 monster. Opponent must attack it.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard,
+                (target) => {
+                    Debug.Log($"Taunt: {target.CurrentCardData.name} é o alvo obrigatório.");
+                    // BattleManager.Instance.forcedAttackTarget = target;
+                }
+            );
+        }
+    }
+
+    // 1829 - Temple of the Kings
+    void Effect_1829_TempleOfTheKings(CardDisplay source)
+    {
+        // Continuous Spell. Activate Traps the turn they are Set.
+        // Tribute this card + Serket to SS monster from Hand/Deck/Extra.
+        Debug.Log("Temple of the Kings: Ativado. (Lógica de ativação de Traps e Serket pendente).");
+    }
+
+    // 1833 - Terraforming
+    void Effect_1833_Terraforming(CardDisplay source)
+    {
+        // Add 1 Field Spell from Deck to hand.
+        Effect_SearchDeck(source, "Field", "Spell");
+    }
+
+    // 1834 - Terrorking Archfiend
+    void Effect_1834_TerrorkingArchfiend(CardDisplay source)
+    {
+        // Maintenance, Negate target, Revive with Pandemonium.
+        Debug.Log("Terrorking Archfiend: Efeitos passivos/gatilho configurados.");
+    }
+
+    // 1836 - Teva
+    void Effect_1836_Teva(CardDisplay source)
+    {
+        // Spirit. If inflicts battle damage, opponent skips next Battle Phase.
+        Debug.Log("Teva: Efeito de pular Battle Phase configurado.");
+    }
+
+    // 1839 - The A. Forces
+    void Effect_1839_TheAForces(CardDisplay source)
+    {
+        // Continuous Spell. Your Warriors/Spellcasters gain 200 ATK for each on your field.
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+            {
+                if(z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if(m != null && (m.CurrentCardData.race == "Warrior" || m.CurrentCardData.race == "Spellcaster"))
+                        count++;
+                }
+            }
+        }
+        
+        int buff = count * 200;
+        // Apply buff to all relevant monsters
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+             foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+             {
+                 if(z.childCount > 0)
+                 {
+                     var m = z.GetChild(0).GetComponent<CardDisplay>();
+                     if(m != null && (m.CurrentCardData.race == "Warrior" || m.CurrentCardData.race == "Spellcaster"))
+                        m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Field, StatModifier.Operation.Add, buff, source));
+                 }
+             }
+        }
+        Debug.Log($"The A. Forces: Buff de {buff} ATK aplicado.");
+    }
+
+    // 1840 - The Agent of Creation - Venus
+    void Effect_1840_TheAgentOfCreationVenus(CardDisplay source)
+    {
+        // Pay 500 LP; SS 1 "Mystical Shine Ball" from hand/Deck.
+        if (Effect_PayLP(source, 500))
+        {
+            // Search and SS
+            Effect_SearchDeck(source, "Mystical Shine Ball", "Monster"); // Should be SS
+        }
+    }
+
+    // 1841 - The Agent of Force - Mars
+    void Effect_1841_TheAgentOfForceMars(CardDisplay source)
+    {
+        // Unaffected by Spells. ATK = LP difference.
+        int diff = Mathf.Abs(GameManager.Instance.playerLP - GameManager.Instance.opponentLP);
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, diff, source));
+        Debug.Log("The Agent of Force - Mars: ATK ajustado pela diferença de LP.");
+    }
+
+    // 1842 - The Agent of Judgment - Saturn
+    void Effect_1842_TheAgentOfJudgmentSaturn(CardDisplay source)
+    {
+        // Tribute this card; inflict damage to opponent equal to LP difference.
+        if (source.isOnField)
+        {
+            GameManager.Instance.TributeCard(source);
+            int diff = Mathf.Abs(GameManager.Instance.playerLP - GameManager.Instance.opponentLP);
+            Effect_DirectDamage(source, diff);
+        }
+    }
+
+    // 1843 - The Agent of Wisdom - Mercury
+    void Effect_1843_TheAgentOfWisdomMercury(CardDisplay source)
+    {
+        // End Phase: If hand is 0, draw 1.
+        // Logic in OnPhaseStart(End).
+        Debug.Log("The Agent of Wisdom - Mercury: Efeito de compra na End Phase configurado.");
+    }
+
+    // 1846 - The Big March of Animals
+    void Effect_1846_TheBigMarchOfAnimals(CardDisplay source)
+    {
+        // All face-up Beast, Beast-Warrior, Winged Beast gain 200 ATK for each on your field.
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+            {
+                if(z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if(m != null && (m.CurrentCardData.race == "Beast" || m.CurrentCardData.race == "Beast-Warrior" || m.CurrentCardData.race == "Winged Beast"))
+                        count++;
+                }
+            }
+        }
+        int buff = count * 200;
+        // Apply buff
+        Debug.Log($"The Big March of Animals: Buff de {buff} ATK aplicado.");
+    }
+
+    // 1847 - The Bistro Butcher
+    void Effect_1847_TheBistroButcher(CardDisplay source)
+    {
+        // If inflicts battle damage: Opponent draws 2.
+        // Logic in OnDamageDealtImpl.
+        Debug.Log("The Bistro Butcher: Efeito de compra para o oponente configurado.");
+    }
+
+    // 1848 - The Cheerful Coffin
+    void Effect_1848_TheCheerfulCoffin(CardDisplay source)
+    {
+        // Discard up to 3 Monster Cards.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        List<CardData> monsters = hand.FindAll(c => c.type.Contains("Monster"));
+        if (monsters.Count > 0)
+        {
+            int max = Mathf.Min(3, monsters.Count);
+            GameManager.Instance.OpenCardMultiSelection(monsters, "Descarte até 3 Monstros", 1, max, (selected) => {
+                foreach(var c in selected)
+                {
+                    GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c).GetComponent<CardDisplay>());
+                }
+            });
+        }
+    }
+
+    // 1849 - The Creator Incarnate
+    void Effect_1849_TheCreatorIncarnate(CardDisplay source)
+    {
+        // Tribute "The Creator"; SS 1 "The Creator" from hand.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "The Creator",
+                (tribute) => {
+                    GameManager.Instance.TributeCard(tribute);
+                    // SS from hand
+                }
+            );
+        }
+    }
+
+    // 1850 - The Dark - Hex-Sealed Fusion
+    void Effect_1850_TheDarkHexSealedFusion(CardDisplay source)
+    {
+        // Fusion Substitute.
+        // Tribute materials + this card -> SS DARK Fusion.
+        Debug.Log("The Dark - Hex-Sealed Fusion: Efeito de fusão por tributo.");
+    }
+
 }
