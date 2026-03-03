@@ -497,49 +497,49 @@ public partial class CardEffectManager
         AddEffect("1725", Effect_1725_SpellShatteringArrow);
 
         // 1726 - Spell Shield Type-8 (Negate Spell)
-        AddEffect("1726", c => Debug.Log("Spell Shield Type-8: Nega magia."));
+        AddEffect("1726", Effect_1726_SpellShieldType8);
 
         // 1727 - Spell Vanishing (Negate & Banish)
-        AddEffect("1727", c => Debug.Log("Spell Vanishing: Nega e bane cópias."));
+        AddEffect("1727", Effect_1727_SpellVanishing);
 
         // 1728 - Spell of Pain (Redirect Damage)
-        AddEffect("1728", c => Debug.Log("Spell of Pain: Redireciona dano de efeito."));
+        AddEffect("1728", Effect_1728_SpellOfPain);
 
         // 1729 - Spell-Stopping Statute (Negate Continuous Spell)
-        AddEffect("1729", c => Debug.Log("Spell-Stopping Statute: Nega Continuous Spell."));
+        AddEffect("1729", Effect_1729_SpellStoppingStatute);
 
         // 1730 - Spellbinding Circle (Lock)
-        AddEffect("1730", c => Debug.Log("Spellbinding Circle: Prende monstro."));
+        AddEffect("1730", Effect_1730_SpellbindingCircle);
 
         // 1731 - Spellbook Organization (Reorder)
-        AddEffect("1731", c => Debug.Log("Spellbook Organization: Reordena topo."));
+        AddEffect("1731", Effect_1731_SpellbookOrganization);
 
         // 1733 - Sphinx Teleia (SS Condition / Burn)
-        AddEffect("1733", c => Debug.Log("Sphinx Teleia: SS especial, dano em defesa."));
+        AddEffect("1733", Effect_1733_SphinxTeleia);
 
         // 1737 - Spiral Spear Strike (Piercing Gaia)
-        AddEffect("1737", c => Debug.Log("Spiral Spear Strike: Perfurante para Gaia."));
+        AddEffect("1737", Effect_1737_SpiralSpearStrike);
 
         // 1738 - Spirit Barrier (No Battle Damage)
-        AddEffect("1738", c => Debug.Log("Spirit Barrier: Sem dano de batalha se tiver monstro."));
+        AddEffect("1738", Effect_1738_SpiritBarrier);
 
         // 1739 - Spirit Caller (Flip SS Normal)
-        AddEffect("1739", c => Debug.Log("Spirit Caller: Flip SS Normal Lv3-."));
+        AddEffect("1739", Effect_1739_SpiritCaller);
 
         // 1740 - Spirit Elimination (Banish Field)
-        AddEffect("1740", c => Debug.Log("Spirit Elimination: Banir do campo em vez do GY."));
+        AddEffect("1740", Effect_1740_SpiritElimination);
 
         // 1745 - Spirit Reaper (Indestructible / Discard)
-        AddEffect("1745", c => Debug.Log("Spirit Reaper: Indestrutível batalha, descarte."));
+        AddEffect("1745", Effect_1745_SpiritReaper);
 
         // 1746 - Spirit Ryu (Discard Dragon Buff)
-        AddEffect("1746", c => Debug.Log("Spirit Ryu: Descarte Dragão para ATK."));
+        AddEffect("1746", Effect_1746_SpiritRyu);
 
         // 1747 - Spirit of Flames (SS Banish Fire)
-        AddEffect("1747", c => Debug.Log("Spirit of Flames: SS banindo FIRE."));
+        AddEffect("1747", Effect_1747_SpiritOfFlames);
 
         // 1749 - Spirit of the Breeze (Gain LP)
-        AddEffect("1749", c => Debug.Log("Spirit of the Breeze: Ganha LP."));
+        AddEffect("1749", Effect_1749_SpiritOfTheBreeze);
 
         // 1752 - Spirit of the Pharaoh (SS Zombies)
         AddEffect("1752", c => Debug.Log("Spirit of the Pharaoh: SS Zumbis."));

@@ -2231,4 +2231,208 @@ public partial class CardEffectManager
             Debug.Log($"Spell Shattering Arrow: {count} magias destruídas. {count * 500} dano.");
         }
     }
+
+    // 1726 - Spell Shield Type-8
+    void Effect_1726_SpellShieldType8(CardDisplay source)
+    {
+        // When a Spell Card is activated that targets exactly 1 monster on the field:
+        // If you control a monster, you can activate this card. Negate the activation and destroy it.
+        // If you have cards in your hand, you must send 1 of them to the Graveyard to activate and to resolve this effect.
+        bool hasMonster = false;
+        if (GameManager.Instance.duelFieldUI != null)
+            hasMonster = GameManager.Instance.duelFieldUI.playerMonsterZones.Any(z => z.childCount > 0);
+
+        if (hasMonster)
+        {
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            if (hand.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(hand, "Descarte 1 para negar", (discarded) => {
+                    GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                    Debug.Log("Spell Shield Type-8: Magia negada (Simulado).");
+                    // ChainManager.Instance.NegateLink(ChainManager.Instance.currentChain.Count);
+                });
+            }
+            else
+            {
+                Debug.Log("Spell Shield Type-8: Magia negada (Simulado).");
+                // ChainManager.Instance.NegateLink(ChainManager.Instance.currentChain.Count);
+            }
+        }
+    }
+
+    // 1727 - Spell Vanishing
+    void Effect_1727_SpellVanishing(CardDisplay source)
+    {
+        // When a Spell Card is activated: Discard 2 cards; negate the activation, and if you do, destroy it,
+        // then your opponent banishes 1 card from their hand or Deck with the same name as that destroyed card.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count >= 2)
+        {
+            GameManager.Instance.OpenCardMultiSelection(hand, "Descarte 2 para negar", 2, 2, (discarded) => {
+                foreach(var c in discarded)
+                    GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c).GetComponent<CardDisplay>());
+                
+                Debug.Log("Spell Vanishing: Magia negada e cópias banidas (Simulado).");
+                // ChainManager.Instance.NegateLink(ChainManager.Instance.currentChain.Count);
+                // Lógica de banir cópias...
+            });
+        }
+    }
+
+    // 1728 - Spell of Pain
+    void Effect_1728_SpellOfPain(CardDisplay source)
+    {
+        // When you take effect damage from an opponent's card effect: Inflict the same amount of damage to your opponent.
+        // Lógica de gatilho no OnDamageTaken.
+        Debug.Log("Spell of Pain: Efeito de redirecionamento de dano configurado.");
+    }
+
+    // 1729 - Spell-Stopping Statute
+    void Effect_1729_SpellStoppingStatute(CardDisplay source)
+    {
+        // When a Continuous Spell Card is activated: Negate the activation, and if you do, destroy it.
+        // Requer Chain.
+        Debug.Log("Spell-Stopping Statute: Negação de Magia Contínua (Requer Chain).");
+    }
+
+    // 1730 - Spellbinding Circle
+    void Effect_1730_SpellbindingCircle(CardDisplay source)
+    {
+        // Activate this card by targeting 1 monster your opponent controls; it cannot attack or change its battle position.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && !t.isFlipped,
+                (target) => {
+                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Continuous);
+                    // TODO: Implementar bloqueio de ataque e posição no BattleManager/GameManager
+                    Debug.Log($"Spellbinding Circle: {target.CurrentCardData.name} está preso.");
+                }
+            );
+        }
+    }
+
+    // 1731 - Spellbook Organization
+    void Effect_1731_SpellbookOrganization(CardDisplay source)
+    {
+        // Look at the top 3 cards of your Deck, then return them to the top of the Deck in any order.
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        if (deck.Count >= 3)
+        {
+            List<CardData> top3 = deck.GetRange(0, 3);
+            // Em um jogo real, abriria UI para reordenar.
+            // Simulação: Apenas loga as cartas.
+            Debug.Log($"Spellbook Organization: Top 3 cartas são {top3[0].name}, {top3[1].name}, {top3[2].name}. (Reordenação simulada).");
+        }
+    }
+
+    // 1733 - Sphinx Teleia
+    void Effect_1733_SphinxTeleia(CardDisplay source)
+    {
+        // SS condition: Pay 500 LP when "Pyramid of Light" is on the field.
+        // If this card destroys a Defense Position monster by battle: Inflict damage to your opponent equal to half the DEF of the destroyed monster.
+        // Lógica de SS na mão. Lógica de dano no OnBattleEnd.
+        Debug.Log("Sphinx Teleia: Efeitos de invocação e dano configurados.");
+    }
+
+    // 1737 - Spiral Spear Strike
+    void Effect_1737_SpiralSpearStrike(CardDisplay source)
+    {
+        // Equip only to "Gaia The Fierce Knight", "Swift Gaia the Fierce Knight", or "Gaia the Dragon Champion".
+        // Piercing. If "Gaia the Dragon Champion" inflicts damage: Draw 2, Discard 1.
+        Effect_Equip(source, 0, 0); // Lógica de alvo específico no filtro do Effect_Equip
+        // Lógica de piercing e draw/discard no BattleManager/OnDamageDealt.
+        Debug.Log("Spiral Spear Strike: Efeitos de perfurante e compra/descarte configurados.");
+    }
+
+    // 1738 - Spirit Barrier
+    void Effect_1738_SpiritBarrier(CardDisplay source)
+    {
+        // While you control a monster, you take no battle damage.
+        // Lógica passiva no BattleManager.
+        Debug.Log("Spirit Barrier: Sem dano de batalha se tiver monstro.");
+    }
+
+    // 1739 - Spirit Caller
+    void Effect_1739_SpiritCaller(CardDisplay source)
+    {
+        // FLIP: You can Special Summon 1 Level 3 or lower Normal Monster from your Graveyard.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> targets = gy.FindAll(c => c.type.Contains("Normal") && c.type.Contains("Monster") && c.level <= 3);
+
+        if (targets.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(targets, "Reviver Normal Lv3-", (selected) => {
+                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+            });
+        }
+    }
+
+    // 1740 - Spirit Elimination
+    void Effect_1740_SpiritElimination(CardDisplay source)
+    {
+        // This turn, any monster sent from your side of the field to the Graveyard is banished instead.
+        Debug.Log("Spirit Elimination: Monstros serão banidos em vez de irem para o GY neste turno.");
+        // TODO: Adicionar flag no GameManager: `banishInsteadOfGraveyard = true`
+    }
+
+    // 1745 - Spirit Reaper
+    void Effect_1745_SpiritReaper(CardDisplay source)
+    {
+        // Cannot be destroyed by battle. Destroyed when targeted. Direct attack -> discard.
+        // Lógica passiva/trigger no BattleManager e SpellTrapManager.
+        Debug.Log("Spirit Reaper: Efeitos de indestrutibilidade, alvo e descarte configurados.");
+    }
+
+    // 1746 - Spirit Ryu
+    void Effect_1746_SpiritRyu(CardDisplay source)
+    {
+        // Discard 1 Dragon-Type monster from your hand to have this card gain 1000 ATK until the End Phase.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        List<CardData> dragons = hand.FindAll(c => c.race == "Dragon");
+
+        if (dragons.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(dragons, "Descarte 1 Dragão", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 1000, source));
+            });
+        }
+    }
+
+    // 1747 - Spirit of Flames
+    void Effect_1747_SpiritOfFlames(CardDisplay source)
+    {
+        // Cannot be Normal Summoned/Set. Must first be Special Summoned (from your hand) by banishing 1 FIRE monster from your Graveyard.
+        if (!source.isOnField)
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> fires = gy.FindAll(c => c.attribute == "Fire");
+            if (fires.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(fires, "Banir 1 FIRE", (selected) => {
+                    GameManager.Instance.RemoveFromPlay(selected, source.isPlayerCard);
+                    gy.Remove(selected);
+                    GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                    GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                });
+            }
+        }
+    }
+
+    // 1749 - Spirit of the Breeze
+    void Effect_1749_SpiritOfTheBreeze(CardDisplay source)
+    {
+        // FLIP: Gain 1000 LP for each "Spirit of the Breeze" on the field.
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            foreach(var m in all)
+                if (m.CurrentCardData.name == "Spirit of the Breeze") count++;
+        }
+        Effect_GainLP(source, count * 1000);
+    }
 }
