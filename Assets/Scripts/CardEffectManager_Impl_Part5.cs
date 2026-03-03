@@ -520,7 +520,7 @@ public partial class CardEffectManager
     // 2044 - Viser Des
     void Effect_2044_ViserDes(CardDisplay source)
     {
-        // Normal Summon: Target 1 opp monster. Destroy it after 3 turns.
+        // Normal Summon: Target 1 opp monster. Destroy it after 3 of your turns.
         if (source.summonedThisTurn && !source.wasSpecialSummoned)
         {
             if (SpellTrapManager.Instance != null)
@@ -528,8 +528,9 @@ public partial class CardEffectManager
                 SpellTrapManager.Instance.StartTargetSelection(
                     (t) => t.isOnField && !t.isPlayerCard,
                     (target) => {
-                        Debug.Log($"Viser Des: {target.CurrentCardData.name} marcado para destruição em 3 turnos.");
-                        // Lógica de contagem de turnos pendente
+                        target.destructionTurnCountdown = 3;
+                        target.destructionCountdownOwnerIsPlayer = source.isPlayerCard; // Countdown ticks on your turn
+                        Debug.Log($"Viser Des: {target.CurrentCardData.name} marcado para destruição em 3 de seus turnos.");
                     }
                 );
             }
@@ -621,14 +622,17 @@ public partial class CardEffectManager
     // 2065 - Wave-Motion Cannon
     void Effect_2065_WaveMotionCannon(CardDisplay source)
     {
-        // Send to GY -> Damage 1000 * Standby Phases.
-        // Requer contador de turnos (incrementado no OnPhaseStart).
+        // Ignition: Send to GY -> Damage 1000 * Standby Phases passed.
+        // O contador é incrementado no OnPhaseStart.
         if (source.isOnField)
         {
-            int damage = source.turnCounter * 1000;
-            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
-            Destroy(source.gameObject);
-            Effect_DirectDamage(source, damage);
+            UIManager.Instance.ShowConfirmation("Ativar efeito do Canhão de Onda-de-Movimento?", () => {
+                int damage = source.turnCounter * 1000;
+                Debug.Log($"Wave-Motion Cannon: Ativado com {source.turnCounter} contadores. Dano: {damage}");
+                GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
+                Destroy(source.gameObject);
+                Effect_DirectDamage(source, damage);
+            });
         }
     }
 
@@ -670,6 +674,13 @@ public partial class CardEffectManager
     void Effect_2073_WhiteDragonRitual(CardDisplay source)
     {
         GameManager.Instance.BeginRitualSummon(source);
+    }
+
+    // 2074 - White Hole
+    void Effect_2074_WhiteHole(CardDisplay source)
+    {
+        // When opp activates Dark Hole: Negate/Protect.
+        Debug.Log("White Hole: Protege contra Dark Hole (Requer Chain).");
     }
 
     // 2075 - White Magical Hat
@@ -765,8 +776,8 @@ public partial class CardEffectManager
                 (target) => {
                     int boost = target.currentDef;
                     target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, boost, source));
-                    // TODO: Schedule destruction
-                    Debug.Log($"Wild Nature's Release: +{boost} ATK.");
+                    target.scheduledForDestruction = true;
+                    Debug.Log($"Wild Nature's Release: +{boost} ATK. Será destruído na End Phase.");
                 }
             );
         }
@@ -1168,6 +1179,12 @@ public partial class CardEffectManager
         GameManager.Instance.BeginRitualSummon(source);
     }
 
+    // 2139 - Zera the Mant
+    void Effect_2139_ZeraTheMant(CardDisplay source)
+    {
+        Debug.Log("Zera the Mant: Monstro Ritual.");
+    }
+
     // 2140 - Zero Gravity
     void Effect_2140_ZeroGravity(CardDisplay source)
     {
@@ -1204,6 +1221,12 @@ public partial class CardEffectManager
         Effect_Union(source, "Decayed Commander", 500, 500);
     }
 
+    // 2145 - Zombie Warrior
+    void Effect_2145_ZombieWarrior(CardDisplay source)
+    {
+        Debug.Log("Zombie Warrior: Monstro de Fusão.");
+    }
+
     // 2146 - Zombyra the Dark
     void Effect_2146_ZombyraTheDark(CardDisplay source)
     {
@@ -1216,8 +1239,8 @@ public partial class CardEffectManager
     // 2147 - Zone Eater
     void Effect_2147_ZoneEater(CardDisplay source)
     {
-        // Destroy attacker after 5 turns.
-        // Lógica no OnBattleEnd.
-        Debug.Log("Zone Eater: Destruição retardada configurada.");
+        // If this face-down card is attacked, destroy attacker after 5 turns.
+        // Lógica implementada no OnBattleEnd (CardEffectManager_Impl.cs).
+        Debug.Log("Zone Eater: Efeito de destruição retardada configurado.");
     }
 }

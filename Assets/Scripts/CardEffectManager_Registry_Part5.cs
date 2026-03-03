@@ -168,7 +168,7 @@ public partial class CardEffectManager
         AddEffect("2073", Effect_2073_WhiteDragonRitual);
 
         // 2074 - White Hole (Anti-Dark Hole)
-        AddEffect("2074", c => Debug.Log("White Hole: Protege contra Dark Hole (Requer Chain)."));
+        AddEffect("2074", Effect_2074_WhiteHole);
 
         // 2075 - White Magical Hat (Discard on Damage)
         AddEffect("2075", Effect_2075_WhiteMagicalHat);
@@ -282,6 +282,9 @@ public partial class CardEffectManager
         // 2138 - Zera Ritual (Ritual)
         AddEffect("2138", Effect_2138_ZeraRitual);
 
+        // 2139 - Zera the Mant (Ritual Monster)
+        AddEffect("2139", Effect_2139_ZeraTheMant);
+
         // 2140 - Zero Gravity (Change Positions)
         AddEffect("2140", Effect_2140_ZeroGravity);
 
@@ -293,6 +296,9 @@ public partial class CardEffectManager
 
         // 2144 - Zombie Tiger (Union)
         AddEffect("2144", Effect_2144_ZombieTiger);
+
+        // 2145 - Zombie Warrior (Fusion)
+        AddEffect("2145", Effect_2145_ZombieWarrior);
 
         // 2146 - Zombyra the Dark (Attack Restriction, Weaken)
         AddEffect("2146", Effect_2146_ZombyraTheDark);

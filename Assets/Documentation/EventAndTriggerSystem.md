@@ -225,6 +225,20 @@ Implementado no `GameManager` (`TrySummonMonster`, `PlaySpellTrap`) e `BattleMan
 *   **Rivalry of Warlords (1541):** Verifica se o novo monstro compartilha o Tipo dos monstros já controlados.
 *   **The Regulation of Tribe (1884):** Verifica no `BattleManager.CanAttack` se o monstro atacante pertence ao Tipo declarado.
 
+## 12. Sistema de Efeitos Retardados (Delayed Effects)
+
+Este sistema gerencia efeitos que não acontecem imediatamente, mas em uma fase futura ou após um número de turnos. A lógica é processada no `CardEffectManager.OnPhaseStart`.
+
+| Componente | Responsabilidade |
+| :--- | :--- |
+| **`CardDisplay`** | Armazena flags e contadores para efeitos retardados (`scheduledForDestruction`, `destructionTurnCountdown`). |
+| **`CardEffectManager`** | No `OnPhaseStart`, verifica todas as cartas no campo para processar os contadores e disparar os efeitos quando as condições são atendidas. |
+
+### Tipos de Efeitos
+*   **Destruição na End Phase:** Cartas como *Wild Nature's Release* marcam seu alvo com `scheduledForDestruction = true`. O `CardEffectManager` destrói a carta na End Phase.
+*   **Contador de Turnos:** Cartas como *Viser Des* ou *Zone Eater* definem `destructionTurnCountdown` em seus alvos. O `CardEffectManager` decrementa o contador a cada Standby Phase do jogador relevante e destrói a carta quando o contador chega a zero.
+*   **Acumulação por Fase:** Cartas como *Wave-Motion Cannon* usam o `turnCounter` genérico do `CardDisplay`, que é incrementado a cada Standby Phase do controlador.
+
 ## Boas Práticas para Adicionar Novas Cartas
 
 1.  **Verifique se já existe um Hook:** Antes de criar um novo sistema, veja se o efeito se encaixa em um dos eventos acima.

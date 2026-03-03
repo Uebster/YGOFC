@@ -65,6 +65,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     // Sistema de Contadores de Turno (para Swords of Revealing Light, etc)
     [HideInInspector] public int turnCounter = 0;
 
+    // Sistema de Efeitos Retardados
+    [HideInInspector] public bool scheduledForDestruction = false;
+    [HideInInspector] public int destructionTurnCountdown = -1;
+    [HideInInspector] public bool destructionCountdownOwnerIsPlayer;
+
     // Lista de modificadores ativos nesta carta
     private List<StatModifier> activeModifiers = new List<StatModifier>();
 

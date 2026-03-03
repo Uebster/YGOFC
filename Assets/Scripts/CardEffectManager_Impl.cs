@@ -47,9 +47,67 @@ public partial class CardEffectManager
         redirectSpellTarget = false;
         reverseStats = false;
 
+        if (phase == GamePhase.Standby)
+        {
+            // --- EFEITOS DE STANDBY PHASE ---
+
+            // Wave-Motion Cannon (2065): Acumula contador
+            CheckActiveCards("2065", (card) => {
+                // O contador aumenta na Standby Phase do controlador
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn)
+                {
+                    card.turnCounter++;
+                    Debug.Log($"Wave-Motion Cannon: Contador aumentado para {card.turnCounter}.");
+                }
+            });
+
+            // Processa contadores de destruição retardada
+            List<CardDisplay> allMonsters = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allMonsters);
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allMonsters);
+            }
+
+            foreach (var monster in allMonsters.ToList()) // Usar ToList para poder modificar a coleção original
+            {
+                if (monster != null && monster.destructionTurnCountdown > 0)
+                {
+                    // O contador diminui no início do turno do jogador que ativou o efeito
+                    if (monster.destructionCountdownOwnerIsPlayer == GameManager.Instance.isPlayerTurn)
+                    {
+                        monster.destructionTurnCountdown--;
+                        Debug.Log($"{monster.CurrentCardData.name} será destruído em {monster.destructionTurnCountdown} turno(s).");
+                        if (monster.destructionTurnCountdown == 0)
+                        {
+                            Debug.Log($"{monster.CurrentCardData.name} destruído por efeito retardado.");
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(monster);
+                            GameManager.Instance.SendToGraveyard(monster.CurrentCardData, monster.isPlayerCard);
+                            Destroy(monster.gameObject);
+                        }
+                    }
+                }
+            }
+        }
+
         if (phase == GamePhase.End)
         {
             // --- EFEITOS DE END PHASE ---
+
+            // Processa destruição agendada para a End Phase (Wild Nature's Release)
+            List<CardDisplay> toDestroy = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, toDestroy);
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, toDestroy);
+            }
+            foreach (var monster in toDestroy.Where(m => m != null && m.scheduledForDestruction).ToList())
+            {
+                Debug.Log($"{monster.CurrentCardData.name} destruído por efeito na End Phase.");
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(monster);
+                GameManager.Instance.SendToGraveyard(monster.CurrentCardData, monster.isPlayerCard);
+                Destroy(monster.gameObject);
+            }
 
             // 1757 - Spiritual Energy Settle Machine (Manutenção)
             bool machineActive = false;
@@ -2150,6 +2208,15 @@ public partial class CardEffectManager
             // Se destruiu o monstro (target está no GY ou marcado para destruição)
             // Chamamos o efeito registrado
             ExecuteCardEffect(attacker);
+        }
+
+        // 2147 - Zone Eater
+        if (target != null && target.CurrentCardData.id == "2147" && attacker != null)
+        {
+            // Se o Zone Eater foi atacado, marca o atacante para destruição
+            attacker.destructionTurnCountdown = 5;
+            attacker.destructionCountdownOwnerIsPlayer = attacker.isPlayerCard; // O contador diminui no turno do dono do atacante
+            Debug.Log($"Zone Eater: {attacker.CurrentCardData.name} será destruído em 5 turnos.");
         }
 
         // Master Monk (1182) & Mataza (1184): Reset attack flag for double attack
