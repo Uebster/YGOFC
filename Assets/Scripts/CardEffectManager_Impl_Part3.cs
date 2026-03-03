@@ -4052,4 +4052,359 @@ public partial class CardEffectManager
         GameManager.Instance.DrawCard();
         Debug.Log("Pot of Greed: Comprou 2");
     }
+        // 1449 - Power Bond
+    void Effect_1449_PowerBond(CardDisplay source)
+    {
+        // Fusion Summon Machine. ATK doubled. End Phase: Damage = Original ATK.
+        Debug.Log("Power Bond: Fusão de Máquina com dobro de ATK e dano na End Phase.");
+    }
+
+    // 1450 - Power of Kaishin
+    void Effect_1450_PowerOfKaishin(CardDisplay source)
+    {
+        Effect_Equip(source, 300, 300, "Aqua");
+    }
+
+    // 1452 - Precious Cards from Beyond
+    void Effect_1452_PreciousCardsFromBeyond(CardDisplay source)
+    {
+        // If you Tribute Summon using 2 or more Tributes: Draw 2 cards.
+        // Lógica no OnSummonImpl.
+        Debug.Log("Precious Cards from Beyond: Ativo.");
+    }
+
+    // 1453 - Premature Burial
+    void Effect_1453_PrematureBurial(CardDisplay source)
+    {
+        // Pay 800 LP; SS monster from GY in Attack. Equip this card.
+        if (Effect_PayLP(source, 800))
+        {
+            Effect_Revive(source, false); // false = apenas seu GY
+            // Lógica de equipar e destruir se equip for destruído
+        }
+    }
+
+    // 1454 - Prepare to Strike Back
+    void Effect_1454_PrepareToStrikeBack(CardDisplay source)
+    {
+        // Trigger on attack. Coin toss to change position or destroy.
+        Debug.Log("Prepare to Strike Back: Contra-ataque.");
+    }
+
+    // 1456 - Prickle Fairy
+    void Effect_1456_PrickleFairy(CardDisplay source)
+    {
+        // Opponent cannot attack Insects. After damage calc, becomes Defense.
+        Debug.Log("Prickle Fairy: Protege insetos.");
+    }
+
+    // 1457 - Primal Seed
+    void Effect_1457_PrimalSeed(CardDisplay source)
+    {
+        // If BLS-EotB or CED-EotE on field: Add 2 banished cards to hand.
+        bool hasChaos = GameManager.Instance.IsCardActiveOnField("0189") || GameManager.Instance.IsCardActiveOnField("0289");
+        if (hasChaos)
+        {
+            List<CardData> banished = GameManager.Instance.GetPlayerRemoved();
+            if (banished.Count > 0)
+            {
+                int max = Mathf.Min(2, banished.Count);
+                GameManager.Instance.OpenCardMultiSelection(banished, "Recuperar Banidas", 1, max, (selected) => {
+                    foreach(var c in selected)
+                    {
+                        banished.Remove(c);
+                        GameManager.Instance.AddCardToHand(c, source.isPlayerCard);
+                    }
+                });
+            }
+        }
+    }
+
+    // 1458 - Princess of Tsurugi
+    void Effect_1458_PrincessOfTsurugi(CardDisplay source)
+    {
+        // FLIP: 500 damage for each S/T opponent controls.
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentSpellZones) if(z.childCount > 0) count++;
+            if (GameManager.Instance.duelFieldUI.opponentFieldSpell.childCount > 0) count++;
+        }
+        Effect_DirectDamage(source, count * 500);
+    }
+
+    // 1460 - Prohibition
+    void Effect_1460_Prohibition(CardDisplay source)
+    {
+        // Declare card name. Cannot be used.
+        Debug.Log("Prohibition: Carta proibida.");
+    }
+
+    // 1461 - Protective Soul Ailin
+    void Effect_1461_ProtectiveSoulAilin(CardDisplay source)
+    {
+        // Union for Indomitable Fighter Lei Lei.
+        Effect_Union(source, "Indomitable Fighter Lei Lei", 0, 0);
+    }
+
+    // 1462 - Protector of the Sanctuary
+    void Effect_1462_ProtectorOfTheSanctuary(CardDisplay source)
+    {
+        // Opponent cannot draw cards except during Draw Phase.
+        Debug.Log("Protector of the Sanctuary: Bloqueio de compra.");
+    }
+
+    // 1468 - Pyramid Energy
+    void Effect_1468_PyramidEnergy(CardDisplay source)
+    {
+        // Select 1 face-up monster; +200 ATK or +500 DEF.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isFlipped,
+                (t) => {
+                    // Simplificado: Dá os dois ou pede escolha (aqui dá ATK)
+                    t.ModifyStats(200, 0);
+                }
+            );
+        }
+    }
+
+    // 1469 - Pyramid Turtle
+    void Effect_1469_PyramidTurtle(CardDisplay source)
+    {
+        // Destroyed by battle: SS Zombie DEF <= 2000 from Deck.
+        Effect_SearchDeck(source, "Zombie", "Monster", 2000); // Deveria ser SS
+    }
+
+    // 1470 - Pyramid of Light
+    void Effect_1470_PyramidOfLight(CardDisplay source)
+    {
+        // Remove Andro/Sphinx Teleia from play if this card is removed.
+        Debug.Log("Pyramid of Light: Mantém as Esfinges.");
+    }
+
+    // 1471 - Pyro Clock of Destiny
+    void Effect_1471_PyroClockOfDestiny(CardDisplay source)
+    {
+        // Move turn count forward by 1.
+        GameManager.Instance.turnCount++;
+        Debug.Log("Pyro Clock of Destiny: Turno avançado em 1.");
+    }
+
+    // 1476 - Question
+    void Effect_1476_Question(CardDisplay source)
+    {
+        // Opponent guesses bottom monster in GY. If wrong, SS it.
+        Debug.Log("Question: Adivinhe o monstro.");
+    }
+
+    // 1478 - Rafflesia Seduction
+    void Effect_1478_RafflesiaSeduction(CardDisplay source)
+    {
+        // FLIP: Take control of 1 monster until End Phase.
+        Effect_ChangeControl(source, true);
+    }
+
+    // 1479 - Raging Flame Sprite
+    void Effect_1479_RagingFlameSprite(CardDisplay source)
+    {
+        // Direct attack. If successful, +1000 ATK.
+        Debug.Log("Raging Flame Sprite: Ativo.");
+    }
+
+    // 1480 - Raigeki
+    void Effect_1480_Raigeki(CardDisplay source)
+    {
+        DestroyAllMonsters(true, false);
+    }
+
+    // 1481 - Raigeki Break
+    void Effect_1481_RaigekiBreak(CardDisplay source)
+    {
+        // Discard 1 card; destroy 1 card on the field.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                
+                if (SpellTrapManager.Instance != null)
+                {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField,
+                        (target) => {
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                            Destroy(target.gameObject);
+                        }
+                    );
+                }
+            });
+        }
+    }
+
+    // 1482 - Raimei
+    void Effect_1482_Raimei(CardDisplay source)
+    {
+        Effect_DirectDamage(source, 300);
+    }
+
+    // 1483 - Rain of Mercy
+    void Effect_1483_RainOfMercy(CardDisplay source)
+    {
+        GameManager.Instance.GainLifePoints(true, 1000);
+        GameManager.Instance.GainLifePoints(false, 1000);
+    }
+
+    // 1484 - Rainbow Flower
+    void Effect_1484_RainbowFlower(CardDisplay source)
+    {
+        // Can attack directly. -400 ATK/DEF.
+        Debug.Log("Rainbow Flower: Ataque direto.");
+    }
+
+    // 1486 - Raise Body Heat
+    void Effect_1486_RaiseBodyHeat(CardDisplay source)
+    {
+        Effect_Equip(source, 300, 300, "Dinosaur");
+    }
+
+    // 1489 - Rare Metalmorph
+    void Effect_1489_RareMetalmorph(CardDisplay source)
+    {
+        // Target Machine +500 ATK. Negate Spell targeting it once.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.race == "Machine",
+                (t) => {
+                    t.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, source));
+                    Debug.Log("Rare Metalmorph: Equipado.");
+                }
+            );
+        }
+    }
+
+    // 1490 - Raregold Armor
+    void Effect_1490_RaregoldArmor(CardDisplay source)
+    {
+        // Equip: Opponent must attack equipped monster.
+        Effect_Equip(source, 0, 0);
+    }
+
+    // 1492 - Ray of Hope
+    void Effect_1492_RayOfHope(CardDisplay source)
+    {
+        // Add 2 LIGHT monsters from GY to Deck.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> lights = gy.FindAll(c => c.attribute == "Light");
+        
+        if (lights.Count >= 2)
+        {
+            GameManager.Instance.OpenCardMultiSelection(lights, "Retornar 2 LIGHT", 2, 2, (selected) => {
+                foreach(var c in selected)
+                {
+                    gy.Remove(c);
+                    GameManager.Instance.GetPlayerMainDeck().Add(c);
+                }
+                GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+            });
+        }
+    }
+
+    // 1493 - Re-Fusion
+    void Effect_1493_ReFusion(CardDisplay source)
+    {
+        // Pay 800 LP; SS Fusion from GY and equip.
+        if (Effect_PayLP(source, 800))
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> fusions = gy.FindAll(c => c.type.Contains("Fusion"));
+            
+            if (fusions.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(fusions, "Reviver Fusão", (selected) => {
+                    GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                    // Equip logic
+                });
+            }
+        }
+    }
+
+    // 1494 - Ready for Intercepting
+    void Effect_1494_ReadyForIntercepting(CardDisplay source)
+    {
+        // Target 1 Warrior/Spellcaster; change to face-down Defense.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && (t.CurrentCardData.race == "Warrior" || t.CurrentCardData.race == "Spellcaster"),
+                (t) => {
+                    t.ChangePosition();
+                    t.ShowBack();
+                }
+            );
+        }
+    }
+
+    // 1495 - Really Eternal Rest
+    void Effect_1495_ReallyEternalRest(CardDisplay source)
+    {
+        // Destroy all monsters equipped with Equip Cards.
+        Effect_0610_EternalRest(source); // Mesma lógica
+    }
+
+    // 1496 - Reaper of the Cards
+    void Effect_1496_ReaperOfTheCards(CardDisplay source)
+    {
+        // FLIP: Destroy 1 Trap.
+        Effect_FlipDestroy(source, TargetType.Trap);
+    }
+
+    // 1497 - Reaper on the Nightmare
+    void Effect_1497_ReaperOnTheNightmare(CardDisplay source)
+    {
+        // Direct attack. Discard 1 random from opp hand.
+        Debug.Log("Reaper on the Nightmare: Ataque direto e descarte.");
+    }
+
+    // 1498 - Reasoning
+    void Effect_1498_Reasoning(CardDisplay source)
+    {
+        // Opponent declares Level. Excavate until Normal Summonable. If Level matches, send to GY. Else SS.
+        Debug.Log("Reasoning: Adivinhe o nível.");
+    }
+
+    // 1499 - Reckless Greed
+    void Effect_1499_RecklessGreed(CardDisplay source)
+    {
+        // Draw 2 cards. Skip next 2 Draw Phases.
+        GameManager.Instance.DrawCard();
+        GameManager.Instance.DrawCard();
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.RegisterSkipDraw();
+            SpellTrapManager.Instance.RegisterSkipDraw();
+        }
+    }
+
+    // 1500 - Recycle
+    void Effect_1500_Recycle(CardDisplay source)
+    {
+        // Standby: Pay 300 LP; return 1 non-Monster from GY to bottom of Deck.
+        if (Effect_PayLP(source, 300))
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> targets = gy.FindAll(c => !c.type.Contains("Monster"));
+            
+            if (targets.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(targets, "Retornar ao Deck", (selected) => {
+                    gy.Remove(selected);
+                    GameManager.Instance.GetPlayerMainDeck().Add(selected); // Add to bottom
+                });
+            }
+        }
+    }
 }
