@@ -2477,7 +2477,7 @@ public partial class CardEffectManager
     void Effect_0863_HannibalNecromancer(CardDisplay source)
     {
         // Remove 1 Spell Counter from your side of the field to destroy 1 Trap Card.
-        if (RemoveSpellCounters(1, source.isPlayerCard))
+        if (SpellCounterManager.Instance.RemoveCountersFromField(1, source.isPlayerCard))
         {
             if (SpellTrapManager.Instance != null)
             {

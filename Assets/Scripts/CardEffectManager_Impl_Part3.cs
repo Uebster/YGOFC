@@ -437,9 +437,9 @@ public partial class CardEffectManager
     {
         // Ritual. Can put counter. Remove 3 counters -> Destroy all monsters.
         // Lógica de Spell Counter no OnSpellActivated
-        if (source.spellCounters >= 3)
+        if (SpellCounterManager.Instance.GetCount(source) >= 3)
         {
-            source.RemoveSpellCounter(3);
+            SpellCounterManager.Instance.RemoveCounter(source, 3);
             DestroyAllMonsters(true, true); // Exceto ele mesmo (filtro pendente)
             Debug.Log("Legendary Flame Lord: Incinerator ativado!");
         }
@@ -535,7 +535,7 @@ public partial class CardEffectManager
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && !t.isFlipped,
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Spell") && !t.isFlipped,
                 (target) => {
                     target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 0, source));
                     Debug.Log($"Micro Ray: DEF de {target.CurrentCardData.name} tornou-se 0.");
@@ -1407,8 +1407,10 @@ public partial class CardEffectManager
         {
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.CurrentCardData.type.Contains("Spell"),
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Spell") && !t.isFlipped,
                 (t) => {
                     t.AddSpellCounter(1);
+                    SpellCounterManager.Instance.AddCounter(t, 1);
                     Debug.Log($"Magic Reflector: Contador adicionado em {t.CurrentCardData.name}.");
                 }
             );
@@ -1538,14 +1540,14 @@ public partial class CardEffectManager
         // Effect: Spell Counter on Spell activation. +200 ATK per counter. Remove 2 -> Destroy monster.
         // Lógica de contadores no OnSpellActivated.
         // Ignition:
-        if (source.spellCounters >= 2)
+        if (SpellCounterManager.Instance.GetCount(source) >= 2)
         {
             if (SpellTrapManager.Instance != null)
             {
                 SpellTrapManager.Instance.StartTargetSelection(
                     (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
                     (t) => {
-                        source.RemoveSpellCounter(2);
+                        SpellCounterManager.Instance.RemoveCounter(source, 2);
                         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
                         GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
                         Destroy(t.gameObject);
@@ -1601,8 +1603,8 @@ public partial class CardEffectManager
             CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, targets);
             
             foreach(var t in targets)
-            {
-                if (!t.isFlipped) t.AddSpellCounter(1);
+            {    
+                if (!t.isFlipped) SpellCounterManager.Instance.AddCounter(t, 1);
             }
             Debug.Log("Mandragola: Contadores distribuídos.");
         }
@@ -2069,8 +2071,10 @@ public partial class CardEffectManager
     {
         // Effect: Remove 10 Spell Counters from your field; destroy all cards opponent controls.
         if (RemoveSpellCounters(10, source.isPlayerCard))
+        if (SpellCounterManager.Instance.RemoveCountersFromField(10, source.isPlayerCard))
         {
             DestroyAllMonsters(true, false);
+            DestroyAllMonsters(true, false); // Destrói monstros
             Effect_HarpiesFeatherDuster(source);
             Debug.Log("Mega Ton Magical Cannon: Campo do oponente limpo.");
         }
@@ -2554,6 +2558,7 @@ public partial class CardEffectManager
     {
         // Remove 2 counters -> SS Dark Magician or Buster Blader from GY.
         if (RemoveSpellCounters(2, source.isPlayerCard))
+        if (SpellCounterManager.Instance.RemoveCountersFromField(2, source.isPlayerCard))
         {
             List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
             List<CardData> targets = gy.FindAll(c => c.name == "Dark Magician" || c.name == "Buster Blader");
@@ -4044,20 +4049,25 @@ public partial class CardEffectManager
         // Activate: Place 3 Spell Counters.
         // Ignition: Move 1 counter to another card.
         if (source.spellCounters == 0 && !source.hasUsedEffectThisTurn) // Assumindo recém ativada
+        if (SpellCounterManager.Instance.GetCount(source) == 0 && !source.hasUsedEffectThisTurn) // Assumindo recém ativada
         {
             source.AddSpellCounter(3);
+            SpellCounterManager.Instance.AddCounter(source, 3);
             Debug.Log("Pitch-Black Power Stone: 3 contadores adicionados.");
         }
         else
         {
             // Lógica de mover contador (Ignição)
             if (source.spellCounters > 0 && SpellTrapManager.Instance != null)
+            if (SpellCounterManager.Instance.GetCount(source) > 0 && SpellTrapManager.Instance != null)
             {
                 SpellTrapManager.Instance.StartTargetSelection(
                     (t) => t.isOnField && t != source, // Alvo válido para receber contador
                     (target) => {
                         source.RemoveSpellCounter(1);
                         target.AddSpellCounter(1);
+                        SpellCounterManager.Instance.RemoveCounter(source, 1);
+                        SpellCounterManager.Instance.AddCounter(target, 1);
                         Debug.Log($"Pitch-Black Power Stone: Contador movido para {target.CurrentCardData.name}.");
                     }
                 );
@@ -4280,7 +4290,11 @@ public partial class CardEffectManager
         {
             source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 100, source));
             source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 100, source));
-            Debug.Log("Pumpking: Buff aplicado.");
+            // Usa contadores para rastrear turnos (limite de 4)
+            if (SpellCounterManager.Instance.GetCount(source) < 4)
+                SpellCounterManager.Instance.AddCounter(source, 1);
+            
+            Debug.Log($"Pumpking: Buff aplicado. Turno {SpellCounterManager.Instance.GetCount(source)}/4.");
         }
         // Lógica de Standby no OnPhaseStart.
     }

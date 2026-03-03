@@ -260,6 +260,7 @@ public class GameManager : MonoBehaviour
         if (BattleManager.Instance == null) CreateManager<BattleManager>();
         if (SpellTrapManager.Instance == null) CreateManager<SpellTrapManager>();
         if (ChainManager.Instance == null) CreateManager<ChainManager>();
+        if (SpellCounterManager.Instance == null) CreateManager<SpellCounterManager>();
         if (CardEffectManager.Instance == null) CreateManager<CardEffectManager>();
         
         // Cria o gerenciador de testes se o modo estiver ativo
@@ -415,6 +416,7 @@ public class GameManager : MonoBehaviour
 
         // Remove modificadores que esta carta gerou em outras
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
+        if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
 
         // Destrói o objeto visual
         Destroy(card.gameObject);
@@ -436,6 +438,7 @@ public class GameManager : MonoBehaviour
 
         // Remove modificadores
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
+        if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
 
         // Envia para o GY (Lógica de dados)
         SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
@@ -497,6 +500,7 @@ public class GameManager : MonoBehaviour
         // Remove modificadores (caso raro de efeito na mão, mas seguro)
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardDiscarded(card);
+        if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
 
         Destroy(card.gameObject);
     }
@@ -556,6 +560,7 @@ public class GameManager : MonoBehaviour
 
         // Remove modificadores
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
+        if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
 
         // Destrói objeto do campo
         Destroy(card.gameObject);
@@ -578,6 +583,7 @@ public class GameManager : MonoBehaviour
 
         // Remove modificadores
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
+        if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
 
         Destroy(card.gameObject);
         UpdatePileVisuals();
