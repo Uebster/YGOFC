@@ -752,6 +752,12 @@ public partial class CardEffectManager
         // 1387 - Ordeal of a Traveler (Hand Game)
         AddEffect("1387", c => Debug.Log("Ordeal of a Traveler: Oponente adivinha carta da mão."));
 
+        // 1428 - Phoenix Wing Wind Blast (Discard -> Spin)
+        AddEffect("1428", Effect_1428_PhoenixWingWindBlast);
+
+        // 1429 - Physical Double (Token Copy)
+        AddEffect("1429", Effect_1429_PhysicalDouble);
+
         // 1397 - Painful Choice (Search 5)
         AddEffect("1397", c => Debug.Log("Painful Choice: Seleciona 5, oponente escolhe 1 para sua mão."));
 

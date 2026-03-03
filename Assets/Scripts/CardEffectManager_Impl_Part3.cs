@@ -3855,4 +3855,102 @@ public partial class CardEffectManager
             });
         }
     }
+
+        void Effect_1410_PenaltyGame(CardDisplay source)
+    {
+        // Discard 1 Card; Choose 1 Effect.
+        // Oponent cannot draw cards. OR cannot activate S/T.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descartar uma carta", (discarded) =>
+            {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                Debug.Log("Penalty Game: Efeito sendo escolhido...(simulado).");
+            });
+        }
+    }
+
+    void Effect_1412_PenguinKnight(CardDisplay source)
+    {
+        // If this card is sent to the Graveyard as a result of battle, shuffle all the cards in your Graveyard into your Deck.
+        Debug.Log("Penguin Knight: Embaralha as cartas do seu cemitério de volta no Deck.");
+    }
+
+    void Effect_1413_PenguinSoldier(CardDisplay source)
+    {
+        // FLIP: Return up to 2 monsters on the field to the hand.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField,
+                (t) => {
+                    Debug.Log("Penguin Soldier: Retornando até 2 monstros para a mão (Efeito em progresso).");
+                }
+            );
+        }
+    }
+
+    void Effect_1414_PenumbralSoldierLady(CardDisplay source)
+    {
+        // If this card attacks a monster with the LIGHT Attribute, increase the ATK of this card by 1000 points during damage calculation only.
+        Debug.Log("Penumbral Soldier Lady: Aumenta o ATK em 1000 pontos ao atacar monstros LIGHT.");
+    }
+
+    void Effect_1416_PerfectMachineKing(CardDisplay source)
+    {
+        // Increase the ATK and DEF of this card by 500 points for each Machine-Type monster on the field.
+        Debug.Log("Perfect Machine King: Aumenta o ATK e DEF em 500 para cada monstro Machine-Type no campo.");
+    }
+
+    void Effect_1417_PerfectlyUltimateGreatMoth(CardDisplay source)
+    {
+        // Special Summoned by tributing "Petit Moth" equipped with "Cocoon of Evolution" for 4 or more of your turns.
+        Debug.Log("Perfectly Ultimate Great Moth: Invocado especialmente por tributar Petit Moth.");
+    }
+
+    void Effect_1418_PerformanceOfSword(CardDisplay source)
+    {
+        // This card is used to Ritual Summon "Skull Guardian".
+        Debug.Log("Performance of Sword: Usada para Ritual Summon de Skull Guardian.");
+    }
+
+    void Effect_1419_PetenTheDarkClown(CardDisplay source)
+    {
+        // If this card is sent from the field to the Graveyard: You can Special Summon 1 "Peten the Dark Clown" from your hand or Deck.
+        Debug.Log("Peten the Dark Clown: Quando enviado para o cemitério, pode Special Summon um Peten.");
+    }
+
+    void Effect_1426_PharaohsTreasure(CardDisplay source)
+    {
+        // Shuffle all cards in your hand into your Deck, then draw 1 card. If that card is a Spell Card, you can add 1 Spell Card from your Graveyard to your hand.
+        Debug.Log("Pharaoh's Treasure: Embaralha todas as cartas na sua mão no Deck.");
+    }
+
+    void Effect_1428_PhoenixWingWindBlast(CardDisplay source)
+    {
+        // Discard 1 card to target 1 card your opponent controls; return that target to the top of the Deck.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        GameManager.Instance.OpenCardSelection(hand, "Selecione carta para descartar", (selectedDiscard) => {
+            if (selectedDiscard != null)
+            {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == selectedDiscard).GetComponent<CardDisplay>());
+                Debug.Log("Phoenix Wing Wind Blast: Descarte 1 carta (pendente).");
+        
+                // UI de seleção do GY
+                List<CardData> oppField = GameManager.Instance.GetOpponentHandData();
+                SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField,
+                (t) => {
+                    Debug.Log($"Phoenix Wing Wind Blast: Carta retornada ao topo do deck.");
+                }
+            );
+            }
+        });
+    }
+
+    void Effect_1429_PhysicalDouble(CardDisplay source)
+    {
+       Debug.Log("Physical Double: Efeito para criar um token com os atributos do monstro do oponente."); 
+    }
 }
