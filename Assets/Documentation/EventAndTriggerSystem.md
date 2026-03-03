@@ -125,6 +125,7 @@ Gerencia a adição, remoção e contagem de Spell Counters em cartas.
 *   **Adicionar:** `SpellCounterManager.Instance.AddCounter(card, amount)`
 *   **Remover:** `SpellCounterManager.Instance.RemoveCounter(card, amount)`
 *   **Verificar:** `SpellCounterManager.Instance.GetCount(card)`
+*   **Acumulação Automática:** O evento `OnSpellActivated` no `CardEffectManager` verifica cartas como *Royal Magical Library* e adiciona contadores automaticamente.
 *   **Remover do Campo:** `SpellCounterManager.Instance.RemoveCountersFromField(amount, isPlayer)` (Útil para custos como *Mega Ton Magical Cannon*).
 
 ## 8. Sistema de Corrente (Chain System)
@@ -137,6 +138,10 @@ O `ChainManager` gerencia a pilha de ativação de efeitos, permitindo respostas
 | **`ChainLink` (Classe)** | Representa um único elo na corrente. Contém a carta fonte, o jogador, o tipo de gatilho (`TriggerType`), a velocidade do efeito (`SpellSpeed`) e um estado `isNegated`. |
 | **`SpellTrapManager`** | `GetValidResponses` verifica se um jogador tem cartas válidas para responder ao último elo da corrente. |
 | **`GameManager`** | Inicia a corrente ao ativar uma carta, chamando `ChainManager.AddToChain`. |
+
+### Helpers de Negação
+*   `GetLinkToNegate(CardDisplay source)`: Identifica o elo anterior na corrente que pode ser negado pela carta atual.
+*   `NegateAndDestroy(CardDisplay source, ChainLink targetLink)`: Nega o efeito do elo alvo, destrói a carta de origem e a envia para o cemitério. Usado por *Magic Jammer*, *Seven Tools of the Bandit*, etc.
 
 ### Fluxo da Corrente
 1.  **Gatilho**: Jogador A declara um ataque. `BattleManager` chama `ChainManager.AddToChain` com `TriggerType.Attack`. Isso cria o **Chain Link 1**.
@@ -188,6 +193,37 @@ O `SpellTrapManager` e `GameManager` fornecem métodos para seleção interativa
 
 *   `GameManager.Instance.TossCoin(count, callback)`: Rola moedas e retorna o número de caras.
 *   `Random.Range(1, 7)`: Usado para rolar dados (D6).
+
+## 10. Sistema de Manipulação de Fases e Turno (Phase & Turn Manipulation)
+
+Este sistema permite que cartas alterem o fluxo normal do jogo, pulando fases específicas do turno atual ou do próximo.
+
+| Componente | Responsabilidade |
+| :--- | :--- |
+| **`PhaseManager`** | Mantém o estado das fases e flags de pulo (`skipDrawPhase`, etc.). |
+| **`GameManager`** | Controla a alternância de turnos (`SwitchTurn`) e verifica condições de vitória. |
+
+### Funcionalidades
+*   **Pular Fase Atual:** Cartas como *Thunder of Ruler* definem flags como `skipBattlePhase = true` para o turno corrente.
+*   **Pular Fase Futura:** Cartas como *Time Seal* usam `RegisterSkipNextPhase` para agendar um pulo de fase no próximo turno do oponente.
+*   **Métodos:**
+    *   `RegisterSkipNextPhase(bool targetPlayerIsHuman, GamePhase phase)`: Agenda o pulo.
+    *   `StartTurn()`: Aplica os pulos agendados e reseta as flags.
+
+## 11. Sistema de Efeitos Contínuos e Restrições (Continuous Effects & Locks)
+
+Gerencia efeitos passivos que impõem regras globais ao jogo, verificados dinamicamente antes de permitir ações.
+
+### Negação de Efeitos
+Implementado no `CardEffectManager.ExecuteCardEffect`. Antes de executar qualquer efeito, o sistema verifica:
+*   **Skill Drain (1655):** Se ativo, impede a execução de efeitos de monstros face-up no campo.
+*   **The End of Anubis (1858):** Se ativo, impede a execução de efeitos de cartas no Cemitério.
+
+### Restrições de Invocação e Jogo
+Implementado no `GameManager` (`TrySummonMonster`, `PlaySpellTrap`) e `BattleManager`.
+*   **Spatial Collapse (1716):** Verifica `GetFieldCardCount`. Se >= 5, impede novas cartas.
+*   **Rivalry of Warlords (1541):** Verifica se o novo monstro compartilha o Tipo dos monstros já controlados.
+*   **The Regulation of Tribe (1884):** Verifica no `BattleManager.CanAttack` se o monstro atacante pertence ao Tipo declarado.
 
 ## Boas Práticas para Adicionar Novas Cartas
 
