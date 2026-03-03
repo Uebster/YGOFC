@@ -984,11 +984,42 @@ public partial class CardEffectManager
 
     public void OnAttackDeclared(CardDisplay attacker, CardDisplay target, System.Action onContinue)
     {
-        // 1581 - Sakuretsu Armor
-        // Se oponente ataca e o jogador tem Sakuretsu Armor setada
-        // ... (Lógica de ativação de trap)
+        // 1507 - Reflect Bounder
+        if (target != null && target.CurrentCardData.id == "1507" && !target.isFlipped && target.position == CardDisplay.BattlePosition.Attack)
+        {
+            int dmg = attacker.currentAtk;
+            Debug.Log($"Reflect Bounder: Causando {dmg} de dano ao atacante.");
+            if (attacker.isPlayerCard) GameManager.Instance.DamagePlayer(dmg);
+            else GameManager.Instance.DamageOpponent(dmg);
+        }
+
+        // 1554 - Rocket Warrior
+        if (attacker.CurrentCardData.id == "1554" && target != null)
+        {
+            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -500, attacker));
+            Debug.Log("Rocket Warrior: Alvo perdeu 500 ATK.");
+        }
 
         // 1592 - Sasuke Samurai #4
+        if (attacker.CurrentCardData.id == "1592" && target != null)
+        {
+            GameManager.Instance.TossCoin(1, (heads) => {
+                if (heads == 1) // Cara = Sucesso
+                {
+                    Debug.Log("Sasuke Samurai #4: Acertou! Destruindo alvo.");
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                    Destroy(target.gameObject);
+                    // Não chama onContinue pois o alvo foi destruído
+                }
+                else
+                {
+                    Debug.Log("Sasuke Samurai #4: Errou.");
+                    onContinue?.Invoke();
+                }
+            });
+            return; // Interrompe fluxo síncrono
+        }
 
         // Aqui poderíamos verificar Kuriboh na mão, etc.
         // Por enquanto, apenas continua o fluxo.
@@ -1033,14 +1064,6 @@ public partial class CardEffectManager
         {
             attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 0, target));
             Debug.Log("Sanga of the Thunder: ATK do atacante zerado.");
-        }
-
-        // 1554 - Rocket Warrior
-        if (attacker.CurrentCardData.id == "1554" && target != null)
-        {
-            // Reduz ATK do alvo em 500
-            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -500, attacker));
-            Debug.Log("Rocket Warrior: Alvo perdeu 500 ATK.");
         }
 
         // Injection Fairy Lily (79575620) - Lógica de pagar LP seria aqui
@@ -1195,6 +1218,15 @@ public partial class CardEffectManager
              }
         }
 
+        // 1507 - Reflect Bounder (Auto-destruição após cálculo de dano)
+        if (target != null && target.CurrentCardData.id == "1507" && target.position == CardDisplay.BattlePosition.Attack)
+        {
+             Debug.Log("Reflect Bounder: Auto-destruição após batalha.");
+             if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+             GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+             Destroy(target.gameObject);
+        }
+
         // 1001 - Kangaroo Champ
         if (attacker != null && attacker.CurrentCardData.id == "1001") attacker.ChangePosition();
         if (target != null && target.CurrentCardData.id == "1001") target.ChangePosition();
@@ -1305,15 +1337,29 @@ public partial class CardEffectManager
             GameManager.Instance.BanishCard(target);
         }
 
+        // 1572 - Ryu Kokki
+        if (attacker != null && attacker.CurrentCardData.id == "1572" && target != null)
+        {
+            if (target.CurrentCardData.race == "Warrior" || target.CurrentCardData.race == "Spellcaster")
+            {
+                Debug.Log("Ryu Kokki: Destruindo Warrior/Spellcaster.");
+                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                Destroy(target.gameObject);
+            }
+        }
+        if (target != null && target.CurrentCardData.id == "1572" && attacker != null)
+        {
+             if (attacker.CurrentCardData.race == "Warrior" || attacker.CurrentCardData.race == "Spellcaster")
+            {
+                Debug.Log("Ryu Kokki: Destruindo Warrior/Spellcaster.");
+                GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+                Destroy(attacker.gameObject);
+            }
+        }
+
         // Mefist the Infernal General (1197): Opponent discards 1
         if (attacker != null && attacker.CurrentCardData.id == "1197" && amount > 0)
         {
-            // 1592 - Sasuke Samurai #4
-            if (attacker.CurrentCardData.id == "1592")
-            {
-                // Coin toss
-            }
-
             if (attacker.isPlayerCard)
             {
                 GameManager.Instance.DiscardRandomHand(false, 1);
