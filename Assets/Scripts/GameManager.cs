@@ -440,6 +440,9 @@ public class GameManager : MonoBehaviour
         // Remove modificadores
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
         if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
+        
+        // Notifica tributo (Zolga)
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnTribute(card);
 
         // Envia para o GY (Lógica de dados)
         SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
@@ -662,6 +665,9 @@ public class GameManager : MonoBehaviour
             newCardDisplay.SetCard(cardData, cardBackTexture, showOpponentHand);
             opponentHand.Add(newCardGO);
         }
+
+        // Notifica adição à mão (Watapon)
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardAddedToHand(newCardDisplay);
     }
 
     public void DrawCard(bool ignoreLimit = false)

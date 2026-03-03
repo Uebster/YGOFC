@@ -88,6 +88,31 @@ public partial class CardEffectManager
                     }
                 }
             }
+
+            // Processa Reviver na Próxima Standby (Vampire Lord, Vampire's Curse)
+            if (reviveNextStandby.Count > 0)
+            {
+                for (int i = reviveNextStandby.Count - 1; i >= 0; i--)
+                {
+                    CardData cardData = reviveNextStandby[i];
+                    // Verifica se está no GY do jogador atual
+                    bool inPlayerGY = GameManager.Instance.GetPlayerGraveyard().Contains(cardData);
+                    bool inOppGY = GameManager.Instance.GetOpponentGraveyard().Contains(cardData);
+                    
+                    if (inPlayerGY && GameManager.Instance.isPlayerTurn)
+                    {
+                        GameManager.Instance.SpecialSummonFromData(cardData, true);
+                        reviveNextStandby.RemoveAt(i);
+                        Debug.Log($"{cardData.name} revivido do GY.");
+                    }
+                    else if (inOppGY && !GameManager.Instance.isPlayerTurn)
+                    {
+                        GameManager.Instance.SpecialSummonFromData(cardData, false);
+                        reviveNextStandby.RemoveAt(i);
+                        Debug.Log($"{cardData.name} revivido do GY.");
+                    }
+                }
+            }
         }
 
         if (phase == GamePhase.End)
@@ -761,6 +786,22 @@ public partial class CardEffectManager
             // Simula escolha do oponente
             Debug.Log("Dark Coffin: Oponente deve descartar ou destruir monstro.");
             if (isOwnerPlayer) GameManager.Instance.DiscardRandomHand(false, 1); // Simulado
+        }
+
+        // 2031 - Vampire Lord
+        if (card.id == "2031")
+        {
+            // Deveria verificar se foi destruído por efeito de carta do oponente
+            Debug.Log("Vampire Lord: Agendado para reviver na próxima Standby.");
+            reviveNextStandby.Add(card);
+        }
+
+        // 2032 - Vampire's Curse
+        if (card.id == "2032")
+        {
+            // Deveria verificar se foi destruído por batalha
+            Debug.Log("Vampire's Curse: Agendado para reviver na próxima Standby.");
+            reviveNextStandby.Add(card);
         }
 
         // 1578 - Sacred Phoenix of Nephthys
@@ -2231,6 +2272,50 @@ public partial class CardEffectManager
         // O método ReturnToHand no GameManager chama OnCardLeavesField.
         // Vamos adicionar a lógica lá ou criar um novo hook.
         // Por enquanto, simulamos no OnCardLeavesField se o destino for mão.
+    }
+
+    // --- NOVOS HOOKS ESPECÍFICOS ---
+
+    public void OnCounterTrapResolvedImpl(CardDisplay trap)
+    {
+        // 2034 - Van'Dalgyon the Dark Dragon Lord
+        List<CardData> hand = trap.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+        CardData vandalgyon = hand.Find(c => c.id == "2034");
+        
+        if (vandalgyon != null)
+        {
+            Debug.Log("Van'Dalgyon: Counter Trap resolvida. Invocando da mão.");
+            if (trap.isPlayerCard)
+            {
+                GameManager.Instance.RemoveCardFromHand(vandalgyon, true);
+                GameManager.Instance.SpecialSummonFromData(vandalgyon, true);
+            }
+            else
+            {
+                // Lógica para oponente (se necessário)
+            }
+        }
+    }
+
+    public void OnCardAddedToHandImpl(CardDisplay card)
+    {
+        // 2058 - Watapon
+        if (card.CurrentCardData.id == "2058")
+        {
+            Debug.Log("Watapon: Adicionado à mão por efeito. Invocando...");
+            GameManager.Instance.RemoveCardFromHand(card.CurrentCardData, card.isPlayerCard);
+            GameManager.Instance.SpecialSummonFromData(card.CurrentCardData, card.isPlayerCard);
+        }
+    }
+
+    public void OnTributeImpl(CardDisplay card)
+    {
+        // 2142 - Zolga
+        if (card.CurrentCardData.id == "2142")
+        {
+            Debug.Log("Zolga: Tributado. Ganha 2000 LP.");
+            GameManager.Instance.GainLifePoints(card.isPlayerCard, 2000);
+        }
     }
 
     public void OnLifePointsGained(bool isPlayer, int amount)

@@ -438,14 +438,14 @@ public partial class CardEffectManager
     {
         // If inflicts battle damage: Declare type; opp sends 1 from Deck to GY.
         // If destroyed by opp card effect: SS next Standby.
-        Debug.Log("Vampire Lord: Efeitos de mill e renascimento configurados.");
+        Debug.Log("Vampire Lord: Mill no dano. Renascimento na Standby (OnCardSentToGraveyard).");
     }
 
     // 2032 - Vampire's Curse
     void Effect_2032_VampiresCurse(CardDisplay source)
     {
         // If destroyed by battle: Pay 500 LP; SS next Standby. Gains 500 ATK.
-        Debug.Log("Vampire's Curse: Efeito de renascimento configurado.");
+        Debug.Log("Vampire's Curse: Renascimento na Standby (OnCardSentToGraveyard).");
     }
 
     // 2033 - Vampiric Orchis
@@ -462,7 +462,7 @@ public partial class CardEffectManager
     void Effect_2034_VanDalgyonTheDarkDragonLord(CardDisplay source)
     {
         // If Counter Trap negates: SS this card.
-        Debug.Log("Van'Dalgyon: Invocação por Counter Trap (Requer hook).");
+        Debug.Log("Van'Dalgyon: Invocação por Counter Trap (OnCounterTrapResolved).");
     }
 
     // 2035 - Vengeful Bog Spirit
@@ -612,11 +612,7 @@ public partial class CardEffectManager
     {
         // If added to hand by effect: SS.
         // Lógica no OnCardAddedToHand (se implementado) ou checagem manual.
-        if (!source.isOnField)
-        {
-             GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
-             GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
-        }
+        Debug.Log("Watapon: Invocação automática ao ser adicionado à mão (OnCardAddedToHand).");
     }
 
     // 2065 - Wave-Motion Cannon
@@ -1204,7 +1200,7 @@ public partial class CardEffectManager
         // Tribute -> Gain 2000 LP.
         // Lógica no OnTribute (se existisse) ou OnCardSentToGraveyard.
         // Simplificado: Se foi tributado (verificar flag isTributeSummoned no monstro invocado? Não, Zolga é o tributo).
-        Debug.Log("Zolga: Ganha 2000 LP se usado como tributo.");
+        Debug.Log("Zolga: Ganha 2000 LP se usado como tributo (OnTribute).");
     }
 
     // 2143 - Zoma the Spirit

@@ -181,6 +181,12 @@ public class ChainManager : MonoBehaviour
                 if (CardEffectManager.Instance != null)
                 {
                     CardEffectManager.Instance.ExecuteCardEffect(link.cardSource);
+                    
+                    // Hook para Counter Traps (Van'Dalgyon)
+                    if (link.cardSource.CurrentCardData.type.Contains("Counter Trap"))
+                    {
+                        CardEffectManager.Instance.OnCounterTrapResolved(link.cardSource);
+                    }
                 }
             }
 

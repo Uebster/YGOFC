@@ -10,6 +10,9 @@ public partial class CardEffectManager : MonoBehaviour
     // Mapeia ID da carta -> Função de efeito
     private Dictionary<string, System.Action<CardDisplay>> effectDatabase;
 
+    // Lista para reviver monstros na próxima Standby Phase (Vampire Lord, etc)
+    public List<CardData> reviveNextStandby = new List<CardData>();
+
     void Awake()
     {
         Instance = this;
@@ -75,6 +78,9 @@ public partial class CardEffectManager : MonoBehaviour
 
     public void OnBattlePositionChanged(CardDisplay card) { OnBattlePositionChangedImpl(card); }
     public void OnDamageDealt(CardDisplay attacker, CardDisplay target, int amount) { OnDamageDealtImpl(attacker, target, amount); }
+    public void OnCounterTrapResolved(CardDisplay trap) { OnCounterTrapResolvedImpl(trap); }
+    public void OnCardAddedToHand(CardDisplay card) { OnCardAddedToHandImpl(card); }
+    public void OnTribute(CardDisplay card) { OnTributeImpl(card); }
 
 
     // Métodos de Eventos (Implementados em CardEffectManager_Impl.cs)
@@ -88,6 +94,9 @@ public partial class CardEffectManager : MonoBehaviour
     // public void OnDamageCalculation(CardDisplay attacker, CardDisplay target);
     // public void OnBattleEnd(CardDisplay attacker, CardDisplay target);
     // public void OnLifePointsGained(bool isPlayer, int amount);
+    // partial void OnCounterTrapResolvedImpl(CardDisplay trap);
+    // partial void OnCardAddedToHandImpl(CardDisplay card);
+    // partial void OnTributeImpl(CardDisplay card);
 
     void DestroyAllMonsters(bool targetOpponent, bool targetPlayer)
     {
