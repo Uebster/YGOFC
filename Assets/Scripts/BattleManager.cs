@@ -166,6 +166,24 @@ public class BattleManager : MonoBehaviour
         }
 
         return true;
+                // 1402 - Panther Warrior
+        if (attacker.CurrentCardData.id == "1402")
+        {
+            // Requer tributo para atacar
+            // Como não podemos abrir UI aqui facilmente (retorno bool), verificamos se já tributou?
+            // Ou impedimos o ataque se não houver monstros para tributar.
+            // Implementação ideal: Ao clicar para atacar, abre popup "Tributar para atacar?".
+            // Aqui apenas bloqueamos se não houver outros monstros.
+            bool hasFodder = false;
+            // ... check fodder ...
+            if (!hasFodder) return false;
+            
+            // Se tiver, o clique do ataque deve tratar o custo.
+            // Por enquanto, permitimos e logamos o custo.
+            Debug.Log("Panther Warrior: Tributo necessário (Lógica de custo pendente).");
+        }
+
+        return true;
     }
 
     public bool CanAttack(CardDisplay attacker)

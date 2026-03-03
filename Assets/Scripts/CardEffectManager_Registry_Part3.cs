@@ -846,6 +846,9 @@ public partial class CardEffectManager
         // 1429 - Physical Double (Token Copy)
         AddEffect("1429", Effect_1429_PhysicalDouble);
 
+        // 1430 - Pikeru's Circle of Enchantment
+        AddEffect("1430", Effect_1430_PikerusCircleOfEnchantment);
+
         // 1431 - Pikeru's Second Sight (Reveal Draws)
         AddEffect("1431", Effect_1431_PikerusSecondSight);
 
@@ -929,6 +932,9 @@ public partial class CardEffectManager
 
         // 1462 - Protector of the Sanctuary (No extra draws)
         AddEffect("1462", Effect_1462_ProtectorOfTheSanctuary);
+
+        // 1465 - Pumpking the King of Ghosts
+        AddEffect("1465", Effect_1465_PumpkingTheKingOfGhosts);
 
         // 1468 - Pyramid Energy (Buff ATK or DEF)
         AddEffect("1468", Effect_1468_PyramidEnergy);
