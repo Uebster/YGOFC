@@ -450,6 +450,12 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // 3. Aplica adições e subtrações (Add) - ex: Equipamentos, Campos, Buffs
         foreach (var mod in activeModifiers)
         {
+            // 1857 - The Emperor's Holiday: Nega Equip Spells
+            if (mod.modifierType == StatModifier.ModifierType.Equipment && GameManager.Instance != null && GameManager.Instance.IsCardActiveOnField("1857"))
+            {
+                continue;
+            }
+
             if (mod.operation == StatModifier.Operation.Add)
             {
                 int valueToAdd = mod.value;

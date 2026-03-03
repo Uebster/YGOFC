@@ -35,6 +35,28 @@ public partial class CardEffectManager : MonoBehaviour
 
         string id = card.CurrentCardData.id;
 
+        // --- VERIFICAÇÕES DE NEGAÇÃO CONTÍNUA ---
+
+        // 1655 - Skill Drain: Nega efeitos de monstros face-up no campo
+        if (card.CurrentCardData.type.Contains("Monster") && card.isOnField && !card.isFlipped)
+        {
+            if (GameManager.Instance.IsCardActiveOnField("1655"))
+            {
+                Debug.Log($"Efeito de {card.CurrentCardData.name} negado por Skill Drain.");
+                return false;
+            }
+        }
+
+        // 1858 - The End of Anubis: Nega efeitos de cartas no Cemitério
+        if (card.isInPile && (GameManager.Instance.GetPlayerGraveyard().Contains(card.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(card.CurrentCardData)))
+        {
+            if (GameManager.Instance.IsCardActiveOnField("1858"))
+            {
+                Debug.Log($"Efeito de {card.CurrentCardData.name} no GY negado por The End of Anubis.");
+                return false;
+            }
+        }
+
         if (effectDatabase.ContainsKey(id))
         {
             Debug.Log($"Executando efeito da carta: {card.CurrentCardData.name} (ID: {id})");

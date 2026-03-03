@@ -547,7 +547,7 @@ public partial class CardEffectManager
     void Effect_1541_RivalryOfWarlords(CardDisplay source)
     {
         // Each player can only control 1 Type of monster.
-        Debug.Log("Rivalry of Warlords: Restrição de Tipo ativa (Lógica no SummonManager).");
+        Debug.Log("Rivalry of Warlords: Restrição de Tipo ativa (Verificado no GameManager).");
     }
 
     // 1543 - Robbin' Goblin
@@ -684,7 +684,7 @@ public partial class CardEffectManager
     void Effect_1563_RoyalDecree(CardDisplay source)
     {
         // Negate all other Trap effects on the field.
-        Debug.Log("Royal Decree: Outras Traps negadas (Passivo).");
+        Debug.Log("Royal Decree: Outras Traps negadas (Verificado no SpellTrapManager).");
     }
 
     // 1565 - Royal Keeper
@@ -1513,8 +1513,7 @@ public partial class CardEffectManager
         // Activate by paying 1000 LP. Negate effects of all face-up monsters.
         if (Effect_PayLP(source, 1000))
         {
-            Debug.Log("Skill Drain: Ativado. Efeitos de monstros negados.");
-            // Lógica de negação contínua deve ser verificada nos outros efeitos
+            Debug.Log("Skill Drain: Ativado. Efeitos de monstros negados (Verificado no CardEffectManager).");
         }
     }
 
@@ -2306,8 +2305,7 @@ public partial class CardEffectManager
 
         if (pCount <= 5 && oCount <= 5)
         {
-            Debug.Log("Spatial Collapse: Limite de campo 5 ativado.");
-            // TODO: Implementar restrição no GameManager
+            Debug.Log("Spatial Collapse: Limite de campo 5 ativado (Verificado no GameManager).");
         }
         else
         {
@@ -2358,7 +2356,7 @@ public partial class CardEffectManager
     void Effect_1721_SpellCanceller(CardDisplay source)
     {
         // Negate Spells.
-        Debug.Log("Spell Canceller: Magias negadas.");
+        Debug.Log("Spell Canceller: Magias negadas (Verificado no SpellTrapManager).");
     }
 
     // 1722 - Spell Economics
@@ -3674,14 +3672,14 @@ public partial class CardEffectManager
     void Effect_1857_TheEmperorsHoliday(CardDisplay source)
     {
         // Negate all Equip Spell Card effects on the field.
-        Debug.Log("The Emperor's Holiday: Equipamentos negados (Passivo).");
+        Debug.Log("The Emperor's Holiday: Equipamentos negados (Verificado no CardDisplay).");
     }
 
     // 1858 - The End of Anubis
     void Effect_1858_TheEndOfAnubis(CardDisplay source)
     {
         // While this card is face-up on the field, all effects of Spell, Trap, and Monster Cards that target a card(s) in the Graveyard or that activate in the Graveyard are negated.
-        Debug.Log("The End of Anubis: Bloqueio de efeitos no GY (Passivo).");
+        Debug.Log("The End of Anubis: Bloqueio de efeitos no GY (Verificado no CardEffectManager).");
     }
 
     // 1859 - The Eye of Truth
@@ -3966,8 +3964,8 @@ public partial class CardEffectManager
     void Effect_1884_TheRegulationOfTribe(CardDisplay source)
     {
         // Declare 1 Type. Monsters of that Type cannot attack. Tribute 1 monster each Standby.
-        Debug.Log("The Regulation of Tribe: Bloqueio de tipo (Simulado: Dragon).");
-        // Lógica de bloqueio no BattleManager.
+        Debug.Log("The Regulation of Tribe: Bloqueio de tipo (Simulado: Dragon) (Verificado no BattleManager).");
+        // Manutenção na Standby Phase pendente
     }
 
     // 1885 - The Reliable Guardian

@@ -1204,6 +1204,23 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Helper para contar cartas no campo de um jogador
+    public int GetFieldCardCount(bool isPlayer)
+    {
+        int count = 0;
+        if (duelFieldUI != null)
+        {
+            Transform[] monsterZones = isPlayer ? duelFieldUI.playerMonsterZones : duelFieldUI.opponentMonsterZones;
+            Transform[] spellZones = isPlayer ? duelFieldUI.playerSpellZones : duelFieldUI.opponentSpellZones;
+            Transform fieldZone = isPlayer ? duelFieldUI.playerFieldSpell : duelFieldUI.opponentFieldSpell;
+
+            foreach (var z in monsterZones) if (z.childCount > 0) count++;
+            foreach (var z in spellZones) if (z.childCount > 0) count++;
+            if (fieldZone.childCount > 0) count++;
+        }
+        return count;
+    }
+
     // --- LÓGICA DE INVOCACÃO ---
 
     // Renomeado para TrySummonMonster para indicar que é o início do processo
@@ -1214,6 +1231,36 @@ public class GameManager : MonoBehaviour
 
         // Chain Energy (0284)
         if (!CheckChainEnergyCost(isPlayer)) return;
+
+        // 1716 - Spatial Collapse (Limite de 5 cartas)
+        if (IsCardActiveOnField("1716"))
+        {
+            if (GetFieldCardCount(isPlayer) >= 5)
+            {
+                Debug.LogWarning("Spatial Collapse: Limite de 5 cartas no campo atingido.");
+                return;
+            }
+        }
+
+        // 1541 - Rivalry of Warlords (Apenas 1 Tipo)
+        if (IsCardActiveOnField("1541"))
+        {
+            string newRace = cardData.race;
+            bool conflict = false;
+            if (duelFieldUI != null)
+            {
+                Transform[] zones = isPlayer ? duelFieldUI.playerMonsterZones : duelFieldUI.opponentMonsterZones;
+                foreach (var z in zones)
+                {
+                    if (z.childCount > 0)
+                    {
+                        var m = z.GetChild(0).GetComponent<CardDisplay>();
+                        if (m != null && m.CurrentCardData.race != newRace) conflict = true;
+                    }
+                }
+            }
+            if (conflict) { Debug.LogWarning($"Rivalry of Warlords: Você só pode controlar 1 Tipo. Tentativa: {newRace}."); return; }
+        }
 
         // 0. Validação de Regras de Invocação (SummonManager)
         if (SummonManager.Instance != null)
@@ -1410,6 +1457,16 @@ public class GameManager : MonoBehaviour
 
         // Chain Energy (0284)
         if (!CheckChainEnergyCost(isPlayer)) return;
+
+        // 1716 - Spatial Collapse (Limite de 5 cartas)
+        if (IsCardActiveOnField("1716"))
+        {
+            if (GetFieldCardCount(isPlayer) >= 5)
+            {
+                Debug.LogWarning("Spatial Collapse: Limite de 5 cartas no campo atingido.");
+                return;
+            }
+        }
 
         // 0.5 Validação de Armadilha
         if (!devMode && isPlayer && cardData.type.Contains("Trap") && !isSet)
