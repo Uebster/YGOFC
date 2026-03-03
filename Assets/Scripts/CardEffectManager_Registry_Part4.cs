@@ -654,25 +654,25 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 1801 - Swarm of Scarabs (Flip Destroy Monster)
-        AddEffect("1801", c => Effect_FlipDestroy(c, TargetType.Monster));
+        AddEffect("1801", Effect_1801_SwarmOfScarabs);
 
         // 1802 - Swift Gaia the Fierce Knight (NS No Tribute)
-        AddEffect("1802", c => Debug.Log("Swift Gaia: NS sem tributo se for a única carta."));
+        AddEffect("1802", Effect_1802_SwiftGaiaTheFierceKnight);
 
         // 1804 - Sword Hunter (Equip destroyed)
-        AddEffect("1804", c => Debug.Log("Sword Hunter: Equipa monstros destruídos."));
+        AddEffect("1804", Effect_1804_SwordHunter);
 
         // 1806 - Sword of Dark Destruction (Equip Dark +400/-200)
-        AddEffect("1806", c => Effect_Equip(c, 400, -200, "", "Dark"));
+        AddEffect("1806", Effect_1806_SwordOfDarkDestruction);
 
         // 1807 - Sword of Deep-Seated (Equip +500/500, Recycle)
-        AddEffect("1807", c => Effect_Equip(c, 500, 500));
+        AddEffect("1807", Effect_1807_SwordOfDeepSeated);
 
         // 1808 - Sword of Dragon's Soul (Equip Warrior +700, Destroy Dragon)
-        AddEffect("1808", c => Effect_Equip(c, 700, 0, "Warrior"));
+        AddEffect("1808", Effect_1808_SwordOfDragonsSoul);
 
         // 1809 - Sword of the Soul-Eater (Equip Normal Lv3-, Buff)
-        AddEffect("1809", c => Debug.Log("Sword of the Soul-Eater: Tributa Normais para ganhar ATK."));
+        AddEffect("1809", Effect_1809_SwordOfTheSoulEater);
 
         // 1810 - Swords of Concealing Light (Face-down Defense)
         AddEffect("1810", Effect_1810_SwordsOfConcealingLight);
@@ -681,28 +681,28 @@ public partial class CardEffectManager
         AddEffect("1811", Effect_1811_SwordsOfRevealingLight);
 
         // 1812 - Swordsman from a Distant Land (Destroy monster after battle)
-        AddEffect("1812", c => Debug.Log("Swordsman from a Distant Land: Destrói monstro em 5 turnos."));
+        AddEffect("1812", Effect_1812_SwordsmanFromADistantLand);
 
         // 1816 - System Down (Pay 1000 Banish Machines)
-        AddEffect("1816", c => { Effect_PayLP(c, 1000); Debug.Log("System Down: Bane Machines do oponente."); });
+        AddEffect("1816", Effect_1816_SystemDown);
 
         // 1817 - T.A.D.P.O.L.E. (Search copies)
-        AddEffect("1817", c => Effect_SearchDeck(c, "T.A.D.P.O.L.E."));
+        AddEffect("1817", Effect_1817_TADPOLE);
 
         // 1818 - Tactical Espionage Expert (No Traps on Summon)
-        AddEffect("1818", c => Debug.Log("Tactical Espionage Expert: Sem traps na invocação."));
+        AddEffect("1818", Effect_1818_TacticalEspionageExpert);
 
         // 1819 - Tailor of the Fickle (Switch Equip)
-        AddEffect("1819", c => Debug.Log("Tailor of the Fickle: Troca alvo de equipamento."));
+        AddEffect("1819", Effect_1819_TailorOfTheFickle);
 
         // 1820 - Tainted Wisdom (Shuffle Deck)
-        AddEffect("1820", c => Debug.Log("Tainted Wisdom: Embaralha deck ao mudar para defesa."));
+        AddEffect("1820", Effect_1820_TaintedWisdom);
 
         // 1823 - Talisman of Spell Sealing (Lock Spells)
-        AddEffect("1823", c => Debug.Log("Talisman of Spell Sealing: Bloqueia Magias (requer Sealmaster)."));
+        AddEffect("1823", Effect_1823_TalismanOfSpellSealing);
 
         // 1824 - Talisman of Trap Sealing (Lock Traps)
-        AddEffect("1824", c => Debug.Log("Talisman of Trap Sealing: Bloqueia Armadilhas (requer Sealmaster)."));
+        AddEffect("1824", Effect_1824_TalismanOfTrapSealing);
 
         // 1827 - Taunt (Force Attack Target)
         AddEffect("1827", c => Debug.Log("Taunt: Força ataque em monstro específico."));

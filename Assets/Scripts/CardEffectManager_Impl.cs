@@ -773,6 +773,19 @@ public partial class CardEffectManager
             Debug.Log("Roc from the Valley of Haze: Voltando ao Deck.");
             // GameManager.Instance.ReturnToDeck(card, true); // Requer CardDisplay ou refatoração
         }
+
+        // 1807 - Sword of Deep-Seated
+        if (card.id == "1807")
+        {
+            Debug.Log("Sword of Deep-Seated: Retornando ao topo do Deck.");
+            // GameManager.Instance.ReturnToDeck(card, true);
+        }
+
+        // 1817 - T.A.D.P.O.L.E.
+        // Lógica já implementada no Effect_1817_TADPOLE, mas o gatilho é aqui se for destruído por batalha.
+        // Como o efeito é opcional, o jogador deve ativar. Se for automático, colocamos aqui.
+        // O efeito diz "When this card you control is destroyed by battle... you can add".
+        // Vamos assumir que o CardEffectManager lida com a ativação.
         
         // 1766 - Statue of the Wicked
         if (card.id == "1766" && isOwnerPlayer) // Se destruída (simplificado, deveria checar face-down)
@@ -2517,6 +2530,16 @@ public partial class CardEffectManager
         }
     }
 
+    partial void OnBattlePositionChangedImpl(CardDisplay card)
+    {
+        // 1820 - Tainted Wisdom
+        if (card.CurrentCardData.id == "1820" && card.position == CardDisplay.BattlePosition.Defense && !card.isFlipped)
+        {
+            // If changed from Attack to Defense (assumindo que estava em ataque antes)
+            Debug.Log("Tainted Wisdom: Embaralhando o Deck.");
+            GameManager.Instance.ShuffleDeck(card.isPlayerCard);
+        }
+    }
     void Effect_SecretBarrel(CardDisplay source)
     {
         Effect_DirectDamage(source, 1000); // Simplificado

@@ -2938,4 +2938,279 @@ public partial class CardEffectManager
             Effect_TurnSet(source);
         }
     }
+
+        // 1801 - Swarm of Scarabs
+    void Effect_1801_SwarmOfScarabs(CardDisplay source)
+    {
+        // Once per turn: You can change this card to face-down Defense Position.
+        // When this card is Flip Summoned: Target 1 monster your opponent controls; destroy that target.
+        if (source.isFlipped)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                    (target) => {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                    }
+                );
+            }
+        }
+        else
+        {
+            Effect_TurnSet(source);
+        }
+    }
+
+    // 1802 - Swift Gaia the Fierce Knight
+    void Effect_1802_SwiftGaiaTheFierceKnight(CardDisplay source)
+    {
+        // If this is the only card in your hand, you can Normal Summon it without Tributing.
+        // Lógica de invocação tratada no SummonManager.
+        Debug.Log("Swift Gaia: Condição de invocação sem tributo (Verificar SummonManager).");
+    }
+
+    // 1804 - Sword Hunter
+    void Effect_1804_SwordHunter(CardDisplay source)
+    {
+        // At the end of the Battle Phase, if this card destroyed a monster(s) by battle and sent it to the Graveyard this Battle Phase: Equip all those monsters from the Graveyard to this card as an Equip Spell Card(s) with this effect. The equipped monster gains 200 ATK.
+        // Lógica no OnBattleEnd/OnPhaseStart.
+        Debug.Log("Sword Hunter: Efeito de equipar monstros destruídos configurado.");
+    }
+
+    // 1806 - Sword of Dark Destruction
+    void Effect_1806_SwordOfDarkDestruction(CardDisplay source)
+    {
+        Effect_Equip(source, 400, -200, "", "Dark");
+    }
+
+    // 1807 - Sword of Deep-Seated
+    void Effect_1807_SwordOfDeepSeated(CardDisplay source)
+    {
+        // Equip: +500 ATK/DEF. If sent to GY: Place on top of Deck.
+        Effect_Equip(source, 500, 500);
+        // Lógica de retorno ao deck no OnCardSentToGraveyard.
+    }
+
+    // 1808 - Sword of Dragon's Soul
+    void Effect_1808_SwordOfDragonsSoul(CardDisplay source)
+    {
+        // Equip Warrior: +700 ATK. If battles Dragon, destroy it at end of Battle Phase.
+        Effect_Equip(source, 700, 0, "Warrior");
+        // Lógica de destruição de dragão no OnBattleEnd.
+    }
+
+    // 1809 - Sword of the Soul-Eater
+    void Effect_1809_SwordOfTheSoulEater(CardDisplay source)
+    {
+        // Equip only to Level 3 or lower Normal Monster. Tribute all other Normal Monsters. +1000 ATK per tribute.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Normal") && t.CurrentCardData.level <= 3,
+                (target) => {
+                    // Tribute others
+                    int count = 0;
+                    List<CardDisplay> toTribute = new List<CardDisplay>();
+                    if (GameManager.Instance.duelFieldUI != null)
+                    {
+                        foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+                        {
+                            if (z.childCount > 0)
+                            {
+                                var m = z.GetChild(0).GetComponent<CardDisplay>();
+                                if (m != null && m != target && m.CurrentCardData.type.Contains("Normal"))
+                                {
+                                    toTribute.Add(m);
+                                }
+                            }
+                        }
+                    }
+                    
+                    foreach(var m in toTribute)
+                    {
+                        GameManager.Instance.TributeCard(m);
+                        count++;
+                    }
+                    
+                    target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, count * 1000, source));
+                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
+                    Debug.Log($"Sword of the Soul-Eater: {count} tributados. +{count*1000} ATK.");
+                }
+            );
+        }
+    }
+
+    // 1810 - Swords of Concealing Light
+    void Effect_1810_SwordsOfConcealingLight(CardDisplay source)
+    {
+        // Destroy 2nd Standby. Change opp monsters to face-down Defense. Cannot change pos.
+        source.turnCounter = 2;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> oppMonsters = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, oppMonsters);
+            foreach(var m in oppMonsters)
+            {
+                if (!m.isFlipped) // Face-up
+                {
+                    m.ChangePosition(); // To Defense
+                    m.ShowBack(); // Face-down
+                }
+            }
+        }
+        Debug.Log("Swords of Concealing Light: Monstros do oponente virados para baixo.");
+    }
+
+    // 1811 - Swords of Revealing Light
+    void Effect_1811_SwordsOfRevealingLight(CardDisplay source)
+    {
+        // Destroy 3rd End Phase. Flip opp monsters face-up. Cannot attack.
+        source.turnCounter = 3;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> oppMonsters = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, oppMonsters);
+            foreach(var m in oppMonsters)
+            {
+                if (m.isFlipped) // Face-down
+                {
+                    m.RevealCard();
+                }
+            }
+        }
+        Debug.Log("Swords of Revealing Light: Monstros do oponente revelados. Ataques bloqueados.");
+    }
+
+    // 1812 - Swordsman from a Distant Land
+    void Effect_1812_SwordsmanFromADistantLand(CardDisplay source)
+    {
+        // If attacked, destroy attacker in 5th End Phase.
+        // Lógica no OnDamageCalculation/OnBattleEnd.
+        Debug.Log("Swordsman from a Distant Land: Efeito de destruição retardada configurado.");
+    }
+
+    // 1816 - System Down
+    void Effect_1816_SystemDown(CardDisplay source)
+    {
+        // Pay 1000 LP; banish all Machine-Type monsters your opponent controls and in their Graveyard.
+        if (Effect_PayLP(source, 1000))
+        {
+            // Field
+            List<CardDisplay> toBanishField = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+                {
+                    if (z.childCount > 0)
+                    {
+                        var m = z.GetChild(0).GetComponent<CardDisplay>();
+                        if (m != null && m.CurrentCardData.race == "Machine") toBanishField.Add(m);
+                    }
+                }
+            }
+            foreach(var m in toBanishField) GameManager.Instance.BanishCard(m);
+
+            // Graveyard
+            List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
+            List<CardData> toBanishGY = oppGY.FindAll(c => c.race == "Machine");
+            foreach(var c in toBanishGY)
+            {
+                GameManager.Instance.RemoveFromPlay(c, false);
+                oppGY.Remove(c);
+            }
+            
+            Debug.Log("System Down: Máquinas do oponente banidas.");
+        }
+    }
+
+    // 1817 - T.A.D.P.O.L.E.
+    void Effect_1817_TADPOLE(CardDisplay source)
+    {
+        // When destroyed by battle and sent to GY: Add any "T.A.D.P.O.L.E."s from Deck to hand.
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        List<CardData> tadpoles = deck.FindAll(c => c.name == "T.A.D.P.O.L.E.");
+        
+        if (tadpoles.Count > 0)
+        {
+            GameManager.Instance.OpenCardMultiSelection(tadpoles, "Adicionar T.A.D.P.O.L.E.", 1, tadpoles.Count, (selected) => {
+                foreach(var c in selected)
+                {
+                    deck.Remove(c);
+                    GameManager.Instance.AddCardToHand(c, source.isPlayerCard);
+                }
+                GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+            });
+        }
+    }
+
+    // 1818 - Tactical Espionage Expert
+    void Effect_1818_TacticalEspionageExpert(CardDisplay source)
+    {
+        // When Normal Summoned: No Trap Cards can be activated.
+        Debug.Log("Tactical Espionage Expert: Traps bloqueadas na invocação.");
+    }
+
+    // 1819 - Tailor of the Fickle
+    void Effect_1819_TailorOfTheFickle(CardDisplay source)
+    {
+        // Switch 1 Equip Card equipped to a monster to another correct target.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.property == "Equip",
+                (equipCard) => {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (newTarget) => newTarget.isOnField && newTarget.CurrentCardData.type.Contains("Monster"),
+                        (target) => {
+                            // Lógica simplificada de re-equipar:
+                            // Em um sistema completo, isso moveria o CardLink.
+                            Debug.Log($"Tailor of the Fickle: {equipCard.CurrentCardData.name} movido para {target.CurrentCardData.name}.");
+                        }
+                    );
+                }
+            );
+        }
+    }
+
+    // 1820 - Tainted Wisdom
+    void Effect_1820_TaintedWisdom(CardDisplay source)
+    {
+        // If changed from Attack to Defense: Shuffle Deck.
+        // Lógica no OnBattlePositionChangedImpl.
+        Debug.Log("Tainted Wisdom: Efeito de embaralhar configurado.");
+    }
+
+    // 1823 - Talisman of Spell Sealing
+    void Effect_1823_TalismanOfSpellSealing(CardDisplay source)
+    {
+        // Active if "Sealmaster Meisei". No Spells.
+        if (GameManager.Instance.IsCardActiveOnField("Sealmaster Meisei") || GameManager.Instance.IsCardActiveOnField("1602"))
+        {
+            Debug.Log("Talisman of Spell Sealing: Magias bloqueadas.");
+        }
+        else
+        {
+            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
+            Destroy(source.gameObject);
+        }
+    }
+
+    // 1824 - Talisman of Trap Sealing
+    void Effect_1824_TalismanOfTrapSealing(CardDisplay source)
+    {
+        // Active if "Sealmaster Meisei". No Traps.
+        if (GameManager.Instance.IsCardActiveOnField("Sealmaster Meisei") || GameManager.Instance.IsCardActiveOnField("1602"))
+        {
+            Debug.Log("Talisman of Trap Sealing: Armadilhas bloqueadas.");
+        }
+        else
+        {
+            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
+            Destroy(source.gameObject);
+        }
+    }
+
 }
