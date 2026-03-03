@@ -4752,4 +4752,155 @@ public partial class CardEffectManager
         }
     }
 
+        // 1976 - Tricky Spell 4
+    void Effect_1976_TrickySpell4(CardDisplay source)
+    {
+        // Send 1 "The Tricky" to GY. SS Tricky Tokens equal to opp monsters.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "The Tricky",
+                (tribute) => {
+                    GameManager.Instance.SendToGraveyard(tribute.CurrentCardData, tribute.isPlayerCard);
+                    Destroy(tribute.gameObject);
+
+                    int oppCount = 0;
+                    if (GameManager.Instance.duelFieldUI != null)
+                    {
+                        foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+                            if(z.childCount > 0) oppCount++;
+                    }
+
+                    for(int i=0; i<oppCount; i++)
+                    {
+                        GameManager.Instance.SpawnToken(source.isPlayerCard, 2000, 1200, "Tricky Token");
+                    }
+                }
+            );
+        }
+    }
+
+    // 1978 - Troop Dragon
+    void Effect_1978_TroopDragon(CardDisplay source)
+    {
+        // Destroyed by battle -> SS Troop Dragon from Deck.
+        Effect_SearchDeck(source, "Troop Dragon", "Monster"); // Should be SS directly
+    }
+
+    // 1979 - Tsukuyomi
+    void Effect_1979_Tsukuyomi(CardDisplay source)
+    {
+        // Cannot SS. Return to hand in End Phase.
+        // On Summon: Target 1 face-up monster; change to face-down Defense.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isFlipped, // Face-up
+                (target) => {
+                    target.ChangePosition(); // To Defense
+                    target.ShowBack(); // Face-down
+                    Debug.Log($"Tsukuyomi: {target.CurrentCardData.name} virado para baixo.");
+                }
+            );
+        }
+    }
+
+    // 1981 - Turtle Oath
+    void Effect_1981_TurtleOath(CardDisplay source)
+    {
+        GameManager.Instance.BeginRitualSummon(source);
+    }
+
+    // 1985 - Tutan Mask
+    void Effect_1985_TutanMask(CardDisplay source)
+    {
+        // Negate Spell/Trap targeting Zombie.
+        Debug.Log("Tutan Mask: Negação de alvo em Zumbi (Requer Chain).");
+    }
+
+    // 1988 - Twin Swords of Flashing Light - Tryce
+    void Effect_1988_TwinSwordsOfFlashingLightTryce(CardDisplay source)
+    {
+        // Send 1 card from hand to GY to activate. Equip. -500 ATK. Second attack.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0 && !source.isOnField) // Activation
+        {
+             GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                 GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                 Effect_Equip(source, -500, 0);
+             });
+        }
+        else if (source.isOnField)
+        {
+            // Already equipped logic handled by modifiers and BattleManager
+        }
+    }
+
+    // 1989 - Twin-Headed Behemoth
+    void Effect_1989_TwinHeadedBehemoth(CardDisplay source)
+    {
+        // If destroyed and sent to GY: SS with 1000 ATK/DEF during End Phase. Once per duel.
+        Debug.Log("Twin-Headed Behemoth: Renascimento agendado (Once per duel).");
+    }
+
+    // 1992 - Twin-Headed Wolf
+    void Effect_1992_TwinHeadedWolf(CardDisplay source)
+    {
+        // Negate Flip effects of monsters destroyed by battle.
+        Debug.Log("Twin-Headed Wolf: Negação de Flip em batalha.");
+    }
+
+    // 1993 - Twinheaded Beast
+    void Effect_1993_TwinheadedBeast(CardDisplay source)
+    {
+        // Double attack.
+        Debug.Log("Twinheaded Beast: Ataque duplo.");
+    }
+
+    // 1994 - Two Thousand Needles
+    void Effect_1994_TwoThousandNeedles(CardDisplay source)
+    {
+        // Defense pos, attacked, DEF > ATK -> Destroy attacker.
+        Debug.Log("Two Thousand Needles: Defesa mortal.");
+    }
+
+    // 1996 - Two-Man Cell Battle
+    void Effect_1996_TwoManCellBattle(CardDisplay source)
+    {
+        // End Phase: Turn player can SS Level 4 Normal.
+        Debug.Log("Two-Man Cell Battle: Invocação na End Phase.");
+    }
+
+    // 1998 - Two-Pronged Attack
+    void Effect_1998_TwoProngedAttack(CardDisplay source)
+    {
+        // Select 2 monsters you control and 1 opp monster. Destroy them.
+        if (SpellTrapManager.Instance != null)
+        {
+             SpellTrapManager.Instance.StartTargetSelection(
+                 (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                 (own1) => {
+                     SpellTrapManager.Instance.StartTargetSelection(
+                         (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster") && t != own1,
+                         (own2) => {
+                             SpellTrapManager.Instance.StartTargetSelection(
+                                 (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                                 (opp) => {
+                                     GameManager.Instance.SendToGraveyard(own1.CurrentCardData, true);
+                                     Destroy(own1.gameObject);
+                                     GameManager.Instance.SendToGraveyard(own2.CurrentCardData, true);
+                                     Destroy(own2.gameObject);
+                                     
+                                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(opp);
+                                     GameManager.Instance.SendToGraveyard(opp.CurrentCardData, false);
+                                     Destroy(opp.gameObject);
+                                 }
+                             );
+                         }
+                     );
+                 }
+             );
+        }
+    }
+
 }

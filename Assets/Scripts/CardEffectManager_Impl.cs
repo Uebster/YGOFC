@@ -485,6 +485,23 @@ public partial class CardEffectManager
                     GameManager.Instance.ReturnToHand(card);
                 }
             });
+
+            // 1979 - Tsukuyomi
+            CheckActiveCards("1979", (card) => {
+                if (card.isPlayerCard && !card.isFlipped) // Face-up
+                {
+                    GameManager.Instance.ReturnToHand(card);
+                }
+            });
+
+            // 1996 - Two-Man Cell Battle
+            CheckActiveCards("1996", (card) => {
+                if (card.isPlayerCard)
+                {
+                    // SS Level 4 Normal from hand
+                    Debug.Log("Two-Man Cell Battle: Pode invocar Normal Lv4 da mão.");
+                }
+            });
         }
         else if (phase == GamePhase.Standby)
         {
@@ -1514,6 +1531,17 @@ public partial class CardEffectManager
             }
         }
 
+        // 1994 - Two Thousand Needles
+        if (target != null && target.CurrentCardData.id == "1994" && target.position == CardDisplay.BattlePosition.Defense)
+        {
+            if (attacker != null && attacker.currentAtk < target.currentDef)
+            {
+                Debug.Log("Two Thousand Needles: Destruindo atacante.");
+                GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+                Destroy(attacker.gameObject);
+            }
+        }
+
         // Injection Fairy Lily (79575620) - Lógica de pagar LP seria aqui
 
         // Buster Rancher (0253)
@@ -1999,6 +2027,13 @@ public partial class CardEffectManager
                      Destroy(card.gameObject);
                 }
             }
+        }
+
+        // 1978 - Troop Dragon
+        if (card.id == "1978" && !isOwnerPlayer) // Destroyed by battle
+        {
+            Debug.Log("Troop Dragon: Invocando cópia do Deck.");
+            // Effect_SearchDeck(null, "Troop Dragon"); // Requer adaptação para SS
         }
 
         // Master Monk (1182) & Mataza (1184): Reset attack flag for double attack

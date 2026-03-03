@@ -1033,39 +1033,39 @@ public partial class CardEffectManager
         AddEffect("1975", Effect_1975_TributeToTheDoomed);
 
         // 1976 - Tricky Spell 4 (Tokens)
-        AddEffect("1976", c => Debug.Log("Tricky Spell 4: Tributa Tricky para invocar Tokens."));
+        AddEffect("1976", Effect_1976_TrickySpell4);
 
         // 1978 - Troop Dragon (Float)
-        AddEffect("1978", c => Effect_SearchDeck(c, "Troop Dragon"));
+        AddEffect("1978", Effect_1978_TroopDragon);
 
         // 1979 - Tsukuyomi (Flip Face-down, Return)
-        AddEffect("1979", c => Debug.Log("Tsukuyomi: Vira monstro face-down. Retorna para mão."));
+        AddEffect("1979", Effect_1979_Tsukuyomi);
 
         // 1981 - Turtle Oath (Ritual Spell)
-        AddEffect("1981", c => Debug.Log("Turtle Oath: Ritual."));
+        AddEffect("1981", Effect_1981_TurtleOath);
 
         // 1985 - Tutan Mask (Negate Target Zombie)
-        AddEffect("1985", c => Debug.Log("Tutan Mask: Nega S/T que alvo Zumbi."));
+        AddEffect("1985", Effect_1985_TutanMask);
 
         // 1988 - Twin Swords of Flashing Light - Tryce (Equip -500, 2 Attacks)
-        AddEffect("1988", c => { Effect_Equip(c, -500, 0); Debug.Log("Tryce: Ataque duplo."); });
+        AddEffect("1988", Effect_1988_TwinSwordsOfFlashingLightTryce);
 
         // 1989 - Twin-Headed Behemoth (Revive 1000)
-        AddEffect("1989", c => Debug.Log("Twin-Headed Behemoth: Renasce com 1000 ATK/DEF."));
+        AddEffect("1989", Effect_1989_TwinHeadedBehemoth);
 
         // 1992 - Twin-Headed Wolf (Negate Flip)
-        AddEffect("1992", c => Debug.Log("Twin-Headed Wolf: Nega efeitos Flip em batalha."));
+        AddEffect("1992", Effect_1992_TwinHeadedWolf);
 
         // 1993 - Twinheaded Beast (Double Attack)
-        AddEffect("1993", c => Debug.Log("Twinheaded Beast: Ataque duplo."));
+        AddEffect("1993", Effect_1993_TwinheadedBeast);
 
         // 1994 - Two Thousand Needles (Destroy Attacker)
-        AddEffect("1994", c => Debug.Log("Two Thousand Needles: Destrói atacante se ATK < DEF."));
+        AddEffect("1994", Effect_1994_TwoThousandNeedles);
 
         // 1996 - Two-Man Cell Battle (SS Normal End Phase)
-        AddEffect("1996", c => Debug.Log("Two-Man Cell Battle: Invoca Normal Lv4 na End Phase."));
+        AddEffect("1996", Effect_1996_TwoManCellBattle);
 
         // 1998 - Two-Pronged Attack (Destroy 2 Own, 1 Opp)
-        AddEffect("1998", c => Debug.Log("Two-Pronged Attack: Destrói 2 seus e 1 do oponente."));
+        AddEffect("1998", Effect_1998_TwoProngedAttack);
     }
 }
