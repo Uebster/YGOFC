@@ -19,22 +19,32 @@ public class FusionManager : MonoBehaviour
             return false;
         }
 
-        // A descrição dos materiais de fusão é um problema complexo de parsing.
-        // Por enquanto, vamos assumir um formato simples como: "Material 1" + "Material 2"
-        // Exemplo: "Blue-Eyes White Dragon" + "Blue-Eyes White Dragon" + "Blue-Eyes White Dragon"
-        
-        string requiredMaterialsText = GetMaterialsFromDescription(fusionMonster.description);
-        if (string.IsNullOrEmpty(requiredMaterialsText))
+        List<string> requiredMaterialNames = new List<string>();
+
+        // 1. Prioridade: Ler do campo de dados dedicado (fusion_materials)
+        if (fusionMonster.fusion_materials != null && fusionMonster.fusion_materials.Count > 0)
         {
-            Debug.LogWarning($"Materiais de fusão para {fusionMonster.name} não estão definidos em um formato esperado.");
-            return false; // Não é possível validar se não conhecemos os materiais.
+            requiredMaterialNames = new List<string>(fusionMonster.fusion_materials);
+        }
+        else
+        {
+            // 2. Fallback: Tentar ler da descrição (Formato "Mat1 + Mat2")
+            string requiredMaterialsText = GetMaterialsFromDescription(fusionMonster.description);
+            if (!string.IsNullOrEmpty(requiredMaterialsText))
+            {
+                requiredMaterialNames = requiredMaterialsText.Split('+').Select(s => s.Trim()).ToList();
+            }
         }
 
-        List<string> requiredMaterialNames = requiredMaterialsText.Split('+').Select(s => s.Trim()).ToList();
+        if (requiredMaterialNames.Count == 0)
+        {
+            Debug.LogWarning($"Materiais de fusão para {fusionMonster.name} não definidos (nem em dados, nem na descrição).");
+            return false;
+        }
 
         if (selectedMaterials.Count != requiredMaterialNames.Count)
         {
-            Debug.Log("Número incorreto de materiais.");
+            Debug.Log($"Número incorreto de materiais. Necessário: {requiredMaterialNames.Count}, Selecionado: {selectedMaterials.Count}");
             return false;
         }
 

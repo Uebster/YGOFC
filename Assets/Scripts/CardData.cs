@@ -14,6 +14,7 @@ public class CardData
     public string attribute;
     public string property;
     public string image_filename;
+    public System.Collections.Generic.List<string> fusion_materials; // Lista de nomes dos materiais de fusão
 }
 
 // Esta classe auxiliar é necessária porque o leitor de JSON padrão do Unity
