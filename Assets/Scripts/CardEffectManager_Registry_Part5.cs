@@ -220,84 +220,84 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 2106 - Woodland Sprite (Send Equip -> Burn)
-        AddEffect("2106", c => Debug.Log("Woodland Sprite: Envia Equip para causar 500 dano."));
+        AddEffect("2106", Effect_2106_WoodlandSprite);
 
         // 2107 - World Suppression (Negate Field Spell)
-        AddEffect("2107", c => Debug.Log("World Suppression: Nega Field Spell."));
+        AddEffect("2107", Effect_2107_WorldSuppression);
 
         // 2111 - Wroughtweiler (Recycle HERO/Poly)
-        AddEffect("2111", c => Debug.Log("Wroughtweiler: Recupera HERO e Poly."));
+        AddEffect("2111", Effect_2111_Wroughtweiler);
 
         // 2112 - Wynn the Wind Charmer (Flip Control Wind)
-        AddEffect("2112", c => Debug.Log("Wynn: Controlar monstro WIND."));
+        AddEffect("2112", Effect_2112_WynnTheWindCharmer);
 
         // 2114 - XY-Dragon Cannon (Fusion Destroy S/T)
-        AddEffect("2114", c => Debug.Log("XY-Dragon Cannon: Destrói S/T face-up."));
+        AddEffect("2114", Effect_2114_XYDragonCannon);
 
         // 2115 - XYZ-Dragon Cannon (Fusion Destroy Card)
-        AddEffect("2115", c => Debug.Log("XYZ-Dragon Cannon: Destrói carta."));
+        AddEffect("2115", Effect_2115_XYZDragonCannon);
 
         // 2116 - XZ-Tank Cannon (Fusion Destroy Face-down S/T)
-        AddEffect("2116", c => Debug.Log("XZ-Tank Cannon: Destrói S/T face-down."));
+        AddEffect("2116", Effect_2116_XZTankCannon);
 
         // 2117 - Xing Zhen Hu (Lock 2 Set S/T)
-        AddEffect("2117", c => Debug.Log("Xing Zhen Hu: Trava 2 S/T setadas."));
+        AddEffect("2117", Effect_2117_XingZhenHu);
 
         // 2118 - Y-Dragon Head (Union)
-        AddEffect("2118", c => Debug.Log("Y-Dragon Head: Union para X-Head Cannon."));
+        AddEffect("2118", Effect_2118_YDragonHead);
 
         // 2119 - YZ-Tank Dragon (Fusion Destroy Face-down Monster)
-        AddEffect("2119", c => Debug.Log("YZ-Tank Dragon: Destrói monstro face-down."));
+        AddEffect("2119", Effect_2119_YZTankDragon);
 
         // 2120 - Yado Karu (Bottom Deck)
-        AddEffect("2120", c => Debug.Log("Yado Karu: Coloca cartas da mão no fundo do deck."));
+        AddEffect("2120", Effect_2120_YadoKaru);
 
         // 2123 - Yamata Dragon (Draw until 5)
-        AddEffect("2123", c => Debug.Log("Yamata Dragon: Compra até ter 5 cartas ao causar dano."));
+        AddEffect("2123", Effect_2123_YamataDragon);
 
         // 2125 - Yami (Field Fiend/Spellcaster +200, Fairy -200)
-        AddEffect("2125", c => { Effect_Field(c, 200, 200, "Fiend"); Effect_Field(c, 200, 200, "Spellcaster"); Effect_Field(c, -200, -200, "Fairy"); });
+        AddEffect("2125", Effect_2125_Yami);
 
         // 2128 - Yata-Garasu (Skip Draw)
-        AddEffect("2128", c => Debug.Log("Yata-Garasu: Oponente pula Draw Phase."));
+        AddEffect("2128", Effect_2128_YataGarasu);
 
         // 2129 - Yellow Gadget (Search Green Gadget)
-        AddEffect("2129", c => Effect_SearchDeck(c, "Green Gadget"));
+        AddEffect("2129", Effect_2129_YellowGadget);
 
         // 2130 - Yellow Luster Shield (Continuous Spell +300 DEF)
-        AddEffect("2130", c => Effect_BuffStats(c, 0, 300));
+        AddEffect("2130", Effect_2130_YellowLusterShield);
 
         // 2131 - Yomi Ship (Destroy Killer)
-        AddEffect("2131", c => Debug.Log("Yomi Ship: Destrói quem o destruiu."));
+        AddEffect("2131", Effect_2131_YomiShip);
 
         // 2133 - Yu-Jo Friendship (Handshake LP Halve)
-        AddEffect("2133", c => Debug.Log("Yu-Jo Friendship: Aperto de mão, iguala LP."));
+        AddEffect("2133", Effect_2133_YuJoFriendship);
 
         // 2134 - Z-Metal Tank (Union)
-        AddEffect("2134", c => Debug.Log("Z-Metal Tank: Union para X ou Y."));
+        AddEffect("2134", Effect_2134_ZMetalTank);
 
         // 2135 - Zaborg the Thunder Monarch (Destroy Monster)
-        AddEffect("2135", c => Debug.Log("Zaborg: Destrói monstro ao ser tributado."));
+        AddEffect("2135", Effect_2135_ZaborgTheThunderMonarch);
 
         // 2138 - Zera Ritual (Ritual)
-        AddEffect("2138", c => Debug.Log("Zera Ritual: Ritual."));
+        AddEffect("2138", Effect_2138_ZeraRitual);
 
         // 2140 - Zero Gravity (Change Positions)
-        AddEffect("2140", c => Debug.Log("Zero Gravity: Inverte posições de todos os monstros."));
+        AddEffect("2140", Effect_2140_ZeroGravity);
 
         // 2142 - Zolga (Gain 2000 LP on Tribute)
-        AddEffect("2142", c => Debug.Log("Zolga: Ganha 2000 LP se usado como tributo."));
+        AddEffect("2142", Effect_2142_Zolga);
 
         // 2143 - Zoma the Spirit (Trap Monster Burn)
-        AddEffect("2143", c => Debug.Log("Zoma: Trap Monster, causa dano ao morrer."));
+        AddEffect("2143", Effect_2143_ZomaTheSpirit);
 
         // 2144 - Zombie Tiger (Union)
-        AddEffect("2144", c => Debug.Log("Zombie Tiger: Union para Decayed Commander."));
+        AddEffect("2144", Effect_2144_ZombieTiger);
 
         // 2146 - Zombyra the Dark (Attack Restriction, Weaken)
-        AddEffect("2146", c => Debug.Log("Zombyra: Não ataca direto. Perde 200 ATK ao destruir."));
+        AddEffect("2146", Effect_2146_ZombyraTheDark);
 
         // 2147 - Zone Eater (Destroy after 5 turns)
-        AddEffect("2147", c => Debug.Log("Zone Eater: Destrói atacado após 5 turnos."));
+        AddEffect("2147", Effect_2147_ZoneEater);
     }
 }

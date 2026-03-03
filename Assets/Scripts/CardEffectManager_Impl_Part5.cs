@@ -1,3 +1,10 @@
+using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
+
+public partial class CardEffectManager
+{   
+
     // =========================================================================================
     // LÓGICA PARA AS CARTAS (ID 2001 - 2025)
     // =========================================================================================
@@ -904,3 +911,313 @@
         }
         source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 100, source));
     }
+        // 2106 - Woodland Sprite
+    void Effect_2106_WoodlandSprite(CardDisplay source)
+    {
+        // Send 1 Equip Card equipped to this card to the GY. Inflict 500 damage.
+        // Requer sistema para identificar quais cartas estão equipadas a esta.
+        Debug.Log("Woodland Sprite: Envia Equip para causar 500 dano (Lógica de seleção de equip pendente).");
+        // Simulação de sucesso:
+        Effect_DirectDamage(source, 500);
+    }
+
+    // 2107 - World Suppression
+    void Effect_2107_WorldSuppression(CardDisplay source)
+    {
+        // Negate Field Spell activation.
+        Debug.Log("World Suppression: Nega Field Spell (Requer Chain).");
+    }
+
+    // 2111 - Wroughtweiler
+    void Effect_2111_Wroughtweiler(CardDisplay source)
+    {
+        // Destroyed by battle: Target 1 Elemental HERO and 1 Polymerization in GY; add to hand.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        CardData poly = gy.Find(c => c.name == "Polymerization");
+        CardData hero = gy.Find(c => c.name.Contains("Elemental HERO"));
+
+        if (poly != null && hero != null)
+        {
+            gy.Remove(poly);
+            gy.Remove(hero);
+            GameManager.Instance.AddCardToHand(poly, source.isPlayerCard);
+            GameManager.Instance.AddCardToHand(hero, source.isPlayerCard);
+            Debug.Log("Wroughtweiler: Recuperou HERO e Polymerization.");
+        }
+    }
+
+    // 2112 - Wynn the Wind Charmer
+    void Effect_2112_WynnTheWindCharmer(CardDisplay source)
+    {
+        // FLIP: Take control of 1 WIND monster.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.attribute == "Wind",
+                (target) => GameManager.Instance.SwitchControl(target)
+            );
+        }
+    }
+
+    // 2114 - XY-Dragon Cannon
+    void Effect_2114_XYDragonCannon(CardDisplay source)
+    {
+        // Discard 1 card; destroy 1 face-up S/T.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                
+                if (SpellTrapManager.Instance != null)
+                {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && !t.isPlayerCard && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")) && !t.isFlipped,
+                        (target) => {
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                            Destroy(target.gameObject);
+                        }
+                    );
+                }
+            });
+        }
+    }
+
+    // 2115 - XYZ-Dragon Cannon
+    void Effect_2115_XYZDragonCannon(CardDisplay source)
+    {
+        // Discard 1 card; destroy 1 card opp controls.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                
+                if (SpellTrapManager.Instance != null)
+                {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && !t.isPlayerCard,
+                        (target) => {
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                            Destroy(target.gameObject);
+                        }
+                    );
+                }
+            });
+        }
+    }
+
+    // 2116 - XZ-Tank Cannon
+    void Effect_2116_XZTankCannon(CardDisplay source)
+    {
+        // Discard 1 card; destroy 1 face-down S/T.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                
+                if (SpellTrapManager.Instance != null)
+                {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && !t.isPlayerCard && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")) && t.isFlipped,
+                        (target) => {
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                            Destroy(target.gameObject);
+                        }
+                    );
+                }
+            });
+        }
+    }
+
+    // 2117 - Xing Zhen Hu
+    void Effect_2117_XingZhenHu(CardDisplay source)
+    {
+        // Select 2 Set S/T; they cannot be activated.
+        Debug.Log("Xing Zhen Hu: Trava 2 S/T setadas (Lógica de seleção múltipla e bloqueio pendente).");
+    }
+
+    // 2118 - Y-Dragon Head
+    void Effect_2118_YDragonHead(CardDisplay source)
+    {
+        Effect_Union(source, "X-Head Cannon", 400, 400);
+    }
+
+    // 2119 - YZ-Tank Dragon
+    void Effect_2119_YZTankDragon(CardDisplay source)
+    {
+        // Discard 1 card; destroy 1 face-down monster.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                
+                if (SpellTrapManager.Instance != null)
+                {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster") && t.isFlipped,
+                        (target) => {
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                            Destroy(target.gameObject);
+                        }
+                    );
+                }
+            });
+        }
+    }
+
+    // 2120 - Yado Karu
+    void Effect_2120_YadoKaru(CardDisplay source)
+    {
+        // Change Attack to Defense -> Place hand on bottom of Deck.
+        // Lógica no OnBattlePositionChangedImpl.
+        Debug.Log("Yado Karu: Efeito de manipulação de mão configurado.");
+    }
+
+    // 2123 - Yamata Dragon
+    void Effect_2123_YamataDragon(CardDisplay source)
+    {
+        // Spirit. Battle Damage -> Draw until 5.
+        // Lógica no OnDamageDealtImpl.
+        Debug.Log("Yamata Dragon: Efeito de compra configurado.");
+    }
+
+    // 2125 - Yami
+    void Effect_2125_Yami(CardDisplay source)
+    {
+        Effect_Field(source, 200, 200, "Fiend");
+        Effect_Field(source, 200, 200, "Spellcaster");
+        Effect_Field(source, -200, -200, "Fairy");
+    }
+
+    // 2128 - Yata-Garasu
+    void Effect_2128_YataGarasu(CardDisplay source)
+    {
+        // Spirit. Battle Damage -> Skip next Draw Phase.
+        // Lógica no OnDamageDealtImpl.
+        Debug.Log("Yata-Garasu: Efeito de bloqueio de compra configurado.");
+    }
+
+    // 2129 - Yellow Gadget
+    void Effect_2129_YellowGadget(CardDisplay source)
+    {
+        Effect_SearchDeck(source, "Green Gadget");
+    }
+
+    // 2130 - Yellow Luster Shield
+    void Effect_2130_YellowLusterShield(CardDisplay source)
+    {
+        Effect_BuffStats(source, 0, 300);
+    }
+
+    // 2131 - Yomi Ship
+    void Effect_2131_YomiShip(CardDisplay source)
+    {
+        // Destroyed by battle -> Destroy killer.
+        // Lógica no OnCardSentToGraveyard.
+        Debug.Log("Yomi Ship: Efeito de destruição mútua configurado.");
+    }
+
+    // 2133 - Yu-Jo Friendship
+    void Effect_2133_YuJoFriendship(CardDisplay source)
+    {
+        // Handshake -> LP becomes average.
+        int combined = GameManager.Instance.playerLP + GameManager.Instance.opponentLP;
+        int average = combined / 2;
+        GameManager.Instance.playerLP = average;
+        GameManager.Instance.opponentLP = average;
+        Debug.Log("Yu-Jo Friendship: LP igualados.");
+    }
+
+    // 2134 - Z-Metal Tank
+    void Effect_2134_ZMetalTank(CardDisplay source)
+    {
+        Effect_Union(source, "X-Head Cannon", 600, 600);
+        Effect_Union(source, "Y-Dragon Head", 600, 600);
+    }
+
+    // 2135 - Zaborg the Thunder Monarch
+    void Effect_2135_ZaborgTheThunderMonarch(CardDisplay source)
+    {
+        // Tribute Summon: Destroy 1 monster.
+        if (source.summonedThisTurn && source.isTributeSummoned)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                    (target) => {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                    }
+                );
+            }
+        }
+    }
+
+    // 2138 - Zera Ritual
+    void Effect_2138_ZeraRitual(CardDisplay source)
+    {
+        GameManager.Instance.BeginRitualSummon(source);
+    }
+
+    // 2140 - Zero Gravity
+    void Effect_2140_ZeroGravity(CardDisplay source)
+    {
+        // Change positions of all face-up monsters.
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) m.ChangePosition();
+        }
+    }
+
+    // 2142 - Zolga
+    void Effect_2142_Zolga(CardDisplay source)
+    {
+        // Tribute -> Gain 2000 LP.
+        // Lógica no OnTribute (se existisse) ou OnCardSentToGraveyard.
+        // Simplificado: Se foi tributado (verificar flag isTributeSummoned no monstro invocado? Não, Zolga é o tributo).
+        Debug.Log("Zolga: Ganha 2000 LP se usado como tributo.");
+    }
+
+    // 2143 - Zoma the Spirit
+    void Effect_2143_ZomaTheSpirit(CardDisplay source)
+    {
+        // SS Trap Monster. Destroyed by battle -> Burn = ATK of killer.
+        GameManager.Instance.SpawnToken(source.isPlayerCard, 1800, 500, "Zoma Token");
+        // Lógica de dano no OnBattleEnd do Token.
+    }
+
+    // 2144 - Zombie Tiger
+    void Effect_2144_ZombieTiger(CardDisplay source)
+    {
+        Effect_Union(source, "Decayed Commander", 500, 500);
+    }
+
+    // 2146 - Zombyra the Dark
+    void Effect_2146_ZombyraTheDark(CardDisplay source)
+    {
+        // Cannot attack direct. Destroy monster -> -200 ATK.
+        // Lógica de ataque direto no BattleManager.
+        // Lógica de debuff no OnBattleEnd.
+        Debug.Log("Zombyra: Efeitos de restrição e debuff configurados.");
+    }
+
+    // 2147 - Zone Eater
+    void Effect_2147_ZoneEater(CardDisplay source)
+    {
+        // Destroy attacker after 5 turns.
+        // Lógica no OnBattleEnd.
+        Debug.Log("Zone Eater: Destruição retardada configurada.");
+    }
+}
