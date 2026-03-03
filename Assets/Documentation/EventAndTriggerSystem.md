@@ -112,7 +112,22 @@ Este sistema gerencia a Invocação-Ritual.
 6.  A Magia de Ritual e os tributos são enviados para o cemitério.
 7.  O Monstro de Ritual é invocado da mão para o campo.
 
-## 7. Sistema de Corrente (Chain System)
+## 7. Sistema de Contadores de Magia (Spell Counter System)
+
+Gerencia a adição, remoção e contagem de Spell Counters em cartas.
+
+| Componente | Responsabilidade |
+| :--- | :--- |
+| **`SpellCounterManager`** | Mantém o estado dos contadores para cada `CardDisplay`. Gerencia a visualização (prefabs de contadores). |
+| **`CardDisplay`** | Possui métodos de atalho `AddSpellCounter` e `RemoveSpellCounter` que delegam ao Manager. |
+
+### Uso
+*   **Adicionar:** `SpellCounterManager.Instance.AddCounter(card, amount)`
+*   **Remover:** `SpellCounterManager.Instance.RemoveCounter(card, amount)`
+*   **Verificar:** `SpellCounterManager.Instance.GetCount(card)`
+*   **Remover do Campo:** `SpellCounterManager.Instance.RemoveCountersFromField(amount, isPlayer)` (Útil para custos como *Mega Ton Magical Cannon*).
+
+## 8. Sistema de Corrente (Chain System)
 
 O `ChainManager` gerencia a pilha de ativação de efeitos, permitindo respostas e garantindo a ordem de resolução correta (LIFO - Last-In, First-Out).
 
@@ -135,7 +150,7 @@ O `ChainManager` gerencia a pilha de ativação de efeitos, permitindo respostas
     *   **Resolve Link 1:** O `ChainManager` verifica o estado `isNegated` do Link 1. Como está negado, o efeito do *Raigeki* não acontece.
 8.  A corrente termina. As cartas usadas (que não são contínuas) são enviadas ao cemitério.
 
-## 8. Outros Sistemas de Suporte
+## 9. Outros Sistemas de Suporte
 
 | Evento | Método | Descrição | Exemplos de Uso |
 | :--- | :--- | :--- | :--- |

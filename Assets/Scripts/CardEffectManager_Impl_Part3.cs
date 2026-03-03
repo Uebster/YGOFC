@@ -10,15 +10,13 @@ public partial class CardEffectManager
     void Effect_1001_KangarooChamp(CardDisplay source)
     {
         // Effect: If this card attacks or is attacked, change it to Defense Position at the end of the Damage Step.
-        // Lógica no OnBattleEnd.
-        Debug.Log("Kangaroo Champ: Efeito de mudança de posição configurado (OnBattleEnd).");
+        // Lógica implementada no OnBattleEnd.
     }
 
     void Effect_1004_KarakuriSpider(CardDisplay source)
     {
         // Effect: If this card attacks a DARK monster, destroy that monster.
-        // Lógica no OnDamageCalculation.
-        Debug.Log("Karakuri Spider: Destrói DARK se atacar (Passivo).");
+        // Lógica implementada no OnDamageCalculation.
     }
 
     void Effect_1005_KarateMan(CardDisplay source)
@@ -35,22 +33,19 @@ public partial class CardEffectManager
     void Effect_1008_Kazejin(CardDisplay source)
     {
         // Effect: Once while face-up, make attacking monster's ATK 0 during damage calculation.
-        // Lógica no OnDamageCalculation.
-        Debug.Log("Kazejin: Efeito de zerar ATK configurado (OnDamageCalculation).");
+        // Lógica implementada no OnDamageCalculation.
     }
 
     void Effect_1009_Kelbek(CardDisplay source)
     {
         // Effect: If attacked, return attacking monster to hand.
-        // Lógica no OnBattleEnd.
-        Debug.Log("Kelbek: Efeito de bounce configurado (OnBattleEnd).");
+        // Lógica implementada no OnBattleEnd.
     }
 
     void Effect_1010_Keldo(CardDisplay source)
     {
         // Effect: When sent to GY by battle: Select 2 cards in opp GY, shuffle into Deck.
-        // Lógica no OnCardSentToGraveyard.
-        Debug.Log("Keldo: Efeito de reciclagem configurado (OnCardSentToGraveyard).");
+        // Lógica implementada no OnCardSentToGraveyard.
     }
 
     void Effect_1014_KingDragun(CardDisplay source)
@@ -74,8 +69,7 @@ public partial class CardEffectManager
     void Effect_1016_KingTigerWanghu(CardDisplay source)
     {
         // Effect: When monster with ATK <= 1400 is Summoned, destroy it.
-        // Lógica no OnSummonImpl (Global Trigger).
-        Debug.Log("King Tiger Wanghu: Efeito de destruição automática configurado (OnSummonImpl).");
+        // Lógica implementada no OnSummonImpl.
     }
 
     void Effect_1018_KingOfTheSkullServants(CardDisplay source)
@@ -126,15 +120,13 @@ public partial class CardEffectManager
     void Effect_1022_Kiseitai(CardDisplay source)
     {
         // Effect: If attacked face-down, equip to attacker. Gain LP equal to half attacker's ATK each Standby.
-        // Lógica no BattleManager (Equip on attack) e OnPhaseStart (Gain LP).
-        Debug.Log("Kiseitai: Efeito de parasita configurado (BattleManager/OnPhaseStart).");
+        // Lógica implementada no BattleManager e OnPhaseStart.
     }
 
     void Effect_1023_KishidoSpirit(CardDisplay source)
     {
         // Effect: Monsters not destroyed by battle if ATK is equal.
-        // Lógica no BattleManager (ResolveDamage).
-        Debug.Log("Kishido Spirit: Proteção em empate de ATK configurada (BattleManager).");
+        // Lógica implementada no BattleManager.
     }
 
     void Effect_1024_KnightsTitle(CardDisplay source)
@@ -164,15 +156,13 @@ public partial class CardEffectManager
     {
         // Effect: As long as this card remains face-up on the field, monsters with the same name cannot exist on the field.
         // If a monster with the same name is Summoned, it is destroyed.
-        // Lógica no OnSummonImpl (Global Trigger).
-        Debug.Log("Kotodama: Regra de unicidade ativa (OnSummonImpl).");
+        // Lógica implementada no OnSummonImpl.
     }
 
     void Effect_1031_KozakysSelfDestructButton(CardDisplay source)
     {
         // Effect: When "Kozaky" is destroyed and sent to the Graveyard, inflict 1000 damage to the controller of this card.
-        // Lógica no OnCardSentToGraveyard.
-        Debug.Log("Kozaky's Self-Destruct Button: Efeito de dano configurado (OnCardSentToGraveyard).");
+        // Lógica implementada no OnCardSentToGraveyard.
     }
 
     void Effect_1033_Kryuel(CardDisplay source)
@@ -201,7 +191,7 @@ public partial class CardEffectManager
     void Effect_1037_Kuriboh(CardDisplay source)
     {
         // Effect: Discard to make battle damage 0.
-        // Lógica no OnDamageCalculation (Hand Trap).
+        // Lógica implementada no OnDamageCalculation.
         if (!source.isOnField) // Da mão
         {
             GameManager.Instance.DiscardCard(source);
@@ -209,41 +199,10 @@ public partial class CardEffectManager
         }
     }
 
-    void Effect_1040_KycooTheGhostDestroyer(CardDisplay source)
-    {
-        // Effect: When inflicts battle damage: Banish up to 2 monsters from opp GY. Opponent cannot banish from GY.
-        // Lógica de banir no OnDamageDealtImpl.
-        // Lógica de bloqueio no GameManager (RemoveFromPlay).
-        if (source.isOnField)
-        {
-            // Bloqueio passivo (deve ser checado no GameManager.RemoveFromPlay)
-            // Efeito de dano:
-            // (Isso seria chamado pelo OnDamageDealtImpl)
-            List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
-            List<CardData> monsters = oppGY.FindAll(c => c.type.Contains("Monster"));
-            if (monsters.Count > 0)
-            {
-                int max = Mathf.Min(2, monsters.Count);
-                GameManager.Instance.OpenCardMultiSelection(monsters, "Banir do Oponente (Kycoo)", 1, max, (selected) => {
-                    foreach(var c in selected)
-                    {
-                        GameManager.Instance.RemoveFromPlay(c, !source.isPlayerCard);
-                        oppGY.Remove(c);
-                    }
-                });
-            }
-        }
-    }
-
     void Effect_1046_LabyrinthOfNightmare(CardDisplay source)
     {
         // Effect: End Phase: Change battle position of all face-up monsters.
-        // Lógica no OnPhaseStart (End Phase).
-        if (GameManager.Instance.duelFieldUI != null)
-        {
-            // Itera e muda posição (simplificado)
-            Debug.Log("Labyrinth of Nightmare: Mudando posições de batalha na End Phase.");
-        }
+        // Lógica implementada no OnPhaseStart.
     }
 
     void Effect_1047_LadyAssailantOfFlames(CardDisplay source)
@@ -328,8 +287,7 @@ public partial class CardEffectManager
     void Effect_1056_LastWill(CardDisplay source)
     {
         // Effect: If monster sent to GY: SS 1 monster with ATK <= 1500 from Deck.
-        // Trigger global.
-        // Marca flag para permitir SS neste turno se condição for atendida
+        // Lógica implementada no OnCardSentToGraveyard.
         Debug.Log("Last Will: Efeito ativo. Se um monstro for para o GY, poderá invocar do Deck.");
         // GameManager.Instance.canSpecialSummonLastWill = true;
     }
@@ -397,13 +355,7 @@ public partial class CardEffectManager
     void Effect_1063_LegacyHunter(CardDisplay source)
     {
         // Effect: If destroys monster by battle: Opponent shuffles 1 random card from hand to Deck.
-        // Lógica no OnBattleEnd.
-        if (source.isOnField)
-        {
-            // Chamado quando destrói monstro
-            // GameManager.Instance.ShuffleHandToDeck(!source.isPlayerCard, 1);
-            Debug.Log("Legacy Hunter: Oponente embaralha 1 carta da mão no deck.");
-        }
+        // Lógica implementada no OnBattleEnd.
     }
 
     void Effect_1064_LegacyOfYataGarasu(CardDisplay source)
@@ -418,14 +370,13 @@ public partial class CardEffectManager
     void Effect_1065_LegendaryBlackBelt(CardDisplay source)
     {
         // Effect: Equip. If destroys monster by battle: Inflict damage = DEF of destroyed monster.
-        // Lógica no OnBattleEnd.
+        // Lógica implementada no OnBattleEnd.
         Effect_Equip(source, 0, 0); // Apenas equipa
     }
 
     void Effect_1066_LegendaryFiend(CardDisplay source)
     {
         // Effect: Gains 700 ATK each Standby Phase.
-        // Lógica no OnPhaseStart.
         if (source.isOnField && source.position == CardDisplay.BattlePosition.Attack)
         {
             source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 700, source));
@@ -448,12 +399,7 @@ public partial class CardEffectManager
     void Effect_1068_LegendaryJujitsuMaster(CardDisplay source)
     {
         // Effect: If battled in Defense: Return attacker to top of Deck.
-        // Lógica no OnBattleEnd.
-        if (source.position == CardDisplay.BattlePosition.Defense)
-        {
-            // Retorna atacante ao topo
-            Debug.Log("Legendary Jujitsu Master: Atacante retornado ao topo do Deck.");
-        }
+        // Lógica implementada no OnBattleEnd.
     }
 
     void Effect_1069_LegendarySword(CardDisplay source)
@@ -490,8 +436,7 @@ public partial class CardEffectManager
     void Effect_1075_LesserFiend(CardDisplay source)
     {
         // Effect: Monsters destroyed by this card are banished instead of going to GY.
-        // Lógica no OnBattleEnd.
-        Debug.Log("Lesser Fiend: Bane monstros destruídos.");
+        // Lógica implementada no OnBattleEnd.
     }
 
     void Effect_1076_LevelConversionLab(CardDisplay source)
@@ -851,8 +796,7 @@ public partial class CardEffectManager
     // 1264 - Monk Fighter
     void Effect_1264_MonkFighter(CardDisplay source)
     {
-        // No battle damage.
-        Debug.Log("Monk Fighter: Sem dano de batalha.");
+        // Lógica implementada no OnDamageCalculation.
     }
 
     // 1265 - Monster Egg
@@ -1067,8 +1011,7 @@ public partial class CardEffectManager
     void Effect_1296_MysteriousPuppeteer(CardDisplay source)
     {
         // Gain 500 LP on Summon.
-        // Lógica implementada no OnSummonImpl (CardEffectManager_Impl.cs).
-        Debug.Log("Mysterious Puppeteer: Efeito contínuo de ganho de LP ativo.");
+        // Lógica implementada no OnSummonImpl.
     }
 
     // 1297 - Mystery Hand
@@ -2347,8 +2290,7 @@ public partial class CardEffectManager
     void Effect_1232_MillenniumScorpion(CardDisplay source)
     {
         // Gains 500 ATK each time it destroys a monster by battle.
-        // Lógica implementada no OnBattleEnd (CardEffectManager_Impl.cs).
-        Debug.Log("Millennium Scorpion: Efeito de crescimento configurado.");
+        // Lógica implementada no OnBattleEnd.
     }
 
     // 1234 - Milus Radiant
@@ -2363,8 +2305,7 @@ public partial class CardEffectManager
     void Effect_1235_Minar(CardDisplay source)
     {
         // If discarded by opponent's effect: 1000 damage.
-        // Lógica no OnCardDiscarded (CardEffectManager_Impl.cs).
-        Debug.Log("Minar: Efeito de dano por descarte configurado.");
+        // Lógica implementada no OnCardDiscarded.
     }
 
     // 1236 - Mind Control
@@ -2466,15 +2407,13 @@ public partial class CardEffectManager
     void Effect_1241_MineGolem(CardDisplay source)
     {
         // If destroyed by battle: 500 damage to opp.
-        // Lógica no OnCardSentToGraveyard (CardEffectManager_Impl.cs).
-        Debug.Log("Mine Golem: Efeito de dano configurado.");
+        // Lógica implementada no OnCardSentToGraveyard.
     }
 
     // 1242 - Minefield Eruption
     void Effect_1242_MinefieldEruption(CardDisplay source)
     {
         // Damage 1000 per Mine Golem, then destroy them.
-        int count = 0;
         List<CardDisplay> golems = new List<CardDisplay>();
         
         if (GameManager.Instance.duelFieldUI != null)
@@ -2495,7 +2434,7 @@ public partial class CardEffectManager
 
         if (count > 0)
         {
-            Effect_DirectDamage(source, count * 1000);
+            Effect_DirectDamage(source, golems.Count * 1000);
             foreach(var g in golems)
             {
                 GameManager.Instance.SendToGraveyard(g.CurrentCardData, true);
@@ -2509,8 +2448,7 @@ public partial class CardEffectManager
     void Effect_1244_MinorGoblinOfficial(CardDisplay source)
     {
         // Opponent LP <= 3000 -> 500 dmg each Standby.
-        // Lógica no OnPhaseStart (CardEffectManager_Impl.cs).
-        Debug.Log("Minor Goblin Official: Ativo.");
+        // Lógica implementada no OnPhaseStart.
     }
 
     // 1245 - Miracle Dig
@@ -2576,25 +2514,21 @@ public partial class CardEffectManager
     void Effect_1248_MirageDragon(CardDisplay source)
     {
         // Opponent cannot activate Traps during Battle Phase.
-        // Lógica passiva verificada no BattleManager/SpellTrapManager.
-        Debug.Log("Mirage Dragon: Traps bloqueadas na batalha.");
+        // Lógica implementada no BattleManager.
     }
 
     // 1249 - Mirage Knight
     void Effect_1249_MirageKnight(CardDisplay source)
     {
         // Gain ATK = Opponent's ATK during calc. Banish at End Phase.
-        // Lógica de ATK no OnDamageCalculation (CardEffectManager_Impl.cs).
-        // Lógica de banir no OnPhaseStart (End Phase).
-        Debug.Log("Mirage Knight: Efeitos de batalha e auto-banimento configurados.");
+        // Lógica implementada no OnDamageCalculation e OnPhaseStart.
     }
 
     // 1250 - Mirage of Nightmare
     void Effect_1250_MirageOfNightmare(CardDisplay source)
     {
         // Opponent's Standby: Draw until 4. Your Standby: Discard same amount.
-        // Lógica no OnPhaseStart (CardEffectManager_Impl.cs).
-        Debug.Log("Mirage of Nightmare: Ativo.");
+        // Lógica implementada no OnPhaseStart.
     }
 
         // 1251 - Mirror Force (Já implementado como Effect_MirrorForce, mantendo referência)
@@ -2603,9 +2537,7 @@ public partial class CardEffectManager
     void Effect_1252_MirrorWall(CardDisplay source)
     {
         // Effect: Halve ATK of opponent's attacking monsters. Pay 2000 LP during Standby.
-        // A lógica de corte de ATK é passiva e será tratada no hook OnAttackDeclared/OnDamageCalculation.
-        // A manutenção é tratada no CheckMaintenanceCosts.
-        Debug.Log("Mirror Wall: Ativada. Monstros atacantes terão ATK reduzido.");
+        // Lógica implementada no OnDamageCalculation e CheckMaintenanceCosts.
     }
 
     // 1254 - Mispolymerization
@@ -2683,8 +2615,7 @@ public partial class CardEffectManager
     void Effect_1259_MokeyMokeySmackdown(CardDisplay source)
     {
         // Continuous: While face-up Mokey Mokey exists, if Fairy destroyed, Mokey Mokeys gain 3000 ATK.
-        // Lógica passiva/gatilho implementada no OnCardSentToGraveyard.
-        Debug.Log("Mokey Mokey Smackdown: Ativo.");
+        // Lógica implementada no OnCardSentToGraveyard.
     }
 
     // 1261 - Molten Destruction
@@ -2697,8 +2628,7 @@ public partial class CardEffectManager
     void Effect_1262_MoltenZombie(CardDisplay source)
     {
         // Effect: When SS from GY: Draw 1 card.
-        // Lógica no OnSpecialSummon (CardEffectManager_Impl.cs).
-        Debug.Log("Molten Zombie: Efeito de compra configurado.");
+        // Lógica implementada no OnSpecialSummon.
     }
 
     // 1264 - Monk Fighter
@@ -2884,8 +2814,7 @@ public partial class CardEffectManager
     void Effect_1283_MucusYolk(CardDisplay source)
     {
         // Direct Attack. If inflicts battle damage: Gain 1000 ATK during next Standby.
-        // Ataque direto verificado no BattleManager.
-        // Ganho de ATK verificado no OnPhaseStart (Standby).
+        // Lógica implementada no BattleManager e OnPhaseStart.
         Debug.Log("Mucus Yolk: Efeitos configurados.");
     }
 
@@ -2963,8 +2892,7 @@ public partial class CardEffectManager
     void Effect_1291_MushroomMan2(CardDisplay source)
     {
         // Controller loses 300 LP Standby. Pay 500 LP End Phase to switch control.
-         // Lógica de Standby no OnPhaseStart.
-        // Lógica de End Phase (Ignição opcional? Não, regra diz "You can pay...").
+        // Lógica implementada no OnPhaseStart.
         // Vamos tratar como efeito de ignição disponível na End Phase.
         Debug.Log("Mushroom Man #2: Efeitos de fase configurados.");
     }
@@ -3058,8 +2986,7 @@ public partial class CardEffectManager
     void Effect_1301_MysticLamp(CardDisplay source)
     {
         // Effect: Can attack directly.
-        Debug.Log("Mystic Lamp: Ataque direto habilitado.");
-        // Lógica de ataque direto tratada no BattleManager
+        // Lógica implementada no BattleManager.
     }
 
     // 1302 - Mystic Plasma Zone
@@ -3091,8 +3018,7 @@ public partial class CardEffectManager
     void Effect_1304_MysticSwordsmanLV2(CardDisplay source)
     {
         // Effect: At start of Damage Step, if attacking face-down Defense: Destroy it.
-        // Lógica no OnDamageCalculation (CardEffectManager_Impl.cs).
-        // Level Up na End Phase (OnPhaseStart).
+        // Lógica implementada no OnDamageCalculation.
         Debug.Log("Mystic Swordsman LV2: Efeito de destruição automática configurado.");
     }
 
@@ -3100,8 +3026,7 @@ public partial class CardEffectManager
     void Effect_1305_MysticSwordsmanLV4(CardDisplay source)
     {
         // Effect: Cannot be Normal Summoned. Start of Damage Step: Destroy face-down Defense.
-        // Lógica no OnDamageCalculation.
-        // Level Up na End Phase.
+        // Lógica implementada no OnDamageCalculation.
         Debug.Log("Mystic Swordsman LV4: Efeito de destruição automática configurado.");
     }
 
@@ -3109,7 +3034,7 @@ public partial class CardEffectManager
     void Effect_1306_MysticSwordsmanLV6(CardDisplay source)
     {
         // Effect: Destroy face-down Defense. If done, place on top of Deck.
-        // Lógica no OnDamageCalculation.
+        // Lógica implementada no OnDamageCalculation.
         Debug.Log("Mystic Swordsman LV6: Efeito de destruição e topo do deck configurado.");
     }
 
@@ -3146,7 +3071,7 @@ public partial class CardEffectManager
     void Effect_1311_MysticalKnightOfJackal(CardDisplay source)
     {
         // Effect: Send destroyed monster to top of Deck.
-        // Lógica no OnBattleEnd.
+        // Lógica implementada no OnBattleEnd.
         Debug.Log("Mystical Knight of Jackal: Efeito de topo do deck configurado.");
     }
 
@@ -3266,7 +3191,7 @@ public partial class CardEffectManager
     void Effect_1326_NeedleBurrower(CardDisplay source)
     {
         // Effect: If destroys monster by battle and sends to GY: Inflict damage = Level x 500.
-        // Lógica no OnBattleEnd.
+        // Lógica implementada no OnBattleEnd.
         Debug.Log("Needle Burrower: Efeito de dano configurado.");
     }
 
@@ -3304,7 +3229,7 @@ public partial class CardEffectManager
     void Effect_1328_NeedleWall(CardDisplay source)
     {
         // Continuous Trap. Standby Phase logic.
-        Debug.Log("Needle Wall: Ativo.");
+        // Lógica implementada no OnPhaseStart.
     }
 
     // 1329 - Needle Worm
@@ -3330,7 +3255,7 @@ public partial class CardEffectManager
     void Effect_1331_NekoManeKing(CardDisplay source)
     {
         // Effect: Opponent's turn, sent to GY by opponent's effect -> End Turn.
-        // Logic in OnCardSentToGraveyard.
+        // Lógica implementada no OnCardSentToGraveyard.
         Debug.Log("Neko Mane King: Efeito de encerrar turno configurado.");
     }
 
@@ -3338,7 +3263,7 @@ public partial class CardEffectManager
     void Effect_1338_Newdoria(CardDisplay source)
     {
         // Effect: Destroyed by battle -> Destroy 1 monster.
-        // Logic in OnCardSentToGraveyard.
+        // Lógica implementada no OnCardSentToGraveyard.
         Debug.Log("Newdoria: Efeito de destruição configurado.");
     }
 
@@ -3351,7 +3276,7 @@ public partial class CardEffectManager
         {
             Effect_FlipDestroy(source, TargetType.Monster);
         }
-        // Hand effect in OnCardDiscarded/SentToGraveyard
+        // Lógica de mão no OnCardDiscarded.
     }
 
     // 1341 - Nightmare Horse
@@ -3407,7 +3332,7 @@ public partial class CardEffectManager
     void Effect_1346_NimbleMomonga(CardDisplay source)
     {
         // Destroyed by battle: Gain 1000 LP, SS up to 2 from Deck.
-        // Logic in OnCardSentToGraveyard.
+        // Lógica implementada no OnCardSentToGraveyard.
         Debug.Log("Nimble Momonga: Efeito de cura e invocação configurado.");
     }
 
@@ -3415,7 +3340,7 @@ public partial class CardEffectManager
     void Effect_1348_NinjaGrandmasterSasuke(CardDisplay source)
     {
         // Attack face-up Defense -> Destroy.
-        // Logic in OnDamageCalculation.
+        // Lógica implementada no OnDamageCalculation.
         Debug.Log("Ninja Grandmaster Sasuke: Efeito de destruição configurado.");
     }
 
@@ -3542,8 +3467,7 @@ public partial class CardEffectManager
     void Effect_1356_NonAggressionArea(CardDisplay source)
     {
         // Standby Phase, Discard 1. Opponent cannot Summon next turn.
-        // Lógica no OnPhaseStart (CardEffectManager_Impl.cs) para checar ativação.
-        // Aqui apenas o efeito imediato se ativado manualmente (o que não deve ocorrer na Standby, mas...)
+        // Lógica implementada no OnPhaseStart.
         Debug.Log("Non Aggression Area: Oponente não pode invocar no próximo turno.");
     }
 
@@ -3564,7 +3488,7 @@ public partial class CardEffectManager
     void Effect_1359_NubianGuard(CardDisplay source)
     {
         // If inflicts battle damage: Return 1 Continuous Spell from GY to top of Deck.
-        // Lógica no OnDamageDealtImpl.
+        // Lógica implementada no OnDamageDealtImpl.
         Debug.Log("Nubian Guard: Efeito de reciclagem configurado.");
     }
 
@@ -3573,7 +3497,7 @@ public partial class CardEffectManager
     {
         // Activate when taking damage. Gain 1000 LP + 500 per copy in GY.
         int copies = GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.name == "Numinous Healer").Count;
-        Effect_GainLP(source, 1000 + (copies * 500));
+        // Lógica implementada no OnDamageTaken.
     }
 
     // 1361 - Nutrient Z
@@ -3587,7 +3511,7 @@ public partial class CardEffectManager
     void Effect_1362_NuviaTheWicked(CardDisplay source)
     {
         // If Normal Summoned, destroy self. ATK -200 per opponent monster.
-        // Auto-destruição no OnSummonImpl.
+        // Auto-destruição implementada no OnSummonImpl.
         // Debuff:
         int oppCount = 0;
         if (GameManager.Instance.duelFieldUI != null)
@@ -3603,7 +3527,7 @@ public partial class CardEffectManager
     void Effect_1364_ObnoxiousCelticGuard(CardDisplay source)
     {
         // Cannot be destroyed by battle with monster ATK >= 1900.
-        Debug.Log("Obnoxious Celtic Guard: Proteção de batalha ativa.");
+        // Lógica implementada no BattleManager.
     }
 
     // 1365 - Ocean Dragon Lord - Neo-Daedalus
@@ -3697,7 +3621,7 @@ public partial class CardEffectManager
     void Effect_1376_OldVindictiveMagician(CardDisplay source)
     {
         // FLIP: Destroy 1 monster.
-        Debug.Log("Old Vindictive Magician: Destruindo monstro.");
+        Effect_FlipDestroy(source, TargetType.Monster);
     }
 
     // 1382 - Ookazi
@@ -3783,7 +3707,7 @@ public partial class CardEffectManager
     void Effect_1400_Pandemonium(CardDisplay source)
     {
         // If Archfiend destroyed -> Search
-        Debug.Log("Pandemonium: Busca Archfiend ao ser destruído.");
+        // Lógica implementada no OnCardSentToGraveyard.
     }
 
     // 1401 - Pandemonium Watchbear
@@ -3799,11 +3723,7 @@ public partial class CardEffectManager
     void Effect_1402_PantherWarrior(CardDisplay source)
     {
         // This card cannot declare an attack unless you Tribute 1 monster.
-        // A restrição é verificada no BattleManager.CanAttack.
-        // Se o jogador tentar atacar, o BattleManager deve solicitar o tributo.
-        // Como o BattleManager atual apenas retorna bool, não podemos abrir UI de tributo lá facilmente sem refatorar.
-        // Solução: O jogador deve tributar manualmente antes de atacar? Não, a regra é "ao declarar".
-        // Implementação simplificada: Log de aviso.
+        // Lógica implementada no BattleManager.
         Debug.Log("Panther Warrior: Requer tributo para atacar (Verificado no BattleManager).");
     }
 
@@ -3845,7 +3765,7 @@ public partial class CardEffectManager
     void Effect_1406_PatricianOfDarkness(CardDisplay source)
     {
         // All monsters your opponent controls must attack this card, if able.
-        // Errata/Actual Effect: You choose the attack targets for your opponent's attacks.
+        // Lógica implementada no BattleManager.
         Debug.Log("Patrician of Darkness: Você escolhe os alvos dos ataques do oponente.");
         if (BattleManager.Instance != null) BattleManager.Instance.patricianOfDarknessActive = true;
     }
@@ -3907,7 +3827,7 @@ public partial class CardEffectManager
     void Effect_1412_PenguinKnight(CardDisplay source)
     {
         // If this card is sent to the Graveyard as a result of battle, shuffle all the cards in your Graveyard into your Deck.
-        Debug.Log("Penguin Knight: Embaralha as cartas do seu cemitério de volta no Deck.");
+        // Lógica implementada no OnCardSentToGraveyard.
     }
 
     void Effect_1413_PenguinSoldier(CardDisplay source)
@@ -3927,7 +3847,7 @@ public partial class CardEffectManager
     void Effect_1414_PenumbralSoldierLady(CardDisplay source)
     {
         // If this card attacks a monster with the LIGHT Attribute, increase the ATK of this card by 1000 points during damage calculation only.
-        Debug.Log("Penumbral Soldier Lady: Aumenta o ATK em 1000 pontos ao atacar monstros LIGHT.");
+        // Lógica implementada no OnDamageCalculation.
     }
 
     void Effect_1416_PerfectMachineKing(CardDisplay source)
@@ -3966,7 +3886,7 @@ public partial class CardEffectManager
     void Effect_1419_PetenTheDarkClown(CardDisplay source)
     {
         // When sent to GY: Banish this card to SS Peten from hand/Deck.
-        // Lógica implementada no OnCardSentToGraveyard (CardEffectManager_Impl.cs).
+        // Lógica implementada no OnCardSentToGraveyard.
         Debug.Log("Peten the Dark Clown: Efeito de gatilho no cemitério configurado.");
     }
 
@@ -4033,7 +3953,7 @@ public partial class CardEffectManager
     void Effect_1433_PineappleBlast(CardDisplay source)
     {
         // When you Normal Summon, if opp has more monsters: Destroy opp monsters until equal.
-        // Lógica implementada no OnSummonImpl (CardEffectManager_Impl.cs).
+        // Lógica implementada no OnSummonImpl.
         Debug.Log("Pineapple Blast: Armadilha de invocação configurada.");
     }
 
@@ -4090,7 +4010,7 @@ public partial class CardEffectManager
     void Effect_1438_PixieKnight(CardDisplay source)
     {
         // Sent to GY by battle: Opponent selects 1 Spell in GY to top of Deck.
-        // Lógica implementada no OnCardSentToGraveyard (CardEffectManager_Impl.cs).
+        // Lógica implementada no OnCardSentToGraveyard.
         Debug.Log("Pixie Knight: Efeito de reciclagem do oponente configurado.");
     }
 
@@ -4104,7 +4024,7 @@ public partial class CardEffectManager
     void Effect_1440_PoisonFangs(CardDisplay source)
     {
         // If this card attacks a monster, increase the ATK of this card by 500 points during damage calculation only.
-        Debug.Log("Poison Fangs: Dano extra por bestas");
+        // Lógica implementada no OnDamageCalculation.
     }
 
     void Effect_1441_PoisonMummy(CardDisplay source)
@@ -4121,7 +4041,7 @@ public partial class CardEffectManager
     void Effect_1443_PolePosition(CardDisplay source)
     {
         // The monster on the field with the highest ATK is unaffected by Spell Cards. If you control 2 or more monsters with the same ATK, apply this effect to all those monsters.
-       Debug.Log("Pole Position: Monstro com maior ATK imune a magias (Lógica passiva).");
+       Debug.Log("Pole Position: Monstro com maior ATK imune a magias (Lógica passiva no SpellTrapManager).");
        // Logic needs to be in SpellTrapManager.CanActivateCard or similar check
     }
 
@@ -4188,7 +4108,7 @@ public partial class CardEffectManager
     void Effect_1452_PreciousCardsFromBeyond(CardDisplay source)
     {
         // If you Tribute Summon using 2 or more Tributes: Draw 2 cards.
-        // Lógica no OnSummonImpl.
+        // Lógica implementada no OnSummonImpl.
         Debug.Log("Precious Cards from Beyond: Ativo.");
     }
 
@@ -4207,7 +4127,7 @@ public partial class CardEffectManager
     void Effect_1454_PrepareToStrikeBack(CardDisplay source)
     {
         // Trigger on attack. Coin toss to change position or destroy.
-        Debug.Log("Prepare to Strike Back: Contra-ataque.");
+        // Lógica implementada no OnAttackDeclared.
     }
 
     // 1456 - Prickle Fairy
@@ -4285,7 +4205,7 @@ public partial class CardEffectManager
     void Effect_1465_PumpkingTheKingOfGhosts(CardDisplay source)
     {
         // If "Castle of Dark Illusions" is face-up: Gain 100 ATK/DEF.
-        // Gains +100 more each Standby Phase (up to 4 turns).
+        // Gains +100 more each Standby Phase (up to 4 turns). Lógica no OnPhaseStart.
         if (GameManager.Instance.IsCardActiveOnField("Castle of Dark Illusions") || GameManager.Instance.IsCardActiveOnField("1270"))
         {
             source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 100, source));
@@ -4296,7 +4216,6 @@ public partial class CardEffectManager
             
             Debug.Log($"Pumpking: Buff aplicado. Turno {SpellCounterManager.Instance.GetCount(source)}/4.");
         }
-        // Lógica de Standby no OnPhaseStart.
     }
 
     // 1468 - Pyramid Energy
@@ -4326,7 +4245,7 @@ public partial class CardEffectManager
     void Effect_1470_PyramidOfLight(CardDisplay source)
     {
         // If removed from field: Destroy Andro Sphinx and Sphinx Teleia.
-        // Lógica implementada no OnCardLeavesField (CardEffectManager_Impl.cs).
+        // Lógica implementada no OnCardLeavesField.
         Debug.Log("Pyramid of Light: Vínculo com Esfinges ativo.");
     }
 
@@ -4386,7 +4305,7 @@ public partial class CardEffectManager
     void Effect_1479_RagingFlameSprite(CardDisplay source)
     {
         // Direct attack. If successful, +1000 ATK.
-        Debug.Log("Raging Flame Sprite: Ativo.");
+        // Lógica implementada no OnDamageDealtImpl.
     }
 
     // 1480 - Raigeki

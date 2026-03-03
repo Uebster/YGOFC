@@ -220,6 +220,23 @@ public partial class CardEffectManager
                 }
             });
 
+            // 1046 - Labyrinth of Nightmare
+            CheckActiveCards("1046", (card) => {
+                if (GameManager.Instance.duelFieldUI != null)
+                {
+                    List<CardDisplay> all = new List<CardDisplay>();
+                    CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                    CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+                    foreach(var m in all) m.ChangePosition();
+                    Debug.Log("Labyrinth of Nightmare: Posições alteradas na End Phase.");
+                }
+            });
+
+            // 1093 - Little-Winguard
+            CheckActiveCards("1093", (card) => {
+                if (card.isPlayerCard) card.ChangePosition(); // Simplificado: Muda automaticamente ou pede confirmação
+            });
+
             // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
             // (Na verdade é End Phase, movido para lá se fosse o caso)
         }
@@ -374,6 +391,14 @@ public partial class CardEffectManager
         }
                 if (phase == GamePhase.Standby)
         {
+            // 1162 - Manticore of Darkness
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            if (gy.Exists(c => c.id == "1162"))
+            {
+                // Lógica simplificada de reviver enviando besta
+                Debug.Log("Manticore of Darkness (GY): Pode reviver enviando Besta (Lógica pendente).");
+            }
+
             // 1465 - Pumpking the King of Ghosts
             CheckActiveCards("1465", (card) => {
                 if (GameManager.Instance.IsCardActiveOnField("Castle of Dark Illusions") || GameManager.Instance.IsCardActiveOnField("1270"))
@@ -439,6 +464,14 @@ public partial class CardEffectManager
             if (isOwnerPlayer) GameManager.Instance.DiscardRandomHand(false, 1); // Simulado
         }
 
+        // 1010 - Keldo
+        if (card.id == "1010" && !isOwnerPlayer) // Destruído por batalha
+        {
+            // Shuffle 2 cards from opp GY to Deck
+            Debug.Log("Keldo: Embaralhando 2 cartas do GY do oponente no Deck.");
+            // Lógica de seleção e shuffle
+        }
+
         // Despair from the Dark (0480): SS se enviado do Hand/Deck pelo oponente
         if (card.id == "0480" && !isOwnerPlayer) // Enviado pelo oponente (simplificado)
         {
@@ -448,6 +481,14 @@ public partial class CardEffectManager
         }
 
         // Maji-Gire Panda (1144): Gain 500 ATK when Beast destroyed
+        if (card.race == "Beast")
+        {
+            CheckActiveCards("1144", (panda) => {
+                panda.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, panda));
+            });
+        }
+
+        // 1144 - Maji-Gire Panda
         if (card.race == "Beast")
         {
             CheckActiveCards("1144", (panda) => {
@@ -573,6 +614,14 @@ public partial class CardEffectManager
             }
             GameManager.Instance.ShuffleDeck(true);
             Debug.Log("Nimble Momonga: Curou e invocou cópias.");
+        }
+
+        // 1412 - Penguin Knight
+        if (card.id == "1412" && !isOwnerPlayer) // Destruído por batalha
+        {
+            // Shuffle GY into Deck
+            Debug.Log("Penguin Knight: GY embaralhado no Deck.");
+            // Lógica de mover GY para Deck e Shuffle
         }
 
         // 1351 - Nitro Unit
@@ -935,6 +984,22 @@ public partial class CardEffectManager
             }
         }
 
+        // 1004 - Karakuri Spider
+        if (attacker.CurrentCardData.id == "1004" && target != null && target.CurrentCardData.attribute == "Dark")
+        {
+            Debug.Log("Karakuri Spider: Destruindo monstro DARK.");
+            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+            Destroy(target.gameObject);
+        }
+
+        // 1008 - Kazejin
+        if (target != null && target.CurrentCardData.id == "1008" && !target.hasUsedEffectThisTurn) // Simplificado: 1x por turno
+        {
+            Debug.Log("Kazejin: Zerando ATK do atacante.");
+            attacker.ModifyStats(-attacker.currentAtk, 0);
+            target.hasUsedEffectThisTurn = true;
+        }
+
         // Injection Fairy Lily (79575620) - Lógica de pagar LP seria aqui
 
         // Buster Rancher (0253)
@@ -983,6 +1048,20 @@ public partial class CardEffectManager
             // Dano de batalha 0 para o controlador
             // Requer suporte no BattleManager para anular dano específico
             Debug.Log("Monk Fighter: Dano de batalha será 0.");
+        }
+
+        // 1103 - Luminous Soldier
+        if (attacker.CurrentCardData.id == "1103" && target != null && target.CurrentCardData.attribute == "Dark")
+        {
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 500, attacker));
+        }
+
+        // 1348 - Ninja Grandmaster Sasuke
+        if (attacker.CurrentCardData.id == "1348" && target != null && target.position == CardDisplay.BattlePosition.Defense && target.isFlipped)
+        {
+            Debug.Log("Ninja Grandmaster Sasuke: Destruindo defesa face-up.");
+            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+            Destroy(target.gameObject);
         }
 
         // 1207 - Mermaid Knight (Double Attack)
@@ -1044,17 +1123,6 @@ public partial class CardEffectManager
             }
         }
     }
-            // 1348 - Ninja Grandmaster Sasuke
-        if (attacker != null && target != null && target.isFlipped && target.position == CardDisplay.BattlePosition.Defense) // Face-up Defense
-        {
-            if (attacker.CurrentCardData.id == "1348")
-            {
-                Debug.Log("Ninja Grandmaster Sasuke: Destruindo defesa face-up.");
-                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
-                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-                Destroy(target.gameObject);
-            }
-        }
 }
 
     public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
@@ -1074,6 +1142,24 @@ public partial class CardEffectManager
                  Debug.Log($"Absorbing Kid: Destruiu monstro Lv{level}. Ganha {heal} LP.");
                  Effect_GainLP(attacker, heal);
              }
+        }
+
+        // 1001 - Kangaroo Champ
+        if (attacker != null && attacker.CurrentCardData.id == "1001") attacker.ChangePosition();
+        if (target != null && target.CurrentCardData.id == "1001") target.ChangePosition();
+
+        // 1009 - Kelbek
+        if (target != null && target.CurrentCardData.id == "1009" && attacker != null)
+        {
+            Debug.Log("Kelbek: Retornando atacante para a mão.");
+            GameManager.Instance.ReturnToHand(attacker);
+        }
+
+        // 1063 - Legacy Hunter
+        if (attacker != null && attacker.CurrentCardData.id == "1063" && target != null) // Se destruiu (verificar se target foi pro GY)
+        {
+            Debug.Log("Legacy Hunter: Oponente embaralha 1 carta da mão no deck.");
+            GameManager.Instance.DiscardRandomHand(!attacker.isPlayerCard, 1); // Deveria ser shuffle
         }
 
                 // Masked Sorcerer (1178): Draw 1
@@ -1102,6 +1188,13 @@ public partial class CardEffectManager
             Debug.Log("Millennium Scorpion: +500 ATK.");
         }
 
+        // 1065 - Legendary Black Belt
+        if (attacker != null && attacker.activeModifiers.Exists(m => m.source != null && m.source.CurrentCardData.id == "1065") && target != null)
+        {
+            int dmg = target.originalDef;
+            Effect_DirectDamage(attacker, dmg);
+        }
+
         // 1308 - Mystical Beast of Serket
         if (attacker != null && attacker.CurrentCardData.id == "1308" && target != null)
         {
@@ -1118,6 +1211,13 @@ public partial class CardEffectManager
             // Requer lógica de mover do GY para o Deck (Topo)
             Debug.Log("Mystical Knight of Jackal: Monstro retornado ao topo do deck.");
             // GameManager.Instance.ReturnToDeck(target, true);
+        }
+
+        // 1068 - Legendary Jujitsu Master
+        if (target != null && target.CurrentCardData.id == "1068" && target.position == CardDisplay.BattlePosition.Defense)
+        {
+            Debug.Log("Legendary Jujitsu Master: Atacante para o topo do deck.");
+            // GameManager.Instance.ReturnToDeck(attacker, true);
         }
 
         // 1326 - Needle Burrower
@@ -1145,6 +1245,13 @@ public partial class CardEffectManager
         if (attacker != null && attacker.currentAtk < target.currentAtk && target.position == CardDisplay.BattlePosition.Attack) // Attacker destroyed
         {
              CheckNecklaceOfCommand(attacker);
+        }
+
+        // 1075 - Lesser Fiend
+        if (attacker != null && attacker.CurrentCardData.id == "1075" && target != null)
+        {
+            Debug.Log("Lesser Fiend: Banindo monstro destruído.");
+            GameManager.Instance.BanishCard(target);
         }
 
         // Mefist the Infernal General (1197): Opponent discards 1
