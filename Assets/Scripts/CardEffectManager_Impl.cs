@@ -785,6 +785,18 @@ public partial class CardEffectManager
                 Debug.Log("Morale Boost: +1000 LP.");
             });
         }
+                // 1400 - Pandemonium
+        CheckActiveCards("1400", (card) => {
+            // Se um Archfiend é destruído, busca Archfiend com nível menor
+            // Requer intercepção de destruição de Fiend (no GY?)
+            Debug.Log($"Pandemonium: Um monstro Archfiend foi destruído. Busca Archfiend com Nível menor (Simulado).");
+        });
+
+
+        // Effect: SS por tributo -> Adicionar contadores iniciais.
+        // https://yugioh.fandom.com/wiki/Card_Errata:MP1-001
+        // Para Zaborg the Thunder Monarch (ver Effect_0382_OrcaMegaFortressOfDarkness).
+
     }
 
     public void OnCardLeavesField(CardDisplay card)

@@ -3713,7 +3713,55 @@ public partial class CardEffectManager
     void Effect_1387_OrdealOfATraveler(CardDisplay source)
     {
         // Requer sistema de revelar
-        Debug.Log("Ordeal of a Traveler: Adivinha qual monstro.");
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Adivinhe a carta", (picked) => {
+                // Lógica simulada: Sempre adivinha certo
+                Debug.Log("Ordeal of a Traveler: Adivinhou corretamente!");
+                // Efeito contínuo: Implementar no BattleManager (Requer hooks e lógica para impedir ataques no turno que adivinhar)
+            });
+        }
+    }
+
+    // 1397 - Painful Choice
+    void Effect_1397_PainfulChoice(CardDisplay source)
+    {
+        // Reveal 5 cards, Opponent selects 1 for hand.
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        if (deck.Count >= 5)
+        {
+            List<CardData> selection = new List<CardData>();
+            for (int i = 0; i < 5; i++)
+            {
+                selection.Add(deck[i]);
+            }
+
+            GameManager.Instance.OpenCardSelection(selection, "Oponente Escolhe", (selected) => {
+                Debug.Log($"Painful Choice: Oponente escolheu {selected.name}.");
+                GameManager.Instance.AddCardToHand(selected, false); // Oponente recebe
+                selection.Remove(selected);
+
+                foreach(CardData card in selection) {
+                    GameManager.Instance.SendToGraveyard(card, source.isPlayerCard);
+                }
+
+                // Remove da mão
+                foreach(var c in selected) deck.Remove(c);
+                GameManager.Instance.ShuffleDeck(source.isPlayerCard); //Shuffle
+            });
+        }
+    }
+
+    // 1398 - Paladin of White Dragon
+    void Effect_1398_PaladinOfWhiteDragon(CardDisplay source)
+    {
+        // Tribute to SS Blue-Eyes.
+        Debug.Log("Paladin of White Dragon: Ritual. Tributa para invocar Blue-Eyes.");
+    }
+
+    // 1400 - Pandemonium
+    void Effect_1400_Pandemonium(CardDisplay source)
     }
 
     // 1397 - Painful Choice
@@ -3736,4 +3784,3 @@ public partial class CardEffectManager
         // If Archfiend destroyed -> Search
         Debug.Log("Pandemonium: Busca Archfiend ao ser destruído.");
     }
-}
