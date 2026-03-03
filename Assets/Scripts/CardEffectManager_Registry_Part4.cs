@@ -859,61 +859,61 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 1901 - The Trojan Horse (2 Tributes Earth)
-        AddEffect("1901", c => Debug.Log("The Trojan Horse: Vale por 2 tributos para Earth."));
+        AddEffect("1901", Effect_1901_TheTrojanHorse);
 
         // 1902 - The Unfriendly Amazon (Maintenance)
-        AddEffect("1902", c => Debug.Log("The Unfriendly Amazon: Tributa monstro na Standby ou destrói."));
+        AddEffect("1902", Effect_1902_TheUnfriendlyAmazon);
 
         // 1903 - The Unhappy Girl (Lock Attack/Pos)
-        AddEffect("1903", c => Debug.Log("The Unhappy Girl: Trava monstro que batalhou."));
+        AddEffect("1903", Effect_1903_TheUnhappyGirl);
 
         // 1904 - The Unhappy Maiden (End Battle Phase)
-        AddEffect("1904", c => Debug.Log("The Unhappy Maiden: Encerra Battle Phase ao ser destruída."));
+        AddEffect("1904", Effect_1904_TheUnhappyMaiden);
 
         // 1906 - The Warrior Returning Alive (Recycle Warrior)
-        AddEffect("1906", c => Debug.Log("The Warrior Returning Alive: Recupera Warrior do GY."));
+        AddEffect("1906", Effect_1906_TheWarriorReturningAlive);
 
         // 1907 - The Wicked Dreadroot (Halve Stats)
-        AddEffect("1907", c => Debug.Log("The Wicked Dreadroot: Corta ATK/DEF de todos pela metade."));
+        AddEffect("1907", Effect_1907_TheWickedDreadroot);
 
         // 1908 - The Wicked Worm Beast (Return to Hand)
-        AddEffect("1908", c => Debug.Log("The Wicked Worm Beast: Retorna para mão na End Phase."));
+        AddEffect("1908", Effect_1908_TheWickedWormBeast);
 
         // 1909 - Theban Nightmare (Buff if empty)
-        AddEffect("1909", c => Debug.Log("Theban Nightmare: +1500 ATK se mão/S-T vazios."));
+        AddEffect("1909", Effect_1909_ThebanNightmare);
 
         // 1910 - Theinen the Great Sphinx (SS +3000)
-        AddEffect("1910", c => Debug.Log("Theinen: SS especial com 6500 ATK."));
+        AddEffect("1910", Effect_1910_TheinenTheGreatSphinx);
 
         // 1911 - Thestalos the Firestorm Monarch (Discard Burn)
-        AddEffect("1911", c => Debug.Log("Thestalos: Descarta carta da mão do oponente e causa dano."));
+        AddEffect("1911", Effect_1911_ThestalosTheFirestormMonarch);
 
         // 1913 - Thousand Energy (Buff Lv2 Normal)
-        AddEffect("1913", c => Debug.Log("Thousand Energy: +1000 ATK para Normais Lv2."));
+        AddEffect("1913", Effect_1913_ThousandEnergy);
 
         // 1914 - Thousand Knives (Destroy if DM)
-        AddEffect("1914", c => Debug.Log("Thousand Knives: Destrói monstro se controlar Dark Magician."));
+        AddEffect("1914", Effect_1914_ThousandKnives);
 
         // 1915 - Thousand Needles (Destroy Attacker)
-        AddEffect("1915", c => Debug.Log("Thousand Needles: Destrói atacante se DEF > ATK."));
+        AddEffect("1915", Effect_1915_ThousandNeedles);
 
         // 1917 - Thousand-Eyes Restrict (Absorb, Lock)
-        AddEffect("1917", c => Debug.Log("Thousand-Eyes Restrict: Absorve monstro, impede ataques."));
+        AddEffect("1917", Effect_1917_ThousandEyesRestrict);
 
         // 1918 - Threatening Roar (No Attack)
-        AddEffect("1918", c => Debug.Log("Threatening Roar: Oponente não pode atacar neste turno."));
+        AddEffect("1918", Effect_1918_ThreateningRoar);
 
         // 1921 - Throwstone Unit (Tribute Warrior -> Destroy)
-        AddEffect("1921", c => Debug.Log("Throwstone Unit: Tributa Warrior para destruir monstro com DEF <= ATK."));
+        AddEffect("1921", Effect_1921_ThrowstoneUnit);
 
         // 1922 - Thunder Crash (Destroy Own -> Burn)
-        AddEffect("1922", c => Debug.Log("Thunder Crash: Destrói seus monstros, 300 dano por cada."));
+        AddEffect("1922", Effect_1922_ThunderCrash);
 
         // 1923 - Thunder Dragon (Discard -> Add 2)
-        AddEffect("1923", c => Debug.Log("Thunder Dragon: Descarta para buscar até 2 cópias."));
+        AddEffect("1923", Effect_1923_ThunderDragon);
 
         // 1925 - Thunder Nyan Nyan (Destroy if non-Light)
-        AddEffect("1925", c => Debug.Log("Thunder Nyan Nyan: Destruída se houver monstro não-LIGHT."));
+        AddEffect("1925", Effect_1925_ThunderNyanNyan);
 
         // 1926 - Thunder of Ruler (Skip Battle Phase)
         AddEffect("1926", c => Debug.Log("Thunder of Ruler: Pula Battle Phase do oponente."));

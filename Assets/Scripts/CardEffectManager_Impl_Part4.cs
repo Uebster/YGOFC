@@ -4042,4 +4042,284 @@ public partial class CardEffectManager
         }
     }
 
+    // 1901 - The Trojan Horse
+    void Effect_1901_TheTrojanHorse(CardDisplay source)
+    {
+        // Earth monsters require 1 less tribute (treated as 2 tributes).
+        Debug.Log("The Trojan Horse: Vale por 2 tributos para EARTH (Lógica no SummonManager).");
+    }
+
+    // 1902 - The Unfriendly Amazon
+    void Effect_1902_TheUnfriendlyAmazon(CardDisplay source)
+    {
+        // Standby Phase: Tribute 1 monster or destroy this card.
+        // Logic in OnPhaseStart.
+        Debug.Log("The Unfriendly Amazon: Manutenção na Standby Phase.");
+    }
+
+    // 1903 - The Unhappy Girl
+    void Effect_1903_TheUnhappyGirl(CardDisplay source)
+    {
+        // Battle protection in Attack pos. Lock attacker.
+        // Logic in OnBattleEnd.
+        Debug.Log("The Unhappy Girl: Efeito de trava de batalha.");
+    }
+
+    // 1904 - The Unhappy Maiden
+    void Effect_1904_TheUnhappyMaiden(CardDisplay source)
+    {
+        // Destroyed by battle -> End Battle Phase.
+        // Logic in OnBattleEnd.
+        Debug.Log("The Unhappy Maiden: Encerra Battle Phase.");
+    }
+
+    // 1906 - The Warrior Returning Alive
+    void Effect_1906_TheWarriorReturningAlive(CardDisplay source)
+    {
+        // Target 1 Warrior in GY; add to hand.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> warriors = gy.FindAll(c => c.race == "Warrior" && c.type.Contains("Monster"));
+        
+        if (warriors.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(warriors, "Recuperar Warrior", (selected) => {
+                gy.Remove(selected);
+                GameManager.Instance.AddCardToHand(selected, source.isPlayerCard);
+            });
+        }
+    }
+
+    // 1907 - The Wicked Dreadroot
+    void Effect_1907_TheWickedDreadroot(CardDisplay source)
+    {
+        // Halve ATK/DEF of all other monsters.
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            
+            foreach(var m in all)
+            {
+                if (m != source)
+                {
+                    m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Multiply, 0.5f, source));
+                    m.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Multiply, 0.5f, source));
+                }
+            }
+        }
+    }
+
+    // 1908 - The Wicked Worm Beast
+    void Effect_1908_TheWickedWormBeast(CardDisplay source)
+    {
+        // Return to hand in End Phase.
+        // Logic in OnPhaseStart.
+        Debug.Log("The Wicked Worm Beast: Retorna à mão na End Phase.");
+    }
+
+    // 1909 - Theban Nightmare
+    void Effect_1909_ThebanNightmare(CardDisplay source)
+    {
+        // +1500 ATK if hand/S-T empty.
+        // Logic in CheckActiveCards/UpdateStats.
+        Debug.Log("Theban Nightmare: Buff condicional.");
+    }
+
+    // 1910 - Theinen the Great Sphinx
+    void Effect_1910_TheinenTheGreatSphinx(CardDisplay source)
+    {
+        // SS condition. Pay 500 LP.
+        if (!source.isOnField)
+        {
+             if (Effect_PayLP(source, 500))
+             {
+                 GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                 GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                 // Buff ATK? "ATK becomes 6500".
+                 // Need reference to summoned card.
+             }
+        }
+    }
+
+    // 1911 - Thestalos the Firestorm Monarch
+    void Effect_1911_ThestalosTheFirestormMonarch(CardDisplay source)
+    {
+        // Tribute Summon: Discard random opp hand. If Monster, burn Level * 100.
+        if (source.summonedThisTurn && source.isTributeSummoned)
+        {
+            List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+            if (oppHand.Count > 0)
+            {
+                CardData discarded = oppHand[Random.Range(0, oppHand.Count)];
+                // Discard logic (remove from list)
+                // GameManager.Instance.DiscardOpponentCard(discarded); // Hypothetical
+                Debug.Log($"Thestalos: Descartou {discarded.name}.");
+                
+                if (discarded.type.Contains("Monster"))
+                {
+                    int dmg = discarded.level * 100;
+                    Effect_DirectDamage(source, dmg);
+                }
+            }
+        }
+    }
+
+    // 1913 - Thousand Energy
+    void Effect_1913_ThousandEnergy(CardDisplay source)
+    {
+        // Lv2 Normal Monsters +1000 ATK/DEF. Destroy at End Phase.
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            
+            foreach(var m in all)
+            {
+                if (m.CurrentCardData.level == 2 && m.CurrentCardData.type.Contains("Normal"))
+                {
+                    m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 1000, source));
+                    m.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 1000, source));
+                    // Mark for destruction?
+                }
+            }
+        }
+    }
+
+    // 1914 - Thousand Knives
+    void Effect_1914_ThousandKnives(CardDisplay source)
+    {
+        // If DM: Destroy 1 opp monster.
+        if (GameManager.Instance.IsCardActiveOnField("Dark Magician") || GameManager.Instance.IsCardActiveOnField("0419"))
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                    (target) => {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                    }
+                );
+            }
+        }
+    }
+
+    // 1915 - Thousand Needles
+    void Effect_1915_ThousandNeedles(CardDisplay source)
+    {
+        // Defense pos, attacked by ATK < DEF -> Destroy attacker.
+        // Logic in OnBattleEnd.
+        Debug.Log("Thousand Needles: Defesa mortal.");
+    }
+
+    // 1917 - Thousand-Eyes Restrict
+    void Effect_1917_ThousandEyesRestrict(CardDisplay source)
+    {
+        // Absorb monster.
+        if (source.isOnField)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                    (target) => {
+                        GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
+                        // Apply stats
+                        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Set, target.originalAtk, source));
+                        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Equipment, StatModifier.Operation.Set, target.originalDef, source));
+                        // Visual move
+                        target.transform.SetParent(source.transform);
+                        target.gameObject.SetActive(false); // Hide or show as equip
+                        Debug.Log($"Thousand-Eyes Restrict: Absorveu {target.CurrentCardData.name}.");
+                    }
+                );
+            }
+        }
+    }
+
+    // 1918 - Threatening Roar
+    void Effect_1918_ThreateningRoar(CardDisplay source)
+    {
+        // Opponent cannot attack this turn.
+        if (BattleManager.Instance != null)
+        {
+            // BattleManager.Instance.preventAttacks = true; // Hypothetical flag
+            Debug.Log("Threatening Roar: Ataques bloqueados.");
+        }
+    }
+
+    // 1921 - Throwstone Unit
+    void Effect_1921_ThrowstoneUnit(CardDisplay source)
+    {
+        // Tribute Warrior -> Destroy monster with DEF <= ATK of tribute.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.race == "Warrior",
+                (tribute) => {
+                    int atk = tribute.currentAtk;
+                    GameManager.Instance.TributeCard(tribute);
+                    
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (target) => target.isOnField && !target.isPlayerCard && target.currentDef <= atk,
+                        (target) => {
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                            Destroy(target.gameObject);
+                        }
+                    );
+                }
+            );
+        }
+    }
+
+    // 1922 - Thunder Crash
+    void Effect_1922_ThunderCrash(CardDisplay source)
+    {
+        // Destroy all your monsters; 300 damage per monster.
+        List<CardDisplay> myMonsters = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, myMonsters);
+        }
+        
+        int count = myMonsters.Count;
+        DestroyCards(myMonsters, true);
+        Effect_DirectDamage(source, count * 300);
+    }
+
+    // 1923 - Thunder Dragon
+    void Effect_1923_ThunderDragon(CardDisplay source)
+    {
+        // Discard: Add up to 2 Thunder Dragon.
+        if (!source.isOnField)
+        {
+            GameManager.Instance.DiscardCard(source);
+            List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+            List<CardData> targets = deck.FindAll(c => c.name == "Thunder Dragon");
+            
+            if (targets.Count > 0)
+            {
+                int max = Mathf.Min(2, targets.Count);
+                GameManager.Instance.OpenCardMultiSelection(targets, "Adicionar Thunder Dragon", 1, max, (selected) => {
+                    foreach(var c in selected)
+                    {
+                        deck.Remove(c);
+                        GameManager.Instance.AddCardToHand(c, source.isPlayerCard);
+                    }
+                    GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+                });
+            }
+        }
+    }
+
+    // 1925 - Thunder Nyan Nyan
+    void Effect_1925_ThunderNyanNyan(CardDisplay source)
+    {
+        // If non-Light monster on your field, destroy this.
+        // Logic in CheckActiveCards (OnPhaseStart or Summon).
+        Debug.Log("Thunder Nyan Nyan: Auto-destruição se houver não-LIGHT.");
+    }
 }

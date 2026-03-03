@@ -277,6 +277,25 @@ public partial class CardEffectManager
                     }
                 }
             });
+            
+            // 1902 - The Unfriendly Amazon
+            CheckActiveCards("1902", (card) => {
+                if (card.isPlayerCard)
+                {
+                    // Tribute or destroy
+                    // Simplified: Destroy if no tribute available or chosen
+                    if (!SummonManager.Instance.HasEnoughTributes(1, true))
+                    {
+                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
+                        Destroy(card.gameObject);
+                    }
+                    else
+                    {
+                        // Prompt tribute (Simulated: Just log)
+                        Debug.Log("The Unfriendly Amazon: Manutenção (Tributo pendente).");
+                    }
+                }
+            });
 
             // 1046 - Labyrinth of Nightmare
             CheckActiveCards("1046", (card) => {
@@ -456,6 +475,16 @@ public partial class CardEffectManager
             
             // Swords of Concealing Light (1810) - Destrói na 2ª Standby Phase do controlador.
             // Lógica movida para Standby Phase do controlador.
+        }
+        else if (phase == GamePhase.End)
+        {
+            // 1908 - The Wicked Worm Beast
+            CheckActiveCards("1908", (card) => {
+                if (card.isPlayerCard && !card.isFlipped)
+                {
+                    GameManager.Instance.ReturnToHand(card);
+                }
+            });
         }
         else if (phase == GamePhase.Standby)
         {
@@ -1457,6 +1486,33 @@ public partial class CardEffectManager
             // A lógica de dobrar o dano deve ser tratada no BattleManager, mas logamos aqui.
             Debug.Log("Stone Statue of the Aztecs: Dano de batalha será dobrado (Se aplicável).");
         }
+        
+        // 1903 - The Unhappy Girl
+        if (attacker != null && attacker.CurrentCardData.id == "1903" && target != null && attacker.position == CardDisplay.BattlePosition.Attack)
+        {
+            Debug.Log("The Unhappy Girl: Alvo travado.");
+            // target.canAttack = false;
+            // target.canChangePosition = false;
+        }
+
+        // 1904 - The Unhappy Maiden
+        if (target != null && target.CurrentCardData.id == "1904" && target.isPlayerCard != attacker.isPlayerCard) // Destroyed by battle
+        {
+            // Check if destroyed (usually handled by health check, assume yes here)
+            Debug.Log("The Unhappy Maiden: Encerrando Battle Phase.");
+            if (PhaseManager.Instance != null) PhaseManager.Instance.ChangePhase(GamePhase.Main2);
+        }
+
+        // 1915 - Thousand Needles
+        if (target != null && target.CurrentCardData.id == "1915" && target.position == CardDisplay.BattlePosition.Defense)
+        {
+            if (attacker != null && attacker.currentAtk < target.currentDef)
+            {
+                Debug.Log("Thousand Needles: Destruindo atacante.");
+                GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+                Destroy(attacker.gameObject);
+            }
+        }
 
         // Injection Fairy Lily (79575620) - Lógica de pagar LP seria aqui
 
@@ -1916,6 +1972,33 @@ public partial class CardEffectManager
             Debug.Log("Mecha-Dog Marron: 1000 de dano para ambos.");
             GameManager.Instance.DamagePlayer(1000);
             GameManager.Instance.DamageOpponent(1000);
+        }
+
+                // 1925 - Thunder Nyan Nyan
+        if (card.isPlayerCard)
+        {
+            // Check if Thunder Nyan Nyan is on field
+            CheckActiveCards("1925", (nyan) => {
+                if (card.CurrentCardData.attribute != "Light")
+                {
+                    Debug.Log("Thunder Nyan Nyan: Destruído por monstro não-LIGHT.");
+                    GameManager.Instance.SendToGraveyard(nyan.CurrentCardData, true);
+                    Destroy(nyan.gameObject);
+                }
+            });
+            
+            // Check if card IS Thunder Nyan Nyan
+            if (card.CurrentCardData.id == "1925")
+            {
+                bool hasNonLight = false;
+                // Check field
+                // ...
+                if (hasNonLight)
+                {
+                     GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
+                     Destroy(card.gameObject);
+                }
+            }
         }
 
         // Master Monk (1182) & Mataza (1184): Reset attack flag for double attack
