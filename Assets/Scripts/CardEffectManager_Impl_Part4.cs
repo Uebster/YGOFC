@@ -4322,4 +4322,174 @@ public partial class CardEffectManager
         // Logic in CheckActiveCards (OnPhaseStart or Summon).
         Debug.Log("Thunder Nyan Nyan: Auto-destruição se houver não-LIGHT.");
     }
+
+        // 1926 - Thunder of Ruler
+    void Effect_1926_ThunderOfRuler(CardDisplay source)
+    {
+        // Your opponent cannot conduct their next Battle Phase.
+        Debug.Log("Thunder of Ruler: Próxima Battle Phase do oponente pulada.");
+        // PhaseManager.Instance.opponentSkipsNextBattlePhase = true;
+    }
+
+    // 1928 - Time Machine
+    void Effect_1928_TimeMachine(CardDisplay source)
+    {
+        // When a monster is destroyed by battle and sent to the Graveyard: Special Summon that monster in the same battle position it was in.
+        // Lógica de gatilho no OnCardSentToGraveyard.
+        Debug.Log("Time Machine: Armadilha de renascimento configurada.");
+    }
+
+    // 1929 - Time Seal
+    void Effect_1929_TimeSeal(CardDisplay source)
+    {
+        // Your opponent skips their next Draw Phase.
+        Debug.Log("Time Seal: Próxima Draw Phase do oponente pulada.");
+        // PhaseManager.Instance.opponentSkipsNextDrawPhase = true;
+    }
+
+    // 1930 - Time Wizard
+    void Effect_1930_TimeWizard(CardDisplay source)
+    {
+        // Toss a coin and call it. If you call it right, destroy all monsters your opponent controls. If you call it wrong, destroy all monsters you control and you lose Life Points equal to half the total ATK of the destroyed monsters.
+        GameManager.Instance.TossCoin(1, (heads) => {
+            if (heads == 1) // Simula acerto
+            {
+                Debug.Log("Time Wizard: Acertou! Destruindo monstros do oponente.");
+                DestroyAllMonsters(true, false);
+            }
+            else
+            {
+                Debug.Log("Time Wizard: Errou! Destruindo seus monstros e tomando dano.");
+                List<CardDisplay> myMonsters = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null)
+                {
+                    CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, myMonsters);
+                }
+                int totalAtk = 0;
+                foreach(var m in myMonsters) totalAtk += m.originalAtk;
+                
+                DestroyCards(myMonsters, true);
+                GameManager.Instance.DamagePlayer(totalAtk / 2);
+            }
+        });
+    }
+
+    // 1931 - Timeater
+    void Effect_1931_Timeater(CardDisplay source)
+    {
+        // If this monster destroys an opponent's monster by battle: Your opponent skips their next Main Phase 1.
+        // Lógica no OnBattleEnd.
+        Debug.Log("Timeater: Efeito de pular Main Phase 1 configurado.");
+    }
+
+    // 1932 - Timidity
+    void Effect_1932_Timidity(CardDisplay source)
+    {
+        // Your opponent cannot destroy your face-down Spell/Trap Cards until the end of their next turn.
+        Debug.Log("Timidity: S/T setadas protegidas.");
+        // Lógica de proteção no SpellTrapManager.
+    }
+
+    // 1935 - Token Feastevil
+    void Effect_1935_TokenFeastevil(CardDisplay source)
+    {
+        // Destroy all Tokens on the field. Inflict 300 damage to the controller of each Token destroyed.
+        // Requer que Tokens sejam identificáveis.
+        Debug.Log("Token Feastevil: Destruindo Tokens e causando dano (Lógica de identificação de Token pendente).");
+    }
+
+    // 1936 - Token Thanksgiving
+    void Effect_1936_TokenThanksgiving(CardDisplay source)
+    {
+        // Destroy all Tokens on the field. Gain 800 LP for each Token destroyed.
+        Debug.Log("Token Thanksgiving: Destruindo Tokens e curando (Lógica de identificação de Token pendente).");
+    }
+
+    // 1937 - Toll
+    void Effect_1937_Toll(CardDisplay source)
+    {
+        // Each player must pay 500 LP to declare an attack.
+        // Lógica no BattleManager.CanAttack.
+        Debug.Log("Toll: Custo de 500 LP para atacar.");
+    }
+
+    // 1941 - Toon Cannon Soldier
+    void Effect_1941_ToonCannonSoldier(CardDisplay source)
+    {
+        // Toon. Tribute 1 monster; inflict 500 damage.
+        Effect_TributeToBurn(source, 1, 500);
+    }
+
+    // 1942 - Toon Dark Magician Girl
+    void Effect_1942_ToonDarkMagicianGirl(CardDisplay source)
+    {
+        // Toon. Can attack directly.
+        Debug.Log("Toon Dark Magician Girl: Ataque direto (Lógica Toon no BattleManager).");
+    }
+
+    // 1943 - Toon Defense
+    void Effect_1943_ToonDefense(CardDisplay source)
+    {
+        // When an opponent's monster attacks a Toon Monster you control: Make it a direct attack instead.
+        // Lógica no OnAttackDeclared.
+        Debug.Log("Toon Defense: Redireciona ataque para direto.");
+    }
+
+    // 1944 - Toon Gemini Elf
+    void Effect_1944_ToonGeminiElf(CardDisplay source)
+    {
+        // Toon. If inflicts battle damage, opponent discards 1 random card.
+        // Lógica no OnDamageDealt.
+        Debug.Log("Toon Gemini Elf: Descarte ao causar dano.");
+    }
+
+    // 1945 - Toon Goblin Attack Force
+    void Effect_1945_ToonGoblinAttackForce(CardDisplay source)
+    {
+        // Toon. Changes to Defense Position after attacking.
+        // Lógica no OnBattleEnd.
+        Debug.Log("Toon Goblin Attack Force: Vira defesa após ataque.");
+    }
+
+    // 1946 - Toon Masked Sorcerer
+    void Effect_1946_ToonMaskedSorcerer(CardDisplay source)
+    {
+        // Toon. If inflicts battle damage, draw 1 card.
+        // Lógica no OnDamageDealt.
+        Debug.Log("Toon Masked Sorcerer: Compra ao causar dano.");
+    }
+
+    // 1947 - Toon Mermaid
+    void Effect_1947_ToonMermaid(CardDisplay source)
+    {
+        // Toon. Can be Special Summoned from hand if you control "Toon World".
+        if (!source.isOnField && (GameManager.Instance.IsCardActiveOnField("1950") || GameManager.Instance.IsCardActiveOnField("Toon World")))
+        {
+            GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+            GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+        }
+    }
+
+    // 1948 - Toon Summoned Skull
+    void Effect_1948_ToonSummonedSkull(CardDisplay source)
+    {
+        // Toon. Cannot be Normal Summoned/Set. Must first be Special Summoned (from your hand) by Tributing 1 monster.
+        // Lógica de invocação na mão.
+        Debug.Log("Toon Summoned Skull: Invocação por tributo da mão.");
+    }
+
+    // 1949 - Toon Table of Contents
+    void Effect_1949_ToonTableOfContents(CardDisplay source)
+    {
+        // Add 1 "Toon" card from your Deck to your hand.
+        Effect_SearchDeck(source, "Toon");
+    }
+
+    // 1950 - Toon World
+    void Effect_1950_ToonWorld(CardDisplay source)
+    {
+        // Activate by paying 1000 LP.
+        Effect_PayLP(source, 1000);
+    }
+
 }

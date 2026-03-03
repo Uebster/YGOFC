@@ -916,61 +916,61 @@ public partial class CardEffectManager
         AddEffect("1925", Effect_1925_ThunderNyanNyan);
 
         // 1926 - Thunder of Ruler (Skip Battle Phase)
-        AddEffect("1926", c => Debug.Log("Thunder of Ruler: Pula Battle Phase do oponente."));
+        AddEffect("1926", Effect_1926_ThunderOfRuler);
 
         // 1928 - Time Machine (Revive Destroyed)
-        AddEffect("1928", c => Debug.Log("Time Machine: Revive monstro destruído na mesma posição."));
+        AddEffect("1928", Effect_1928_TimeMachine);
 
         // 1929 - Time Seal (Skip Draw)
-        AddEffect("1929", c => Debug.Log("Time Seal: Pula Draw Phase do oponente."));
+        AddEffect("1929", Effect_1929_TimeSeal);
 
         // 1930 - Time Wizard (Coin Destroy)
-        AddEffect("1930", c => Debug.Log("Time Wizard: Moeda para destruir monstros ou tomar dano."));
+        AddEffect("1930", Effect_1930_TimeWizard);
 
         // 1931 - Timeater (Skip Main 1)
-        AddEffect("1931", c => Debug.Log("Timeater: Oponente pula Main Phase 1."));
+        AddEffect("1931", Effect_1931_Timeater);
 
         // 1932 - Timidity (Protect Set S/T)
-        AddEffect("1932", c => Debug.Log("Timidity: Impede destruição de S/T setadas."));
+        AddEffect("1932", Effect_1932_Timidity);
 
         // 1935 - Token Feastevil (Destroy Tokens Burn)
-        AddEffect("1935", c => Debug.Log("Token Feastevil: Destrói Tokens e causa dano."));
+        AddEffect("1935", Effect_1935_TokenFeastevil);
 
         // 1936 - Token Thanksgiving (Destroy Tokens Heal)
-        AddEffect("1936", c => Debug.Log("Token Thanksgiving: Destrói Tokens e cura."));
+        AddEffect("1936", Effect_1936_TokenThanksgiving);
 
         // 1937 - Toll (Pay to Attack)
-        AddEffect("1937", c => Debug.Log("Toll: Paga 500 LP para atacar."));
+        AddEffect("1937", Effect_1937_Toll);
 
         // 1941 - Toon Cannon Soldier (Toon, Tribute Burn)
-        AddEffect("1941", c => Effect_TributeToBurn(c, 1, 500));
+        AddEffect("1941", Effect_1941_ToonCannonSoldier);
 
         // 1942 - Toon Dark Magician Girl (Toon, Direct)
-        AddEffect("1942", c => Debug.Log("Toon DMG: Ataque direto, SS especial."));
+        AddEffect("1942", Effect_1942_ToonDarkMagicianGirl);
 
         // 1943 - Toon Defense (Redirect to Direct)
-        AddEffect("1943", c => Debug.Log("Toon Defense: Redireciona ataque para direto."));
+        AddEffect("1943", Effect_1943_ToonDefense);
 
         // 1944 - Toon Gemini Elf (Toon, Discard)
-        AddEffect("1944", c => Debug.Log("Toon Gemini Elf: Descarte ao causar dano."));
+        AddEffect("1944", Effect_1944_ToonGeminiElf);
 
         // 1945 - Toon Goblin Attack Force (Toon, Defense)
-        AddEffect("1945", c => Debug.Log("Toon Goblin: Vira defesa após ataque."));
+        AddEffect("1945", Effect_1945_ToonGoblinAttackForce);
 
         // 1946 - Toon Masked Sorcerer (Toon, Draw)
-        AddEffect("1946", c => Debug.Log("Toon Masked Sorcerer: Compra 1 ao causar dano."));
+        AddEffect("1946", Effect_1946_ToonMaskedSorcerer);
 
         // 1947 - Toon Mermaid (Toon, SS)
-        AddEffect("1947", c => Debug.Log("Toon Mermaid: SS se Toon World."));
+        AddEffect("1947", Effect_1947_ToonMermaid);
 
         // 1948 - Toon Summoned Skull (Toon, SS)
-        AddEffect("1948", c => Debug.Log("Toon Summoned Skull: SS tributando."));
+        AddEffect("1948", Effect_1948_ToonSummonedSkull);
 
         // 1949 - Toon Table of Contents (Search Toon)
-        AddEffect("1949", c => Effect_SearchDeck(c, "Toon"));
+        AddEffect("1949", Effect_1949_ToonTableOfContents);
 
         // 1950 - Toon World (Pay 1000)
-        AddEffect("1950", c => { Effect_PayLP(c, 1000); Debug.Log("Toon World ativado."); });
+        AddEffect("1950", Effect_1950_ToonWorld);
 
         // 1952 - Tornado Bird (Flip Bounce 2 S/T)
         AddEffect("1952", c => Debug.Log("Tornado Bird: Retorna 2 S/T para a mão."));
