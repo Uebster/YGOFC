@@ -9,130 +9,130 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 2001 - Type Zero Magic Crusher (Discard Spell -> Burn)
-        AddEffect("2001", c => { Debug.Log("Type Zero Magic Crusher: Descarte Magia para 500 dano."); Effect_DirectDamage(c, 500); });
+        AddEffect("2001", Effect_2001_TypeZeroMagicCrusher);
 
         // 2002 - Tyranno Infinity (ATK = Banished Dinos * 1000)
-        AddEffect("2002", c => Debug.Log("Tyranno Infinity: ATK = Dinos banidos * 1000."));
+        AddEffect("2002", Effect_2002_TyrannoInfinity);
 
         // 2003 - Tyrant Dragon (Double Attack, Negate Trap)
-        AddEffect("2003", c => Debug.Log("Tyrant Dragon: Ataque duplo, nega Trap alvo."));
+        AddEffect("2003", Effect_2003_TyrantDragon);
 
         // 2004 - UFO Turtle (Search Fire)
-        AddEffect("2004", c => Effect_SearchDeck(c, "Fire"));
+        AddEffect("2004", Effect_2004_UFOTurtle);
 
         // 2005 - UFOroid (Search Machine)
-        AddEffect("2005", c => Effect_SearchDeck(c, "Machine"));
+        AddEffect("2005", Effect_2005_UFOroid);
 
         // 2006 - UFOroid Fighter (Fusion Stats)
-        AddEffect("2006", c => Debug.Log("UFOroid Fighter: Stats = soma dos materiais."));
+        AddEffect("2006", Effect_2006_UFOroidFighter);
 
         // 2007 - Ultimate Baseball Kid (Buff Fire, Burn)
-        AddEffect("2007", c => Debug.Log("Ultimate Baseball Kid: Buff por Fire. Envia Fire para 500 dano."));
+        AddEffect("2007", Effect_2007_UltimateBaseballKid);
 
         // 2008 - Ultimate Insect LV1 (Level Up)
-        AddEffect("2008", c => Effect_LevelUp(c, "2009"));
+        AddEffect("2008", Effect_2008_UltimateInsectLV1);
 
         // 2009 - Ultimate Insect LV3 (Debuff, Level Up)
-        AddEffect("2009", c => Effect_LevelUp(c, "2010"));
+        AddEffect("2009", Effect_2009_UltimateInsectLV3);
 
         // 2010 - Ultimate Insect LV5 (Debuff, Level Up)
-        AddEffect("2010", c => Effect_LevelUp(c, "2011"));
+        AddEffect("2010", Effect_2010_UltimateInsectLV5);
 
         // 2011 - Ultimate Insect LV7 (Debuff All)
-        AddEffect("2011", c => Debug.Log("Ultimate Insect LV7: Oponente perde 700 ATK/DEF."));
+        AddEffect("2011", Effect_2011_UltimateInsectLV7);
 
         // 2012 - Ultimate Obedient Fiend (Attack Restriction)
-        AddEffect("2012", c => Debug.Log("Ultimate Obedient Fiend: Restrição de ataque. Nega efeitos."));
+        AddEffect("2012", Effect_2012_UltimateObedientFiend);
 
         // 2013 - Ultimate Offering (Pay 500 Extra Summon)
-        AddEffect("2013", c => { Effect_PayLP(c, 500); Debug.Log("Ultimate Offering: Invocação Normal extra."); });
+        AddEffect("2013", Effect_2013_UltimateOffering);
 
         // 2014 - Ultra Evolution Pill (Tribute Reptile -> SS Dino)
-        AddEffect("2014", c => Debug.Log("Ultra Evolution Pill: Tributa Réptil, invoca Dinossauro."));
+        AddEffect("2014", Effect_2014_UltraEvolutionPill);
 
         // 2015 - Umi (Field Aqua/Fish/Sea Serpent/Thunder +200)
-        AddEffect("2015", c => { Effect_Field(c, 200, 200, "Aqua"); Effect_Field(c, 200, 200, "Fish"); Effect_Field(c, 200, 200, "Sea Serpent"); Effect_Field(c, 200, 200, "Thunder"); });
+        AddEffect("2015", Effect_2015_Umi);
 
         // 2016 - Umiiruka (Field Water +500/-400)
-        AddEffect("2016", c => Effect_Field(c, 500, -400, "", "Water"));
+        AddEffect("2016", Effect_2016_Umiiruka);
 
         // 2017 - Union Attack (Combine ATK)
-        AddEffect("2017", c => Debug.Log("Union Attack: Soma ATK para um monstro."));
+        AddEffect("2017", Effect_2017_UnionAttack);
 
         // 2018 - Union Rider (Steal Union)
-        AddEffect("2018", c => Debug.Log("Union Rider: Rouba Union do oponente."));
+        AddEffect("2018", Effect_2018_UnionRider);
 
         // 2020 - United We Stand (Equip +800 per monster)
-        AddEffect("2020", c => Debug.Log("United We Stand: +800 ATK/DEF por monstro."));
+        AddEffect("2020", Effect_2020_UnitedWeStand);
 
         // 2021 - Unity (Combine DEF)
-        AddEffect("2021", c => Debug.Log("Unity: DEF = soma das DEFs."));
+        AddEffect("2021", Effect_2021_Unity);
 
         // 2023 - Unshaven Angler (2 Tributes Water)
-        AddEffect("2023", c => Debug.Log("Unshaven Angler: 2 tributos para Water."));
+        AddEffect("2023", Effect_2023_UnshavenAngler);
 
         // 2024 - Upstart Goblin (Draw 1, Opp +1000 LP)
-        AddEffect("2024", c => { GameManager.Instance.DrawCard(); if(c.isPlayerCard) GameManager.Instance.opponentLP += 1000; else GameManager.Instance.playerLP += 1000; Debug.Log("Upstart Goblin: Compra 1, oponente ganha 1000 LP."); });
+        AddEffect("2024", Effect_2024_UpstartGoblin);
 
         // 2027 - Valkyrion the Magna Warrior (SS Magnet Warriors)
-        AddEffect("2027", c => Debug.Log("Valkyrion: SS tributando magnet warriors."));
+        AddEffect("2027", Effect_2027_ValkyrionTheMagnaWarrior);
 
         // 2028 - Vampire Baby (SS destroyed)
-        AddEffect("2028", c => Debug.Log("Vampire Baby: Invoca monstro destruído por batalha."));
+        AddEffect("2028", Effect_2028_VampireBaby);
 
         // 2029 - Vampire Genesis (SS Banish Lord)
-        AddEffect("2029", c => Debug.Log("Vampire Genesis: SS banindo Lord. Revive Zumbi."));
+        AddEffect("2029", Effect_2029_VampireGenesis);
 
         // 2030 - Vampire Lady (Damage -> Declare Type)
-        AddEffect("2030", c => Debug.Log("Vampire Lady: Dano -> Oponente envia carta do tipo declarado do deck."));
+        AddEffect("2030", Effect_2030_VampireLady);
 
         // 2031 - Vampire Lord (Damage -> Declare Type, Revive)
-        AddEffect("2031", c => Debug.Log("Vampire Lord: Dano -> Mill tipo. Revive se destruído por efeito."));
+        AddEffect("2031", Effect_2031_VampireLord);
 
         // 2032 - Vampire's Curse (Pay 500 Revive +500)
-        AddEffect("2032", c => Debug.Log("Vampire's Curse: Paga 500 para reviver com +500 ATK."));
+        AddEffect("2032", Effect_2032_VampiresCurse);
 
         // 2033 - Vampiric Orchis (SS Des Dendle)
-        AddEffect("2033", c => Debug.Log("Vampiric Orchis: Invoca Des Dendle."));
+        AddEffect("2033", Effect_2033_VampiricOrchis);
 
         // 2034 - Van'Dalgyon the Dark Dragon Lord (SS Counter Trap)
-        AddEffect("2034", c => Debug.Log("Van'Dalgyon: SS após Counter Trap."));
+        AddEffect("2034", Effect_2034_VanDalgyonTheDarkDragonLord);
 
         // 2035 - Vengeful Bog Spirit (Summoning Sickness)
-        AddEffect("2035", c => Debug.Log("Vengeful Bog Spirit: Monstros não atacam no turno que são invocados."));
+        AddEffect("2035", Effect_2035_VengefulBogSpirit);
 
         // 2037 - Versago the Destroyer (Fusion Sub)
-        AddEffect("2037", c => Debug.Log("Versago: Substituto de fusão."));
+        AddEffect("2037", Effect_2037_VersagoTheDestroyer);
 
         // 2038 - Victory Dragon (Match Winner)
-        AddEffect("2038", c => Debug.Log("Victory Dragon: Ataque direto vence a partida."));
+        AddEffect("2038", Effect_2038_VictoryDragon);
 
         // 2039 - Vile Germs (Equip Plant +300/300)
-        AddEffect("2039", c => Effect_Equip(c, 300, 300, "Plant"));
+        AddEffect("2039", Effect_2039_VileGerms);
 
         // 2040 - Vilepawn Archfiend (Protect Archfiend)
-        AddEffect("2040", c => Debug.Log("Vilepawn Archfiend: Protege outros Archfiends."));
+        AddEffect("2040", Effect_2040_VilepawnArchfiend);
 
         // 2042 - Violet Crystal (Equip Zombie +300/300)
-        AddEffect("2042", c => Effect_Equip(c, 300, 300, "Zombie"));
+        AddEffect("2042", Effect_2042_VioletCrystal);
 
         // 2043 - Virus Cannon (Tribute -> Mill Spells)
-        AddEffect("2043", c => Debug.Log("Virus Cannon: Envia magias do oponente ao GY."));
+        AddEffect("2043", Effect_2043_VirusCannon);
 
         // 2044 - Viser Des (Destroy after 3 turns)
-        AddEffect("2044", c => Debug.Log("Viser Des: Destrói alvo após 3 turnos."));
+        AddEffect("2044", Effect_2044_ViserDes);
 
         // 2047 - Waboku (No Damage/Destruction)
-        AddEffect("2047", c => Debug.Log("Waboku: Sem dano de batalha, monstros não morrem."));
+        AddEffect("2047", Effect_2047_Waboku);
 
         // 2048 - Wall Shadow (SS via Labyrinth)
-        AddEffect("2048", c => Debug.Log("Wall Shadow: SS via Magical Labyrinth."));
+        AddEffect("2048", Effect_2048_WallShadow);
 
         // 2049 - Wall of Illusion (Bounce Attacker)
-        AddEffect("2049", c => Debug.Log("Wall of Illusion: Retorna atacante para a mão."));
+        AddEffect("2049", Effect_2049_WallOfIllusion);
 
         // 2050 - Wall of Revealing Light (Pay LP -> Lock Attack)
-        AddEffect("2050", c => { Effect_PayLP(c, 1000); Debug.Log("Wall of Revealing Light: Bloqueia ataques."); });
+        AddEffect("2050", Effect_2050_WallOfRevealingLight);
 
         // 2051 - Wandering Mummy (Flip Shuffle)
         AddEffect("2051", c => Debug.Log("Wandering Mummy: Vira face-down e embaralha posições."));
