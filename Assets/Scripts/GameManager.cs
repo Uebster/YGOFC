@@ -260,6 +260,7 @@ public class GameManager : MonoBehaviour
         if (BattleManager.Instance == null) CreateManager<BattleManager>();
         if (SpellTrapManager.Instance == null) CreateManager<SpellTrapManager>();
         if (ChainManager.Instance == null) CreateManager<ChainManager>();
+        if (FusionManager.Instance == null) CreateManager<FusionManager>();
         if (CardEffectManager.Instance == null) CreateManager<CardEffectManager>();
         
         // Cria o gerenciador de testes se o modo estiver ativo
@@ -1692,6 +1693,57 @@ public class GameManager : MonoBehaviour
         {
             Debug.Log("Nenhuma carta válida para selecionar.");
         }
+    }
+
+    // --- SISTEMA DE FUSÃO ---
+
+    public void BeginFusionSummon(CardDisplay sourceCard)
+    {
+        // 1. Verifica se tem monstros no Extra Deck
+        var fusionMonsters = GetPlayerExtraDeck().Where(c => c.type.Contains("Fusion")).ToList();
+        if (fusionMonsters.Count == 0)
+        {
+            Debug.Log("Nenhum Monstro de Fusão no Deck Extra.");
+            return;
+        }
+
+        // 2. Abre a UI de Fusão
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowFusionUI(sourceCard);
+        }
+    }
+
+    public void PerformFusionSummon(CardDisplay sourceCard, CardData fusionMonster, List<CardData> materials)
+    {
+        if (fusionMonster == null || materials == null || materials.Count == 0)
+        {
+            Debug.LogError("PerformFusionSummon: Dados inválidos.");
+            return;
+        }
+
+        Debug.Log($"Realizando Invocação-Fusão de {fusionMonster.name}...");
+
+        // 1. Envia a carta de fusão (ex: Polymerization) para o cemitério
+        SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard);
+        Destroy(sourceCard.gameObject);
+
+        // 2. Envia os materiais para o cemitério (da mão ou do campo)
+        foreach (var material in materials)
+        {
+            // Tenta remover da mão
+            var handObject = playerHand.FirstOrDefault(go => go.GetComponent<CardDisplay>().CurrentCardData == material);
+            if (handObject != null)
+            {
+                DiscardCard(handObject.GetComponent<CardDisplay>());
+            }
+            // TODO: Tenta remover do campo
+        }
+
+        // 3. Invoca o monstro de fusão do Deck Extra
+        SpecialSummonFromData(fusionMonster, sourceCard.isPlayerCard);
+        playerExtraDeck.Remove(fusionMonster);
+        UpdatePileVisuals();
     }
 
     // Invocação Especial direta por dados (para Monster Reborn, etc)

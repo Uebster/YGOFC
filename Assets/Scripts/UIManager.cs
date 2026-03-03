@@ -48,6 +48,7 @@ public class UIManager : MonoBehaviour
     public GraveyardViewer deckViewer; // Reusa o script para visualizar o Deck (Dev Tool)
     public PositionSelectionUI positionSelectionModal; // Novo modal específico
     public CardSelectionUI cardSelectionModal; // Novo modal de seleção múltipla
+    public FusionUI fusionUI; // Novo modal para Fusão
 
     [Header("Debug")]
     public bool testDuelDirectly = false;
@@ -133,6 +134,7 @@ public class UIManager : MonoBehaviour
         if (deckViewer != null) deckViewer.gameObject.SetActive(false);
         if (positionSelectionModal != null) positionSelectionModal.gameObject.SetActive(false);
         if (cardSelectionModal != null) cardSelectionModal.gameObject.SetActive(false);
+        if (fusionUI != null) fusionUI.gameObject.SetActive(false);
 
         // 2. Ativa apenas a tela desejada
         if (screenToShow != null)
@@ -207,6 +209,18 @@ public class UIManager : MonoBehaviour
             List<CardData> fallback = new List<CardData>();
             for(int i=0; i<Mathf.Min(min, cards.Count); i++) fallback.Add(cards[i]);
             onConfirm?.Invoke(fallback);
+        }
+    }
+
+    public void ShowFusionUI(CardDisplay source)
+    {
+        if (fusionUI != null)
+        {
+            fusionUI.Show(source);
+        }
+        else
+        {
+            Debug.LogError("UIManager: FusionUI não atribuído!");
         }
     }
 

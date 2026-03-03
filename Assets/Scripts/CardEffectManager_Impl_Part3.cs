@@ -4117,7 +4117,8 @@ public partial class CardEffectManager
 
     void Effect_1444_Polymerization(CardDisplay source)
     {
-       Debug.Log("Polymerization: realiza fusão"); 
+       // Inicia o processo de fusão
+       GameManager.Instance.BeginFusionSummon(source);
     }
 
     void Effect_1445_PossessedDarkSoul(CardDisplay source)
