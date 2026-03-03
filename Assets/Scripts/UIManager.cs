@@ -238,6 +238,26 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    public void ShowResponseWindow(List<CardDisplay> responseCards, System.Action onPass)
+    {
+        if (cardSelectionModal != null)
+        {
+            List<CardData> cardDataList = responseCards.Select(c => c.CurrentCardData).ToList();
+            
+            // Reutiliza o modal de seleção de cartas. O botão "cancelar" funcionará como "passar".
+            cardSelectionModal.Show(cardDataList, "Ativar em resposta?", 1, 1, (selected) => {
+                if (selected != null && selected.Count > 0)
+                {
+                    // Jogador escolheu uma carta para ativar
+                    var cardToActivate = GameManager.Instance.FindCardOnField(selected[0].id, true); // Assume que a resposta é do jogador
+                    if (cardToActivate != null)
+                        GameManager.Instance.ActivateFieldSpellTrap(cardToActivate.gameObject);
+                }
+                else { onPass?.Invoke(); } // Jogador cancelou/passou
+            });
+        }
+    }
+
     // Exibe uma mensagem simples (usa o modal de confirmação adaptado)
     public void ShowMessage(string message)
     {

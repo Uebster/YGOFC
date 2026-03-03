@@ -92,7 +92,10 @@ public class BattleManager : MonoBehaviour
         // Se o oponente não tiver monstros, pode atacar direto (Direct Attack)
         if (HasDirectAttackCondition())
         {
-            UIManager.Instance.ShowConfirmation("Atacar diretamente?", () => CheckTrapsAndAttackDirectly(attacker));
+            UIManager.Instance.ShowConfirmation("Atacar diretamente?", () => {
+                if (ChainManager.Instance != null)
+                    ChainManager.Instance.AddToChain(attacker, attacker.isPlayerCard, ChainManager.TriggerType.Attack, null, () => PerformDirectAttack(attacker));
+            });
         }
     }
 
@@ -249,7 +252,10 @@ public class BattleManager : MonoBehaviour
             }
         }
 
-        UIManager.Instance.ShowConfirmation($"Atacar {target.CurrentCardData.name}?", () => CheckTrapsAndBattle(currentAttacker, target));
+        UIManager.Instance.ShowConfirmation($"Atacar {target.CurrentCardData.name}?", () => {
+            if (ChainManager.Instance != null)
+                ChainManager.Instance.AddToChain(currentAttacker, currentAttacker.isPlayerCard, ChainManager.TriggerType.Attack, target, () => PerformBattle(currentAttacker, target));
+        });
         currentTarget = target;
     }
 
@@ -296,22 +302,10 @@ public class BattleManager : MonoBehaviour
 
     private void CheckTrapsAndAttackDirectly(CardDisplay attacker)
     {
-        // Verifica armadilhas antes do dano (passa callback para continuar se não houver trap)
-        SpellTrapManager.Instance.CheckForTraps(SpellTrapTrigger.Attack, attacker, null, () => 
-        {
-            // Hook OnAttackDeclared (para Kuriboh, etc)
-            if (CardEffectManager.Instance != null)
-            {
-                CardEffectManager.Instance.OnAttackDeclared(attacker, null, () => PerformDirectAttack(attacker));
-            }
-            else
-            {
-                PerformDirectAttack(attacker);
-            }
-        });
+        // Obsoleto. O fluxo agora é controlado pelo ChainManager.
     }
 
-    private void PerformDirectAttack(CardDisplay attacker)
+    public void PerformDirectAttack(CardDisplay attacker)
     {
         // Hook OnDamageCalculation (para Injection Fairy Lily, etc)
         if (CardEffectManager.Instance != null)
@@ -334,28 +328,17 @@ public class BattleManager : MonoBehaviour
 
     private void CheckTrapsAndBattle(CardDisplay attacker, CardDisplay target)
     {
+        // Obsoleto. O fluxo agora é controlado pelo ChainManager.
+    }
+
+    public void PerformBattle(CardDisplay attacker, CardDisplay target)
+    {
         // Revela o alvo se estiver virado para baixo (Flip)
         if (target.isFlipped)
         {
             target.RevealCard(true); // true = triggered by attack
         }
 
-        SpellTrapManager.Instance.CheckForTraps(SpellTrapTrigger.Attack, attacker, target, () =>
-        {
-            // Hook OnAttackDeclared
-            if (CardEffectManager.Instance != null)
-            {
-                CardEffectManager.Instance.OnAttackDeclared(attacker, target, () => PerformBattle(attacker, target));
-            }
-            else
-            {
-                PerformBattle(attacker, target);
-            }
-        });
-    }
-
-    private void PerformBattle(CardDisplay attacker, CardDisplay target)
-    {
         // Hook OnDamageCalculation (Skyscraper, etc)
         if (CardEffectManager.Instance != null)
         {

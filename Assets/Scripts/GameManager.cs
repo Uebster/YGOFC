@@ -1775,12 +1775,31 @@ public class GameManager : MonoBehaviour
         {
             CardEffectManager.Instance.OnSpecialSummon(display);
         }
+
+        // Notifica o ChainManager sobre a invocação para abrir janela de resposta (ex: Trap Hole)
+        if (ChainManager.Instance != null)
+        {
+            ChainManager.Instance.AddToChain(display, forPlayer, ChainManager.TriggerType.Summon);
+        }
     }
 
         // Helper para encontrar um CardDisplay no campo pelo ID
-    private CardDisplay FindCardOnField(string cardId, bool isPlayer)
+    public CardDisplay FindCardOnField(string cardId, bool isPlayer)
     {
         Transform[] zones = isPlayer ? duelFieldUI.playerMonsterZones : duelFieldUI.opponentMonsterZones;
+        foreach (var zone in zones)
+        {
+            if (zone.childCount > 0)
+            {
+                var display = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData.id == cardId)
+                {
+                    return display;
+                }
+            }
+        }
+        
+        zones = isPlayer ? duelFieldUI.playerSpellZones : duelFieldUI.opponentSpellZones;
         foreach (var zone in zones)
         {
             if (zone.childCount > 0)

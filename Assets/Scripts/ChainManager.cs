@@ -1,10 +1,13 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 public class ChainManager : MonoBehaviour
 {
     public static ChainManager Instance;
+
+    public enum TriggerType { CardActivation, Summon, Attack, Flip, Effect }
 
     [System.Serializable]
     public class ChainLink
@@ -12,6 +15,8 @@ public class ChainManager : MonoBehaviour
         public int linkNumber;
         public CardDisplay cardSource;
         public bool isPlayerEffect;
+        public TriggerType trigger;
+        public int spellSpeed;
         public bool isNegated; // Novo: Se o efeito foi negado
         public CardDisplay target; // Novo: Alvo específico (se houver)
         // public EffectData effect; // Futuro: Lógica específica do efeito
@@ -19,6 +24,9 @@ public class ChainManager : MonoBehaviour
 
     public List<ChainLink> currentChain = new List<ChainLink>();
     public bool isChainResolving = false;
+    private bool isWaitingForResponse = false;
+    private bool playerPassed;
+    private bool opponentPassed;
 
     void Awake()
     {
@@ -26,7 +34,7 @@ public class ChainManager : MonoBehaviour
     }
 
     // Adiciona uma carta à corrente (Link 1, Link 2, etc.)
-    public void AddToChain(CardDisplay card, bool isPlayer)
+    public void AddToChain(CardDisplay card, bool isPlayer, TriggerType triggerType = TriggerType.CardActivation, CardDisplay targetCard = null, System.Action onChainResolved = null)
     {
         if (isChainResolving)
         {
@@ -38,8 +46,10 @@ public class ChainManager : MonoBehaviour
         link.linkNumber = currentChain.Count + 1;
         link.cardSource = card;
         link.isPlayerEffect = isPlayer;
+        link.trigger = triggerType;
+        link.spellSpeed = GetSpellSpeed(card.CurrentCardData);
+        link.target = targetCard;
         link.isNegated = false;
-        link.target = null; // Pode ser setado depois se o efeito tiver alvo
 
         currentChain.Add(link);
         Debug.Log($"Chain Link {link.linkNumber}: {card.CurrentCardData.name} ativado.");
@@ -50,39 +60,84 @@ public class ChainManager : MonoBehaviour
             // Poderíamos tocar um som de "Chain Link" aqui
         }
 
-        // Verifica se o oponente quer responder (Janela de Resposta)
-        CheckForResponse(!isPlayer);
+        // Inicia o processo de resposta
+        if (currentChain.Count == 1)
+        {
+            StartCoroutine(ResponseRoutine(onChainResolved));
+        }
     }
 
-    // Verifica se o jogador alvo tem alguma carta que pode ser encadeada
-    private void CheckForResponse(bool checkPlayer)
+    private IEnumerator ResponseRoutine(System.Action onChainResolved)
     {
-        if (SpellTrapManager.Instance != null)
+        isWaitingForResponse = true;
+
+        // A prioridade para responder ao último elo é do oponente de quem o ativou.
+        bool currentPlayerIsPlayer = !GetLastChainLink().isPlayerEffect;
+
+        while (true)
         {
-            // Verifica se há alguma carta que pode responder ao último elo
-            // Por enquanto, simplificado para verificar qualquer Trap/Quick-Play
-            // Em um sistema completo, verificaria Spell Speed e condições de ativação
-            
-            ChainLink lastLink = GetLastChainLink();
-            
-            // Simula a verificação de resposta
-            // Se for o oponente (IA), pode ter uma lógica simples de chance ou prioridade
-            // Se for o jogador, abriria um popup "Deseja ativar uma carta?"
-            
-            // Para este protótipo, vamos apenas resolver a chain se não houver resposta imediata
-            // ou se a resposta for automática (ex: Counter Trap obrigatória)
-            
-            // Exemplo de resposta automática (Counter Trap)
-            if (SpellTrapManager.Instance.CheckChainResponse(lastLink))
+            playerPassed = false;
+            opponentPassed = false;
+
+            // Loop de prioridade para 2 jogadores
+            for (int i = 0; i < 2; i++)
             {
-                // Se encontrou resposta, ela foi adicionada à chain dentro do CheckChainResponse
-                // e o fluxo continua recursivamente
-                return;
+                List<CardDisplay> responses = SpellTrapManager.Instance.GetValidResponses(GetLastChainLink(), currentPlayerIsPlayer);
+
+                if (responses.Count > 0)
+                {
+                    if (currentPlayerIsPlayer)
+                    {
+                        // Espera a resposta do jogador humano
+                        UIManager.Instance.ShowResponseWindow(responses, () => { playerPassed = true; });
+                        yield return new WaitUntil(() => playerPassed || currentChain.Count > responses.Count); // Espera passar ou uma nova carta ser adicionada
+                    }
+                    else
+                    {
+                        // Lógica da IA
+                        Debug.Log("IA está pensando se responde...");
+                        yield return new WaitForSeconds(0.5f); // Simula pensamento
+                        opponentPassed = true; // IA decide não responder por enquanto
+                    }
+                }
+                else
+                {
+                    if (currentPlayerIsPlayer) playerPassed = true;
+                    else opponentPassed = true;
+                }
+
+                // Se uma nova carta foi adicionada à chain, o loop de prioridade reinicia para o outro jogador
+                if (currentChain.Count > responses.Count)
+                {
+                    currentPlayerIsPlayer = !GetLastChainLink().isPlayerEffect;
+                    i = -1; // Reinicia o loop for
+                    continue;
+                }
+
+                // Passa a prioridade para o outro jogador
+                currentPlayerIsPlayer = !currentPlayerIsPlayer;
+            }
+
+            // Se ambos os jogadores passaram em sequência, a chain para de construir
+            if (playerPassed && opponentPassed)
+            {
+                break;
             }
         }
 
-        // Se ninguém respondeu, resolve a chain
-        ResolveChain();
+        isWaitingForResponse = false;
+        ResolveChain(onChainResolved);
+    }
+
+    public int GetSpellSpeed(CardData card)
+    {
+        if (card == null) return 0;
+        if (card.type.Contains("Counter Trap")) return 3;
+        if (card.type.Contains("Quick-Play Spell")) return 2;
+        if (card.type.Contains("Trap")) return 2;
+        // Efeitos rápidos de monstros (Quick Effects) seriam 2
+        // Todo o resto (Normal Spells, etc.) é 1
+        return 1;
     }
 
     // Retorna o último elo da corrente (para Counter Traps e efeitos de resposta)
@@ -93,13 +148,13 @@ public class ChainManager : MonoBehaviour
     }
 
     // Inicia a resolução da corrente
-    public void ResolveChain()
+    public void ResolveChain(System.Action onChainResolved = null)
     {
         if (currentChain.Count == 0 || isChainResolving) return;
-        StartCoroutine(ResolveChainRoutine());
+        StartCoroutine(ResolveChainRoutine(onChainResolved));
     }
 
-    private IEnumerator ResolveChainRoutine()
+    private IEnumerator ResolveChainRoutine(System.Action onChainResolved)
     {
         isChainResolving = true;
         Debug.Log("Resolvendo Corrente...");
@@ -150,6 +205,12 @@ public class ChainManager : MonoBehaviour
         currentChain.Clear();
         isChainResolving = false;
         Debug.Log("Corrente Resolvida.");
+
+        // Se o gatilho original não foi negado, executa a ação pós-corrente (ex: o ataque continua)
+        if (onChainResolved != null)
+        {
+            onChainResolved.Invoke();
+        }
     }
 
     // Método para negar um elo específico da corrente

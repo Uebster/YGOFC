@@ -159,30 +159,101 @@ public class SpellTrapManager : MonoBehaviour
     }
 
     // Verifica se há cartas que podem ser encadeadas (Chained)
-    public bool CheckChainResponse(ChainManager.ChainLink lastLink)
+    public List<CardDisplay> GetValidResponses(ChainManager.ChainLink triggerLink, bool forPlayer)
     {
-        if (lastLink == null || lastLink.cardSource == null) return false;
+        List<CardDisplay> validResponses = new List<CardDisplay>();
+        if (triggerLink == null) return validResponses;
 
-        // Determina quem deve responder (o oponente de quem ativou o último elo)
-        bool responderIsPlayer = !lastLink.isPlayerEffect;
-
-        // Procura por cartas setadas ou na mão (se permitido) que possam responder
-        // Simplificação: Verifica apenas Traps setadas no campo do respondedor
         if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null)
         {
-            Transform[] zones = responderIsPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+            Transform[] zones = forPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
 
             foreach (Transform zone in zones)
             {
                 if (zone.childCount > 0)
                 {
                     CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
-                    // Verifica se é Trap e se está virada para baixo (Set)
-                    if (cd != null && cd.CurrentCardData.type.Contains("Trap") && cd.isFlipped)
+                    if (cd == null || !cd.isFlipped) continue; // Só pode ativar cartas setadas (ou da mão se permitido)
+
+                    int cardSpeed = ChainManager.Instance.GetSpellSpeed(cd.CurrentCardData);
+                    if (cardSpeed < triggerLink.spellSpeed) continue; // Spell Speed baixo demais
+                    if (triggerLink.spellSpeed == 3 && cardSpeed != 3) continue; // Apenas Counter Traps respondem a Counter Traps
+
+                    // Verifica condições de ativação
+                    switch (triggerLink.trigger)
                     {
-                        // Lógica específica de Counter Trap ou resposta genérica
-                        // Exemplo: Magic Jammer vs Spell
-                        if (lastLink.cardSource.CurrentCardData.type.Contains("Spell") && cd.CurrentCardData.name == "Magic Jammer")
+                        case ChainManager.TriggerType.CardActivation:
+                            // Magic Jammer (1123) vs Spell
+                            if (cd.CurrentCardData.id == "1123" && triggerLink.cardSource.CurrentCardData.type.Contains("Spell"))
+                            {
+                                validResponses.Add(cd);
+                            }
+                            // Seven Tools of the Bandit (1620) vs Trap
+                            if (cd.CurrentCardData.id == "1620" && triggerLink.cardSource.CurrentCardData.type.Contains("Trap"))
+                            {
+                                validResponses.Add(cd);
+                            }
+                            break;
+
+                        case ChainManager.TriggerType.Summon:
+                            // Trap Hole (1962) vs Normal/Flip Summon 1000+ ATK
+                            if (cd.CurrentCardData.id == "1962" && triggerLink.cardSource.currentAtk >= 1000)
+                            {
+                                // Assumimos que o trigger de Summon é para Normal/Flip
+                                validResponses.Add(cd);
+                            }
+                            break;
+
+                        case ChainManager.TriggerType.Attack:
+                            // Sakuretsu Armor (1581) vs Attack
+                            if (cd.CurrentCardData.id == "1581")
+                            {
+                                validResponses.Add(cd);
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+        return validResponses;
+    }
+
+    // --- LÓGICA DE SELEÇÃO DE ALVO ---
+
+    public void StartTargetSelection(System.Predicate<CardDisplay> filter, System.Action<CardDisplay> callback)
+    {
+        isSelectingTarget = true;
+        targetFilter = filter;
+        onTargetSelected = callback;
+
+        if (UIManager.Instance != null)
+            UIManager.Instance.ShowConfirmation("Selecione um alvo no campo.", null, CancelTargetSelection);
+        
+        Debug.Log("SpellTrapManager: Iniciando seleção de alvo...");
+    }
+
+    public void SelectTarget(CardDisplay card)
+    {
+        if (!isSelectingTarget) return;
+
+        if (targetFilter != null && !targetFilter(card))
+        {
+            Debug.Log("Alvo inválido para esta carta.");
+            return;
+        }
+
+        // Alvo válido
+        isSelectingTarget = false;
+        onTargetSelected?.Invoke(card);
+    }
+
+    public void CancelTargetSelection()
+    {
+        isSelectingTarget = false;
+        onTargetSelected = null;
+        targetFilter = null;
+    }
+}
                         {
                             // Encontrou uma resposta válida!
                             // Se for o jogador, pergunta. Se for IA, ativa.
