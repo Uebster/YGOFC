@@ -448,8 +448,17 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             if (mod.operation == StatModifier.Operation.Add)
             {
-                if (mod.statType == StatModifier.StatType.ATK) finalAtk += mod.value;
-                if (mod.statType == StatModifier.StatType.DEF) finalDef += mod.value;
+                int valueToAdd = mod.value;
+
+                // Reverse Trap (1526): Inverte adições e subtrações
+                if (CardEffectManager.Instance != null && CardEffectManager.Instance.reverseStats)
+                {
+                    // Se for buff (+500), vira debuff (-500). Se for debuff (-500), vira buff (+500).
+                    valueToAdd = -valueToAdd;
+                }
+
+                if (mod.statType == StatModifier.StatType.ATK) finalAtk += valueToAdd;
+                if (mod.statType == StatModifier.StatType.DEF) finalDef += valueToAdd;
             }
         }
 

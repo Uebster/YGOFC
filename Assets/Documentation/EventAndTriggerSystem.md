@@ -60,7 +60,7 @@ Estes eventos monitoram mudanças no estado do tabuleiro.
 | **Invocação (Qualquer)** | `OnSummonImpl` | Disparado após qualquer invocação (Normal, Flip, Special) bem-sucedida. | *Torrential Tribute*, *Trap Hole*, *Breaker the Magical Warrior* (contador). |
 | **Setar Carta** | `OnSetImpl` | Disparado quando uma carta é baixada face-down. | *D.D. Trap Hole*. |
 | **Invocação Especial** | `OnSpecialSummon` | Disparado especificamente após Special Summon. | *Card of Safe Return*. |
-| **Mudança de Posição** | `OnBattlePositionChangedImpl` | Disparado quando um monstro muda de Atk <-> Def. | *Tragedy*, *Blade Rabbit*. |
+| **Mudança de Posição** | `OnBattlePositionChanged` | Disparado quando um monstro muda de Atk <-> Def. | *Tragedy*, *Blade Rabbit*. |
 | **Sair do Campo** | `OnCardLeavesField` | Disparado quando uma carta sai do campo (destruída, banida, retornada). | *Sangan*, *Witch of the Black Forest*, *Butterfly Dagger - Elma*. |
 | **Ir para o Cemitério** | `OnCardSentToGraveyard` | Disparado quando qualquer carta vai para o GY. | *Coffin Seller*, *Despair from the Dark*. |
 | **Descarte** | `OnCardDiscarded` | Disparado quando uma carta é descartada da mão. | *Dark World* monsters, *Blessings of the Nile*. |
@@ -133,22 +133,23 @@ O `ChainManager` gerencia a pilha de ativação de efeitos, permitindo respostas
 
 | Componente | Responsabilidade |
 | :--- | :--- |
-| **`ChainManager`** | Mantém a lista de `ChainLink`s. Controla a adição de elos e a resolução da corrente. |
-| **`ChainLink` (Classe)** | Representa um único elo na corrente. Contém a carta fonte, o jogador, e um estado `isNegated`. |
-| **`SpellTrapManager`** | `CheckChainResponse` verifica se o oponente tem uma carta válida para responder (encadear). |
+| **`ChainManager`** | Mantém a lista de `ChainLink`s. Controla a adição de elos, a janela de resposta e a resolução da corrente. |
+| **`ChainLink` (Classe)** | Representa um único elo na corrente. Contém a carta fonte, o jogador, o tipo de gatilho (`TriggerType`), a velocidade do efeito (`SpellSpeed`) e um estado `isNegated`. |
+| **`SpellTrapManager`** | `GetValidResponses` verifica se um jogador tem cartas válidas para responder ao último elo da corrente. |
 | **`GameManager`** | Inicia a corrente ao ativar uma carta, chamando `ChainManager.AddToChain`. |
 
 ### Fluxo da Corrente
-1.  Jogador A ativa uma carta (ex: *Raigeki*). `GameManager` chama `ChainManager.AddToChain`. Isso cria o **Chain Link 1**.
-2.  O `ChainManager` pausa e chama `SpellTrapManager.CheckChainResponse` para o Jogador B.
-3.  O `SpellTrapManager` encontra uma *Counter Trap* setada (ex: *Magic Jammer*) e pergunta ao Jogador B se deseja ativar.
-4.  Jogador B confirma. `GameManager` ativa *Magic Jammer*, que chama `ChainManager.AddToChain`. Isso cria o **Chain Link 2**.
-5.  O `ChainManager` pausa novamente e verifica se o Jogador A tem uma resposta para o Link 2.
-6.  Nenhuma resposta é encontrada. A corrente começa a resolver.
-7.  **Resolução (LIFO):**
-    *   **Resolve Link 2:** O efeito do *Magic Jammer* é executado. Ele nega o Link 1 (`ChainManager.NegateLink(1)`).
-    *   **Resolve Link 1:** O `ChainManager` verifica o estado `isNegated` do Link 1. Como está negado, o efeito do *Raigeki* não acontece.
-8.  A corrente termina. As cartas usadas (que não são contínuas) são enviadas ao cemitério.
+1.  **Gatilho**: Jogador A declara um ataque. `BattleManager` chama `ChainManager.AddToChain` com `TriggerType.Attack`. Isso cria o **Chain Link 1**.
+2.  **Janela de Resposta**: O `ChainManager` pausa o jogo e passa a prioridade para o Jogador B.
+3.  **Verificação de Resposta**: O `ChainManager` chama `SpellTrapManager.GetValidResponses` para o Jogador B. O `SpellTrapManager` encontra uma *Sakuretsu Armor* setada, que pode ser ativada em resposta a um ataque.
+4.  **Ação do Jogador**: O `UIManager` exibe uma janela para o Jogador B, perguntando se ele deseja ativar *Sakuretsu Armor*.
+5.  **Construção da Corrente**: Jogador B confirma. `GameManager` ativa a armadilha, que chama `ChainManager.AddToChain`. Isso cria o **Chain Link 2**.
+6.  **Troca de Prioridade**: A prioridade agora volta para o Jogador A. O `ChainManager` verifica se ele tem alguma resposta para o Chain Link 2 (ex: uma *Seven Tools of the Bandit*).
+7.  **Passando a Vez**: Jogador A não tem resposta e "passa". Jogador B também não tem mais nada para responder e "passa".
+8.  **Resolução (LIFO)**: Como ambos os jogadores passaram em sequência, a corrente começa a resolver de trás para frente:
+    *   **Resolve Link 2:** O efeito da *Sakuretsu Armor* é executado. O monstro atacante do Jogador A é destruído.
+    *   **Resolve Link 1:** O `ChainManager` verifica o estado do Link 1. Como o ataque foi interrompido (o atacante foi destruído), o efeito do ataque não acontece.
+9.  A corrente termina. As cartas usadas (que não são contínuas) são enviadas ao cemitério. O ataque original não é concluído.
 
 ## 9. Outros Sistemas de Suporte
 
@@ -157,6 +158,11 @@ O `ChainManager` gerencia a pilha de ativação de efeitos, permitindo respostas
 | **Dano Tomado** | `OnDamageTaken` | Disparado quando um jogador perde LP (batalha ou efeito). | *Numinous Healer*, *Attack and Receive*, *Dark Room of Nightmare*. |
 | **Ganho de Vida** | `OnLifePointsGained` | Disparado quando um jogador ganha LP. | *Fire Princess*, *Bad Reaction to Simochi* (inverte). |
 
+### Sistema de Limpeza de Equipamentos (Equip Cleanup)
+*   **Evento:** `OnCardLeavesField`
+*   **Descrição:** Quando um monstro sai do campo (destruído, tributado, etc.), o sistema agora verifica automaticamente se alguma Carta de Equipamento estava ligada a ele. Se sim, a Carta de Equipamento também é destruída e enviada ao cemitério.
+*   **Implementação:** A lógica reside no `CardEffectManager_Impl.cs`, que itera sobre os `CardLink`s existentes na cena.
+
 ### Sistema de Modificadores de Stats (Stat Modifiers)
 
 O sistema de `StatModifier` permite alterações temporárias ou permanentes em ATK/DEF sem alterar os valores base originais.
@@ -164,6 +170,11 @@ O sistema de `StatModifier` permite alterações temporárias ou permanentes em 
 *   **Tipos:** `Temporary` (até fim do turno), `Permanent`, `Continuous` (enquanto condição for válida), `Equip`, `Field`.
 *   **Operações:** `Add` (soma), `Multiply` (multiplica), `Set` (define valor fixo).
 *   **Uso:** `card.AddStatModifier(new StatModifier(...))`
+
+### Sistema de Inversão de Stats (Stat Reversal)
+*   **Flag Global:** `CardEffectManager.Instance.reverseStats`
+*   **Descrição:** Quando esta flag está `true` (ativada por cartas como *Reverse Trap*), o método `CardDisplay.RecalculateStats` inverte a operação de todos os modificadores do tipo `Add`. Buffs (+500) se tornam debuffs (-500) e vice-versa.
+*   **Reset:** A flag é automaticamente resetada para `false` no início de cada fase pelo `OnPhaseStart`.
 
 ### Sistema de Seleção (Targeting)
 

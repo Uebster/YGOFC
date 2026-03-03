@@ -6,6 +6,7 @@ public partial class CardEffectManager
     // Flags globais para efeitos de turno
     public bool negateContinuousSpells = false;
     public bool redirectSpellTarget = false;
+    public bool reverseStats = false; // Para Reverse Trap (1526)
 
     // --- MÉTODOS UTILITÁRIOS COMUNS (REAPROVEITADOS) ---
 
@@ -16,6 +17,7 @@ public partial class CardEffectManager
         // Reset flags de turno
         negateContinuousSpells = false;
         redirectSpellTarget = false;
+        reverseStats = false;
 
         Debug.Log($"CardEffectManager: Processando efeitos da fase {phase}...");
 
@@ -1060,6 +1062,23 @@ public partial class CardEffectManager
                 if (target != null) target.RemoveModifiersFromSource(card);
             }
         }
+
+        // Destrói cartas que estavam equipadas NESTA carta (Equip Spell dependency)
+        CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        foreach(var link in links)
+        {
+            // Se esta carta (card) era o ALVO de um equipamento
+            if (link.target == card && link.type == CardLink.LinkType.Equipment)
+            {
+                if (link.source != null && link.source.isOnField)
+                {
+                    Debug.Log($"Regra de Equipamento: Destruindo {link.source.CurrentCardData.name} pois o monstro equipado saiu de campo.");
+                    GameManager.Instance.SendToGraveyard(link.source.CurrentCardData, link.source.isPlayerCard);
+                    Destroy(link.source.gameObject);
+                }
+            }
+        }
+
                 // 1470 - Pyramid of Light
         if (card.CurrentCardData.id == "1470")
         {
