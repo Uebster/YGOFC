@@ -3687,4 +3687,53 @@ public partial class CardEffectManager
 
     // 1375 - Ojama Yellow
     void Effect_1375_OjamaYellow(CardDisplay source) { } // Normal Monster
+
+        // 1376 - Old Vindictive Magician
+    void Effect_1376_OldVindictiveMagician(CardDisplay source)
+    {
+        // FLIP: Destroy 1 monster.
+        Debug.Log("Old Vindictive Magician: Destruindo monstro.");
+    }
+
+    // 1382 - Ookazi
+    void Effect_1382_Ookazi(CardDisplay source)
+    {
+        // Inflict 800 damage.
+        Effect_DirectDamage(source, 800);
+    }
+
+    // 1384 - Opti-Camouflage Armor
+    void Effect_1384_OptiCamouflageArmor(CardDisplay source)
+    {
+        // Equip a Lv1, Direct Attack.
+        Debug.Log("Opti-Camouflage Armor: Equipa em Lv1, pode atacar direto.");
+    }
+
+    // 1387 - Ordeal of a Traveler
+    void Effect_1387_OrdealOfATraveler(CardDisplay source)
+    {
+        // Requer sistema de revelar
+        Debug.Log("Ordeal of a Traveler: Adivinha qual monstro.");
+    }
+
+    // 1397 - Painful Choice
+    void Effect_1397_PainfulChoice(CardDisplay source)
+    {
+        // Exibir escolha
+        Debug.Log("Painful Choice: Oponente escolhe 1 de 5.");
+    }
+
+    // 1398 - Paladin of White Dragon
+    void Effect_1398_PaladinOfWhiteDragon(CardDisplay source)
+    {
+        // SS Blue-Eyes
+        Debug.Log("Paladin of White Dragon: Tributa para Blue-Eyes.");
+    }
+
+    // 1400 - Pandemonium
+    void Effect_1400_Pandemonium(CardDisplay source)
+    {
+        // If Archfiend destroyed -> Search
+        Debug.Log("Pandemonium: Busca Archfiend ao ser destruído.");
+    }
 }
