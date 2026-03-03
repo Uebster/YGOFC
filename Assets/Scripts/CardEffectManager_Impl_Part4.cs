@@ -2435,4 +2435,256 @@ public partial class CardEffectManager
         }
         Effect_GainLP(source, count * 1000);
     }
+
+    // 1752 - Spirit of the Pharaoh
+    void Effect_1752_SpiritOfThePharaoh(CardDisplay source)
+    {
+        // When this card is Special Summoned: You can Special Summon up to 4 Level 2 or lower Zombie-Type Normal Monsters from your Graveyard.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> targets = gy.FindAll(c => c.race == "Zombie" && c.type.Contains("Normal") && c.level <= 2);
+        
+        if (targets.Count > 0)
+        {
+            int max = Mathf.Min(4, targets.Count);
+            GameManager.Instance.OpenCardMultiSelection(targets, "Reviver Zumbis", 1, max, (selected) => {
+                foreach(var c in selected)
+                {
+                    GameManager.Instance.SpecialSummonFromData(c, source.isPlayerCard);
+                }
+            });
+        }
+    }
+
+    // 1753 - Spirit of the Pot of Greed
+    void Effect_1753_SpiritOfThePotOfGreed(CardDisplay source)
+    {
+        // Passive effect handled in OnSpellActivated.
+        Debug.Log("Spirit of the Pot of Greed: Efeito passivo ativo.");
+    }
+
+    // 1755 - Spirit's Invitation
+    void Effect_1755_SpiritsInvitation(CardDisplay source)
+    {
+        // Continuous Trap.
+        Debug.Log("Spirit's Invitation: Ativada.");
+    }
+
+    // 1756 - Spiritual Earth Art - Kurogane
+    void Effect_1756_SpiritualEarthArtKurogane(CardDisplay source)
+    {
+        // Tribute 1 EARTH; SS 1 Level 4 or lower EARTH from GY.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.attribute == "Earth",
+                (tribute) => {
+                    GameManager.Instance.TributeCard(tribute);
+                    
+                    List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+                    List<CardData> targets = gy.FindAll(c => c.attribute == "Earth" && c.level <= 4 && c != tribute.CurrentCardData);
+                    
+                    if (targets.Count > 0)
+                    {
+                        GameManager.Instance.OpenCardSelection(targets, "Reviver EARTH", (selected) => {
+                            GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                        });
+                    }
+                }
+            );
+        }
+    }
+
+    // 1757 - Spiritual Energy Settle Machine
+    void Effect_1757_SpiritualEnergySettleMachine(CardDisplay source)
+    {
+        // Continuous Spell.
+        Debug.Log("Spiritual Energy Settle Machine: Ativada.");
+    }
+
+    // 1758 - Spiritual Fire Art - Kurenai
+    void Effect_1758_SpiritualFireArtKurenai(CardDisplay source)
+    {
+        // Tribute 1 FIRE; inflict damage = original ATK.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.attribute == "Fire",
+                (tribute) => {
+                    int dmg = tribute.originalAtk;
+                    GameManager.Instance.TributeCard(tribute);
+                    Effect_DirectDamage(source, dmg);
+                }
+            );
+        }
+    }
+
+    // 1759 - Spiritual Water Art - Aoi
+    void Effect_1759_SpiritualWaterArtAoi(CardDisplay source)
+    {
+        // Tribute 1 WATER; look at opp hand, send 1 to GY.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.attribute == "Water",
+                (tribute) => {
+                    GameManager.Instance.TributeCard(tribute);
+                    
+                    List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+                    if (oppHand.Count > 0)
+                    {
+                        GameManager.Instance.OpenCardSelection(oppHand, "Enviar ao GY", (selected) => {
+                            GameManager.Instance.DiscardCardsByName(false, selected.name);
+                            Debug.Log($"Aoi: Enviando {selected.name} ao GY.");
+                        });
+                    }
+                }
+            );
+        }
+    }
+
+    // 1760 - Spiritual Wind Art - Miyabi
+    void Effect_1760_SpiritualWindArtMiyabi(CardDisplay source)
+    {
+        // Tribute 1 WIND; target 1 opp card, bottom of Deck.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.attribute == "Wind",
+                (tribute) => {
+                    GameManager.Instance.TributeCard(tribute);
+                    
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && !t.isPlayerCard,
+                        (target) => {
+                            GameManager.Instance.ReturnToDeck(target, false); // false = bottom
+                        }
+                    );
+                }
+            );
+        }
+    }
+
+    // 1761 - Spiritualism
+    void Effect_1761_Spiritualism(CardDisplay source)
+    {
+        // Return 1 opp S/T to hand. Cannot be negated.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")),
+                (target) => {
+                    GameManager.Instance.ReturnToHand(target);
+                }
+            );
+        }
+    }
+
+    // 1762 - Spring of Rebirth
+    void Effect_1762_SpringOfRebirth(CardDisplay source)
+    {
+        // Continuous Spell.
+        Debug.Log("Spring of Rebirth: Ativada.");
+    }
+
+    // 1764 - Stamping Destruction
+    void Effect_1764_StampingDestruction(CardDisplay source)
+    {
+        // If Dragon: Destroy S/T, 500 dmg.
+        bool hasDragon = false;
+        if (GameManager.Instance.duelFieldUI != null)
+             foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+                 if(z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.race == "Dragon") hasDragon = true;
+
+        if (hasDragon)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")),
+                    (target) => {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                        Effect_DirectDamage(source, 500);
+                    }
+                );
+            }
+        }
+    }
+
+    // 1765 - Star Boy
+    void Effect_1765_StarBoy(CardDisplay source)
+    {
+        Effect_Field(source, 500, -400, "", "Water");
+    }
+
+    // 1766 - Statue of the Wicked
+    void Effect_1766_StatueOfTheWicked(CardDisplay source)
+    {
+        // Trap. Effect activates in GY.
+        Debug.Log("Statue of the Wicked: Setada.");
+    }
+
+    // 1767 - Staunch Defender
+    void Effect_1767_StaunchDefender(CardDisplay source)
+    {
+        // Select 1 face-up monster. Opponent must attack it.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard,
+                (target) => {
+                    Debug.Log($"Staunch Defender: {target.CurrentCardData.name} é o alvo obrigatório.");
+                    // Logic to force attack on this target in BattleManager
+                    // BattleManager.Instance.forcedAttackTarget = target;
+                }
+            );
+        }
+    }
+
+    // 1768 - Stealth Bird
+    void Effect_1768_StealthBird(CardDisplay source)
+    {
+        // Ignition: Flip face-down.
+        // Flip: 1000 dmg.
+        if (source.isFlipped)
+        {
+            Effect_DirectDamage(source, 1000);
+        }
+        else
+        {
+            if (!source.hasUsedEffectThisTurn)
+            {
+                Effect_TurnSet(source);
+                source.hasUsedEffectThisTurn = true;
+            }
+        }
+    }
+
+    // 1770 - Steamroid
+    void Effect_1770_Steamroid(CardDisplay source)
+    {
+        // Logic in OnAttackDeclared/OnDamageCalculation.
+        Debug.Log("Steamroid: Efeitos de batalha configurados.");
+    }
+
+    // 1773 - Steel Scorpion
+    void Effect_1773_SteelScorpion(CardDisplay source)
+    {
+        // Logic in OnBattleEnd (delayed destruction).
+        Debug.Log("Steel Scorpion: Efeito de destruição retardada configurado.");
+    }
+
+    // 1774 - Steel Shell
+    void Effect_1774_SteelShell(CardDisplay source)
+    {
+        Effect_Equip(source, 400, -200, "", "Water");
+    }
+
+    // 1775 - Stim-Pack
+    void Effect_1775_StimPack(CardDisplay source)
+    {
+        Effect_Equip(source, 700, 0);
+        // Decay logic in OnPhaseStart.
+    }
 }

@@ -542,61 +542,61 @@ public partial class CardEffectManager
         AddEffect("1749", Effect_1749_SpiritOfTheBreeze);
 
         // 1752 - Spirit of the Pharaoh (SS Zombies)
-        AddEffect("1752", c => Debug.Log("Spirit of the Pharaoh: SS Zumbis."));
+        AddEffect("1752", Effect_1752_SpiritOfThePharaoh);
 
         // 1753 - Spirit of the Pot of Greed (Draw Extra)
-        AddEffect("1753", c => Debug.Log("Spirit of the Pot: Compra extra."));
+        AddEffect("1753", Effect_1753_SpiritOfThePotOfGreed);
 
         // 1755 - Spirit's Invitation (Bounce)
-        AddEffect("1755", c => Debug.Log("Spirit's Invitation: Bounce."));
+        AddEffect("1755", Effect_1755_SpiritsInvitation);
 
         // 1756 - Spiritual Earth Art - Kurogane (Swap Earth)
-        AddEffect("1756", c => Debug.Log("Kurogane: Troca Earth."));
+        AddEffect("1756", Effect_1756_SpiritualEarthArtKurogane);
 
         // 1757 - Spiritual Energy Settle Machine (Keep Spirits)
-        AddEffect("1757", c => Debug.Log("Spiritual Energy: Mantém Spirits."));
+        AddEffect("1757", Effect_1757_SpiritualEnergySettleMachine);
 
         // 1758 - Spiritual Fire Art - Kurenai (Burn)
-        AddEffect("1758", c => Debug.Log("Kurenai: Tributa Fire para dano."));
+        AddEffect("1758", Effect_1758_SpiritualFireArtKurenai);
 
         // 1759 - Spiritual Water Art - Aoi (Hand Destruction)
-        AddEffect("1759", c => Debug.Log("Aoi: Hand destruction."));
+        AddEffect("1759", Effect_1759_SpiritualWaterArtAoi);
 
         // 1760 - Spiritual Wind Art - Miyabi (Spin)
-        AddEffect("1760", c => Debug.Log("Miyabi: Spin."));
+        AddEffect("1760", Effect_1760_SpiritualWindArtMiyabi);
 
         // 1761 - Spiritualism (Bounce S/T)
-        AddEffect("1761", c => Debug.Log("Spiritualism: Bounce S/T."));
+        AddEffect("1761", Effect_1761_Spiritualism);
 
         // 1762 - Spring of Rebirth (Gain LP on Bounce)
-        AddEffect("1762", c => Debug.Log("Spring of Rebirth: Ganha LP por bounce."));
+        AddEffect("1762", Effect_1762_SpringOfRebirth);
 
         // 1764 - Stamping Destruction (Destroy S/T Burn)
-        AddEffect("1764", c => Debug.Log("Stamping Destruction: Destrói S/T e dano."));
+        AddEffect("1764", Effect_1764_StampingDestruction);
 
         // 1765 - Star Boy (Field Water +500 Fire -400)
-        AddEffect("1765", c => Effect_Field(c, 500, -400, "", "Water"));
+        AddEffect("1765", Effect_1765_StarBoy);
 
         // 1766 - Statue of the Wicked (Token)
-        AddEffect("1766", c => Debug.Log("Statue of the Wicked: Token."));
+        AddEffect("1766", Effect_1766_StatueOfTheWicked);
 
         // 1767 - Staunch Defender (Forced Attack)
-        AddEffect("1767", c => Debug.Log("Staunch Defender: Redireciona ataques."));
+        AddEffect("1767", Effect_1767_StaunchDefender);
 
         // 1768 - Stealth Bird (Burn / Flip Down)
-        AddEffect("1768", c => Debug.Log("Stealth Bird: Dano 1000, flip down."));
+        AddEffect("1768", Effect_1768_StealthBird);
 
         // 1770 - Steamroid (Battle Stats)
-        AddEffect("1770", c => Debug.Log("Steamroid: Modifica ATK na batalha."));
+        AddEffect("1770", Effect_1770_Steamroid);
 
         // 1773 - Steel Scorpion (Destroy non-Machine)
-        AddEffect("1773", c => Debug.Log("Steel Scorpion: Destrói não-máquina."));
+        AddEffect("1773", Effect_1773_SteelScorpion);
 
         // 1774 - Steel Shell (Equip Water +400/-200)
-        AddEffect("1774", c => Effect_Equip(c, 400, -200, "", "Water"));
+        AddEffect("1774", Effect_1774_SteelShell);
 
         // 1775 - Stim-Pack (Equip +700 / Decay)
-        AddEffect("1775", c => Debug.Log("Stim-Pack: +700 ATK, perde 200."));
+        AddEffect("1775", Effect_1775_StimPack);
 
         // 1780 - Stone Statue of the Aztecs (Double Battle Damage)
         AddEffect("1780", c => Debug.Log("Aztecs: Dano de batalha dobrado."));

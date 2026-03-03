@@ -221,6 +221,50 @@ public partial class CardEffectManager
                     }
                 }
             });
+            
+            // 1755 - Spirit's Invitation
+            CheckActiveCards("1755", (card) => {
+                if (card.isPlayerCard)
+                {
+                    if (!Effect_PayLP(card, 500))
+                    {
+                        Debug.Log("Spirit's Invitation: Manutenção não paga. Destruída.");
+                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
+                        Destroy(card.gameObject);
+                    }
+                }
+            });
+
+            // 1757 - Spiritual Energy Settle Machine
+            CheckActiveCards("1757", (card) => {
+                if (card.isPlayerCard)
+                {
+                    // Discard 1 card or destroy
+                    if (GameManager.Instance.GetPlayerHandData().Count > 0)
+                    {
+                        GameManager.Instance.DiscardRandomHand(true, 1); // Simplificado
+                    }
+                    else
+                    {
+                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
+                        Destroy(card.gameObject);
+                    }
+                }
+            });
+            
+            // 1775 - Stim-Pack
+            CheckActiveCards("1775", (card) => {
+                // Encontra o monstro equipado
+                CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+                foreach(var link in links)
+                {
+                    if (link.source == card && link.target != null)
+                    {
+                        link.target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, -200, card));
+                        Debug.Log($"Stim-Pack: {link.target.CurrentCardData.name} perdeu 200 ATK.");
+                    }
+                }
+            });
 
             // 1046 - Labyrinth of Nightmare
             CheckActiveCards("1046", (card) => {
@@ -729,6 +773,14 @@ public partial class CardEffectManager
             Debug.Log("Roc from the Valley of Haze: Voltando ao Deck.");
             // GameManager.Instance.ReturnToDeck(card, true); // Requer CardDisplay ou refatoração
         }
+        
+        // 1766 - Statue of the Wicked
+        if (card.id == "1766" && isOwnerPlayer) // Se destruída (simplificado, deveria checar face-down)
+        {
+            // Assume que estava face-down se foi destruída por efeito (difícil rastrear aqui)
+            Debug.Log("Statue of the Wicked: Invocando Wicked Token.");
+            GameManager.Instance.SpawnToken(isOwnerPlayer, 1000, 1000, "Wicked Token");
+        }
     }
 
     public void OnCardDiscarded(CardDisplay card)
@@ -1186,6 +1238,19 @@ public partial class CardEffectManager
         // Effect: SS por tributo -> Adicionar contadores iniciais.
         // https://yugioh.fandom.com/wiki/Card_Errata:MP1-001
         // Para Zaborg the Thunder Monarch (ver Effect_0382_OrcaMegaFortressOfDarkness).
+        
+        // 1753 - Spirit of the Pot of Greed
+        if (spell.CurrentCardData.name == "Pot of Greed")
+        {
+            CheckActiveCards("1753", (spirit) => {
+                if (spirit.position == CardDisplay.BattlePosition.Attack)
+                {
+                    Debug.Log("Spirit of the Pot of Greed: Compra extra.");
+                    if (spirit.isPlayerCard) GameManager.Instance.DrawCard();
+                    else GameManager.Instance.DrawOpponentCard();
+                }
+            });
+        }
 
     }
 
@@ -1287,6 +1352,20 @@ public partial class CardEffectManager
                 }
             });
             return; // Interrompe fluxo síncrono
+        }
+
+        // 1770 - Steamroid
+        if (attacker.CurrentCardData.id == "1770")
+        {
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 500, attacker));
+            Debug.Log("Steamroid: +500 ATK no ataque.");
+        }
+        
+        // 1770 - Steamroid (Defesa)
+        if (target != null && target.CurrentCardData.id == "1770")
+        {
+            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -500, target));
+            Debug.Log("Steamroid: -500 ATK ao ser atacado.");
         }
 
         // Aqui poderíamos verificar Kuriboh na mão, etc.
@@ -1462,6 +1541,16 @@ public partial class CardEffectManager
                 
                 // Se for LV6 (1306), coloca no topo do deck em vez do GY? (Regra diz: "and if you do, you can place it on top...")
                 // Implementação simplificada: Vai pro GY.
+            }
+        }
+        
+        // 1773 - Steel Scorpion
+        if (target != null && target.CurrentCardData.id == "1773" && !target.isPlayerCard)
+        {
+            if (attacker != null && !attacker.CurrentCardData.race.Contains("Machine"))
+            {
+                Debug.Log("Steel Scorpion: Atacante não-máquina marcado para destruição (Simulado).");
+                // TODO: Agendar destruição na End Phase do 2º turno do oponente
             }
         }
     }
@@ -1790,6 +1879,12 @@ public partial class CardEffectManager
         // Workaround: Se for um desses monstros, reseta hasAttackedThisTurn se for o primeiro ataque.
         // Como não sabemos se é o primeiro, isso permitiria ataques infinitos.
         // Solução correta requer adicionar 'attackCount' no CardDisplay.
+        
+        // 1762 - Spring of Rebirth & 1755 - Spirit's Invitation (Lógica de retorno à mão)
+        // Como não temos um hook explícito OnReturnToHand aqui, verificamos se podemos inferir ou adicionar.
+        // O método ReturnToHand no GameManager chama OnCardLeavesField.
+        // Vamos adicionar a lógica lá ou criar um novo hook.
+        // Por enquanto, simulamos no OnCardLeavesField se o destino for mão.
     }
 
     public void OnLifePointsGained(bool isPlayer, int amount)
