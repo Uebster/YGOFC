@@ -253,6 +253,25 @@ public class BattleManager : MonoBehaviour
                 return false;
             }
         }
+
+        // 1553 - Rocket Jumper
+        if (currentAttacker != null && currentAttacker.CurrentCardData.id == "1553")
+        {
+            // Pode atacar direto se o oponente só tiver monstros em Defesa
+            bool onlyDefense = true;
+            bool hasMonsters = false;
+            foreach (Transform zone in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+            {
+                if (zone.childCount > 0)
+                {
+                    hasMonsters = true;
+                    CardDisplay m = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && m.position == CardDisplay.BattlePosition.Attack) onlyDefense = false;
+                }
+            }
+            
+            if (hasMonsters && onlyDefense) return true;
+        }
         return true;
     }
 
@@ -361,6 +380,13 @@ public class BattleManager : MonoBehaviour
         // B.E.S. Immunity (0124, 0125)
         bool targetIsBES = target.CurrentCardData.id == "0124" || target.CurrentCardData.id == "0125";
 
+        // 1554 - Rocket Warrior (Invulnerável na batalha durante seu turno)
+        bool attackerIsRocketWarrior = attacker.CurrentCardData.id == "1554" && attacker.isPlayerCard == GameManager.Instance.isPlayerTurn; // Simplificado: Assume turno do atacante
+        
+        // Se Rocket Warrior ataca, ele não toma dano e não é destruído
+        // Mas o alvo pode ser destruído e tomar dano normalmente? Não, Rocket Warrior diz "battle damage to both players becomes 0".
+        bool noBattleDamage = attackerIsRocketWarrior;
+
         if (target.position == CardDisplay.BattlePosition.Attack)
         {
             // Ataque vs Ataque
@@ -368,7 +394,7 @@ public class BattleManager : MonoBehaviour
             {
                 int damage = atk - def;
                 Debug.Log($"Vitória do Atacante! Oponente toma {damage} de dano. Alvo destruído.");
-                GameManager.Instance.DamageOpponent(damage);
+                if (!noBattleDamage) GameManager.Instance.DamageOpponent(damage);
                 if (!targetIsBES)
                 {
                     // Charm of Shabti (0296)
@@ -387,17 +413,23 @@ public class BattleManager : MonoBehaviour
             {
                 int damage = def - atk;
                 Debug.Log($"Vitória do Alvo! Atacante toma {damage} de dano. Atacante destruído.");
-                GameManager.Instance.DamagePlayer(damage);
-                GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
-                Destroy(attacker.gameObject);
+                if (!noBattleDamage) GameManager.Instance.DamagePlayer(damage);
+                
+                if (!attackerIsRocketWarrior)
+                {
+                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+                    Destroy(attacker.gameObject);
+                }
             }
             else // Empate
             {
                 Debug.Log("Empate! Ambos destruídos.");
                 GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-                GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
                 Destroy(target.gameObject);
-                Destroy(attacker.gameObject);
+                if (!attackerIsRocketWarrior) {
+                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+                    Destroy(attacker.gameObject);
+                }
             }
         }
         else // Ataque vs Defesa

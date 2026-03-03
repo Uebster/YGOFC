@@ -900,6 +900,14 @@ public partial class CardEffectManager
                 Debug.Log("Morale Boost: +1000 LP.");
             });
         }
+
+        // 1566 - Royal Magical Library (Add Counter)
+        CheckActiveCards("1566", (library) => {
+            library.AddSpellCounter(1);
+            SpellCounterManager.Instance.AddCounter(library, 1);
+            Debug.Log("Royal Magical Library: Contador adicionado.");
+        });
+
                 // 1400 - Pandemonium
         CheckActiveCards("1400", (card) => {
             // Se um Archfiend é destruído, busca Archfiend com nível menor
@@ -998,6 +1006,14 @@ public partial class CardEffectManager
             Debug.Log("Kazejin: Zerando ATK do atacante.");
             attacker.ModifyStats(-attacker.currentAtk, 0);
             target.hasUsedEffectThisTurn = true;
+        }
+
+        // 1554 - Rocket Warrior
+        if (attacker.CurrentCardData.id == "1554" && target != null)
+        {
+            // Reduz ATK do alvo em 500
+            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -500, attacker));
+            Debug.Log("Rocket Warrior: Alvo perdeu 500 ATK.");
         }
 
         // Injection Fairy Lily (79575620) - Lógica de pagar LP seria aqui

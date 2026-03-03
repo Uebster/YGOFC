@@ -45,6 +45,13 @@ public class SpellTrapManager : MonoBehaviour
             return false;
         }
 
+        // Royal Decree (1563): Nega todas as outras Traps
+        if (card.type.Contains("Trap") && IsTrapNegationActive())
+        {
+            Debug.Log("Ativação de Trap bloqueada por Royal Decree!");
+            return false;
+        }
+
         // Imperial Order (0932) / Spell Canceller (1721) / Silent Swordsman LV7 (1647)
         if (card.type.Contains("Spell") && IsSpellNegationActive())
         {
@@ -76,6 +83,12 @@ public class SpellTrapManager : MonoBehaviour
         if (GameManager.Instance.IsCardActiveOnField("1721")) return true; // Spell Canceller
         if (GameManager.Instance.IsCardActiveOnField("1647")) return true; // Silent Swordsman LV7
         return false;
+    }
+
+    public bool IsTrapNegationActive()
+    {
+        if (GameManager.Instance == null) return false;
+        return GameManager.Instance.IsCardActiveOnField("1563"); // Royal Decree
     }
 
     public void RegisterExtraDraw(int amount)

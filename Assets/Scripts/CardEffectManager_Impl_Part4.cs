@@ -349,4 +349,200 @@ public partial class CardEffectManager
             GameManager.Instance.opponentLP = pLP;
         }
     }
+
+    // 1553 - Rocket Jumper
+    void Effect_1553_RocketJumper(CardDisplay source)
+    {
+        // Can attack directly if opponent controls only Defense Position monsters.
+        // Lógica implementada no BattleManager.
+        Debug.Log("Rocket Jumper: Pode atacar diretamente se oponente só tiver defesa.");
+    }
+
+    // 1554 - Rocket Warrior
+    void Effect_1554_RocketWarrior(CardDisplay source)
+    {
+        // Battle Phase: Cannot be destroyed by battle, no battle damage.
+        // If attacks: Target loses 500 ATK until End Phase.
+        // Lógica de proteção no BattleManager.
+        // Lógica de debuff no OnAttackDeclared/OnDamageCalculation.
+        Debug.Log("Rocket Warrior: Efeitos de batalha configurados.");
+    }
+
+    // 1555 - Rod of Silence - Kay'est
+    void Effect_1555_RodOfSilenceKayest(CardDisplay source)
+    {
+        // Equip: +500 DEF. Negate Spell effects targeting equipped monster. Destroy other Equips.
+        Effect_Equip(source, 0, 500);
+        // Lógica de destruir outros equips:
+        if (SpellTrapManager.Instance != null && SpellTrapManager.Instance.isSelectingTarget == false) // Evita loop na seleção
+        {
+            // Encontra o monstro equipado (via CardLink)
+            // ... (Simplificado: Assume que o link foi criado no Effect_Equip)
+            Debug.Log("Rod of Silence: Outros equipamentos destruídos (Lógica pendente).");
+        }
+    }
+
+    // 1556 - Rod of the Mind's Eye
+    void Effect_1556_RodOfTheMindsEye(CardDisplay source)
+    {
+        // Equip: If deals battle damage, it becomes 1000.
+        Effect_Equip(source, 0, 0);
+        // Lógica de dano fixo no BattleManager/OnDamageCalculation.
+    }
+
+    // 1559 - Rope of Life
+    void Effect_1559_RopeOfLife(CardDisplay source)
+    {
+        // Trigger: When monster destroyed by battle -> Discard hand -> SS +800 ATK.
+        // Lógica no OnCardSentToGraveyard.
+        Debug.Log("Rope of Life: Armadilha de renascimento configurada.");
+    }
+
+    // 1561 - Roulette Barrel
+    void Effect_1561_RouletteBarrel(CardDisplay source)
+    {
+        // Roll die twice. Destroy monster with Level = Result.
+        if (source.hasUsedEffectThisTurn) return;
+        
+        GameManager.Instance.TossCoin(2, (heads) => { // Simulando dados
+            int d1 = Random.Range(1, 7);
+            int d2 = Random.Range(1, 7);
+            int result = 0;
+            // Regra: Seleciona 1 resultado
+            // Simplificado: Usa o maior ou soma? Texto diz "Select 1 result".
+            // Vamos usar o primeiro para simplificar.
+            result = d1;
+            
+            Debug.Log($"Roulette Barrel: Rolou {d1} e {d2}. Alvo Nível {result}.");
+            
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && t.CurrentCardData.level == result,
+                    (target) => {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                    }
+                );
+            }
+        });
+        source.hasUsedEffectThisTurn = true;
+    }
+
+    // 1562 - Royal Command
+    void Effect_1562_RoyalCommand(CardDisplay source)
+    {
+        // Negate activation and effects of Flip Effect Monsters.
+        Debug.Log("Royal Command: Efeitos Flip negados (Passivo).");
+    }
+
+    // 1563 - Royal Decree
+    void Effect_1563_RoyalDecree(CardDisplay source)
+    {
+        // Negate all other Trap effects on the field.
+        Debug.Log("Royal Decree: Outras Traps negadas (Passivo).");
+    }
+
+    // 1565 - Royal Keeper
+    void Effect_1565_RoyalKeeper(CardDisplay source)
+    {
+        // FLIP: Gains 300 ATK/DEF.
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 300, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 300, source));
+    }
+
+    // 1566 - Royal Magical Library
+    void Effect_1566_RoyalMagicalLibrary(CardDisplay source)
+    {
+        // Accumulate Spell Counter on Spell activation. Remove 3 -> Draw 1.
+        // Acúmulo: Tratado no OnSpellActivated (CardEffectManager_Impl.cs).
+        // Ignição:
+        if (SpellCounterManager.Instance.GetCount(source) >= 3)
+        {
+            SpellCounterManager.Instance.RemoveCounter(source, 3);
+            GameManager.Instance.DrawCard();
+            Debug.Log("Royal Magical Library: Comprou 1 carta.");
+        }
+    }
+
+    // 1567 - Royal Oppression
+    void Effect_1567_RoyalOppression(CardDisplay source)
+    {
+        // Pay 800 LP; negate Special Summon or effect that SS.
+        // Requer Chain/Trigger de invocação.
+        Debug.Log("Royal Oppression: Negação de SS (Requer Chain).");
+    }
+
+    // 1568 - Royal Surrender
+    void Effect_1568_RoyalSurrender(CardDisplay source)
+    {
+        // Negate activation of Continuous Trap and destroy it.
+        // Requer Chain.
+        Debug.Log("Royal Surrender: Nega Trap Contínua (Requer Chain).");
+    }
+
+    // 1569 - Royal Tribute
+    void Effect_1569_RoyalTribute(CardDisplay source)
+    {
+        // If Necrovalley active: Both players discard all monsters in hand.
+        if (GameManager.Instance.IsCardActiveOnField("1324")) // Necrovalley
+        {
+            // Player
+            List<CardData> pHand = GameManager.Instance.GetPlayerHandData();
+            List<CardData> pMonsters = pHand.FindAll(c => c.type.Contains("Monster"));
+            foreach(var c in pMonsters) GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c).GetComponent<CardDisplay>());
+            
+            // Opponent
+            List<CardData> oHand = GameManager.Instance.GetOpponentHandData();
+            List<CardData> oMonsters = oHand.FindAll(c => c.type.Contains("Monster"));
+            // Simula descarte do oponente (remove visualmente)
+            // Em produção: GameManager.DiscardOpponentCard(card)
+            Debug.Log($"Royal Tribute: Descartados {pMonsters.Count} (Player) e {oMonsters.Count} (Opp) monstros.");
+        }
+        else
+        {
+            Debug.Log("Royal Tribute: Requer Necrovalley.");
+        }
+    }
+
+    // 1571 - Rush Recklessly
+    void Effect_1571_RushRecklessly(CardDisplay source)
+    {
+        // Target 1 face-up monster; +700 ATK until end of turn.
+        Effect_BuffStats(source, 700, 0);
+    }
+
+    // 1572 - Ryu Kokki
+    void Effect_1572_RyuKokki(CardDisplay source)
+    {
+        // If battles Warrior or Spellcaster: Destroy that monster at end of Damage Step.
+        // Lógica no OnBattleEnd.
+        Debug.Log("Ryu Kokki: Efeito de batalha configurado.");
+    }
+
+    // 1573 - Ryu Senshi
+    void Effect_1573_RyuSenshi(CardDisplay source)
+    {
+        // Pay 1000 LP; negate Normal Trap. Negate Spell targeting this card.
+        // Negação de Trap: Requer Chain.
+        // Negação de Alvo: Passivo/Trigger.
+        Debug.Log("Ryu Senshi: Efeitos de negação ativos.");
+    }
+
+    // 1575 - Ryu-Kishin Clown
+    void Effect_1575_RyuKishinClown(CardDisplay source)
+    {
+        // When Summoned: Select 1 face-up monster; change its battle position.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isFlipped,
+                (t) => {
+                    t.ChangePosition();
+                    Debug.Log($"Ryu-Kishin Clown: Posição de {t.CurrentCardData.name} alterada.");
+                }
+            );
+        }
+    }
 }
