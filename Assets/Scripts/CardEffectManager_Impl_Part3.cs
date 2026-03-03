@@ -3760,10 +3760,6 @@ public partial class CardEffectManager
         Debug.Log("Paladin of White Dragon: Ritual. Tributa para invocar Blue-Eyes.");
     }
 
-    // 1400 - Pandemonium
-    void Effect_1400_Pandemonium(CardDisplay source)
-    }
-
     // 1397 - Painful Choice
     void Effect_1397_PainfulChoice(CardDisplay source)
     {
@@ -3784,3 +3780,4 @@ public partial class CardEffectManager
         // If Archfiend destroyed -> Search
         Debug.Log("Pandemonium: Busca Archfiend ao ser destruído.");
     }
+}
