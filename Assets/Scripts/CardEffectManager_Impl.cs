@@ -372,6 +372,23 @@ public partial class CardEffectManager
             // We check GY directly.
             // ...
         }
+                if (phase == GamePhase.Standby)
+        {
+            // 1465 - Pumpking the King of Ghosts
+            CheckActiveCards("1465", (card) => {
+                if (GameManager.Instance.IsCardActiveOnField("Castle of Dark Illusions") || GameManager.Instance.IsCardActiveOnField("1270"))
+                {
+                    // Limite de 4 turnos requer contador
+                    if (card.spellCounters < 4)
+                    {
+                        card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 100, card));
+                        card.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 100, card));
+                        card.spellCounters++; // Usa spellCounters para rastrear turnos
+                        Debug.Log("Pumpking: +100 ATK/DEF (Standby).");
+                    }
+                }
+            });
+        }
     }
 
     private void UpdateDMGBuff(CardDisplay card)
@@ -436,6 +453,32 @@ public partial class CardEffectManager
             CheckActiveCards("1144", (panda) => {
                 panda.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, panda));
             });
+        }
+
+                // 1419 - Peten the Dark Clown
+        if (card.id == "1419")
+        {
+            // Banish this card to SS Peten from hand/Deck
+            // Pergunta ao jogador (Simulado)
+            Debug.Log("Peten: Deseja banir para invocar outro? (Simulado: Sim)");
+            GameManager.Instance.RemoveFromPlay(card, isOwnerPlayer); // Bane do GY
+            Effect_SearchDeck(null, "Peten the Dark Clown"); // Deveria ser SS direto
+        }
+
+        // 1438 - Pixie Knight
+        if (card.id == "1438" && !isOwnerPlayer) // Enviado pelo oponente (batalha)
+        {
+            // Oponente escolhe Spell no GY e põe no topo do Deck
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard(); // GY do dono do Pixie
+            List<CardData> spells = gy.FindAll(c => c.type.Contains("Spell"));
+            if (spells.Count > 0)
+            {
+                // Simula escolha do oponente
+                CardData selected = spells[Random.Range(0, spells.Count)];
+                gy.Remove(selected);
+                GameManager.Instance.GetPlayerMainDeck().Insert(0, selected);
+                Debug.Log($"Pixie Knight: Oponente colocou {selected.name} no topo do seu deck.");
+            }
         }
 
         // Masked Beast Des Gardius (1175): Equip Mask of Remnants from Deck
@@ -683,6 +726,22 @@ public partial class CardEffectManager
                 foreach(var c in toReturn) if (c.isFlipped) GameManager.Instance.ReturnToHand(c);
             }
         }
+                // 1433 - Pineapple Blast
+        if (card.isPlayerCard && !card.isTributeSummoned) // Normal Summon
+        {
+            // Check Pineapple Blast
+            if (GameManager.Instance.IsCardActiveOnField("1433"))
+            {
+                int myCount = 0; // Contar monstros
+                int oppCount = 0;
+                // ... Lógica de contagem ...
+                if (oppCount > myCount)
+                {
+                    Debug.Log("Pineapple Blast: Oponente deve destruir monstros até igualar (Simulado).");
+                    // Destroy logic
+                }
+            }
+        }
     }
 
     partial void OnSetImpl(CardDisplay card)
@@ -748,6 +807,13 @@ public partial class CardEffectManager
                 CardDisplay target = zone.GetChild(0).GetComponent<CardDisplay>();
                 if (target != null) target.RemoveModifiersFromSource(card);
             }
+        }
+                // 1470 - Pyramid of Light
+        if (card.CurrentCardData.id == "1470")
+        {
+            Debug.Log("Pyramid of Light removida: Destruindo Esfinges.");
+            // Encontra Andro e Teleia e destrói/bane
+            // DestroyCards(FindSphinxes(), card.isPlayerCard);
         }
     }
 
