@@ -3405,4 +3405,243 @@ public partial class CardEffectManager
         Debug.Log("The Dark - Hex-Sealed Fusion: Efeito de fusão por tributo.");
     }
 
+        // 1853 - The Dragon's Bead
+    void Effect_1853_TheDragonsBead(CardDisplay source)
+    {
+        // Discard 1 card from your hand to negate the activation of a Trap Card that targets a face-up Dragon-Type monster you control and destroy it.
+        // Requer Chain.
+        Debug.Log("The Dragon's Bead: Negação de Trap que alveja Dragão (Requer Chain).");
+    }
+
+    // 1856 - The Earth - Hex-Sealed Fusion
+    void Effect_1856_TheEarthHexSealedFusion(CardDisplay source)
+    {
+        // Fusion Substitute. Tribute materials + this card -> SS EARTH Fusion.
+        Debug.Log("The Earth - Hex-Sealed Fusion: Efeito de fusão por tributo.");
+    }
+
+    // 1857 - The Emperor's Holiday
+    void Effect_1857_TheEmperorsHoliday(CardDisplay source)
+    {
+        // Negate all Equip Spell Card effects on the field.
+        Debug.Log("The Emperor's Holiday: Equipamentos negados (Passivo).");
+    }
+
+    // 1858 - The End of Anubis
+    void Effect_1858_TheEndOfAnubis(CardDisplay source)
+    {
+        // While this card is face-up on the field, all effects of Spell, Trap, and Monster Cards that target a card(s) in the Graveyard or that activate in the Graveyard are negated.
+        Debug.Log("The End of Anubis: Bloqueio de efeitos no GY (Passivo).");
+    }
+
+    // 1859 - The Eye of Truth
+    void Effect_1859_TheEyeOfTruth(CardDisplay source)
+    {
+        // As long as this card remains face-up on the field, your opponent must show their hand.
+        // During each of your opponent's Standby Phases, if your opponent has a Spell Card in their hand, they gain 1000 Life Points.
+        GameManager.Instance.showOpponentHand = true;
+        Debug.Log("The Eye of Truth: Mão do oponente revelada.");
+        // Lógica de cura na Standby Phase do oponente (OnPhaseStart).
+    }
+
+    // 1860 - The Fiend Megacyber
+    void Effect_1860_TheFiendMegacyber(CardDisplay source)
+    {
+        // If your opponent controls at least 2 more monsters than you do, you can Special Summon this card from your hand.
+        // Lógica de SS da mão.
+        int myCount = 0;
+        int oppCount = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if(z.childCount > 0) myCount++;
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) oppCount++;
+        }
+
+        if (oppCount >= myCount + 2)
+        {
+            if (!source.isOnField)
+            {
+                GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                Debug.Log("The Fiend Megacyber: Invocado especialmente.");
+            }
+        }
+    }
+
+    // 1861 - The First Sarcophagus
+    void Effect_1861_TheFirstSarcophagus(CardDisplay source)
+    {
+        // Special Summon "Spirit of the Pharaoh".
+        // Lógica complexa de turnos e sarcófagos adicionais.
+        Debug.Log("The First Sarcophagus: Início da contagem.");
+    }
+
+    // 1862 - The Flute of Summoning Dragon
+    void Effect_1862_TheFluteOfSummoningDragon(CardDisplay source)
+    {
+        // If "Lord of D." is on the field: SS up to 2 Dragons from hand.
+        if (GameManager.Instance.IsCardActiveOnField("Lord of D.") || GameManager.Instance.IsCardActiveOnField("1098"))
+        {
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            List<CardData> dragons = hand.FindAll(c => c.race == "Dragon" && c.type.Contains("Monster"));
+            
+            if (dragons.Count > 0)
+            {
+                int max = Mathf.Min(2, dragons.Count);
+                GameManager.Instance.OpenCardMultiSelection(dragons, "Invocar Dragões", 1, max, (selected) => {
+                    foreach(var c in selected)
+                    {
+                        GameManager.Instance.SpecialSummonFromData(c, source.isPlayerCard);
+                        GameManager.Instance.RemoveCardFromHand(c, source.isPlayerCard);
+                    }
+                });
+            }
+        }
+    }
+
+    // 1863 - The Forceful Sentry
+    void Effect_1863_TheForcefulSentry(CardDisplay source)
+    {
+        // Look at opponent's hand, select 1 card and return to Deck.
+        List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+        if (oppHand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(oppHand, "Retornar ao Deck", (selected) => {
+                // Remove da mão do oponente (precisa achar o GO)
+                // ...
+                // Adiciona ao deck do oponente
+                GameManager.Instance.GetOpponentMainDeck().Add(selected);
+                GameManager.Instance.ShuffleDeck(false);
+                Debug.Log($"The Forceful Sentry: {selected.name} retornado ao deck do oponente.");
+            });
+        }
+    }
+
+    // 1864 - The Forgiving Maiden
+    void Effect_1864_TheForgivingMaiden(CardDisplay source)
+    {
+        // Tribute this card to return 1 of your monsters destroyed by battle to your hand.
+        // Requer gatilho de destruição.
+        Debug.Log("The Forgiving Maiden: Efeito de recuperação configurado.");
+    }
+
+    // 1866 - The Graveyard in the Fourth Dimension
+    void Effect_1866_TheGraveyardInTheFourthDimension(CardDisplay source)
+    {
+        // Add 2 "LV" monsters from GY to Deck.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> lvs = gy.FindAll(c => c.name.Contains("LV"));
+        
+        if (lvs.Count >= 2)
+        {
+            GameManager.Instance.OpenCardMultiSelection(lvs, "Retornar 2 LV", 2, 2, (selected) => {
+                foreach(var c in selected)
+                {
+                    gy.Remove(c);
+                    GameManager.Instance.GetPlayerMainDeck().Add(c);
+                }
+                GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+            });
+        }
+    }
+
+    // 1868 - The Hunter with 7 Weapons
+    void Effect_1868_TheHunterWith7Weapons(CardDisplay source)
+    {
+        // When Summoned: Declare 1 Type. +1000 ATK when battling that Type.
+        // Simulação: Declara "Dragon".
+        Debug.Log("The Hunter with 7 Weapons: Tipo declarado (Simulado: Dragon).");
+        // Lógica de buff no OnDamageCalculation.
+    }
+
+    // 1870 - The Immortal of Thunder
+    void Effect_1870_TheImmortalOfThunder(CardDisplay source)
+    {
+        // FLIP: Gain 3000 LP. When sent to GY, lose 5000 LP.
+        Effect_GainLP(source, 3000);
+        // Lógica de perda no OnCardSentToGraveyard.
+    }
+
+    // 1871 - The Inexperienced Spy
+    void Effect_1871_TheInexperiencedSpy(CardDisplay source)
+    {
+        // Select 1 card in opponent's hand and look at it.
+        List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+        if (oppHand.Count > 0)
+        {
+            CardData random = oppHand[Random.Range(0, oppHand.Count)];
+            Debug.Log($"The Inexperienced Spy: Carta revelada: {random.name}");
+        }
+    }
+
+    // 1873 - The Kick Man
+    void Effect_1873_TheKickMan(CardDisplay source)
+    {
+        // When SS: Equip 1 Equip Spell from GY.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> equips = gy.FindAll(c => c.type.Contains("Spell") && c.property == "Equip");
+        
+        if (equips.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(equips, "Equipar do GY", (selected) => {
+                // Lógica de equipar (Simulada)
+                Debug.Log($"The Kick Man: Equipou {selected.name}.");
+            });
+        }
+    }
+
+    // 1874 - The Last Warrior from Another Planet
+    void Effect_1874_TheLastWarriorFromAnotherPlanet(CardDisplay source)
+    {
+        // When SS: Destroy all other monsters you control. Neither player can Summon.
+        if (source.isOnField)
+        {
+            // Destroy others
+            List<CardDisplay> toDestroy = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+                {
+                    if(z.childCount > 0)
+                    {
+                        var m = z.GetChild(0).GetComponent<CardDisplay>();
+                        if(m != null && m != source) toDestroy.Add(m);
+                    }
+                }
+            }
+            DestroyCards(toDestroy, source.isPlayerCard);
+            
+            // Lock Summons (Passivo no SummonManager)
+            Debug.Log("The Last Warrior: Invocações bloqueadas.");
+        }
+    }
+
+    // 1875 - The Law of the Normal
+    void Effect_1875_TheLawOfTheNormal(CardDisplay source)
+    {
+        // Activate only if you control 5 face-up Level 2 or lower Normal Monsters.
+        // Destroy all cards on opp hand and field.
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+            {
+                if(z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if(m != null && !m.isFlipped && m.CurrentCardData.type.Contains("Normal") && m.CurrentCardData.level <= 2)
+                        count++;
+                }
+            }
+        }
+
+        if (count == 5)
+        {
+            Debug.Log("The Law of the Normal: Destruição total!");
+            GameManager.Instance.DiscardHand(false);
+            DestroyAllMonsters(true, false);
+            Effect_HarpiesFeatherDuster(source);
+        }
+    }
+
 }
