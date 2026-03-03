@@ -382,6 +382,24 @@ public partial class CardEffectManager
                     Destroy(card.gameObject);
                 }
             });
+
+            // Swords of Revealing Light (1811) / Swords of Concealing Light (1810)
+            // Decrementa contador na Standby Phase do oponente (para Swords of Revealing Light)
+            // A regra diz: "destroy this card during the End Phase of your opponent's 3rd turn".
+            // Vamos usar o contador para simplificar: Inicia com 3, decrementa na End Phase do oponente.
+            // Se for Swords of Concealing Light: "Destroy this card during your 2nd Standby Phase".
+        }
+        else if (phase == GamePhase.End)
+        {
+            // Swords of Revealing Light (1811)
+            // Se for o turno do oponente, decrementa.
+            if (!GameManager.Instance.isPlayerTurn) // Turno do oponente
+            {
+                CheckActiveCards("1811", (card) => HandleTurnCounter(card));
+            }
+            
+            // Swords of Concealing Light (1810) - Destrói na 2ª Standby Phase do controlador.
+            // Lógica movida para Standby Phase do controlador.
         }
         else if (phase == GamePhase.Standby)
         {
@@ -434,6 +452,12 @@ public partial class CardEffectManager
                     }
                 }
             });
+
+            // Swords of Concealing Light (1810)
+            if (GameManager.Instance.isPlayerTurn) // Minha Standby Phase
+            {
+                CheckActiveCards("1810", (card) => HandleTurnCounter(card));
+            }
         }
     }
 
@@ -1180,6 +1204,21 @@ public partial class CardEffectManager
                 if (zone.childCount == 0) continue;
                 CardDisplay target = zone.GetChild(0).GetComponent<CardDisplay>();
                 if (target != null) target.RemoveModifiersFromSource(card);
+            }
+        }
+    }
+
+    private void HandleTurnCounter(CardDisplay card)
+    {
+        if (card.turnCounter > 0)
+        {
+            card.turnCounter--;
+            Debug.Log($"{card.CurrentCardData.name}: Turnos restantes: {card.turnCounter}");
+            if (card.turnCounter <= 0)
+            {
+                Debug.Log($"{card.CurrentCardData.name}: Expirou. Destruindo.");
+                GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                Destroy(card.gameObject);
             }
         }
     }

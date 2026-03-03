@@ -670,10 +670,10 @@ public partial class CardEffectManager
         AddEffect("1809", c => Debug.Log("Sword of the Soul-Eater: Tributa Normais para ganhar ATK."));
 
         // 1810 - Swords of Concealing Light (Face-down Defense)
-        AddEffect("1810", c => Debug.Log("Swords of Concealing Light: Oponente face-down por 2 turnos."));
+        AddEffect("1810", Effect_1810_SwordsOfConcealingLight);
 
         // 1811 - Swords of Revealing Light (Face-up, No Attack)
-        AddEffect("1811", c => Debug.Log("Swords of Revealing Light: Revela e impede ataque por 3 turnos."));
+        AddEffect("1811", Effect_1811_SwordsOfRevealingLight);
 
         // 1812 - Swordsman from a Distant Land (Destroy monster after battle)
         AddEffect("1812", c => Debug.Log("Swordsman from a Distant Land: Destrói monstro em 5 turnos."));

@@ -62,6 +62,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     // Sistema de Spell Counters
     [HideInInspector] public int spellCounters = 0;
 
+    // Sistema de Contadores de Turno (para Swords of Revealing Light, etc)
+    [HideInInspector] public int turnCounter = 0;
+
     // Lista de modificadores ativos nesta carta
     private List<StatModifier> activeModifiers = new List<StatModifier>();
 
@@ -207,6 +210,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
         activeModifiers.Clear(); // Limpa modificadores antigos ao resetar a carta
         spellCounters = 0; // Reseta contadores
+        turnCounter = 0; // Reseta contadores de turno
 
         originalScale = transform.localScale; // Salva a escala inicial definida pelo GameManager
         
