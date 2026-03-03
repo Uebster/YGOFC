@@ -280,64 +280,64 @@ public partial class CardEffectManager
         AddEffect("1625", Effect_1625_ShadowOfEyes);
 
         // 1626 - Shadowknight Archfiend (Maintenance, Dice negate)
-        AddEffect("1626", c => Debug.Log("Shadowknight Archfiend: Custo de manutenção e chance de negar alvo."));
+        AddEffect("1626", Effect_1626_ShadowknightArchfiend);
 
         // 1627 - Shadowslayer (Direct attack if all def)
-        AddEffect("1627", c => Debug.Log("Shadowslayer: Ataca direto se oponente só tiver monstros em defesa."));
+        AddEffect("1627", Effect_1627_Shadowslayer);
 
         // 1629 - Share the Pain (Tribute 1, Opp tribute 1)
-        AddEffect("1629", c => Debug.Log("Share the Pain: Você tributa 1, oponente tributa 1."));
+        AddEffect("1629", Effect_1629_ShareThePain);
 
         // 1630 - Shield & Sword (Swap ATK/DEF)
-        AddEffect("1630", c => Debug.Log("Shield & Sword: Troca ATK e DEF de todos os monstros no campo."));
+        AddEffect("1630", Effect_1630_ShieldAndSword);
 
         // 1631 - Shield Crush (Destroy Def)
-        AddEffect("1631", c => Debug.Log("Shield Crush: Destrói 1 monstro em Posição de Defesa."));
+        AddEffect("1631", Effect_1631_ShieldCrush);
 
         // 1632 - Shien's Spy (Give control)
-        AddEffect("1632", c => Debug.Log("Shien's Spy: Dá o controle de um monstro seu para o oponente."));
+        AddEffect("1632", Effect_1632_ShiensSpy);
 
         // 1633 - Shift (Redirect target)
-        AddEffect("1633", c => Debug.Log("Shift: Redireciona alvo de magia/ataque para outro monstro seu."));
+        AddEffect("1633", Effect_1633_Shift);
 
         // 1634 - Shifting Shadows (Shuffle def monsters)
-        AddEffect("1634", c => { Effect_PayLP(c, 300); Debug.Log("Shifting Shadows: Embaralha posições dos monstros em defesa."); });
+        AddEffect("1634", Effect_1634_ShiftingShadows);
 
         // 1635 - Shinato's Ark (Ritual Spell)
-        AddEffect("1635", c => Debug.Log("Shinato's Ark: Ritual para Shinato."));
+        AddEffect("1635", Effect_1635_ShinatosArk);
 
         // 1636 - Shinato, King of a Higher Plane (Burn on destroy)
-        AddEffect("1636", c => Debug.Log("Shinato: Se destruir defesa, causa dano igual ao ATK original."));
+        AddEffect("1636", Effect_1636_ShinatoKingOfAHigherPlane);
 
         // 1637 - Shine Palace (Equip Light +700)
-        AddEffect("1637", c => Effect_Equip(c, 700, 0, "", "Light"));
+        AddEffect("1637", Effect_1637_ShinePalace);
 
         // 1639 - Shining Angel (Floater Light)
-        AddEffect("1639", c => Effect_SearchDeck(c, "Light"));
+        AddEffect("1639", Effect_1639_ShiningAngel);
 
         // 1641 - Shooting Star Bow - Ceal (Equip -1000, Direct Attack)
-        AddEffect("1641", c => { Effect_Equip(c, -1000, 0); Debug.Log("Ceal: Equipado pode atacar diretamente."); });
+        AddEffect("1641", Effect_1641_ShootingStarBowCeal);
 
         // 1643 - Shrink (Halve ATK)
-        AddEffect("1643", c => Debug.Log("Shrink: ATK original do alvo cai pela metade até o fim do turno."));
+        AddEffect("1643", Effect_1643_Shrink);
 
         // 1644 - Silent Doom (Revive Normal Def)
-        AddEffect("1644", c => Debug.Log("Silent Doom: Invoca Normal Monster do GY em defesa."));
+        AddEffect("1644", Effect_1644_SilentDoom);
 
         // 1645 - Silent Swordsman LV3 (Negate Spell target, LV up)
-        AddEffect("1645", c => Effect_LevelUp(c, "1646")); // LV5
+        AddEffect("1645", Effect_1645_SilentSwordsmanLV3);
 
         // 1646 - Silent Swordsman LV5 (Immune Spell, LV up)
-        AddEffect("1646", c => Effect_LevelUp(c, "1647")); // LV7
+        AddEffect("1646", Effect_1646_SilentSwordsmanLV5);
 
         // 1647 - Silent Swordsman LV7 (Negate all Spells)
-        AddEffect("1647", c => Debug.Log("Silent Swordsman LV7: Nega todas as magias no campo."));
+        AddEffect("1647", Effect_1647_SilentSwordsmanLV7);
 
         // 1648 - Silpheed (SS Banish Wind, Hand discard)
-        AddEffect("1648", c => Debug.Log("Silpheed: SS banindo Wind. Oponente descarta se destruído."));
+        AddEffect("1648", Effect_1648_Silpheed);
 
         // 1649 - Silver Bow and Arrow (Equip Fairy +300)
-        AddEffect("1649", c => Effect_Equip(c, 300, 300, "Fairy"));
+        AddEffect("1649", Effect_1649_SilverBowAndArrow);
 
         // 1651 - Sinister Serpent (Return to hand)
         AddEffect("1651", c => Debug.Log("Sinister Serpent: Retorna do GY para a mão na Standby Phase."));

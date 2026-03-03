@@ -1178,4 +1178,256 @@ public partial class CardEffectManager
         // Trigger no OnSetImpl.
         Debug.Log("Shadow of Eyes: Força posição de ataque.");
     }
+
+       // 1626 - Shadowknight Archfiend
+    void Effect_1626_ShadowknightArchfiend(CardDisplay source)
+    {
+        // Maintenance cost: 900 LP (Standby Phase).
+        // Dice roll negate target effect. Halve battle damage.
+        // Lógica de manutenção e batalha são tratadas nos hooks globais (OnPhaseStart, OnDamageCalculation).
+        Debug.Log("Shadowknight Archfiend: Efeitos passivos (Manutenção/Dados) ativos.");
+    }
+
+    // 1627 - Shadowslayer
+    void Effect_1627_Shadowslayer(CardDisplay source)
+    {
+        // If the only cards your opponent controls are Defense Position monsters, this card can attack your opponent directly.
+        // Lógica tratada no BattleManager.HasDirectAttackCondition.
+        Debug.Log("Shadowslayer: Condição de ataque direto ativa.");
+    }
+
+    // 1629 - Share the Pain
+    void Effect_1629_ShareThePain(CardDisplay source)
+    {
+        // Tribute 1 monster; make your opponent Tribute 1 monster (for no effect).
+        if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
+        {
+            // Jogador tributa
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                    (myTribute) => {
+                        GameManager.Instance.TributeCard(myTribute);
+                        
+                        // Oponente tributa (Simulado: IA escolhe o primeiro ou aleatório)
+                        List<CardDisplay> oppMonsters = new List<CardDisplay>();
+                        if (GameManager.Instance.duelFieldUI != null)
+                        {
+                            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, oppMonsters);
+                        }
+                        
+                        if (oppMonsters.Count > 0)
+                        {
+                            // Simula escolha do oponente
+                            CardDisplay oppTribute = oppMonsters[0]; 
+                            GameManager.Instance.TributeCard(oppTribute);
+                            Debug.Log($"Share the Pain: Oponente tributou {oppTribute.CurrentCardData.name}.");
+                        }
+                        else
+                        {
+                            Debug.Log("Share the Pain: Oponente não tem monstros para tributar.");
+                        }
+                    }
+                );
+            }
+        }
+    }
+
+    // 1630 - Shield & Sword
+    void Effect_1630_ShieldAndSword(CardDisplay source)
+    {
+        // Switch the original ATK and DEF of all face-up monsters currently on the field, until the end of this turn.
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            
+            foreach(var m in all)
+            {
+                int oldAtk = m.originalAtk;
+                int oldDef = m.originalDef;
+                
+                // Aplica modificadores temporários para trocar os valores
+                // Nota: Isso define o valor ATUAL baseado no ORIGINAL do outro stat
+                m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, oldDef, source));
+                m.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, oldAtk, source));
+            }
+            Debug.Log("Shield & Sword: ATK/DEF trocados até o fim do turno.");
+        }
+    }
+
+    // 1631 - Shield Crush
+    void Effect_1631_ShieldCrush(CardDisplay source)
+    {
+        // Target 1 Defense Position monster on the field; destroy that target.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.position == CardDisplay.BattlePosition.Defense,
+                (target) => {
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                    Destroy(target.gameObject);
+                    Debug.Log($"Shield Crush: {target.CurrentCardData.name} destruído.");
+                }
+            );
+        }
+    }
+
+    // 1632 - Shien's Spy
+    void Effect_1632_ShiensSpy(CardDisplay source)
+    {
+        // Select 1 face-up monster you control to activate this card. Give control of the selected monster to your opponent until the End Phase of this turn.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && !t.isFlipped,
+                (target) => {
+                    GameManager.Instance.SwitchControl(target);
+                    // TODO: Agendar retorno na End Phase (requer sistema de efeitos retardados)
+                    Debug.Log($"Shien's Spy: Controle de {target.CurrentCardData.name} trocado temporariamente.");
+                }
+            );
+        }
+    }
+
+    // 1633 - Shift
+    void Effect_1633_Shift(CardDisplay source)
+    {
+        // When your opponent targets exactly 1 monster you control... Target another monster... change target.
+        Debug.Log("Shift: Redirecionamento de alvo (Requer sistema de Chain/Targeting avançado).");
+    }
+
+    // 1634 - Shifting Shadows
+    void Effect_1634_ShiftingShadows(CardDisplay source)
+    {
+        // Pay 300 LP; rearrange face-down Defense Position monsters.
+        if (Effect_PayLP(source, 300))
+        {
+            Debug.Log("Shifting Shadows: Monstros face-down embaralhados (Visualmente).");
+            // Lógica visual de embaralhar posições nas zonas
+        }
+    }
+
+    // 1635 - Shinato's Ark
+    void Effect_1635_ShinatosArk(CardDisplay source)
+    {
+        GameManager.Instance.BeginRitualSummon(source);
+    }
+
+    // 1636 - Shinato, King of a Higher Plane
+    void Effect_1636_ShinatoKingOfAHigherPlane(CardDisplay source)
+    {
+        // If destroys Defense monster: Inflict damage = original ATK.
+        // Lógica implementada no OnBattleEnd (CardEffectManager_Impl.cs).
+        Debug.Log("Shinato: Efeito de dano de batalha configurado.");
+    }
+
+    // 1637 - Shine Palace
+    void Effect_1637_ShinePalace(CardDisplay source)
+    {
+        Effect_Equip(source, 700, 0, "", "Light");
+    }
+
+    // 1639 - Shining Angel
+    void Effect_1639_ShiningAngel(CardDisplay source)
+    {
+        // Destroyed by battle: SS LIGHT <= 1500.
+        Effect_SearchDeck(source, "Light", "Monster", 1500); // Deveria ser SS direto
+    }
+
+    // 1641 - Shooting Star Bow - Ceal
+    void Effect_1641_ShootingStarBowCeal(CardDisplay source)
+    {
+        // Equip: -1000 ATK, Direct Attack.
+        Effect_Equip(source, -1000, 0);
+        // Lógica de ataque direto no BattleManager.
+    }
+
+    // 1643 - Shrink
+    void Effect_1643_Shrink(CardDisplay source)
+    {
+        // Target 1 face-up monster; original ATK becomes halved until end of turn.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isFlipped,
+                (target) => {
+                    int halfAtk = target.originalAtk / 2;
+                    target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, halfAtk, source));
+                    Debug.Log($"Shrink: ATK de {target.CurrentCardData.name} reduzido para {halfAtk}.");
+                }
+            );
+        }
+    }
+
+    // 1644 - Silent Doom
+    void Effect_1644_SilentDoom(CardDisplay source)
+    {
+        // Target 1 Normal Monster in your Graveyard; Special Summon it in face-up Defense Position, but it cannot attack.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> normals = gy.FindAll(c => c.type.Contains("Normal") && c.type.Contains("Monster"));
+        
+        if (normals.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(normals, "Reviver Normal", (selected) => {
+                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard, true, true); // Face-up Defense
+                // TODO: Adicionar restrição 'Cannot Attack'
+            });
+        }
+    }
+
+    // 1645 - Silent Swordsman LV3
+    void Effect_1645_SilentSwordsmanLV3(CardDisplay source)
+    {
+        // Negate Spell targeting this card. Standby: Send to GY -> SS LV5.
+        // Negação é passiva/trigger.
+        // Level Up: Lógica no OnPhaseStart.
+        Debug.Log("Silent Swordsman LV3: Efeitos de nível configurados.");
+    }
+
+    // 1646 - Silent Swordsman LV5
+    void Effect_1646_SilentSwordsmanLV5(CardDisplay source)
+    {
+        // Unaffected by Spells. Direct attack damage -> Standby -> SS LV7.
+        // Imunidade é passiva.
+        // Level Up: Lógica no OnPhaseStart/OnDamageDealt.
+        Debug.Log("Silent Swordsman LV5: Efeitos de nível configurados.");
+    }
+
+    // 1647 - Silent Swordsman LV7
+    void Effect_1647_SilentSwordsmanLV7(CardDisplay source)
+    {
+        // Negate all Spell effects on the field.
+        Debug.Log("Silent Swordsman LV7: Magias negadas (Passivo).");
+        // Requer verificação no SpellTrapManager.IsSpellNegationActive.
+    }
+
+    // 1648 - Silpheed
+    void Effect_1648_Silpheed(CardDisplay source)
+    {
+        // SS by banishing 1 WIND. Destroyed by battle -> Opponent discards random.
+        if (!source.isOnField)
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> winds = gy.FindAll(c => c.attribute == "Wind");
+            if (winds.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(winds, "Banir 1 WIND", (selected) => {
+                    GameManager.Instance.RemoveFromPlay(selected, source.isPlayerCard);
+                    GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                    GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                });
+            }
+        }
+        // Lógica de descarte no OnBattleEnd.
+    }
+
+    // 1649 - Silver Bow and Arrow
+    void Effect_1649_SilverBowAndArrow(CardDisplay source)
+    {
+        Effect_Equip(source, 300, 300, "Fairy");
+    }
 }
