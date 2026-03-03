@@ -1880,4 +1880,355 @@ public partial class CardEffectManager
             );
         }
     }
+
+    // 1702 - Soul Release
+    void Effect_1702_SoulRelease(CardDisplay source)
+    {
+        // Target up to 5 cards in any GY(s); banish them.
+        List<CardData> targets = new List<CardData>();
+        targets.AddRange(GameManager.Instance.GetPlayerGraveyard());
+        targets.AddRange(GameManager.Instance.GetOpponentGraveyard());
+
+        if (targets.Count > 0)
+        {
+            GameManager.Instance.OpenCardMultiSelection(targets, "Banir até 5 cartas", 1, 5, (selected) => {
+                foreach(var c in selected)
+                {
+                    // Determine owner to banish correctly
+                    bool isPlayerCard = GameManager.Instance.GetPlayerGraveyard().Contains(c);
+                    if (!isPlayerCard && !GameManager.Instance.GetOpponentGraveyard().Contains(c)) continue;
+
+                    GameManager.Instance.RemoveFromPlay(c, isPlayerCard);
+                    if (isPlayerCard) GameManager.Instance.GetPlayerGraveyard().Remove(c);
+                    else GameManager.Instance.GetOpponentGraveyard().Remove(c);
+                }
+                Debug.Log($"Soul Release: {selected.Count} cartas banidas.");
+            });
+        }
+    }
+
+    // 1703 - Soul Resurrection
+    void Effect_1703_SoulResurrection(CardDisplay source)
+    {
+        // Activate this card by targeting 1 Normal Monster in your Graveyard; Special Summon it in Defense Position.
+        // When this card leaves the field, destroy that monster. When that monster is destroyed, destroy this card.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> normals = gy.FindAll(c => c.type.Contains("Normal") && c.type.Contains("Monster"));
+
+        if (normals.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(normals, "Reviver Normal", (selected) => {
+                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard, true, true); // Face-up Defense
+                // TODO: Implementar vínculo de destruição mútua (Continuous Trap)
+                Debug.Log("Soul Resurrection: Monstro revivido em Defesa.");
+            });
+        }
+    }
+
+    // 1704 - Soul Reversal
+    void Effect_1704_SoulReversal(CardDisplay source)
+    {
+        // Target 1 Flip Effect Monster in your Graveyard; return it to the top of your Deck.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> flips = gy.FindAll(c => c.description.Contains("FLIP:"));
+
+        if (flips.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(flips, "Retornar ao Topo", (selected) => {
+                gy.Remove(selected);
+                GameManager.Instance.GetPlayerMainDeck().Insert(0, selected);
+                Debug.Log($"Soul Reversal: {selected.name} retornado ao topo do deck.");
+            });
+        }
+    }
+
+    // 1705 - Soul Rope
+    void Effect_1705_SoulRope(CardDisplay source)
+    {
+        // When a monster you control is destroyed by a card effect and sent to the Graveyard: Pay 1000 LP; Special Summon 1 Level 4 monster from your Deck.
+        // Este efeito é um gatilho. Aqui implementamos a resolução.
+        if (Effect_PayLP(source, 1000))
+        {
+            List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+            List<CardData> targets = deck.FindAll(c => c.type.Contains("Monster") && c.level == 4);
+            
+            if (targets.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(targets, "Invocar Lv4", (selected) => {
+                    GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                });
+            }
+        }
+    }
+
+    // 1706 - Soul Taker
+    void Effect_1706_SoulTaker(CardDisplay source)
+    {
+        // Target 1 face-up monster your opponent controls; destroy that target, then your opponent gains 1000 LP.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && !t.isFlipped,
+                (target) => {
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                    Destroy(target.gameObject);
+                    GameManager.Instance.GainLifePoints(!source.isPlayerCard, 1000);
+                    Debug.Log("Soul Taker: Monstro destruído e oponente curado.");
+                }
+            );
+        }
+    }
+
+    // 1708 - Soul of Purity and Light
+    void Effect_1708_SoulOfPurityAndLight(CardDisplay source)
+    {
+        // Cannot be Normal Summoned/Set. Must be Special Summoned by banishing 2 LIGHT monsters from your GY.
+        // Monsters opponent controls lose 300 ATK during their Battle Phase.
+        if (!source.isOnField)
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> lights = gy.FindAll(c => c.attribute == "Light");
+            if (lights.Count >= 2)
+            {
+                GameManager.Instance.OpenCardMultiSelection(lights, "Banir 2 LIGHT", 2, 2, (selected) => {
+                    foreach(var c in selected)
+                    {
+                        GameManager.Instance.RemoveFromPlay(c, source.isPlayerCard);
+                        gy.Remove(c);
+                    }
+                    GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                    GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                });
+            }
+        }
+        else
+        {
+            Debug.Log("Soul of Purity and Light: Debuff passivo na Battle Phase do oponente.");
+        }
+    }
+
+    // 1709 - Soul of the Pure
+    void Effect_1709_SoulOfThePure(CardDisplay source)
+    {
+        Effect_GainLP(source, 800);
+    }
+
+    // 1710 - Soul-Absorbing Bone Tower
+    void Effect_1710_SoulAbsorbingBoneTower(CardDisplay source)
+    {
+        // If you control another Zombie-Type monster, your opponent cannot target this card for attacks.
+        // Each time a Zombie-Type monster(s) is Special Summoned: Send the top 2 cards of your opponent's Deck to the Graveyard.
+        Debug.Log("Soul-Absorbing Bone Tower: Efeitos passivos e de gatilho configurados.");
+    }
+
+    // 1714 - Spark Blaster
+    void Effect_1714_SparkBlaster(CardDisplay source)
+    {
+        // Equip only to "Elemental HERO Sparkman". Change battle position of target. Destroy after 3 uses.
+        if (SpellTrapManager.Instance != null)
+        {
+            // Se já estiver equipada, usa o efeito de ignição
+            if (source.isOnField && source.CurrentCardData.property == "Equip")
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && !t.isFlipped,
+                    (target) => {
+                        target.ChangePosition();
+                        source.spellCounters++; // Usa contadores para rastrear uso
+                        if (source.spellCounters >= 3)
+                        {
+                            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
+                            Destroy(source.gameObject);
+                        }
+                    }
+                );
+            }
+            else
+            {
+                // Lógica de equipar (simplificada, deveria checar nome do alvo)
+                Effect_Equip(source, 0, 0); 
+            }
+        }
+    }
+
+    // 1715 - Sparks
+    void Effect_1715_Sparks(CardDisplay source)
+    {
+        Effect_DirectDamage(source, 200);
+    }
+
+    // 1716 - Spatial Collapse
+    void Effect_1716_SpatialCollapse(CardDisplay source)
+    {
+        // Activate only if both players have 5 or less cards on field. Max cards on field becomes 5.
+        int pCount = 0;
+        int oCount = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            // Contagem simplificada
+            pCount = GameManager.Instance.duelFieldUI.playerMonsterZones.Count(z => z.childCount > 0) + 
+                     GameManager.Instance.duelFieldUI.playerSpellZones.Count(z => z.childCount > 0);
+            oCount = GameManager.Instance.duelFieldUI.opponentMonsterZones.Count(z => z.childCount > 0) + 
+                     GameManager.Instance.duelFieldUI.opponentSpellZones.Count(z => z.childCount > 0);
+        }
+
+        if (pCount <= 5 && oCount <= 5)
+        {
+            Debug.Log("Spatial Collapse: Limite de campo 5 ativado.");
+            // TODO: Implementar restrição no GameManager
+        }
+        else
+        {
+            Debug.Log("Spatial Collapse: Condição não atendida.");
+        }
+    }
+
+    // 1717 - Spear Cretin
+    void Effect_1717_SpearCretin(CardDisplay source)
+    {
+        // FLIP: When sent to GY after flip, mutual revive.
+        // Lógica no OnCardSentToGraveyard verificando status isFlipped.
+        Debug.Log("Spear Cretin: Efeito de renascimento mútuo configurado.");
+    }
+
+    // 1718 - Spear Dragon
+    void Effect_1718_SpearDragon(CardDisplay source)
+    {
+        // Piercing. Changes to Defense after attack.
+        Debug.Log("Spear Dragon: Perfurante e mudança de posição.");
+    }
+
+    // 1719 - Special Hurricane
+    void Effect_1719_SpecialHurricane(CardDisplay source)
+    {
+        // Discard 1 card; destroy all Special Summoned monsters on the field.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                
+                // Destrói monstros SS (Requer rastreamento de status de invocação)
+                Debug.Log("Special Hurricane: Destruindo monstros Special Summoned (Simulado).");
+                // DestroyAllMonsters(true, true, (m) => m.wasSpecialSummoned);
+            });
+        }
+    }
+
+    // 1720 - Spell Absorption
+    void Effect_1720_SpellAbsorption(CardDisplay source)
+    {
+        // Each time a Spell is activated, gain 500 LP.
+        Debug.Log("Spell Absorption: Ativo.");
+    }
+
+    // 1721 - Spell Canceller
+    void Effect_1721_SpellCanceller(CardDisplay source)
+    {
+        // Negate Spells.
+        Debug.Log("Spell Canceller: Magias negadas.");
+    }
+
+    // 1722 - Spell Economics
+    void Effect_1722_SpellEconomics(CardDisplay source)
+    {
+        // No LP cost for Spells.
+        Debug.Log("Spell Economics: Sem custo de LP para magias.");
+    }
+
+    // 1723 - Spell Purification
+    void Effect_1723_SpellPurification(CardDisplay source)
+    {
+        // Discard 1 card; destroy all face-up Continuous Spell Cards.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                
+                List<CardDisplay> toDestroy = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null)
+                {
+                    List<Transform> zones = new List<Transform>();
+                    zones.AddRange(GameManager.Instance.duelFieldUI.playerSpellZones);
+                    zones.AddRange(GameManager.Instance.duelFieldUI.opponentSpellZones);
+                    foreach(var z in zones)
+                    {
+                        if(z.childCount > 0)
+                        {
+                            var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                            if(cd != null && !cd.isFlipped && cd.CurrentCardData.type.Contains("Spell") && cd.CurrentCardData.property == "Continuous")
+                                toDestroy.Add(cd);
+                        }
+                    }
+                }
+                DestroyCards(toDestroy, source.isPlayerCard);
+                Debug.Log("Spell Purification: Magias Contínuas destruídas.");
+            });
+        }
+    }
+
+    // 1724 - Spell Reproduction
+    void Effect_1724_SpellReproduction(CardDisplay source)
+    {
+        // Send 2 Spells from hand to GY, then target 1 Spell in GY; add it to your hand.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        List<CardData> spellsInHand = hand.FindAll(c => c.type.Contains("Spell") && c != source.CurrentCardData);
+
+        if (spellsInHand.Count >= 2)
+        {
+            GameManager.Instance.OpenCardMultiSelection(spellsInHand, "Descarte 2 Magias", 2, 2, (discarded) => {
+                foreach(var c in discarded)
+                {
+                    GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c).GetComponent<CardDisplay>());
+                }
+
+                List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+                List<CardData> spellsInGY = gy.FindAll(c => c.type.Contains("Spell"));
+                
+                if (spellsInGY.Count > 0)
+                {
+                    GameManager.Instance.OpenCardSelection(spellsInGY, "Recuperar Magia", (selected) => {
+                        gy.Remove(selected);
+                        GameManager.Instance.AddCardToHand(selected, source.isPlayerCard);
+                    });
+                }
+            });
+        }
+    }
+
+    // 1725 - Spell Shattering Arrow
+    void Effect_1725_SpellShatteringArrow(CardDisplay source)
+    {
+        // Destroy as many face-up Spells opponent controls as possible, and if you do, inflict 500 damage for each.
+        List<CardDisplay> toDestroy = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentSpellZones)
+            {
+                if(z.childCount > 0)
+                {
+                    var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                    if(cd != null && !cd.isFlipped && cd.CurrentCardData.type.Contains("Spell"))
+                        toDestroy.Add(cd);
+                }
+            }
+            // Field Spell
+            if(GameManager.Instance.duelFieldUI.opponentFieldSpell.childCount > 0)
+            {
+                var cd = GameManager.Instance.duelFieldUI.opponentFieldSpell.GetChild(0).GetComponent<CardDisplay>();
+                if(cd != null && !cd.isFlipped && cd.CurrentCardData.type.Contains("Spell"))
+                    toDestroy.Add(cd);
+            }
+        }
+
+        int count = toDestroy.Count;
+        DestroyCards(toDestroy, source.isPlayerCard);
+        if (count > 0)
+        {
+            Effect_DirectDamage(source, count * 500);
+            Debug.Log($"Spell Shattering Arrow: {count} magias destruídas. {count * 500} dano.");
+        }
+    }
 }

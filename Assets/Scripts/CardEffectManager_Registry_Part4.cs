@@ -437,64 +437,64 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 1702 - Soul Release (Banish 5 GY)
-        AddEffect("1702", c => Debug.Log("Soul Release: Banir até 5 do GY."));
+        AddEffect("1702", Effect_1702_SoulRelease);
 
         // 1703 - Soul Resurrection (Revive Normal Defense)
-        AddEffect("1703", c => Debug.Log("Soul Resurrection: Reviver Normal em Defesa."));
+        AddEffect("1703", Effect_1703_SoulResurrection);
 
         // 1704 - Soul Reversal (Recycle Flip)
-        AddEffect("1704", c => Debug.Log("Soul Reversal: Retornar Flip do GY ao Deck."));
+        AddEffect("1704", Effect_1704_SoulReversal);
 
         // 1705 - Soul Rope (Pay 1000 SS Lv4)
-        AddEffect("1705", c => Debug.Log("Soul Rope: Paga 1000, SS Lv4 do Deck."));
+        AddEffect("1705", Effect_1705_SoulRope);
 
         // 1706 - Soul Taker (Destroy & Heal Opp)
-        AddEffect("1706", c => Debug.Log("Soul Taker: Destrói monstro, oponente ganha 1000 LP."));
+        AddEffect("1706", Effect_1706_SoulTaker);
 
         // 1708 - Soul of Purity and Light (SS Condition / Debuff)
-        AddEffect("1708", c => Debug.Log("Soul of Purity and Light: SS banindo 2 LIGHT. Debuff oponente."));
+        AddEffect("1708", Effect_1708_SoulOfPurityAndLight);
 
         // 1709 - Soul of the Pure (Gain 800)
-        AddEffect("1709", c => Effect_GainLP(c, 800));
+        AddEffect("1709", Effect_1709_SoulOfThePure);
 
         // 1710 - Soul-Absorbing Bone Tower (Mill on Zombie SS)
-        AddEffect("1710", c => Debug.Log("Bone Tower: Mill 2 quando Zumbi é invocado."));
+        AddEffect("1710", Effect_1710_SoulAbsorbingBoneTower);
 
         // 1714 - Spark Blaster (Pos Change)
-        AddEffect("1714", c => Debug.Log("Spark Blaster: Equip Sparkman. Muda posição."));
+        AddEffect("1714", Effect_1714_SparkBlaster);
 
         // 1715 - Sparks (Burn 200)
-        AddEffect("1715", c => Effect_DirectDamage(c, 200));
+        AddEffect("1715", Effect_1715_Sparks);
 
         // 1716 - Spatial Collapse (Limit 5)
-        AddEffect("1716", c => Debug.Log("Spatial Collapse: Limite de 5 cartas."));
+        AddEffect("1716", Effect_1716_SpatialCollapse);
 
         // 1717 - Spear Cretin (Flip Mutual Revive)
-        AddEffect("1717", c => Debug.Log("Spear Cretin: Flip, ambos invocam do GY."));
+        AddEffect("1717", Effect_1717_SpearCretin);
 
         // 1718 - Spear Dragon (Piercing / Defense)
-        AddEffect("1718", c => Debug.Log("Spear Dragon: Perfurante, vira defesa."));
+        AddEffect("1718", Effect_1718_SpearDragon);
 
         // 1719 - Special Hurricane (Destroy SS)
-        AddEffect("1719", c => Debug.Log("Special Hurricane: Destrói monstros SS."));
+        AddEffect("1719", Effect_1719_SpecialHurricane);
 
         // 1720 - Spell Absorption (Gain LP on Spell)
-        AddEffect("1720", c => Debug.Log("Spell Absorption: Ganha 500 LP por magia."));
+        AddEffect("1720", Effect_1720_SpellAbsorption);
 
         // 1721 - Spell Canceller (Negate Spells)
-        AddEffect("1721", c => Debug.Log("Spell Canceller: Nega magias."));
+        AddEffect("1721", Effect_1721_SpellCanceller);
 
         // 1722 - Spell Economics (No LP Cost)
-        AddEffect("1722", c => Debug.Log("Spell Economics: Sem custo de LP para magias."));
+        AddEffect("1722", Effect_1722_SpellEconomics);
 
         // 1723 - Spell Purification (Destroy Continuous Spells)
-        AddEffect("1723", c => Debug.Log("Spell Purification: Destrói Continuous Spells."));
+        AddEffect("1723", Effect_1723_SpellPurification);
 
         // 1724 - Spell Reproduction (Recycle Spell)
-        AddEffect("1724", c => Debug.Log("Spell Reproduction: Recupera magia."));
+        AddEffect("1724", Effect_1724_SpellReproduction);
 
         // 1725 - Spell Shattering Arrow (Destroy Face-up Spells)
-        AddEffect("1725", c => Debug.Log("Spell Shattering Arrow: Destrói face-up Spells e dano."));
+        AddEffect("1725", Effect_1725_SpellShatteringArrow);
 
         // 1726 - Spell Shield Type-8 (Negate Spell)
         AddEffect("1726", c => Debug.Log("Spell Shield Type-8: Nega magia."));
