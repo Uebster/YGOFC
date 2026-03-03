@@ -35,6 +35,12 @@ public class BattleManager : MonoBehaviour
             }
         }
 
+        // 1590 - Sasuke Samurai #2
+        if (GameManager.Instance.IsCardActiveOnField("1590"))
+        {
+            return true;
+        }
+
         return oppHasMirage;
     }
 
@@ -230,6 +236,19 @@ public class BattleManager : MonoBehaviour
             }
         }
 
+        // 1577 - Sacred Defense Barrier
+        if (GameManager.Instance.IsCardActiveOnField("1577"))
+        {
+            if (target.CurrentCardData.race == "Fairy")
+            {
+                // Se houver outro monstro não-Fada, o ataque é válido (mas não neste alvo)
+                // Se SÓ houver Fadas, o ataque é inválido.
+                // Simplificado: Bloqueia o alvo se for Fada.
+                Debug.Log("Sacred Defense Barrier: Não pode atacar Fadas.");
+                return;
+            }
+        }
+
         UIManager.Instance.ShowConfirmation($"Atacar {target.CurrentCardData.name}?", () => CheckTrapsAndBattle(currentAttacker, target));
         currentTarget = target;
     }
@@ -386,6 +405,12 @@ public class BattleManager : MonoBehaviour
         // Se Rocket Warrior ataca, ele não toma dano e não é destruído
         // Mas o alvo pode ser destruído e tomar dano normalmente? Não, Rocket Warrior diz "battle damage to both players becomes 0".
         bool noBattleDamage = attackerIsRocketWarrior;
+
+        // 1593 - Satellite Cannon
+        if (target.CurrentCardData.id == "1593" && attacker.CurrentCardData.level <= 7)
+        {
+            // Não é destruído, mas o dano ainda é calculado
+        }
 
         if (target.position == CardDisplay.BattlePosition.Attack)
         {

@@ -391,6 +391,13 @@ public partial class CardEffectManager
         }
                 if (phase == GamePhase.Standby)
         {
+            // 1578 - Sacred Phoenix of Nephthys
+            // Lógica de reviver se foi destruído por efeito
+
+            // 1585 - Sand Moth
+            // Lógica de reviver se foi destruído por Spell
+        }
+        {
             // 1162 - Manticore of Darkness
             List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
             if (gy.Exists(c => c.id == "1162"))
@@ -463,6 +470,13 @@ public partial class CardEffectManager
             Debug.Log("Dark Coffin: Oponente deve descartar ou destruir monstro.");
             if (isOwnerPlayer) GameManager.Instance.DiscardRandomHand(false, 1); // Simulado
         }
+
+        // 1578 - Sacred Phoenix of Nephthys
+        // Se destruído por efeito, marca para reviver
+
+        // 1587 - Sangan
+        if (card.id == "1587")
+            Effect_SearchDeck(null, "Monster", "", 1500);
 
         // 1010 - Keldo
         if (card.id == "1010" && !isOwnerPlayer) // Destruído por batalha
@@ -970,6 +984,12 @@ public partial class CardEffectManager
 
     public void OnAttackDeclared(CardDisplay attacker, CardDisplay target, System.Action onContinue)
     {
+        // 1581 - Sakuretsu Armor
+        // Se oponente ataca e o jogador tem Sakuretsu Armor setada
+        // ... (Lógica de ativação de trap)
+
+        // 1592 - Sasuke Samurai #4
+
         // Aqui poderíamos verificar Kuriboh na mão, etc.
         // Por enquanto, apenas continua o fluxo.
         onContinue?.Invoke();
@@ -1006,6 +1026,13 @@ public partial class CardEffectManager
             Debug.Log("Kazejin: Zerando ATK do atacante.");
             attacker.ModifyStats(-attacker.currentAtk, 0);
             target.hasUsedEffectThisTurn = true;
+        }
+
+        // 1586 - Sanga of the Thunder
+        if (target != null && target.CurrentCardData.id == "1586" && !target.isPlayerCard)
+        {
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 0, target));
+            Debug.Log("Sanga of the Thunder: ATK do atacante zerado.");
         }
 
         // 1554 - Rocket Warrior
@@ -1076,6 +1103,14 @@ public partial class CardEffectManager
         if (attacker.CurrentCardData.id == "1348" && target != null && target.position == CardDisplay.BattlePosition.Defense && target.isFlipped)
         {
             Debug.Log("Ninja Grandmaster Sasuke: Destruindo defesa face-up.");
+            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+            Destroy(target.gameObject);
+        }
+
+        // 1589 - Sasuke Samurai
+        if (attacker.CurrentCardData.id == "1589" && target != null && target.isFlipped)
+        {
+            Debug.Log("Sasuke Samurai: Destruindo monstro face-down.");
             GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
             Destroy(target.gameObject);
         }
@@ -1273,6 +1308,12 @@ public partial class CardEffectManager
         // Mefist the Infernal General (1197): Opponent discards 1
         if (attacker != null && attacker.CurrentCardData.id == "1197" && amount > 0)
         {
+            // 1592 - Sasuke Samurai #4
+            if (attacker.CurrentCardData.id == "1592")
+            {
+                // Coin toss
+            }
+
             if (attacker.isPlayerCard)
             {
                 GameManager.Instance.DiscardRandomHand(false, 1);
