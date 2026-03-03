@@ -1247,7 +1247,7 @@ public class GameManager : MonoBehaviour
     // --- LÓGICA DE INVOCACÃO ---
 
     // Renomeado para TrySummonMonster para indicar que é o início do processo
-    public void TrySummonMonster(GameObject cardGO, CardData cardData, bool isSet)
+    public void TrySummonMonster(GameObject cardGO, CardData cardData, bool isSet, bool ignoreLimit = false)
     {
         CardDisplay display = cardGO.GetComponent<CardDisplay>();
         bool isPlayer = display != null ? display.isPlayerCard : true;
@@ -1291,7 +1291,7 @@ public class GameManager : MonoBehaviour
             // Verifica se pode invocar (Normal Summon, Tributos, etc)
             // Nota: isSpecial = false (por enquanto, invocação da mão é Normal)
             // Passamos o GameObject agora para o SummonManager poder controlar o fluxo manual
-            if (!SummonManager.Instance.PerformSummon(cardGO, cardData, isSet, false, isPlayer))
+            if (!SummonManager.Instance.PerformSummon(cardGO, cardData, isSet, false, isPlayer, ignoreLimit))
             {
                 // Se retornou false, pode ser porque iniciou a seleção manual de tributo
                 // ou porque falhou a validação. Em ambos os casos, paramos aqui.

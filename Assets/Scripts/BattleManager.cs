@@ -64,12 +64,22 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
-        // Verifica ataque duplo (Mermaid Knight, etc)
-        bool canAttackAgain = false;
-        if (attacker.CurrentCardData.id == "1207" && (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013"))) canAttackAgain = true;
-        // Adicionar outras lógicas de ataque duplo aqui
+        // Lógica de Ataques Múltiplos
+        int maxAttacks = attacker.maxAttacksPerTurn;
 
-        if (attacker.hasAttackedThisTurn && !canAttackAgain)
+        // 1207 - Mermaid Knight (Ataque duplo com Umi)
+        if (attacker.CurrentCardData.id == "1207" && (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013"))) 
+            maxAttacks = 2;
+        
+        // 2003 - Tyrant Dragon (Ataque duplo se oponente tiver monstro)
+        if (attacker.CurrentCardData.id == "2003")
+        {
+            // A regra diz "se o oponente controlar um monstro após o primeiro ataque".
+            // Aqui definimos o potencial como 2, a validação de alvo cuidará do resto.
+            maxAttacks = 2;
+        }
+
+        if (attacker.attacksDeclaredThisTurn >= maxAttacks || attacker.hasAttackedThisTurn) // Mantendo hasAttackedThisTurn para compatibilidade
         {
             Debug.LogWarning("Este monstro já atacou neste turno.");
             return;
@@ -147,6 +157,42 @@ public class BattleManager : MonoBehaviour
             if (!hasOtherDragon) return false;
         }
 
+        // 2012 - Ultimate Obedient Fiend
+        if (attacker.CurrentCardData.id == "2012")
+        {
+            // Só ataca se for o único monstro e mão vazia
+            int handCount = GameManager.Instance.GetPlayerHandData().Count;
+            int monsterCount = GameManager.Instance.GetFieldCardCount(attacker.isPlayerCard); // Isso conta S/T também no método atual, precisa de ajuste ou contagem manual
+            // Contagem manual de monstros
+            int mCount = 0;
+            Transform[] zones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach(var z in zones) if(z.childCount > 0) mCount++;
+
+            if (handCount > 0 || mCount > 1)
+            {
+                Debug.Log("Ultimate Obedient Fiend: Não pode atacar (Mão ou Campo não vazios).");
+                return false;
+            }
+        }
+
+        // 2035 - Vengeful Bog Spirit
+        if (GameManager.Instance.IsCardActiveOnField("2035"))
+        {
+            if (attacker.summonedThisTurn)
+            {
+                Debug.Log("Ataque impedido por Vengeful Bog Spirit (Invocado neste turno).");
+                return false;
+            }
+        }
+
+        // 2050 - Wall of Revealing Light
+        // Verifica se o oponente tem a carta ativa
+        if (IsWallOfRevealingLightBlocking(attacker))
+        {
+            Debug.Log("Ataque impedido por Wall of Revealing Light.");
+            return false;
+        }
+
         // D.D. Borderline (0379)
         // Se não houver Spells no seu GY, não pode atacar.
         if (GameManager.Instance.IsCardActiveOnField("0379"))
@@ -201,6 +247,25 @@ public class BattleManager : MonoBehaviour
         }
 
         return true;
+    }
+
+    private bool IsWallOfRevealingLightBlocking(CardDisplay attacker)
+    {
+        bool attackerIsPlayer = attacker.isPlayerCard;
+        Transform[] enemySpellZones = attackerIsPlayer ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
+        
+        foreach (var zone in enemySpellZones)
+        {
+            if (zone.childCount > 0)
+            {
+                CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (cd != null && cd.isOnField && !cd.isFlipped && cd.CurrentCardData.id == "2050")
+                {
+                    if (attacker.currentAtk <= cd.paidLifePoints) return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void SelectTarget(CardDisplay target)
@@ -323,6 +388,7 @@ public class BattleManager : MonoBehaviour
             DuelFXManager.Instance.PlayAttack(attacker, null, null); // Null target = direct
         
         attacker.hasAttackedThisTurn = true;
+        attacker.attacksDeclaredThisTurn++;
         ClearBattleState();
     }
 
@@ -395,6 +461,16 @@ public class BattleManager : MonoBehaviour
             // Não é destruído, mas o dano ainda é calculado
         }
 
+        // 2017 - Union Attack (Flag no atacante)
+        if (attacker.cannotInflictBattleDamage)
+        {
+            Debug.Log("Union Attack: Dano de batalha zerado.");
+            // Lógica: Se o atacante venceria e causaria dano, o dano vira 0.
+            // Mas a destruição do monstro ainda ocorre? "cannot inflict battle damage to your opponent".
+            // Sim, destruição ocorre, apenas o dano aos LP é prevenido.
+            // Vamos aplicar isso nos blocos abaixo.
+        }
+
         if (target.position == CardDisplay.BattlePosition.Attack)
         {
             // Ataque vs Ataque
@@ -402,7 +478,10 @@ public class BattleManager : MonoBehaviour
             {
                 int damage = atk - def;
                 Debug.Log($"Vitória do Atacante! Oponente toma {damage} de dano. Alvo destruído.");
-                if (!noBattleDamage) GameManager.Instance.DamageOpponent(damage);
+                
+                if (!noBattleDamage && !attacker.cannotInflictBattleDamage) 
+                    GameManager.Instance.DamageOpponent(damage);
+                
                 if (!targetIsBES)
                 {
                     // Charm of Shabti (0296)
@@ -524,6 +603,7 @@ public class BattleManager : MonoBehaviour
         }
 
         attacker.hasAttackedThisTurn = true;
+        attacker.attacksDeclaredThisTurn++;
         ClearBattleState();
     }
 

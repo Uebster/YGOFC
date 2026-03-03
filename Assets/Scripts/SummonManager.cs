@@ -68,24 +68,43 @@ public class SummonManager : MonoBehaviour
     }
 
     // Verifica se tem monstros suficientes para tributar
-    public bool HasEnoughTributes(int requiredTributes, bool isPlayer)
+    public bool HasEnoughTributes(int requiredTributes, bool isPlayer, CardData monsterToSummon = null)
     {
         if (requiredTributes <= 0) return true;
         if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return false;
 
-        int count = 0;
+        int tributeValue = 0;
         Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
 
         foreach (Transform zone in zones)
         {
-            if (zone.childCount > 0) count++;
+            if (zone.childCount > 0)
+            {
+                CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (cd != null)
+                {
+                    int value = 1;
+                    if (monsterToSummon != null)
+                    {
+                        string id = cd.CurrentCardData.id;
+                        // Lógica de Tributo Duplo
+                        if (id == "2023" && monsterToSummon.attribute == "Water") value = 2; // Unshaven Angler
+                        else if (id == "2071" && monsterToSummon.attribute == "Wind") value = 2; // Whirlwind Prodigy
+                        else if (id == "1901" && monsterToSummon.attribute == "Earth") value = 2; // Trojan Horse
+                        else if (id == "0523" && monsterToSummon.attribute == "Dark") value = 2; // Double Coston
+                        else if (id == "0995" && monsterToSummon.attribute == "Light") value = 2; // Kaiser Sea Horse
+                        else if (id == "0673" && monsterToSummon.attribute == "Fire") value = 2; // Flame Ruler
+                    }
+                    tributeValue += value;
+                }
+            }
         }
 
-        return count >= requiredTributes;
+        return tributeValue >= requiredTributes;
     }
 
     // Realiza a invocação (lógica de regras)
-    public bool PerformSummon(GameObject cardGO, CardData card, bool isSet, bool isSpecial, bool isPlayer)
+    public bool PerformSummon(GameObject cardGO, CardData card, bool isSet, bool isSpecial, bool isPlayer, bool ignoreLimit = false)
     {
         // Se for Normal Summon, verifica limite e tributos
         if (!isSpecial)
@@ -99,14 +118,14 @@ public class SummonManager : MonoBehaviour
                     return false;
                 }
             }
-            else if (!CanNormalSummon())
+            else if (!CanNormalSummon() && !ignoreLimit)
             {
                 Debug.LogWarning("Já realizou Normal Summon neste turno.");
                 return false;
             }
 
             int tributesNeeded = GetRequiredTributes(card.level);
-            if (!HasEnoughTributes(tributesNeeded, isPlayer))
+            if (!HasEnoughTributes(tributesNeeded, isPlayer, card))
             {
                 Debug.LogWarning($"Tributos insuficientes! Precisa de {tributesNeeded}.");
                 return false;

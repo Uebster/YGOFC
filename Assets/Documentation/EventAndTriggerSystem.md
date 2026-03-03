@@ -239,6 +239,16 @@ Este sistema gerencia efeitos que não acontecem imediatamente, mas em uma fase 
 *   **Contador de Turnos:** Cartas como *Viser Des* ou *Zone Eater* definem `destructionTurnCountdown` em seus alvos. O `CardEffectManager` decrementa o contador a cada Standby Phase do jogador relevante e destrói a carta quando o contador chega a zero.
 *   **Acumulação por Fase:** Cartas como *Wave-Motion Cannon* usam o `turnCounter` genérico do `CardDisplay`, que é incrementado a cada Standby Phase do controlador.
 
+## 13. Lógica de Batalha e Invocação Avançada
+
+### Ataques Múltiplos e Restrições
+*   **Ataque Duplo:** `BattleManager` verifica `maxAttacksPerTurn` no `CardDisplay`. Cartas como *Tyrant Dragon* e *Mermaid Knight* modificam esse valor.
+*   **Bloqueio de Dano:** A flag `cannotInflictBattleDamage` no `CardDisplay` (usada por *Union Attack*) impede que o oponente tome dano, mas a destruição de monstros ainda ocorre.
+*   **Restrições de Ataque:** `BattleManager.CanAttack` verifica condições complexas como *Wall of Revealing Light* (baseado em `paidLifePoints`) e *Vengeful Bog Spirit*.
+
+### Tributos Especiais
+*   **Tributo Duplo:** O `SummonManager.HasEnoughTributes` agora verifica o monstro alvo. Cartas como *Unshaven Angler* contam como 2 tributos se o monstro invocado for do Atributo correto (WATER).
+
 ## Boas Práticas para Adicionar Novas Cartas
 
 1.  **Verifique se já existe um Hook:** Antes de criar um novo sistema, veja se o efeito se encaixa em um dos eventos acima.

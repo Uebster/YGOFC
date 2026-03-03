@@ -201,8 +201,7 @@ public partial class CardEffectManager
                     if (cardGO != null)
                     {
                         // Força invocação (ignora limite de 1 por turno)
-                        // Precisamos de um método no GameManager que aceite "ignoreLimit" ou similar
-                        GameManager.Instance.TrySummonMonster(cardGO, selected, false); 
+                        GameManager.Instance.TrySummonMonster(cardGO, selected, false, true); // true = ignoreLimit
                     }
                 });
             }
@@ -277,8 +276,8 @@ public partial class CardEffectManager
                         }
                     }
                     target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, totalAtk, source));
+                    target.cannotInflictBattleDamage = true;
                     Debug.Log($"Union Attack: +{totalAtk} ATK.");
-                    // TODO: Set flag 'cannot inflict damage' on target
                 }
             );
         }
@@ -563,8 +562,10 @@ public partial class CardEffectManager
     void Effect_2050_WallOfRevealingLight(CardDisplay source)
     {
         // Pay multiple of 1000. Monsters with ATK <= paid cannot attack.
-        if (Effect_PayLP(source, 1000)) // Simulação: Paga 1000
+        int payment = 1000; // Simulação: Deveria abrir UI para escolher múltiplo
+        if (Effect_PayLP(source, payment))
         {
+            source.paidLifePoints = payment;
             Debug.Log("Wall of Revealing Light: Bloqueio de ataque <= 1000 (Lógica no BattleManager).");
         }
     }
