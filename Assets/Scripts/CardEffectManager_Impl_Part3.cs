@@ -3953,4 +3953,103 @@ public partial class CardEffectManager
     {
        Debug.Log("Physical Double: Efeito para criar um token com os atributos do monstro do oponente."); 
     }
+
+            void Effect_1431_PikerusSecondSight(CardDisplay source)
+    {
+        // Reveal all cards drawn by your opponent during your opponent's next Draw Phase.
+        Debug.Log("Pikeru's Second Sight: Ver compras do oponente.");
+    }
+
+    void Effect_1432_PinchHopper(CardDisplay source)
+    {
+        // When this card is sent from the field to the Graveyard: You can Special Summon 1 Insect-Type monster from your hand.
+       Debug.Log("Pinch Hopper: SS 1 Insect-Type");
+    }
+
+    void Effect_1433_PineappleBlast(CardDisplay source)
+    {
+        // If the number of monsters you control is less than the number of monsters your opponent controls: Destroy this card.
+        Debug.Log("Pineapple Blast: destruir se outnumbered");
+    }
+
+    void Effect_1434_PiranhaArmy(CardDisplay source)
+    {
+        // This card can attack your opponent directly. If you use this effect, halve any battle damage you inflict to your opponent during that battle.
+        Debug.Log("Piranha Army: double direct damage");
+    }
+
+    void Effect_1435_PitchBlackPowerStone(CardDisplay source)
+    {
+        // Each time a Spell Card is activated, place 1 Spell Counter on this card. You can Tribute this card with 3 Spell Counters on it to inflict 1000 damage to your opponent.
+        Debug.Log("Pitch-Black Power Stone: spell counters");
+    }
+
+    void Effect_1436_PitchBlackWarwolf(CardDisplay source)
+    {
+        // You can activate Trap Cards during the turn this card inflicts Battle Damage to your opponent.
+        Debug.Log("Pitch-Black Warwolf: traps na battle phase");
+    }
+
+    void Effect_1437_PitchDarkDragon(CardDisplay source)
+    {
+       Debug.Log("Pitch-Dark Dragon: union"); 
+    }
+
+    void Effect_1438_PixieKnight(CardDisplay source)
+    {
+        // Your opponent must add 1 Spell Card from their Graveyard to their hand.
+        Debug.Log("Pixie Knight: opponent recycle");
+    }
+
+    void Effect_1439_PoisonDrawFrog(CardDisplay source)
+    {
+        // When this card is sent from the field to the Graveyard: Draw 1 card.
+        GameManager.Instance.DrawCard();
+        Debug.Log("Poison Draw Frog: Compra 1");
+    }
+
+    void Effect_1440_PoisonFangs(CardDisplay source)
+    {
+        // If this card attacks a monster, increase the ATK of this card by 500 points during damage calculation only.
+        Debug.Log("Poison Fangs: Dano extra por bestas");
+    }
+
+    void Effect_1441_PoisonMummy(CardDisplay source)
+    {
+        Effect_DirectDamage(source, 500);
+    }
+
+    void Effect_1442_PoisonOfTheOldMan(CardDisplay source)
+    {
+        // Target 1 player; either gain 1200 LP or inflict 800 damage to that player.
+        Debug.Log("Poison Of The Old Man: cura ou dano");
+    }
+
+    void Effect_1443_PolePosition(CardDisplay source)
+    {
+        // The monster on the field with the highest ATK is unaffected by Spell Cards. If you control 2 or more monsters with the same ATK, apply this effect to all those monsters.
+       Debug.Log("Pole Position: maior ATK imune a magias"); 
+    }
+
+    void Effect_1444_Polymerization(CardDisplay source)
+    {
+       Debug.Log("Polymerization: realiza fusão"); 
+    }
+
+    void Effect_1445_PossessedDarkSoul(CardDisplay source)
+    {
+       Debug.Log("Possessed Dark Soul: Rouba Lv3-"); 
+    }
+
+    void Effect_1446_PotOfGenerosity(CardDisplay source)
+    {
+        Debug.Log("Pot of Generosity: Devolve 2 ao deck");
+    }
+
+    void Effect_1447_PotOfGreed(CardDisplay source)
+    {
+        GameManager.Instance.DrawCard();
+        GameManager.Instance.DrawCard();
+        Debug.Log("Pot of Greed: Comprou 2");
+    }
 }

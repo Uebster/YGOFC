@@ -835,7 +835,7 @@ public partial class CardEffectManager
         AddEffect("1432", c => Debug.Log("Pinch Hopper: Invoca Inseto da mão ao ir pro GY."));
 
         // 1433 - Pineapple Blast (Destroy if outnumbered)
-        AddEffect("1433", c => Debug.Log("Pineapple Blast: Equilibra número de monstros."));
+        AddEffect("1433", Effect_1433_PineappleBlast);
 
         // 1434 - Piranha Army (Double Direct Damage)
         AddEffect("1434", c => Debug.Log("Piranha Army: Dano direto dobrado."));
@@ -851,7 +851,7 @@ public partial class CardEffectManager
         AddEffect("1437", c => Debug.Log("Pitch-Dark Dragon: Union para Dark Blade."));
 
         // 1438 - Pixie Knight (Opponent Recycle Spell)
-        AddEffect("1438", c => Debug.Log("Pixie Knight: Oponente recupera Magia."));
+        AddEffect("1438", Effect_1438_PixieKnight);
 
         // 1439 - Poison Draw Frog (Draw on GY)
         AddEffect("1439", c => { GameManager.Instance.DrawCard(); Debug.Log("Poison Draw Frog: Compra 1."); });
@@ -901,7 +901,6 @@ public partial class CardEffectManager
 
         // 1456 - Prickle Fairy (Anti-Insect / Position Change)
         AddEffect("1456", c => Debug.Log("Prickle Fairy: Impede Insetos. Vira defesa."));
-
         // 1457 - Primal Seed (Recycle Banished)
         AddEffect("1457", c => Debug.Log("Primal Seed: Recupera banidas se tiver BLS/CED."));
 
@@ -915,6 +914,7 @@ public partial class CardEffectManager
         AddEffect("1461", c => Debug.Log("Protective Soul Ailin: Union para Lei Lei."));
 
         // 1462 - Protector of the Sanctuary (No extra draws)
+        AddEffect("1462", Effect_1462_ProtectorOfTheSanctuary);
         AddEffect("1462", c => Debug.Log("Protector of the Sanctuary: Impede compras extras."));
 
         // 1468 - Pyramid Energy (Buff ATK or DEF)
