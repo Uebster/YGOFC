@@ -229,7 +229,7 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 1601 - Seal of the Ancients (Pay 1000, Reveal Face-down)
-        AddEffect("1600", Effect_1600_SealOfTheAncients);
+        AddEffect("1601", Effect_1601_SealOfTheAncients);
 
         // 1603 - Sebek's Blessing (Quick-Play: Gain LP = Damage)
         AddEffect("1603", c => Debug.Log("Sebek's Blessing: Ganha LP igual ao dano direto causado."));

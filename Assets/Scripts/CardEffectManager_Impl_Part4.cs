@@ -970,7 +970,7 @@ public partial class CardEffectManager
     }
 
     // 1600 - Seal of the Ancients
-    void Effect_1600_SealOfTheAncients(CardDisplay source)
+    void Effect_1601_SealOfTheAncients(CardDisplay source)
     {
         // Pay 1000 LP. Look at all cards your opponent has set on the field.
         if (GameManager.Instance.PayLifePoints(source.isPlayerCard, 1000))
