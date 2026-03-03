@@ -720,37 +720,125 @@ public partial class CardEffectManager
         AddEffect("1350", Effect_1350_NinjitsuArtOfTransformation);
 
         // 1353 - Nobleman of Crossout (Banish Face-down)
-        AddEffect("1353", c => Debug.Log("Nobleman of Crossout: Destrói e bane face-down."));
+        AddEffect("1353", Effect_1353_NoblemanOfCrossout);
 
         // 1354 - Nobleman of Extermination (Banish Face-down S/T)
-        AddEffect("1354", c => Debug.Log("Nobleman of Extermination: Destrói e bane S/T face-down."));
+        AddEffect("1354", Effect_1354_NoblemanOfExtermination);
 
         // 1355 - Nobleman-Eater Bug (Destroy 2)
-        AddEffect("1355", c => Debug.Log("Nobleman-Eater Bug: Destrói 2 monstros."));
+        AddEffect("1355", Effect_1355_NoblemanEaterBug);
+
+        // 1356 - Non Aggression Area
+        AddEffect("1356", Effect_1356_NonAggressionArea);
+
+        // 1357 - Non-Spellcasting Area
+        AddEffect("1357", Effect_1357_NonSpellcastingArea);
+
+        // 1358 - Novox's Prayer
+        AddEffect("1358", Effect_1358_NovoxsPrayer);
+
+        // 1359 - Nubian Guard
+        AddEffect("1359", Effect_1359_NubianGuard);
+
+        // 1360 - Numinous Healer
+        AddEffect("1360", Effect_1360_NuminousHealer);
+
+        // 1361 - Nutrient Z
+        AddEffect("1361", Effect_1361_NutrientZ);
+
+        // 1362 - Nuvia the Wicked
+        AddEffect("1362", Effect_1362_NuviaTheWicked);
 
         // 1364 - Obnoxious Celtic Guard (Battle Protection)
-        AddEffect("1364", c => Debug.Log("Obnoxious Celtic Guard: Não morre por monstros 1900+ ATK."));
+        AddEffect("1364", Effect_1364_ObnoxiousCelticGuard);
+
+        // 1365 - Ocean Dragon Lord - Neo-Daedalus
+        AddEffect("1365", Effect_1365_OceanDragonLordNeoDaedalus);
 
         // 1368 - Offerings to the Doomed (Destroy & Skip Draw)
-        AddEffect("1368", c => Debug.Log("Offerings to the Doomed: Destrói face-up, pula Draw Phase."));
+        AddEffect("1368", Effect_1368_OfferingsToTheDoomed);
 
         // 1371 - Ojama Delta Hurricane!! (Nuke)
-        AddEffect("1371", c => Debug.Log("Ojama Delta Hurricane!!: Destrói tudo do oponente se tiver Ojamas."));
+        AddEffect("1371", Effect_1371_OjamaDeltaHurricane);
+
+        // 1373 - Ojama King
+        AddEffect("1373", Effect_1373_OjamaKing);
 
         // 1374 - Ojama Trio (Tokens)
-        AddEffect("1374", c => Debug.Log("Ojama Trio: Invoca 3 Tokens no campo do oponente."));
+        AddEffect("1374", Effect_1374_OjamaTrio);
 
         // 1376 - Old Vindictive Magician (Flip Destroy)
-        AddEffect("1376", c => Effect_FlipDestroy(c, TargetType.Monster));
+        AddEffect("1376", Effect_1376_OldVindictiveMagician);
 
         // 1382 - Ookazi (Burn 800)
-        AddEffect("1382", c => Effect_DirectDamage(c, 800));
+        AddEffect("1382", Effect_1382_Ookazi);
 
         // 1384 - Opti-Camouflage Armor (Direct Attack Lv1)
-        AddEffect("1384", c => Debug.Log("Opti-Camouflage Armor: Nível 1 ataca direto."));
+        AddEffect("1384", Effect_1384_OptiCamouflageArmor);
 
         // 1387 - Ordeal of a Traveler (Hand Game)
-        AddEffect("1387", c => Debug.Log("Ordeal of a Traveler: Oponente adivinha carta da mão."));
+        AddEffect("1387", Effect_1387_OrdealOfATraveler);
+
+        // 1397 - Painful Choice (Search 5)
+        AddEffect("1397", Effect_1397_PainfulChoice);
+
+        // 1398 - Paladin of White Dragon (Ritual / SS Blue-Eyes)
+        AddEffect("1398", Effect_1398_PaladinOfWhiteDragon);
+
+        // 1400 - Pandemonium (Field Archfiend)
+        AddEffect("1400", Effect_1400_Pandemonium);
+
+        // =========================================================================================
+        // LÓGICA PARA AS CARTAS (ID 1401 - 1500)
+        // =========================================================================================
+
+        // 1401 - Pandemonium Watchbear (Protect Pandemonium)
+        AddEffect("1401", Effect_1401_PandemoniumWatchbear);
+
+        // 1402 - Panther Warrior (Tribute to attack)
+        AddEffect("1402", Effect_1402_PantherWarrior);
+
+        // 1403 - Paralyzing Potion (Equip non-Machine no attack)
+        AddEffect("1403", Effect_1403_ParalyzingPotion);
+
+        // 1404 - Parasite Paracide (Flip Shuffle into Opp Deck)
+        AddEffect("1404", Effect_1404_ParasiteParacide);
+
+        // 1406 - Patrician of Darkness (Choose attack targets)
+        AddEffect("1406", Effect_1406_PatricianOfDarkness);
+
+        // 1407 - Patroid (Look face-down)
+        AddEffect("1407", Effect_1407_Patroid);
+
+        // 1408 - Patrol Robo (Look face-down standby)
+        AddEffect("1408", Effect_1408_PatrolRobo);
+
+        // 1410 - Penalty Game! (Lock Draw or S/T)
+        AddEffect("1410", Effect_1410_PenaltyGame);
+
+        // 1412 - Penguin Knight (Shuffle GY to Deck)
+        AddEffect("1412", Effect_1412_PenguinKnight);
+
+        // 1413 - Penguin Soldier (Flip Bounce 2)
+        AddEffect("1413", Effect_1413_PenguinSoldier);
+
+        // 1414 - Penumbral Soldier Lady (Buff vs Light)
+        AddEffect("1414", Effect_1414_PenumbralSoldierLady);
+
+        // 1416 - Perfect Machine King (Buff per Machine)
+        AddEffect("1416", Effect_1416_PerfectMachineKing);
+
+        // 1417 - Perfectly Ultimate Great Moth (SS Condition)
+        AddEffect("1417", Effect_1417_PerfectlyUltimateGreatMoth);
+
+        // 1418 - Performance of Sword (Ritual)
+        AddEffect("1418", Effect_1418_PerformanceOfSword);
+
+        // 1419 - Peten the Dark Clown (Banish to SS)
+        AddEffect("1419", Effect_1419_PetenTheDarkClown);
+
+        // 1426 - Pharaoh's Treasure (Shuffle, Draw -> Add from GY)
+        AddEffect("1426", Effect_1426_PharaohsTreasure);
 
         // 1428 - Phoenix Wing Wind Blast (Discard -> Spin)
         AddEffect("1428", Effect_1428_PhoenixWingWindBlast);
@@ -758,235 +846,160 @@ public partial class CardEffectManager
         // 1429 - Physical Double (Token Copy)
         AddEffect("1429", Effect_1429_PhysicalDouble);
 
-        // 1397 - Painful Choice (Search 5)
-        AddEffect("1397", c => Debug.Log("Painful Choice: Seleciona 5, oponente escolhe 1 para sua mão."));
-
-        // 1398 - Paladin of White Dragon (Ritual / SS Blue-Eyes)
-        AddEffect("1398", c => Debug.Log("Paladin of White Dragon: Ritual. Tributa para invocar Blue-Eyes."));
-
-        // 1400 - Pandemonium (Field Archfiend)
-        AddEffect("1400", c => Debug.Log("Pandemonium: Busca Archfiend quando um é destruído."));
-
-        // =========================================================================================
-        // LÓGICA PARA AS CARTAS (ID 1401 - 1500)
-        // =========================================================================================
-
-        // 1401 - Pandemonium Watchbear (Protect Pandemonium)
-        AddEffect("1401", c => Debug.Log("Pandemonium Watchbear: Protege Pandemonium."));
-
-        // 1402 - Panther Warrior (Tribute to attack)
-        AddEffect("1402", c => Debug.Log("Panther Warrior: Tributa 1 para atacar."));
-
-        // 1403 - Paralyzing Potion (Equip non-Machine no attack)
-        AddEffect("1403", c => Debug.Log("Paralyzing Potion: Impede ataque de não-Máquina."));
-
-        // 1404 - Parasite Paracide (Flip Shuffle into Opp Deck)
-        AddEffect("1404", c => Debug.Log("Parasite Paracide: Embaralha no deck do oponente."));
-
-        // 1406 - Patrician of Darkness (Choose attack targets)
-        AddEffect("1406", c => Debug.Log("Patrician of Darkness: Escolhe alvos de ataque."));
-
-        // 1407 - Patroid (Look face-down)
-        AddEffect("1407", c => Debug.Log("Patroid: Olha carta face-down."));
-
-        // 1408 - Patrol Robo (Look face-down standby)
-        AddEffect("1408", c => Debug.Log("Patrol Robo: Olha carta face-down na Standby."));
-
-        // 1410 - Penalty Game! (Lock Draw or S/T)
-        AddEffect("1410", c => Debug.Log("Penalty Game!: Bloqueia Draw ou S/T."));
-
-        // 1412 - Penguin Knight (Shuffle GY to Deck)
-        AddEffect("1412", c => Debug.Log("Penguin Knight: Recicla GY se millado."));
-
-        // 1413 - Penguin Soldier (Flip Bounce 2)
-        AddEffect("1413", c => Debug.Log("Penguin Soldier: Retorna 2 monstros para a mão."));
-
-        // 1414 - Penumbral Soldier Lady (Buff vs Light)
-        AddEffect("1414", c => Debug.Log("Penumbral Soldier Lady: +1000 ATK contra LIGHT."));
-
-        // 1416 - Perfect Machine King (Buff per Machine)
-        AddEffect("1416", c => Debug.Log("Perfect Machine King: +500 ATK por Máquina."));
-
-        // 1417 - Perfectly Ultimate Great Moth (SS Condition)
-        AddEffect("1417", c => Debug.Log("Perfectly Ultimate Great Moth: SS difícil."));
-
-        // 1418 - Performance of Sword (Ritual)
-        AddEffect("1418", c => Debug.Log("Performance of Sword: Ritual."));
-
-        // 1419 - Peten the Dark Clown (Banish to SS)
-        AddEffect("1419", c => Debug.Log("Peten: Bane do GY para invocar outro."));
-
-        // 1426 - Pharaoh's Treasure (Shuffle, Draw -> Add from GY)
-        AddEffect("1426", c => Debug.Log("Pharaoh's Treasure: Efeito complexo de deck."));
-
-        // 1428 - Phoenix Wing Wind Blast (Discard -> Spin)
-        AddEffect("1428", c => Debug.Log("Phoenix Wing Wind Blast: Descarta 1, topo do deck."));
-
-        // 1429 - Physical Double (Token Copy)
-        AddEffect("1429", c => Debug.Log("Physical Double: Cria Token com stats do oponente."));
-
-        // 1430 - Pikeru's Circle of Enchantment (No Effect Damage)
-        AddEffect("1430", c => Debug.Log("Pikeru's Circle: Sem dano de efeito."));
-
         // 1431 - Pikeru's Second Sight (Reveal Draws)
-        AddEffect("1431", c => Debug.Log("Pikeru's Second Sight: Ver compras do oponente."));
+        AddEffect("1431", Effect_1431_PikerusSecondSight);
 
         // 1432 - Pinch Hopper (SS Insect from Hand)
-        AddEffect("1432", c => Debug.Log("Pinch Hopper: Invoca Inseto da mão ao ir pro GY."));
+        AddEffect("1432", Effect_1432_PinchHopper);
 
         // 1433 - Pineapple Blast (Destroy if outnumbered)
         AddEffect("1433", Effect_1433_PineappleBlast);
 
         // 1434 - Piranha Army (Double Direct Damage)
-        AddEffect("1434", c => Debug.Log("Piranha Army: Dano direto dobrado."));
+        AddEffect("1434", Effect_1434_PiranhaArmy);
 
         // 1435 - Pitch-Black Power Stone (Spell Counters)
-        AddEffect("1435", c => Debug.Log("Pitch-Black Power Stone: Gera contadores."));
+        AddEffect("1435", Effect_1435_PitchBlackPowerStone);
 
         // 1436 - Pitch-Black Warwolf (No Traps Battle)
-        AddEffect("1436", c => Debug.Log("Pitch-Black Warwolf: Sem Traps na Battle Phase."));
+        AddEffect("1436", Effect_1436_PitchBlackWarwolf);
 
         // 1437 - Pitch-Dark Dragon (Union)
-        AddEffect("1437", c => Effect_Union(c, "Dark Blade", 400, 400));
-        AddEffect("1437", c => Debug.Log("Pitch-Dark Dragon: Union para Dark Blade."));
+        AddEffect("1437", Effect_1437_PitchDarkDragon);
 
         // 1438 - Pixie Knight (Opponent Recycle Spell)
         AddEffect("1438", Effect_1438_PixieKnight);
 
         // 1439 - Poison Draw Frog (Draw on GY)
-        AddEffect("1439", c => { GameManager.Instance.DrawCard(); Debug.Log("Poison Draw Frog: Compra 1."); });
+        AddEffect("1439", Effect_1439_PoisonDrawFrog);
 
         // 1440 - Poison Fangs (Burn on Beast Damage)
-        AddEffect("1440", c => Debug.Log("Poison Fangs: Dano extra por Bestas."));
+        AddEffect("1440", Effect_1440_PoisonFangs);
 
         // 1441 - Poison Mummy (Flip Burn)
-        AddEffect("1441", c => Effect_DirectDamage(c, 500));
+        AddEffect("1441", Effect_1441_PoisonMummy);
 
         // 1442 - Poison of the Old Man (Heal/Burn)
-        AddEffect("1442", c => Debug.Log("Poison of the Old Man: Cura 1200 ou Dano 800."));
+        AddEffect("1442", Effect_1442_PoisonOfTheOldMan);
 
         // 1443 - Pole Position (Immunity Loop)
-        AddEffect("1443", c => Debug.Log("Pole Position: Maior ATK imune a magias."));
+        AddEffect("1443", Effect_1443_PolePosition);
 
         // 1444 - Polymerization (Fusion)
-        AddEffect("1444", c => Debug.Log("Polymerization: Realiza Fusão."));
+        AddEffect("1444", Effect_1444_Polymerization);
 
         // 1445 - Possessed Dark Soul (Steal Lv3-)
-        AddEffect("1445", c => Debug.Log("Possessed Dark Soul: Rouba monstros Lv3 ou menor."));
+        AddEffect("1445", Effect_1445_PossessedDarkSoul);
 
         // 1446 - Pot of Generosity (Return 2 to Deck)
-        AddEffect("1446", c => Debug.Log("Pot of Generosity: Retorna 2 da mão ao deck."));
+        AddEffect("1446", Effect_1446_PotOfGenerosity);
 
         // 1447 - Pot of Greed (Draw 2)
-        AddEffect("1447", c => { 
-            if (c.isPlayerCard) { GameManager.Instance.DrawCard(true); GameManager.Instance.DrawCard(true); }
-            else { GameManager.Instance.DrawOpponentCard(); GameManager.Instance.DrawOpponentCard(); }
-            Debug.Log("Pot of Greed: Comprou 2 cartas.");
-        });
+        AddEffect("1447", Effect_1447_PotOfGreed);
 
         // 1449 - Power Bond (Fusion Machine Double ATK)
-        AddEffect("1449", c => Debug.Log("Power Bond: Fusão Machine com dobro de ATK e dano."));
+        AddEffect("1449", Effect_1449_PowerBond);
 
         // 1450 - Power of Kaishin (Equip Aqua +300)
-        AddEffect("1450", c => Effect_Equip(c, 300, 300, "Aqua"));
+        AddEffect("1450", Effect_1450_PowerOfKaishin);
 
         // 1452 - Precious Cards from Beyond (Draw 2 on 2-Tribute)
-        AddEffect("1452", c => Debug.Log("Precious Cards: Compra 2 ao tributar 2."));
+        AddEffect("1452", Effect_1452_PreciousCardsFromBeyond);
 
         // 1453 - Premature Burial (Pay 800 Revive)
-        AddEffect("1453", c => { Effect_PayLP(c, 800); Debug.Log("Premature Burial: Revive monstro."); });
+        AddEffect("1453", Effect_1453_PrematureBurial);
 
         // 1454 - Prepare to Strike Back (Coin Toss Position)
-        AddEffect("1454", c => Debug.Log("Prepare to Strike Back: Moeda para mudar posição."));
+        AddEffect("1454", Effect_1454_PrepareToStrikeBack);
 
         // 1456 - Prickle Fairy (Anti-Insect / Position Change)
-        AddEffect("1456", c => Debug.Log("Prickle Fairy: Impede Insetos. Vira defesa."));
+        AddEffect("1456", Effect_1456_PrickleFairy);
+
         // 1457 - Primal Seed (Recycle Banished)
-        AddEffect("1457", c => Debug.Log("Primal Seed: Recupera banidas se tiver BLS/CED."));
+        AddEffect("1457", Effect_1457_PrimalSeed);
 
         // 1458 - Princess of Tsurugi (Flip Burn per S/T)
-        AddEffect("1458", c => Debug.Log("Princess of Tsurugi: Dano por S/T do oponente."));
+        AddEffect("1458", Effect_1458_PrincessOfTsurugi);
 
         // 1460 - Prohibition (Declare card)
-        AddEffect("1460", c => Debug.Log("Prohibition: Proíbe carta."));
+        AddEffect("1460", Effect_1460_Prohibition);
 
         // 1461 - Protective Soul Ailin (Union)
-        AddEffect("1461", c => Debug.Log("Protective Soul Ailin: Union para Lei Lei."));
+        AddEffect("1461", Effect_1461_ProtectiveSoulAilin);
 
         // 1462 - Protector of the Sanctuary (No extra draws)
         AddEffect("1462", Effect_1462_ProtectorOfTheSanctuary);
-        AddEffect("1462", c => Debug.Log("Protector of the Sanctuary: Impede compras extras."));
 
         // 1468 - Pyramid Energy (Buff ATK or DEF)
-        AddEffect("1468", c => Debug.Log("Pyramid Energy: +200 ATK ou +500 DEF."));
+        AddEffect("1468", Effect_1468_PyramidEnergy);
 
         // 1469 - Pyramid Turtle (Float Zombie)
-        AddEffect("1469", c => Effect_SearchDeck(c, "Zombie"));
+        AddEffect("1469", Effect_1469_PyramidTurtle);
 
         // 1470 - Pyramid of Light (Banish Sphinxes)
-        AddEffect("1470", c => Debug.Log("Pyramid of Light: Mantém Sphinxes."));
+        AddEffect("1470", Effect_1470_PyramidOfLight);
 
         // 1471 - Pyro Clock of Destiny (Turn Count)
-        AddEffect("1471", c => Debug.Log("Pyro Clock: Avança contagem de turnos."));
+        AddEffect("1471", Effect_1471_PyroClockOfDestiny);
 
         // 1476 - Question (Guess GY)
-        AddEffect("1476", c => Debug.Log("Question: Adivinhar monstro no fundo do GY."));
+        AddEffect("1476", Effect_1476_Question);
 
         // 1478 - Rafflesia Seduction (Flip Snatch Steal)
-        AddEffect("1478", c => Debug.Log("Rafflesia Seduction: Rouba monstro por 1 turno."));
+        AddEffect("1478", Effect_1478_RafflesiaSeduction);
 
         // 1479 - Raging Flame Sprite (Direct Attack, Gain ATK)
-        AddEffect("1479", c => Debug.Log("Raging Flame Sprite: Ataque direto, +1000 ATK."));
+        AddEffect("1479", Effect_1479_RagingFlameSprite);
 
         // 1480 - Raigeki (Destroy All Opp Monsters)
         AddEffect("1480", Effect_Raigeki);
 
         // 1481 - Raigeki Break (Discard 1 Destroy 1)
-        AddEffect("1481", c => Debug.Log("Raigeki Break: Descarta 1, destrói 1."));
+        AddEffect("1481", Effect_1481_RaigekiBreak);
 
         // 1482 - Raimei (Burn 300)
-        AddEffect("1482", c => Effect_DirectDamage(c, 300));
+        AddEffect("1482", Effect_1482_Raimei);
 
         // 1483 - Rain of Mercy (Heal 1000 Both)
-        AddEffect("1483", c => { GameManager.Instance.playerLP += 1000; GameManager.Instance.opponentLP += 1000; Debug.Log("Rain of Mercy: Ambos curam 1000."); });
+        AddEffect("1483", Effect_1483_RainOfMercy);
 
         // 1484 - Rainbow Flower (Direct Attack)
-        AddEffect("1484", c => Debug.Log("Rainbow Flower: Ataque direto."));
+        AddEffect("1484", Effect_1484_RainbowFlower);
 
         // 1486 - Raise Body Heat (Equip Dinosaur +300)
-        AddEffect("1486", c => Effect_Equip(c, 300, 300, "Dinosaur"));
+        AddEffect("1486", Effect_1486_RaiseBodyHeat);
 
         // 1489 - Rare Metalmorph (Buff Machine)
-        AddEffect("1489", c => Debug.Log("Rare Metalmorph: +500 ATK para Máquina."));
+        AddEffect("1489", Effect_1489_RareMetalmorph);
 
         // 1490 - Raregold Armor (Aggro)
-        AddEffect("1490", c => Debug.Log("Raregold Armor: Redireciona ataques."));
+        AddEffect("1490", Effect_1490_RaregoldArmor);
 
         // 1492 - Ray of Hope (Recycle Light)
-        AddEffect("1492", c => Debug.Log("Ray of Hope: Recicla 2 LIGHT."));
+        AddEffect("1492", Effect_1492_RayOfHope);
 
         // 1493 - Re-Fusion (Pay 800 Revive Fusion)
-        AddEffect("1493", c => { Effect_PayLP(c, 800); Debug.Log("Re-Fusion: Revive Fusão."); });
+        AddEffect("1493", Effect_1493_ReFusion);
 
         // 1494 - Ready for Intercepting (Face-down)
-        AddEffect("1494", c => Debug.Log("Ready for Intercepting: Vira monstro face-down."));
+        AddEffect("1494", Effect_1494_ReadyForIntercepting);
 
         // 1495 - Really Eternal Rest (Destroy Equipped)
-        AddEffect("1495", c => Debug.Log("Really Eternal Rest: Destrói monstros equipados."));
+        AddEffect("1495", Effect_1495_ReallyEternalRest);
 
         // 1496 - Reaper of the Cards (Flip Destroy Trap)
-        AddEffect("1496", c => Effect_FlipDestroy(c, TargetType.Trap));
+        AddEffect("1496", Effect_1496_ReaperOfTheCards);
 
         // 1497 - Reaper on the Nightmare (Direct Attack / Discard)
-        AddEffect("1497", c => Debug.Log("Reaper on the Nightmare: Ataque direto e descarte."));
+        AddEffect("1497", Effect_1497_ReaperOnTheNightmare);
 
         // 1498 - Reasoning (Excavate SS)
-        AddEffect("1498", c => Debug.Log("Reasoning: Escava e invoca se nível não for adivinhado."));
+        AddEffect("1498", Effect_1498_Reasoning);
 
         // 1499 - Reckless Greed (Draw 2 Skip 2)
-        AddEffect("1499", c => Debug.Log("Reckless Greed: Compra 2, pula 2 Draw Phases."));
+        AddEffect("1499", Effect_1499_RecklessGreed);
 
         // 1500 - Recycle (Pay 300 Recycle)
-        AddEffect("1500", c => { Effect_PayLP(c, 300); Debug.Log("Recycle: Retorna carta do GY ao deck."); });
+        AddEffect("1500", Effect_1500_Recycle);
     }
 }
