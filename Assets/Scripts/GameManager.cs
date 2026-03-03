@@ -972,6 +972,15 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Chamado pelo PhaseManager quando entra na End Phase
+    public void OnEndPhaseStart()
+    {
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.OnPhaseStart(GamePhase.End);
+        }
+    }
+
     // --- SISTEMA DE MOEDAS ---
     public void TossCoin(int numberOfCoins, System.Action<int> onResult)
     {

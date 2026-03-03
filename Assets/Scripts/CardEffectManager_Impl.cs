@@ -47,6 +47,72 @@ public partial class CardEffectManager
         redirectSpellTarget = false;
         reverseStats = false;
 
+        if (phase == GamePhase.End)
+        {
+            // --- EFEITOS DE END PHASE ---
+
+            // 1757 - Spiritual Energy Settle Machine (Manutenção)
+            bool machineActive = false;
+            CheckActiveCards("1757", (card) => {
+                machineActive = true;
+                if (card.isPlayerCard) // Apenas o controlador paga o custo
+                {
+                    if (GameManager.Instance.GetPlayerHandData().Count > 0)
+                    {
+                        UIManager.Instance.ShowConfirmation("Manter 'Spiritual Energy Settle Machine' (descartar 1 carta)?", 
+                        () => {
+                            // Jogador escolhe qual carta descartar
+                            GameManager.Instance.OpenCardSelection(GameManager.Instance.GetPlayerHandData(), "Descarte 1 para manter a Máquina", (toDiscardData) => {
+                                if (toDiscardData != null)
+                                {
+                                    var cardToDiscard = GameManager.Instance.playerHand.Find(go => go.GetComponent<CardDisplay>().CurrentCardData == toDiscardData);
+                                    if (cardToDiscard != null) GameManager.Instance.DiscardCard(cardToDiscard.GetComponent<CardDisplay>());
+                                }
+                                else // Jogador cancelou a seleção de descarte
+                                {
+                                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
+                                    Destroy(card.gameObject);
+                                }
+                            });
+                        }, 
+                        () => { // Jogador escolheu "Não" na confirmação
+                            GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
+                            Destroy(card.gameObject);
+                        });
+                    }
+                    else
+                    {
+                        Debug.Log("Spiritual Energy Settle Machine: Sem cartas para descartar. Destruída.");
+                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
+                        Destroy(card.gameObject);
+                    }
+                }
+            });
+
+            // Lógica de Retorno de Monstros Spirit
+            if (!machineActive)
+            {
+                List<CardDisplay> monstersToReturn = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null)
+                {
+                    CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, monstersToReturn);
+                    CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, monstersToReturn);
+                }
+
+                foreach (var monster in monstersToReturn.ToList()) // Itera sobre uma cópia para poder modificar a original
+                {
+                    string id = monster.CurrentCardData.id;
+                    if (id == "0114" || id == "2128" || id == "1141" || id == "0933" || id == "1798") // Asura, Yata, Maharaghi, Inaba, Susa
+                    {
+                        if (monster.summonedThisTurn) // Só retornam no turno que foram invocados/flipados
+                        {
+                            GameManager.Instance.ReturnToHand(monster);
+                        }
+                    }
+                }
+            }
+        }
+
         Debug.Log($"CardEffectManager: Processando efeitos da fase {phase}...");
 
         if (phase == GamePhase.Draw)
@@ -1337,6 +1403,20 @@ public partial class CardEffectManager
             library.AddSpellCounter(1);
             SpellCounterManager.Instance.AddCounter(library, 1);
             Debug.Log("Royal Magical Library: Contador adicionado.");
+        });
+
+        // 1656 - Skilled Dark Magician (Add Counter)
+        CheckActiveCards("1656", (mage) => {
+            mage.AddSpellCounter(1);
+            SpellCounterManager.Instance.AddCounter(mage, 1);
+            Debug.Log("Skilled Dark Magician: Contador adicionado.");
+        });
+
+        // 1657 - Skilled White Magician (Add Counter)
+        CheckActiveCards("1657", (mage) => {
+            mage.AddSpellCounter(1);
+            SpellCounterManager.Instance.AddCounter(mage, 1);
+            Debug.Log("Skilled White Magician: Contador adicionado.");
         });
 
                 // 1400 - Pandemonium

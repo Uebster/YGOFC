@@ -2735,7 +2735,8 @@ public partial class CardEffectManager
     void Effect_1757_SpiritualEnergySettleMachine(CardDisplay source)
     {
         // Continuous Spell.
-        Debug.Log("Spiritual Energy Settle Machine: Ativada.");
+        // Efeito contínuo que impede Spirit Monsters de retornarem para a mão.
+        Debug.Log("Spiritual Energy Settle Machine: Ativada. (Lógica na End Phase).");
     }
 
     // 1758 - Spiritual Fire Art - Kurenai
