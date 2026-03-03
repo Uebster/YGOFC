@@ -2050,6 +2050,205 @@ public partial class CardEffectManager
                 Effect_Equip(source, 0, 0); 
             }
         }
+
+    // 1876 - The Legendary Fisherman
+    void Effect_1876_TheLegendaryFisherman(CardDisplay source)
+    {
+        // While "Umi" is on the field, this card is unaffected by Spell effects and cannot be targeted for attacks.
+        if (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013")) // Umi
+        {
+            Debug.Log("The Legendary Fisherman: Imune a Magias e Ataques (Passivo).");
+            // Lógica de imunidade a magias e ataques no BattleManager/SpellTrapManager
+        }
+    }
+
+    // 1877 - The Light - Hex-Sealed Fusion
+    void Effect_1877_TheLightHexSealedFusion(CardDisplay source)
+    {
+        // Fusion Substitute. Tribute materials + this card -> SS LIGHT Fusion.
+        Debug.Log("The Light - Hex-Sealed Fusion: Efeito de fusão por tributo.");
+    }
+
+    // 1878 - The Little Swordsman of Aile
+    void Effect_1878_TheLittleSwordsmanOfAile(CardDisplay source)
+    {
+        // Tribute 1 monster; increase ATK by 700 until End Phase.
+        if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
+        {
+            // Seleção de tributo simplificada (primeiro disponível)
+            // Em produção: UI de seleção
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard && t != source,
+                    (tribute) => {
+                        GameManager.Instance.TributeCard(tribute);
+                        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 700, source));
+                        Debug.Log("The Little Swordsman of Aile: +700 ATK.");
+                    }
+                );
+            }
+        }
+    }
+
+    // 1879 - The Mask of Remnants
+    void Effect_1879_TheMaskOfRemnants(CardDisplay source)
+    {
+        // If in GY when Des Gardius leaves field: Equip to opp monster and take control.
+        // Lógica implementada no OnCardSentToGraveyard (Des Gardius).
+        // Se ativada da mão: Shuffle into Deck.
+        if (source.isOnField) // Ativada como Spell
+        {
+            GameManager.Instance.ReturnToDeck(source, false); // Shuffle
+            GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+            Debug.Log("The Mask of Remnants: Retornada ao Deck.");
+        }
+    }
+
+    // 1880 - The Masked Beast
+    void Effect_1880_TheMaskedBeast(CardDisplay source)
+    {
+        // Ritual Monster.
+        Debug.Log("The Masked Beast: Monstro Ritual.");
+    }
+
+    // 1883 - The Puppet Magic of Dark Ruler
+    void Effect_1883_ThePuppetMagicOfDarkRuler(CardDisplay source)
+    {
+        // Banish monsters from GY whose Levels equal Level of Fiend in GY; SS that Fiend.
+        Debug.Log("The Puppet Magic of Dark Ruler: Requer seleção complexa de banimento.");
+    }
+
+    // 1884 - The Regulation of Tribe
+    void Effect_1884_TheRegulationOfTribe(CardDisplay source)
+    {
+        // Declare 1 Type. Monsters of that Type cannot attack. Tribute 1 monster each Standby.
+        Debug.Log("The Regulation of Tribe: Bloqueio de tipo (Simulado: Dragon).");
+        // Lógica de bloqueio no BattleManager.
+    }
+
+    // 1885 - The Reliable Guardian
+    void Effect_1885_TheReliableGuardian(CardDisplay source)
+    {
+        // Target 1 face-up monster; +700 DEF until end of turn.
+        Effect_BuffStats(source, 0, 700);
+    }
+
+    // 1886 - The Rock Spirit
+    void Effect_1886_TheRockSpirit(CardDisplay source)
+    {
+        // SS by banishing 1 EARTH from GY. Opponent gains 300 ATK during your Battle Phase.
+        if (!source.isOnField)
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> earths = gy.FindAll(c => c.attribute == "Earth");
+            if (earths.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(earths, "Banir 1 EARTH", (selected) => {
+                    GameManager.Instance.RemoveFromPlay(selected, source.isPlayerCard);
+                    GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                    GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                });
+            }
+        }
+        // Debuff no oponente (OnPhaseStart Battle Phase)
+    }
+
+    // 1887 - The Sanctuary in the Sky
+    void Effect_1887_TheSanctuaryInTheSky(CardDisplay source)
+    {
+        // Battle Damage to controller of Fairy monster becomes 0.
+        Debug.Log("The Sanctuary in the Sky: Proteção de dano para Fadas (Passivo).");
+    }
+
+    // 1889 - The Secret of the Bandit
+    void Effect_1889_TheSecretOfTheBandit(CardDisplay source)
+    {
+        // When a monster inflicts Battle Damage: Opponent discards 1 card.
+        // Lógica no OnDamageDealtImpl.
+        Debug.Log("The Secret of the Bandit: Efeito de descarte configurado.");
+    }
+
+    // 1890 - The Selection
+    void Effect_1890_TheSelection(CardDisplay source)
+    {
+        // Pay 1000 LP. Negate Summon of monster with same Type as one on field.
+        // Requer Chain/Trigger de invocação.
+        Debug.Log("The Selection: Negação de invocação por tipo.");
+    }
+
+    // 1892 - The Shallow Grave
+    void Effect_1892_TheShallowGrave(CardDisplay source)
+    {
+        // Each player selects 1 monster in their GY; SS it in face-down Defense.
+        // Player
+        Effect_Revive(source, false); // Deveria ser face-down
+        // Opponent (Simulado)
+        List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
+        List<CardData> monsters = oppGY.FindAll(c => c.type.Contains("Monster"));
+        if (monsters.Count > 0)
+        {
+            CardData random = monsters[Random.Range(0, monsters.Count)];
+            GameManager.Instance.SpecialSummonFromData(random, false, false, true); // Face-down Defense
+            Debug.Log($"The Shallow Grave: Oponente reviveu {random.name}.");
+        }
+    }
+
+    // 1894 - The Spell Absorbing Life
+    void Effect_1894_TheSpellAbsorbingLife(CardDisplay source)
+    {
+        // Flip all face-down monsters face-up. Gain 400 LP for each Effect Monster.
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            
+            int effectCount = 0;
+            foreach(var m in all)
+            {
+                if (m.isFlipped) m.RevealCard();
+                if (m.CurrentCardData.type.Contains("Effect")) effectCount++;
+            }
+            Effect_GainLP(source, effectCount * 400);
+        }
+    }
+
+    // 1896 - The Stern Mystic
+    void Effect_1896_TheSternMystic(CardDisplay source)
+    {
+        // FLIP: All face-down cards are turned face-up, then returned to original position. No effects activate.
+        Debug.Log("The Stern Mystic: Revelando cartas (Visualmente).");
+    }
+
+    // 1898 - The Thing in the Crater
+    void Effect_1898_TheThingInTheCrater(CardDisplay source)
+    {
+        // If destroyed: SS 1 Pyro from hand.
+        // Lógica no OnCardSentToGraveyard.
+        Debug.Log("The Thing in the Crater: Efeito de invocação configurado.");
+    }
+
+    // 1900 - The Tricky
+    void Effect_1900_TheTricky(CardDisplay source)
+    {
+        // SS from hand by discarding 1 card.
+        if (!source.isOnField)
+        {
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            if (hand.Count > 1) // Tricky + 1
+            {
+                GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                    if (discarded != source.CurrentCardData)
+                    {
+                        GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                        GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                        GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                    }
+                });
+            }
+        }
+    }
     }
 
     // 1715 - Sparks
@@ -3641,6 +3840,205 @@ public partial class CardEffectManager
             GameManager.Instance.DiscardHand(false);
             DestroyAllMonsters(true, false);
             Effect_HarpiesFeatherDuster(source);
+        }
+    }
+
+        // 1876 - The Legendary Fisherman
+    void Effect_1876_TheLegendaryFisherman(CardDisplay source)
+    {
+        // While "Umi" is on the field, this card is unaffected by Spell effects and cannot be targeted for attacks.
+        if (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013")) // Umi
+        {
+            Debug.Log("The Legendary Fisherman: Imune a Magias e Ataques (Passivo).");
+            // Lógica de imunidade a magias e ataques no BattleManager/SpellTrapManager
+        }
+    }
+
+    // 1877 - The Light - Hex-Sealed Fusion
+    void Effect_1877_TheLightHexSealedFusion(CardDisplay source)
+    {
+        // Fusion Substitute. Tribute materials + this card -> SS LIGHT Fusion.
+        Debug.Log("The Light - Hex-Sealed Fusion: Efeito de fusão por tributo.");
+    }
+
+    // 1878 - The Little Swordsman of Aile
+    void Effect_1878_TheLittleSwordsmanOfAile(CardDisplay source)
+    {
+        // Tribute 1 monster; increase ATK by 700 until End Phase.
+        if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
+        {
+            // Seleção de tributo simplificada (primeiro disponível)
+            // Em produção: UI de seleção
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard && t != source,
+                    (tribute) => {
+                        GameManager.Instance.TributeCard(tribute);
+                        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 700, source));
+                        Debug.Log("The Little Swordsman of Aile: +700 ATK.");
+                    }
+                );
+            }
+        }
+    }
+
+    // 1879 - The Mask of Remnants
+    void Effect_1879_TheMaskOfRemnants(CardDisplay source)
+    {
+        // If in GY when Des Gardius leaves field: Equip to opp monster and take control.
+        // Lógica implementada no OnCardSentToGraveyard (Des Gardius).
+        // Se ativada da mão: Shuffle into Deck.
+        if (source.isOnField) // Ativada como Spell
+        {
+            GameManager.Instance.ReturnToDeck(source, false); // Shuffle
+            GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+            Debug.Log("The Mask of Remnants: Retornada ao Deck.");
+        }
+    }
+
+    // 1880 - The Masked Beast
+    void Effect_1880_TheMaskedBeast(CardDisplay source)
+    {
+        // Ritual Monster.
+        Debug.Log("The Masked Beast: Monstro Ritual.");
+    }
+
+    // 1883 - The Puppet Magic of Dark Ruler
+    void Effect_1883_ThePuppetMagicOfDarkRuler(CardDisplay source)
+    {
+        // Banish monsters from GY whose Levels equal Level of Fiend in GY; SS that Fiend.
+        Debug.Log("The Puppet Magic of Dark Ruler: Requer seleção complexa de banimento.");
+    }
+
+    // 1884 - The Regulation of Tribe
+    void Effect_1884_TheRegulationOfTribe(CardDisplay source)
+    {
+        // Declare 1 Type. Monsters of that Type cannot attack. Tribute 1 monster each Standby.
+        Debug.Log("The Regulation of Tribe: Bloqueio de tipo (Simulado: Dragon).");
+        // Lógica de bloqueio no BattleManager.
+    }
+
+    // 1885 - The Reliable Guardian
+    void Effect_1885_TheReliableGuardian(CardDisplay source)
+    {
+        // Target 1 face-up monster; +700 DEF until end of turn.
+        Effect_BuffStats(source, 0, 700);
+    }
+
+    // 1886 - The Rock Spirit
+    void Effect_1886_TheRockSpirit(CardDisplay source)
+    {
+        // SS by banishing 1 EARTH from GY. Opponent gains 300 ATK during your Battle Phase.
+        if (!source.isOnField)
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> earths = gy.FindAll(c => c.attribute == "Earth");
+            if (earths.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(earths, "Banir 1 EARTH", (selected) => {
+                    GameManager.Instance.RemoveFromPlay(selected, source.isPlayerCard);
+                    GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                    GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                });
+            }
+        }
+        // Debuff no oponente (OnPhaseStart Battle Phase)
+    }
+
+    // 1887 - The Sanctuary in the Sky
+    void Effect_1887_TheSanctuaryInTheSky(CardDisplay source)
+    {
+        // Battle Damage to controller of Fairy monster becomes 0.
+        Debug.Log("The Sanctuary in the Sky: Proteção de dano para Fadas (Passivo).");
+    }
+
+    // 1889 - The Secret of the Bandit
+    void Effect_1889_TheSecretOfTheBandit(CardDisplay source)
+    {
+        // When a monster inflicts Battle Damage: Opponent discards 1 card.
+        // Lógica no OnDamageDealtImpl.
+        Debug.Log("The Secret of the Bandit: Efeito de descarte configurado.");
+    }
+
+    // 1890 - The Selection
+    void Effect_1890_TheSelection(CardDisplay source)
+    {
+        // Pay 1000 LP. Negate Summon of monster with same Type as one on field.
+        // Requer Chain/Trigger de invocação.
+        Debug.Log("The Selection: Negação de invocação por tipo.");
+    }
+
+    // 1892 - The Shallow Grave
+    void Effect_1892_TheShallowGrave(CardDisplay source)
+    {
+        // Each player selects 1 monster in their GY; SS it in face-down Defense.
+        // Player
+        Effect_Revive(source, false); // Deveria ser face-down
+        // Opponent (Simulado)
+        List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
+        List<CardData> monsters = oppGY.FindAll(c => c.type.Contains("Monster"));
+        if (monsters.Count > 0)
+        {
+            CardData random = monsters[Random.Range(0, monsters.Count)];
+            GameManager.Instance.SpecialSummonFromData(random, false, false, true); // Face-down Defense
+            Debug.Log($"The Shallow Grave: Oponente reviveu {random.name}.");
+        }
+    }
+
+    // 1894 - The Spell Absorbing Life
+    void Effect_1894_TheSpellAbsorbingLife(CardDisplay source)
+    {
+        // Flip all face-down monsters face-up. Gain 400 LP for each Effect Monster.
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            
+            int effectCount = 0;
+            foreach(var m in all)
+            {
+                if (m.isFlipped) m.RevealCard();
+                if (m.CurrentCardData.type.Contains("Effect")) effectCount++;
+            }
+            Effect_GainLP(source, effectCount * 400);
+        }
+    }
+
+    // 1896 - The Stern Mystic
+    void Effect_1896_TheSternMystic(CardDisplay source)
+    {
+        // FLIP: All face-down cards are turned face-up, then returned to original position. No effects activate.
+        Debug.Log("The Stern Mystic: Revelando cartas (Visualmente).");
+    }
+
+    // 1898 - The Thing in the Crater
+    void Effect_1898_TheThingInTheCrater(CardDisplay source)
+    {
+        // If destroyed: SS 1 Pyro from hand.
+        // Lógica no OnCardSentToGraveyard.
+        Debug.Log("The Thing in the Crater: Efeito de invocação configurado.");
+    }
+
+    // 1900 - The Tricky
+    void Effect_1900_TheTricky(CardDisplay source)
+    {
+        // SS from hand by discarding 1 card.
+        if (!source.isOnField)
+        {
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            if (hand.Count > 1) // Tricky + 1
+            {
+                GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                    if (discarded != source.CurrentCardData)
+                    {
+                        GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                        GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                        GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                    }
+                });
+            }
         }
     }
 

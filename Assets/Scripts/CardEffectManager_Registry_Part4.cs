@@ -804,55 +804,55 @@ public partial class CardEffectManager
         AddEffect("1875", Effect_1875_TheLawOfTheNormal);
 
         // 1876 - The Legendary Fisherman (Immune Umi)
-        AddEffect("1876", c => Debug.Log("The Legendary Fisherman: Imune a magia e ataque com Umi."));
+        AddEffect("1876", Effect_1876_TheLegendaryFisherman);
 
         // 1877 - The Light - Hex-Sealed Fusion (Fusion Sub)
-        AddEffect("1877", c => Debug.Log("The Light - Hex-Sealed Fusion: Substituto de fusão."));
+        AddEffect("1877", Effect_1877_TheLightHexSealedFusion);
 
         // 1878 - The Little Swordsman of Aile (Tribute +700)
-        AddEffect("1878", c => Debug.Log("The Little Swordsman of Aile: Tributa para ganhar ATK."));
+        AddEffect("1878", Effect_1878_TheLittleSwordsmanOfAile);
 
         // 1879 - The Mask of Remnants (Shuffle/Equip)
-        AddEffect("1879", c => Debug.Log("The Mask of Remnants: Equipa e controla (via Des Gardius)."));
+        AddEffect("1879", Effect_1879_TheMaskOfRemnants);
 
         // 1880 - The Masked Beast (Ritual)
-        AddEffect("1880", c => Debug.Log("The Masked Beast: Ritual."));
+        AddEffect("1880", Effect_1880_TheMaskedBeast);
 
         // 1883 - The Puppet Magic of Dark Ruler (Banish -> SS Fiend)
-        AddEffect("1883", c => Debug.Log("The Puppet Magic: Bane monstros para invocar Fiend do GY."));
+        AddEffect("1883", Effect_1883_ThePuppetMagicOfDarkRuler);
 
         // 1884 - The Regulation of Tribe (Type Lock)
-        AddEffect("1884", c => Debug.Log("The Regulation of Tribe: Tipo declarado não ataca."));
+        AddEffect("1884", Effect_1884_TheRegulationOfTribe);
 
         // 1885 - The Reliable Guardian (Quick-Play +700 DEF)
-        AddEffect("1885", c => Effect_BuffStats(c, 0, 700));
+        AddEffect("1885", Effect_1885_TheReliableGuardian);
 
         // 1886 - The Rock Spirit (SS Banish Earth)
-        AddEffect("1886", c => Debug.Log("The Rock Spirit: SS banindo Earth."));
+        AddEffect("1886", Effect_1886_TheRockSpirit);
 
         // 1887 - The Sanctuary in the Sky (No Fairy Damage)
-        AddEffect("1887", c => Debug.Log("The Sanctuary in the Sky: Sem dano de batalha com Fadas."));
+        AddEffect("1887", Effect_1887_TheSanctuaryInTheSky);
 
         // 1889 - The Secret of the Bandit (Discard on Damage)
-        AddEffect("1889", c => Debug.Log("The Secret of the Bandit: Descarte ao causar dano."));
+        AddEffect("1889", Effect_1889_TheSecretOfTheBandit);
 
         // 1890 - The Selection (Pay 1000 Negate Summon)
-        AddEffect("1890", c => { Effect_PayLP(c, 1000); Debug.Log("The Selection: Nega invocação de mesmo tipo."); });
+        AddEffect("1890", Effect_1890_TheSelection);
 
         // 1892 - The Shallow Grave (SS Face-down)
-        AddEffect("1892", c => Debug.Log("The Shallow Grave: Ambos invocam monstro face-down do GY."));
+        AddEffect("1892", Effect_1892_TheShallowGrave);
 
         // 1894 - The Spell Absorbing Life (Flip Face-up, Heal)
-        AddEffect("1894", c => Debug.Log("The Spell Absorbing Life: Vira face-up e cura."));
+        AddEffect("1894", Effect_1894_TheSpellAbsorbingLife);
 
         // 1896 - The Stern Mystic (Flip Reveal)
-        AddEffect("1896", c => Debug.Log("The Stern Mystic: Revela cartas face-down."));
+        AddEffect("1896", Effect_1896_TheSternMystic);
 
         // 1898 - The Thing in the Crater (SS Pyro)
-        AddEffect("1898", c => Debug.Log("The Thing in the Crater: Invoca Pyro da mão ao ser destruído."));
+        AddEffect("1898", Effect_1898_TheThingInTheCrater);
 
         // 1900 - The Tricky (SS Discard)
-        AddEffect("1900", c => Debug.Log("The Tricky: SS descartando 1 carta."));
+        AddEffect("1900", Effect_1900_TheTricky);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 1901 - 2000)
