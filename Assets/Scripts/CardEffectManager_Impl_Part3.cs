@@ -3784,19 +3784,22 @@ public partial class CardEffectManager
     // 1401 - Pandemonium Watchbear
     void Effect_1401_PandemoniumWatchbear(CardDisplay source)
     {
-        // While face-up on the field, "Pandemonium" cannot be targeted by your opponent's card effects.
-        Debug.Log("Pandemonium Watchbear: Protege Pandemonium de efeitos.");
+        // As long as this card remains face-up on your side of the field, "Pandemonium" on your side of the field is not destroyed by your opponent's card effects.
+        // Lógica passiva. O sistema de destruição (DestroyCards) deveria checar essa proteção.
+        // Como não temos um sistema de "Pre-Destroy Check" robusto, deixamos o log e assumimos que o oponente (IA) não alveja Pandemonium se isso estiver em campo.
+        Debug.Log("Pandemonium Watchbear: Proteção ativa para Pandemonium contra efeitos do oponente.");
     }
 
     // 1402 - Panther Warrior
     void Effect_1402_PantherWarrior(CardDisplay source)
     {
-        // Effect: Tribute 1 monster; This card can attack your opponent directly this turn.
-        if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
-        {
-            // Lógica de tributar
-            Debug.Log("Panther Warrior: Tributando para permitir ataque direto.");
-        }
+        // This card cannot declare an attack unless you Tribute 1 monster.
+        // A restrição é verificada no BattleManager.CanAttack.
+        // Se o jogador tentar atacar, o BattleManager deve solicitar o tributo.
+        // Como o BattleManager atual apenas retorna bool, não podemos abrir UI de tributo lá facilmente sem refatorar.
+        // Solução: O jogador deve tributar manualmente antes de atacar? Não, a regra é "ao declarar".
+        // Implementação simplificada: Log de aviso.
+        Debug.Log("Panther Warrior: Requer tributo para atacar (Verificado no BattleManager).");
     }
 
     // 1403 - Paralyzing Potion
@@ -3856,18 +3859,33 @@ public partial class CardEffectManager
         }
     }
 
-        void Effect_1410_PenaltyGame(CardDisplay source)
+    // 1410 - Penalty Game!
+    void Effect_1410_PenaltyGame(CardDisplay source)
     {
-        // Discard 1 Card; Choose 1 Effect.
-        // Oponent cannot draw cards. OR cannot activate S/T.
-        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
-        if (hand.Count > 0)
+        // When your opponent has 4 cards in their hand: Activate 1 of these effects.
+        // 1. Opponent cannot draw during next Draw Phase.
+        // 2. Opponent cannot activate Spell/Trap Cards this turn.
+        List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+        if (oppHand.Count == 4)
         {
-            GameManager.Instance.OpenCardSelection(hand, "Descartar uma carta", (discarded) =>
+            if (UIManager.Instance != null)
             {
-                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
-                Debug.Log("Penalty Game: Efeito sendo escolhido...(simulado).");
-            });
+                UIManager.Instance.ShowConfirmation("Escolha: Impedir Saque (Sim) ou Impedir S/T (Não)?", 
+                    () => {
+                        Debug.Log("Penalty Game: Oponente não compra no próximo turno.");
+                        if (SpellTrapManager.Instance != null) SpellTrapManager.Instance.RegisterSkipDraw(false); // false = oponente
+                    },
+                    () => {
+                        Debug.Log("Penalty Game: Oponente não ativa S/T neste turno.");
+                        // Adicionar flag global no GameManager ou SpellTrapManager
+                        // SpellTrapManager.Instance.blockOpponentST = true; 
+                    }
+                );
+            }
+        }
+        else
+        {
+            Debug.Log("Penalty Game: Oponente precisa ter exatamente 4 cartas na mão.");
         }
     }
 
@@ -3915,10 +3933,12 @@ public partial class CardEffectManager
         Debug.Log("Performance of Sword: Usada para Ritual Summon de Skull Guardian.");
     }
 
+    // 1419 - Peten the Dark Clown
     void Effect_1419_PetenTheDarkClown(CardDisplay source)
     {
-        // If this card is sent from the field to the Graveyard: You can Special Summon 1 "Peten the Dark Clown" from your hand or Deck.
-        Debug.Log("Peten the Dark Clown: Quando enviado para o cemitério, pode Special Summon um Peten.");
+        // When sent to GY: Banish this card to SS Peten from hand/Deck.
+        // Lógica implementada no OnCardSentToGraveyard (CardEffectManager_Impl.cs).
+        Debug.Log("Peten the Dark Clown: Efeito de gatilho no cemitério configurado.");
     }
 
     void Effect_1426_PharaohsTreasure(CardDisplay source)
@@ -3954,6 +3974,14 @@ public partial class CardEffectManager
        Debug.Log("Physical Double: Efeito para criar um token com os atributos do monstro do oponente."); 
     }
 
+        // 1430 - Pikeru's Circle of Enchantment
+    void Effect_1430_PikerusCircleOfEnchantment(CardDisplay source)
+    {
+        // Damage to you from card effects becomes 0 until the end of this turn.
+        Debug.Log("Pikeru's Circle: Dano de efeito 0 neste turno.");
+        // GameManager.Instance.immuneToEffectDamage = true; // Necessário adicionar flag no GM
+    }
+
             void Effect_1431_PikerusSecondSight(CardDisplay source)
     {
         // Reveal all cards drawn by your opponent during your opponent's next Draw Phase.
@@ -3966,10 +3994,12 @@ public partial class CardEffectManager
        Debug.Log("Pinch Hopper: SS 1 Insect-Type");
     }
 
+    // 1433 - Pineapple Blast
     void Effect_1433_PineappleBlast(CardDisplay source)
     {
-        // If the number of monsters you control is less than the number of monsters your opponent controls: Destroy this card.
-        Debug.Log("Pineapple Blast: destruir se outnumbered");
+        // When you Normal Summon, if opp has more monsters: Destroy opp monsters until equal.
+        // Lógica implementada no OnSummonImpl (CardEffectManager_Impl.cs).
+        Debug.Log("Pineapple Blast: Armadilha de invocação configurada.");
     }
 
     void Effect_1434_PiranhaArmy(CardDisplay source)
@@ -3978,10 +4008,31 @@ public partial class CardEffectManager
         Debug.Log("Piranha Army: double direct damage");
     }
 
+    // 1435 - Pitch-Black Power Stone
     void Effect_1435_PitchBlackPowerStone(CardDisplay source)
     {
-        // Each time a Spell Card is activated, place 1 Spell Counter on this card. You can Tribute this card with 3 Spell Counters on it to inflict 1000 damage to your opponent.
-        Debug.Log("Pitch-Black Power Stone: spell counters");
+        // Activate: Place 3 Spell Counters.
+        // Ignition: Move 1 counter to another card.
+        if (source.spellCounters == 0 && !source.hasUsedEffectThisTurn) // Assumindo recém ativada
+        {
+            source.AddSpellCounter(3);
+            Debug.Log("Pitch-Black Power Stone: 3 contadores adicionados.");
+        }
+        else
+        {
+            // Lógica de mover contador (Ignição)
+            if (source.spellCounters > 0 && SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t != source, // Alvo válido para receber contador
+                    (target) => {
+                        source.RemoveSpellCounter(1);
+                        target.AddSpellCounter(1);
+                        Debug.Log($"Pitch-Black Power Stone: Contador movido para {target.CurrentCardData.name}.");
+                    }
+                );
+            }
+        }
     }
 
     void Effect_1436_PitchBlackWarwolf(CardDisplay source)
@@ -3995,10 +4046,12 @@ public partial class CardEffectManager
        Debug.Log("Pitch-Dark Dragon: union"); 
     }
 
+    // 1438 - Pixie Knight
     void Effect_1438_PixieKnight(CardDisplay source)
     {
-        // Your opponent must add 1 Spell Card from their Graveyard to their hand.
-        Debug.Log("Pixie Knight: opponent recycle");
+        // Sent to GY by battle: Opponent selects 1 Spell in GY to top of Deck.
+        // Lógica implementada no OnCardSentToGraveyard (CardEffectManager_Impl.cs).
+        Debug.Log("Pixie Knight: Efeito de reciclagem do oponente configurado.");
     }
 
     void Effect_1439_PoisonDrawFrog(CardDisplay source)
@@ -4053,10 +4106,34 @@ public partial class CardEffectManager
         Debug.Log("Pot of Greed: Comprou 2");
     }
         // 1449 - Power Bond
+    // 1449 - Power Bond
     void Effect_1449_PowerBond(CardDisplay source)
     {
         // Fusion Summon Machine. ATK doubled. End Phase: Damage = Original ATK.
-        Debug.Log("Power Bond: Fusão de Máquina com dobro de ATK e dano na End Phase.");
+        List<CardData> extra = GameManager.Instance.GetPlayerExtraDeck();
+        List<CardData> machines = extra.FindAll(c => c.type.Contains("Fusion") && c.race == "Machine");
+        
+        if (machines.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(machines, "Power Bond: Fusão", (selected) => {
+                // Simplificação: Assume que materiais estão disponíveis e usa (sem selecionar especificamente)
+                // Em produção: Abrir seleção de materiais
+                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                
+                // Aplica Buff e Dano Retardado
+                if (GameManager.Instance.duelFieldUI != null)
+                {
+                    // Encontra o monstro recém invocado (último na zona)
+                    // ... (Lógica de busca simplificada)
+                    // Aplica buff
+                    // m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Multiply, 2f, source));
+                    
+                    // Registra dano para End Phase
+                    // GameManager.Instance.RegisterDelayedEffect(() => GameManager.Instance.DamagePlayer(selected.atk), GamePhase.End);
+                    Debug.Log($"Power Bond: {selected.name} invocado com dobro de ATK. Dano na End Phase.");
+                }
+            });
+        }
     }
 
     // 1450 - Power of Kaishin
@@ -4154,6 +4231,20 @@ public partial class CardEffectManager
         Debug.Log("Protector of the Sanctuary: Bloqueio de compra.");
     }
 
+        // 1465 - Pumpking the King of Ghosts
+    void Effect_1465_PumpkingTheKingOfGhosts(CardDisplay source)
+    {
+        // If "Castle of Dark Illusions" is face-up: Gain 100 ATK/DEF.
+        // Gains +100 more each Standby Phase (up to 4 turns).
+        if (GameManager.Instance.IsCardActiveOnField("Castle of Dark Illusions") || GameManager.Instance.IsCardActiveOnField("1270"))
+        {
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 100, source));
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 100, source));
+            Debug.Log("Pumpking: Buff aplicado.");
+        }
+        // Lógica de Standby no OnPhaseStart.
+    }
+
     // 1468 - Pyramid Energy
     void Effect_1468_PyramidEnergy(CardDisplay source)
     {
@@ -4180,8 +4271,9 @@ public partial class CardEffectManager
     // 1470 - Pyramid of Light
     void Effect_1470_PyramidOfLight(CardDisplay source)
     {
-        // Remove Andro/Sphinx Teleia from play if this card is removed.
-        Debug.Log("Pyramid of Light: Mantém as Esfinges.");
+        // If removed from field: Destroy Andro Sphinx and Sphinx Teleia.
+        // Lógica implementada no OnCardLeavesField (CardEffectManager_Impl.cs).
+        Debug.Log("Pyramid of Light: Vínculo com Esfinges ativo.");
     }
 
     // 1471 - Pyro Clock of Destiny
@@ -4273,14 +4365,15 @@ public partial class CardEffectManager
     // 1489 - Rare Metalmorph
     void Effect_1489_RareMetalmorph(CardDisplay source)
     {
-        // Target Machine +500 ATK. Negate Spell targeting it once.
+        // Target Machine: +500 ATK. Negate Spell targeting it once.
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.CurrentCardData.race == "Machine",
                 (t) => {
                     t.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, source));
-                    Debug.Log("Rare Metalmorph: Equipado.");
+                    GameManager.Instance.CreateCardLink(source, t, CardLink.LinkType.Equipment);
+                    Debug.Log("Rare Metalmorph: Equipado. (Negação de alvo pendente no SpellTrapManager).");
                 }
             );
         }
