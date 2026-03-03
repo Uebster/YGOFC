@@ -480,8 +480,15 @@ public partial class CardEffectManager
     void Effect_1536_RiryokuField(CardDisplay source)
     {
         // Negate Spell that targets 1 monster.
-        // Requer Chain.
-        Debug.Log("Riryoku Field: Negação de alvo (Requer Chain).");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell"))
+        {
+            // Verifica se tem alvo (simplificado: target != null)
+            if (link.target != null && link.target.CurrentCardData.type.Contains("Monster"))
+            {
+                NegateAndDestroy(source, link);
+            }
+        }
     }
 
     // 1537 - Rising Air Current
@@ -706,16 +713,27 @@ public partial class CardEffectManager
     void Effect_1567_RoyalOppression(CardDisplay source)
     {
         // Pay 800 LP; negate Special Summon or effect that SS.
-        // Requer Chain/Trigger de invocação.
-        Debug.Log("Royal Oppression: Negação de SS (Requer Chain).");
+        if (Effect_PayLP(source, 800))
+        {
+            var link = GetLinkToNegate(source);
+            if (link != null)
+            {
+                // Simplificado: Nega qualquer efeito na chain anterior (assumindo que foi ativado em resposta a SS)
+                // Em um sistema completo, verificaria se o efeito realiza SS.
+                NegateAndDestroy(source, link);
+            }
+        }
     }
 
     // 1568 - Royal Surrender
     void Effect_1568_RoyalSurrender(CardDisplay source)
     {
         // Negate activation of Continuous Trap and destroy it.
-        // Requer Chain.
-        Debug.Log("Royal Surrender: Nega Trap Contínua (Requer Chain).");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Trap") && link.cardSource.CurrentCardData.property == "Continuous")
+        {
+            NegateAndDestroy(source, link);
+        }
     }
 
     // 1569 - Royal Tribute
@@ -761,9 +779,15 @@ public partial class CardEffectManager
     void Effect_1573_RyuSenshi(CardDisplay source)
     {
         // Pay 1000 LP; negate Normal Trap. Negate Spell targeting this card.
-        // Negação de Trap: Requer Chain.
-        // Negação de Alvo: Passivo/Trigger.
-        Debug.Log("Ryu Senshi: Efeitos de negação ativos.");
+        if (Effect_PayLP(source, 1000))
+        {
+            var link = GetLinkToNegate(source);
+            if (link != null && link.cardSource.CurrentCardData.type.Contains("Trap") && link.cardSource.CurrentCardData.property == "Normal")
+            {
+                NegateAndDestroy(source, link);
+            }
+        }
+        // Nota: A negação de Spell que alveja é um efeito contínuo/trigger separado, tratado no SpellTrapManager.
     }
 
     // 1575 - Ryu-Kishin Clown
@@ -1125,7 +1149,11 @@ public partial class CardEffectManager
         // Pay 1000 LP; negate Trap.
         if (Effect_PayLP(source, 1000))
         {
-            Debug.Log("Seven Tools: Trap negada.");
+            var link = GetLinkToNegate(source);
+            if (link != null && link.cardSource.CurrentCardData.type.Contains("Trap"))
+            {
+                NegateAndDestroy(source, link);
+            }
         }
     }
 
@@ -1782,7 +1810,11 @@ public partial class CardEffectManager
         int cost = GameManager.Instance.playerLP / 2;
         if (Effect_PayLP(source, cost))
         {
-            Debug.Log("Solemn Judgment: Custo pago. (Negação requer Chain).");
+            var link = GetLinkToNegate(source);
+            if (link != null)
+            {
+                NegateAndDestroy(source, link);
+            }
         }
     }
 
@@ -2437,25 +2469,27 @@ public partial class CardEffectManager
         // When a Spell Card is activated that targets exactly 1 monster on the field:
         // If you control a monster, you can activate this card. Negate the activation and destroy it.
         // If you have cards in your hand, you must send 1 of them to the Graveyard to activate and to resolve this effect.
-        bool hasMonster = false;
-        if (GameManager.Instance.duelFieldUI != null)
-            hasMonster = GameManager.Instance.duelFieldUI.playerMonsterZones.Any(z => z.childCount > 0);
-
-        if (hasMonster)
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell"))
         {
-            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
-            if (hand.Count > 0)
+            // Modo 1: Alveja 1 monstro (Sem custo)
+            if (link.target != null && link.target.CurrentCardData.type.Contains("Monster"))
             {
-                GameManager.Instance.OpenCardSelection(hand, "Descarte 1 para negar", (discarded) => {
-                    GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
-                    Debug.Log("Spell Shield Type-8: Magia negada (Simulado).");
-                    // ChainManager.Instance.NegateLink(ChainManager.Instance.currentChain.Count);
-                });
+                NegateAndDestroy(source, link);
             }
+            // Modo 2: Qualquer Spell (Custo: Descartar 1 Spell)
             else
             {
-                Debug.Log("Spell Shield Type-8: Magia negada (Simulado).");
-                // ChainManager.Instance.NegateLink(ChainManager.Instance.currentChain.Count);
+                List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+                List<CardData> spells = hand.FindAll(c => c.type.Contains("Spell"));
+                
+                if (spells.Count > 0)
+                {
+                    GameManager.Instance.OpenCardSelection(spells, "Descarte 1 Magia", (discarded) => {
+                        GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                        NegateAndDestroy(source, link);
+                    });
+                }
             }
         }
     }
@@ -2472,9 +2506,12 @@ public partial class CardEffectManager
                 foreach(var c in discarded)
                     GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c).GetComponent<CardDisplay>());
                 
-                Debug.Log("Spell Vanishing: Magia negada e cópias banidas (Simulado).");
-                // ChainManager.Instance.NegateLink(ChainManager.Instance.currentChain.Count);
-                // Lógica de banir cópias...
+                var link = GetLinkToNegate(source);
+                if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell"))
+                {
+                    NegateAndDestroy(source, link);
+                    Debug.Log("Spell Vanishing: Cópias banidas (Simulado).");
+                }
             });
         }
     }
@@ -2491,8 +2528,11 @@ public partial class CardEffectManager
     void Effect_1729_SpellStoppingStatute(CardDisplay source)
     {
         // When a Continuous Spell Card is activated: Negate the activation, and if you do, destroy it.
-        // Requer Chain.
-        Debug.Log("Spell-Stopping Statute: Negação de Magia Contínua (Requer Chain).");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell") && link.cardSource.CurrentCardData.property == "Continuous")
+        {
+            NegateAndDestroy(source, link);
+        }
     }
 
     // 1730 - Spellbinding Circle
@@ -3608,8 +3648,19 @@ public partial class CardEffectManager
     void Effect_1853_TheDragonsBead(CardDisplay source)
     {
         // Discard 1 card from your hand to negate the activation of a Trap Card that targets a face-up Dragon-Type monster you control and destroy it.
-        // Requer Chain.
-        Debug.Log("The Dragon's Bead: Negação de Trap que alveja Dragão (Requer Chain).");
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                
+                var link = GetLinkToNegate(source);
+                if (link != null && link.cardSource.CurrentCardData.type.Contains("Trap") && link.target != null && link.target.CurrentCardData.race == "Dragon" && !link.target.isFlipped)
+                {
+                    NegateAndDestroy(source, link);
+                }
+            });
+        }
     }
 
     // 1856 - The Earth - Hex-Sealed Fusion
@@ -3965,8 +4016,27 @@ public partial class CardEffectManager
     void Effect_1890_TheSelection(CardDisplay source)
     {
         // Pay 1000 LP. Negate Summon of monster with same Type as one on field.
-        // Requer Chain/Trigger de invocação.
-        Debug.Log("The Selection: Negação de invocação por tipo.");
+        if (Effect_PayLP(source, 1000))
+        {
+            var link = GetLinkToNegate(source);
+            if (link != null && link.trigger == ChainManager.TriggerType.Summon)
+            {
+                string type = link.cardSource.CurrentCardData.race;
+                bool exists = false;
+                if (GameManager.Instance.duelFieldUI != null)
+                {
+                    List<CardDisplay> all = new List<CardDisplay>();
+                    CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                    CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+                    foreach(var m in all) if (m != link.cardSource && m.CurrentCardData.race == type) exists = true;
+                }
+                
+                if (exists)
+                {
+                    NegateAndDestroy(source, link);
+                }
+            }
+        }
     }
 
     // 1892 - The Shallow Grave
@@ -4652,7 +4722,11 @@ public partial class CardEffectManager
         // Battle Phase: Negate Trap.
         if (PhaseManager.Instance.currentPhase == GamePhase.Battle)
         {
-            Debug.Log("Trap Jammer: Trap negada.");
+            var link = GetLinkToNegate(source);
+            if (link != null && link.cardSource.CurrentCardData.type.Contains("Trap"))
+            {
+                NegateAndDestroy(source, link);
+            }
         }
     }
 

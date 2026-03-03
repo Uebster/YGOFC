@@ -10,6 +10,34 @@ public partial class CardEffectManager
 
     // --- MÉTODOS UTILITÁRIOS COMUNS (REAPROVEITADOS) ---
 
+    // --- Helpers para Negação (Chain) ---
+    private ChainManager.ChainLink GetLinkToNegate(CardDisplay source)
+    {
+        if (ChainManager.Instance == null) return null;
+        var chain = ChainManager.Instance.currentChain;
+        for (int i = 0; i < chain.Count; i++)
+        {
+            if (chain[i].cardSource == source)
+            {
+                if (i > 0) return chain[i - 1];
+                break;
+            }
+        }
+        return null;
+    }
+
+    private void NegateAndDestroy(CardDisplay source, ChainManager.ChainLink targetLink)
+    {
+        if (targetLink != null)
+        {
+            ChainManager.Instance.NegateLink(targetLink.linkNumber);
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(targetLink.cardSource);
+            GameManager.Instance.SendToGraveyard(targetLink.cardSource.CurrentCardData, targetLink.isPlayerEffect);
+            Destroy(targetLink.cardSource.gameObject);
+            Debug.Log($"{source.CurrentCardData.name} negou {targetLink.cardSource.CurrentCardData.name}.");
+        }
+    }
+
     // --- SISTEMA DE EVENTOS E FASES (TURNOBSERVER) ---
 
     public void OnPhaseStart(GamePhase phase)
