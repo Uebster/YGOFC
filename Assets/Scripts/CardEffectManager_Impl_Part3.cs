@@ -3780,4 +3780,79 @@ public partial class CardEffectManager
         // If Archfiend destroyed -> Search
         Debug.Log("Pandemonium: Busca Archfiend ao ser destruído.");
     }
+
+    // 1401 - Pandemonium Watchbear
+    void Effect_1401_PandemoniumWatchbear(CardDisplay source)
+    {
+        // While face-up on the field, "Pandemonium" cannot be targeted by your opponent's card effects.
+        Debug.Log("Pandemonium Watchbear: Protege Pandemonium de efeitos.");
+    }
+
+    // 1402 - Panther Warrior
+    void Effect_1402_PantherWarrior(CardDisplay source)
+    {
+        // Effect: Tribute 1 monster; This card can attack your opponent directly this turn.
+        if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
+        {
+            // Lógica de tributar
+            Debug.Log("Panther Warrior: Tributando para permitir ataque direto.");
+        }
+    }
+
+    // 1403 - Paralyzing Potion
+    void Effect_1403_ParalyzingPotion(CardDisplay source)
+    {
+        // Equip only to a monster that is not a Machine-Type monster. The equipped monster cannot attack.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && !t.CurrentCardData.type.Contains("Machine"),
+                (t) => {
+                    Debug.Log($"Paralyzing Potion: {t.CurrentCardData.name} não pode atacar.");
+                    // Lógica de impedir ataque
+                }
+            );
+        }
+    }
+
+    // 1404 - Parasite Paracide
+    void Effect_1404_ParasiteParacide(CardDisplay source)
+    {
+        // FLIP: Shuffle this card into your opponent's Deck. When opponent draws this, SS to their field.
+        Debug.Log("Parasite Paracide: Efeito de deck (Simulado).");
+    }
+
+    // 1405 - Parasitic Ticky
+    void Effect_1405_ParasiticTicky(CardDisplay source) { } // Normal Monster
+
+    // 1406 - Patrician of Darkness
+    void Effect_1406_PatricianOfDarkness(CardDisplay source)
+    {
+        // All monsters your opponent controls must attack this card, if able.
+        Debug.Log("Patrician of Darkness: Alvos de ataque forçados.");
+    }
+
+    // 1407 - Patroid
+    void Effect_1407_Patroid(CardDisplay source)
+    {
+        // Pay 1000 LP; reveal 1 face-down card.
+        Effect_PayLP(source, 1000);
+        Debug.Log("Patroid: Revelando carta (Simulado).");
+    }
+
+    // 1408 - Patrol Robo
+    void Effect_1408_PatrolRobo(CardDisplay source)
+    {
+        // Paga 800. Roll die. +Dice * 100.
+        if (Effect_PayLP(source, 1000))
+        {
+            GameManager.Instance.TossCoin(1, (heads) => {
+                int roll = Random.Range(1, 7);
+                Debug.Log($"Patrol Robo: Rolou {roll}. +{roll * 100} ATK/DEF.");
+                // Implementa lógica para aumentar ATK e DEF
+                source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, roll * 100, source));
+                source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, roll * 100, source));
+            });
+        }
+    }
 }
