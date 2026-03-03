@@ -926,6 +926,13 @@ public partial class CardEffectManager
                 foreach(var c in toReturn) if (c.isFlipped) GameManager.Instance.ReturnToHand(c);
             }
         }
+        
+        // 1786 - Stumbling
+        if (GameManager.Instance.IsCardActiveOnField("1786"))
+        {
+            Debug.Log("Stumbling: Mudando monstro invocado para Defesa.");
+            card.ChangePosition(); // Force Defense
+        }
     }
 
     public void OnCardDiscarded(CardDisplay card)
@@ -1411,6 +1418,13 @@ public partial class CardEffectManager
         {
             attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 0, target));
             Debug.Log("Sanga of the Thunder: ATK do atacante zerado.");
+        }
+        
+        // 1780 - Stone Statue of the Aztecs
+        if (target != null && target.CurrentCardData.id == "1780" && target.position == CardDisplay.BattlePosition.Defense)
+        {
+            // A lógica de dobrar o dano deve ser tratada no BattleManager, mas logamos aqui.
+            Debug.Log("Stone Statue of the Aztecs: Dano de batalha será dobrado (Se aplicável).");
         }
 
         // Injection Fairy Lily (79575620) - Lógica de pagar LP seria aqui

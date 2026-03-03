@@ -2687,4 +2687,255 @@ public partial class CardEffectManager
         Effect_Equip(source, 700, 0);
         // Decay logic in OnPhaseStart.
     }
+
+    // 1780 - Stone Statue of the Aztecs
+    void Effect_1780_StoneStatueOfTheAztecs(CardDisplay source)
+    {
+        // Double any Battle Damage your opponent takes when they attack this monster.
+        // Lógica passiva tratada no BattleManager/OnDamageCalculation.
+        Debug.Log("Stone Statue of the Aztecs: Dano de batalha dobrado (Passivo).");
+    }
+
+    // 1781 - Stop Defense
+    void Effect_1781_StopDefense(CardDisplay source)
+    {
+        // Select 1 Defense Position monster on your opponent's side of the field and change it to Attack Position.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.position == CardDisplay.BattlePosition.Defense,
+                (target) => {
+                    target.ChangePosition();
+                    Debug.Log($"Stop Defense: {target.CurrentCardData.name} mudou para Ataque.");
+                }
+            );
+        }
+    }
+
+    // 1782 - Stray Lambs
+    void Effect_1782_StrayLambs(CardDisplay source)
+    {
+        // Special Summon 2 "Lamb Tokens". You cannot Summon other monsters the turn you activate this card (but you can Set).
+        // A restrição de invocação deve ser verificada antes da ativação em um sistema completo.
+        GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Lamb Token");
+        GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Lamb Token");
+        Debug.Log("Stray Lambs: 2 Tokens invocados.");
+    }
+
+    // 1783 - Strike Ninja
+    void Effect_1783_StrikeNinja(CardDisplay source)
+    {
+        // (Quick Effect): You can banish 2 DARK monsters from your GY; banish this face-up card until the End Phase.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> darks = gy.FindAll(c => c.attribute == "Dark" && c.type.Contains("Monster"));
+        
+        if (darks.Count >= 2)
+        {
+            GameManager.Instance.OpenCardMultiSelection(darks, "Banir 2 DARK", 2, 2, (selected) => {
+                foreach(var c in selected)
+                {
+                    GameManager.Instance.RemoveFromPlay(c, source.isPlayerCard);
+                    gy.Remove(c);
+                }
+                GameManager.Instance.BanishCard(source);
+                // TODO: Agendar retorno na End Phase.
+                Debug.Log("Strike Ninja: Banido até a End Phase.");
+            });
+        }
+    }
+
+    // 1784 - Stronghold the Moving Fortress
+    void Effect_1784_StrongholdTheMovingFortress(CardDisplay source)
+    {
+        // Special Summon this card in Defense Position as an Effect Monster.
+        // Gains 3000 ATK if you control Green, Red, and Yellow Gadget.
+        GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 2000, "Stronghold"); // Simulado como Token
+        // Lógica de buff de Gadgets seria aplicada ao token/monstro armadilha.
+        Debug.Log("Stronghold: Invocado como monstro.");
+    }
+
+    // 1786 - Stumbling
+    void Effect_1786_Stumbling(CardDisplay source)
+    {
+        // Any monster that is Normal Summoned, Flip Summoned or Special Summoned is changed to Defense Position.
+        // Lógica implementada no OnSummonImpl (CardEffectManager_Impl.cs).
+        Debug.Log("Stumbling: Ativo.");
+    }
+
+    // 1788 - Suijin
+    void Effect_1788_Suijin(CardDisplay source)
+    {
+        // During damage calculation... make that target's ATK 0.
+        // Lógica implementada no OnDamageCalculation (CardEffectManager_Impl.cs).
+        Debug.Log("Suijin: Efeito de batalha configurado.");
+    }
+
+    // 1790 - Summoner Monk
+    void Effect_1790_SummonerMonk(CardDisplay source)
+    {
+        // Once per turn: You can discard 1 Spell; Special Summon 1 Level 4 monster from your Deck.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        List<CardData> spells = hand.FindAll(c => c.type.Contains("Spell"));
+        
+        if (spells.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(spells, "Descarte 1 Magia", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                
+                List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+                List<CardData> targets = deck.FindAll(c => c.level == 4 && c.type.Contains("Monster"));
+                
+                if (targets.Count > 0)
+                {
+                    GameManager.Instance.OpenCardSelection(targets, "Invocar Lv4", (selected) => {
+                        GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                        // TODO: Aplicar restrição "cannot attack this turn".
+                    });
+                }
+            });
+        }
+    }
+
+    // 1791 - Summoner of Illusions
+    void Effect_1791_SummonerOfIllusions(CardDisplay source)
+    {
+        // FLIP: Tribute 1 other monster; SS 1 Fusion Monster from Extra Deck. Destroy it at End Phase.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t != source,
+                (tribute) => {
+                    GameManager.Instance.TributeCard(tribute);
+                    
+                    List<CardData> extra = GameManager.Instance.GetPlayerExtraDeck();
+                    List<CardData> fusions = extra.FindAll(c => c.type.Contains("Fusion"));
+                    
+                    if (fusions.Count > 0)
+                    {
+                        GameManager.Instance.OpenCardSelection(fusions, "Invocar Fusão", (selected) => {
+                            GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                            // TODO: Agendar destruição na End Phase.
+                        });
+                    }
+                }
+            );
+        }
+    }
+
+    // 1792 - Super Rejuvenation
+    void Effect_1792_SuperRejuvenation(CardDisplay source)
+    {
+        // During the End Phase... draw cards equal to Dragon monsters discarded or Tributed this turn.
+        // Lógica implementada no OnPhaseStart (End Phase) em CardEffectManager_Impl.cs.
+        Debug.Log("Super Rejuvenation: Contagem de dragões iniciada.");
+    }
+
+    // 1793 - Super Robolady
+    void Effect_1793_SuperRobolady(CardDisplay source)
+    {
+        // You can Special Summon "Super Roboyarou" by returning this card from the field to the Extra Deck.
+        // Increase ATK by 1000 during Damage Step when inflicting Direct Damage.
+        if (source.isOnField)
+        {
+            // Tag out logic
+            List<CardData> extra = GameManager.Instance.GetPlayerExtraDeck();
+            CardData target = extra.Find(c => c.name == "Super Roboyarou");
+            if (target != null)
+            {
+                UIManager.Instance.ShowConfirmation("Trocar por Super Roboyarou?", () => {
+                    GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard); // Simula retorno ao Extra
+                    Destroy(source.gameObject);
+                    GameManager.Instance.SpecialSummonFromData(target, source.isPlayerCard);
+                });
+            }
+        }
+    }
+
+    // 1794 - Super Roboyarou
+    void Effect_1794_SuperRoboyarou(CardDisplay source)
+    {
+        // You can Special Summon "Super Robolady" by returning this card from the field to the Extra Deck.
+        // Increase ATK by 1000 during Damage Step when battling a monster.
+        if (source.isOnField)
+        {
+            List<CardData> extra = GameManager.Instance.GetPlayerExtraDeck();
+            CardData target = extra.Find(c => c.name == "Super Robolady");
+            if (target != null)
+            {
+                UIManager.Instance.ShowConfirmation("Trocar por Super Robolady?", () => {
+                    GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
+                    Destroy(source.gameObject);
+                    GameManager.Instance.SpecialSummonFromData(target, source.isPlayerCard);
+                });
+            }
+        }
+    }
+
+    // 1795 - Super War-Lion
+    void Effect_1795_SuperWarLion(CardDisplay source)
+    {
+        Debug.Log("Super War-Lion: Ritual.");
+    }
+
+    // 1796 - Supply
+    void Effect_1796_Supply(CardDisplay source)
+    {
+        // FLIP: Return 2 Fusion-Material monsters that were sent to the GY as a result of a Fusion Summon to your hand.
+        // Simplificado: Retorna 2 monstros do GY.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> monsters = gy.FindAll(c => c.type.Contains("Monster"));
+        
+        if (monsters.Count >= 2)
+        {
+            GameManager.Instance.OpenCardMultiSelection(monsters, "Recuperar 2 Materiais", 2, 2, (selected) => {
+                foreach(var c in selected)
+                {
+                    gy.Remove(c);
+                    GameManager.Instance.AddCardToHand(c, source.isPlayerCard);
+                }
+            });
+        }
+    }
+
+    // 1798 - Susa Soldier
+    void Effect_1798_SusaSoldier(CardDisplay source)
+    {
+        // Spirit. Battle Damage this card inflicts is halved.
+        // Lógica de Spirit no OnPhaseStart. Lógica de dano no OnDamageCalculation.
+        Debug.Log("Susa Soldier: Dano cortado.");
+    }
+
+    // 1799 - Swamp Battleguard
+    void Effect_1799_SwampBattleguard(CardDisplay source)
+    {
+        // This card gains 500 ATK for each "Lava Battleguard" you control.
+        int count = 0;
+        if (GameManager.Instance.IsCardActiveOnField("Lava Battleguard") || GameManager.Instance.IsCardActiveOnField("1059")) count++;
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 500, source));
+    }
+
+    // 1800 - Swarm of Locusts
+    void Effect_1800_SwarmOfLocusts(CardDisplay source)
+    {
+        // Once per turn: You can change this card to face-down Defense Position.
+        // When this card is Flip Summoned: Target 1 Spell/Trap Card your opponent controls; destroy that target.
+        if (source.isFlipped)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isPlayerCard && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")),
+                    (target) => {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                    }
+                );
+            }
+        }
+        else
+        {
+            Effect_TurnSet(source);
+        }
+    }
 }

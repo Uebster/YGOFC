@@ -599,49 +599,55 @@ public partial class CardEffectManager
         AddEffect("1775", Effect_1775_StimPack);
 
         // 1780 - Stone Statue of the Aztecs (Double Battle Damage)
-        AddEffect("1780", c => Debug.Log("Aztecs: Dano de batalha dobrado."));
+        AddEffect("1780", Effect_1780_StoneStatueOfTheAztecs);
 
         // 1781 - Stop Defense (Change to Attack)
-        AddEffect("1781", c => Debug.Log("Stop Defense: Muda para ataque."));
+        AddEffect("1781", Effect_1781_StopDefense);
 
         // 1782 - Stray Lambs (Tokens)
-        AddEffect("1782", c => Debug.Log("Stray Lambs: 2 Tokens."));
+        AddEffect("1782", Effect_1782_StrayLambs);
 
         // 1783 - Strike Ninja (Dodge)
-        AddEffect("1783", c => Debug.Log("Strike Ninja: Dodge banindo 2 Dark."));
+        AddEffect("1783", Effect_1783_StrikeNinja);
 
         // 1784 - Stronghold the Moving Fortress (Trap Monster)
-        AddEffect("1784", c => Debug.Log("Stronghold: Trap Monster."));
+        AddEffect("1784", Effect_1784_StrongholdTheMovingFortress);
 
         // 1786 - Stumbling (Defense on Summon)
-        AddEffect("1786", c => Debug.Log("Stumbling: Invocados viram defesa."));
+        AddEffect("1786", Effect_1786_Stumbling);
 
         // 1788 - Suijin (Zero ATK)
-        AddEffect("1788", c => Debug.Log("Suijin: Zera ATK."));
+        AddEffect("1788", Effect_1788_Suijin);
 
         // 1790 - Summoner Monk (Discard Spell SS)
-        AddEffect("1790", c => Debug.Log("Summoner Monk: Descarta Spell invoca Lv4."));
+        AddEffect("1790", Effect_1790_SummonerMonk);
 
         // 1791 - Summoner of Illusions (Flip SS Fusion)
-        AddEffect("1791", c => Debug.Log("Summoner of Illusions: Flip tributa invoca Fusão."));
+        AddEffect("1791", Effect_1791_SummonerOfIllusions);
 
         // 1792 - Super Rejuvenation (Draw Dragons)
-        AddEffect("1792", c => Debug.Log("Super Rejuvenation: Compra por Dragões."));
+        AddEffect("1792", Effect_1792_SuperRejuvenation);
+
+        // 1793 - Super Robolady
+        AddEffect("1793", Effect_1793_SuperRobolady);
+
+        // 1794 - Super Roboyarou
+        AddEffect("1794", Effect_1794_SuperRoboyarou);
 
         // 1795 - Super War-Lion (Ritual)
-        AddEffect("1795", c => Debug.Log("Super War-Lion: Ritual."));
+        AddEffect("1795", Effect_1795_SuperWarLion);
 
         // 1796 - Supply (Recycle Fusion Material)
-        AddEffect("1796", c => Debug.Log("Supply: Recupera materiais."));
+        AddEffect("1796", Effect_1796_Supply);
 
         // 1798 - Susa Soldier (Halve Damage)
-        AddEffect("1798", c => Debug.Log("Susa Soldier: Dano cortado."));
+        AddEffect("1798", Effect_1798_SusaSoldier);
 
         // 1799 - Swamp Battleguard (Buff)
-        AddEffect("1799", c => Debug.Log("Swamp Battleguard: Buff por Lava Battleguard."));
+        AddEffect("1799", Effect_1799_SwampBattleguard);
 
         // 1800 - Swarm of Locusts (Destroy S/T / Flip Down)
-        AddEffect("1800", c => Debug.Log("Swarm of Locusts: Destrói S/T, flip down."));
+        AddEffect("1800", Effect_1800_SwarmOfLocusts);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 1801 - 1900)
