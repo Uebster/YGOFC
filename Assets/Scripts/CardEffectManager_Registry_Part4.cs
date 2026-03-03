@@ -385,53 +385,52 @@ public partial class CardEffectManager
         AddEffect("1675", Effect_1675_SlateWarrior);
 
         // 1679 - Smashing Ground (Destroy highest DEF)
-        AddEffect("1679", c => Debug.Log("Smashing Ground: Destrói monstro do oponente com maior DEF."));
+        AddEffect("1679", Effect_1679_SmashingGround);
 
         // 1680 - Smoke Grenade of the Thief (Equip: Look hand discard)
-        AddEffect("1680", c => Debug.Log("Smoke Grenade: Olha mão do oponente e descarta 1."));
+        AddEffect("1680", Effect_1680_SmokeGrenadeOfTheThief);
 
         // 1681 - Snake Fang (Debuff DEF)
-        AddEffect("1681", c => Debug.Log("Snake Fang: Reduz DEF em 500."));
+        AddEffect("1681", Effect_1681_SnakeFang);
 
         // 1683 - Snatch Steal (Equip Control, Opp heal)
-        AddEffect("1683", c => { Effect_Equip(c, 0, 0); Effect_ChangeControl(c, false); });
-        AddEffect("1683", c => Debug.Log("Snatch Steal: Toma controle. Oponente ganha 1000 LP por turno."));
+        AddEffect("1683", Effect_1683_SnatchSteal);
 
         // 1684 - Sogen (Field Warrior/Beast-Warrior +200)
-        AddEffect("1684", c => { Effect_Field(c, 200, 200, "Warrior"); Effect_Field(c, 200, 200, "Beast-Warrior"); });
+        AddEffect("1684", Effect_1684_Sogen);
 
         // 1686 - Solar Flare Dragon (Burn, Protect)
-        AddEffect("1686", c => Debug.Log("Solar Flare Dragon: 500 dano na End Phase. Não pode ser atacado se tiver outro Pyro."));
+        AddEffect("1686", Effect_1686_SolarFlareDragon);
 
         // 1687 - Solar Ray (Burn per Light)
-        AddEffect("1687", c => Debug.Log("Solar Ray: 600 dano por cada monstro LIGHT face-up."));
+        AddEffect("1687", Effect_1687_SolarRay);
 
         // 1688 - Solemn Judgment (Counter: Pay half negate)
-        AddEffect("1688", c => Debug.Log("Solemn Judgment: Paga metade do LP para negar Invocação/Magia/Armadilha."));
+        AddEffect("1688", Effect_1688_SolemnJudgment);
 
         // 1689 - Solemn Wishes (Heal on draw)
-        AddEffect("1689", c => Debug.Log("Solemn Wishes: Ganha 500 LP cada vez que compra carta."));
+        AddEffect("1689", Effect_1689_SolemnWishes);
 
         // 1691 - Solomon's Lawbook (Skip Standby)
-        AddEffect("1691", c => Debug.Log("Solomon's Lawbook: Pula a próxima Standby Phase."));
+        AddEffect("1691", Effect_1691_SolomonsLawbook);
 
         // 1692 - Sonic Bird (Search Ritual Spell)
-        AddEffect("1692", c => Effect_SearchDeck(c, "Ritual", "Spell"));
+        AddEffect("1692", Effect_1692_SonicBird);
 
         // 1694 - Sonic Jammer (Flip: No Spells)
-        AddEffect("1694", c => Debug.Log("Sonic Jammer: Oponente não pode ativar Magias no próximo turno."));
+        AddEffect("1694", Effect_1694_SonicJammer);
 
         // 1696 - Sorcerer of Dark Magic (Negate Traps)
-        AddEffect("1696", c => Debug.Log("Sorcerer of Dark Magic: Nega ativação de Armadilhas."));
+        AddEffect("1696", Effect_1696_SorcererOfDarkMagic);
 
         // 1698 - Soul Absorption (Heal on banish)
-        AddEffect("1698", c => Debug.Log("Soul Absorption: Ganha 500 LP por cada carta banida."));
+        AddEffect("1698", Effect_1698_SoulAbsorption);
 
         // 1699 - Soul Demolition (Pay 500 Banish GY)
-        AddEffect("1699", c => Debug.Log("Soul Demolition: Paga 500 para banir monstro do GY do oponente."));
+        AddEffect("1699", Effect_1699_SoulDemolition);
 
         // 1700 - Soul Exchange (Tribute Opp monster)
-        AddEffect("1700", c => Debug.Log("Soul Exchange: Seleciona monstro do oponente para tributar no lugar do seu."));
+        AddEffect("1700", Effect_1700_SoulExchange);
 
         // =========================================================================================
         // LÓGICA PARA AS CARTAS (ID 1701 - 1800)

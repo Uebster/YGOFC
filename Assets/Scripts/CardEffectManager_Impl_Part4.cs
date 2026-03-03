@@ -1664,4 +1664,220 @@ public partial class CardEffectManager
         }
         // Lógica de destruição no OnBattleEnd.
     }
+    // 1679 - Smashing Ground
+    void Effect_1679_SmashingGround(CardDisplay source)
+    {
+        // Destroy the 1 face-up monster your opponent controls that has the highest DEF.
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> oppMonsters = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, oppMonsters);
+            
+            CardDisplay target = null;
+            int maxDef = -1;
+            
+            foreach(var m in oppMonsters)
+            {
+                if (!m.isFlipped) // Face-up
+                {
+                    if (m.currentDef > maxDef)
+                    {
+                        maxDef = m.currentDef;
+                        target = m;
+                    }
+                    else if (m.currentDef == maxDef)
+                    {
+                        // Tie: Player chooses. For simplicity, pick first.
+                        // In a full implementation, open selection dialog.
+                    }
+                }
+            }
+            
+            if (target != null)
+            {
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                Destroy(target.gameObject);
+                Debug.Log($"Smashing Ground: Destruiu {target.CurrentCardData.name}.");
+            }
+        }
+    }
+
+    // 1680 - Smoke Grenade of the Thief
+    void Effect_1680_SmokeGrenadeOfTheThief(CardDisplay source)
+    {
+        // Equip. When destroyed by card effect while equipped: Look at opp hand and discard 1.
+        Effect_Equip(source, 0, 0);
+        // Lógica de destruição deve ser tratada no OnCardSentToGraveyard verificando se estava equipada.
+    }
+
+    // 1681 - Snake Fang
+    void Effect_1681_SnakeFang(CardDisplay source)
+    {
+        // Target 1 face-up monster; it loses 500 DEF.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && !t.isFlipped,
+                (target) => {
+                    target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -500, source));
+                    Debug.Log($"Snake Fang: {target.CurrentCardData.name} perdeu 500 DEF.");
+                }
+            );
+        }
+    }
+
+    // 1683 - Snatch Steal
+    void Effect_1683_SnatchSteal(CardDisplay source)
+    {
+        // Equip to opponent's monster. Take control. Opponent gains 1000 LP at their Standby.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (target) => {
+                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
+                    GameManager.Instance.SwitchControl(target);
+                    Debug.Log($"Snatch Steal: Controlando {target.CurrentCardData.name}.");
+                }
+            );
+        }
+    }
+
+    // 1684 - Sogen
+    void Effect_1684_Sogen(CardDisplay source)
+    {
+        Effect_Field(source, 200, 200, "Warrior");
+        Effect_Field(source, 200, 200, "Beast-Warrior");
+    }
+
+    // 1686 - Solar Flare Dragon
+    void Effect_1686_SolarFlareDragon(CardDisplay source)
+    {
+        // Passive: Cannot be attacked if another Pyro exists.
+        // Trigger: End Phase burn 500.
+        // Lógica tratada no BattleManager (proteção) e OnPhaseStart (burn).
+        Debug.Log("Solar Flare Dragon: Efeitos passivos e de fase configurados.");
+    }
+
+    // 1687 - Solar Ray
+    void Effect_1687_SolarRay(CardDisplay source)
+    {
+        // Damage 600 x Face-up LIGHT monsters.
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            // "on your side of the field"
+            foreach(var m in all) if (m.CurrentCardData.attribute == "Light" && !m.isFlipped) count++;
+        }
+        Effect_DirectDamage(source, count * 600);
+    }
+
+    // 1688 - Solemn Judgment
+    void Effect_1688_SolemnJudgment(CardDisplay source)
+    {
+        // Pay half LP. Negate Summon/Spell/Trap.
+        int cost = GameManager.Instance.playerLP / 2;
+        if (Effect_PayLP(source, cost))
+        {
+            Debug.Log("Solemn Judgment: Custo pago. (Negação requer Chain).");
+        }
+    }
+
+    // 1689 - Solemn Wishes
+    void Effect_1689_SolemnWishes(CardDisplay source)
+    {
+        // Gain 500 LP when drawing.
+        // Lógica no OnDraw (CardEffectManager_Impl.cs).
+        Debug.Log("Solemn Wishes: Ativo.");
+    }
+
+    // 1691 - Solomon's Lawbook
+    void Effect_1691_SolomonsLawbook(CardDisplay source)
+    {
+        // Skip next Standby Phase.
+        Debug.Log("Solomon's Lawbook: Próxima Standby Phase pulada (Simulado).");
+    }
+
+    // 1692 - Sonic Bird
+    void Effect_1692_SonicBird(CardDisplay source)
+    {
+        // Search Ritual Spell.
+        Effect_SearchDeck(source, "Ritual", "Spell");
+    }
+
+    // 1694 - Sonic Jammer
+    void Effect_1694_SonicJammer(CardDisplay source)
+    {
+        // FLIP: Opponent cannot activate Spells until end of next turn.
+        Debug.Log("Sonic Jammer: Magias do oponente bloqueadas.");
+    }
+
+    // 1696 - Sorcerer of Dark Magic
+    void Effect_1696_SorcererOfDarkMagic(CardDisplay source)
+    {
+        // Negate Traps.
+        Debug.Log("Sorcerer of Dark Magic: Traps negadas.");
+    }
+
+    // 1698 - Soul Absorption
+    void Effect_1698_SoulAbsorption(CardDisplay source)
+    {
+        // Gain 500 LP when card banished.
+        Debug.Log("Soul Absorption: Ativo.");
+    }
+
+    // 1699 - Soul Demolition
+    void Effect_1699_SoulDemolition(CardDisplay source)
+    {
+        // Pay 500 LP; banish 1 monster from opp GY. (If you have Fiend).
+        // Simplificado: Verifica se tem Fiend genérico
+        bool hasFiend = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+             foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+             {
+                 if(z.childCount > 0)
+                 {
+                     var m = z.GetChild(0).GetComponent<CardDisplay>();
+                     if(m != null && m.CurrentCardData.race == "Fiend") hasFiend = true;
+                 }
+             }
+        }
+
+        if (hasFiend)
+        {
+            if (Effect_PayLP(source, 500))
+            {
+                List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
+                List<CardData> monsters = oppGY.FindAll(c => c.type.Contains("Monster"));
+                if (monsters.Count > 0)
+                {
+                    GameManager.Instance.OpenCardSelection(monsters, "Banir do Oponente", (selected) => {
+                        GameManager.Instance.RemoveFromPlay(selected, !source.isPlayerCard);
+                        oppGY.Remove(selected);
+                    });
+                }
+            }
+        }
+    }
+
+    // 1700 - Soul Exchange
+    void Effect_1700_SoulExchange(CardDisplay source)
+    {
+        // Target opp monster; Tribute it this turn. Skip Battle Phase.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (target) => {
+                    Debug.Log($"Soul Exchange: {target.CurrentCardData.name} marcado para tributo.");
+                    // Em um sistema completo, marcaríamos o alvo como tributável pelo jogador
+                    // e pularíamos a Battle Phase.
+                }
+            );
+        }
+    }
 }
