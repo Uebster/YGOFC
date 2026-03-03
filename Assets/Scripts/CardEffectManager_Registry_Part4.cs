@@ -973,64 +973,64 @@ public partial class CardEffectManager
         AddEffect("1950", Effect_1950_ToonWorld);
 
         // 1952 - Tornado Bird (Flip Bounce 2 S/T)
-        AddEffect("1952", c => Debug.Log("Tornado Bird: Retorna 2 S/T para a mão."));
+        AddEffect("1952", Effect_1952_TornadoBird);
 
         // 1953 - Tornado Wall (No Damage with Umi)
-        AddEffect("1953", c => Debug.Log("Tornado Wall: Sem dano de batalha se Umi estiver em campo."));
+        AddEffect("1953", Effect_1953_TornadoWall);
 
         // 1954 - Torpedo Fish (Immune with Umi)
-        AddEffect("1954", c => Debug.Log("Torpedo Fish: Imune a magias com Umi."));
+        AddEffect("1954", Effect_1954_TorpedoFish);
 
         // 1955 - Torrential Tribute (Destroy All on Summon)
-        AddEffect("1955", c => Debug.Log("Torrential Tribute: Destrói todos os monstros na invocação."));
+        AddEffect("1955", Effect_1955_TorrentialTribute);
 
         // 1956 - Total Defense Shogun (Attack in Defense)
-        AddEffect("1956", c => Debug.Log("Total Defense Shogun: Pode atacar em posição de defesa."));
+        AddEffect("1956", Effect_1956_TotalDefenseShogun);
 
         // 1957 - Tower of Babel (Counters -> Burn)
-        AddEffect("1957", c => Debug.Log("Tower of Babel: 4º contador causa 3000 de dano."));
+        AddEffect("1957", Effect_1957_TowerOfBabel);
 
         // 1958 - Tragedy (Destroy Defense on Pos Change)
-        AddEffect("1958", c => Debug.Log("Tragedy: Destrói monstros em defesa ao mudar posição."));
+        AddEffect("1958", Effect_1958_Tragedy);
 
         // 1960 - Transcendent Wings (SS Winged Kuriboh LV10)
-        AddEffect("1960", c => Debug.Log("Transcendent Wings: Evolui Winged Kuriboh."));
+        AddEffect("1960", Effect_1960_TranscendentWings);
 
         // 1961 - Trap Dustshoot (Hand Shuffle)
-        AddEffect("1961", c => Debug.Log("Trap Dustshoot: Retorna carta da mão do oponente ao deck."));
+        AddEffect("1961", Effect_1961_TrapDustshoot);
 
         // 1962 - Trap Hole (Destroy Summon 1000+)
-        AddEffect("1962", c => Debug.Log("Trap Hole: Destrói monstro invocado com 1000+ ATK."));
+        AddEffect("1962", Effect_1962_TrapHole);
 
         // 1963 - Trap Jammer (Negate Battle Trap)
-        AddEffect("1963", c => Debug.Log("Trap Jammer: Nega Trap na Battle Phase."));
+        AddEffect("1963", Effect_1963_TrapJammer);
 
         // 1964 - Trap Master (Flip Destroy Trap)
-        AddEffect("1964", c => Effect_FlipDestroy(c, TargetType.Trap));
+        AddEffect("1964", Effect_1964_TrapMaster);
 
         // 1965 - Trap of Board Eraser (Negate Burn, Discard)
-        AddEffect("1965", c => Debug.Log("Trap of Board Eraser: Nega dano de efeito, oponente descarta."));
+        AddEffect("1965", Effect_1965_TrapOfBoardEraser);
 
         // 1966 - Trap of Darkness (Copy Trap)
-        AddEffect("1966", c => Debug.Log("Trap of Darkness: Copia efeito de Trap Normal do GY."));
+        AddEffect("1966", Effect_1966_TrapOfDarkness);
 
         // 1967 - Tremendous Fire (Burn 1000/500)
-        AddEffect("1967", c => { Effect_DirectDamage(c, 1000); Effect_PayLP(c, 500); });
+        AddEffect("1967", Effect_1967_TremendousFire);
 
         // 1971 - Triangle Ecstasy Spark (Buff Harpie Sisters)
-        AddEffect("1971", c => Debug.Log("Triangle Ecstasy Spark: Harpie Sisters 2700 ATK, sem Traps."));
+        AddEffect("1971", Effect_1971_TriangleEcstasySpark);
 
         // 1972 - Triangle Power (Buff Lv1 Normal)
-        AddEffect("1972", c => Debug.Log("Triangle Power: +2000 ATK para Normais Lv1."));
+        AddEffect("1972", Effect_1972_TrianglePower);
 
         // 1973 - Tribe-Infecting Virus (Destroy Type)
-        AddEffect("1973", c => Debug.Log("Tribe-Infecting Virus: Descarta para destruir Tipo declarado."));
+        AddEffect("1973", Effect_1973_TribeInfectingVirus);
 
         // 1974 - Tribute Doll (SS Lv7)
-        AddEffect("1974", c => Debug.Log("Tribute Doll: Tributa para invocar Lv7 da mão."));
+        AddEffect("1974", Effect_1974_TributeDoll);
 
         // 1975 - Tribute to the Doomed (Discard Destroy)
-        AddEffect("1975", c => Debug.Log("Tribute to the Doomed: Descarta para destruir monstro."));
+        AddEffect("1975", Effect_1975_TributeToTheDoomed);
 
         // 1976 - Tricky Spell 4 (Tokens)
         AddEffect("1976", c => Debug.Log("Tricky Spell 4: Tributa Tricky para invocar Tokens."));

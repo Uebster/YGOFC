@@ -4492,4 +4492,264 @@ public partial class CardEffectManager
         Effect_PayLP(source, 1000);
     }
 
+        // 1951 - Tornado
+    void Effect_1951_Tornado(CardDisplay source)
+    {
+        // Activate only if opponent controls 3 or more S/T. Target 1 S/T; destroy it.
+        int oppSTCount = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentSpellZones) if(z.childCount > 0) oppSTCount++;
+            if(GameManager.Instance.duelFieldUI.opponentFieldSpell.childCount > 0) oppSTCount++;
+        }
+
+        if (oppSTCount >= 3)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")),
+                    (target) => {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                    }
+                );
+            }
+        }
+        else
+        {
+            Debug.Log("Tornado: Oponente precisa ter 3 ou mais S/T.");
+        }
+    }
+
+    // 1952 - Tornado Bird
+    void Effect_1952_TornadoBird(CardDisplay source)
+    {
+        // FLIP: Return 2 Spell/Trap Cards on the field to the hand.
+        // Simplificado: Retorna 2 aleatórios ou pede seleção sequencial
+        Debug.Log("Tornado Bird: Retornando 2 S/T para a mão (Lógica de seleção pendente).");
+    }
+
+    // 1953 - Tornado Wall
+    void Effect_1953_TornadoWall(CardDisplay source)
+    {
+        // Active only if "Umi" is on the field. Battle Damage to you is 0.
+        if (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013"))
+        {
+            Debug.Log("Tornado Wall: Dano de batalha 0 (Passivo).");
+        }
+        else
+        {
+            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
+            Destroy(source.gameObject);
+        }
+    }
+
+    // 1954 - Torpedo Fish
+    void Effect_1954_TorpedoFish(CardDisplay source)
+    {
+        // Unaffected by Spells if Umi is on field.
+        if (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013"))
+        {
+            Debug.Log("Torpedo Fish: Imune a Magias.");
+        }
+    }
+
+    // 1955 - Torrential Tribute
+    void Effect_1955_TorrentialTribute(CardDisplay source)
+    {
+        // Activate when monster is Summoned. Destroy all monsters.
+        DestroyAllMonsters(true, true);
+    }
+
+    // 1956 - Total Defense Shogun
+    void Effect_1956_TotalDefenseShogun(CardDisplay source)
+    {
+        // Can attack while in Defense Position.
+        Debug.Log("Total Defense Shogun: Pode atacar em defesa.");
+    }
+
+    // 1957 - Tower of Babel
+    void Effect_1957_TowerOfBabel(CardDisplay source)
+    {
+        // Counter on Spell activation. 4th counter -> Destroy -> 3000 dmg to player.
+        // Lógica no OnSpellActivated.
+    }
+
+    // 1958 - Tragedy
+    void Effect_1958_Tragedy(CardDisplay source)
+    {
+        // Activate when opp monster changes to Defense. Destroy all Defense monsters opp controls.
+        List<CardDisplay> toDestroy = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+            {
+                if(z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if(m != null && m.position == CardDisplay.BattlePosition.Defense) toDestroy.Add(m);
+                }
+            }
+        }
+        DestroyCards(toDestroy, false);
+    }
+
+    // 1960 - Transcendent Wings
+    void Effect_1960_TranscendentWings(CardDisplay source)
+    {
+        // Send Winged Kuriboh (field) + 2 cards (hand) -> SS Winged Kuriboh LV10.
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "Winged Kuriboh",
+                (kuriboh) => {
+                    List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+                    if (hand.Count >= 2)
+                    {
+                        GameManager.Instance.OpenCardMultiSelection(hand, "Descarte 2 cartas", 2, 2, (discarded) => {
+                            foreach(var c in discarded) GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c).GetComponent<CardDisplay>());
+                            
+                            GameManager.Instance.SendToGraveyard(kuriboh.CurrentCardData, true);
+                            Destroy(kuriboh.gameObject);
+                            
+                            Effect_SearchDeck(source, "Winged Kuriboh LV10", "Monster"); // Should be SS
+                        });
+                    }
+                }
+            );
+        }
+    }
+
+    // 1961 - Trap Dustshoot
+    void Effect_1961_TrapDustshoot(CardDisplay source)
+    {
+        // If opp hand >= 4. Reveal hand, return 1 Monster to Deck.
+        List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+        if (oppHand.Count >= 4)
+        {
+            GameManager.Instance.OpenCardSelection(oppHand, "Retornar Monstro ao Deck", (selected) => {
+                if (selected.type.Contains("Monster"))
+                {
+                    // Return logic (Simulado)
+                    Debug.Log($"Trap Dustshoot: {selected.name} retornado ao deck.");
+                }
+            });
+        }
+    }
+
+    // 1962 - Trap Hole
+    void Effect_1962_TrapHole(CardDisplay source)
+    {
+        // Opponent Normal/Flip Summon 1000+ ATK -> Destroy.
+        // Trigger no OnSummonImpl.
+    }
+
+    // 1963 - Trap Jammer
+    void Effect_1963_TrapJammer(CardDisplay source)
+    {
+        // Battle Phase: Negate Trap.
+        if (PhaseManager.Instance.currentPhase == GamePhase.Battle)
+        {
+            Debug.Log("Trap Jammer: Trap negada.");
+        }
+    }
+
+    // 1964 - Trap Master
+    void Effect_1964_TrapMaster(CardDisplay source)
+    {
+        // FLIP: Destroy 1 Trap.
+        Effect_FlipDestroy(source, TargetType.Trap);
+    }
+
+    // 1965 - Trap of Board Eraser
+    void Effect_1965_TrapOfBoardEraser(CardDisplay source)
+    {
+        // Negate effect damage. Opponent discards 1.
+        Debug.Log("Trap of Board Eraser: Dano negado. Oponente descarta.");
+        GameManager.Instance.DiscardRandomHand(false, 1);
+    }
+
+    // 1966 - Trap of Darkness
+    void Effect_1966_TrapOfDarkness(CardDisplay source)
+    {
+        // LP <= 1000. Copy Normal Trap in GY.
+        if (GameManager.Instance.playerLP <= 1000)
+        {
+            Debug.Log("Trap of Darkness: Copiando efeito de Trap do GY.");
+        }
+    }
+
+    // 1967 - Tremendous Fire
+    void Effect_1967_TremendousFire(CardDisplay source)
+    {
+        Effect_DirectDamage(source, 1000);
+        Effect_PayLP(source, 500);
+    }
+
+    // 1971 - Triangle Ecstasy Spark
+    void Effect_1971_TriangleEcstasySpark(CardDisplay source)
+    {
+        // Harpie Lady Sisters becomes 2700. Opponent cannot activate Traps.
+        Debug.Log("Triangle Ecstasy Spark: Buff e bloqueio de Traps.");
+    }
+
+    // 1972 - Triangle Power
+    void Effect_1972_TrianglePower(CardDisplay source)
+    {
+        // All Lv1 Normal Monsters +2000 ATK/DEF. Destroy at End Phase.
+        Debug.Log("Triangle Power: Buff massivo em Lv1 Normal.");
+    }
+
+    // 1973 - Tribe-Infecting Virus
+    void Effect_1973_TribeInfectingVirus(CardDisplay source)
+    {
+        // Discard 1; declare Type; destroy all face-up of that Type.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                Debug.Log("Tribe-Infecting Virus: Tipo declarado (Simulado). Destruindo...");
+                // Effect_DestroyType(source, "Dragon"); // Exemplo
+            });
+        }
+    }
+
+    // 1974 - Tribute Doll
+    void Effect_1974_TributeDoll(CardDisplay source)
+    {
+        // Tribute 1 monster; SS Level 7 monster from hand. Cannot attack.
+        if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
+        {
+            Debug.Log("Tribute Doll: Invocando Lv7 da mão.");
+        }
+    }
+
+    // 1975 - Tribute to the Doomed
+    void Effect_1975_TributeToTheDoomed(CardDisplay source)
+    {
+        // Discard 1; destroy 1 monster.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                
+                if (SpellTrapManager.Instance != null)
+                {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                        (target) => {
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                            Destroy(target.gameObject);
+                        }
+                    );
+                }
+            });
+        }
+    }
+
 }
