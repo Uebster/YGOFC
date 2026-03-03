@@ -560,3 +560,114 @@
             Debug.Log("Wall of Revealing Light: Bloqueio de ataque <= 1000 (Lógica no BattleManager).");
         }
     }
+
+        // 2051 - Wandering Mummy
+    void Effect_2051_WanderingMummy(CardDisplay source)
+    {
+        // Once per turn: Flip face-down. Shuffle face-down Defense monsters.
+        if (source.isOnField && !source.isFlipped)
+        {
+            Effect_TurnSet(source);
+            Debug.Log("Wandering Mummy: Monstros face-down embaralhados (Visualmente).");
+        }
+    }
+
+    // 2052 - War-Lion Ritual
+    void Effect_2052_WarLionRitual(CardDisplay source)
+    {
+        GameManager.Instance.BeginRitualSummon(source);
+    }
+
+    // 2054 - Warrior Elimination
+    void Effect_2054_WarriorElimination(CardDisplay source)
+    {
+        Effect_DestroyType(source, "Warrior");
+    }
+
+    // 2055 - Warrior of Tradition
+    void Effect_2055_WarriorOfTradition(CardDisplay source)
+    {
+        // Fusion Monster (Non-Effect).
+        Debug.Log("Warrior of Tradition: Fusão sem efeito.");
+    }
+
+    // 2057 - Wasteland
+    void Effect_2057_Wasteland(CardDisplay source)
+    {
+        Effect_Field(source, 200, 200, "Dinosaur");
+        Effect_Field(source, 200, 200, "Zombie");
+        Effect_Field(source, 200, 200, "Rock");
+    }
+
+    // 2058 - Watapon
+    void Effect_2058_Watapon(CardDisplay source)
+    {
+        // If added to hand by effect: SS.
+        // Lógica no OnCardAddedToHand (se implementado) ou checagem manual.
+        if (!source.isOnField)
+        {
+             GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+             GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+        }
+    }
+
+    // 2065 - Wave-Motion Cannon
+    void Effect_2065_WaveMotionCannon(CardDisplay source)
+    {
+        // Send to GY -> Damage 1000 * Standby Phases.
+        // Requer contador de turnos (incrementado no OnPhaseStart).
+        if (source.isOnField)
+        {
+            int damage = source.turnCounter * 1000;
+            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
+            Destroy(source.gameObject);
+            Effect_DirectDamage(source, damage);
+        }
+    }
+
+    // 2066 - Weapon Change
+    void Effect_2066_WeaponChange(CardDisplay source)
+    {
+        // Pay 700. Swap ATK/DEF of Warrior/Machine.
+        if (Effect_PayLP(source, 700))
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard && (t.CurrentCardData.race == "Warrior" || t.CurrentCardData.race == "Machine"),
+                    (target) => {
+                        int atk = target.currentAtk;
+                        int def = target.currentDef;
+                        target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, def, source));
+                        target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, atk, source));
+                    }
+                );
+            }
+        }
+    }
+
+    // 2068 - Weather Report
+    void Effect_2068_WeatherReport(CardDisplay source)
+    {
+        // FLIP: Destroy all opp Swords of Revealing Light.
+        Debug.Log("Weather Report: Destruindo Swords of Revealing Light (Lógica de busca pendente).");
+    }
+
+    // 2071 - Whirlwind Prodigy
+    void Effect_2071_WhirlwindProdigy(CardDisplay source)
+    {
+        Debug.Log("Whirlwind Prodigy: Vale por 2 tributos para WIND.");
+    }
+
+    // 2073 - White Dragon Ritual
+    void Effect_2073_WhiteDragonRitual(CardDisplay source)
+    {
+        GameManager.Instance.BeginRitualSummon(source);
+    }
+
+    // 2075 - White Magical Hat
+    void Effect_2075_WhiteMagicalHat(CardDisplay source)
+    {
+        // Battle Damage -> Opponent discards 1 random.
+        Debug.Log("White Magical Hat: Efeito de descarte configurado (OnDamageDealtImpl).");
+    }

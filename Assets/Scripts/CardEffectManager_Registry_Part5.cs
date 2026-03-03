@@ -5,7 +5,7 @@ public partial class CardEffectManager
     void InitializeEffects_Part5()
     {
         // =========================================================================================
-        // LÓGICA PARA AS CARTAS (ID 2001 - 2100)
+        // LÓGICA PARA AS CARTAS (ID 2001 - 2075)
         // =========================================================================================
 
         // 2001 - Type Zero Magic Crusher (Discard Spell -> Burn)
@@ -135,40 +135,43 @@ public partial class CardEffectManager
         AddEffect("2050", Effect_2050_WallOfRevealingLight);
 
         // 2051 - Wandering Mummy (Flip Shuffle)
-        AddEffect("2051", c => Debug.Log("Wandering Mummy: Vira face-down e embaralha posições."));
+        AddEffect("2051", Effect_2051_WanderingMummy);
 
         // 2052 - War-Lion Ritual (Ritual)
-        AddEffect("2052", c => Debug.Log("War-Lion Ritual: Ritual."));
+        AddEffect("2052", Effect_2052_WarLionRitual);
 
         // 2054 - Warrior Elimination (Destroy Warriors)
-        AddEffect("2054", c => Effect_DestroyType(c, "Warrior"));
+        AddEffect("2054", Effect_2054_WarriorElimination);
+
+        // 2055 - Warrior of Tradition (Fusion)
+        AddEffect("2055", Effect_2055_WarriorOfTradition);
 
         // 2057 - Wasteland (Field Dino/Zombie/Rock +200)
-        AddEffect("2057", c => { Effect_Field(c, 200, 200, "Dinosaur"); Effect_Field(c, 200, 200, "Zombie"); Effect_Field(c, 200, 200, "Rock"); });
+        AddEffect("2057", Effect_2057_Wasteland);
 
         // 2058 - Watapon (SS if added)
-        AddEffect("2058", c => Debug.Log("Watapon: SS se adicionado à mão por efeito."));
+        AddEffect("2058", Effect_2058_Watapon);
 
         // 2065 - Wave-Motion Cannon (Accumulate Burn)
-        AddEffect("2065", c => Debug.Log("Wave-Motion Cannon: Dano acumulativo."));
+        AddEffect("2065", Effect_2065_WaveMotionCannon);
 
         // 2066 - Weapon Change (Swap ATK/DEF)
-        AddEffect("2066", c => Debug.Log("Weapon Change: Troca ATK/DEF de Warrior/Machine."));
+        AddEffect("2066", Effect_2066_WeaponChange);
 
         // 2068 - Weather Report (Destroy Swords -> Extra BP)
-        AddEffect("2068", c => Debug.Log("Weather Report: Destrói Swords, ganha Battle Phase extra."));
+        AddEffect("2068", Effect_2068_WeatherReport);
 
         // 2071 - Whirlwind Prodigy (2 Tributes Wind)
-        AddEffect("2071", c => Debug.Log("Whirlwind Prodigy: 2 tributos para Wind."));
+        AddEffect("2071", Effect_2071_WhirlwindProdigy);
 
         // 2073 - White Dragon Ritual (Ritual)
-        AddEffect("2073", c => Debug.Log("White Dragon Ritual: Ritual Paladin."));
+        AddEffect("2073", Effect_2073_WhiteDragonRitual);
 
         // 2074 - White Hole (Anti-Dark Hole)
-        AddEffect("2074", c => Debug.Log("White Hole: Protege contra Dark Hole."));
+        AddEffect("2074", c => Debug.Log("White Hole: Protege contra Dark Hole (Requer Chain)."));
 
         // 2075 - White Magical Hat (Discard on Damage)
-        AddEffect("2075", c => Debug.Log("White Magical Hat: Descarte ao causar dano."));
+        AddEffect("2075", Effect_2075_WhiteMagicalHat);
 
         // 2076 - White Magician Pikeru (Heal)
         AddEffect("2076", c => Debug.Log("Pikeru: Cura na Standby."));
