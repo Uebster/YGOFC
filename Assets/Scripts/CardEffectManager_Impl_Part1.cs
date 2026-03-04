@@ -3689,8 +3689,10 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0390_DNASurgery(CardDisplay source)
     {
         // Trap: Declare 1 Tipo; todos viram esse Tipo.
-        Debug.Log("DNA Surgery: Declare um Tipo (Simulado: Dragon).");
-        // Aplica modificador global de tipo (não implementado no sistema de stats atual, apenas log)
+        // Simulação de declaração
+        string declared = "Dragon"; // Em produção: UI de input
+        Debug.Log($"DNA Surgery: Tipo declarado: {declared}.");
+        CardEffectManager.Instance.dnaSurgeryDeclaredType = declared;
     }
 
     void Effect_0391_DNATransplant(CardDisplay source)

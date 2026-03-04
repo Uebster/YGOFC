@@ -87,7 +87,7 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
-        // Verifica restrições de ataque (Gravity Bind, etc)
+        // Verifica restrições de ataque (Gravity Bind, Level Limit, etc)
         if (!CanAttack(attacker)) return;
 
         currentAttacker = attacker;
@@ -113,10 +113,10 @@ public class BattleManager : MonoBehaviour
 
     public bool CanAttack(CardDisplay attacker)
     {
-        // Gravity Bind (85742772)
-        if (GameManager.Instance.IsCardActiveOnField("85742772") && attacker.CurrentCardData.level >= 4)
+        // Verifica efeitos contínuos globais (Gravity Bind, Level Limit, Messenger of Peace, etc.)
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.IsAttackPreventedByContinuousEffect(attacker))
         {
-            Debug.Log("Ataque impedido por Gravity Bind!");
+            // O log específico já é feito dentro do CardEffectManager
             return false;
         }
 

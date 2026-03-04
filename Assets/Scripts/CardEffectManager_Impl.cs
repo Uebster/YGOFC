@@ -49,6 +49,9 @@ public partial class CardEffectManager
         if (BattleManager.Instance != null) BattleManager.Instance.wabokuActive = false;
         if (BattleManager.Instance != null) BattleManager.Instance.noBattleDamageThisTurn = false;
 
+        // Aplica efeitos contínuos de mudança de posição (ex: Level Limit - Area B)
+        ApplyContinuousPositionChecks();
+
         if (phase == GamePhase.Standby)
         {
             // --- EFEITOS DE STANDBY PHASE ---
@@ -1663,6 +1666,103 @@ public partial class CardEffectManager
                 Debug.Log($"{card.CurrentCardData.name}: Expirou. Destruindo.");
                 GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
                 Destroy(card.gameObject);
+            }
+        }
+    }
+
+    // --- SISTEMA DE EFEITOS CONTÍNUOS GLOBAIS ---
+
+    public bool IsAttackPreventedByContinuousEffect(CardDisplay attacker)
+    {
+        // Gravity Bind (0817) - Level 4+ cannot attack
+        if (GameManager.Instance.IsCardActiveOnField("0817") && attacker.CurrentCardData.level >= 4)
+        {
+            Debug.Log("Ataque impedido por Gravity Bind.");
+            return true;
+        }
+        
+        // Level Limit - Area B (1077) - Level 4+ cannot attack (technically become Defense, but blocks attack if checked)
+        if (GameManager.Instance.IsCardActiveOnField("1077") && attacker.CurrentCardData.level >= 4)
+        {
+            Debug.Log("Ataque impedido por Level Limit - Area B.");
+            return true;
+        }
+        
+        // Messenger of Peace (1209) - 1500+ ATK cannot attack
+        if (GameManager.Instance.IsCardActiveOnField("1209") && attacker.currentAtk >= 1500)
+        {
+            Debug.Log("Ataque impedido por Messenger of Peace.");
+            return true;
+        }
+        
+        return false;
+    }
+
+    public bool IsSummonRestricted(bool isSpecialSummon)
+    {
+        // Jowgen the Spiritualist (0979) - No Special Summons
+        if (isSpecialSummon && GameManager.Instance.IsCardActiveOnField("0979")) return true;
+        
+        // The Last Warrior from Another Planet (1874) - No Summons at all
+        if (GameManager.Instance.IsCardActiveOnField("1874")) return true;
+        
+        return false;
+    }
+
+    public bool ShouldBanishInsteadOfGraveyard()
+    {
+        // Banisher of the Light (0133)
+        if (GameManager.Instance.IsCardActiveOnField("0133")) return true;
+        
+        // Banisher of the Radiance (1654 - Se implementado)
+        // Macro Cosmos (Se implementado)
+        
+        return false;
+    }
+    
+    public string GetEffectiveRace(CardDisplay card)
+    {
+        // DNA Surgery (0390)
+        if (GameManager.Instance.IsCardActiveOnField("0390") && !string.IsNullOrEmpty(dnaSurgeryDeclaredType))
+        {
+            return dnaSurgeryDeclaredType;
+        }
+        return card.CurrentCardData.race;
+    }
+
+    private void ApplyContinuousPositionChecks()
+    {
+        // Level Limit - Area B (1077) - Change Level 4+ to Defense
+        if (GameManager.Instance.IsCardActiveOnField("1077") && GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            
+            foreach(var m in all)
+            {
+                if (m.CurrentCardData.level >= 4 && m.position == CardDisplay.BattlePosition.Attack)
+                {
+                    m.ChangePosition();
+                    Debug.Log($"Level Limit - Area B: {m.CurrentCardData.name} mudou para Defesa.");
+                }
+            }
+        }
+        
+        // Final Attack Orders (0651) - Change to Attack
+        if (GameManager.Instance.IsCardActiveOnField("0651") && GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            
+            foreach(var m in all)
+            {
+                if (m.position == CardDisplay.BattlePosition.Defense)
+                {
+                    m.ChangePosition();
+                    Debug.Log($"Final Attack Orders: {m.CurrentCardData.name} mudou para Ataque.");
+                }
             }
         }
     }
