@@ -37,3 +37,11 @@ Antes de cada duelo da campanha, uma tela de história (`Panel_Walkthrough`) é 
 *   **Deck Inicial:** O jogador começa com um deck fraco gerado proceduralmente (`InitialDeckSystem`).
 *   **Drops:** Ao vencer, o jogador ganha cartas do oponente (baseado no Rank S/A/B/C/D).
 *   **Starchips (Futuro):** Planejado sistema de moeda para comprar cartas específicas via Password.
+
+## Distribuição de Pools (Drops e Decks)
+A qualidade das cartas (Pools 1.1 a 5.5) escala conforme o progresso da campanha. Tanto os decks dos oponentes quanto as recompensas de vitória seguem esta progressão:
+*   **Ato 1 e 2:** Pools 1.x (Cartas Fracas/Iniciais)
+*   **Ato 3 e 4:** Pools 2.x (Cartas Médias)
+*   **Ato 5 e 6:** Pools 3.x (Cartas Fortes)
+*   **Ato 7 e 8:** Pools 4.x (Cartas Elite)
+*   **Ato 9 e 10:** Pools 5.x (Cartas Lendárias/God)
