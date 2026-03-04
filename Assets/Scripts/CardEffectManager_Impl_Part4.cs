@@ -690,8 +690,8 @@ public partial class CardEffectManager
     void Effect_1565_RoyalKeeper(CardDisplay source)
     {
         // FLIP: Gains 300 ATK/DEF.
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 300, source));
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 300, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 300, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 300, source));
     }
 
     // 1566 - Royal Magical Library

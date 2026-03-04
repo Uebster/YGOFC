@@ -3188,8 +3188,8 @@ public partial class CardEffectManager
                 int roll = Random.Range(1, 7);
                 Debug.Log($"Patrol Robo: Rolou {roll}. +{roll * 100} ATK/DEF.");
                 // Implementa lógica para aumentar ATK e DEF
-                source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, roll * 100, source));
-                source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, roll * 100, source));
+                source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, roll * 100, source));
+                source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, roll * 100, source));
             });
         }
     }
