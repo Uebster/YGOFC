@@ -1994,10 +1994,4 @@ public class GameManager : MonoBehaviour
             UIManager.Instance.ShowFusionUI(sourceCard);
         }
     }
-
-    public void OnSummon(CardDisplay card)
-    {
-        if (CardEffectManager.Instance != null)
-            CardEffectManager.Instance.OnSummon(card);
-    }
 }

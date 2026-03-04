@@ -877,8 +877,8 @@ public partial class CardEffectManager
                     (t) => t.isOnField && t.CurrentCardData.race == "Fiend" && t != source,
                     (target) => {
                         GameManager.Instance.TributeCard(source);
-                        target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 700, source));
-                        target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 700, source));
+                            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 700, source));
+                            target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 700, source));
                     }
                 );
             }

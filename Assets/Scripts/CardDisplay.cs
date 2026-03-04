@@ -54,7 +54,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool summonedThisTurn = false;
     [HideInInspector] public bool battledThisTurn = false;
     [HideInInspector] public bool wasSpecialSummoned = false;
-    [HideInInspector] public bool wasSpecialSummoned = false;
     [HideInInspector] public bool hasUsedEffectThisTurn = false;
     [HideInInspector] public int attacksDeclaredThisTurn = 0; // Substitui/Complementa hasAttackedThisTurn
     [HideInInspector] public int maxAttacksPerTurn = 1; // Padrão 1

@@ -22,7 +22,7 @@ public partial class CardEffectManager
                     foreach (CardDisplay tribute in tributes)
                     {
                         GameManager.Instance.SendToGraveyard(tribute.CurrentCardData, tribute.isPlayerCard);
-                        Destroy(t.gameObject);
+                        Destroy(tribute.gameObject);
                     }
                     for (int i = 0; i < 3; i++) GameManager.Instance.DrawCard(source.isPlayerCard);
                 }
@@ -4642,10 +4642,10 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         {
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
-                (t) => {
+                (tribute) => {
                     // Banir temporariamente (Simulado: Destrói)
-                    Destroy(t.gameObject);
-                    Debug.Log($"Dimensionhole: {t.CurrentCardData.name} removido temporariamente.");
+                    Destroy(tribute.gameObject);
+                    Debug.Log($"Dimensionhole: {tribute.CurrentCardData.name} removido temporariamente.");
                 }
             );
         }

@@ -1823,6 +1823,7 @@ public partial class CardEffectManager
     void Effect_1242_MinefieldEruption(CardDisplay source)
     {
         // Damage 1000 per Mine Golem, then destroy them.
+        int count = 0;
         List<CardDisplay> golems = new List<CardDisplay>();
         
         if (GameManager.Instance.duelFieldUI != null)
@@ -2240,8 +2241,8 @@ public partial class CardEffectManager
     {
         // Gains 300 ATK/DEF for each card in your hand.
         int handCount = GameManager.Instance.GetPlayerHandData().Count;
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 300, source));
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 300, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, handCount * 300, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, handCount * 300, source));
     }
 
     // 1286 - Muko
@@ -3082,7 +3083,7 @@ public partial class CardEffectManager
                 GameManager.Instance.AddCardToHand(selected, false); // Oponente recebe
                 selection.Remove(selected);
 
-                foreach(CardData card in selection) {
+                foreach(CardData card in new List<CardData>(selection)) {
                     GameManager.Instance.SendToGraveyard(card, source.isPlayerCard);
                 }
 
@@ -3219,7 +3220,7 @@ public partial class CardEffectManager
                 UIManager.Instance.ShowConfirmation("Escolha: Impedir Saque (Sim) ou Impedir S/T (Não)?", 
                     () => {
                         Debug.Log("Penalty Game: Oponente não compra no próximo turno.");
-                        if (SpellTrapManager.Instance != null) SpellTrapManager.Instance.RegisterSkipDraw(false); // false = oponente
+                        if (PhaseManager.Instance != null) PhaseManager.Instance.RegisterSkipNextPhase(false, GamePhase.Draw);
                     },
                     () => {
                         Debug.Log("Penalty Game: Oponente não ativa S/T neste turno.");

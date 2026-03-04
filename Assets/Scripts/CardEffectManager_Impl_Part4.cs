@@ -1677,8 +1677,8 @@ public partial class CardEffectManager
         // Destroyed by battle: Destroyer loses 500 ATK/DEF.
         if (source.isFlipped)
         {
-            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, source));
-            source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, source));
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, source));
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, source));
         }
         // Lógica de destruição no OnBattleEnd.
     }
