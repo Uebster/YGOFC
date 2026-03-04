@@ -35,14 +35,6 @@ public partial class CardEffectManager
         Effect_FlipDestroyLevel(source, 4);
     }
 
-    partial void OnSummonImpl(CardDisplay card);
-
-    partial void OnSetImpl(CardDisplay card);
-
-    partial void OnBattlePositionChangedImpl(CardDisplay card);
-
-    partial void OnDamageDealtImpl(CardDisplay attacker, CardDisplay target, int amount);
-
     void Effect_0004_7(CardDisplay source)
     {
         // Ganha 700 LP
