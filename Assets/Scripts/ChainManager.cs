@@ -24,7 +24,6 @@ public class ChainManager : MonoBehaviour
 
     public List<ChainLink> currentChain = new List<ChainLink>();
     public bool isChainResolving = false;
-    private bool isWaitingForResponse = false;
     private bool playerPassed;
     private bool opponentPassed;
 
@@ -69,8 +68,6 @@ public class ChainManager : MonoBehaviour
 
     private IEnumerator ResponseRoutine(System.Action onChainResolved)
     {
-        isWaitingForResponse = true;
-
         // A prioridade para responder ao último elo é do oponente de quem o ativou.
         bool currentPlayerIsPlayer = !GetLastChainLink().isPlayerEffect;
 
@@ -125,7 +122,6 @@ public class ChainManager : MonoBehaviour
             }
         }
 
-        isWaitingForResponse = false;
         ResolveChain(onChainResolved);
     }
 

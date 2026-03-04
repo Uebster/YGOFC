@@ -253,8 +253,7 @@ public class BattleManager : MonoBehaviour
             if (AreAllEnemyMonstersEarthWaterOrFire()) return true;
         }
 
-        return true;
-                // 1402 - Panther Warrior
+        // 1402 - Panther Warrior
         if (attacker.CurrentCardData.id == "1402")
         {
             // Requer tributo para atacar
