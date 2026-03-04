@@ -2858,13 +2858,41 @@ public partial class CardEffectManager
         }
     }
 
+    // Helper para selecionar múltiplos tributos para efeitos
+    void SelectTributesForEffect(int count, bool isPlayer, System.Action<List<CardDisplay>> onComplete, List<CardDisplay> current = null)
+    {
+        if (current == null) current = new List<CardDisplay>();
+        
+        if (current.Count == count)
+        {
+            onComplete?.Invoke(current);
+            return;
+        }
+
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard == isPlayer && t.CurrentCardData.type.Contains("Monster") && !current.Contains(t),
+                (selected) => {
+                    current.Add(selected);
+                    SelectTributesForEffect(count, isPlayer, onComplete, current);
+                }
+            );
+        }
+    }
+
     void Effect_TributeToDraw(CardDisplay source, int tributes, int draws)
     {
         if (SummonManager.Instance.HasEnoughTributes(tributes, source.isPlayerCard))
         {
-            Debug.Log($"Tributando {tributes} para comprar {draws}.");
-            // TODO: Consumir tributos
-            for(int i=0; i<draws; i++) GameManager.Instance.DrawCard(true);
+            SelectTributesForEffect(tributes, source.isPlayerCard, (tributesList) => {
+                foreach (var t in tributesList)
+                {
+                    GameManager.Instance.TributeCard(t);
+                }
+                Debug.Log($"Tributando {tributes} para comprar {draws}.");
+                for(int i=0; i<draws; i++) GameManager.Instance.DrawCard(true);
+            });
         }
     }
 
