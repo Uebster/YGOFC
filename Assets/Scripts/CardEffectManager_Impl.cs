@@ -2589,6 +2589,21 @@ public partial class CardEffectManager
         }
     }
 
+    // Retorna lista de cartas equipadas no alvo
+    public List<CardDisplay> GetEquippedCards(CardDisplay target)
+    {
+        List<CardDisplay> equipped = new List<CardDisplay>();
+        CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        foreach(var link in links)
+        {
+            if (link.target == target && link.type == CardLink.LinkType.Equipment && link.source != null)
+            {
+                equipped.Add(link.source);
+            }
+        }
+        return equipped;
+    }
+
     void Effect_Equip(CardDisplay source, int atkBonus, int defBonus, string requiredRace = "", string requiredAttribute = "")
     {
         if (SpellTrapManager.Instance != null)

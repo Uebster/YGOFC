@@ -75,6 +75,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public int destructionTurnCountdown = -1;
     [HideInInspector] public bool destructionCountdownOwnerIsPlayer;
 
+    // Sistema de Fusão
+    [HideInInspector] public List<CardData> fusionMaterialsUsed = new List<CardData>();
+
     // Lista de modificadores ativos nesta carta
     private List<StatModifier> activeModifiers = new List<StatModifier>();
 

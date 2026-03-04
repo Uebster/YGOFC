@@ -1831,10 +1831,10 @@ public class GameManager : MonoBehaviour
     }
 
     // Invocação Especial direta por dados (para Monster Reborn, etc)
-    public void SpecialSummonFromData(CardData data, bool forPlayer, bool faceUp = true, bool defense = false)
+    public CardDisplay SpecialSummonFromData(CardData data, bool forPlayer, bool faceUp = true, bool defense = false)
     {
         Transform targetZone = forPlayer ? GetFreePlayerMonsterZone() : GetFreeOpponentMonsterZone();
-        if (targetZone == null) return;
+        if (targetZone == null) return null;
 
         GameObject cardGO = Instantiate(cardPrefab, targetZone);
         CardDisplay display = cardGO.GetComponent<CardDisplay>();
@@ -1867,6 +1867,8 @@ public class GameManager : MonoBehaviour
         {
             ChainManager.Instance.AddToChain(display, forPlayer, ChainManager.TriggerType.Summon);
         }
+
+        return display;
     }
 
         // Helper para encontrar um CardDisplay no campo pelo ID
@@ -1949,5 +1951,83 @@ public class GameManager : MonoBehaviour
         }
                 // Notifica sistema de efeitos (Ex: Fire Princess)
         CardEffectManager.Instance.OnDamageDealt(attacker, target, amount);
+    }
+
+    // --- SISTEMA DE FUSÃO ---
+
+    public void PerformFusionSummon(CardDisplay sourceCard, CardData fusionMonster, List<CardData> materials)
+    {
+        if (fusionMonster == null || materials == null || materials.Count == 0) return;
+
+        Debug.Log($"Realizando Invocação-Fusão de {fusionMonster.name}...");
+
+        // 1. Envia a Magia de Fusão para o cemitério (se existir e for Spell)
+        if (sourceCard != null)
+        {
+            SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard);
+            Destroy(sourceCard.gameObject);
+        }
+
+        // 2. Envia os materiais para o cemitério
+        foreach (var mat in materials)
+        {
+            // Tenta achar na mão
+            var handObj = playerHand.FirstOrDefault(go => go.GetComponent<CardDisplay>().CurrentCardData == mat);
+            if (handObj != null)
+            {
+                SendToGraveyard(mat, true); // Fusão é sempre do player neste contexto de UI
+                playerHand.Remove(handObj);
+                Destroy(handObj);
+            }
+            else
+            {
+                // Tenta achar no campo
+                var fieldObj = FindCardOnField(mat.id, true);
+                if (fieldObj != null)
+                {
+                    SendToGraveyard(mat, true);
+                    Destroy(fieldObj.gameObject);
+                }
+            }
+        }
+
+        // 3. Invoca o Monstro de Fusão
+        if (playerExtraDeck.Contains(fusionMonster))
+            playerExtraDeck.Remove(fusionMonster);
+        
+        CardDisplay summonedMonster = SpecialSummonFromData(fusionMonster, true);
+        
+        // 4. Registra os materiais usados (para UFOroid Fighter, etc)
+        if (summonedMonster != null)
+        {
+            summonedMonster.fusionMaterialsUsed = new List<CardData>(materials);
+        }
+    }
+
+    // Helper para equipar um monstro em outro (Union, Relinquished)
+    public void EquipMonsterToMonster(CardDisplay equipCard, CardDisplay targetMonster)
+    {
+        // 1. Move equipCard para zona de S/T
+        Transform targetZone = equipCard.isPlayerCard ? GetFreePlayerSpellZone() : GetFreeOpponentSpellZone();
+        if (targetZone == null)
+        {
+            Debug.LogWarning("Sem zona de S/T para equipar o monstro.");
+            SendToGraveyard(equipCard.CurrentCardData, equipCard.isPlayerCard);
+            Destroy(equipCard.gameObject);
+            return;
+        }
+
+        // Remove da zona de monstro/mão se necessário (SetParent cuida da hierarquia, mas listas precisam de update)
+        if (equipCard.isPlayerCard && playerHand.Contains(equipCard.gameObject)) playerHand.Remove(equipCard.gameObject);
+        
+        equipCard.transform.SetParent(targetZone);
+        equipCard.transform.localPosition = Vector3.zero;
+        equipCard.transform.localScale = fieldCardScale;
+        equipCard.transform.localRotation = Quaternion.Euler(0, 0, 0); // Face-up
+        equipCard.isOnField = true;
+        equipCard.isInteractable = false;
+        
+        CreateCardLink(equipCard, targetMonster, CardLink.LinkType.Equipment);
+        Debug.Log($"{equipCard.CurrentCardData.name} equipado em {targetMonster.CurrentCardData.name}.");
     }
 }

@@ -74,7 +74,16 @@ public partial class CardEffectManager
     {
         // Fusion: ATK/DEF = Sum of original ATK of materials.
         // Requer sistema de fusão que passe os materiais.
-        Debug.Log("UFOroid Fighter: Stats definidos pelos materiais (Lógica pendente no FusionManager).");
+        int totalAtk = 0;
+        int totalDef = 0;
+        foreach (var mat in source.fusionMaterialsUsed)
+        {
+            totalAtk += mat.atk;
+            totalDef += mat.atk; // Regra: "Original ATK and DEF ... become the sum of the original ATK of the Fusion Material Monsters"
+        }
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Original, StatModifier.Operation.Set, totalAtk, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Original, StatModifier.Operation.Set, totalDef, source));
+        Debug.Log($"UFOroid Fighter: Stats definidos para {totalAtk}/{totalDef}.");
     }
 
     // 2007 - Ultimate Baseball Kid
@@ -290,10 +299,17 @@ public partial class CardEffectManager
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.description.Contains("Union"), // Simplificado
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.description.Contains("Union") && t.position == CardDisplay.BattlePosition.Attack, // Face-up Union
                 (target) => {
-                    GameManager.Instance.SwitchControl(target);
-                    // Equip logic...
+                    // Equipa o monstro do oponente no Union Rider
+                    GameManager.Instance.EquipMonsterToMonster(target, source);
+                    
+                    // Ganha ATK/DEF do equipado
+                    source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, target.originalAtk, source));
+                    source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, target.originalDef, source));
+                    
+                    // Muda o dono para o player (para que vá para o GY do player se destruído? Não, regras de controle. Mas visualmente está na S/T do player)
+                    target.isPlayerCard = source.isPlayerCard;
                 }
             );
         }
@@ -923,10 +939,20 @@ public partial class CardEffectManager
     void Effect_2106_WoodlandSprite(CardDisplay source)
     {
         // Send 1 Equip Card equipped to this card to the GY. Inflict 500 damage.
-        // Requer sistema para identificar quais cartas estão equipadas a esta.
-        Debug.Log("Woodland Sprite: Envia Equip para causar 500 dano (Lógica de seleção de equip pendente).");
-        // Simulação de sucesso:
         Effect_DirectDamage(source, 500);
+        List<CardDisplay> equippedCards = GetEquippedCards(source);
+        
+        if (equippedCards.Count > 0)
+        {
+            // Converte para CardData para usar o seletor genérico (ou cria seletor de CardDisplay)
+            // Como OpenCardSelection usa CardData, vamos mapear de volta.
+            // Nota: Isso pode ser ambíguo se houver múltiplas cópias iguais equipadas.
+            // Para simplificar, removemos o primeiro encontrado.
+            CardDisplay toSend = equippedCards[0];
+            GameManager.Instance.SendToGraveyard(toSend.CurrentCardData, toSend.isPlayerCard);
+            Destroy(toSend.gameObject);
+            Effect_DirectDamage(source, 500);
+        }
     }
 
     // 2107 - World Suppression
