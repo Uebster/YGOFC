@@ -2660,9 +2660,9 @@ public partial class CardEffectManager
         GameManager.Instance.GainLifePoints(source.isPlayerCard, amount);
     }
 
-    void Effect_PayLP(CardDisplay source, int amount)
+    bool Effect_PayLP(CardDisplay source, int amount)
     {
-        GameManager.Instance.PayLifePoints(source.isPlayerCard, amount);
+        return GameManager.Instance.PayLifePoints(source.isPlayerCard, amount);
     }
 
     void Effect_DestroyType(CardDisplay source, string type)

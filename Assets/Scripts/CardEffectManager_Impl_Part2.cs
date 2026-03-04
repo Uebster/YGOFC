@@ -80,13 +80,17 @@ public partial class CardEffectManager
     void Effect_0508_DivineWrath(CardDisplay source)
     {
         // Discard 1 card. Negate the activation of an Effect Monster's effect and destroy it.
-        // Requer sistema de Chain/Counter.
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         if (hand.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
                 GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
-                Debug.Log("Divine Wrath: Custo pago. (Negação de efeito pendente no sistema de Chain).");
+                
+                var link = GetLinkToNegate(source);
+                if (link != null && link.cardSource.CurrentCardData.type.Contains("Monster"))
+                {
+                    NegateAndDestroy(source, link);
+                }
             });
         }
     }

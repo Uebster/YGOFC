@@ -249,11 +249,11 @@ public partial class CardEffectManager
     void Effect_0017_ATeamTrapDisposalUnit(CardDisplay source)
     {
         // (Quick) Quando oponente ativa Trap: Tributa este card; nega e destrói.
-        // Custo: Tributar a si mesmo.
-        if (source.isOnField)
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Trap") && !link.isPlayerEffect)
         {
             GameManager.Instance.TributeCard(source);
-            Debug.Log("A-Team: Tributado. (Lógica de negar Trap simulada).");
+            NegateAndDestroy(source, link);
         }
     }
 
@@ -778,10 +778,12 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0073_AntiRaigeki(CardDisplay source)
     {
         // Quando oponente ativa Raigeki: Negue, destrua todos monstros do oponente.
-        // Verifica se a última carta na chain foi Raigeki do oponente
-        // (Lógica simplificada, assume que ChainManager tem histórico)
-        Debug.Log("Anti Raigeki: Destruindo monstros do oponente (Lógica de Counter pendente).");
-        DestroyAllMonsters(true, false);
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.name == "Raigeki" && !link.isPlayerEffect)
+        {
+            NegateAndDestroy(source, link);
+            DestroyAllMonsters(true, false);
+        }
     }
 
     void Effect_0074_AntiAircraftFlower(CardDisplay source)
@@ -1128,25 +1130,10 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0101_ArmorBreak(CardDisplay source)
     {
         // Counter Trap: Negate Equip Spell activation.
-        // Verifica se há uma chain e se o último elo é uma Equip Spell
-        if (ChainManager.Instance != null && ChainManager.Instance.currentChain.Count > 1)
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell") && link.cardSource.CurrentCardData.property == "Equip")
         {
-            // O elo atual é o Armor Break, o anterior é o alvo
-            var targetLink = ChainManager.Instance.currentChain[ChainManager.Instance.currentChain.Count - 2];
-            var targetCard = targetLink.cardSource;
-            
-            if (targetCard != null && targetCard.CurrentCardData.type.Contains("Spell") && targetCard.CurrentCardData.property == "Equip")
-            {
-                Debug.Log($"Armor Break: Negando ativação de {targetCard.CurrentCardData.name}.");
-                // Em um sistema real, marcaríamos o elo como negado. Aqui destruímos a fonte.
-                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(targetCard);
-                GameManager.Instance.SendToGraveyard(targetCard.CurrentCardData, targetCard.isPlayerCard);
-                Destroy(targetCard.gameObject);
-            }
-            else
-            {
-                Debug.Log("Armor Break: O último efeito não era uma Equip Spell.");
-            }
+            NegateAndDestroy(source, link);
         }
     }
 
@@ -2419,9 +2406,11 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0258_CallOfTheGrave(CardDisplay source)
     {
         // Efeito: Nega Monster Reborn.
-        // Requer sistema de Chain para verificar se a carta anterior é Monster Reborn
-        // Similar ao Armor Break
-        Debug.Log("Call of the Grave: Nega Monster Reborn (Lógica de Chain).");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.name == "Monster Reborn")
+        {
+            NegateAndDestroy(source, link);
+        }
     }
 
     void Effect_0259_CallOfTheHaunted(CardDisplay source)
@@ -3400,8 +3389,11 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0353_CurseOfRoyal(CardDisplay source)
     {
         // Counter Trap: Nega S/T que destrói S/T.
-        // Requer sistema de Chain para verificar efeito de destruição
-        Debug.Log("Curse of Royal: Nega destruição de S/T.");
+        var link = GetLinkToNegate(source);
+        if (link != null && (link.cardSource.CurrentCardData.type.Contains("Spell") || link.cardSource.CurrentCardData.type.Contains("Trap")))
+        {
+            NegateAndDestroy(source, link);
+        }
     }
 
     void Effect_0354_CurseOfTheMaskedBeast(CardDisplay source)
@@ -3413,32 +3405,20 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0355_CursedSealOfTheForbiddenSpell(CardDisplay source)
     {
         // Descarte Spell; nega Spell e proíbe uso pelo resto do duelo.
-        // Requer Chain para pegar a Spell anterior
-        if (ChainManager.Instance != null && ChainManager.Instance.currentChain.Count > 1)
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell"))
         {
-            var targetLink = ChainManager.Instance.currentChain[ChainManager.Instance.currentChain.Count - 2];
-            var targetCard = targetLink.cardSource;
-
-            if (targetCard != null && targetCard.CurrentCardData.type.Contains("Spell"))
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            List<CardData> spells = hand.FindAll(c => c.type.Contains("Spell"));
+            
+            if (spells.Count > 0)
             {
-                // Custo: Descartar 1 Spell
-                List<CardData> hand = GameManager.Instance.GetPlayerHandData();
-                List<CardData> spells = hand.FindAll(c => c.type.Contains("Spell"));
-                
-                if (spells.Count > 0)
-                {
-                    GameManager.Instance.OpenCardSelection(spells, "Descarte 1 Spell", (discarded) => {
-                        GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
-                        
-                        Debug.Log($"Cursed Seal: Negando {targetCard.CurrentCardData.name} e proibindo uso.");
-                        GameManager.Instance.forbiddenSpells.Add(targetCard.CurrentCardData.name);
-                        
-                        // Destrói/Nega
-                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(targetCard);
-                        GameManager.Instance.SendToGraveyard(targetCard.CurrentCardData, targetCard.isPlayerCard);
-                        Destroy(targetCard.gameObject);
-                    });
-                }
+                GameManager.Instance.OpenCardSelection(spells, "Descarte 1 Spell", (discarded) => {
+                    GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                    
+                    GameManager.Instance.forbiddenSpells.Add(link.cardSource.CurrentCardData.name);
+                    NegateAndDestroy(source, link);
+                });
             }
         }
     }

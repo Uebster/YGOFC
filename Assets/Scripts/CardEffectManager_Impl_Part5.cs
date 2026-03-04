@@ -693,7 +693,11 @@ public partial class CardEffectManager
     void Effect_2074_WhiteHole(CardDisplay source)
     {
         // When opp activates Dark Hole: Negate/Protect.
-        Debug.Log("White Hole: Protege contra Dark Hole (Requer Chain).");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.name == "Dark Hole" && !link.isPlayerEffect)
+        {
+             NegateAndDestroy(source, link);
+        }
     }
 
     // 2075 - White Magical Hat
@@ -958,7 +962,11 @@ public partial class CardEffectManager
     void Effect_2107_WorldSuppression(CardDisplay source)
     {
         // Negate Field Spell activation.
-        Debug.Log("World Suppression: Nega Field Spell (Requer Chain).");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell") && link.cardSource.CurrentCardData.race == "Field")
+        {
+            NegateAndDestroy(source, link);
+        }
     }
 
     // 2111 - Wroughtweiler

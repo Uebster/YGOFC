@@ -1147,10 +1147,10 @@ public partial class CardEffectManager
     void Effect_1620_SevenToolsOfTheBandit(CardDisplay source)
     {
         // Pay 1000 LP; negate Trap.
-        if (Effect_PayLP(source, 1000))
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Trap"))
         {
-            var link = GetLinkToNegate(source);
-            if (link != null && link.cardSource.CurrentCardData.type.Contains("Trap"))
+            if (Effect_PayLP(source, 1000))
             {
                 NegateAndDestroy(source, link);
             }
@@ -1806,11 +1806,11 @@ public partial class CardEffectManager
     void Effect_1688_SolemnJudgment(CardDisplay source)
     {
         // Pay half LP. Negate Summon/Spell/Trap.
-        int cost = GameManager.Instance.playerLP / 2;
-        if (Effect_PayLP(source, cost))
+        var link = GetLinkToNegate(source);
+        if (link != null)
         {
-            var link = GetLinkToNegate(source);
-            if (link != null)
+            int cost = GameManager.Instance.playerLP / 2;
+            if (Effect_PayLP(source, cost))
             {
                 NegateAndDestroy(source, link);
             }
