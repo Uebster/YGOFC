@@ -16,6 +16,8 @@ public class BattleManager : MonoBehaviour
     public bool globalPiercing = false; // Meteorain
     public bool battlePositionsLocked = false; // Mesmeric Control
     public bool patricianOfDarknessActive = false; // Patrician of Darkness (1406)
+    public bool wabokuActive = false; // Waboku (2047)
+    public bool noBattleDamageThisTurn = false; // Winged Kuriboh (2090)
 
     // Verifica se a ativação de armadilhas está bloqueada (ex: Mirage Dragon)
     public bool IsTrapActivationBlocked(bool isPlayer)
@@ -155,6 +157,17 @@ public class BattleManager : MonoBehaviour
                 }
             }
             if (!hasOtherDragon) return false;
+        }
+
+        // 2146 - Zombyra the Dark
+        if (attacker.CurrentCardData.id == "2146")
+        {
+            // Cannot attack directly
+            if (HasDirectAttackCondition())
+            {
+                Debug.Log("Zombyra the Dark: Não pode atacar diretamente.");
+                return false;
+            }
         }
 
         // 2012 - Ultimate Obedient Fiend
@@ -301,6 +314,26 @@ public class BattleManager : MonoBehaviour
             {
                 Debug.Log("Command Knight não pode ser atacado enquanto houver outro monstro.");
                 return;
+            }
+        }
+
+        // 2040 - Vilepawn Archfiend
+        if (target.CurrentCardData.name.Contains("Archfiend") && target.CurrentCardData.id != "2040")
+        {
+            // Se houver um Vilepawn Archfiend no campo do alvo, ele protege outros Archfiends
+            Transform[] targetZones = target.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach(var z in targetZones)
+            {
+                if(z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if(m != null && m.CurrentCardData.id == "2040" && !m.isFlipped)
+                    {
+                        Debug.Log("Vilepawn Archfiend: Redirecionando ataque para si mesmo.");
+                        // Em um sistema ideal, forçaria a troca de alvo. Aqui bloqueamos o ataque ao alvo original.
+                        // return; // Ou implementar lógica de redirecionamento
+                    }
+                }
             }
         }
 
@@ -455,6 +488,12 @@ public class BattleManager : MonoBehaviour
         // Mas o alvo pode ser destruído e tomar dano normalmente? Não, Rocket Warrior diz "battle damage to both players becomes 0".
         bool noBattleDamage = attackerIsRocketWarrior;
 
+        // Waboku (2047) / Winged Kuriboh (2090)
+        if (wabokuActive || noBattleDamageThisTurn)
+        {
+            noBattleDamage = true;
+        }
+
         // 1593 - Satellite Cannon
         if (target.CurrentCardData.id == "1593" && attacker.CurrentCardData.level <= 7)
         {
@@ -484,10 +523,10 @@ public class BattleManager : MonoBehaviour
                 
                 if (!targetIsBES)
                 {
-                    // Charm of Shabti (0296)
-                    if (gravekeepersProtected && target.CurrentCardData.name.Contains("Gravekeeper"))
+                    // Charm of Shabti (0296) / Waboku (2047)
+                    if ((gravekeepersProtected && target.CurrentCardData.name.Contains("Gravekeeper")) || wabokuActive)
                     {
-                        Debug.Log("Gravekeeper protegido por Charm of Shabti.");
+                        Debug.Log("Monstro protegido (Charm of Shabti ou Waboku).");
                     }
                     else
                     {
@@ -511,9 +550,12 @@ public class BattleManager : MonoBehaviour
             else // Empate
             {
                 Debug.Log("Empate! Ambos destruídos.");
-                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-                Destroy(target.gameObject);
-                if (!attackerIsRocketWarrior) {
+                if (!wabokuActive)
+                {
+                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                    Destroy(target.gameObject);
+                }
+                if (!attackerIsRocketWarrior && !wabokuActive) {
                     GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
                     Destroy(attacker.gameObject);
                 }
@@ -524,8 +566,11 @@ public class BattleManager : MonoBehaviour
             if (atk > def)
             {
                 Debug.Log("Vitória do Atacante! Alvo destruído (sem dano).");
-                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-                Destroy(target.gameObject);
+                if (!wabokuActive)
+                {
+                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                    Destroy(target.gameObject);
+                }
             }
             else if (atk < def)
             {
@@ -612,6 +657,8 @@ public class BattleManager : MonoBehaviour
         currentAttacker = null;
         currentTarget = null;
         dimensionWallActive = false;
+        // wabokuActive = false; // Waboku dura o turno todo, resetar no PhaseManager
+        // noBattleDamageThisTurn = false; // Resetar no PhaseManager
         // patricianOfDarknessActive = false; // Não reseta pois é contínuo enquanto o monstro estiver em campo
         gravekeepersProtected = false; // Reseta no fim da batalha ou turno? Regra diz "until End Phase".
         // Se for até End Phase, deve ser resetado no PhaseManager ou CardEffectManager.

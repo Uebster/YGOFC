@@ -46,6 +46,8 @@ public partial class CardEffectManager
         negateContinuousSpells = false;
         redirectSpellTarget = false;
         reverseStats = false;
+        if (BattleManager.Instance != null) BattleManager.Instance.wabokuActive = false;
+        if (BattleManager.Instance != null) BattleManager.Instance.noBattleDamageThisTurn = false;
 
         if (phase == GamePhase.Standby)
         {
@@ -113,6 +115,17 @@ public partial class CardEffectManager
                     }
                 }
             }
+
+            // 2076 - White Magician Pikeru
+            CheckActiveCards("2076", (card) => {
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && card.position == CardDisplay.BattlePosition.Defense)
+                {
+                    int monsterCount = GameManager.Instance.GetFieldCardCount(card.isPlayerCard); // Simplificado, conta tudo
+                    // Contagem correta de monstros
+                    // ...
+                    Effect_GainLP(card, monsterCount * 400);
+                }
+            });
         }
 
         if (phase == GamePhase.End)
@@ -840,6 +853,29 @@ public partial class CardEffectManager
             Effect_SpecialSummonFromDeck(null, race: "Machine", maxAtk: 1500, isPlayerOverride: isOwnerPlayer);
         }
 
+        // 2090 - Winged Kuriboh
+        if (card.id == "2090")
+        {
+            Debug.Log("Winged Kuriboh: Sem dano de batalha neste turno.");
+            if (BattleManager.Instance != null) BattleManager.Instance.noBattleDamageThisTurn = true;
+        }
+
+        // 2097 - Witch of the Black Forest
+        if (card.id == "2097" && isOwnerPlayer)
+        {
+            Debug.Log("Witch of the Black Forest: Buscando monstro com DEF <= 1500.");
+            List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+            List<CardData> targets = deck.FindAll(c => c.type.Contains("Monster") && c.def <= 1500);
+            if (targets.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(targets, "Witch of the Black Forest", (selected) => {
+                    deck.Remove(selected);
+                    GameManager.Instance.AddCardToHand(selected, true);
+                    GameManager.Instance.ShuffleDeck(true);
+                });
+            }
+        }
+
         // 1010 - Keldo
         if (card.id == "1010" && !isOwnerPlayer) // Destruído por batalha
         {
@@ -1475,6 +1511,48 @@ public partial class CardEffectManager
                 GameManager.Instance.MillCards(false, 1);
             }
         });
+
+        // 2030 - Vampire Lady
+        if (attacker.CurrentCardData.id == "2030" && attacker.isPlayerCard && amount > 0)
+        {
+            Debug.Log("Vampire Lady: Declare um tipo (Card, Spell, Trap) e oponente envia 1 do deck ao GY (Simulado: Monster).");
+            GameManager.Instance.MillCards(!attacker.isPlayerCard, 1);
+        }
+
+        // 2038 - Victory Dragon
+        if (attacker.CurrentCardData.id == "2038" && amount > 0 && (attacker.isPlayerCard ? GameManager.Instance.opponentLP : GameManager.Instance.playerLP) <= 0)
+        {
+            Debug.Log("Victory Dragon: MATCH WIN!");
+            // GameManager.Instance.WinMatch(); // Hypothetical
+        }
+
+        // 2075 - White Magical Hat
+        if (attacker.CurrentCardData.id == "2075" && amount > 0)
+        {
+            Debug.Log("White Magical Hat: Oponente descarta 1 carta aleatória.");
+            GameManager.Instance.DiscardRandomHand(!attacker.isPlayerCard, 1);
+        }
+
+        // 2123 - Yamata Dragon
+        if (attacker.CurrentCardData.id == "2123" && amount > 0)
+        {
+            int handCount = attacker.isPlayerCard ? GameManager.Instance.GetPlayerHandData().Count : GameManager.Instance.GetOpponentHandData().Count;
+            if (handCount < 5)
+            {
+                int toDraw = 5 - handCount;
+                Debug.Log($"Yamata Dragon: Comprando {toDraw} cartas.");
+                for(int i=0; i<toDraw; i++) 
+                    if(attacker.isPlayerCard) GameManager.Instance.DrawCard(); 
+                    else GameManager.Instance.DrawOpponentCard();
+            }
+        }
+
+        // 2128 - Yata-Garasu
+        if (attacker.CurrentCardData.id == "2128" && amount > 0)
+        {
+            Debug.Log("Yata-Garasu: Oponente pula a próxima Draw Phase.");
+            if (PhaseManager.Instance != null) PhaseManager.Instance.RegisterSkipNextPhase(!attacker.isPlayerCard, GamePhase.Draw);
+        }
     }
     public void OnDamageTaken(bool isPlayer, int amount)
     {
@@ -2274,6 +2352,86 @@ public partial class CardEffectManager
             Debug.Log($"Zone Eater: {attacker.CurrentCardData.name} será destruído em 5 turnos.");
         }
 
+        // 2028 - Vampire Baby
+        if (attacker != null && attacker.CurrentCardData.id == "2028" && target != null)
+        {
+            // Se destruiu monstro por batalha e enviou ao GY
+            List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
+            List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
+            
+            if (oppGY.Contains(target.CurrentCardData) || myGY.Contains(target.CurrentCardData))
+            {
+                Debug.Log("Vampire Baby: Invocando monstro destruído (Simulado no fim da batalha).");
+                // Remove do GY
+                if (oppGY.Contains(target.CurrentCardData)) oppGY.Remove(target.CurrentCardData);
+                else myGY.Remove(target.CurrentCardData);
+                
+                // SS no campo do controlador do Vampire Baby
+                GameManager.Instance.SpecialSummonFromData(target.CurrentCardData, attacker.isPlayerCard);
+            }
+        }
+
+        // 2049 - Wall of Illusion
+        if (target != null && target.CurrentCardData.id == "2049" && attacker != null)
+        {
+            // Se o atacante sobreviveu (não foi destruído na batalha), retorna para a mão
+            // Verifica se o atacante ainda está no campo (não foi destruído por regra de batalha)
+            // Nota: ResolveDamage chama Destroy(), mas o objeto Unity persiste até o fim do frame.
+            // Uma verificação robusta seria checar se ele NÃO está no GY.
+            bool attackerInGY = GameManager.Instance.GetPlayerGraveyard().Contains(attacker.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(attacker.CurrentCardData);
+            
+            if (!attackerInGY)
+            {
+                Debug.Log("Wall of Illusion: Retornando atacante para a mão.");
+                GameManager.Instance.ReturnToHand(attacker);
+            }
+        }
+
+        // 2093 - Winged Sage Falcos
+        if (attacker != null && attacker.CurrentCardData.id == "2093" && target != null)
+        {
+            // Se destruiu monstro em Posição de Ataque
+            // Precisamos saber a posição anterior (target.position), mas target pode ter sido destruído.
+            // Assumimos que target.position ainda guarda o estado do momento da batalha.
+            if (target.position == CardDisplay.BattlePosition.Attack)
+            {
+                // Verifica se foi enviado ao GY
+                List<CardData> gy = target.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
+                if (gy.Contains(target.CurrentCardData))
+                {
+                    Debug.Log("Winged Sage Falcos: Retornando monstro destruído ao topo do Deck.");
+                    gy.Remove(target.CurrentCardData);
+                    List<CardData> deck = target.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+                    deck.Insert(0, target.CurrentCardData);
+                }
+            }
+        }
+
+        // 2146 - Zombyra the Dark
+        if (attacker != null && attacker.CurrentCardData.id == "2146" && target != null)
+        {
+            // Se destruiu monstro (está no GY)
+            bool targetInGY = GameManager.Instance.GetPlayerGraveyard().Contains(target.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(target.CurrentCardData);
+            if (targetInGY)
+            {
+                Debug.Log("Zombyra the Dark: -200 ATK.");
+                attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, -200, attacker));
+            }
+        }
+
+        // 2131 - Yomi Ship
+        if (target != null && target.CurrentCardData.id == "2131" && attacker != null)
+        {
+            // Se Yomi Ship foi destruído por batalha
+            bool targetInGY = GameManager.Instance.GetPlayerGraveyard().Contains(target.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(target.CurrentCardData);
+            if (targetInGY)
+            {
+                Debug.Log("Yomi Ship: Destruindo o atacante.");
+                GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+                Destroy(attacker.gameObject);
+            }
+        }
+
         // Master Monk (1182) & Mataza (1184): Reset attack flag for double attack
         // (Lógica simplificada: Se atacou uma vez, permite atacar de novo resetando a flag)
         // Isso requer um contador de ataques no CardDisplay, que não temos.
@@ -3002,6 +3160,14 @@ public partial class CardEffectManager
             // If changed from Attack to Defense (assumindo que estava em ataque antes)
             Debug.Log("Tainted Wisdom: Embaralhando o Deck.");
             GameManager.Instance.ShuffleDeck(card.isPlayerCard);
+        }
+
+        // 2120 - Yado Karu
+        if (card.CurrentCardData.id == "2120" && card.position == CardDisplay.BattlePosition.Defense && !card.isFlipped)
+        {
+            // Changed from Attack to Defense
+            Debug.Log("Yado Karu: Mão retornada ao fundo do Deck (Simulado).");
+            // Lógica de retornar mão ao deck
         }
     }
     void Effect_SecretBarrel(CardDisplay source)

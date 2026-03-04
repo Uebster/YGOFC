@@ -298,6 +298,7 @@ public partial class CardEffectManager
         // Take control of Union monster.
         if (SpellTrapManager.Instance != null)
         {
+            SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.description.Contains("Union") && t.position == CardDisplay.BattlePosition.Attack, // Face-up Union
                 (target) => {
 
@@ -555,7 +556,8 @@ public partial class CardEffectManager
     void Effect_2047_Waboku(CardDisplay source)
     {
         // No battle damage, monsters not destroyed by battle this turn.
-        Debug.Log("Waboku: Proteção total de batalha este turno (Flags no BattleManager).");
+        Debug.Log("Waboku: Proteção total de batalha este turno.");
+        if (BattleManager.Instance != null) BattleManager.Instance.wabokuActive = true;
     }
 
     // 2048 - Wall Shadow

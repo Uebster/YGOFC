@@ -78,10 +78,20 @@ public class FusionManager : MonoBehaviour
 
     private bool IsSubstitute(CardData material, string requiredName)
     {
-        // Exemplo para King of the Swamp (ID 1019)
-        if (material.id == "1019")
+        // Lista de Substitutos de Fusão
+        string[] substitutes = {
+            "1019", // King of the Swamp
+            "0781", // Goddess with the Third Eye
+            "2037", // Versago the Destroyer
+            "1315", // Mystical Sheep #1
+            "0158", // Beastking of the Swamps
+            "1877", // The Light - Hex-Sealed Fusion
+            "1850", // The Dark - Hex-Sealed Fusion
+            "1856"  // The Earth - Hex-Sealed Fusion
+        };
+
+        if (substitutes.Contains(material.id))
         {
-            // King of the Swamp pode substituir qualquer 1 Monstro Material de Fusão.
             return true;
         }
         return false;
