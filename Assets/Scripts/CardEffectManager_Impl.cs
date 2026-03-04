@@ -2550,38 +2550,26 @@ public partial class CardEffectManager
         // DestroyAllMonsters(true, true, (m) => m.CurrentCardData.race == type);
     }
 
-    void Effect_SearchDeck(CardDisplay source, string term, string typeFilter = "")
+    void Effect_SearchDeck(CardDisplay source, string term, string typeFilter, int maxAtk)
     {
-        bool isPlayer = source != null ? source.isPlayerCard : true; // Fallback para true se source for null (ex: Sangan no GY)
+        bool isPlayer = source != null ? source.isPlayerCard : true;
         List<CardData> deck = isPlayer ? GameManager.Instance.GetPlayerMainDeck() : null;
 
-        if (deck == null)
-        {
-            Debug.LogError("Effect_SearchDeck: Deck is null!");
-            return;
-        }
+        if (deck == null) return;
 
-        List<CardData> results = deck.FindAll(c => c.name.Contains(term) && (string.IsNullOrEmpty(typeFilter) || c.type.Contains(typeFilter)));
+        List<CardData> results = deck.FindAll(c => 
+            c.name.Contains(term) && 
+            (string.IsNullOrEmpty(typeFilter) || c.type.Contains(typeFilter)) &&
+            c.atk <= maxAtk
+        );
 
         if (results.Count > 0)
         {
-            GameManager.Instance.OpenCardSelection(results, $"Selecione '{term}' do Deck", (selected) => {
-                if (selected != null)
-                {
-                    Debug.Log($"Adicionando {selected.name} à mão.");
-                    deck.Remove(selected);
-                    GameManager.Instance.AddCardToHand(selected, isPlayer);
-                    GameManager.Instance.ShuffleDeck(isPlayer); // Shuffle após busca
-                }
-                else
-                {
-                    Debug.Log("Nenhuma carta selecionada.");
-                }
+            GameManager.Instance.OpenCardSelection(results, $"Selecione '{term}'", (selected) => {
+                deck.Remove(selected);
+                GameManager.Instance.AddCardToHand(selected, isPlayer);
+                GameManager.Instance.ShuffleDeck(isPlayer);
             });
-        }
-        else
-        {
-            Debug.Log($"Nenhuma carta encontrada com o termo '{term}'.");
         }
     }
 

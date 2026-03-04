@@ -366,7 +366,8 @@ public partial class CardEffectManager
                      if(monster != null && monster.summonedThisTurn)
                      {
                          Debug.Log($"Adhesion Trap Hole: {monster.CurrentCardData.name} ATK reduzido pela metade.");
-                         monster.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Multiply, 0.5f, source));
+                         int reduction = monster.currentAtk / 2;
+                         monster.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -reduction, source));
                      }
                  }
              }

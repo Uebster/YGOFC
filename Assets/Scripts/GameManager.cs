@@ -110,10 +110,10 @@ public class GameManager : MonoBehaviour
     private List<CardData> playerSideDeck = new List<CardData>();
     public List<string> playerTrunk = new List<string>(); // IDs das cartas que o jogador possui
 
-    private List<GameObject> playerHand = new List<GameObject>();
+    public List<GameObject> playerHand = new List<GameObject>();
     private List<CardData> playerGraveyard = new List<CardData>();
     private List<CardData> opponentDeck = new List<CardData>();
-    private List<GameObject> opponentHand = new List<GameObject>();
+    public List<GameObject> opponentHand = new List<GameObject>();
     private List<CardData> opponentGraveyard = new List<CardData>();
     private List<CardData> playerExtraDeck = new List<CardData>();
     private List<CardData> opponentExtraDeck = new List<CardData>();
@@ -410,6 +410,11 @@ public class GameManager : MonoBehaviour
     public void ShuffleDeck(bool isPlayer)
     {
         GameManager.Instance.ShuffleDeck(isPlayer);
+    }
+
+        public void ShuffleOpponentDeck()
+    {
+        ShuffleDeck(false);
     }
 
     public void MillCards(bool isPlayer, int amount)
@@ -1964,5 +1969,28 @@ public class GameManager : MonoBehaviour
         
         CreateCardLink(equipCard, targetMonster, CardLink.LinkType.Equipment);
         Debug.Log($"{equipCard.CurrentCardData.name} equipado em {targetMonster.CurrentCardData.name}.");
+    }
+
+    public void CreateCardLink(CardDisplay source, CardDisplay target, CardLink.LinkType type)
+    {
+        GameObject linkObj = new GameObject($"Link_{source.name}_{target.name}");
+        CardLink link = linkObj.AddComponent<CardLink>();
+        link.Initialize(source, target, type);
+    }
+
+    public void BeginFusionSummon(CardDisplay sourceCard)
+    {
+        // 1. Verifica se tem Monstros de Fusão no Extra Deck
+        if (playerExtraDeck.Count == 0)
+        {
+            Debug.Log("Nenhum Monstro de Fusão no Extra Deck.");
+            return;
+        }
+
+        // 2. Abre a UI de Fusão
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowFusionUI(sourceCard);
+        }
     }
 }

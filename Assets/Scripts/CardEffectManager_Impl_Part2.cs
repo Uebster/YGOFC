@@ -339,7 +339,6 @@ public partial class CardEffectManager
     {
         // Activate 1: Inflict 800 damage OR Destroy 1 face-up monster with DEF <= 800.
         // Simplified: If target available, destroy. Else burn.
-        bool hasTarget = false;
         // Check for targets...
         // For prototype, just burn.
         Effect_DirectDamage(source, 800);
@@ -525,7 +524,6 @@ public partial class CardEffectManager
         if (source.isOnField)
         {
             int handCount = GameManager.Instance.GetPlayerHandData().Count;
-            int fieldCount = 0;
             // Conta cartas no campo (excluindo Bubbleman)
             if (GameManager.Instance.duelFieldUI != null)
             {

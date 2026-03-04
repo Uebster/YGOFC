@@ -377,7 +377,7 @@ public partial class CardEffectManager
         // Effect: Gains 700 ATK each Standby Phase.
         if (source.isOnField && source.position == CardDisplay.BattlePosition.Attack)
         {
-            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 700, source));
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 700, source));
             Debug.Log("Legendary Fiend: +700 ATK (Standby Phase).");
         }
     }
@@ -613,7 +613,7 @@ public partial class CardEffectManager
                     var m = z.GetChild(0).GetComponent<CardDisplay>();
                     if(m != null && m.CurrentCardData.race == "Machine")
                     {
-                        m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Multiply, 2f, source));
+                        m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Multiply, 2, source));
                         // Mark for destruction? We don't have a delayed effect system yet.
                         Debug.Log($"Limiter Removal: {m.CurrentCardData.name} ATK dobrado.");
                     }
@@ -1383,7 +1383,7 @@ public partial class CardEffectManager
             GameManager.Instance.TossCoin(1, (heads) => { // Simula dado
                 int roll = Random.Range(1, 7);
                 int buff = roll * 200;
-                source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, buff, source));
+                source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, buff, source));
                 Debug.Log($"Maximum Six: Rolou {roll}. +{buff} ATK.");
             });
         }
@@ -2240,8 +2240,8 @@ public partial class CardEffectManager
     {
         // Gains 300 ATK/DEF for each card in your hand.
         int handCount = GameManager.Instance.GetPlayerHandData().Count;
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, handCount * 300, source));
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, handCount * 300, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 300, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 300, source));
     }
 
     // 1286 - Muko
@@ -3619,8 +3619,8 @@ public partial class CardEffectManager
         // Gains +100 more each Standby Phase (up to 4 turns). Lógica no OnPhaseStart.
         if (GameManager.Instance.IsCardActiveOnField("Castle of Dark Illusions") || GameManager.Instance.IsCardActiveOnField("1270"))
         {
-            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 100, source));
-            source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 100, source));
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 100, source));
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 100, source));
             // Usa contadores para rastrear turnos (limite de 4)
             if (SpellCounterManager.Instance.GetCount(source) < 4)
                 SpellCounterManager.Instance.AddCounter(source, 1);

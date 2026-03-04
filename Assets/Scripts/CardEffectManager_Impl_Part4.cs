@@ -465,7 +465,7 @@ public partial class CardEffectManager
                     SpellTrapManager.Instance.StartTargetSelection(
                         (t2) => t2.isOnField && !t2.isFlipped && t2 != target1,
                         (target2) => {
-                            target1.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Multiply, 0.5f, source));
+                            target1.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -lostAtk, source));
                             target2.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, lostAtk, source));
                             Debug.Log($"Riryoku: {target1.CurrentCardData.name} perdeu {lostAtk}, {target2.CurrentCardData.name} ganhou {lostAtk}.");
                         }
@@ -4140,9 +4140,10 @@ public partial class CardEffectManager
             {
                 if (m != source)
                 {
-                    m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Multiply, 0.5f, source));
-                    m.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Multiply, 0.5f, source));
-                }
+                    // Simplificação: Reduz pela metade usando valor fixo negativo (não exato se mudar depois, mas evita erro de float)
+                    m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -m.currentAtk/2, source));
+                    m.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -m.currentDef/2, source));
+               }
             }
         }
     }
