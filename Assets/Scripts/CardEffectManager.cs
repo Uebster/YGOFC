@@ -7,7 +7,7 @@ public enum SendReason { Battle, Effect, Cost, Tribute, Destroyed, Discarded, Mi
 public partial class CardEffectManager : MonoBehaviour
 {
     public static CardEffectManager Instance;
-    
+
     public enum TargetType { Monster, Spell, Trap, Any }
 
     // Mapeia ID da carta -> Função de efeito
@@ -85,6 +85,7 @@ public partial class CardEffectManager : MonoBehaviour
     public void OnCardAddedToHand(CardDisplay card) { OnCardAddedToHandImpl(card); }
     public void OnTribute(CardDisplay card) { OnTributeImpl(card); }
     public void OnCardDiscarded(CardDisplay card) { OnCardDiscardedImpl(card); }
+    public void OnSpecialSummon(CardDisplay card) { OnSpecialSummonImpl(card); }
 
 
     // Métodos de Eventos (Implementados em CardEffectManager_Impl.cs)
@@ -105,6 +106,7 @@ public partial class CardEffectManager : MonoBehaviour
     partial void OnCardAddedToHandImpl(CardDisplay card);
     partial void OnTributeImpl(CardDisplay card);
     partial void OnCardDiscardedImpl(CardDisplay card);
+    partial void OnSpecialSummonImpl(CardDisplay card);
 
     void DestroyAllMonsters(bool targetOpponent, bool targetPlayer)
     {

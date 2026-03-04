@@ -94,7 +94,7 @@ public class GameManager : MonoBehaviour
     public GameObject tokenPrefab; // Prefab para Tokens (Scapegoat, etc)
     public Transform playerHandLayoutGroup; // O HorizontalLayoutGroup da mão do jogador
     public Transform opponentHandLayoutGroup; // O HorizontalLayoutGroup da mão do oponente
-    
+
     [Header("Piles Visuals")]
     public PileDisplay playerDeckDisplay;
     public PileDisplay opponentDeckDisplay;
@@ -116,7 +116,7 @@ public class GameManager : MonoBehaviour
     public List<GameObject> opponentHand = new List<GameObject>();
     private List<CardData> opponentGraveyard = new List<CardData>();
     private List<CardData> playerExtraDeck = new List<CardData>();
-    public List<CardData> opponentExtraDeck = new List<CardData>(); // Tornado público para efeitos (Memory Crusher)
+    public List<CardData> opponentExtraDeck = new List<CardData>(); // Changed to public
     private List<CardData> playerRemoved = new List<CardData>(); // Novo
     private List<CardData> opponentRemoved = new List<CardData>(); // Novo
 
@@ -155,11 +155,11 @@ public class GameManager : MonoBehaviour
             Debug.LogError("Banco de dados não conectado ou está vazio!");
             yield break;
         }
-        
+
         // Carrega o nome salvo
         playerName = PlayerPrefs.GetString("PlayerName", "Duelist");
         currentSaveID = PlayerPrefs.GetString("CurrentSaveID", "default");
-    
+
         // O CardViewer agora busca seus próprios textos
         if (cardViewerDisplay == null)
         {
@@ -173,7 +173,7 @@ public class GameManager : MonoBehaviour
         // Inicializa o Baú com todas as cartas se estiver vazio (Modo Sandbox/Teste)
         if (playerTrunk.Count == 0 && cardDatabase != null)
         {
-            foreach(var card in cardDatabase.cardDatabase)
+            foreach (var card in cardDatabase.cardDatabase)
                 playerTrunk.Add(card.id);
         }
 
@@ -214,7 +214,7 @@ public class GameManager : MonoBehaviour
     {
         // Limpa o estado anterior (destrói cartas visuais, limpa listas)
         CleanupDuelState();
-        
+
         // Garante que os gerenciadores essenciais existam na cena
         EnsureCoreManagers();
 
@@ -222,16 +222,16 @@ public class GameManager : MonoBehaviour
         InitializeOpponentDeck();
         DrawInitialHand(5); // Exemplo: compra 5 cartas iniciais
         DrawInitialOpponentHand(5);
-        
+
         // Inicializa LP
         playerLP = 8000;
         opponentLP = 8000;
         turnCount = 0;
         UpdateLPUI();
-        
+
         // Reseta flag de draw antes de começar o turno
         hasDrawnThisTurn = false;
-        
+
         if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
         else Debug.LogError("PhaseManager não encontrado mesmo após tentativa de criação!");
 
@@ -246,7 +246,7 @@ public class GameManager : MonoBehaviour
         {
             // Se currentDuelIndex for -1 (Free Duel), tenta usar o tema do Ato 1 ou um padrão
             int levelToUse = (currentDuelIndex > 0) ? currentDuelIndex : 1;
-            
+
             DuelTheme theme = campaignDatabase.GetThemeForLevel(levelToUse);
             if (theme != null)
                 DuelThemeManager.Instance.ApplyTheme(theme);
@@ -263,7 +263,7 @@ public class GameManager : MonoBehaviour
         if (ChainManager.Instance == null) CreateManager<ChainManager>();
         if (SpellCounterManager.Instance == null) CreateManager<SpellCounterManager>();
         if (CardEffectManager.Instance == null) CreateManager<CardEffectManager>();
-        
+
         // Cria o gerenciador de testes se o modo estiver ativo
         if (effectTestMode && FindFirstObjectByType<EffectTestManager>() == null) CreateManager<EffectTestManager>();
     }
@@ -300,7 +300,7 @@ public class GameManager : MonoBehaviour
         UpdatePileVisuals();
         ClearCardViewer();
     }
-    
+
     // Sobrecarga para iniciar duelo contra personagem específico (Campanha)
     public void StartDuel(CharacterData opponent, int duelIndex = -1)
     {
@@ -317,7 +317,7 @@ public class GameManager : MonoBehaviour
         {
             Debug.Log("Gerando Deck Inicial Único...");
             List<CardData> generatedDeck = InitialDeckBuilder.Instance.GenerateInitialDeck();
-            
+
             playerDeck.Clear();
             playerExtraDeck.Clear(); // Deck inicial não tem fusões prontas
 
@@ -412,7 +412,7 @@ public class GameManager : MonoBehaviour
         GameManager.Instance.ShuffleDeck(isPlayer);
     }
 
-        public void ShuffleOpponentDeck()
+    public void ShuffleOpponentDeck()
     {
         ShuffleDeck(false);
     }
@@ -440,7 +440,7 @@ public class GameManager : MonoBehaviour
         else opponentHand.Remove(card.gameObject);
 
         SendToGraveyard(card.CurrentCardData, card.isPlayerCard, CardLocation.Hand, SendReason.Discarded);
-        
+
         // Remove modificadores (caso raro de efeito na mão, mas seguro)
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardDiscarded(card);
@@ -455,7 +455,7 @@ public class GameManager : MonoBehaviour
         if (hand.Count == 0) return;
 
         int count = Mathf.Min(amount, hand.Count);
-        
+
         for (int i = 0; i < count; i++)
         {
             if (hand.Count == 0) break;
@@ -487,7 +487,7 @@ public class GameManager : MonoBehaviour
         List<GameObject> hand = isPlayer ? playerHand : opponentHand;
         // Cria uma cópia da lista para iterar com segurança enquanto removemos
         List<GameObject> toDiscard = new List<GameObject>(hand);
-        
+
         foreach (GameObject cardGO in toDiscard)
         {
             CardDisplay cd = cardGO.GetComponent<CardDisplay>();
@@ -560,7 +560,7 @@ public class GameManager : MonoBehaviour
 
         if (isPlayer) playerLP -= amount;
         else opponentLP -= amount;
-        
+
         UpdateLPUI();
         Debug.Log($"{(isPlayer ? "Player" : "Oponente")} pagou {amount} LP.");
         return true;
@@ -570,10 +570,10 @@ public class GameManager : MonoBehaviour
     {
         if (isPlayer) playerLP += amount;
         else opponentLP += amount;
-        
+
         UpdateLPUI();
         Debug.Log($"{(isPlayer ? "Player" : "Oponente")} ganhou {amount} LP.");
-        
+
         // Notifica sistema de efeitos (Ex: Fire Princess)
         if (CardEffectManager.Instance != null)
             CardEffectManager.Instance.OnLifePointsGained(isPlayer, amount);
@@ -638,9 +638,9 @@ public class GameManager : MonoBehaviour
         CardData drawnCard = playerDeck[0];
         playerDeck.RemoveAt(0);
         UpdatePileVisuals(); // Atualiza visual do deck após remover carta
-        
+
         Debug.Log($"Carta comprada: {drawnCard.name}. Cartas restantes no deck: {playerDeck.Count}");
-        
+
         // Marca que já comprou neste turno (se não for mão inicial)
         if (!ignoreLimit) hasDrawnThisTurn = true;
 
@@ -659,15 +659,15 @@ public class GameManager : MonoBehaviour
             {
                 newCardDisplay = newCardGO.AddComponent<CardDisplay>();
             }
-            
+
             // Força a busca de componentes se necessário, pois Awake pode já ter rodado antes de configurarmos tudo
             // Mas como acabamos de instanciar, Awake rodou.
             // Se a carta foi instanciada desativada, Awake não rodou.
             // Vamos garantir que ela esteja pronta.
-            
+
             newCardGO.transform.localScale = handCardScale;
             newCardDisplay.hoverYOffset = playerHandHoverYOffset;
-            newCardDisplay.isInteractable = true; 
+            newCardDisplay.isInteractable = true;
 
             newCardDisplay.isPlayerCard = true;
             newCardDisplay.SetCard(drawnCard, cardBackTexture);
@@ -701,7 +701,7 @@ public class GameManager : MonoBehaviour
         CardData drawnCard = opponentDeck[0];
         opponentDeck.RemoveAt(0);
         UpdatePileVisuals(); // Atualiza visual do deck do oponente
-        
+
         // Adiciona a carta à mão visualmente
         if (cardPrefab != null && opponentHandLayoutGroup != null)
         {
@@ -722,7 +722,7 @@ public class GameManager : MonoBehaviour
             bool startFaceUp = showOpponentHand;
             newCardDisplay.SetCard(drawnCard, cardBackTexture, startFaceUp);
             opponentHand.Add(newCardGO);
-            
+
             // Pikeru's Second Sight (1431)
             if (revealOpponentDraw)
             {
@@ -757,7 +757,7 @@ public class GameManager : MonoBehaviour
         {
             opponentGraveyard.Add(card);
         }
-        
+
         if (DuelScoreManager.Instance != null)
         {
             // Registra pontuação se for carta do jogador indo pro cemitério
@@ -794,9 +794,9 @@ public class GameManager : MonoBehaviour
         {
             opponentRemoved.Add(card);
         }
-        
+
         // TODO: Adicionar lógica de pontuação se necessário
-        
+
         UpdatePileVisuals();
     }
 
@@ -852,7 +852,7 @@ public class GameManager : MonoBehaviour
             // Se a carta estiver virada para baixo ou for do oponente, mostra o verso
             cardViewerDisplay.SetCardBackOnly(cardBackTexture);
         }
-        
+
         // Força a atualização visual do Card Viewer para aplicar as configurações de borda/arredondamento
         // Isso é importante se as configurações mudarem em tempo real ou se o estado da carta mudar
         // O método SetCard já chama ApplyRoundedCorners, mas podemos garantir aqui também se necessário.
@@ -906,8 +906,8 @@ public class GameManager : MonoBehaviour
             // Verifica exceções de Draw via SpellTrapManager
             int draws = 1;
             if (SpellTrapManager.Instance != null) draws += SpellTrapManager.Instance.extraDrawsPerTurn;
-            
-            for(int i=0; i<draws; i++)
+
+            for (int i = 0; i < draws; i++)
                 DrawCard();
         }
     }
@@ -942,9 +942,9 @@ public class GameManager : MonoBehaviour
         int headsCount = 0;
         for (int i = 0; i < numberOfCoins; i++)
         {
-            if (UIManager.Instance != null) UIManager.Instance.ShowMessage($"Jogando moeda {i+1}...");
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage($"Jogando moeda {i + 1}...");
             yield return new WaitForSeconds(0.8f); // Tempo para "animação"
-            
+
             bool isHeads = Random.value > 0.5f;
             if (isHeads) headsCount++;
             if (UIManager.Instance != null) UIManager.Instance.ShowMessage(isHeads ? "CARA!" : "COROA!");
@@ -1071,13 +1071,13 @@ public class GameManager : MonoBehaviour
         if (DuelScoreManager.Instance != null)
         {
             DuelScoreManager.Instance.StopDuelTracking(playerWon, isDeckOut, playerLP);
-            
+
             int score;
             DuelRank rank = DuelScoreManager.Instance.CalculateFinalRank(out score);
-            
+
             Debug.Log($"DUELO FINALIZADO! Venceu: {playerWon} | Rank: {rank} | Pontos: {score}");
             Debug.Log(DuelScoreManager.Instance.GetScoreReport());
-            
+
             // TODO: Chamar UIManager para mostrar tela de Resultado (Vitória/Derrota) com o Rank
         }
     }
@@ -1089,7 +1089,7 @@ public class GameManager : MonoBehaviour
         playerLP -= amount;
         if (playerLP < 0) playerLP = 0;
         UpdateLPUI();
-        
+
         if (DuelScoreManager.Instance != null) DuelScoreManager.Instance.RecordDamageTaken(amount);
         Debug.Log($"Player tomou {amount} de dano. LP Restante: {playerLP}");
 
@@ -1139,7 +1139,7 @@ public class GameManager : MonoBehaviour
         // IDs das 5 partes do Exodia (Baseado no seu JSON)
         string[] exodiaParts = { "0618", "1061", "1062", "1530", "1531" };
         HashSet<string> handIds = new HashSet<string>();
-        
+
         foreach (GameObject cardGO in playerHand)
         {
             CardDisplay display = cardGO.GetComponent<CardDisplay>();
@@ -1259,7 +1259,7 @@ public class GameManager : MonoBehaviour
         // Normal Summon/Set: Se isSet=true, é Face-Down Defense. Se false, é Face-Up Attack.
         // Nota: Se houve tributo automático, SummonManager deveria ter lidado, mas aqui assumimos fluxo simples ou 0 tributos
         bool wasTribute = (cardData.level >= 5); // Simplificação para Auto-Tribute implícito se passou pelo SummonManager
-        FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, wasTribute); 
+        FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, wasTribute);
     }
 
     // Novo método para Special Summon que pede a posição
@@ -1267,7 +1267,7 @@ public class GameManager : MonoBehaviour
     {
         if (UIManager.Instance != null)
         {
-            UIManager.Instance.ShowPositionSelection(cardData, (selectedPosition) => 
+            UIManager.Instance.ShowPositionSelection(cardData, (selectedPosition) =>
             {
                 bool isDefense = (selectedPosition == CardDisplay.BattlePosition.Defense);
                 // Special Summon geralmente é Face-Up, mesmo em defesa
@@ -1292,7 +1292,7 @@ public class GameManager : MonoBehaviour
         CardDisplay display = cardGO.GetComponent<CardDisplay>();
         if (isPlayer) playerHand.Remove(cardGO);
         else opponentHand.Remove(cardGO);
-        
+
         cardGO.transform.SetParent(targetZone); // Coloca na zona
         cardGO.transform.localPosition = Vector3.zero; // Centraliza
         cardGO.transform.localScale = fieldCardScale; // Reseta escala para a do campo
@@ -1302,7 +1302,7 @@ public class GameManager : MonoBehaviour
         {
             display.isInteractable = false; // Desativa o hover de mão (subir)
             display.isOnField = true;
-            
+
             if (isDefensePos)
             {
                 display.position = CardDisplay.BattlePosition.Defense;
@@ -1310,7 +1310,7 @@ public class GameManager : MonoBehaviour
                 display.isTributeSummoned = isTributeSummon;
                 // Modo Defesa (Set): Virado para baixo e Rotacionado 90 graus
                 float zRotation = isPlayer ? 90f : -90f;
-                
+
                 if (isFaceDown) display.ShowBack(); else display.ShowFront();
                 cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRotation);
             }
@@ -1323,7 +1323,7 @@ public class GameManager : MonoBehaviour
                 float zRotation = isPlayer ? 0f : 180f;
                 display.ShowFront();
                 cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRotation);
-                
+
                 // Toca efeito visual de invocação
                 if (DuelFXManager.Instance != null)
                     DuelFXManager.Instance.PlaySummonEffect(display);
@@ -1354,7 +1354,7 @@ public class GameManager : MonoBehaviour
         return null;
     }
 
-        // --- SISTEMA DE RITUAL ---
+    // --- SISTEMA DE RITUAL ---
 
     public void BeginRitualSummon(CardDisplay sourceCard)
     {
@@ -1459,7 +1459,7 @@ public class GameManager : MonoBehaviour
         // 2. Verifica se é Field Spell
         if (cardData.race == "Field")
         {
-            if (duelFieldUI != null) 
+            if (duelFieldUI != null)
                 targetZone = isPlayer ? duelFieldUI.playerFieldSpell : duelFieldUI.opponentFieldSpell;
         }
         else
@@ -1494,7 +1494,7 @@ public class GameManager : MonoBehaviour
                 float zRotation = isPlayer ? 0f : 180f;
                 display.ShowBack();
                 // Spells/Traps setadas ficam verticais (não rotacionam como monstros em defesa)
-                cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRotation); 
+                cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRotation);
             }
             else
             {
@@ -1506,7 +1506,7 @@ public class GameManager : MonoBehaviour
                 bool isTrap = cardData.type.Contains("Trap");
                 if (DuelFXManager.Instance != null)
                     DuelFXManager.Instance.PlayCardActivation(display, isTrap);
-                
+
                 if (DuelScoreManager.Instance != null)
                 {
                     if (isTrap) DuelScoreManager.Instance.RecordTrapActivation();
@@ -1551,7 +1551,7 @@ public class GameManager : MonoBehaviour
         bool isTrap = cardData.type.Contains("Trap");
         if (DuelFXManager.Instance != null)
             DuelFXManager.Instance.PlayCardActivation(display, isTrap);
-        
+
         if (DuelScoreManager.Instance != null)
         {
             if (isTrap) DuelScoreManager.Instance.RecordTrapActivation();
@@ -1585,7 +1585,7 @@ public class GameManager : MonoBehaviour
     }
 
     // --- GERENCIAMENTO DE DECK (ACESSO PÚBLICO) ---
-    
+
     public List<CardData> GetPlayerMainDeck() { return playerDeck; }
     public List<CardData> GetPlayerSideDeck() { return playerSideDeck; }
     public List<CardData> GetPlayerExtraDeck() { return playerExtraDeck; }
@@ -1610,7 +1610,7 @@ public class GameManager : MonoBehaviour
         }
         return true;
     }
-    
+
     public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
     {
         playerDeck = new List<CardData>(main);
@@ -1650,7 +1650,7 @@ public class GameManager : MonoBehaviour
         if (CheckZone(duelFieldUI.opponentSpellZones)) return true;
         if (CheckZone(duelFieldUI.playerMonsterZones)) return true; // Jinzo é monstro
         if (CheckZone(duelFieldUI.opponentMonsterZones)) return true;
-        
+
         // Checa Field Spells
         if (duelFieldUI.playerFieldSpell.childCount > 0)
         {
@@ -1740,7 +1740,8 @@ public class GameManager : MonoBehaviour
     // Método para Seleção Única (Mantido para compatibilidade, redireciona para Multi)
     public void OpenCardSelection(List<CardData> sourceList, string title, System.Action<CardData> onSelected)
     {
-        OpenCardMultiSelection(sourceList, title, 1, 1, (selectedList) => {
+        OpenCardMultiSelection(sourceList, title, 1, 1, (selectedList) =>
+        {
             if (selectedList != null && selectedList.Count > 0)
                 onSelected?.Invoke(selectedList[0]);
         });
@@ -1783,11 +1784,11 @@ public class GameManager : MonoBehaviour
 
         cardGO.transform.localPosition = Vector3.zero;
         cardGO.transform.localScale = fieldCardScale;
-        
+
         float zRot = 0;
         if (defense) zRot = forPlayer ? 90f : -90f;
         else zRot = forPlayer ? 0f : 180f;
-        
+
         cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRot);
 
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySummonEffect(display);
@@ -1807,7 +1808,13 @@ public class GameManager : MonoBehaviour
         return display;
     }
 
-        // Helper para encontrar um CardDisplay no campo pelo ID
+    public void OnSummon(CardDisplay card)
+    {
+        if (CardEffectManager.Instance != null)
+            CardEffectManager.Instance.OnSummon(card);
+    }
+
+    // Helper para encontrar um CardDisplay no campo pelo ID
     public CardDisplay FindCardOnField(string cardId, bool isPlayer)
     {
         Transform[] zones = isPlayer ? duelFieldUI.playerMonsterZones : duelFieldUI.opponentMonsterZones;
@@ -1822,7 +1829,7 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
-        
+
         zones = isPlayer ? duelFieldUI.playerSpellZones : duelFieldUI.opponentSpellZones;
         foreach (var zone in zones)
         {
@@ -1928,9 +1935,9 @@ public class GameManager : MonoBehaviour
         // 3. Invoca o Monstro de Fusão
         if (playerExtraDeck.Contains(fusionMonster))
             playerExtraDeck.Remove(fusionMonster);
-        
+
         CardDisplay summonedMonster = SpecialSummonFromData(fusionMonster, true);
-        
+
         // 4. Registra os materiais usados (para UFOroid Fighter, etc)
         if (summonedMonster != null)
         {
@@ -1953,14 +1960,14 @@ public class GameManager : MonoBehaviour
 
         // Remove da zona de monstro/mão se necessário (SetParent cuida da hierarquia, mas listas precisam de update)
         if (equipCard.isPlayerCard && playerHand.Contains(equipCard.gameObject)) playerHand.Remove(equipCard.gameObject);
-        
+
         equipCard.transform.SetParent(targetZone);
         equipCard.transform.localPosition = Vector3.zero;
         equipCard.transform.localScale = fieldCardScale;
         equipCard.transform.localRotation = Quaternion.Euler(0, 0, 0); // Face-up
         equipCard.isOnField = true;
         equipCard.isInteractable = false;
-        
+
         CreateCardLink(equipCard, targetMonster, CardLink.LinkType.Equipment);
         Debug.Log($"{equipCard.CurrentCardData.name} equipado em {targetMonster.CurrentCardData.name}.");
     }

@@ -35,7 +35,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     private Texture2D backTexture;
     public bool isFlipped = false; // Tornado público para acesso externo
     private RectTransform rectTransform;
-    
+
     // Componentes para corrigir a renderização e tremedeira
     private Canvas canvas;
     private GraphicRaycaster graphicRaycaster;
@@ -47,7 +47,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool isOnField = false; // Define se a carta está no campo
     [HideInInspector] public bool isInPile = false; // Define se a carta está em uma pilha (Deck, GY, Extra)
     [HideInInspector] public BattlePosition position; // Posição de batalha do monstro
-    
+
     // Variáveis de Estado de Turno
     [HideInInspector] public bool hasAttackedThisTurn = false;
     [HideInInspector] public bool hasChangedPositionThisTurn = false;
@@ -62,7 +62,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public int paidLifePoints = 0; // Para Wall of Revealing Light
 
     [HideInInspector] public bool isTributeSummoned = false; // Novo: Rastreia Invocação por Tributo
-    
+
     // Stats em Tempo Real (Modificados por efeitos)
     [HideInInspector] public int originalAtk;
     [HideInInspector] public int originalDef;
@@ -100,7 +100,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             if (transform.parent != null)
             {
                 var allTexts = transform.parent.GetComponentsInChildren<TextMeshProUGUI>(true);
-                foreach(var t in allTexts)
+                foreach (var t in allTexts)
                 {
                     if (t.name.Contains("Name")) cardNameText = t;
                     if (t.name.Contains("Info")) cardInfoText = t;
@@ -115,7 +115,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             // 1. Tenta achar o filho "Art" (Padrão novo)
             Transform art = transform.Find("Art");
-            if (art != null) 
+            if (art != null)
             {
                 cardImage = art.GetComponent<RawImage>();
                 // FIX EXTRA: Se o objeto "Art" existe mas está sem o componente RawImage, adiciona agora
@@ -129,7 +129,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // FIX: Garante que a imagem da carta não bloqueie o mouse (para o Hover no pai funcionar)
         if (cardImage != null)
             cardImage.raycastTarget = false;
-        
+
         // FIX: Configura a Borda para esticar na carta toda e não bloquear cliques
         if (outlineImage != null)
         {
@@ -139,7 +139,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             outlineImage.rectTransform.anchorMin = Vector2.zero;
             outlineImage.rectTransform.anchorMax = Vector2.one;
             // O tamanho será controlado pelo layout ou sprite
-            
+
             outlineImage.gameObject.SetActive(false);
         }
 
@@ -172,7 +172,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         Mask mask = GetComponent<Mask>();
         // Se não tiver máscara e precisarmos arredondar, adiciona. Se não precisar, não adiciona à toa.
         if (mask == null && useRounded) mask = gameObject.AddComponent<Mask>();
-        
+
         Image parentImage = GetComponent<Image>();
         if (parentImage == null && useRounded) parentImage = gameObject.AddComponent<Image>();
 
@@ -186,7 +186,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             if (mask != null)
             {
                 // A máscara DEVE ser visível para que o Outline tenha onde se desenhar
-                mask.showMaskGraphic = true; 
+                mask.showMaskGraphic = true;
                 mask.enabled = true;
             }
         }
@@ -201,7 +201,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public void SetCard(CardData card, Texture2D cardBackTexture, bool startFaceUp = true)
     {
         if (card == null) return;
-        
+
         // Limpa requisição anterior se ainda estiver rodando
         if (currentRequest != null)
         {
@@ -219,7 +219,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         currentCardData = card;
         backTexture = cardBackTexture;
         isFlipped = !startFaceUp; // Se startFaceUp for false, isFlipped será true (verso)
-        
+
         // Inicializa stats
         originalAtk = card.atk;
         originalDef = card.def;
@@ -231,9 +231,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         turnCounter = 0; // Reseta contadores de turno
 
         originalScale = transform.localScale; // Salva a escala inicial definida pelo GameManager
-        
+
         DisplayCardDetails();
-        
+
         // Se começar virada, já aplica o verso imediatamente
         if (isFlipped && cardImage != null && backTexture != null)
         {
@@ -298,14 +298,14 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     IEnumerator LoadCardFrontTexture(string imagePath)
     {
         string fullPath = Path.Combine(Application.streamingAssetsPath, imagePath);
-        
+
         // FIX: Usa System.Uri para escapar caracteres especiais (como #) corretamente no caminho
         string url = "file://" + fullPath;
         try { url = new System.Uri(fullPath).AbsoluteUri; } catch { }
 
         // Não usamos 'using' aqui para poder descartar manualmente se a corrotina for interrompida
         currentRequest = UnityWebRequestTexture.GetTexture(url);
-        
+
         yield return currentRequest.SendWebRequest();
 
         if (currentRequest.result == UnityWebRequest.Result.Success)
@@ -364,7 +364,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             position = BattlePosition.Attack;
             // Ataque: Reto
             transform.localRotation = Quaternion.identity;
-            
+
             // Flip Summon: Se estava virado para baixo em defesa e muda para ataque, vira para cima
             if (isFlipped)
             {
@@ -372,13 +372,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 // Flip Summon conta como invocação? Em regras oficiais sim, mas aqui tratamos como mudança de posição.
                 // Efeitos de Flip seriam disparados aqui.
             }
-                    GameManager.Instance.OnBattlePositionChanged(this);
-    // Informa o EventManager da invocação
-    if (GameManager.Instance != null)
-        GameManager.Instance.OnSummon(this);
+            GameManager.Instance.OnBattlePositionChanged(this);
+            // Informa o EventManager da invocação
+            if (GameManager.Instance != null)
+                GameManager.Instance.OnSummon(this);
         }
     }
-    
+
     // Novo método para revelar carta (Flip) com verificação de exceções
     public void RevealCard(bool isAttackTriggered = false)
     {
@@ -387,7 +387,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Verifica exceções via SpellTrapManager ou efeitos de monstros
         // Por exemplo, "Light of Intervention" impede monstros de serem setados face-down, ou revela todos.
         // Aqui é um bom lugar para hooks de efeitos de "Flip Effect" monsters.
-        
+
         if (isAttackTriggered)
         {
             Debug.Log($"CardDisplay: Carta {currentCardData.name} revelada por ataque!");
@@ -401,7 +401,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
 
         ShowFront();
-        
+
         // Se for Spell/Trap, pode ser que precise ficar revelada ou ir pro GY dependendo do tipo (Continuous vs Normal)
         // Isso será tratado pelo GameManager/SpellTrapManager na resolução da chain.
     }
@@ -535,13 +535,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 // Opção 1: Usa o componente Outline do Unity no PAI (gameObject)
                 // Aplicar no pai garante que a máscara não corte o contorno externo
                 Outline outline = GetComponent<Outline>();
-                if (outline == null) outline = gameObject.AddComponent<Outline>();                
-                
+                if (outline == null) outline = gameObject.AddComponent<Outline>();
+
                 // Usa a cor do tema se disponível, senão usa a cor local
                 outline.effectColor = (GameManager.Instance != null) ? GameManager.Instance.themeHoverColor : hoverColor;
                 outline.effectDistance = new Vector2(4, -4); // Espessura da borda
                 // FIX: Usa o alpha do gráfico (sprite arredondado) para desenhar a borda
-                outline.useGraphicAlpha = true; 
+                outline.useGraphicAlpha = true;
                 outline.enabled = true;
             }
             else if (outlineImage != null)
@@ -559,7 +559,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             // FIX: Usa Canvas Sorting para trazer para frente visualmente sem recalcular o Layout
             canvas.overrideSorting = true;
             canvas.sortingOrder = 10; // Valor alto para ficar por cima de tudo
-            
+
             // Move para cima (Y) mantendo a escala original
             rectTransform.anchoredPosition += new Vector2(0, hoverYOffset);
         }
@@ -688,7 +688,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
             if (canActivate)
             {
-                UIManager.Instance.ShowConfirmation($"Ativar {currentCardData.name}?", () => {
+                UIManager.Instance.ShowConfirmation($"Ativar {currentCardData.name}?", () =>
+                {
                     GameManager.Instance.ActivateFieldSpellTrap(gameObject);
                 });
             }

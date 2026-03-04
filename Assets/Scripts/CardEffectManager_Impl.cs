@@ -10,7 +10,7 @@ public partial class CardEffectManager
     public bool reverseStats = false; // Para Reverse Trap (1526)
 
     public bool banishInsteadOfGraveyard = false; // Para Macro Cosmos / Dimensional Fissure / Spirit Elimination
-    
+
     public string dnaSurgeryDeclaredType = ""; // Para DNA Surgery (0390)
 
     // --- MÉTODOS UTILITÁRIOS COMUNS (REAPROVEITADOS) ---
@@ -71,7 +71,8 @@ public partial class CardEffectManager
             // --- EFEITOS DE STANDBY PHASE ---
 
             // Wave-Motion Cannon (2065): Acumula contador
-            CheckActiveCards("2065", (card) => {
+            CheckActiveCards("2065", (card) =>
+            {
                 // O contador aumenta na Standby Phase do controlador
                 if (card.isPlayerCard == GameManager.Instance.isPlayerTurn)
                 {
@@ -117,7 +118,7 @@ public partial class CardEffectManager
                     // Verifica se está no GY do jogador atual
                     bool inPlayerGY = GameManager.Instance.GetPlayerGraveyard().Contains(cardData);
                     bool inOppGY = GameManager.Instance.GetOpponentGraveyard().Contains(cardData);
-                    
+
                     if (inPlayerGY && GameManager.Instance.isPlayerTurn)
                     {
                         GameManager.Instance.SpecialSummonFromData(cardData, true);
@@ -134,7 +135,8 @@ public partial class CardEffectManager
             }
 
             // 2076 - White Magician Pikeru
-            CheckActiveCards("2076", (card) => {
+            CheckActiveCards("2076", (card) =>
+            {
                 if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && card.position == CardDisplay.BattlePosition.Defense)
                 {
                     int monsterCount = GameManager.Instance.GetFieldCardCount(card.isPlayerCard); // Simplificado, conta tudo
@@ -166,16 +168,19 @@ public partial class CardEffectManager
 
             // 1757 - Spiritual Energy Settle Machine (Manutenção)
             bool machineActive = false;
-            CheckActiveCards("1757", (card) => {
+            CheckActiveCards("1757", (card) =>
+            {
                 machineActive = true;
                 if (card.isPlayerCard) // Apenas o controlador paga o custo
                 {
                     if (GameManager.Instance.GetPlayerHandData().Count > 0)
                     {
-                        UIManager.Instance.ShowConfirmation("Manter 'Spiritual Energy Settle Machine' (descartar 1 carta)?", 
-                        () => {
+                        UIManager.Instance.ShowConfirmation("Manter 'Spiritual Energy Settle Machine' (descartar 1 carta)?",
+                        () =>
+                        {
                             // Jogador escolhe qual carta descartar
-                            GameManager.Instance.OpenCardSelection(GameManager.Instance.GetPlayerHandData(), "Descarte 1 para manter a Máquina", (toDiscardData) => {
+                            GameManager.Instance.OpenCardSelection(GameManager.Instance.GetPlayerHandData(), "Descarte 1 para manter a Máquina", (toDiscardData) =>
+                            {
                                 if (toDiscardData != null)
                                 {
                                     var cardToDiscard = GameManager.Instance.playerHand.Find(go => go.GetComponent<CardDisplay>().CurrentCardData == toDiscardData);
@@ -187,8 +192,9 @@ public partial class CardEffectManager
                                     Destroy(card.gameObject);
                                 }
                             });
-                        }, 
-                        () => { // Jogador escolheu "Não" na confirmação
+                        },
+                        () =>
+                        { // Jogador escolheu "Não" na confirmação
                             GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
                             Destroy(card.gameObject);
                         });
@@ -231,7 +237,8 @@ public partial class CardEffectManager
         if (phase == GamePhase.Draw)
         {
             // Cyber Archfiend (0357): Se mão vazia na Draw Phase, compra +1
-            CheckActiveCards("0357", (card) => {
+            CheckActiveCards("0357", (card) =>
+            {
                 List<CardData> hand = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
                 if (hand.Count == 0)
                 {
@@ -246,9 +253,10 @@ public partial class CardEffectManager
             CheckMaintenanceCosts();
 
             // 2. Efeitos de Fase (Phase Triggers)
-            
+
             // Dancing Fairy (0393): Ganha 1000 LP se em Defesa
-            CheckActiveCards("0393", (card) => {
+            CheckActiveCards("0393", (card) =>
+            {
                 if (card.position == CardDisplay.BattlePosition.Defense && card.isPlayerCard)
                 {
                     Effect_GainLP(card, 1000);
@@ -257,7 +265,7 @@ public partial class CardEffectManager
 
             // Darklord Marie (0453): Ganha 200 LP se no GY
             List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
-            foreach(var cardData in myGY)
+            foreach (var cardData in myGY)
             {
                 if (cardData.id == "0453")
                 {
@@ -268,12 +276,14 @@ public partial class CardEffectManager
             }
 
             // Balloon Lizard (0132): Add counter
-            CheckActiveCards("0132", (card) => {
+            CheckActiveCards("0132", (card) =>
+            {
                 if (card.isPlayerCard) card.AddSpellCounter(1);
             });
 
             // Blast Sphere (0201): Destroy equipped and burn
-            CheckActiveCards("0201", (card) => {
+            CheckActiveCards("0201", (card) =>
+            {
                 // Se tiver contador (marcado no BattleManager), é a standby phase seguinte
                 if (card.spellCounters > 0)
                 {
@@ -288,7 +298,8 @@ public partial class CardEffectManager
             });
 
             // Blind Destruction (0206)
-            CheckActiveCards("0206", (card) => {
+            CheckActiveCards("0206", (card) =>
+            {
                 if (card.isPlayerCard)
                 {
                     Effect_0206_BlindDestruction_Logic(card);
@@ -296,12 +307,14 @@ public partial class CardEffectManager
             });
 
             // Bowganian (0235): 600 dano na Standby
-            CheckActiveCards("0235", (card) => {
+            CheckActiveCards("0235", (card) =>
+            {
                 if (card.isPlayerCard) Effect_DirectDamage(card, 600);
             });
 
             // Brain Jacker (0238): Ganha 500 LP na Standby do oponente
-            CheckActiveCards("0238", (card) => {
+            CheckActiveCards("0238", (card) =>
+            {
                 // Se está no campo do oponente (foi equipado e trocou controle), o dono original ganha LP?
                 // Texto: "During your opponent's Standby Phase, gain 500 Life Points." (Referindo-se ao controlador do monstro equipado/efeito)
                 // Como Brain Jacker vira Equip, ele fica na S/T zone.
@@ -312,14 +325,16 @@ public partial class CardEffectManager
             });
 
             // Burning Land (0248): 500 dano na Standby
-            CheckActiveCards("0248", (card) => {
+            CheckActiveCards("0248", (card) =>
+            {
                 // Dano para o jogador do turno
                 if (card.isPlayerCard) GameManager.Instance.DamagePlayer(500);
                 else GameManager.Instance.DamageOpponent(500);
             });
 
             // Bottomless Shifting Sand (0232): Destrói se mão <= 4
-            CheckActiveCards("0232", (card) => {
+            CheckActiveCards("0232", (card) =>
+            {
                 if (card.isPlayerCard)
                 {
                     int handCount = GameManager.Instance.GetPlayerHandData().Count;
@@ -333,7 +348,8 @@ public partial class CardEffectManager
             });
 
             // Cybernetic Cyclopean (0372): ATK vira 2400 se mão vazia
-            CheckActiveCards("0372", (card) => {
+            CheckActiveCards("0372", (card) =>
+            {
                 List<CardData> hand = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
                 if (hand.Count == 0)
                 {
@@ -344,13 +360,15 @@ public partial class CardEffectManager
             });
 
             // Dark Catapulter (0402): Add counter in Standby if Defense
-            CheckActiveCards("0402", (card) => {
+            CheckActiveCards("0402", (card) =>
+            {
                 if (card.isPlayerCard && card.position == CardDisplay.BattlePosition.Defense)
                     card.AddSpellCounter(1);
             });
 
             // Dangerous Machine Type-6 (0394): Rola dado na Standby
-            CheckActiveCards("0394", (card) => {
+            CheckActiveCards("0394", (card) =>
+            {
                 if (card.isPlayerCard)
                 {
                     int roll = Random.Range(1, 7);
@@ -371,7 +389,8 @@ public partial class CardEffectManager
             });
 
             // Lava Golem (1060): 1000 damage to controller
-            CheckActiveCards("1060", (card) => {
+            CheckActiveCards("1060", (card) =>
+            {
                 // The controller takes damage.
                 // If card.isPlayerCard is true, it means the player controls it.
                 if (card.isPlayerCard) GameManager.Instance.DamagePlayer(1000);
@@ -380,10 +399,11 @@ public partial class CardEffectManager
             });
 
             // Mask of Dispel (1171): 500 damage to controller of targeted spell
-            CheckActiveCards("1171", (card) => {
+            CheckActiveCards("1171", (card) =>
+            {
                 // Encontra o alvo via links
                 CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
-                foreach(var link in links)
+                foreach (var link in links)
                 {
                     if (link.source == card && link.target != null)
                     {
@@ -396,7 +416,8 @@ public partial class CardEffectManager
             });
 
             // 1244 - Minor Goblin Official
-            CheckActiveCards("1244", (card) => {
+            CheckActiveCards("1244", (card) =>
+            {
                 if (GameManager.Instance.opponentLP <= 3000 && !card.isPlayerCard) // Turno do oponente
                 {
                     Effect_DirectDamage(card, 500);
@@ -404,14 +425,15 @@ public partial class CardEffectManager
             });
 
             // 1250 - Mirage of Nightmare
-            CheckActiveCards("1250", (card) => {
+            CheckActiveCards("1250", (card) =>
+            {
                 if (!card.isPlayerCard) // Standby do Oponente: Compra até 4
                 {
                     int handCount = GameManager.Instance.GetPlayerHandData().Count;
                     if (handCount < 4)
                     {
                         int toDraw = 4 - handCount;
-                        for(int i=0; i<toDraw; i++) GameManager.Instance.DrawCard();
+                        for (int i = 0; i < toDraw; i++) GameManager.Instance.DrawCard();
                         card.spellCounters = toDraw; // Armazena quantos comprou
                     }
                 }
@@ -424,9 +446,10 @@ public partial class CardEffectManager
                     }
                 }
             });
-            
+
             // 1755 - Spirit's Invitation
-            CheckActiveCards("1755", (card) => {
+            CheckActiveCards("1755", (card) =>
+            {
                 if (card.isPlayerCard)
                 {
                     if (!Effect_PayLP(card, 500))
@@ -439,7 +462,8 @@ public partial class CardEffectManager
             });
 
             // 1757 - Spiritual Energy Settle Machine
-            CheckActiveCards("1757", (card) => {
+            CheckActiveCards("1757", (card) =>
+            {
                 if (card.isPlayerCard)
                 {
                     // Discard 1 card or destroy
@@ -454,12 +478,13 @@ public partial class CardEffectManager
                     }
                 }
             });
-            
+
             // 1775 - Stim-Pack
-            CheckActiveCards("1775", (card) => {
+            CheckActiveCards("1775", (card) =>
+            {
                 // Encontra o monstro equipado
                 CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
-                foreach(var link in links)
+                foreach (var link in links)
                 {
                     if (link.source == card && link.target != null)
                     {
@@ -468,9 +493,10 @@ public partial class CardEffectManager
                     }
                 }
             });
-            
+
             // 1859 - The Eye of Truth
-            CheckActiveCards("1859", (card) => {
+            CheckActiveCards("1859", (card) =>
+            {
                 if (!card.isPlayerCard) // Standby do oponente
                 {
                     List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
@@ -480,9 +506,10 @@ public partial class CardEffectManager
                     }
                 }
             });
-            
+
             // 1902 - The Unfriendly Amazon
-            CheckActiveCards("1902", (card) => {
+            CheckActiveCards("1902", (card) =>
+            {
                 if (card.isPlayerCard)
                 {
                     // Tribute or destroy
@@ -501,19 +528,21 @@ public partial class CardEffectManager
             });
 
             // 1046 - Labyrinth of Nightmare
-            CheckActiveCards("1046", (card) => {
+            CheckActiveCards("1046", (card) =>
+            {
                 if (GameManager.Instance.duelFieldUI != null)
                 {
                     List<CardDisplay> all = new List<CardDisplay>();
                     CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
                     CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
-                    foreach(var m in all) m.ChangePosition();
+                    foreach (var m in all) m.ChangePosition();
                     Debug.Log("Labyrinth of Nightmare: Posições alteradas na End Phase.");
                 }
             });
 
             // 1093 - Little-Winguard
-            CheckActiveCards("1093", (card) => {
+            CheckActiveCards("1093", (card) =>
+            {
                 if (card.isPlayerCard) card.ChangePosition(); // Simplificado: Muda automaticamente ou pede confirmação
             });
 
@@ -523,7 +552,8 @@ public partial class CardEffectManager
         else if (phase == GamePhase.End)
         {
             // Solar Flare Dragon (1686): 500 dano
-            CheckActiveCards("1686", (card) => {
+            CheckActiveCards("1686", (card) =>
+            {
                 if (card.isPlayerCard) Effect_DirectDamage(card, 500);
             });
 
@@ -542,7 +572,8 @@ public partial class CardEffectManager
             bool isOpponentTurn = !GameManager.Instance.canPlacePlayerCards; // Simplificação
             if (isOpponentTurn)
             {
-                CheckActiveCards("0232", (card) => {
+                CheckActiveCards("0232", (card) =>
+                {
                     if (card.isPlayerCard)
                     {
                         Debug.Log("Bottomless Shifting Sand: Destruindo monstro(s) com maior ATK.");
@@ -551,9 +582,9 @@ public partial class CardEffectManager
                         List<CardDisplay> targets = new List<CardDisplay>();
                         CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, targets);
                         CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, targets);
-                        
-                        foreach(var m in targets) if (m.currentAtk > maxAtk) maxAtk = m.currentAtk;
-                        
+
+                        foreach (var m in targets) if (m.currentAtk > maxAtk) maxAtk = m.currentAtk;
+
                         List<CardDisplay> toDestroy = targets.FindAll(m => m.currentAtk == maxAtk);
                         DestroyCards(toDestroy, true);
                     }
@@ -561,7 +592,8 @@ public partial class CardEffectManager
             }
 
             // Dark Dust Spirit (0408): Return to hand
-            CheckActiveCards("0408", (card) => {
+            CheckActiveCards("0408", (card) =>
+            {
                 if (card.isPlayerCard && card.isFlipped == false) // Face-up
                 {
                     Debug.Log("Dark Dust Spirit: Retornando para a mão.");
@@ -570,7 +602,8 @@ public partial class CardEffectManager
             });
 
             // Dark Magician of Chaos (0422): Add Spell from GY
-            CheckActiveCards("0422", (card) => {
+            CheckActiveCards("0422", (card) =>
+            {
                 if (card.isPlayerCard && card.summonedThisTurn)
                 {
                     // Simplificado: Pega a primeira spell
@@ -599,7 +632,8 @@ public partial class CardEffectManager
             }
 
             // 1249 - Mirage Knight (Banish if battled)
-            CheckActiveCards("1249", (card) => {
+            CheckActiveCards("1249", (card) =>
+            {
                 if (card.battledThisTurn)
                 {
                     Debug.Log("Mirage Knight: Banido após batalha.");
@@ -608,7 +642,8 @@ public partial class CardEffectManager
             });
 
             // 1252 - Mirror Wall (Maintenance)
-            CheckActiveCards("1252", (card) => {
+            CheckActiveCards("1252", (card) =>
+            {
                 if (!Effect_PayLP(card, 2000))
                 {
                     Debug.Log("Mirror Wall: Manutenção não paga. Destruída.");
@@ -618,7 +653,8 @@ public partial class CardEffectManager
             });
 
             // 1283 - Mucus Yolk (Gain 1000 ATK if dealt damage)
-            CheckActiveCards("1283", (card) => {
+            CheckActiveCards("1283", (card) =>
+            {
                 if (card.isPlayerCard && card.battledThisTurn) // Simplificado: Se batalhou e sobreviveu
                 {
                     card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 1000, card));
@@ -627,7 +663,8 @@ public partial class CardEffectManager
             });
 
             // 1328 - Needle Wall
-            CheckActiveCards("1328", (card) => {
+            CheckActiveCards("1328", (card) =>
+            {
                 if (card.isPlayerCard)
                 {
                     int roll = Random.Range(1, 7);
@@ -637,11 +674,12 @@ public partial class CardEffectManager
             });
 
             // 1344 - Nightmare Wheel
-            CheckActiveCards("1344", (card) => {
+            CheckActiveCards("1344", (card) =>
+            {
                 // Dano ao controlador do monstro alvo
                 // Requer saber quem é o alvo (via CardLink)
                 CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
-                foreach(var link in links)
+                foreach (var link in links)
                 {
                     if (link.source == card && link.target != null)
                     {
@@ -651,7 +689,8 @@ public partial class CardEffectManager
             });
 
             // 1345 - Nightmare's Steelcage
-            CheckActiveCards("1345", (card) => {
+            CheckActiveCards("1345", (card) =>
+            {
                 card.spellCounters--; // Usa contadores para turnos
                 if (card.spellCounters <= 0)
                 {
@@ -675,14 +714,15 @@ public partial class CardEffectManager
             {
                 CheckActiveCards("1811", (card) => HandleTurnCounter(card));
             }
-            
+
             // Swords of Concealing Light (1810) - Destrói na 2ª Standby Phase do controlador.
             // Lógica movida para Standby Phase do controlador.
         }
         else if (phase == GamePhase.End)
         {
             // 1908 - The Wicked Worm Beast
-            CheckActiveCards("1908", (card) => {
+            CheckActiveCards("1908", (card) =>
+            {
                 if (card.isPlayerCard && !card.isFlipped)
                 {
                     GameManager.Instance.ReturnToHand(card);
@@ -690,7 +730,8 @@ public partial class CardEffectManager
             });
 
             // 1979 - Tsukuyomi
-            CheckActiveCards("1979", (card) => {
+            CheckActiveCards("1979", (card) =>
+            {
                 if (card.isPlayerCard && !card.isFlipped) // Face-up
                 {
                     GameManager.Instance.ReturnToHand(card);
@@ -698,7 +739,8 @@ public partial class CardEffectManager
             });
 
             // 1996 - Two-Man Cell Battle
-            CheckActiveCards("1996", (card) => {
+            CheckActiveCards("1996", (card) =>
+            {
                 if (card.isPlayerCard)
                 {
                     // SS Level 4 Normal from hand
@@ -714,7 +756,7 @@ public partial class CardEffectManager
             // We check GY directly.
             // ...
         }
-                if (phase == GamePhase.Standby)
+        if (phase == GamePhase.Standby)
         {
             // 1578 - Sacred Phoenix of Nephthys
             // Se foi destruído por efeito no turno anterior (marcado no OnCardSentToGraveyard)
@@ -744,7 +786,8 @@ public partial class CardEffectManager
             }
 
             // 1465 - Pumpking the King of Ghosts
-            CheckActiveCards("1465", (card) => {
+            CheckActiveCards("1465", (card) =>
+            {
                 if (GameManager.Instance.IsCardActiveOnField("Castle of Dark Illusions") || GameManager.Instance.IsCardActiveOnField("1270"))
                 {
                     // Limite de 4 turnos requer contador
@@ -771,7 +814,7 @@ public partial class CardEffectManager
         int count = 0;
         count += GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.name == "Dark Magician" || c.name == "Magician of Black Chaos").Count;
         count += GameManager.Instance.GetOpponentGraveyard().FindAll(c => c.name == "Dark Magician" || c.name == "Magician of Black Chaos").Count;
-        
+
         // Remove buff antigo e adiciona novo (simplificado)
         card.RemoveModifiersFromSource(card);
         if (count > 0)
@@ -784,7 +827,7 @@ public partial class CardEffectManager
         // Conta dragões no campo e GY
         count += GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.race == "Dragon").Count;
         // ... + Campo ...
-        
+
         card.RemoveModifiersFromSource(card);
         if (count > 0)
             card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 500, card));
@@ -795,7 +838,8 @@ public partial class CardEffectManager
         // Coffin Seller (0314): Dano quando monstro do oponente vai pro GY
         if (!isOwnerPlayer && card.type.Contains("Monster"))
         {
-            CheckActiveCards("0314", (source) => {
+            CheckActiveCards("0314", (source) =>
+            {
                 if (source.isPlayerCard)
                 {
                     Debug.Log("Coffin Seller: Oponente enviou monstro ao GY. 300 Dano.");
@@ -880,7 +924,8 @@ public partial class CardEffectManager
             List<CardData> targets = deck.FindAll(c => c.type.Contains("Monster") && c.def <= 1500);
             if (targets.Count > 0)
             {
-                GameManager.Instance.OpenCardSelection(targets, "Witch of the Black Forest", (selected) => {
+                GameManager.Instance.OpenCardSelection(targets, "Witch of the Black Forest", (selected) =>
+                {
                     deck.Remove(selected);
                     GameManager.Instance.AddCardToHand(selected, true);
                     GameManager.Instance.ShuffleDeck(true);
@@ -910,8 +955,9 @@ public partial class CardEffectManager
         // Maji-Gire Panda (1144): Gain 500 ATK when Beast destroyed
         if (card.race == "Beast")
         {
-            CheckActiveCards("1144", (panda) => {
-                panda.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, panda));
+            CheckActiveCards("1144", (panda) =>
+            {
+                panda.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, panda));
             });
         }
 
@@ -960,7 +1006,8 @@ public partial class CardEffectManager
                     // Seleciona monstro do oponente para equipar
                     SpellTrapManager.Instance.StartTargetSelection(
                         (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
-                        (target) => {
+                        (target) =>
+                        {
                             Debug.Log("Des Gardius: Equipando Mask of Remnants e tomando controle.");
                             GameManager.Instance.SwitchControl(target);
                             // Visualmente mover Mask para campo...
@@ -980,7 +1027,8 @@ public partial class CardEffectManager
         // 1259 - Mokey Mokey Smackdown
         if (card.race == "Fairy" && isOwnerPlayer)
         {
-            CheckActiveCards("1259", (smackdown) => {
+            CheckActiveCards("1259", (smackdown) =>
+            {
                 // Verifica se tem Mokey Mokey
                 if (GameManager.Instance.IsCardActiveOnField("1258") || GameManager.Instance.IsCardActiveOnField("Mokey Mokey"))
                 {
@@ -994,7 +1042,8 @@ public partial class CardEffectManager
         // 1275 - Morale Boost (Damage on Equip removed)
         if (card.type.Contains("Spell") && card.property == "Equip")
         {
-            CheckActiveCards("1275", (morale) => {
+            CheckActiveCards("1275", (morale) =>
+            {
                 // Dano ao controlador do Equip
                 if (isOwnerPlayer) GameManager.Instance.DamagePlayer(1000);
                 else GameManager.Instance.DamageOpponent(1000);
@@ -1016,7 +1065,8 @@ public partial class CardEffectManager
             {
                 SpellTrapManager.Instance.StartTargetSelection(
                     (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
-                    (t) => {
+                    (t) =>
+                    {
                         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
                         GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
                         Destroy(t.gameObject);
@@ -1033,7 +1083,7 @@ public partial class CardEffectManager
             List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
             List<CardData> momongas = deck.FindAll(c => c.name == "Nimble Momonga");
             int max = Mathf.Min(2, momongas.Count);
-            for(int i=0; i<max; i++)
+            for (int i = 0; i < max; i++)
             {
                 GameManager.Instance.SpecialSummonFromData(momongas[i], true, false, true); // Face-down Defense
                 deck.Remove(momongas[i]);
@@ -1053,9 +1103,9 @@ public partial class CardEffectManager
         // 1351 - Nitro Unit
         // Verifica se o monstro destruído estava equipado com Nitro Unit
         CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
-        foreach(var link in links)
+        foreach (var link in links)
         {
-            if (link.target == card && link.type == CardLink.LinkType.Equipment)
+            if (link.target != null && link.target.CurrentCardData == card && link.type == CardLink.LinkType.Equipment)
             {
                 if (link.source != null && link.source.CurrentCardData.id == "1351")
                 {
@@ -1064,7 +1114,7 @@ public partial class CardEffectManager
                     // Texto: "inflict damage to your opponent equal to the ATK".
                     // "Your opponent" refere-se ao oponente do controlador da Nitro Unit.
                     // Como Nitro Unit equipa no oponente, o "opponent" do controlador da Nitro Unit é o dono do monstro.
-                    int dmg = card.originalAtk;
+                    int dmg = card.atk;
                     Debug.Log($"Nitro Unit: {dmg} de dano ao oponente.");
                     if (link.source.isPlayerCard) GameManager.Instance.DamageOpponent(dmg);
                     else GameManager.Instance.DamagePlayer(dmg);
@@ -1101,7 +1151,7 @@ public partial class CardEffectManager
         // Como o efeito é opcional, o jogador deve ativar. Se for automático, colocamos aqui.
         // O efeito diz "When this card you control is destroyed by battle... you can add".
         // Vamos assumir que o CardEffectManager lida com a ativação.
-        
+
         // 1766 - Statue of the Wicked
         if (card.id == "1766" && isOwnerPlayer && reason == SendReason.Destroyed) // Se destruída
         {
@@ -1109,7 +1159,7 @@ public partial class CardEffectManager
             Debug.Log("Statue of the Wicked: Invocando Wicked Token.");
             GameManager.Instance.SpawnToken(isOwnerPlayer, 1000, 1000, "Wicked Token");
         }
-        
+
         // 1870 - The Immortal of Thunder
         if (card.id == "1870" && isOwnerPlayer && fromLocation == CardLocation.Field)
         {
@@ -1184,7 +1234,7 @@ public partial class CardEffectManager
 
         // Destrói cartas que estavam equipadas NESTA carta (Equip Spell dependency)
         CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
-        foreach(var link in links)
+        foreach (var link in links)
         {
             // Se esta carta (card) era o ALVO de um equipamento
             if (link.target == card && link.type == CardLink.LinkType.Equipment)
@@ -1198,7 +1248,7 @@ public partial class CardEffectManager
             }
         }
 
-                // 1470 - Pyramid of Light
+        // 1470 - Pyramid of Light
         if (card.CurrentCardData.id == "1470")
         {
             Debug.Log("Pyramid of Light removida: Destruindo Esfinges.");
@@ -1207,11 +1257,12 @@ public partial class CardEffectManager
         }
     }
 
-        // Novo Hook para dano de batalha causado (chamado pelo BattleManager)
+    // Novo Hook para dano de batalha causado (chamado pelo BattleManager)
     public void OnDamageDealtImpl(CardDisplay attacker, CardDisplay target, int amount)
     {
         // Robbin' Goblin (1543): Se um monstro seu causa dano, oponente descarta 1
-        CheckActiveCards("1543", (source) => {
+        CheckActiveCards("1543", (source) =>
+        {
             if (source.isPlayerCard && attacker != null && attacker.isPlayerCard && amount > 0)
             {
                 Debug.Log("Robbin' Goblin: Oponente descarta 1 carta aleatória.");
@@ -1220,7 +1271,8 @@ public partial class CardEffectManager
         });
 
         // Robbin' Zombie (1544): Se um monstro seu causa dano, oponente envia carta do topo do Deck para o GY
-        CheckActiveCards("1544", (source) => {
+        CheckActiveCards("1544", (source) =>
+        {
             if (source.isPlayerCard && attacker != null && attacker.isPlayerCard && amount > 0)
             {
                 Debug.Log("Robbin' Zombie: Oponente envia 1 carta do topo do Deck para o GY.");
@@ -1257,8 +1309,8 @@ public partial class CardEffectManager
             {
                 int toDraw = 5 - handCount;
                 Debug.Log($"Yamata Dragon: Comprando {toDraw} cartas.");
-                for(int i=0; i<toDraw; i++) 
-                    if(attacker.isPlayerCard) GameManager.Instance.DrawCard(); 
+                for (int i = 0; i < toDraw; i++)
+                    if (attacker.isPlayerCard) GameManager.Instance.DrawCard();
                     else GameManager.Instance.DrawOpponentCard();
             }
         }
@@ -1291,7 +1343,8 @@ public partial class CardEffectManager
 
         // Dark Room of Nightmare (0432): Dano extra em dano de efeito
         // Precisamos saber se foi dano de efeito. Assumindo que sim para este contexto.
-        CheckActiveCards("0432", (card) => {
+        CheckActiveCards("0432", (card) =>
+        {
             if (card.isPlayerCard != isPlayer) // Se o oponente tomou dano
                 Effect_DirectDamage(card, 300);
         });
@@ -1307,41 +1360,62 @@ public partial class CardEffectManager
         UpdateAllMegamorphs();
     }
 
-        // Novo Hook para ativação de Spells (chamado pelo GameManager/SpellTrapManager)
+    void UpdateMegamorphStats(CardDisplay megamorph, CardDisplay target)
+    {
+        target.RemoveModifiersFromSource(megamorph);
+        int controllerLP = megamorph.isPlayerCard ? GameManager.Instance.playerLP : GameManager.Instance.opponentLP;
+        int enemyLP = megamorph.isPlayerCard ? GameManager.Instance.opponentLP : GameManager.Instance.playerLP;
+
+        if (controllerLP < enemyLP)
+        {
+            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Set, target.originalAtk * 2, megamorph));
+        }
+        else if (controllerLP > enemyLP)
+        {
+            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Set, target.originalAtk / 2, megamorph));
+        }
+    }
+
+    // Novo Hook para ativação de Spells (chamado pelo GameManager/SpellTrapManager)
     public void OnSpellActivated(CardDisplay spell)
     {
         // 1275 - Morale Boost (Heal on Equip)
         if (spell.CurrentCardData.property == "Equip")
         {
-            CheckActiveCards("1275", (morale) => {
+            CheckActiveCards("1275", (morale) =>
+            {
                 Effect_GainLP(spell, 1000); // Cura o controlador da Spell
                 Debug.Log("Morale Boost: +1000 LP.");
             });
         }
 
         // 1566 - Royal Magical Library (Add Counter)
-        CheckActiveCards("1566", (library) => {
+        CheckActiveCards("1566", (library) =>
+        {
             library.AddSpellCounter(1);
             SpellCounterManager.Instance.AddCounter(library, 1);
             Debug.Log("Royal Magical Library: Contador adicionado.");
         });
 
         // 1656 - Skilled Dark Magician (Add Counter)
-        CheckActiveCards("1656", (mage) => {
+        CheckActiveCards("1656", (mage) =>
+        {
             mage.AddSpellCounter(1);
             SpellCounterManager.Instance.AddCounter(mage, 1);
             Debug.Log("Skilled Dark Magician: Contador adicionado.");
         });
 
         // 1657 - Skilled White Magician (Add Counter)
-        CheckActiveCards("1657", (mage) => {
+        CheckActiveCards("1657", (mage) =>
+        {
             mage.AddSpellCounter(1);
             SpellCounterManager.Instance.AddCounter(mage, 1);
             Debug.Log("Skilled White Magician: Contador adicionado.");
         });
 
-                // 1400 - Pandemonium
-        CheckActiveCards("1400", (card) => {
+        // 1400 - Pandemonium
+        CheckActiveCards("1400", (card) =>
+        {
             // Se um Archfiend é destruído, busca Archfiend com nível menor
             // Requer intercepção de destruição de Fiend (no GY?)
             Debug.Log($"Pandemonium: Um monstro Archfiend foi destruído. Busca Archfiend com Nível menor (Simulado).");
@@ -1351,11 +1425,12 @@ public partial class CardEffectManager
         // Effect: SS por tributo -> Adicionar contadores iniciais.
         // https://yugioh.fandom.com/wiki/Card_Errata:MP1-001
         // Para Zaborg the Thunder Monarch (ver Effect_0382_OrcaMegaFortressOfDarkness).
-        
+
         // 1753 - Spirit of the Pot of Greed
         if (spell.CurrentCardData.name == "Pot of Greed")
         {
-            CheckActiveCards("1753", (spirit) => {
+            CheckActiveCards("1753", (spirit) =>
+            {
                 if (spirit.position == CardDisplay.BattlePosition.Attack)
                 {
                     Debug.Log("Spirit of the Pot of Greed: Compra extra.");
@@ -1392,21 +1467,21 @@ public partial class CardEffectManager
             Debug.Log("Ataque impedido por Gravity Bind.");
             return true;
         }
-        
+
         // Level Limit - Area B (1077) - Level 4+ cannot attack (technically become Defense, but blocks attack if checked)
         if (GameManager.Instance.IsCardActiveOnField("1077") && attacker.CurrentCardData.level >= 4)
         {
             Debug.Log("Ataque impedido por Level Limit - Area B.");
             return true;
         }
-        
+
         // Messenger of Peace (1209) - 1500+ ATK cannot attack
         if (GameManager.Instance.IsCardActiveOnField("1209") && attacker.currentAtk >= 1500)
         {
             Debug.Log("Ataque impedido por Messenger of Peace.");
             return true;
         }
-        
+
         return false;
     }
 
@@ -1414,10 +1489,10 @@ public partial class CardEffectManager
     {
         // Jowgen the Spiritualist (0979) - No Special Summons
         if (isSpecialSummon && GameManager.Instance.IsCardActiveOnField("0979")) return true;
-        
+
         // The Last Warrior from Another Planet (1874) - No Summons at all
         if (GameManager.Instance.IsCardActiveOnField("1874")) return true;
-        
+
         return false;
     }
 
@@ -1428,16 +1503,16 @@ public partial class CardEffectManager
 
         // Banisher of the Light (0133)
         if (GameManager.Instance.IsCardActiveOnField("0133")) return true;
-        
+
         // Banisher of the Radiance (1654)
         if (GameManager.Instance.IsCardActiveOnField("1654")) return true;
-        
+
         // Macro Cosmos (Se implementado - ID pendente)
         // if (GameManager.Instance.IsCardActiveOnField("MACRO_ID")) return true;
-        
+
         return false;
     }
-    
+
     public string GetEffectiveRace(CardDisplay card)
     {
         // DNA Surgery (0390)
@@ -1456,8 +1531,8 @@ public partial class CardEffectManager
             List<CardDisplay> all = new List<CardDisplay>();
             CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
             CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
-            
-            foreach(var m in all)
+
+            foreach (var m in all)
             {
                 if (m.CurrentCardData.level >= 4 && m.position == CardDisplay.BattlePosition.Attack)
                 {
@@ -1466,15 +1541,15 @@ public partial class CardEffectManager
                 }
             }
         }
-        
+
         // Final Attack Orders (0651) - Change to Attack
         if (GameManager.Instance.IsCardActiveOnField("0651") && GameManager.Instance.duelFieldUI != null)
         {
             List<CardDisplay> all = new List<CardDisplay>();
             CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
             CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
-            
-            foreach(var m in all)
+
+            foreach (var m in all)
             {
                 if (m.position == CardDisplay.BattlePosition.Defense)
                 {
@@ -1495,7 +1570,7 @@ public partial class CardEffectManager
         {
             bool attackerIsPlayer = attacker.isPlayerCard;
             Transform[] enemySpellZones = attackerIsPlayer ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
-            
+
             foreach (var zone in enemySpellZones)
             {
                 if (zone.childCount > 0)
@@ -1533,7 +1608,8 @@ public partial class CardEffectManager
         // 1592 - Sasuke Samurai #4
         if (attacker.CurrentCardData.id == "1592" && target != null)
         {
-            GameManager.Instance.TossCoin(1, (heads) => {
+            GameManager.Instance.TossCoin(1, (heads) =>
+            {
                 if (heads == 1) // Cara = Sucesso
                 {
                     Debug.Log("Sasuke Samurai #4: Acertou! Destruindo alvo.");
@@ -1557,7 +1633,7 @@ public partial class CardEffectManager
             attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 500, attacker));
             Debug.Log("Steamroid: +500 ATK no ataque.");
         }
-        
+
         // 1770 - Steamroid (Defesa)
         if (target != null && target.CurrentCardData.id == "1770")
         {
@@ -1609,14 +1685,14 @@ public partial class CardEffectManager
             attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 0, target));
             Debug.Log("Sanga of the Thunder: ATK do atacante zerado.");
         }
-        
+
         // 1780 - Stone Statue of the Aztecs
         if (target != null && target.CurrentCardData.id == "1780" && target.position == CardDisplay.BattlePosition.Defense)
         {
             // A lógica de dobrar o dano deve ser tratada no BattleManager, mas logamos aqui.
             Debug.Log("Stone Statue of the Aztecs: Dano de batalha será dobrado (Se aplicável).");
         }
-        
+
         // 1903 - The Unhappy Girl
         if (attacker != null && attacker.CurrentCardData.id == "1903" && target != null && attacker.position == CardDisplay.BattlePosition.Attack)
         {
@@ -1664,20 +1740,20 @@ public partial class CardEffectManager
         // Como não temos acesso fácil aos links aqui, verificamos se o atacante tem o ID 0253 nos modificadores? Não.
         // Vamos checar se existe Buster Rancher ativo e se está linkado ao atacante.
         // (Lógica complexa para este escopo, simplificando para log)
-        if (attacker.currentAtk <= 1000 || attacker.activeModifiers.Exists(m => m.source != null && m.source.CurrentCardData.id == "0253"))
+        if (attacker.currentAtk <= 1000) // || attacker.activeModifiers.Exists(m => m.source != null && m.source.CurrentCardData.id == "0253"))
         {
-             // Se o alvo for forte
-             int targetAtk = (target != null && target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : (target != null ? target.currentDef : 0);
-             if (targetAtk >= 2500) Debug.Log("Buster Rancher: Ativando buff massivo!");
+            // Se o alvo for forte
+            int targetAtk = (target != null && target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : (target != null ? target.currentDef : 0);
+            if (targetAtk >= 2500) Debug.Log("Buster Rancher: Ativando buff massivo!");
         }
-        
-                // Dark Artist (0395): DEF / 2 se atacado por LIGHT
+
+        // Dark Artist (0395): DEF / 2 se atacado por LIGHT
         if (target != null && target.CurrentCardData.id == "0395" && target.position == CardDisplay.BattlePosition.Defense)
         {
             if (attacker != null && attacker.CurrentCardData.attribute == "Light")
             {
                 Debug.Log("Dark Artist: Atacado por LIGHT. DEF reduzida pela metade.");
-                target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Multiply, 0.5f, target));
+                target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, 0.5f, target));
             }
         }
 
@@ -1730,63 +1806,23 @@ public partial class CardEffectManager
 
         // 1207 - Mermaid Knight (Double Attack)
         if (attacker.CurrentCardData.id == "1207" && (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013")))
-    // 1298 - Mystic Box
-    void Effect_1298_MysticBox(CardDisplay source)
-    {
-        // Target opp monster, target own monster. Destroy opp, give control of own.
-        Debug.Log("Mystic Box: Troca e destruição.");
-        if (SpellTrapManager.Instance != null)
         {
-            // 1. Seleciona monstro do oponente para destruir
-            SpellTrapManager.Instance.StartTargetSelection(
-            );
-        }    
-    
-        // 1298 - Mystic Box
-    void Effect_1298_MysticBox(CardDisplay source)
-    {
-        // Target opp monster, target own monster. Destroy opp, give control of own.
-        Debug.Log("Mystic Box: Troca e destruição.");
-        if (SpellTrapManager.Instance != null)
-        {
-            // 1. Seleciona monstro do oponente para destruir
-            SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
-                (oppMonster) => {
-                    // 2. Seleciona monstro do jogador para dar o controle
-                    SpellTrapManager.Instance.StartTargetSelection(
-                        (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
-                        (myMonster) => {
-                            // Executa o efeito
-                            Debug.Log($"Mystic Box: Destruindo {oppMonster.CurrentCardData.name} e trocando controle de {myMonster.CurrentCardData.name}.");
-                            
-                            // Destrói o do oponente
-                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(oppMonster);
-                            GameManager.Instance.SendToGraveyard(oppMonster.CurrentCardData, oppMonster.isPlayerCard);
-                            Destroy(oppMonster.gameObject);
-
-                            // Troca o controle do seu
-                            GameManager.Instance.SwitchControl(myMonster);
-                        }
-                    );
-                }
-            );
-        }
             // Lógica tratada no BattleManager via CanAttackAgain, mas podemos logar aqui
             Debug.Log("Mermaid Knight: Ataque duplo com Umi.");
-            string id = attacker.CurrentCardData.id;
-            if (id == "1304" || id == "1305" || id == "1306" || id == "1590")
-            {
-                Debug.Log($"{attacker.CurrentCardData.name}: Destruindo monstro face-down sem virar.");
-                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
-                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-                Destroy(target.gameObject);
-                
-                // Se for LV6 (1306), coloca no topo do deck em vez do GY? (Regra diz: "and if you do, you can place it on top...")
-                // Implementação simplificada: Vai pro GY.
-            }
         }
-        
+
+        string id = attacker.CurrentCardData.id;
+        if (id == "1304" || id == "1305" || id == "1306" || id == "1590")
+        {
+            Debug.Log($"{attacker.CurrentCardData.name}: Destruindo monstro face-down sem virar.");
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+            Destroy(target.gameObject);
+
+            // Se for LV6 (1306), coloca no topo do deck em vez do GY? (Regra diz: "and if you do, you can place it on top...")
+            // Implementação simplificada: Vai pro GY.
+        }
+
         // 1773 - Steel Scorpion
         if (target != null && target.CurrentCardData.id == "1773" && !target.isPlayerCard)
         {
@@ -1797,247 +1833,208 @@ public partial class CardEffectManager
             }
         }
     }
-}
+public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
+{
+    // D.D. Warrior Lady (7572887) - Lógica de banir seria aqui
+    // Mystic Tomato (83011278) - Lógica de busca seria aqui
 
-    public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
+    // 0019 - Absorbing Kid from the Sky
+    if (attacker != null && attacker.CurrentCardData.id == "0019" && target != null)
     {
-        // D.D. Warrior Lady (7572887) - Lógica de banir seria aqui
-        // Mystic Tomato (83011278) - Lógica de busca seria aqui
-
-        // 0019 - Absorbing Kid from the Sky
-        if (attacker != null && attacker.CurrentCardData.id == "0019" && target != null)
+        // Verifica se o alvo foi destruído (está no cemitério)
+        if (GameManager.Instance.GetOpponentGraveyard().Contains(target.CurrentCardData) ||
+            GameManager.Instance.GetPlayerGraveyard().Contains(target.CurrentCardData))
         {
-             // Verifica se o alvo foi destruído (está no cemitério)
-             if (GameManager.Instance.GetOpponentGraveyard().Contains(target.CurrentCardData) || 
-                 GameManager.Instance.GetPlayerGraveyard().Contains(target.CurrentCardData))
-             {
-                 int level = target.CurrentCardData.level;
-                 int heal = level * 300;
-                 Debug.Log($"Absorbing Kid: Destruiu monstro Lv{level}. Ganha {heal} LP.");
-                 Effect_GainLP(attacker, heal);
-             }
+            int level = target.CurrentCardData.level;
+            int heal = level * 300;
+            Debug.Log($"Absorbing Kid: Destruiu monstro Lv{level}. Ganha {heal} LP.");
+            Effect_GainLP(attacker, heal);
         }
+    }
 
-        // 1507 - Reflect Bounder (Auto-destruição após cálculo de dano)
-        if (target != null && target.CurrentCardData.id == "1507" && target.position == CardDisplay.BattlePosition.Attack)
+    // 1507 - Reflect Bounder (Auto-destruição após cálculo de dano)
+    if (target != null && target.CurrentCardData.id == "1507" && target.position == CardDisplay.BattlePosition.Attack)
+    {
+        Debug.Log("Reflect Bounder: Auto-destruição após batalha.");
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+        Destroy(target.gameObject);
+    }
+
+    // 1001 - Kangaroo Champ
+    if (attacker != null && attacker.CurrentCardData.id == "1001") attacker.ChangePosition();
+    if (target != null && target.CurrentCardData.id == "1001") target.ChangePosition();
+
+    // 1009 - Kelbek
+    if (target != null && target.CurrentCardData.id == "1009" && attacker != null)
+    {
+        Debug.Log("Kelbek: Retornando atacante para a mão.");
+        GameManager.Instance.ReturnToHand(attacker);
+    }
+
+    // 1063 - Legacy Hunter
+    if (attacker != null && attacker.CurrentCardData.id == "1063" && target != null) // Se destruiu (verificar se target foi pro GY)
+    {
+        Debug.Log("Legacy Hunter: Oponente embaralha 1 carta da mão no deck.");
+        GameManager.Instance.DiscardRandomHand(!attacker.isPlayerCard, 1); // Deveria ser shuffle
+    }
+
+    // 1232 - Millennium Scorpion
+    if (attacker != null && attacker.CurrentCardData.id == "1232" && target != null)
+    {
+        attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, attacker));
+        Debug.Log("Millennium Scorpion: +500 ATK.");
+    }
+
+    // 1065 - Legendary Black Belt
+    if (attacker != null && target != null)
+    {
+        int dmg = target.originalDef;
+        Effect_DirectDamage(attacker, dmg);
+    }
+
+    // 1308 - Mystical Beast of Serket
+    if (attacker != null && attacker.CurrentCardData.id == "1308" && target != null)
+    {
+        // Se destruiu monstro, ganha 500 ATK e bane o monstro
+        attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, attacker));
+        GameManager.Instance.BanishCard(target); // Bane do GY (ou antes de ir)
+        Debug.Log("Serket: Comeu o monstro. +500 ATK.");
+    }
+
+    // 1311 - Mystical Knight of Jackal
+    if (attacker != null && attacker.CurrentCardData.id == "1311" && target != null)
+    {
+        // Retorna monstro destruído ao topo do deck
+        // Requer lógica de mover do GY para o Deck (Topo)
+        Debug.Log("Mystical Knight of Jackal: Monstro retornado ao topo do deck.");
+        // GameManager.Instance.ReturnToDeck(target, true);
+    }
+
+    // 1068 - Legendary Jujitsu Master
+    if (target != null && target.CurrentCardData.id == "1068" && target.position == CardDisplay.BattlePosition.Defense)
+    {
+        Debug.Log("Legendary Jujitsu Master: Atacante para o topo do deck.");
+        // GameManager.Instance.ReturnToDeck(attacker, true);
+    }
+
+    // 1326 - Needle Burrower
+    if (attacker != null && attacker.CurrentCardData.id == "1326" && target != null)
+    {
+        int dmg = target.CurrentCardData.level * 500;
+        Effect_DirectDamage(attacker, dmg);
+        Debug.Log($"Needle Burrower: {dmg} de dano.");
+    }
+
+    // 1322 - Necklace of Command
+    // Verifica se algum monstro destruído tinha Necklace of Command equipado
+    if (target != null && (target.currentAtk < attacker.currentAtk || target.position == CardDisplay.BattlePosition.Defense)) // Target destroyed
+    {
+        CheckNecklaceOfCommand(target);
+    }
+    if (attacker != null && attacker.currentAtk < target.currentAtk && target.position == CardDisplay.BattlePosition.Attack) // Attacker destroyed
+    {
+        CheckNecklaceOfCommand(attacker);
+    }
+
+    // 1075 - Lesser Fiend
+    if (attacker != null && attacker.CurrentCardData.id == "1075" && target != null)
+    {
+        Debug.Log("Lesser Fiend: Banindo monstro destruído.");
+        GameManager.Instance.BanishCard(target);
+    }
+
+    // 1572 - Ryu Kokki
+    if (attacker != null && attacker.CurrentCardData.id == "1572" && target != null)
+    {
+        if (target.CurrentCardData.race == "Warrior" || target.CurrentCardData.race == "Spellcaster")
         {
-             Debug.Log("Reflect Bounder: Auto-destruição após batalha.");
-             if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
-             GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-             Destroy(target.gameObject);
+            Debug.Log("Ryu Kokki: Destruindo Warrior/Spellcaster.");
+            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+            Destroy(target.gameObject);
         }
-
-        // 1001 - Kangaroo Champ
-        if (attacker != null && attacker.CurrentCardData.id == "1001") attacker.ChangePosition();
-        if (target != null && target.CurrentCardData.id == "1001") target.ChangePosition();
-
-        // 1009 - Kelbek
-        if (target != null && target.CurrentCardData.id == "1009" && attacker != null)
+    }
+    if (target != null && target.CurrentCardData.id == "1572" && attacker != null)
+    {
+        if (attacker.CurrentCardData.race == "Warrior" || attacker.CurrentCardData.race == "Spellcaster")
         {
-            Debug.Log("Kelbek: Retornando atacante para a mão.");
-            GameManager.Instance.ReturnToHand(attacker);
+            Debug.Log("Ryu Kokki: Destruindo Warrior/Spellcaster.");
+            GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+            Destroy(attacker.gameObject);
         }
+    }
 
-        // 1063 - Legacy Hunter
-        if (attacker != null && attacker.CurrentCardData.id == "1063" && target != null) // Se destruiu (verificar se target foi pro GY)
-        {
-            Debug.Log("Legacy Hunter: Oponente embaralha 1 carta da mão no deck.");
-            GameManager.Instance.DiscardRandomHand(!attacker.isPlayerCard, 1); // Deveria ser shuffle
-        }
+    // B.E.S. Big Core (0124) & Crystal Core (0125)
+    // Remove contador no fim da batalha ou destrói
+    if (attacker != null && (attacker.CurrentCardData.id == "0124" || attacker.CurrentCardData.id == "0125"))
+    {
+        HandleBESCounter(attacker);
+    }
+    if (target != null && (target.CurrentCardData.id == "0124" || target.CurrentCardData.id == "0125"))
+    {
+        HandleBESCounter(target);
+    }
 
-                // Masked Sorcerer (1178): Draw 1
-        if (attacker != null && attacker.CurrentCardData.id == "1178" && amount > 0)
-        {
-            if (attacker.isPlayerCard) GameManager.Instance.DrawCard();
-        }
+    // BLS - Envoy (0189): Ataque duplo se destruir monstro
+    if (attacker != null && attacker.CurrentCardData.id == "0189" && target != null)
+    {
+        // Verifica se o alvo foi destruído
+        // Nota: O BattleManager já marcou hasAttackedThisTurn = true.
+        // Precisamos de uma flag especial ou resetar hasAttackedThisTurn condicionalmente.
+        Debug.Log("BLS - Envoy: Ativando segundo ataque (Lógica pendente no BattleManager para permitir ataque extra).");
+        // attacker.canAttackAgain = true; // Necessário suporte no CardDisplay
+    }
 
-        // 1205 - Memory Crusher
-        if (attacker != null && attacker.CurrentCardData.id == "1205" && amount > 0)
+    // D.D. Assailant (0378): Bane ambos se destruído em batalha
+    // Verifica se D.D. Assailant foi destruído (está no GY ou marcado para destruição)
+    // Como OnBattleEnd ocorre antes da destruição visual em alguns casos, verificamos o resultado
+    // Simplificação: Se um dos dois é D.D. Assailant e a batalha resultou em sua destruição
+    if (attacker != null && attacker.CurrentCardData.id == "0378" && target != null)
+    {
+        // Se atacante morreu (ATK <= DEF ou ATK <= ATK)
+        int atk = attacker.currentAtk;
+        int def = (target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : target.currentDef;
+        if (atk <= def)
         {
-            int millCount = amount / 100;
-            if (millCount > 0)
-            {
-                Debug.Log($"Memory Crusher: Oponente envia {millCount} cartas do Extra Deck ao GY.");
-                // Lógica de mill do Extra Deck (Simulado com Main Deck se Extra vazio ou não acessível)
-                List<CardData> oppExtra = GameManager.Instance.opponentExtraDeck; // Precisa ser público no GM
-                // ... (Implementação real requer acesso à lista)
-            }
-        }
-
-        // 1232 - Millennium Scorpion
-        if (attacker != null && attacker.CurrentCardData.id == "1232" && target != null)
-        {
-            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, attacker));
-            Debug.Log("Millennium Scorpion: +500 ATK.");
-        }
-
-        // 1065 - Legendary Black Belt
-        if (attacker != null && attacker.activeModifiers.Exists(m => m.source != null && m.source.CurrentCardData.id == "1065") && target != null)
-        {
-            int dmg = target.originalDef;
-            Effect_DirectDamage(attacker, dmg);
-        }
-
-        // 1308 - Mystical Beast of Serket
-        if (attacker != null && attacker.CurrentCardData.id == "1308" && target != null)
-        {
-            // Se destruiu monstro, ganha 500 ATK e bane o monstro
-            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, attacker));
-            GameManager.Instance.BanishCard(target); // Bane do GY (ou antes de ir)
-            Debug.Log("Serket: Comeu o monstro. +500 ATK.");
-        }
-
-        // 1311 - Mystical Knight of Jackal
-        if (attacker != null && attacker.CurrentCardData.id == "1311" && target != null)
-        {
-            // Retorna monstro destruído ao topo do deck
-            // Requer lógica de mover do GY para o Deck (Topo)
-            Debug.Log("Mystical Knight of Jackal: Monstro retornado ao topo do deck.");
-            // GameManager.Instance.ReturnToDeck(target, true);
-        }
-
-        // 1068 - Legendary Jujitsu Master
-        if (target != null && target.CurrentCardData.id == "1068" && target.position == CardDisplay.BattlePosition.Defense)
-        {
-            Debug.Log("Legendary Jujitsu Master: Atacante para o topo do deck.");
-            // GameManager.Instance.ReturnToDeck(attacker, true);
-        }
-
-        // 1326 - Needle Burrower
-        if (attacker != null && attacker.CurrentCardData.id == "1326" && target != null)
-        {
-            int dmg = target.CurrentCardData.level * 500;
-            Effect_DirectDamage(attacker, dmg);
-            Debug.Log($"Needle Burrower: {dmg} de dano.");
-        }
-
-        // 1359 - Nubian Guard
-        if (attacker != null && attacker.CurrentCardData.id == "1359" && amount > 0)
-        {
-            // Return 1 Continuous Spell from GY to top of Deck
-            // Lógica simplificada: Apenas log, requer seleção do GY
-            Debug.Log("Nubian Guard: Pode retornar Continuous Spell do GY ao topo do Deck.");
-        }
-
-        // 1322 - Necklace of Command
-        // Verifica se algum monstro destruído tinha Necklace of Command equipado
-        if (target != null && (target.currentAtk < attacker.currentAtk || target.position == CardDisplay.BattlePosition.Defense)) // Target destroyed
-        {
-             CheckNecklaceOfCommand(target);
-        }
-        if (attacker != null && attacker.currentAtk < target.currentAtk && target.position == CardDisplay.BattlePosition.Attack) // Attacker destroyed
-        {
-             CheckNecklaceOfCommand(attacker);
-        }
-
-        // 1075 - Lesser Fiend
-        if (attacker != null && attacker.CurrentCardData.id == "1075" && target != null)
-        {
-            Debug.Log("Lesser Fiend: Banindo monstro destruído.");
+            Debug.Log("D.D. Assailant: Banindo ambos após batalha.");
+            GameManager.Instance.BanishCard(attacker);
             GameManager.Instance.BanishCard(target);
         }
+    }
+    // Caso reverso (D.D. Assailant foi atacado)
+    if (target != null && target.CurrentCardData.id == "0378" && attacker != null)
+    {
+        // Lógica similar...
+    }
 
-        // 1572 - Ryu Kokki
-        if (attacker != null && attacker.CurrentCardData.id == "1572" && target != null)
-        {
-            if (target.CurrentCardData.race == "Warrior" || target.CurrentCardData.race == "Spellcaster")
-            {
-                Debug.Log("Ryu Kokki: Destruindo Warrior/Spellcaster.");
-                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-                Destroy(target.gameObject);
-            }
-        }
-        if (target != null && target.CurrentCardData.id == "1572" && attacker != null)
-        {
-             if (attacker.CurrentCardData.race == "Warrior" || attacker.CurrentCardData.race == "Spellcaster")
-            {
-                Debug.Log("Ryu Kokki: Destruindo Warrior/Spellcaster.");
-                GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
-                Destroy(attacker.gameObject);
-            }
-        }
+    // D.D. Crazy Beast (0380): Bane monstro destruído
+    if (attacker != null && attacker.CurrentCardData.id == "0380" && target != null)
+    {
+        // Se o alvo foi destruído, bane em vez de enviar ao GY
+        // Isso requer intercepção do SendToGraveyard ou verificação aqui
+        // Como o BattleManager já enviou ao GY, teríamos que banir do GY.
+        // Simplificação:
+        Debug.Log("D.D. Crazy Beast: Banindo monstro destruído.");
+        // GameManager.Instance.BanishFromGraveyard(target.CurrentCardData);
+    }
 
-        // Mefist the Infernal General (1197): Opponent discards 1
-        if (attacker != null && attacker.CurrentCardData.id == "1197" && amount > 0)
-        {
-            if (attacker.isPlayerCard)
-            {
-                GameManager.Instance.DiscardRandomHand(false, 1);
-                Debug.Log("Mefist: Oponente descartou 1 carta.");
-            }
-        }
+    // D.D. Warrior (0387): Bane ambos após batalha
+    if ((attacker != null && attacker.CurrentCardData.id == "0387") || (target != null && target.CurrentCardData.id == "0387"))
+    {
+        Debug.Log("D.D. Warrior: Banindo ambos os monstros.");
+        if (attacker != null) GameManager.Instance.BanishCard(attacker);
+        if (target != null) GameManager.Instance.BanishCard(target);
+    }
 
-        // B.E.S. Big Core (0124) & Crystal Core (0125)
-        // Remove contador no fim da batalha ou destrói
-        if (attacker != null && (attacker.CurrentCardData.id == "0124" || attacker.CurrentCardData.id == "0125"))
-        {
-            HandleBESCounter(attacker);
-        }
-        if (target != null && (target.CurrentCardData.id == "0124" || target.CurrentCardData.id == "0125"))
-        {
-            HandleBESCounter(target);
-        }
+    // D.D. Warrior Lady (0388): Pode banir ambos (Opcional)
+    if ((attacker != null && attacker.CurrentCardData.id == "0388") || (target != null && target.CurrentCardData.id == "0388"))
+    {
+        // Deveria abrir confirmação
+        Debug.Log("D.D. Warrior Lady: Banindo ambos (Assumindo Sim).");
+        if (attacker != null) GameManager.Instance.BanishCard(attacker);
+        if (target != null) GameManager.Instance.BanishCard(target);
+    }
 
-        // BLS - Envoy (0189): Ataque duplo se destruir monstro
-        if (attacker != null && attacker.CurrentCardData.id == "0189" && target != null)
-        {
-            // Verifica se o alvo foi destruído
-            // Nota: O BattleManager já marcou hasAttackedThisTurn = true.
-            // Precisamos de uma flag especial ou resetar hasAttackedThisTurn condicionalmente.
-            Debug.Log("BLS - Envoy: Ativando segundo ataque (Lógica pendente no BattleManager para permitir ataque extra).");
-            // attacker.canAttackAgain = true; // Necessário suporte no CardDisplay
-        }
-
-        // D.D. Assailant (0378): Bane ambos se destruído em batalha
-        // Verifica se D.D. Assailant foi destruído (está no GY ou marcado para destruição)
-        // Como OnBattleEnd ocorre antes da destruição visual em alguns casos, verificamos o resultado
-        // Simplificação: Se um dos dois é D.D. Assailant e a batalha resultou em sua destruição
-        if (attacker != null && attacker.CurrentCardData.id == "0378" && target != null)
-        {
-            // Se atacante morreu (ATK <= DEF ou ATK <= ATK)
-            int atk = attacker.currentAtk;
-            int def = (target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : target.currentDef;
-            if (atk <= def)
-            {
-                Debug.Log("D.D. Assailant: Banindo ambos após batalha.");
-                GameManager.Instance.BanishCard(attacker);
-                GameManager.Instance.BanishCard(target);
-            }
-        }
-        // Caso reverso (D.D. Assailant foi atacado)
-        if (target != null && target.CurrentCardData.id == "0378" && attacker != null)
-        {
-             // Lógica similar...
-        }
-
-        // D.D. Crazy Beast (0380): Bane monstro destruído
-        if (attacker != null && attacker.CurrentCardData.id == "0380" && target != null)
-        {
-            // Se o alvo foi destruído, bane em vez de enviar ao GY
-            // Isso requer intercepção do SendToGraveyard ou verificação aqui
-            // Como o BattleManager já enviou ao GY, teríamos que banir do GY.
-            // Simplificação:
-            Debug.Log("D.D. Crazy Beast: Banindo monstro destruído.");
-            // GameManager.Instance.BanishFromGraveyard(target.CurrentCardData);
-        }
-
-        // D.D. Warrior (0387): Bane ambos após batalha
-        if ((attacker != null && attacker.CurrentCardData.id == "0387") || (target != null && target.CurrentCardData.id == "0387"))
-        {
-            Debug.Log("D.D. Warrior: Banindo ambos os monstros.");
-            if (attacker != null) GameManager.Instance.BanishCard(attacker);
-            if (target != null) GameManager.Instance.BanishCard(target);
-        }
-
-        // D.D. Warrior Lady (0388): Pode banir ambos (Opcional)
-        if ((attacker != null && attacker.CurrentCardData.id == "0388") || (target != null && target.CurrentCardData.id == "0388"))
-        {
-            // Deveria abrir confirmação
-            Debug.Log("D.D. Warrior Lady: Banindo ambos (Assumindo Sim).");
-            if (attacker != null) GameManager.Instance.BanishCard(attacker);
-            if (target != null) GameManager.Instance.BanishCard(target);
-        }
-    
     // Rigorous Reaver (1532): Se destruído em batalha, o atacante perde 500 ATK/DEF
     if (target != null && target.CurrentCardData.id == "1532")
     {
@@ -2045,1019 +2042,1017 @@ public partial class CardEffectManager
         if (attacker != null && attacker.currentAtk >= target.currentDef)
         {
             Debug.Log("Rigorous Reaver: Atacante perde 500 ATK/DEF.");
-                attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -500, target));
-                attacker.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -500, target));
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -500, target));
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -500, target));
         }
     }
 
-        // Dark Balter the Terrible (0397): Nega efeitos de monstros destruídos
-        if (attacker != null && attacker.CurrentCardData.id == "0397" && target != null)
+    // Dark Balter the Terrible (0397): Nega efeitos de monstros destruídos
+    if (attacker != null && attacker.CurrentCardData.id == "0397" && target != null)
+    {
+        // Se o alvo foi destruído...
+        // A negação de efeitos no GY (como Sangan) requer um sistema de "NegatedStatus" no CardData ou verificação no evento do GY.
+        // Por enquanto, apenas logamos.
+        Debug.Log("Dark Balter: Efeitos do monstro destruído negados.");
+    }
+
+    // Dark Flare Knight (0412): SS Mirage Knight
+    if (attacker != null && attacker.CurrentCardData.id == "0412" && attacker.currentAtk <= 0) // Destruído (simplificado)
+    {
+        Debug.Log("Dark Flare Knight: Invocando Mirage Knight.");
+        // GameManager.Instance.SpecialSummonById("1249", attacker.isPlayerCard);
+    }
+
+    // Dark Mimic LV3 (0425): Draw 1
+    if (target != null && target.CurrentCardData.id == "0425") // Se foi destruído
+    {
+        Debug.Log("Dark Mimic LV3: Compra 1.");
+        if (target.isPlayerCard) GameManager.Instance.DrawCard();
+    }
+
+    // Dark Ruler Ha Des (0433): Negate effects of destroyed monsters
+    if (attacker != null && attacker.CurrentCardData.race == "Fiend" && attacker.isPlayerCard)
+    {
+        if (GameManager.Instance.IsCardActiveOnField("0433"))
         {
-            // Se o alvo foi destruído...
-            // A negação de efeitos no GY (como Sangan) requer um sistema de "NegatedStatus" no CardData ou verificação no evento do GY.
-            // Por enquanto, apenas logamos.
-            Debug.Log("Dark Balter: Efeitos do monstro destruído negados.");
+            Debug.Log("Dark Ruler Ha Des: Efeitos do monstro destruído negados.");
         }
+    }
 
-        // Dark Flare Knight (0412): SS Mirage Knight
-        if (attacker != null && attacker.CurrentCardData.id == "0412" && attacker.currentAtk <= 0) // Destruído (simplificado)
+    // Dark Necrofear (0427): Equip on End Phase
+    // A lógica real é na End Phase se foi destruído.
+    // Marcamos uma flag no GameManager ou similar.
+    // GameManager.Instance.necrofearDestroyedThisTurn = true;
+
+    // Des Volstgalph (0476): Burn 500 on destroy monster
+    if (attacker != null && attacker.CurrentCardData.id == "0476" && target != null)
+    {
+        Debug.Log("Des Volstgalph: 500 de dano.");
+        Effect_DirectDamage(attacker, 500);
+    }
+
+    // Desrook Archfiend (0481): Revive Terrorking
+    if (card.CurrentCardData.name == "Terrorking Archfiend" && card.isPlayerCard)
+    {
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        CardData desrook = hand.Find(c => c.id == "0481");
+        if (desrook != null)
         {
-             Debug.Log("Dark Flare Knight: Invocando Mirage Knight.");
-             // GameManager.Instance.SpecialSummonById("1249", attacker.isPlayerCard);
+            Debug.Log("Desrook Archfiend: Enviando da mão para reviver Terrorking.");
+            GameManager.Instance.SendToGraveyard(desrook, true);
+            GameManager.Instance.SpecialSummonFromData(card.CurrentCardData, true);
         }
+    }
 
-        // Dark Mimic LV3 (0425): Draw 1
-        if (target != null && target.CurrentCardData.id == "0425") // Se foi destruído
+    // Mecha-Dog Marron (1190): 1000 damage to both if destroyed by battle
+    if (attacker != null && target != null && target.CurrentCardData.id == "1190")
+    {
+        // Verifica se foi destruído por batalha (chamado dentro de OnBattleEnd implica batalha)
+        Debug.Log("Mecha-Dog Marron: 1000 de dano para ambos.");
+        GameManager.Instance.DamagePlayer(1000);
+        GameManager.Instance.DamageOpponent(1000);
+    }
+
+    // 1925 - Thunder Nyan Nyan
+    // 1978 - Troop Dragon
+    if (card.id == "1978" && !isOwnerPlayer) // Destroyed by battle
+    {
+        Debug.Log("Troop Dragon: Invocando cópia do Deck.");
+        // Effect_SearchDeck(null, "Troop Dragon"); // Requer adaptação para SS
+    }
+
+    // 1931 - Timeater
+    if (attacker != null && attacker.CurrentCardData.id == "1931" && target != null)
+    {
+        // Se destruiu o monstro (target está no GY ou marcado para destruição)
+        // Chamamos o efeito registrado
+        ExecuteCardEffect(attacker);
+    }
+
+    // 2147 - Zone Eater
+    if (target != null && target.CurrentCardData.id == "2147" && attacker != null)
+    {
+        // Se o Zone Eater foi atacado, marca o atacante para destruição
+        attacker.destructionTurnCountdown = 5;
+        attacker.destructionCountdownOwnerIsPlayer = attacker.isPlayerCard; // O contador diminui no turno do dono do atacante
+        Debug.Log($"Zone Eater: {attacker.CurrentCardData.name} será destruído em 5 turnos.");
+    }
+
+    // 2028 - Vampire Baby
+    if (attacker != null && attacker.CurrentCardData.id == "2028" && target != null)
+    {
+        // Se destruiu monstro por batalha e enviou ao GY
+        List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
+        List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
+
+        // if (oppGY.Contains(target.CurrentCardData) || myGY.Contains(target.CurrentCardData))
+        // {
+        //     Debug.Log("Vampire Baby: Invocando monstro destruído (Simulado no fim da batalha).");
+        //     // Remove do GY
+        //     if (oppGY.Contains(target.CurrentCardData)) oppGY.Remove(target.CurrentCardData);
+        //     else myGY.Remove(target.CurrentCardData);
+        //     
+        //     // SS no campo do controlador do Vampire Baby
+        //     GameManager.Instance.SpecialSummonFromData(target.CurrentCardData, attacker.isPlayerCard);
+        // }
+    }
+
+    // 2049 - Wall of Illusion
+    if (target != null && target.CurrentCardData.id == "2049" && attacker != null)
+    {
+        // Se o atacante sobreviveu (não foi destruído na batalha), retorna para a mão
+        // Verifica se o atacante ainda está no campo (não foi destruído por regra de batalha)
+        // Nota: ResolveDamage chama Destroy(), mas o objeto Unity persiste até o fim do frame.
+        // Uma verificação robusta seria checar se ele NÃO está no GY.
+        // bool attackerInGY = GameManager.Instance.GetPlayerGraveyard().Contains(attacker.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(attacker.CurrentCardData);
+
+        // if (!attackerInGY)
         {
-            Debug.Log("Dark Mimic LV3: Compra 1.");
-            if (target.isPlayerCard) GameManager.Instance.DrawCard();
+            Debug.Log("Wall of Illusion: Retornando atacante para a mão.");
+            GameManager.Instance.ReturnToHand(attacker);
         }
+    }
 
-        // Dark Ruler Ha Des (0433): Negate effects of destroyed monsters
-        if (attacker != null && attacker.CurrentCardData.race == "Fiend" && attacker.isPlayerCard)
+    // 2093 - Winged Sage Falcos
+    if (attacker != null && attacker.CurrentCardData.id == "2093" && target != null)
+    {
+        // Se destruiu monstro em Posição de Ataque
+        // Precisamos saber a posição anterior (target.position), mas target pode ter sido destruído.
+        // Assumimos que target.position ainda guarda o estado do momento da batalha.
+        // if (target.position == CardDisplay.BattlePosition.Attack)
+        // {
+        //     // Verifica se foi enviado ao GY
+        //     List<CardData> gy = target.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
+        //     if (gy.Contains(target.CurrentCardData))
+        //     {
+        //         Debug.Log("Winged Sage Falcos: Retornando monstro destruído ao topo do Deck.");
+        //         gy.Remove(target.CurrentCardData);
+        //         List<CardData> deck = target.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+        //         deck.Insert(0, target.CurrentCardData);
+        //     }
+        // }
+    }
+
+    // 2146 - Zombyra the Dark
+    if (attacker != null && attacker.CurrentCardData.id == "2146" && target != null)
+    {
+        // Se destruiu monstro (está no GY)
+        // bool targetInGY = GameManager.Instance.GetPlayerGraveyard().Contains(target.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(target.CurrentCardData);
+        // if (targetInGY)
         {
-            if (GameManager.Instance.IsCardActiveOnField("0433"))
-            {
-                Debug.Log("Dark Ruler Ha Des: Efeitos do monstro destruído negados.");
-            }
+            Debug.Log("Zombyra the Dark: -200 ATK.");
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -200, attacker));
         }
+    }
 
-        // Dark Necrofear (0427): Equip on End Phase
-        // A lógica real é na End Phase se foi destruído.
-        // Marcamos uma flag no GameManager ou similar.
-        // GameManager.Instance.necrofearDestroyedThisTurn = true;
-
-        // Des Volstgalph (0476): Burn 500 on destroy monster
-        if (attacker != null && attacker.CurrentCardData.id == "0476" && target != null)
+    // 2131 - Yomi Ship
+    if (target != null && target.CurrentCardData.id == "2131" && attacker != null)
+    {
+        // Se Yomi Ship foi destruído por batalha
+        bool targetInGY = GameManager.Instance.GetPlayerGraveyard().Contains(target.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(target.CurrentCardData);
+        if (targetInGY)
         {
-            Debug.Log("Des Volstgalph: 500 de dano.");
-            Effect_DirectDamage(attacker, 500);
+            Debug.Log("Yomi Ship: Destruindo o atacante.");
+            GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+            Destroy(attacker.gameObject);
         }
+    }
 
-        // Desrook Archfiend (0481): Revive Terrorking
-        if (card.CurrentCardData.name == "Terrorking Archfiend" && card.isPlayerCard)
+    // Master Monk (1182) & Mataza (1184): Reset attack flag for double attack
+    // (Lógica simplificada: Se atacou uma vez, permite atacar de novo resetando a flag)
+    // Isso requer um contador de ataques no CardDisplay, que não temos.
+    // Workaround: Se for um desses monstros, reseta hasAttackedThisTurn se for o primeiro ataque.
+    // Como não sabemos se é o primeiro, isso permitiria ataques infinitos.
+    // Solução correta requer adicionar 'attackCount' no CardDisplay.
+
+    // 1762 - Spring of Rebirth & 1755 - Spirit's Invitation (Lógica de retorno à mão)
+    // Como não temos um hook explícito OnReturnToHand aqui, verificamos se podemos inferir ou adicionar.
+    // O método ReturnToHand no GameManager chama OnCardLeavesField.
+    // Vamos adicionar a lógica lá ou criar um novo hook.
+    // Por enquanto, simulamos no OnCardLeavesField se o destino for mão.
+}
+
+// --- NOVOS HOOKS ESPECÍFICOS ---
+
+partial void OnCounterTrapResolvedImpl(CardDisplay trap)
+{
+    // 2034 - Van'Dalgyon the Dark Dragon Lord
+    List<CardData> hand = trap.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+    CardData vandalgyon = hand.Find(c => c.id == "2034");
+
+    if (vandalgyon != null)
+    {
+        Debug.Log("Van'Dalgyon: Counter Trap resolvida. Invocando da mão.");
+        if (trap.isPlayerCard)
         {
-            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
-            CardData desrook = hand.Find(c => c.id == "0481");
-            if (desrook != null)
-            {
-                Debug.Log("Desrook Archfiend: Enviando da mão para reviver Terrorking.");
-                GameManager.Instance.SendToGraveyard(desrook, true);
-                GameManager.Instance.SpecialSummonFromData(card.CurrentCardData, true);
-            }
+            GameManager.Instance.RemoveCardFromHand(vandalgyon, true);
+            GameManager.Instance.SpecialSummonFromData(vandalgyon, true);
         }
-
-        // Mecha-Dog Marron (1190): 1000 damage to both if destroyed by battle
-        if (attacker != null && target != null && target.CurrentCardData.id == "1190")
+        else
         {
-            // Verifica se foi destruído por batalha (chamado dentro de OnBattleEnd implica batalha)
-            Debug.Log("Mecha-Dog Marron: 1000 de dano para ambos.");
-            GameManager.Instance.DamagePlayer(1000);
-            GameManager.Instance.DamageOpponent(1000);
+            // Lógica para oponente (se necessário)
         }
+    }
+}
 
-                // 1925 - Thunder Nyan Nyan
+partial void OnCardAddedToHandImpl(CardDisplay card)
+{
+    // 2058 - Watapon
+    if (card.CurrentCardData.id == "2058")
+    {
+        Debug.Log("Watapon: Adicionado à mão por efeito. Invocando...");
+        GameManager.Instance.RemoveCardFromHand(card.CurrentCardData, card.isPlayerCard);
+        GameManager.Instance.SpecialSummonFromData(card.CurrentCardData, card.isPlayerCard);
+    }
+}
+
+partial void OnTributeImpl(CardDisplay card)
+{
+    // 2142 - Zolga
+    if (card.CurrentCardData.id == "2142")
+    {
+        Debug.Log("Zolga: Tributado. Ganha 2000 LP.");
+        GameManager.Instance.GainLifePoints(card.isPlayerCard, 2000);
+    }
+}
+
+public void OnLifePointsGained(bool isPlayer, int amount)
+{
+    // Fire Princess (0659)
+    // Se você ganhar LP, causa 500 de dano ao oponente.
+    CheckActiveCards("0659", (card) =>
+    {
+        if (card.isPlayerCard == isPlayer)
+        {
+            Debug.Log("Fire Princess: Dano por cura.");
+            Effect_DirectDamage(card, 500);
+        }
+    });
+
+    // Atualiza Megamorph (1200)
+    UpdateAllMegamorphs();
+}
+
+// Helper para iterar cartas ativas no campo
+private void CheckActiveCards(string cardId, System.Action<CardDisplay> action)
+{
+    if (GameManager.Instance.duelFieldUI == null) return;
+
+    // Verifica todas as zonas do jogador (e oponente se necessário)
+    // Simplificado para zonas do jogador por enquanto
+    List<Transform> allZones = new List<Transform>();
+    allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
+    allZones.AddRange(GameManager.Instance.duelFieldUI.playerSpellZones);
+    allZones.Add(GameManager.Instance.duelFieldUI.playerFieldSpell);
+
+    foreach (var zone in allZones)
+    {
+        if (zone.childCount == 0) continue;
+        CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+        if (cd != null && cd.isOnField && !cd.isFlipped && cd.CurrentCardData.id == cardId)
+        {
+            action(cd);
+        }
+    }
+}
+
+public void CheckMaintenanceCosts()
+{
+    maintenanceQueue.Clear();
+
+    // Imperial Order (0932)
+    CheckActiveCards("0932", (card) =>
+    {
         if (card.isPlayerCard)
         {
-            // Check if Thunder Nyan Nyan is on field
-            CheckActiveCards("1925", (nyan) => {
-                if (card.CurrentCardData.attribute != "Light")
-                {
-                    Debug.Log("Thunder Nyan Nyan: Destruído por monstro não-LIGHT.");
-                    GameManager.Instance.SendToGraveyard(nyan.CurrentCardData, true);
-                    Destroy(nyan.gameObject);
-                }
+            maintenanceQueue.Enqueue(new MaintenanceRequest
+            {
+                card = card,
+                description = "700 LP",
+                canPay = () => GameManager.Instance.playerLP > 700,
+                payAction = () => GameManager.Instance.PayLifePoints(true, 700)
             });
-            
-            // Check if card IS Thunder Nyan Nyan
-            if (card.CurrentCardData.id == "1925")
+        }
+    });
+
+    // Mirror Wall (1252)
+    CheckActiveCards("1252", (card) =>
+    {
+        if (card.isPlayerCard)
+        {
+            maintenanceQueue.Enqueue(new MaintenanceRequest
             {
-                bool hasNonLight = false;
-                // Check field
-                // ...
-                if (hasNonLight)
-                {
-                     GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
-                     Destroy(card.gameObject);
-                }
-            }
+                card = card,
+                description = "2000 LP",
+                canPay = () => GameManager.Instance.playerLP > 2000,
+                payAction = () => GameManager.Instance.PayLifePoints(true, 2000)
+            });
         }
+    });
 
-        // 1978 - Troop Dragon
-        if (card.id == "1978" && !isOwnerPlayer) // Destroyed by battle
+    // Armor Exe (0102)
+    CheckActiveCards("0102", (card) =>
+    {
+        if (card.isPlayerCard)
         {
-            Debug.Log("Troop Dragon: Invocando cópia do Deck.");
-            // Effect_SearchDeck(null, "Troop Dragon"); // Requer adaptação para SS
-        }
-
-        // 1931 - Timeater
-        if (attacker != null && attacker.CurrentCardData.id == "1931" && target != null)
-        {
-            // Se destruiu o monstro (target está no GY ou marcado para destruição)
-            // Chamamos o efeito registrado
-            ExecuteCardEffect(attacker);
-        }
-
-        // 2147 - Zone Eater
-        if (target != null && target.CurrentCardData.id == "2147" && attacker != null)
-        {
-            // Se o Zone Eater foi atacado, marca o atacante para destruição
-            attacker.destructionTurnCountdown = 5;
-            attacker.destructionCountdownOwnerIsPlayer = attacker.isPlayerCard; // O contador diminui no turno do dono do atacante
-            Debug.Log($"Zone Eater: {attacker.CurrentCardData.name} será destruído em 5 turnos.");
-        }
-
-        // 2028 - Vampire Baby
-        if (attacker != null && attacker.CurrentCardData.id == "2028" && target != null)
-        {
-            // Se destruiu monstro por batalha e enviou ao GY
-            List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
-            List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
-            
-            if (oppGY.Contains(target.CurrentCardData) || myGY.Contains(target.CurrentCardData))
+            maintenanceQueue.Enqueue(new MaintenanceRequest
             {
-                Debug.Log("Vampire Baby: Invocando monstro destruído (Simulado no fim da batalha).");
-                // Remove do GY
-                if (oppGY.Contains(target.CurrentCardData)) oppGY.Remove(target.CurrentCardData);
-                else myGY.Remove(target.CurrentCardData);
-                
-                // SS no campo do controlador do Vampire Baby
-                GameManager.Instance.SpecialSummonFromData(target.CurrentCardData, attacker.isPlayerCard);
-            }
+                card = card,
+                description = "1 Spell Counter",
+                canPay = () => GetTotalSpellCounters(true) > 0,
+                payAction = () => RemoveSpellCounters(1, true)
+            });
         }
+    });
 
-        // 2049 - Wall of Illusion
-        if (target != null && target.CurrentCardData.id == "2049" && attacker != null)
+    // Messenger of Peace (1209)
+    CheckActiveCards("1209", (card) =>
+    {
+        if (card.isPlayerCard)
         {
-            // Se o atacante sobreviveu (não foi destruído na batalha), retorna para a mão
-            // Verifica se o atacante ainda está no campo (não foi destruído por regra de batalha)
-            // Nota: ResolveDamage chama Destroy(), mas o objeto Unity persiste até o fim do frame.
-            // Uma verificação robusta seria checar se ele NÃO está no GY.
-            bool attackerInGY = GameManager.Instance.GetPlayerGraveyard().Contains(attacker.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(attacker.CurrentCardData);
-            
-            if (!attackerInGY)
+            maintenanceQueue.Enqueue(new MaintenanceRequest
             {
-                Debug.Log("Wall of Illusion: Retornando atacante para a mão.");
-                GameManager.Instance.ReturnToHand(attacker);
-            }
+                card = card,
+                description = "100 LP",
+                canPay = () => GameManager.Instance.playerLP > 100,
+                payAction = () => GameManager.Instance.PayLifePoints(true, 100)
+            });
         }
+    });
 
-        // 2093 - Winged Sage Falcos
-        if (attacker != null && attacker.CurrentCardData.id == "2093" && target != null)
+    // Fairy Box (0620)
+    CheckActiveCards("0620", (card) =>
+    {
+        if (card.isPlayerCard)
         {
-            // Se destruiu monstro em Posição de Ataque
-            // Precisamos saber a posição anterior (target.position), mas target pode ter sido destruído.
-            // Assumimos que target.position ainda guarda o estado do momento da batalha.
-            if (target.position == CardDisplay.BattlePosition.Attack)
+            maintenanceQueue.Enqueue(new MaintenanceRequest
             {
-                // Verifica se foi enviado ao GY
-                List<CardData> gy = target.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
-                if (gy.Contains(target.CurrentCardData))
-                {
-                    Debug.Log("Winged Sage Falcos: Retornando monstro destruído ao topo do Deck.");
-                    gy.Remove(target.CurrentCardData);
-                    List<CardData> deck = target.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
-                    deck.Insert(0, target.CurrentCardData);
-                }
-            }
+                card = card,
+                description = "500 LP",
+                canPay = () => GameManager.Instance.playerLP > 500,
+                payAction = () => GameManager.Instance.PayLifePoints(true, 500)
+            });
         }
+    });
 
-        // 2146 - Zombyra the Dark
-        if (attacker != null && attacker.CurrentCardData.id == "2146" && target != null)
-        {
-            // Se destruiu monstro (está no GY)
-            bool targetInGY = GameManager.Instance.GetPlayerGraveyard().Contains(target.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(target.CurrentCardData);
-            if (targetInGY)
-            {
-                Debug.Log("Zombyra the Dark: -200 ATK.");
-                attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -200, attacker));
-            }
-        }
+    ProcessNextMaintenance();
+}
 
-        // 2131 - Yomi Ship
-        if (target != null && target.CurrentCardData.id == "2131" && attacker != null)
-        {
-            // Se Yomi Ship foi destruído por batalha
-            bool targetInGY = GameManager.Instance.GetPlayerGraveyard().Contains(target.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(target.CurrentCardData);
-            if (targetInGY)
-            {
-                Debug.Log("Yomi Ship: Destruindo o atacante.");
-                GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
-                Destroy(attacker.gameObject);
-            }
-        }
+private void ProcessNextMaintenance()
+{
+    if (maintenanceQueue.Count == 0) return;
 
-        // Master Monk (1182) & Mataza (1184): Reset attack flag for double attack
-        // (Lógica simplificada: Se atacou uma vez, permite atacar de novo resetando a flag)
-        // Isso requer um contador de ataques no CardDisplay, que não temos.
-        // Workaround: Se for um desses monstros, reseta hasAttackedThisTurn se for o primeiro ataque.
-        // Como não sabemos se é o primeiro, isso permitiria ataques infinitos.
-        // Solução correta requer adicionar 'attackCount' no CardDisplay.
-        
-        // 1762 - Spring of Rebirth & 1755 - Spirit's Invitation (Lógica de retorno à mão)
-        // Como não temos um hook explícito OnReturnToHand aqui, verificamos se podemos inferir ou adicionar.
-        // O método ReturnToHand no GameManager chama OnCardLeavesField.
-        // Vamos adicionar a lógica lá ou criar um novo hook.
-        // Por enquanto, simulamos no OnCardLeavesField se o destino for mão.
+    var req = maintenanceQueue.Dequeue();
+
+    // Verifica se a carta ainda está em campo
+    if (req.card == null || !req.card.isOnField)
+    {
+        ProcessNextMaintenance();
+        return;
     }
 
-    // --- NOVOS HOOKS ESPECÍFICOS ---
-
-    partial void OnCounterTrapResolvedImpl(CardDisplay trap)
+    if (req.canPay())
     {
-        // 2034 - Van'Dalgyon the Dark Dragon Lord
-        List<CardData> hand = trap.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
-        CardData vandalgyon = hand.Find(c => c.id == "2034");
-        
-        if (vandalgyon != null)
-        {
-            Debug.Log("Van'Dalgyon: Counter Trap resolvida. Invocando da mão.");
-            if (trap.isPlayerCard)
+        UIManager.Instance.ShowConfirmation(
+            $"Pagar {req.description} para manter {req.card.CurrentCardData.name}?",
+            () =>
             {
-                GameManager.Instance.RemoveCardFromHand(vandalgyon, true);
-                GameManager.Instance.SpecialSummonFromData(vandalgyon, true);
-            }
-            else
+                req.payAction();
+                Debug.Log($"{req.card.CurrentCardData.name}: Manutenção paga.");
+                ProcessNextMaintenance();
+            },
+            () =>
             {
-                // Lógica para oponente (se necessário)
+                Debug.Log($"{req.card.CurrentCardData.name}: Manutenção recusada. Destruindo.");
+                DestroyCardForMaintenance(req.card);
+                ProcessNextMaintenance();
             }
-        }
+        );
     }
-
-    partial void OnCardAddedToHandImpl(CardDisplay card)
+    else
     {
-        // 2058 - Watapon
-        if (card.CurrentCardData.id == "2058")
-        {
-            Debug.Log("Watapon: Adicionado à mão por efeito. Invocando...");
-            GameManager.Instance.RemoveCardFromHand(card.CurrentCardData, card.isPlayerCard);
-            GameManager.Instance.SpecialSummonFromData(card.CurrentCardData, card.isPlayerCard);
-        }
-    }
-
-    partial void OnTributeImpl(CardDisplay card)
-    {
-        // 2142 - Zolga
-        if (card.CurrentCardData.id == "2142")
-        {
-            Debug.Log("Zolga: Tributado. Ganha 2000 LP.");
-            GameManager.Instance.GainLifePoints(card.isPlayerCard, 2000);
-        }
-    }
-
-    public void OnLifePointsGained(bool isPlayer, int amount)
-    {
-        // Fire Princess (0659)
-        // Se você ganhar LP, causa 500 de dano ao oponente.
-        CheckActiveCards("0659", (card) => {
-            if (card.isPlayerCard == isPlayer)
-            {
-                Debug.Log("Fire Princess: Dano por cura.");
-                Effect_DirectDamage(card, 500);
-            }
-        });
-
-        // Atualiza Megamorph (1200)
-        UpdateAllMegamorphs();
-    }
-
-    // Helper para iterar cartas ativas no campo
-    private void CheckActiveCards(string cardId, System.Action<CardDisplay> action)
-    {
-        if (GameManager.Instance.duelFieldUI == null) return;
-        
-        // Verifica todas as zonas do jogador (e oponente se necessário)
-        // Simplificado para zonas do jogador por enquanto
-        List<Transform> allZones = new List<Transform>();
-        allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
-        allZones.AddRange(GameManager.Instance.duelFieldUI.playerSpellZones);
-        allZones.Add(GameManager.Instance.duelFieldUI.playerFieldSpell);
-
-        foreach (var zone in allZones)
-        {
-            if (zone.childCount == 0) continue;
-            CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
-            if (cd != null && cd.isOnField && !cd.isFlipped && cd.CurrentCardData.id == cardId)
-            {
-                action(cd);
-            }
-        }
-    }
-
-    public void CheckMaintenanceCosts()
-    {
-        maintenanceQueue.Clear();
-
-        // Imperial Order (0932)
-        CheckActiveCards("0932", (card) => {
-            if (card.isPlayerCard)
-            {
-                maintenanceQueue.Enqueue(new MaintenanceRequest {
-                    card = card,
-                    description = "700 LP",
-                    canPay = () => GameManager.Instance.playerLP > 700,
-                    payAction = () => GameManager.Instance.PayLifePoints(true, 700)
-                });
-            }
-        });
-
-        // Mirror Wall (1252)
-        CheckActiveCards("1252", (card) => {
-            if (card.isPlayerCard)
-            {
-                maintenanceQueue.Enqueue(new MaintenanceRequest {
-                    card = card,
-                    description = "2000 LP",
-                    canPay = () => GameManager.Instance.playerLP > 2000,
-                    payAction = () => GameManager.Instance.PayLifePoints(true, 2000)
-                });
-            }
-        });
-
-        // Armor Exe (0102)
-        CheckActiveCards("0102", (card) => {
-            if (card.isPlayerCard)
-            {
-                maintenanceQueue.Enqueue(new MaintenanceRequest {
-                    card = card,
-                    description = "1 Spell Counter",
-                    canPay = () => GetTotalSpellCounters(true) > 0,
-                    payAction = () => RemoveSpellCounters(1, true)
-                });
-            }
-        });
-
-        // Messenger of Peace (1209)
-        CheckActiveCards("1209", (card) => {
-            if (card.isPlayerCard)
-            {
-                maintenanceQueue.Enqueue(new MaintenanceRequest {
-                    card = card,
-                    description = "100 LP",
-                    canPay = () => GameManager.Instance.playerLP > 100,
-                    payAction = () => GameManager.Instance.PayLifePoints(true, 100)
-                });
-            }
-        });
-
-        // Fairy Box (0620)
-        CheckActiveCards("0620", (card) => {
-            if (card.isPlayerCard)
-            {
-                maintenanceQueue.Enqueue(new MaintenanceRequest {
-                    card = card,
-                    description = "500 LP",
-                    canPay = () => GameManager.Instance.playerLP > 500,
-                    payAction = () => GameManager.Instance.PayLifePoints(true, 500)
-                });
-            }
-        });
-
+        Debug.Log($"{req.card.CurrentCardData.name}: Não pode pagar manutenção. Destruindo.");
+        DestroyCardForMaintenance(req.card);
         ProcessNextMaintenance();
     }
+}
 
-    private void ProcessNextMaintenance()
+private void DestroyCardForMaintenance(CardDisplay card)
+{
+    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
+    GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard, CardLocation.Field, SendReason.Rule);
+    Destroy(card.gameObject);
+}
+
+private void CleanAllExpiredModifiers()
+{
+    List<Transform> allZones = new List<Transform>();
+    allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
+    allZones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+
+    foreach (var zone in allZones)
     {
-        if (maintenanceQueue.Count == 0) return;
-
-        var req = maintenanceQueue.Dequeue();
-        
-        // Verifica se a carta ainda está em campo
-        if (req.card == null || !req.card.isOnField) 
+        if (zone.childCount == 0) continue;
+        CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+        if (cd != null)
         {
-            ProcessNextMaintenance();
-            return;
-        }
-
-        if (req.canPay())
-        {
-            UIManager.Instance.ShowConfirmation(
-                $"Pagar {req.description} para manter {req.card.CurrentCardData.name}?",
-                () => {
-                    req.payAction();
-                    Debug.Log($"{req.card.CurrentCardData.name}: Manutenção paga.");
-                    ProcessNextMaintenance();
-                },
-                () => {
-                    Debug.Log($"{req.card.CurrentCardData.name}: Manutenção recusada. Destruindo.");
-                    DestroyCardForMaintenance(req.card);
-                    ProcessNextMaintenance();
-                }
-            );
-        }
-        else
-        {
-            Debug.Log($"{req.card.CurrentCardData.name}: Não pode pagar manutenção. Destruindo.");
-            DestroyCardForMaintenance(req.card);
-            ProcessNextMaintenance();
+            cd.CleanExpiredModifiers();
         }
     }
+}
 
-    private void DestroyCardForMaintenance(CardDisplay card)
+private void HandleBESCounter(CardDisplay card)
+{
+    if (card.spellCounters > 0)
     {
-        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
-        GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard, CardLocation.Field, SendReason.Rule);
+        card.RemoveSpellCounter(1);
+    }
+    else
+    {
+        Debug.Log($"{card.CurrentCardData.name}: Sem contadores após batalha. Destruído.");
+        GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
         Destroy(card.gameObject);
     }
+}
 
-    private void CleanAllExpiredModifiers()
+// --- FIM DO SISTEMA DE EVENTOS ---
+void Effect_DirectDamage(CardDisplay source, int amount)
+{
+    bool targetOpponent = source.isPlayerCard;
+
+    // Mystical Refpanel Logic (1313)
+    if (redirectSpellTarget && source.CurrentCardData.type.Contains("Spell"))
     {
-        List<Transform> allZones = new List<Transform>();
-        allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
-        allZones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+        targetOpponent = !targetOpponent; // Inverte o alvo
+        Debug.Log("Effect_DirectDamage: Alvo redirecionado por Mystical Refpanel.");
+    }
 
-        foreach (var zone in allZones)
+    if (targetOpponent) GameManager.Instance.DamageOpponent(amount);
+    else GameManager.Instance.DamagePlayer(amount);
+
+    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDamageEffect(Vector3.zero);
+}
+
+private void CheckNecklaceOfCommand(CardDisplay destroyedMonster)
+{
+    // Verifica se o monstro destruído tinha Necklace of Command (1322) equipado
+    CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+    foreach (var link in links)
+    {
+        if (link.target == destroyedMonster && link.type == CardLink.LinkType.Equipment)
         {
-            if (zone.childCount == 0) continue;
-            CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
-            if (cd != null)
+            if (link.source != null && link.source.CurrentCardData.id == "1322")
             {
-                cd.CleanExpiredModifiers();
-            }
-        }
-    }
+                Debug.Log("Necklace of Command: Ativado após destruição do monstro equipado.");
 
-    private void HandleBESCounter(CardDisplay card)
-    {
-        if (card.spellCounters > 0)
-        {
-            card.RemoveSpellCounter(1);
-        }
-        else
-        {
-            Debug.Log($"{card.CurrentCardData.name}: Sem contadores após batalha. Destruído.");
-            GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
-            Destroy(card.gameObject);
-        }
-    }
-
-    // --- FIM DO SISTEMA DE EVENTOS ---
-    void Effect_DirectDamage(CardDisplay source, int amount)
-    {
-        bool targetOpponent = source.isPlayerCard;
-        
-        // Mystical Refpanel Logic (1313)
-        if (redirectSpellTarget && source.CurrentCardData.type.Contains("Spell"))
-        {
-            targetOpponent = !targetOpponent; // Inverte o alvo
-            Debug.Log("Effect_DirectDamage: Alvo redirecionado por Mystical Refpanel.");
-        }
-
-        if (targetOpponent) GameManager.Instance.DamageOpponent(amount);
-        else GameManager.Instance.DamagePlayer(amount);
-        
-        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDamageEffect(Vector3.zero);
-    }
-
-    private void CheckNecklaceOfCommand(CardDisplay destroyedMonster)
-    {
-        // Verifica se o monstro destruído tinha Necklace of Command (1322) equipado
-        CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
-        foreach(var link in links)
-        {
-            if (link.target == destroyedMonster && link.type == CardLink.LinkType.Equipment)
-            {
-                if (link.source != null && link.source.CurrentCardData.id == "1322")
+                // Effect: Draw 1 OR Discard 1 random from opp hand
+                // Como é opcional, abrimos um diálogo simples
+                if (UIManager.Instance != null)
                 {
-                    Debug.Log("Necklace of Command: Ativado após destruição do monstro equipado.");
-                    
-                    // Effect: Draw 1 OR Discard 1 random from opp hand
-                    // Como é opcional, abrimos um diálogo simples
-                    if (UIManager.Instance != null)
-                    {
-                        UIManager.Instance.ShowConfirmation("Necklace of Command: Comprar 1 carta (Sim) ou Descartar do oponente (Não)?", 
-                            () => GameManager.Instance.DrawCard(),
-                            () => GameManager.Instance.DiscardRandomHand(!link.source.isPlayerCard, 1)
-                        );
-                    }
-                }
-            }
-        }
-    }
-
-    void Effect_GainLP(CardDisplay source, int amount)
-    {
-        GameManager.Instance.GainLifePoints(source.isPlayerCard, amount);
-    }
-
-    bool Effect_PayLP(CardDisplay source, int amount)
-    {
-        return GameManager.Instance.PayLifePoints(source.isPlayerCard, amount);
-    }
-
-    void Effect_DestroyType(CardDisplay source, string type)
-    {
-        Debug.Log($"Destruindo todos os monstros tipo {type}...");
-        // Implementação real requereria iterar sobre o campo e destruir
-        // DestroyAllMonsters(true, true, (m) => m.CurrentCardData.race == type);
-    }
-
-    void Effect_SearchDeck(CardDisplay source, string term, string typeFilter = "", int maxAtk = 9999)
-    {
-        bool isPlayer = source != null ? source.isPlayerCard : true;
-        List<CardData> deck = isPlayer ? GameManager.Instance.GetPlayerMainDeck() : null;
-
-        if (deck == null) return;
-
-        List<CardData> results = deck.FindAll(c => 
-            c.name.Contains(term) && 
-            (string.IsNullOrEmpty(typeFilter) || c.type.Contains(typeFilter)) &&
-            c.atk <= maxAtk
-        );
-
-        if (results.Count > 0)
-        {
-            GameManager.Instance.OpenCardSelection(results, $"Selecione '{term}'", (selected) => {
-                deck.Remove(selected);
-                GameManager.Instance.AddCardToHand(selected, isPlayer);
-                GameManager.Instance.ShuffleDeck(isPlayer);
-            });
-        }
-    }
-
-    void Effect_SearchDeckTop(CardDisplay source, string type, string subType = "")
-    {
-        Debug.Log($"Procurando {type}/{subType} para colocar no topo do deck.");
-    }
-
-    void Effect_SpecialSummonFromDeck(CardDisplay source, string race = "", string attribute = "", int maxAtk = -1, int maxDef = -1, int maxLevel = -1, string nameContains = "", bool? isPlayerOverride = null)
-    {
-        bool isPlayer = isPlayerOverride.HasValue ? isPlayerOverride.Value : (source != null ? source.isPlayerCard : true);
-        List<CardData> deck = isPlayer ? GameManager.Instance.GetPlayerMainDeck() : null;
-
-        if (deck == null) return;
-
-        List<CardData> targets = deck.FindAll(c => 
-            c.type.Contains("Monster") &&
-            (string.IsNullOrEmpty(race) || c.race == race) &&
-            (string.IsNullOrEmpty(attribute) || c.attribute == attribute) &&
-            (maxAtk == -1 || c.atk <= maxAtk) &&
-            (maxDef == -1 || c.def <= maxDef) &&
-            (maxLevel == -1 || c.level <= maxLevel) &&
-            (string.IsNullOrEmpty(nameContains) || c.name.Contains(nameContains))
-        );
-
-        if (targets.Count > 0)
-        {
-            GameManager.Instance.OpenCardSelection(targets, "Invocar do Deck", (selected) => {
-                deck.Remove(selected);
-                GameManager.Instance.SpecialSummonFromData(selected, isPlayer);
-                GameManager.Instance.ShuffleDeck(isPlayer);
-            });
-        }
-        else
-        {
-            Debug.Log("Nenhum alvo válido no Deck para Invocação Especial.");
-        }
-    }
-
-    // Retorna lista de cartas equipadas no alvo
-    public List<CardDisplay> GetEquippedCards(CardDisplay target)
-    {
-        List<CardDisplay> equipped = new List<CardDisplay>();
-        CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
-        foreach(var link in links)
-        {
-            if (link.target == target && link.type == CardLink.LinkType.Equipment && link.source != null)
-            {
-                equipped.Add(link.source);
-            }
-        }
-        return equipped;
-    }
-
-    void Effect_Equip(CardDisplay source, int atkBonus, int defBonus, string requiredRace = "", string requiredAttribute = "")
-    {
-        if (SpellTrapManager.Instance != null)
-        {
-            SpellTrapManager.Instance.StartTargetSelection(
-                (target) => {
-                    if (!target.isOnField || !target.CurrentCardData.type.Contains("Monster")) return false;
-                    if (!string.IsNullOrEmpty(requiredRace) && target.CurrentCardData.race != requiredRace) return false;
-                    if (!string.IsNullOrEmpty(requiredAttribute) && target.CurrentCardData.attribute != requiredAttribute) return false;
-                    return true;
-                },
-                (target) => 
-                {
-                    Debug.Log($"{source.CurrentCardData.name} equipada em {target.CurrentCardData.name}");
-                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
-                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment); // <---- CRIA O LINK
-                    // Usa o novo sistema de modificadores
-                    if (atkBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, atkBonus, source));
-                    if (defBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, defBonus, source));
-                    // TODO: Vincular visualmente
-                }
-            );
-        }
-    }
-
-    void Effect_Field(CardDisplay source, int atkBonus, int defBonus, string requiredRace = "", string requiredAttribute = "", int levelMod = 0)
-    {
-        // Lógica simplificada: Aplica em todos os monstros atuais (em um sistema real, seria um efeito contínuo que checa ao entrar/sair)
-        // Por enquanto, vamos aplicar como "Continuous" em todos os monstros válidos já no campo
-        if (GameManager.Instance.duelFieldUI == null) return;
-
-        List<Transform> allZones = new List<Transform>();
-        allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
-        allZones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
-
-        foreach (var zone in allZones)
-        {
-            if (zone.childCount == 0) continue;
-            CardDisplay target = zone.GetChild(0).GetComponent<CardDisplay>();
-            if (target == null) continue;
-
-            bool matchRace = string.IsNullOrEmpty(requiredRace) || target.CurrentCardData.race == requiredRace;
-            bool matchAttr = string.IsNullOrEmpty(requiredAttribute) || target.CurrentCardData.attribute == requiredAttribute;
-
-            if (matchRace && matchAttr)
-            {
-                if (atkBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Field, StatModifier.Operation.Add, atkBonus, source));
-                if (defBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Field, StatModifier.Operation.Add, defBonus, source));
-            }
-        }
-        Debug.Log($"Campo ativado: {source.CurrentCardData.name}. Buff aplicado.");
-    }
-
-    void Effect_FlipDestroy(CardDisplay source, TargetType type)
-    {
-        Debug.Log($"Efeito FLIP ativado: {source.CurrentCardData.name}");
-        if (SpellTrapManager.Instance != null)
-        {
-            SpellTrapManager.Instance.StartTargetSelection(
-                (target) => IsValidTarget(target, type),
-                (target) => 
-                {
-                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
-                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-                    Destroy(target.gameObject);
-                }
-            );
-        }
-    }
-
-    void Effect_FlipReturn(CardDisplay source, TargetType type)
-    {
-        Debug.Log($"Efeito FLIP (Return) ativado: {source.CurrentCardData.name}");
-        // Lógica de bounce
-    }
-
-    void Effect_FlipDestroyLevel(CardDisplay source, int level)
-    {
-        bool isPlayer = source.isPlayerCard;
-        Transform[] targetZones = isPlayer ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
-        
-        foreach(Transform zone in targetZones)
-        {
-            if(zone.childCount > 0)
-            {
-                CardDisplay target = zone.GetChild(0).GetComponent<CardDisplay>();
-                if(target != null && target.CurrentCardData.level == level)
-                {
-                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
-                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, !isPlayer);
-                    Destroy(target.gameObject);
-                }
-            }
-        }
-    }
-
-    // Helper para selecionar múltiplos tributos para efeitos
-    void SelectTributesForEffect(int count, bool isPlayer, System.Action<List<CardDisplay>> onComplete, List<CardDisplay> current = null)
-    {
-        if (current == null) current = new List<CardDisplay>();
-        
-        if (current.Count == count)
-        {
-            onComplete?.Invoke(current);
-            return;
-        }
-
-        if (SpellTrapManager.Instance != null)
-        {
-            SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && t.isPlayerCard == isPlayer && t.CurrentCardData.type.Contains("Monster") && !current.Contains(t),
-                (selected) => {
-                    current.Add(selected);
-                    SelectTributesForEffect(count, isPlayer, onComplete, current);
-                }
-            );
-        }
-    }
-
-    void Effect_TributeToDraw(CardDisplay source, int tributes, int draws)
-    {
-        if (SummonManager.Instance.HasEnoughTributes(tributes, source.isPlayerCard))
-        {
-            SelectTributesForEffect(tributes, source.isPlayerCard, (tributesList) => {
-                foreach (var t in tributesList)
-                {
-                    GameManager.Instance.TributeCard(t);
-                }
-                Debug.Log($"Tributando {tributes} para comprar {draws}.");
-                for(int i=0; i<draws; i++) GameManager.Instance.DrawCard(true);
-            });
-        }
-    }
-
-    void Effect_TributeToBurn(CardDisplay source, int tributes, int damage, string race = "")
-    {
-        Debug.Log($"Tributando {tributes} {race} para causar {damage} dano.");
-        GameManager.Instance.DamageOpponent(damage);
-    }
-
-    void Effect_LevelUp(CardDisplay source, string nextLevelId)
-    {
-        Debug.Log($"Level Up! Invocando {nextLevelId}.");
-        // Lógica de buscar no deck/mão e invocar
-    }
-
-    void Effect_TurnSet(CardDisplay source)
-    {
-        if (source.position == CardDisplay.BattlePosition.Attack)
-            source.ChangePosition();
-        source.ShowBack();
-    }
-
-    void Effect_BuffStats(CardDisplay source, int atk, int def)
-    {
-        if (SpellTrapManager.Instance != null)
-        {
-            SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
-                (t) => {
-                    if (atk != 0) t.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, atk, source));
-                    if (def != 0) t.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, def, source));
-                }
-            );
-        }
-    }
-
-    void Effect_ChangeControl(CardDisplay source, bool returnAtEndPhase)
-    {
-        if (SpellTrapManager.Instance != null)
-        {
-            SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && t.isPlayerCard != source.isPlayerCard,
-                (t) => GameManager.Instance.SwitchControl(t)
-            );
-        }
-    }
-
-    void Effect_Revive(CardDisplay source, bool anyGraveyard)
-    {
-        List<CardData> targets = new List<CardData>();
-        targets.AddRange(GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.type.Contains("Monster")));
-        if (anyGraveyard)
-            targets.AddRange(GameManager.Instance.GetOpponentGraveyard().FindAll(c => c.type.Contains("Monster")));
-
-        GameManager.Instance.OpenCardSelection(targets, "Selecione monstro para reviver", (selected) => {
-            GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
-            Debug.Log($"Revivendo {selected.name}");
-        });
-    }
-
-    void Effect_Union(CardDisplay source, string targetName, int atkBuff, int defBuff)
-    {
-        Debug.Log($"Union: Tentando equipar em {targetName}...");
-        // Lógica de Union simplificada
-        Effect_Equip(source, atkBuff, defBuff);
-    }
-
-    void Effect_CoinTossDestroy(CardDisplay source, int numCoins, int requiredHeads, TargetType targetType)
-    {
-        GameManager.Instance.TossCoin(numCoins, (heads) => {
-            if (heads >= requiredHeads)
-            {
-                Debug.Log($"{source.CurrentCardData.name}: {heads} caras! Sucesso.");
-                if (SpellTrapManager.Instance != null)
-                {
-                    SpellTrapManager.Instance.StartTargetSelection(
-                        (t) => IsValidTarget(t, targetType) && t.isPlayerCard != source.isPlayerCard,
-                        (t) => {
-                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
-                            GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
-                            Destroy(t.gameObject);
-                        }
+                    UIManager.Instance.ShowConfirmation("Necklace of Command: Comprar 1 carta (Sim) ou Descartar do oponente (Não)?",
+                        () => GameManager.Instance.DrawCard(),
+                        () => GameManager.Instance.DiscardRandomHand(!link.source.isPlayerCard, 1)
                     );
                 }
             }
-            else
-            {
-                Debug.Log($"{source.CurrentCardData.name}: {heads} caras. Falhou.");
-            }
+        }
+    }
+}
+
+void Effect_GainLP(CardDisplay source, int amount)
+{
+    GameManager.Instance.GainLifePoints(source.isPlayerCard, amount);
+}
+
+bool Effect_PayLP(CardDisplay source, int amount)
+{
+    return GameManager.Instance.PayLifePoints(source.isPlayerCard, amount);
+}
+
+void Effect_DestroyType(CardDisplay source, string type)
+{
+    Debug.Log($"Destruindo todos os monstros tipo {type}...");
+    // Implementação real requereria iterar sobre o campo e destruir
+    // DestroyAllMonsters(true, true, (m) => m.CurrentCardData.race == type);
+}
+
+void Effect_SearchDeck(CardDisplay source, string term, string typeFilter = "", int maxAtk = 9999)
+{
+    bool isPlayer = source != null ? source.isPlayerCard : true;
+    List<CardData> deck = isPlayer ? GameManager.Instance.GetPlayerMainDeck() : null;
+
+    if (deck == null) return;
+
+    List<CardData> results = deck.FindAll(c =>
+        c.name.Contains(term) &&
+        (string.IsNullOrEmpty(typeFilter) || c.type.Contains(typeFilter)) &&
+        c.atk <= maxAtk
+    );
+
+    if (results.Count > 0)
+    {
+        GameManager.Instance.OpenCardSelection(results, $"Selecione '{term}'", (selected) =>
+        {
+            deck.Remove(selected);
+            GameManager.Instance.AddCardToHand(selected, isPlayer);
+            GameManager.Instance.ShuffleDeck(isPlayer);
         });
     }
+}
 
-    // --- SISTEMA DE SPELL COUNTERS (GLOBAL) ---
+void Effect_SearchDeckTop(CardDisplay source, string type, string subType = "")
+{
+    Debug.Log($"Procurando {type}/{subType} para colocar no topo do deck.");
+}
 
-    public int GetTotalSpellCounters(bool isPlayer)
+void Effect_SpecialSummonFromDeck(CardDisplay source, string race = "", string attribute = "", int maxAtk = -1, int maxDef = -1, int maxLevel = -1, string nameContains = "", bool? isPlayerOverride = null)
+{
+    bool isPlayer = isPlayerOverride.HasValue ? isPlayerOverride.Value : (source != null ? source.isPlayerCard : true);
+    List<CardData> deck = isPlayer ? GameManager.Instance.GetPlayerMainDeck() : null;
+
+    if (deck == null) return;
+
+    List<CardData> targets = deck.FindAll(c =>
+        c.type.Contains("Monster") &&
+        (string.IsNullOrEmpty(race) || c.race == race) &&
+        (string.IsNullOrEmpty(attribute) || c.attribute == attribute) &&
+        (maxAtk == -1 || c.atk <= maxAtk) &&
+        (maxDef == -1 || c.def <= maxDef) &&
+        (maxLevel == -1 || c.level <= maxLevel) &&
+        (string.IsNullOrEmpty(nameContains) || c.name.Contains(nameContains))
+    );
+
+    if (targets.Count > 0)
     {
-        int total = 0;
-        if (GameManager.Instance.duelFieldUI != null)
+        GameManager.Instance.OpenCardSelection(targets, "Invocar do Deck", (selected) =>
         {
-            List<Transform> zones = new List<Transform>();
-            if (isPlayer)
+            deck.Remove(selected);
+            GameManager.Instance.SpecialSummonFromData(selected, isPlayer);
+            GameManager.Instance.ShuffleDeck(isPlayer);
+        });
+    }
+    else
+    {
+        Debug.Log("Nenhum alvo válido no Deck para Invocação Especial.");
+    }
+}
+
+// Retorna lista de cartas equipadas no alvo
+public List<CardDisplay> GetEquippedCards(CardDisplay target)
+{
+    List<CardDisplay> equipped = new List<CardDisplay>();
+    CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+    foreach (var link in links)
+    {
+        if (link.target == target && link.type == CardLink.LinkType.Equipment && link.source != null)
+        {
+            equipped.Add(link.source);
+        }
+    }
+    return equipped;
+}
+
+void Effect_Equip(CardDisplay source, int atkBonus, int defBonus, string requiredRace = "", string requiredAttribute = "")
+{
+    if (SpellTrapManager.Instance != null)
+    {
+        SpellTrapManager.Instance.StartTargetSelection(
+            (target) =>
             {
-                zones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
-                zones.AddRange(GameManager.Instance.duelFieldUI.playerSpellZones);
-                zones.Add(GameManager.Instance.duelFieldUI.playerFieldSpell);
-            }
-            else
+                if (!target.isOnField || !target.CurrentCardData.type.Contains("Monster")) return false;
+                if (!string.IsNullOrEmpty(requiredRace) && target.CurrentCardData.race != requiredRace) return false;
+                if (!string.IsNullOrEmpty(requiredAttribute) && target.CurrentCardData.attribute != requiredAttribute) return false;
+                return true;
+            },
+            (target) =>
             {
-                zones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
-                zones.AddRange(GameManager.Instance.duelFieldUI.opponentSpellZones);
-                zones.Add(GameManager.Instance.duelFieldUI.opponentFieldSpell);
+                Debug.Log($"{source.CurrentCardData.name} equipada em {target.CurrentCardData.name}");
+                GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
+                GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment); // <---- CRIA O LINK
+                                                                                                  // Usa o novo sistema de modificadores
+                if (atkBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, atkBonus, source));
+                if (defBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, defBonus, source));
+                // TODO: Vincular visualmente
             }
+        );
+    }
+}
 
-            foreach (var zone in zones)
+void Effect_Field(CardDisplay source, int atkBonus, int defBonus, string requiredRace = "", string requiredAttribute = "", int levelMod = 0)
+{
+    // Lógica simplificada: Aplica em todos os monstros atuais (em um sistema real, seria um efeito contínuo que checa ao entrar/sair)
+    // Por enquanto, vamos aplicar como "Continuous" em todos os monstros válidos já no campo
+    if (GameManager.Instance.duelFieldUI == null) return;
+
+    List<Transform> allZones = new List<Transform>();
+    allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
+    allZones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+
+    foreach (var zone in allZones)
+    {
+        if (zone.childCount == 0) continue;
+        CardDisplay target = zone.GetChild(0).GetComponent<CardDisplay>();
+        if (target == null) continue;
+
+        bool matchRace = string.IsNullOrEmpty(requiredRace) || target.CurrentCardData.race == requiredRace;
+        bool matchAttr = string.IsNullOrEmpty(requiredAttribute) || target.CurrentCardData.attribute == requiredAttribute;
+
+        if (matchRace && matchAttr)
+        {
+            if (atkBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Field, StatModifier.Operation.Add, atkBonus, source));
+            if (defBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Field, StatModifier.Operation.Add, defBonus, source));
+        }
+    }
+    Debug.Log($"Campo ativado: {source.CurrentCardData.name}. Buff aplicado.");
+}
+
+void Effect_FlipDestroy(CardDisplay source, TargetType type)
+{
+    Debug.Log($"Efeito FLIP ativado: {source.CurrentCardData.name}");
+    if (SpellTrapManager.Instance != null)
+    {
+        SpellTrapManager.Instance.StartTargetSelection(
+            (target) => IsValidTarget(target, type),
+            (target) =>
             {
-                if (zone.childCount > 0)
-                {
-                    var cd = zone.GetChild(0).GetComponent<CardDisplay>();
-                    if (cd != null) total += cd.spellCounters;
-                }
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                Destroy(target.gameObject);
             }
-        }
-        return total;
+        );
     }
+}
 
-    public bool RemoveSpellCounters(int amount, bool isPlayer)
+void Effect_FlipReturn(CardDisplay source, TargetType type)
+{
+    Debug.Log($"Efeito FLIP (Return) ativado: {source.CurrentCardData.name}");
+    // Lógica de bounce
+}
+
+void Effect_FlipDestroyLevel(CardDisplay source, int level)
+{
+    bool isPlayer = source.isPlayerCard;
+    Transform[] targetZones = isPlayer ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+
+    foreach (Transform zone in targetZones)
     {
-        int total = GetTotalSpellCounters(isPlayer);
-        if (total < amount) return false;
-
-        int remaining = amount;
-        // Coleta todas as cartas com contadores
-        List<CardDisplay> holders = new List<CardDisplay>();
-        if (GameManager.Instance.duelFieldUI != null)
+        if (zone.childCount > 0)
         {
-            // Reusa a lógica de coleta de zonas do GetTotalSpellCounters ou similar
-            // Para simplificar, vamos iterar novamente ou criar um helper CollectAllCards(isPlayer)
-            // Aqui faremos a remoção automática (greedy) para o protótipo.
-            // Em um jogo completo, abriria uma UI para o jogador escolher de onde remover.
-            
-            // ... (Lógica de iteração similar ao GetTotal, mas chamando RemoveSpellCounter)
-            // Como o código ficaria grande no diff, vou simplificar assumindo que você pode copiar a lógica de iteração acima
-            // e aplicar cd.RemoveSpellCounter(1) até remaining == 0.
-            
-            // Implementação simplificada:
-            Debug.Log($"Removendo {amount} Spell Counters automaticamente...");
-            // TODO: Implementar a iteração real de remoção aqui
-        }
-        return true;
-    }
-
-
-    // --- EFEITOS COMUNS (REFERENCIADOS POR MÚLTIPLAS CARTAS) ---
-
-    void Effect_MST(CardDisplay source)
-    {
-        Debug.Log("MST: Destruir 1 S/T.");
-        if (SpellTrapManager.Instance != null)
-        {
-            SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")),
-                (t) => {
-                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
-                    GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
-                    Destroy(t.gameObject);
-                }
-            );
-        }
-    }
-
-    void Effect_HeavyStorm(CardDisplay source)
-    {
-        Debug.Log("Heavy Storm: Destruir todas as S/T.");
-        List<CardDisplay> toDestroy = new List<CardDisplay>();
-        if (GameManager.Instance.duelFieldUI != null)
-        {
-            
-            CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, toDestroy);
-            CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, toDestroy);
-            CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.playerFieldSpell, GameManager.Instance.duelFieldUI.opponentFieldSpell }, toDestroy);
-        }
-        DestroyCards(toDestroy, source.isPlayerCard);
-    }
-
-    void Effect_HarpiesFeatherDuster(CardDisplay source)
-    {
-        Debug.Log("Harpie's Feather Duster: Destruir S/T do oponente.");
-        List<CardDisplay> toDestroy = new List<CardDisplay>();
-        if (GameManager.Instance.duelFieldUI != null)
-        {
-            Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
-            CollectCards(zones, toDestroy);
-            Transform fieldZone = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentFieldSpell : GameManager.Instance.duelFieldUI.playerFieldSpell;
-            CollectCards(new Transform[] { fieldZone }, toDestroy);
-        }
-        DestroyCards(toDestroy, source.isPlayerCard);
-    }
-
-    void Effect_Raigeki(CardDisplay source)
-    {
-        DestroyAllMonsters(true, false);
-    }
-
-    void Effect_MirrorForce(CardDisplay source)
-    {
-        Debug.Log("Mirror Force: Destruir monstros em ataque do oponente.");
-        List<CardDisplay> toDestroy = new List<CardDisplay>();
-        if (GameManager.Instance.duelFieldUI != null)
-        {
-            Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
-            foreach (var zone in zones)
+            CardDisplay target = zone.GetChild(0).GetComponent<CardDisplay>();
+            if (target != null && target.CurrentCardData.level == level)
             {
-                if (zone.childCount > 0)
-                {
-                    var monster = zone.GetChild(0).GetComponent<CardDisplay>();
-                    if (monster != null && monster.position == CardDisplay.BattlePosition.Attack)
-                        toDestroy.Add(monster);
-                }
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                GameManager.Instance.SendToGraveyard(target.CurrentCardData, !isPlayer);
+                Destroy(target.gameObject);
             }
         }
-        DestroyCards(toDestroy, source.isPlayerCard);
+    }
+}
+
+// Helper para selecionar múltiplos tributos para efeitos
+void SelectTributesForEffect(int count, bool isPlayer, System.Action<List<CardDisplay>> onComplete, List<CardDisplay> current = null)
+{
+    if (current == null) current = new List<CardDisplay>();
+
+    if (current.Count == count)
+    {
+        onComplete?.Invoke(current);
+        return;
     }
 
-    void Effect_MagicCylinder(CardDisplay source)
+    if (SpellTrapManager.Instance != null)
     {
-        if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+        SpellTrapManager.Instance.StartTargetSelection(
+            (t) => t.isOnField && t.isPlayerCard == isPlayer && t.CurrentCardData.type.Contains("Monster") && !current.Contains(t),
+            (selected) =>
+            {
+                current.Add(selected);
+                SelectTributesForEffect(count, isPlayer, onComplete, current);
+            }
+        );
+    }
+}
+
+void Effect_TributeToDraw(CardDisplay source, int tributes, int draws)
+{
+    if (SummonManager.Instance.HasEnoughTributes(tributes, source.isPlayerCard))
+    {
+        SelectTributesForEffect(tributes, source.isPlayerCard, (tributesList) =>
         {
-            int damage = BattleManager.Instance.currentAttacker.CurrentCardData.atk;
-            Effect_DirectDamage(source, damage);
+            foreach (var t in tributesList)
+            {
+                GameManager.Instance.TributeCard(t);
+            }
+            Debug.Log($"Tributando {tributes} para comprar {draws}.");
+            for (int i = 0; i < draws; i++) GameManager.Instance.DrawCard(true);
+        });
+    }
+}
+
+void Effect_TributeToBurn(CardDisplay source, int tributes, int damage, string race = "")
+{
+    Debug.Log($"Tributando {tributes} {race} para causar {damage} dano.");
+    GameManager.Instance.DamageOpponent(damage);
+}
+
+void Effect_LevelUp(CardDisplay source, string nextLevelId)
+{
+    Debug.Log($"Level Up! Invocando {nextLevelId}.");
+    // Lógica de buscar no deck/mão e invocar
+}
+
+void Effect_TurnSet(CardDisplay source)
+{
+    if (source.position == CardDisplay.BattlePosition.Attack)
+        source.ChangePosition();
+    source.ShowBack();
+}
+
+void Effect_BuffStats(CardDisplay source, int atk, int def)
+{
+    if (SpellTrapManager.Instance != null)
+    {
+        SpellTrapManager.Instance.StartTargetSelection(
+            (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+            (t) =>
+            {
+                if (atk != 0) t.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, atk, source));
+                if (def != 0) t.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, def, source));
+            }
+        );
+    }
+}
+
+void Effect_ChangeControl(CardDisplay source, bool returnAtEndPhase)
+{
+    if (SpellTrapManager.Instance != null)
+    {
+        SpellTrapManager.Instance.StartTargetSelection(
+            (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && t.isPlayerCard != source.isPlayerCard,
+            (t) => GameManager.Instance.SwitchControl(t)
+        );
+    }
+}
+
+void Effect_Revive(CardDisplay source, bool anyGraveyard)
+{
+    List<CardData> targets = new List<CardData>();
+    targets.AddRange(GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.type.Contains("Monster")));
+    if (anyGraveyard)
+        targets.AddRange(GameManager.Instance.GetOpponentGraveyard().FindAll(c => c.type.Contains("Monster")));
+
+    GameManager.Instance.OpenCardSelection(targets, "Selecione monstro para reviver", (selected) =>
+    {
+        GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+        Debug.Log($"Revivendo {selected.name}");
+    });
+}
+
+void Effect_Union(CardDisplay source, string targetName, int atkBuff, int defBuff)
+{
+    Debug.Log($"Union: Tentando equipar em {targetName}...");
+    // Lógica de Union simplificada
+    Effect_Equip(source, atkBuff, defBuff);
+}
+
+void Effect_CoinTossDestroy(CardDisplay source, int numCoins, int requiredHeads, TargetType targetType)
+{
+    GameManager.Instance.TossCoin(numCoins, (heads) =>
+    {
+        if (heads >= requiredHeads)
+        {
+            Debug.Log($"{source.CurrentCardData.name}: {heads} caras! Sucesso.");
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => IsValidTarget(t, targetType) && t.isPlayerCard != source.isPlayerCard,
+                    (t) =>
+                    {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                        GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                        Destroy(t.gameObject);
+                    }
+                );
+            }
+        }
+        else
+        {
+            Debug.Log($"{source.CurrentCardData.name}: {heads} caras. Falhou.");
+        }
+    });
+}
+
+// --- SISTEMA DE SPELL COUNTERS (GLOBAL) ---
+
+public int GetTotalSpellCounters(bool isPlayer)
+{
+    int total = 0;
+    if (GameManager.Instance.duelFieldUI != null)
+    {
+        List<Transform> zones = new List<Transform>();
+        if (isPlayer)
+        {
+            zones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
+            zones.AddRange(GameManager.Instance.duelFieldUI.playerSpellZones);
+            zones.Add(GameManager.Instance.duelFieldUI.playerFieldSpell);
+        }
+        else
+        {
+            zones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+            zones.AddRange(GameManager.Instance.duelFieldUI.opponentSpellZones);
+            zones.Add(GameManager.Instance.duelFieldUI.opponentFieldSpell);
+        }
+
+        foreach (var zone in zones)
+        {
+            if (zone.childCount > 0)
+            {
+                var cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (cd != null) total += cd.spellCounters;
+            }
         }
     }
+    return total;
+}
 
-    void Effect_EnemyController(CardDisplay source)
+public bool RemoveSpellCounters(int amount, bool isPlayer)
+{
+    int total = GetTotalSpellCounters(isPlayer);
+    if (total < amount) return false;
+
+    int remaining = amount;
+    // Coleta todas as cartas com contadores
+    List<CardDisplay> holders = new List<CardDisplay>();
+    if (GameManager.Instance.duelFieldUI != null)
     {
-        Debug.Log("Enemy Controller: Escolha 1 efeito (Mudar Posição ou Controlar).");
-        Effect_ChangeControl(source, true);
+        // Reusa a lógica de coleta de zonas do GetTotalSpellCounters ou similar
+        // Para simplificar, vamos iterar novamente ou criar um helper CollectAllCards(isPlayer)
+        // Aqui faremos a remoção automática (greedy) para o protótipo.
+        // Em um jogo completo, abriria uma UI para o jogador escolher de onde remover.
+
+        // ... (Lógica de iteração similar ao GetTotal, mas chamando RemoveSpellCounter)
+        // Como o código ficaria grande no diff, vou simplificar assumindo que você pode copiar a lógica de iteração acima
+        // e aplicar cd.RemoveSpellCounter(1) até remaining == 0.
+
+        // Implementação simplificada:
+        Debug.Log($"Removendo {amount} Spell Counters automaticamente...");
+        // TODO: Implementar a iteração real de remoção aqui
     }
+    return true;
+}
 
-    void Effect_MonsterReborn(CardDisplay source)
+
+// --- EFEITOS COMUNS (REFERENCIADOS POR MÚLTIPLAS CARTAS) ---
+
+void Effect_MST(CardDisplay source)
+{
+    Debug.Log("MST: Destruir 1 S/T.");
+    if (SpellTrapManager.Instance != null)
     {
-        Effect_Revive(source, true);
+        SpellTrapManager.Instance.StartTargetSelection(
+            (t) => t.isOnField && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")),
+            (t) =>
+            {
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                Destroy(t.gameObject);
+            }
+        );
     }
+}
 
-    void Effect_MagePower(CardDisplay source)
+void Effect_HeavyStorm(CardDisplay source)
+{
+    Debug.Log("Heavy Storm: Destruir todas as S/T.");
+    List<CardDisplay> toDestroy = new List<CardDisplay>();
+    if (GameManager.Instance.duelFieldUI != null)
     {
-        Effect_Equip(source, 500, 500); // Simplificado
+
+        CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, toDestroy);
+        CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, toDestroy);
+        CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.playerFieldSpell, GameManager.Instance.duelFieldUI.opponentFieldSpell }, toDestroy);
     }
+    DestroyCards(toDestroy, source.isPlayerCard);
+}
 
-    void Effect_MukaMuka(CardDisplay source)
+void Effect_HarpiesFeatherDuster(CardDisplay source)
+{
+    Debug.Log("Harpie's Feather Duster: Destruir S/T do oponente.");
+    List<CardDisplay> toDestroy = new List<CardDisplay>();
+    if (GameManager.Instance.duelFieldUI != null)
     {
-        Debug.Log("Muka Muka: Ganha ATK por cartas na mão.");
+        Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
+        CollectCards(zones, toDestroy);
+        Transform fieldZone = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentFieldSpell : GameManager.Instance.duelFieldUI.playerFieldSpell;
+        CollectCards(new Transform[] { fieldZone }, toDestroy);
     }
+    DestroyCards(toDestroy, source.isPlayerCard);
+}
 
-    void Effect_MysticBox(CardDisplay source)
-    {
-        Debug.Log("Mystic Box: Destruir e trocar controle.");
-    }
+void Effect_Raigeki(CardDisplay source)
+{
+    DestroyAllMonsters(true, false);
+}
 
-    void Effect_Scapegoat(CardDisplay source)
+void Effect_MirrorForce(CardDisplay source)
+{
+    Debug.Log("Mirror Force: Destruir monstros em ataque do oponente.");
+    List<CardDisplay> toDestroy = new List<CardDisplay>();
+    if (GameManager.Instance.duelFieldUI != null)
     {
-        for(int i=0; i<4; i++) GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Sheep Token");
-    }
-
-    void Effect_RingOfDestruction(CardDisplay source)
-    {
-        if (SpellTrapManager.Instance != null)
+        Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+        foreach (var zone in zones)
         {
-            SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && !t.isFlipped,
-                (t) => {
-                    int damage = t.CurrentCardData.atk;
-                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
-                    GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
-                    Destroy(t.gameObject);
-                    GameManager.Instance.DamagePlayer(damage);
-                    GameManager.Instance.DamageOpponent(damage);
-                }
-            );
+            if (zone.childCount > 0)
+            {
+                var monster = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (monster != null && monster.position == CardDisplay.BattlePosition.Attack)
+                    toDestroy.Add(monster);
+            }
         }
     }
+    DestroyCards(toDestroy, source.isPlayerCard);
+}
 
-    partial void OnBattlePositionChangedImpl(CardDisplay card)
+void Effect_MagicCylinder(CardDisplay source)
+{
+    if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
     {
-        // 1820 - Tainted Wisdom
-        if (card.CurrentCardData.id == "1820" && card.position == CardDisplay.BattlePosition.Defense && !card.isFlipped)
-        {
-            // If changed from Attack to Defense (assumindo que estava em ataque antes)
-            Debug.Log("Tainted Wisdom: Embaralhando o Deck.");
-            GameManager.Instance.ShuffleDeck(card.isPlayerCard);
-        }
+        int damage = BattleManager.Instance.currentAttacker.CurrentCardData.atk;
+        Effect_DirectDamage(source, damage);
+    }
+}
 
-        // 2120 - Yado Karu
-        if (card.CurrentCardData.id == "2120" && card.position == CardDisplay.BattlePosition.Defense && !card.isFlipped)
-        {
-            // Changed from Attack to Defense
-            Debug.Log("Yado Karu: Mão retornada ao fundo do Deck (Simulado).");
-            // Lógica de retornar mão ao deck
-        }
-    }
-    void Effect_SecretBarrel(CardDisplay source)
+void Effect_EnemyController(CardDisplay source)
+{
+    Debug.Log("Enemy Controller: Escolha 1 efeito (Mudar Posição ou Controlar).");
+    Effect_ChangeControl(source, true);
+}
+
+void Effect_MonsterReborn(CardDisplay source)
+{
+    Effect_Revive(source, true);
+}
+
+void Effect_MagePower(CardDisplay source)
+{
+    Effect_Equip(source, 500, 500); // Simplificado
+}
+
+void Effect_MukaMuka(CardDisplay source)
+{
+    Debug.Log("Muka Muka: Ganha ATK por cartas na mão.");
+}
+
+void Effect_MysticBox(CardDisplay source)
+{
+    Debug.Log("Mystic Box: Destruir e trocar controle.");
+}
+
+void Effect_Scapegoat(CardDisplay source)
+{
+    for (int i = 0; i < 4; i++) GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Sheep Token");
+}
+
+void Effect_RingOfDestruction(CardDisplay source)
+{
+    if (SpellTrapManager.Instance != null)
     {
-        Effect_DirectDamage(source, 1000); // Simplificado
+        SpellTrapManager.Instance.StartTargetSelection(
+            (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && !t.isFlipped,
+            (t) =>
+            {
+                int damage = t.CurrentCardData.atk;
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                Destroy(t.gameObject);
+                GameManager.Instance.DamagePlayer(damage);
+                GameManager.Instance.DamageOpponent(damage);
+            }
+        );
     }
+}
+
+partial void OnBattlePositionChangedImpl(CardDisplay card)
+{
+    // 1820 - Tainted Wisdom
+    if (card.CurrentCardData.id == "1820" && card.position == CardDisplay.BattlePosition.Defense && !card.isFlipped)
+    {
+        // If changed from Attack to Defense (assumindo que estava em ataque antes)
+        Debug.Log("Tainted Wisdom: Embaralhando o Deck.");
+        GameManager.Instance.ShuffleDeck(card.isPlayerCard);
+    }
+
+    // 2120 - Yado Karu
+    if (card.CurrentCardData.id == "2120" && card.position == CardDisplay.BattlePosition.Defense && !card.isFlipped)
+    {
+        // Changed from Attack to Defense
+        Debug.Log("Yado Karu: Mão retornada ao fundo do Deck (Simulado).");
+        // Lógica de retornar mão ao deck
+    }
+}
+void Effect_SecretBarrel(CardDisplay source)
+{
+    Effect_DirectDamage(source, 1000); // Simplificado
+}
 }
