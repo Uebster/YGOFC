@@ -129,6 +129,24 @@ Gerencia a adição, remoção e contagem de Spell Counters em cartas.
 *   **Remover do Campo:** `SpellCounterManager.Instance.RemoveCountersFromField(amount, isPlayer)` (Útil para custos como *Mega Ton Magical Cannon*).
 
 ## 8. Sistema de Corrente (Chain System)
+## 8. Sistema de Gatilhos de Cemitério e Banimento (Graveyard & Banish Triggers)
+
+### Contexto do Evento
+Para resolver problemas de "Missing Timing" e condições de ativação complexas, o evento `OnCardSentToGraveyard` foi aprimorado para incluir contexto sobre como e de onde a carta foi enviada.
+
+*   **`CardLocation fromLocation`**: Indica a origem da carta (`Hand`, `Deck`, `Field`).
+*   **`SendReason reason`**: Indica o motivo do envio (`Battle`, `Effect`, `Cost`, `Tribute`).
+
+### Implementação
+O `CardEffectManager` agora usa esses parâmetros para validar gatilhos com precisão:
+
+*   **"Quando... você pode..." (Missing Timing):** Efeitos opcionais como o de *Peten the Dark Clown* agora verificam se `reason` **não é** `Cost` ou `Tribute`. Se a carta foi enviada como custo para ativar outro efeito, o gatilho de *Peten* é perdido.
+*   **Origem da Carta:** Efeitos como o de *Despair from the Dark* verificam se `fromLocation` é `Hand` ou `Deck` e se `reason` é um efeito do oponente.
+*   **Destruição por Batalha:** Efeitos como o de *Mystic Tomato* ou *Sangan* verificam se `reason` é `Battle` e `fromLocation` é `Field`.
+
+Este sistema garante que os efeitos sejam ativados apenas sob as condições corretas, espelhando as regras oficiais do TCG/OCG.
+
+## 9. Sistema de Corrente (Chain System)
 
 O `ChainManager` gerencia a pilha de ativação de efeitos, permitindo respostas e garantindo a ordem de resolução correta (LIFO - Last-In, First-Out).
 
@@ -156,19 +174,19 @@ O `ChainManager` gerencia a pilha de ativação de efeitos, permitindo respostas
     *   **Resolve Link 1:** O `ChainManager` verifica o estado do Link 1. Como o ataque foi interrompido (o atacante foi destruído), o efeito do ataque não acontece.
 9.  A corrente termina. As cartas usadas (que não são contínuas) são enviadas ao cemitério. O ataque original não é concluído.
 
-## 9. Outros Sistemas de Suporte
+## 10. Outros Sistemas de Suporte
 
 | Evento | Método | Descrição | Exemplos de Uso |
 | :--- | :--- | :--- | :--- |
 | **Dano Tomado** | `OnDamageTaken` | Disparado quando um jogador perde LP (batalha ou efeito). | *Numinous Healer*, *Attack and Receive*, *Dark Room of Nightmare*. |
 | **Ganho de Vida** | `OnLifePointsGained` | Disparado quando um jogador ganha LP. | *Fire Princess*, *Bad Reaction to Simochi* (inverte). |
 
-### Sistema de Limpeza de Equipamentos (Equip Cleanup)
+#### Sistema de Limpeza de Equipamentos (Equip Cleanup)
 *   **Evento:** `OnCardLeavesField`
 *   **Descrição:** Quando um monstro sai do campo (destruído, tributado, etc.), o sistema agora verifica automaticamente se alguma Carta de Equipamento estava ligada a ele. Se sim, a Carta de Equipamento também é destruída e enviada ao cemitério.
 *   **Implementação:** A lógica reside no `CardEffectManager_Impl.cs`, que itera sobre os `CardLink`s existentes na cena.
 
-### Sistema de Modificadores de Stats (Stat Modifiers)
+#### Sistema de Modificadores de Stats (Stat Modifiers)
 
 O sistema de `StatModifier` permite alterações temporárias ou permanentes em ATK/DEF sem alterar os valores base originais.
 
@@ -176,12 +194,12 @@ O sistema de `StatModifier` permite alterações temporárias ou permanentes em 
 *   **Operações:** `Add` (soma), `Multiply` (multiplica), `Set` (define valor fixo).
 *   **Uso:** `card.AddStatModifier(new StatModifier(...))`
 
-### Sistema de Inversão de Stats (Stat Reversal)
+#### Sistema de Inversão de Stats (Stat Reversal)
 *   **Flag Global:** `CardEffectManager.Instance.reverseStats`
 *   **Descrição:** Quando esta flag está `true` (ativada por cartas como *Reverse Trap*), o método `CardDisplay.RecalculateStats` inverte a operação de todos os modificadores do tipo `Add`. Buffs (+500) se tornam debuffs (-500) e vice-versa.
 *   **Reset:** A flag é automaticamente resetada para `false` no início de cada fase pelo `OnPhaseStart`.
 
-### Sistema de Seleção (Targeting)
+#### Sistema de Seleção (Targeting)
 
 O `SpellTrapManager` e `GameManager` fornecem métodos para seleção interativa de alvos.
 
@@ -189,7 +207,7 @@ O `SpellTrapManager` e `GameManager` fornecem métodos para seleção interativa
 *   `OpenCardSelection(list, title, callback)`: Abre um modal com uma lista de cartas (do Deck, GY, Mão) para escolha.
 *   `OpenCardMultiSelection(...)`: Permite escolher múltiplas cartas de uma lista.
 
-### Sistema de Moedas e Dados
+#### Sistema de Moedas e Dados
 
 *   `GameManager.Instance.TossCoin(count, callback)`: Rola moedas e retorna o número de caras.
 *   `Random.Range(1, 7)`: Usado para rolar dados (D6).
@@ -241,15 +259,23 @@ Este sistema gerencia efeitos que não acontecem imediatamente, mas em uma fase 
 
 ## 13. Lógica de Batalha e Invocação Avançada
 
-### Ataques Múltiplos e Restrições
+#### Ataques Múltiplos e Restrições
 *   **Ataque Duplo:** `BattleManager` verifica `maxAttacksPerTurn` no `CardDisplay`. Cartas como *Tyrant Dragon* e *Mermaid Knight* modificam esse valor.
 *   **Bloqueio de Dano:** A flag `cannotInflictBattleDamage` no `CardDisplay` (usada por *Union Attack*) impede que o oponente tome dano, mas a destruição de monstros ainda ocorre.
 *   **Restrições de Ataque:** `BattleManager.CanAttack` verifica condições complexas como *Wall of Revealing Light* (baseado em `paidLifePoints`) e *Vengeful Bog Spirit*.
 
-### Tributos Especiais
+#### Tributos Especiais
 *   **Tributo Duplo:** O `SummonManager.HasEnoughTributes` agora verifica o monstro alvo. Cartas como *Unshaven Angler* contam como 2 tributos se o monstro invocado for do Atributo correto (WATER).
 
-## Boas Práticas para Adicionar Novas Cartas
+#### Flags Globais de Turno
+O `BattleManager` e `CardEffectManager` agora suportam flags que alteram regras fundamentais por um turno:
+*   `forceDirectAttack`: Obriga ataques a serem diretos (*Absolute End*).
+*   `globalPiercing`: Todos os monstros causam dano perfurante (*Meteorain*).
+*   `reverseStats`: Inverte buffs/debuffs (*Reverse Trap*).
+*   `wabokuActive`: Previne dano de batalha e destruição (*Waboku*).
+*   `banishInsteadOfGraveyard`: Redireciona cartas para a zona de banimento (*Spirit Elimination*).
+
+## 14. Boas Práticas para Adicionar Novas Cartas
 
 1.  **Verifique se já existe um Hook:** Antes de criar um novo sistema, veja se o efeito se encaixa em um dos eventos acima.
 2.  **Use IDs:** Sempre verifique `card.CurrentCardData.id` para lógica específica de uma carta.
