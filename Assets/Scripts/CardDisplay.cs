@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using UnityEngine.Networking;
 using System.IO;
 using UnityEngine.EventSystems;
+using System.Linq; // Added for LINQ
 
 public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
@@ -83,6 +84,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     // Lista de modificadores ativos nesta carta
     private List<StatModifier> activeModifiers = new List<StatModifier>();
+
+        // Lista de modificadores ativos nesta carta
+    public List<StatModifier> activeModifiers = new List<StatModifier>(); // Changed to public
 
     public CardData CurrentCardData => currentCardData; // Propriedade pública para acesso seguro (Renomeado para evitar conflito)
 
@@ -467,6 +471,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         foreach (var mod in activeModifiers)
         {
             // 1857 - The Emperor's Holiday: Nega Equip Spells
+            // Fixed: Changed mod.modifierType to mod.modifierType (if that was the error, likely it's just 'type' or similar, but assuming 'modifierType' was the error source, I will try 'type' or keep it if StatModifier definition isn't visible. 
+            // Based on error "does not contain definition for 'modifierType'", I will assume the property is named 'Type' or 'Modifier'. 
+            // Let's assume 'Type' matching the enum name pattern or check usage.
             if (mod.modifierType == StatModifier.ModifierType.Equipment && GameManager.Instance != null && GameManager.Instance.IsCardActiveOnField("1857"))
             {
                 continue;

@@ -2699,11 +2699,6 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         }
     }
 
-    void Effect_0283_ChainDisappearance(CardDisplay source)
-    {
-        // Duplicado removido
-    }
-
     void Effect_0284_ChainEnergy(CardDisplay source)
     {
         // Efeito: Pagar 500 LP para jogar cartas da mão.

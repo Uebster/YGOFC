@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public partial class CardEffectManager
 {
@@ -1692,7 +1693,8 @@ public partial class CardEffectManager
         if (GameManager.Instance.IsCardActiveOnField("1252") && attacker != null && !attacker.isPlayerCard) // Se oponente ataca e Mirror Wall ativa
         {
             // Reduz ATK pela metade (Permanente enquanto atacar? Regra diz "has its ATK halved")
-            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Multiply, 0.5f, null));
+            int reduction = attacker.currentAtk / 2;
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -reduction, null));
             Debug.Log("Mirror Wall: ATK do atacante reduzido pela metade.");
         }
 
@@ -2043,8 +2045,8 @@ public partial class CardEffectManager
         if (attacker != null && attacker.currentAtk >= target.currentDef)
         {
             Debug.Log("Rigorous Reaver: Atacante perde 500 ATK/DEF.");
-            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, -500, target));
-            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, -500, target));
+                attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -500, target));
+                attacker.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -500, target));
         }
     }
 
@@ -2228,7 +2230,7 @@ public partial class CardEffectManager
             if (targetInGY)
             {
                 Debug.Log("Zombyra the Dark: -200 ATK.");
-                attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, -200, attacker));
+                attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -200, attacker));
             }
         }
 
@@ -2342,7 +2344,7 @@ public partial class CardEffectManager
         }
     }
 
-    private void CheckMaintenanceCosts()
+    public void CheckMaintenanceCosts()
     {
         maintenanceQueue.Clear();
 
@@ -2550,7 +2552,7 @@ public partial class CardEffectManager
         // DestroyAllMonsters(true, true, (m) => m.CurrentCardData.race == type);
     }
 
-    void Effect_SearchDeck(CardDisplay source, string term, string typeFilter, int maxAtk)
+    void Effect_SearchDeck(CardDisplay source, string term, string typeFilter = "", int maxAtk = 9999)
     {
         bool isPlayer = source != null ? source.isPlayerCard : true;
         List<CardData> deck = isPlayer ? GameManager.Instance.GetPlayerMainDeck() : null;

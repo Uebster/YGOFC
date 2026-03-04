@@ -149,15 +149,6 @@ public class PhaseManager : MonoBehaviour
                     CardEffectManager.Instance.OnPhaseStart(GamePhase.Standby);
                 }
                 break;
-            case GamePhase.Standby:
-                if (skipStandbyPhase)
-                {
-                    Debug.Log("Standby Phase pulada.");
-                    ChangePhase(GamePhase.Main1);
-                    return;
-                }
-                StartCoroutine(HandleStandbyPhase());
-                break;
             case GamePhase.Main1:
                 if (skipMain1Phase)
                 {

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class BattleManager : MonoBehaviour
 {
@@ -270,6 +271,28 @@ public class BattleManager : MonoBehaviour
             Debug.Log("Panther Warrior: Tributo necessário (Lógica de custo pendente).");
         }
 
+        return true;
+    }
+
+    private bool AreAllEnemyMonstersEarthWaterOrFire()
+    {
+        if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return false;
+        
+        // Determine enemy zones based on current turn (attacker is current player)
+        Transform[] enemyZones = GameManager.Instance.isPlayerTurn ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+        
+        foreach (var zone in enemyZones)
+        {
+            if (zone.childCount > 0)
+            {
+                CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (cd != null && cd.isOnField && !cd.isFlipped)
+                {
+                    string r = cd.CurrentCardData.attribute; // Attribute, not Race? Method name says Earth/Water/Fire which are Attributes usually.
+                    if (r != "Earth" && r != "Water" && r != "Fire") return false;
+                }
+            }
+        }
         return true;
     }
 

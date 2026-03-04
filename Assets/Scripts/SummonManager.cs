@@ -267,4 +267,22 @@ public class SummonManager : MonoBehaviour
         // Nota: O fluxo original chamava FinalizeSummon no GameManager.TrySummonMonster.
         // Precisamos garantir que a flag seja passada corretamente lá também se for automático.
     }
+
+    public void SelectTributes(int count, bool isPlayer, System.Action<List<CardDisplay>> onComplete)
+    {
+        // Simplificado: Usa seleção automática ou abre UI se implementado
+        if (enableAutoTribute)
+        {
+            // Lógica de auto-tributo (não retorna lista, apenas executa)
+            // Para este método que requer callback, precisamos simular a seleção
+            // ...
+            Debug.LogWarning("SelectTributes: Auto-tributo não suporta callback de lista ainda.");
+        }
+        else
+        {
+            // Inicia seleção manual (requer adaptação para retornar lista via callback em vez de finalizar summon)
+            // Por enquanto, log de erro
+            Debug.LogError("SelectTributes: Seleção manual com callback não implementada.");
+        }
+    }
 }

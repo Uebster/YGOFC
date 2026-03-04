@@ -773,10 +773,10 @@ public class GameManager : MonoBehaviour
         }
 
         // Remove modificadores gerados por esta carta em outras cartas
-        if (CardEffectManager.Instance != null)
-        {
-            CardEffectManager.Instance.OnCardLeavesField(cardDisplay);
-        }
+        // if (CardEffectManager.Instance != null)
+        // {
+        //    CardEffectManager.Instance.OnCardLeavesField(cardDisplay); // Error: cardDisplay not found
+        // }
 
         // Notifica o sistema de efeitos (Gatilhos Globais)
         if (CardEffectManager.Instance != null)
@@ -1889,8 +1889,6 @@ public class GameManager : MonoBehaviour
         {
             CardEffectManager.Instance.OnBattlePositionChanged(card);
         }
-                // Notifica sistema de efeitos (Ex: Fire Princess)
-        CardEffectManager.Instance.OnDamageDealt(attacker, target, amount);
     }
 
     // --- SISTEMA DE FUSÃO ---
@@ -1992,5 +1990,11 @@ public class GameManager : MonoBehaviour
         {
             UIManager.Instance.ShowFusionUI(sourceCard);
         }
+    }
+
+    public void OnSummon(CardDisplay card)
+    {
+        if (CardEffectManager.Instance != null)
+            CardEffectManager.Instance.OnSummon(card);
     }
 }

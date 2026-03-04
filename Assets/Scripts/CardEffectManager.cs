@@ -84,6 +84,7 @@ public partial class CardEffectManager : MonoBehaviour
     public void OnCounterTrapResolved(CardDisplay trap) { OnCounterTrapResolvedImpl(trap); }
     public void OnCardAddedToHand(CardDisplay card) { OnCardAddedToHandImpl(card); }
     public void OnTribute(CardDisplay card) { OnTributeImpl(card); }
+    public void OnCardDiscarded(CardDisplay card) { OnCardDiscardedImpl(card); }
 
 
     // Métodos de Eventos (Implementados em CardEffectManager_Impl.cs)
@@ -103,6 +104,7 @@ public partial class CardEffectManager : MonoBehaviour
     partial void OnCounterTrapResolvedImpl(CardDisplay trap);
     partial void OnCardAddedToHandImpl(CardDisplay card);
     partial void OnTributeImpl(CardDisplay card);
+    partial void OnCardDiscardedImpl(CardDisplay card);
 
     void DestroyAllMonsters(bool targetOpponent, bool targetPlayer)
     {
