@@ -170,6 +170,7 @@ public partial class CardEffectManager
                 GameManager.Instance.SendToGraveyard(picked, source.isPlayerCard);
             }
         }
+    }
 
     void Effect_0013_ALegendaryOcean(CardDisplay source)
     {
@@ -4660,6 +4661,5 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                 }
             );
         }
-    }
     }
 }
