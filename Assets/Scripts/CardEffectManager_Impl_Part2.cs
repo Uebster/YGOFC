@@ -2585,6 +2585,12 @@ public partial class CardEffectManager
         }
     }
 
+    // 0861 - Hane-Hane
+    void Effect_0861_HaneHane(CardDisplay source)
+    {
+        Effect_FlipReturn(source, TargetType.Monster);
+    }
+
     void Effect_0863_HannibalNecromancer(CardDisplay source)
     {
         // Remove 1 Spell Counter from your side of the field to destroy 1 Trap Card.

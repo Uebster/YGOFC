@@ -17,9 +17,6 @@ public partial class CardEffectManager
         // 0004 - 7 (Spell: Gain 700 LP)
         AddEffect("0004", Effect_0004_7);
 
-        // 0037 - Alligator's Sword Dragon (Direct Attack condition)
-        AddEffect("0037", Effect_0037_AlligatorsSwordDragon);
-
         // 0006 - 7 Completed (Equip: +700 ATK or DEF to Machine)
         AddEffect("0006", Effect_0006_7Completed);
 
@@ -28,12 +25,6 @@ public partial class CardEffectManager
 
         // 0008 - A Cat of Ill Omen (FLIP: Search Trap)
         AddEffect("0008", Effect_0008_ACatOfIllOmen);
-
-        // 0046 - Amazoness Paladin (Effect: +100 ATK per Amazoness)
-        AddEffect("0046", Effect_0046_AmazonessPaladin);
-
-        // 0053 - Amphibious Bugroth MK-3 (Direct Attack with Umi)
-        AddEffect("0053", Effect_0053_AmphibiousBugrothMK3);
 
         // 0009 - A Deal with Dark Ruler (Special Summon Berserk Dragon)
         AddEffect("0009", Effect_0009_ADealWithDarkRuler);

@@ -41,7 +41,11 @@ public class CampaignNode : MonoBehaviour
     void Start()
     {
         btn.onClick.AddListener(OnNodeClick);
-        UpdateVisualState();
+        
+        // Tenta atualizar imediatamente se os gerenciadores já estiverem prontos
+        if (CampaignManager.Instance != null && GameManager.Instance != null)
+            UpdateVisualState();
+            
         // Força uma atualização extra após um breve momento para garantir que o CampaignManager carregou
         StartCoroutine(DelayedUpdate());
     }
@@ -54,7 +58,15 @@ public class CampaignNode : MonoBehaviour
 
     void OnEnable()
     {
-        UpdateVisualState();
+        if (CampaignManager.Instance != null && GameManager.Instance != null)
+        {
+            UpdateVisualState();
+        }
+        else
+        {
+            // Se não estiverem prontos, aguarda um pouco (útil para re-ativação de objetos)
+            StartCoroutine(DelayedUpdate());
+        }
     }
 
     // Permite testar clicando com botão direito no componente no Inspector
