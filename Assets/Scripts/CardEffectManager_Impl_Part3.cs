@@ -470,6 +470,7 @@ public partial class CardEffectManager
                 }
             }
         }
+    }
 
     void Effect_1078_LevelUp(CardDisplay source)
     {
@@ -3943,5 +3944,4 @@ public partial class CardEffectManager
             }
         }
     }
-}
 }
