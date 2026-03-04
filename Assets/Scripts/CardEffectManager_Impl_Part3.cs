@@ -2396,7 +2396,8 @@ public partial class CardEffectManager
     void Effect_1301_MysticLamp(CardDisplay source)
     {
         // Effect: Can attack directly.
-        // Lógica implementada no BattleManager.
+        Debug.Log("Mystic Lamp: Ataque direto habilitado.");
+        // source.canAttackDirectly = true; // Flag no CardDisplay/BattleManager
     }
 
     // 1302 - Mystic Plasma Zone
