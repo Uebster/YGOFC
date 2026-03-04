@@ -1463,27 +1463,6 @@ public partial class CardEffectManager
         }
     }
 
-    void UpdateMegamorphStats(CardDisplay megamorph, CardDisplay target)
-    {
-        // Remove modificadores anteriores desta fonte para recalcular
-        target.RemoveModifiersFromSource(megamorph);
-
-        int controllerLP = megamorph.isPlayerCard ? GameManager.Instance.playerLP : GameManager.Instance.opponentLP;
-        int enemyLP = megamorph.isPlayerCard ? GameManager.Instance.opponentLP : GameManager.Instance.playerLP;
-
-        if (controllerLP < enemyLP)
-        {
-            // Dobra o ATK original
-            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Set, target.originalAtk * 2, megamorph));
-        }
-        else if (controllerLP > enemyLP)
-        {
-            // Divide o ATK original pela metade
-            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Set, target.originalAtk / 2, megamorph));
-        }
-        // Se LP igual, não aplica modificador (ATK permanece inalterado)
-    }
-
     void Effect_1201_MegarockDragon(CardDisplay source)
     {
         // Effect: Cannot be Normal Summoned. SS by banishing Rock monsters from GY. ATK/DEF = 700 * banished.
