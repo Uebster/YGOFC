@@ -2261,7 +2261,7 @@ public partial class CardEffectManager
 
     // --- NOVOS HOOKS ESPECÍFICOS ---
 
-    public void OnCounterTrapResolvedImpl(CardDisplay trap)
+    partial void OnCounterTrapResolvedImpl(CardDisplay trap)
     {
         // 2034 - Van'Dalgyon the Dark Dragon Lord
         List<CardData> hand = trap.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
@@ -2282,7 +2282,7 @@ public partial class CardEffectManager
         }
     }
 
-    public void OnCardAddedToHandImpl(CardDisplay card)
+    partial void OnCardAddedToHandImpl(CardDisplay card)
     {
         // 2058 - Watapon
         if (card.CurrentCardData.id == "2058")
@@ -2293,7 +2293,7 @@ public partial class CardEffectManager
         }
     }
 
-    public void OnTributeImpl(CardDisplay card)
+    partial void OnTributeImpl(CardDisplay card)
     {
         // 2142 - Zolga
         if (card.CurrentCardData.id == "2142")
