@@ -121,14 +121,12 @@ public partial class CardEffectManager
     void Effect_0010_AFeatherOfThePhoenix(CardDisplay source)
     {
         // Descarte 1 carta, selecione 1 carta do GY e coloque no topo do Deck
-        // TODO: UI de descarte
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         GameManager.Instance.OpenCardSelection(hand, "Selecione carta para descartar", (selectedDiscard) => {
             if (selectedDiscard != null)
             {
                 GameManager.Instance.SendToGraveyard(selectedDiscard, source.isPlayerCard);
                 hand.Remove(selectedDiscard);
-                Debug.Log("A Feather of the Phoenix: Descarte 1 carta (pendente).");
         
                 // UI de seleção do GY
                 List<CardData> gy = source.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
@@ -305,13 +303,20 @@ public partial class CardEffectManager
     {
         // Pague 1000 LP; declare Tipo e Atributo. Oponente envia 1 monstro correspondente da mão/deck ao GY.
         Effect_PayLP(source, 1000);
-        Debug.Log("Abyssal Designator: Declarando Tipo/Atributo (Simulado: Dark/Fiend).");
+        
+        // Simulação de declaração (Em produção: UI de Input)
+        string[] attributes = { "Dark", "Light", "Earth", "Water", "Fire", "Wind" };
+        string[] races = { "Fiend", "Zombie", "Warrior", "Spellcaster", "Dragon", "Machine", "Beast" };
+        
+        string declaredAttribute = attributes[Random.Range(0, attributes.Length)];
+        string declaredRace = races[Random.Range(0, races.Length)];
+
+        Debug.Log($"Abyssal Designator: Declarando {declaredAttribute}/{declaredRace}.");
         
         // Simulação: Oponente envia 1 Dark/Fiend
         List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
-        // Nota: Não temos acesso fácil à mão do oponente como dados brutos aqui sem expor, usando deck para simular efeito
         
-        CardData target = oppDeck.Find(c => c.attribute == "Dark" && c.race == "Fiend");
+        CardData target = oppDeck.Find(c => c.attribute == declaredAttribute && c.race == declaredRace);
         
         if (target != null)
         {
@@ -1330,14 +1335,14 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         if (hand.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
-                Debug.Log($"Back to Square One: Descartou {discarded.name}.");
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                
                 if (SpellTrapManager.Instance != null)
                 {
                     SpellTrapManager.Instance.StartTargetSelection(
                         (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
                         (target) => {
-                            Debug.Log($"{target.CurrentCardData.name} retornado ao topo do deck.");
-                            Destroy(target.gameObject); // Simplificado (deveria ir pro topo)
+                            GameManager.Instance.ReturnToDeck(target, true); // true = Topo
                         }
                     );
                 }
@@ -1354,15 +1359,18 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0129_BackupSoldier(CardDisplay source)
     {
         // Target up to 3 Normal Monsters in GY; add to hand.
-        // Simplificação: Pega 1 por enquanto (falta Multi-Select).
         List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
         List<CardData> targets = gy.FindAll(c => c.type.Contains("Normal") && !c.type.Contains("Effect"));
         
         if (targets.Count > 0)
         {
-            GameManager.Instance.OpenCardSelection(targets, "Recuperar Normal Monster", (selected) => {
-                // Adicionar à mão
-                Debug.Log($"Backup Soldier: {selected.name} recuperado.");
+            int max = Mathf.Min(3, targets.Count);
+            GameManager.Instance.OpenCardMultiSelection(targets, "Recuperar até 3 Normais", 1, max, (selectedList) => {
+                foreach(var c in selectedList)
+                {
+                    gy.Remove(c);
+                    GameManager.Instance.AddCardToHand(c, source.isPlayerCard);
+                }
             });
         }
     }
@@ -1579,10 +1587,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         
         if (discardCount > 0)
         {
-            // Descarta toda a mão
-            // Nota: Precisamos iterar sobre uma cópia ou usar DiscardRandomHand repetidamente
-            // Como não temos acesso fácil aos GameObjects da mão aqui, usamos DiscardRandomHand que limpa tudo
-            GameManager.Instance.DiscardRandomHand(source.isPlayerCard, discardCount);
+            GameManager.Instance.DiscardHand(source.isPlayerCard);
             
             // Seleciona LIGHTs do GY
             List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
@@ -1659,12 +1664,8 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
             int count = Mathf.Min(5, deck.Count);
             List<CardData> topCards = deck.GetRange(0, count);
             
-            // Usa a seleção múltipla para simular a reordenação
-            // A lista 'ordered' virá na ordem que o jogador clicou (1, 2, 3...)
             GameManager.Instance.OpenCardMultiSelection(topCards, "Selecione a ordem (1º = Topo)", count, count, (ordered) => {
                 deck.RemoveRange(0, count);
-                // Insere de volta no topo na ordem escolhida
-                // InsertRange(0, ordered) coloca a lista no topo. O índice 0 da lista vira o topo do deck.
                 deck.InsertRange(0, ordered);
                 Debug.Log("Big Eye: Deck reordenado.");
             });
@@ -2241,19 +2242,17 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     {
         // Efeito: Se tiver cartas na mão/campo, envie para o GY até ter 5.
         int totalCards = GameManager.Instance.GetPlayerHandData().Count;
-        // + Campo...
+        totalCards += GameManager.Instance.GetFieldCardCount(source.isPlayerCard);
+
         if (totalCards > 5)
         {
             int toSend = totalCards - 5;
             Debug.Log($"Bubble Crash: Você deve enviar {toSend} cartas para o GY.");
-            // Abre seleção múltipla na mão para descartar (simplificado, deveria incluir campo)
+            // Abre seleção múltipla na mão para descartar (simplificado para mão por enquanto)
             GameManager.Instance.OpenCardMultiSelection(GameManager.Instance.GetPlayerHandData(), $"Selecione {toSend} para enviar ao GY", toSend, toSend, (selected) => {
                 foreach(var c in selected)
                 {
-                    // Encontra o display correspondente e descarta
-                    // (Lógica simplificada de busca)
-                    GameManager.Instance.SendToGraveyard(c, source.isPlayerCard);
-                    // Remover da mão visualmente...
+                    GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c).GetComponent<CardDisplay>());
                 }
             });
         }
@@ -2323,9 +2322,18 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                     int atk = tribute.currentAtk;
                     GameManager.Instance.TributeCard(tribute);
                     
-                    // Destrói monstros com DEF <= atk
-                    // (Requer iteração no campo e verificação de DEF)
-                    Debug.Log($"Burst Breath: Destruindo monstros com DEF <= {atk}.");
+                    List<CardDisplay> toDestroy = new List<CardDisplay>();
+                    if (GameManager.Instance.duelFieldUI != null)
+                    {
+                        List<CardDisplay> all = new List<CardDisplay>();
+                        CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                        CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+                        foreach(var m in all)
+                        {
+                            if (!m.isFlipped && m.currentDef <= atk) toDestroy.Add(m);
+                        }
+                    }
+                    DestroyCards(toDestroy, true);
                 }
             );
         }
@@ -2499,17 +2507,15 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0267_CardOfSanctity(CardDisplay source)
     {
         // Efeito (TCG): Bana todas as cartas da sua mão e campo; compre 2 cartas.
-        Debug.Log("Card of Sanctity: Banindo tudo e comprando 2.");
         
         // Banir Mão
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
-        // Copia para evitar erro de modificação de coleção
-        foreach(var c in new List<CardData>(hand)) 
+        // Simula banimento da mão (remove e adiciona a removed)
+        foreach(var c in new List<CardData>(hand))
         {
-            // Encontra o display correspondente (simplificado)
-            // Em produção, GameManager.BanishCard precisa de CardDisplay, então iteraríamos os GameObjects da mão
+            GameManager.Instance.RemoveCardFromHand(c, source.isPlayerCard);
+            GameManager.Instance.RemoveFromPlay(c, source.isPlayerCard);
         }
-        GameManager.Instance.DiscardHand(true); // Usando discard por enquanto pois BanishHand não existe
         
         // Banir Campo (Simplificado: Destrói tudo)
         DestroyAllMonsters(false, true);
@@ -2746,6 +2752,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
             }
 
             // Mão Player
+            count += GameManager.Instance.GetPlayerHandData().Count;
             GameManager.Instance.DiscardHand(true);
 
             // Campo Player
@@ -2754,6 +2761,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                 List<CardDisplay> myCards = new List<CardDisplay>();
                 CollectCards(GameManager.Instance.duelFieldUI.playerMonsterZones, myCards);
                 CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, myCards);
+                count += myCards.Count;
                 DestroyCards(myCards, true);
             }
 
@@ -2860,9 +2868,16 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0300_ChironTheMage(CardDisplay source)
     {
         // Efeito: Descarte 1 Spell; destrua 1 S/T do oponente.
-        // O que falta: UI de descarte específico (Spell).
-        Debug.Log("Chiron the Mage: Descarte Spell para destruir S/T (UI de descarte pendente).");
-        Effect_MST(source); // Reusa lógica de destruir S/T
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        List<CardData> spells = hand.FindAll(c => c.type.Contains("Spell"));
+        
+        if (spells.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(spells, "Descarte 1 Magia", (discarded) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                Effect_MST(source);
+            });
+        }
     }
 
     // =========================================================================================

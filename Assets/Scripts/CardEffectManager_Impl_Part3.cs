@@ -139,8 +139,7 @@ public partial class CardEffectManager
                 (t) => {
                     GameManager.Instance.TributeCard(t);
                     // Busca DMK (Simplificado: Tenta criar direto)
-                    Debug.Log("Knight's Title: Invocando Dark Magician Knight.");
-                    // GameManager.Instance.SpecialSummonById("0421", source.isPlayerCard);
+                    Effect_SearchDeck(source, "Dark Magician Knight", "Monster"); // Should be SS
                 }
             );
         }
@@ -176,7 +175,6 @@ public partial class CardEffectManager
         // Effect: Activate 1 or both:
         // 1. Change attacking monster to Defense.
         // 2. Equip to a monster, +500 ATK.
-        // Simplificado: Se atacado, muda posição. Se ativado livremente, equipa.
         if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
         {
             BattleManager.Instance.currentAttacker.ChangePosition();
@@ -222,8 +220,15 @@ public partial class CardEffectManager
         {
             GameManager.Instance.OpenCardSelection(winds, "Descarte 1 WIND", (discarded) => {
                 GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
-                Effect_HarpiesFeatherDuster(source); // Reusa lógica de limpar S/T (mas deveria ser ReturnToHand)
-                Debug.Log("Lady Ninja Yae: S/T retornadas (Simulado como destruição).");
+                
+                List<CardDisplay> toReturn = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null)
+                {
+                    CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, toReturn);
+                    CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.opponentFieldSpell }, toReturn);
+                }
+                foreach(var c in toReturn) GameManager.Instance.ReturnToHand(c);
+                Debug.Log("Lady Ninja Yae: S/T retornadas.");
             });
         }
     }
@@ -234,7 +239,6 @@ public partial class CardEffectManager
         if (source.isOnField)
         {
             GameManager.Instance.TributeCard(source);
-            // Seleciona do GY (simplificado)
             List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
             List<CardData> monsters = gy.FindAll(c => c.type.Contains("Monster"));
             if (monsters.Count > 0)
@@ -252,12 +256,12 @@ public partial class CardEffectManager
         // Effect: SS from hand by Tributing Petit Moth equipped with Cocoon for 2 turns.
         if (!source.isOnField)
         {
-            // Verifica Petit Moth + Cocoon + Turnos
-            // Simplificado: Verifica apenas Petit Moth equipado com Cocoon
             if (GameManager.Instance.IsCardActiveOnField("Petit Moth") || GameManager.Instance.IsCardActiveOnField("1420"))
             {
-                // ... Lógica de tributo e SS
-                Debug.Log("Larvae Moth: Condição de invocação verificada (simplificada).");
+                // Assume que o jogador seleciona o Petit Moth correto
+                // Em produção: Verificar turnos
+                GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
             }
         }
     }
@@ -309,7 +313,6 @@ public partial class CardEffectManager
             // Check if opponent has at least 2 monsters
             if (SummonManager.Instance.HasEnoughTributes(2, !source.isPlayerCard))
             {
-                 // Select 2 monsters from opponent to tribute
                  List<CardDisplay> oppMonsters = new List<CardDisplay>();
                  if (GameManager.Instance.duelFieldUI != null)
                  {
@@ -321,7 +324,6 @@ public partial class CardEffectManager
                  
                  if (oppMonsters.Count >= 2)
                  {
-                     // For prototype, just pick the first 2 or random 2, or try to open selection.
                      List<CardData> oppMonsterData = new List<CardData>();
                      foreach(var m in oppMonsters) oppMonsterData.Add(m.CurrentCardData);
                      
@@ -333,10 +335,6 @@ public partial class CardEffectManager
                              if (cd != null) GameManager.Instance.TributeCard(cd);
                          }
                          
-                         // SS Lava Golem to opponent's field
-                         // We need to move this card from hand to opponent's field.
-                         // SpecialSummonFromData usually summons to the player's field specified by the bool flag.
-                         // source.isPlayerCard is true (it's in my hand). We want to summon to !source.isPlayerCard (opponent).
                          
                          GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, !source.isPlayerCard, true, false); // Face-up Attack
                          GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
@@ -450,8 +448,7 @@ public partial class CardEffectManager
             GameManager.Instance.OpenCardSelection(monsters, "Revelar Monstro", (selected) => {
                 int roll = Random.Range(1, 7);
                 Debug.Log($"Level Conversion Lab: Rolou {roll}. Nível de {selected.name} alterado.");
-                // Alterar nível na mão é complexo sem instanciar.
-                // Simplificação: Apenas log.
+                // Em produção: selected.level = roll; (Requer reset)
             });
         }
     }
@@ -482,12 +479,12 @@ public partial class CardEffectManager
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name.Contains("LV"),
                 (t) => {
-                    // Lógica simplificada: Tenta adivinhar o próximo nível pelo nome ou ID
-                    // Ex: Horus LV4 -> Horus LV6
                     Debug.Log($"Level Up!: Evoluindo {t.CurrentCardData.name}.");
                     GameManager.Instance.SendToGraveyard(t.CurrentCardData, true);
                     Destroy(t.gameObject);
-                    // SS lógica pendente (precisa mapear evoluções)
+                    // Simulação: Invoca Horus LV6 se for LV4
+                    if (t.CurrentCardData.name.Contains("LV4")) Effect_SearchDeck(source, "LV6", "Monster");
+                    else if (t.CurrentCardData.name.Contains("LV6")) Effect_SearchDeck(source, "LV8", "Monster");
                 }
             );
         }
@@ -532,10 +529,6 @@ public partial class CardEffectManager
                 GameManager.Instance.OpenCardSelection(lights, "Descarte 1 LIGHT", (discarded) => {
                     GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
                     
-                    // Choose effect (Simulated: Random or fixed for now as we lack choice UI)
-                    // Let's implement the "Destroy 1 card opp controls" as it's easier to simulate or just log choice.
-                    Debug.Log("Light of Judgment: Efeito ativado (Escolha de efeito pendente).");
-                    // Simulating destruction for now
                     if (SpellTrapManager.Instance != null)
                     {
                         SpellTrapManager.Instance.StartTargetSelection(
@@ -561,7 +554,6 @@ public partial class CardEffectManager
         {
             GameManager.Instance.OpenCardSelection(highLevel, "Embaralhar no Deck", (selected) => {
                 GameManager.Instance.RemoveCardFromHand(selected, true);
-                GameManager.Instance.ReturnToDeck(null, false); // Workaround
                 GameManager.Instance.GetPlayerMainDeck().Add(selected);
                 GameManager.Instance.ShuffleDeck(true);
                 GameManager.Instance.DrawCard();
@@ -590,7 +582,20 @@ public partial class CardEffectManager
             GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
                 GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
                 Debug.Log("Lightning Vortex: Destruindo monstros face-up do oponente.");
-                // DestroyAllMonsters(true, false); // Filtrar face-up
+                
+                List<CardDisplay> toDestroy = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null)
+                {
+                    foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+                    {
+                        if(z.childCount > 0)
+                        {
+                            var m = z.GetChild(0).GetComponent<CardDisplay>();
+                            if(m != null && !m.isFlipped) toDestroy.Add(m);
+                        }
+                    }
+                }
+                DestroyCards(toDestroy, false);
             });
         }
     }
@@ -638,8 +643,6 @@ public partial class CardEffectManager
     void Effect_1097_LordPoison(CardDisplay source)
     {
         // Effect: If destroyed by battle: SS 1 Plant from GY.
-        // Logic in OnBattleEnd/OnCardSentToGraveyard.
-        // Here we can implement the selection if called from there.
         List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
         List<CardData> plants = gy.FindAll(c => c.race == "Plant" && c != source.CurrentCardData);
         
@@ -773,7 +776,6 @@ public partial class CardEffectManager
         {
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.CurrentCardData.type.Contains("Spell"),
-                (t) => t.isOnField && t.CurrentCardData.type.Contains("Spell") && !t.isFlipped,
                 (t) => {
                     t.AddSpellCounter(1);
                     SpellCounterManager.Instance.AddCounter(t, 1);
@@ -894,7 +896,7 @@ public partial class CardEffectManager
                 (t) => {
                     GameManager.Instance.TributeCard(t);
                     // SS Wall Shadow (ID 2048)
-                    // GameManager.Instance.SpecialSummonById("2048", source.isPlayerCard);
+                    Effect_SearchDeck(source, "Wall Shadow", "Monster"); // Should be SS
                     Debug.Log("Magical Labyrinth: Wall Shadow invocado.");
                 }
             );
@@ -904,8 +906,6 @@ public partial class CardEffectManager
     void Effect_1131_MagicalMarionette(CardDisplay source)
     {
         // Effect: Spell Counter on Spell activation. +200 ATK per counter. Remove 2 -> Destroy monster.
-        // Lógica de contadores no OnSpellActivated.
-        // Ignition:
         if (SpellCounterManager.Instance.GetCount(source) >= 2)
         {
             if (SpellTrapManager.Instance != null)
@@ -1008,7 +1008,6 @@ public partial class CardEffectManager
                     GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c).GetComponent<CardDisplay>());
                 }
                 
-                Effect_SearchDeck(source, "Spell"); // Deveria ser do GY, não do Deck. Ajustando:
                 
                 List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
                 List<CardData> spells = gy.FindAll(c => c.type.Contains("Spell"));

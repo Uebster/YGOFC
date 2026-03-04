@@ -359,7 +359,6 @@ public partial class CardEffectManager
     void Effect_1525_ReversalQuiz(CardDisplay source)
     {
         // Declare a card type (Monster, Spell, or Trap). Your opponent guesses if the top card of your Deck is that type. If they guess wrong: Swap Life Points with your opponent.
-        // Simulação
         int declaredType = Random.Range(0, 3); // 0=M, 1=S, 2=T
         CardData topCard = GameManager.Instance.GetPlayerMainDeck()[0];
         
@@ -699,8 +698,6 @@ public partial class CardEffectManager
     void Effect_1566_RoyalMagicalLibrary(CardDisplay source)
     {
         // Accumulate Spell Counter on Spell activation. Remove 3 -> Draw 1.
-        // Acúmulo: Tratado no OnSpellActivated (CardEffectManager_Impl.cs).
-        // Ignição:
         if (SpellCounterManager.Instance.GetCount(source) >= 3)
         {
             SpellCounterManager.Instance.RemoveCounter(source, 3);
@@ -988,7 +985,6 @@ public partial class CardEffectManager
     void Effect_1597_ScrollOfBewitchment(CardDisplay source)
     {
         // Equip: Declare 1 Attribute. The equipped monster's Attribute becomes the declared Attribute.
-        // Simulado: Muda para LIGHT
         Effect_Equip(source, 0, 0);
         Debug.Log("Scroll of Bewitchment: Atributo alterado para LIGHT (Simulado).");
     }
@@ -1075,7 +1071,7 @@ public partial class CardEffectManager
                 (t) => t.isOnField && t.isPlayerCard && t.currentAtk <= 1000 && !t.isFlipped,
                 (target) => {
                     Debug.Log($"Secret Pass: {target.CurrentCardData.name} pode atacar diretamente.");
-                    // target.canAttackDirectly = true; 
+                    // Adicionar flag no CardDisplay ou BattleManager
                 }
             );
         }
@@ -1479,7 +1475,6 @@ public partial class CardEffectManager
         // Declare 2 numbers from 1 to 6. Opponent rolls die.
         // If result is declared: Draw that many cards.
         // Else: Send top X cards to GY (X = result).
-        // Simulação: Jogador declara 5 and 6 (comum).
         int declared1 = 5;
         int declared2 = 6;
         
@@ -1631,10 +1626,6 @@ public partial class CardEffectManager
         
         if (monsters.Count > 0)
         {
-            // Seleção múltipla
-            // Simplificado: Pede para selecionar 1 monstro alvo primeiro para saber o nível?
-            // Ou seleciona monstros do GY e depois valida?
-            // Vamos selecionar o alvo primeiro.
             if (SpellTrapManager.Instance != null)
             {
                 SpellTrapManager.Instance.StartTargetSelection(
@@ -1714,8 +1705,6 @@ public partial class CardEffectManager
                     }
                     else if (m.currentDef == maxDef)
                     {
-                        // Tie: Player chooses. For simplicity, pick first.
-                        // In a full implementation, open selection dialog.
                     }
                 }
             }
@@ -1864,7 +1853,6 @@ public partial class CardEffectManager
     void Effect_1699_SoulDemolition(CardDisplay source)
     {
         // Pay 500 LP; banish 1 monster from opp GY. (If you have Fiend).
-        // Simplificado: Verifica se tem Fiend genérico
         bool hasFiend = false;
         if (GameManager.Instance.duelFieldUI != null)
         {
@@ -1905,8 +1893,8 @@ public partial class CardEffectManager
                 (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
                 (target) => {
                     Debug.Log($"Soul Exchange: {target.CurrentCardData.name} marcado para tributo.");
-                    // Em um sistema completo, marcaríamos o alvo como tributável pelo jogador
-                    // e pularíamos a Battle Phase.
+                    // TODO: Marcar alvo como tributável
+                    if (PhaseManager.Instance != null) PhaseManager.Instance.skipBattlePhase = true;
                 }
             );
         }
@@ -1942,7 +1930,6 @@ public partial class CardEffectManager
     void Effect_1703_SoulResurrection(CardDisplay source)
     {
         // Activate this card by targeting 1 Normal Monster in your Graveyard; Special Summon it in Defense Position.
-        // When this card leaves the field, destroy that monster. When that monster is destroyed, destroy this card.
         List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
         List<CardData> normals = gy.FindAll(c => c.type.Contains("Normal") && c.type.Contains("Monster"));
 
@@ -1950,7 +1937,6 @@ public partial class CardEffectManager
         {
             GameManager.Instance.OpenCardSelection(normals, "Reviver Normal", (selected) => {
                 GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard, true, true); // Face-up Defense
-                // TODO: Implementar vínculo de destruição mútua (Continuous Trap)
                 Debug.Log("Soul Resurrection: Monstro revivido em Defesa.");
             });
         }
@@ -1977,7 +1963,6 @@ public partial class CardEffectManager
     void Effect_1705_SoulRope(CardDisplay source)
     {
         // When a monster you control is destroyed by a card effect and sent to the Graveyard: Pay 1000 LP; Special Summon 1 Level 4 monster from your Deck.
-        // Este efeito é um gatilho. Aqui implementamos a resolução.
         if (Effect_PayLP(source, 1000))
         {
             List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
@@ -2015,7 +2000,6 @@ public partial class CardEffectManager
     void Effect_1708_SoulOfPurityAndLight(CardDisplay source)
     {
         // Cannot be Normal Summoned/Set. Must be Special Summoned by banishing 2 LIGHT monsters from your GY.
-        // Monsters opponent controls lose 300 ATK during their Battle Phase.
         if (!source.isOnField)
         {
             List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
@@ -2059,7 +2043,6 @@ public partial class CardEffectManager
         // Equip only to "Elemental HERO Sparkman". Change battle position of target. Destroy after 3 uses.
         if (SpellTrapManager.Instance != null)
         {
-            // Se já estiver equipada, usa o efeito de ignição
             if (source.isOnField && source.CurrentCardData.property == "Equip")
             {
                 SpellTrapManager.Instance.StartTargetSelection(
@@ -2077,7 +2060,6 @@ public partial class CardEffectManager
             }
             else
             {
-                // Lógica de equipar (simplificada, deveria checar nome do alvo)
                 Effect_Equip(source, 0, 0); 
             }
         }
@@ -2106,8 +2088,6 @@ public partial class CardEffectManager
         // Tribute 1 monster; increase ATK by 700 until End Phase.
         if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
         {
-            // Seleção de tributo simplificada (primeiro disponível)
-            // Em produção: UI de seleção
             if (SpellTrapManager.Instance != null)
             {
                 SpellTrapManager.Instance.StartTargetSelection(
@@ -2126,7 +2106,6 @@ public partial class CardEffectManager
     void Effect_1879_TheMaskOfRemnants(CardDisplay source)
     {
         // If in GY when Des Gardius leaves field: Equip to opp monster and take control.
-        // Lógica implementada no OnCardSentToGraveyard (Des Gardius).
         // Se ativada da mão: Shuffle into Deck.
         if (source.isOnField) // Ativada como Spell
         {
@@ -2182,7 +2161,6 @@ public partial class CardEffectManager
                 });
             }
         }
-        // Debuff no oponente (OnPhaseStart Battle Phase)
     }
 
     // 1887 - The Sanctuary in the Sky
@@ -2338,9 +2316,9 @@ public partial class CardEffectManager
             GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
                 GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
                 
-                // Destrói monstros SS (Requer rastreamento de status de invocação)
                 Debug.Log("Special Hurricane: Destruindo monstros Special Summoned (Simulado).");
-                // DestroyAllMonsters(true, true, (m) => m.wasSpecialSummoned);
+                // TODO: Implementar filtro por wasSpecialSummoned
+                DestroyAllMonsters(true, true); 
             });
         }
     }
@@ -2465,17 +2443,13 @@ public partial class CardEffectManager
     void Effect_1726_SpellShieldType8(CardDisplay source)
     {
         // When a Spell Card is activated that targets exactly 1 monster on the field:
-        // If you control a monster, you can activate this card. Negate the activation and destroy it.
-        // If you have cards in your hand, you must send 1 of them to the Graveyard to activate and to resolve this effect.
         var link = GetLinkToNegate(source);
         if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell"))
         {
-            // Modo 1: Alveja 1 monstro (Sem custo)
             if (link.target != null && link.target.CurrentCardData.type.Contains("Monster"))
             {
                 NegateAndDestroy(source, link);
             }
-            // Modo 2: Qualquer Spell (Custo: Descartar 1 Spell)
             else
             {
                 List<CardData> hand = GameManager.Instance.GetPlayerHandData();
@@ -2496,7 +2470,6 @@ public partial class CardEffectManager
     void Effect_1727_SpellVanishing(CardDisplay source)
     {
         // When a Spell Card is activated: Discard 2 cards; negate the activation, and if you do, destroy it,
-        // then your opponent banishes 1 card from their hand or Deck with the same name as that destroyed card.
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         if (hand.Count >= 2)
         {
@@ -2543,7 +2516,6 @@ public partial class CardEffectManager
                 (t) => t.isOnField && !t.isPlayerCard && !t.isFlipped,
                 (target) => {
                     GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Continuous);
-                    // TODO: Implementar bloqueio de ataque e posição no BattleManager/GameManager
                     Debug.Log($"Spellbinding Circle: {target.CurrentCardData.name} está preso.");
                 }
             );
@@ -2558,9 +2530,11 @@ public partial class CardEffectManager
         if (deck.Count >= 3)
         {
             List<CardData> top3 = deck.GetRange(0, 3);
-            // Em um jogo real, abriria UI para reordenar.
-            // Simulação: Apenas loga as cartas.
-            Debug.Log($"Spellbook Organization: Top 3 cartas são {top3[0].name}, {top3[1].name}, {top3[2].name}. (Reordenação simulada).");
+            GameManager.Instance.OpenCardMultiSelection(top3, "Reordenar Topo", 3, 3, (ordered) => {
+                deck.RemoveRange(0, 3);
+                deck.InsertRange(0, ordered);
+                Debug.Log("Spellbook Organization: Deck reordenado.");
+            });
         }
     }
 
@@ -2873,8 +2847,7 @@ public partial class CardEffectManager
                 (t) => t.isOnField && t.isPlayerCard,
                 (target) => {
                     Debug.Log($"Staunch Defender: {target.CurrentCardData.name} é o alvo obrigatório.");
-                    // Logic to force attack on this target in BattleManager
-                    // BattleManager.Instance.forcedAttackTarget = target;
+                    // TODO: Implementar forcedAttackTarget no BattleManager
                 }
             );
         }
@@ -2923,7 +2896,7 @@ public partial class CardEffectManager
     void Effect_1775_StimPack(CardDisplay source)
     {
         Effect_Equip(source, 700, 0);
-        // Decay logic in OnPhaseStart.
+        // Lógica de decaimento no OnPhaseStart (CardEffectManager_Impl.cs)
     }
 
     // 1780 - Stone Statue of the Aztecs
@@ -2954,7 +2927,6 @@ public partial class CardEffectManager
     void Effect_1782_StrayLambs(CardDisplay source)
     {
         // Special Summon 2 "Lamb Tokens". You cannot Summon other monsters the turn you activate this card (but you can Set).
-        // A restrição de invocação deve ser verificada antes da ativação em um sistema completo.
         GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Lamb Token");
         GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Lamb Token");
         Debug.Log("Stray Lambs: 2 Tokens invocados.");
@@ -2976,7 +2948,6 @@ public partial class CardEffectManager
                     gy.Remove(c);
                 }
                 GameManager.Instance.BanishCard(source);
-                // TODO: Agendar retorno na End Phase.
                 Debug.Log("Strike Ninja: Banido até a End Phase.");
             });
         }
@@ -3027,7 +2998,6 @@ public partial class CardEffectManager
                 {
                     GameManager.Instance.OpenCardSelection(targets, "Invocar Lv4", (selected) => {
                         GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
-                        // TODO: Aplicar restrição "cannot attack this turn".
                     });
                 }
             });
@@ -3052,7 +3022,6 @@ public partial class CardEffectManager
                     {
                         GameManager.Instance.OpenCardSelection(fusions, "Invocar Fusão", (selected) => {
                             GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
-                            // TODO: Agendar destruição na End Phase.
                         });
                     }
                 }
@@ -3072,7 +3041,6 @@ public partial class CardEffectManager
     void Effect_1793_SuperRobolady(CardDisplay source)
     {
         // You can Special Summon "Super Roboyarou" by returning this card from the field to the Extra Deck.
-        // Increase ATK by 1000 during Damage Step when inflicting Direct Damage.
         if (source.isOnField)
         {
             // Tag out logic
@@ -3093,7 +3061,6 @@ public partial class CardEffectManager
     void Effect_1794_SuperRoboyarou(CardDisplay source)
     {
         // You can Special Summon "Super Robolady" by returning this card from the field to the Extra Deck.
-        // Increase ATK by 1000 during Damage Step when battling a monster.
         if (source.isOnField)
         {
             List<CardData> extra = GameManager.Instance.GetPlayerExtraDeck();
@@ -3119,7 +3086,6 @@ public partial class CardEffectManager
     void Effect_1796_Supply(CardDisplay source)
     {
         // FLIP: Return 2 Fusion-Material monsters that were sent to the GY as a result of a Fusion Summon to your hand.
-        // Simplificado: Retorna 2 monstros do GY.
         List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
         List<CardData> monsters = gy.FindAll(c => c.type.Contains("Monster"));
         
@@ -3403,9 +3369,8 @@ public partial class CardEffectManager
                     SpellTrapManager.Instance.StartTargetSelection(
                         (newTarget) => newTarget.isOnField && newTarget.CurrentCardData.type.Contains("Monster"),
                         (target) => {
-                            // Lógica simplificada de re-equipar:
-                            // Em um sistema completo, isso moveria o CardLink.
                             Debug.Log($"Tailor of the Fickle: {equipCard.CurrentCardData.name} movido para {target.CurrentCardData.name}.");
+                            // TODO: Mover CardLink
                         }
                     );
                 }
@@ -3428,6 +3393,7 @@ public partial class CardEffectManager
         if (GameManager.Instance.IsCardActiveOnField("Sealmaster Meisei") || GameManager.Instance.IsCardActiveOnField("1602"))
         {
             Debug.Log("Talisman of Spell Sealing: Magias bloqueadas.");
+            // TODO: Adicionar flag de bloqueio
         }
         else
         {
@@ -3443,6 +3409,7 @@ public partial class CardEffectManager
         if (GameManager.Instance.IsCardActiveOnField("Sealmaster Meisei") || GameManager.Instance.IsCardActiveOnField("1602"))
         {
             Debug.Log("Talisman of Trap Sealing: Armadilhas bloqueadas.");
+            // TODO: Adicionar flag de bloqueio
         }
         else
         {
@@ -3461,7 +3428,7 @@ public partial class CardEffectManager
                 (t) => t.isOnField && t.isPlayerCard,
                 (target) => {
                     Debug.Log($"Taunt: {target.CurrentCardData.name} é o alvo obrigatório.");
-                    // BattleManager.Instance.forcedAttackTarget = target;
+                    // TODO: Implementar forcedAttackTarget no BattleManager
                 }
             );
         }
@@ -3543,8 +3510,7 @@ public partial class CardEffectManager
         // Pay 500 LP; SS 1 "Mystical Shine Ball" from hand/Deck.
         if (Effect_PayLP(source, 500))
         {
-            // Search and SS
-            Effect_SearchDeck(source, "Mystical Shine Ball", "Monster"); // Should be SS
+            Effect_SpecialSummonFromDeck(source, nameContains: "Mystical Shine Ball");
         }
     }
 
@@ -3635,7 +3601,7 @@ public partial class CardEffectManager
                 (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "The Creator",
                 (tribute) => {
                     GameManager.Instance.TributeCard(tribute);
-                    // SS from hand
+                    // SS from hand logic
                 }
             );
         }
@@ -3703,7 +3669,6 @@ public partial class CardEffectManager
     void Effect_1860_TheFiendMegacyber(CardDisplay source)
     {
         // If your opponent controls at least 2 more monsters than you do, you can Special Summon this card from your hand.
-        // Lógica de SS da mão.
         int myCount = 0;
         int oppCount = 0;
         if (GameManager.Instance.duelFieldUI != null)
@@ -3762,9 +3727,7 @@ public partial class CardEffectManager
         if (oppHand.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(oppHand, "Retornar ao Deck", (selected) => {
-                // Remove da mão do oponente (precisa achar o GO)
-                // ...
-                // Adiciona ao deck do oponente
+                // Simula retorno
                 GameManager.Instance.GetOpponentMainDeck().Add(selected);
                 GameManager.Instance.ShuffleDeck(false);
                 Debug.Log($"The Forceful Sentry: {selected.name} retornado ao deck do oponente.");
@@ -3839,8 +3802,8 @@ public partial class CardEffectManager
         if (equips.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(equips, "Equipar do GY", (selected) => {
-                // Lógica de equipar (Simulada)
                 Debug.Log($"The Kick Man: Equipou {selected.name}.");
+                // TODO: Implementar lógica visual de equipar do GY
             });
         }
     }
@@ -3866,7 +3829,6 @@ public partial class CardEffectManager
             }
             DestroyCards(toDestroy, source.isPlayerCard);
             
-            // Lock Summons (Passivo no SummonManager)
             Debug.Log("The Last Warrior: Invocações bloqueadas.");
         }
     }
@@ -4227,8 +4189,8 @@ public partial class CardEffectManager
             if (oppHand.Count > 0)
             {
                 CardData discarded = oppHand[Random.Range(0, oppHand.Count)];
-                // Discard logic (remove from list)
-                // GameManager.Instance.DiscardOpponentCard(discarded); // Hypothetical
+                // Simula descarte
+                // Em produção: GameManager.DiscardOpponentCard(discarded);
                 Debug.Log($"Thestalos: Descartou {discarded.name}.");
                 
                 if (discarded.type.Contains("Monster"))

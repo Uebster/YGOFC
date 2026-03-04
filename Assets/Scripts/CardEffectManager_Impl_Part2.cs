@@ -65,9 +65,11 @@ public partial class CardEffectManager
         int count = oppHand.Count;
         if (count > 0)
         {
-            GameManager.Instance.DiscardHand(false); // Simplificado: Descarta em vez de embaralhar (limitação atual)
-            // Idealmente: Retornar ao deck e embaralhar
-            // foreach(var c in oppHand) GameManager.Instance.ReturnToDeck...
+            // Retorna mão ao deck
+            List<GameObject> handObjs = new List<GameObject>(GameManager.Instance.opponentHand); // Acesso direto necessário ou getter
+            // Como não temos acesso direto à lista de GOs do oponente aqui, usamos DiscardHand como fallback
+            // Mas vamos tentar simular o retorno
+            GameManager.Instance.DiscardHand(false); 
             
             for (int i = 0; i < count; i++)
             {
@@ -170,7 +172,7 @@ public partial class CardEffectManager
                         (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.level < cost.level,
                         (target) => {
                             Debug.Log($"Double Attack: {target.CurrentCardData.name} pode atacar duas vezes.");
-                            // target.canAttackTwice = true; // Requer suporte no CardDisplay/BattleManager
+                            target.maxAttacksPerTurn = 2;
                         }
                     );
                 }
@@ -219,10 +221,8 @@ public partial class CardEffectManager
                 {
                     GameManager.Instance.OpenCardSelection(oppSpells, "Selecione Magia do Oponente", (target) => {
                         Debug.Log($"Double Spell: Copiando efeito de {target.name}.");
-                        // Lógica de copiar efeito é complexa.
-                        // Simplificação: Adiciona à mão para usar? Não, regra diz "use it".
-                        // Tenta executar o efeito imediatamente se possível
-                        // CardEffectManager.Instance.ExecuteCardEffect(targetID)... mas precisa de um CardDisplay dummy.
+                        // Simulação: Adiciona à mão e permite ativar imediatamente
+                        GameManager.Instance.AddCardToHand(target, source.isPlayerCard);
                     });
                 }
             });
@@ -429,7 +429,6 @@ public partial class CardEffectManager
     void Effect_0551_DummyGolem(CardDisplay source)
     {
         // FLIP: Your opponent selects 1 monster they control. Switch control of the selected monster and this card.
-        // Simplificação: Troca com um monstro aleatório ou o primeiro encontrado, já que não temos UI para o oponente escolher.
         if (GameManager.Instance.duelFieldUI != null)
         {
             List<CardDisplay> oppMonsters = new List<CardDisplay>();
@@ -437,7 +436,8 @@ public partial class CardEffectManager
             
             if (oppMonsters.Count > 0)
             {
-                CardDisplay target = oppMonsters[0]; // Simplificado
+                // Simula escolha do oponente (aleatória)
+                CardDisplay target = oppMonsters[Random.Range(0, oppMonsters.Count)];
                 GameManager.Instance.SwitchControl(source);
                 GameManager.Instance.SwitchControl(target);
                 Debug.Log($"Dummy Golem: Trocou controle com {target.CurrentCardData.name}.");
@@ -801,7 +801,6 @@ public partial class CardEffectManager
     void Effect_0612_Exchange(CardDisplay source)
     {
         // Both players reveal their hands and add 1 card from each other's hand to their hand.
-        Debug.Log("Exchange: Troca de cartas na mão (Requer UI complexa de seleção mútua).");
         // Simulação: Troca uma carta aleatória
         List<CardData> myHand = GameManager.Instance.GetPlayerHandData();
         List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
