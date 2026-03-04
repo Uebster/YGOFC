@@ -407,11 +407,17 @@ public class GameManager : MonoBehaviour
         Destroy(card.gameObject);
     }
 
-    public void ShuffleDeck(bool isPlayer)
-    {
-        GameManager.Instance.ShuffleDeck(isPlayer);
+public void ShuffleDeck(bool isPlayer)
+{
+        List<CardData> deck = isPlayer ? playerDeck : opponentDeck;
+    // Lógica de embaralhar (Fisher-Yates)
+    for (int i = 0; i < deck.Count; i++) {
+         CardData temp = deck[i];
+         int randomIndex = Random.Range(i, deck.Count);
+         deck[i] = deck[randomIndex];
+         deck[randomIndex] = temp;
     }
-
+}
     public void ShuffleOpponentDeck()
     {
         ShuffleDeck(false);

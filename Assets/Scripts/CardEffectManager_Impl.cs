@@ -961,6 +961,29 @@ public partial class CardEffectManager
             });
         }
 
+        // Desrook Archfiend (0481): Revive Terrorking
+        if (card.name == "Terrorking Archfiend" && isOwnerPlayer && reason == SendReason.Destroyed)
+        {
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            CardData desrook = hand.Find(c => c.id == "0481");
+            if (desrook != null)
+            {
+                Debug.Log("Desrook Archfiend: Enviando da mão para reviver Terrorking.");
+                GameManager.Instance.SendToGraveyard(desrook, true);
+                GameManager.Instance.SpecialSummonFromData(card, true);
+            }
+        }
+
+        // 1925 - Thunder Nyan Nyan
+        // 1978 - Troop Dragon
+        if (card.id == "1978" && reason == SendReason.Battle) // Destroyed by battle
+        {
+            Debug.Log("Troop Dragon: Invocando cópia do Deck.");
+            // Effect_SearchDeck(null, "Troop Dragon"); // Requer adaptação para SS
+            // Simulação de SS do deck:
+            Effect_SpecialSummonFromDeck(null, nameContains: "Troop Dragon", isPlayerOverride: isOwnerPlayer);
+        }
+
         // 1419 - Peten the Dark Clown
         if (card.id == "1419")
         {
