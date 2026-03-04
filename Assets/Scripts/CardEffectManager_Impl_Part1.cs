@@ -26,10 +26,6 @@ public partial class CardEffectManager
                     }
                     for (int i = 0; i < 3; i++) GameManager.Instance.DrawCard(source.isPlayerCard);
                 }
-                else
-                {
-                    Debug.Log("3-Hump Lacooda: Tributo cancelado ou falhou.");
-                }
             });
         }
     }
@@ -88,7 +84,8 @@ public partial class CardEffectManager
         // (Quick-Play) Se um monstro Lv8+ foi enviado ao GY este turno:
         // Pague metade dos LP; invoque "Berserk Dragon" da mão ou Deck.
         
-        if (!GameManager.Instance.wasLevel8DestroyedThisTurn) return;
+        // TODO: Implementar flag wasLevel8DestroyedThisTurn no GameManager
+        // if (!GameManager.Instance.wasLevel8DestroyedThisTurn) return;
 
         int cost = source.isPlayerCard ? GameManager.Instance.playerLP / 2 : GameManager.Instance.opponentLP / 2;
         Effect_PayLP(source, cost);
@@ -503,7 +500,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         // Tribute 2 monstros; cause 1200 dano.
         if (SummonManager.Instance.HasEnoughTributes(2, source.isPlayerCard))
         {
-            // Seleção simplificada
+            // Usa o helper genérico de tributo para dano (que seleciona automaticamente ou pede seleção simples)
             Effect_TributeToBurn(source, 2, 1200);
         }
     }
