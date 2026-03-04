@@ -59,14 +59,14 @@ public partial class CardEffectManager
     void Effect_2004_UFOTurtle(CardDisplay source) // Based on user registry
     {
         // Destroyed by battle: SS FIRE <= 1500.
-        Effect_SearchDeck(source, "Fire", "Monster", 1500); // Deveria ser SS direto
+        Effect_SpecialSummonFromDeck(source, attribute: "Fire", maxAtk: 1500);
     }
 
     // 2005 - UFOroid
     void Effect_2005_UFOroid(CardDisplay source) // Based on user registry
     {
         // Destroyed by battle: SS Machine <= 1500.
-        Effect_SearchDeck(source, "Machine", "Monster", 1500); // Deveria ser SS direto
+        Effect_SpecialSummonFromDeck(source, race: "Machine", maxAtk: 1500);
     }
 
     // 2006 - UFOroid Fighter

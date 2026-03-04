@@ -826,6 +826,20 @@ public partial class CardEffectManager
             }
         }
 
+        // 2004 - UFO Turtle
+        if (card.id == "2004" && isOwnerPlayer) // Destroyed by battle
+        {
+            Debug.Log("UFO Turtle: Invocando FIRE do Deck.");
+            Effect_SpecialSummonFromDeck(null, attribute: "Fire", maxAtk: 1500, isPlayerOverride: isOwnerPlayer);
+        }
+
+        // 2005 - UFOroid
+        if (card.id == "2005" && isOwnerPlayer) // Destroyed by battle
+        {
+            Debug.Log("UFOroid: Invocando Machine do Deck.");
+            Effect_SpecialSummonFromDeck(null, race: "Machine", maxAtk: 1500, isPlayerOverride: isOwnerPlayer);
+        }
+
         // 1010 - Keldo
         if (card.id == "1010" && !isOwnerPlayer) // Destruído por batalha
         {
@@ -2542,6 +2556,37 @@ public partial class CardEffectManager
     void Effect_SearchDeckTop(CardDisplay source, string type, string subType = "")
     {
         Debug.Log($"Procurando {type}/{subType} para colocar no topo do deck.");
+    }
+
+    void Effect_SpecialSummonFromDeck(CardDisplay source, string race = "", string attribute = "", int maxAtk = -1, int maxDef = -1, int maxLevel = -1, string nameContains = "", bool? isPlayerOverride = null)
+    {
+        bool isPlayer = isPlayerOverride.HasValue ? isPlayerOverride.Value : (source != null ? source.isPlayerCard : true);
+        List<CardData> deck = isPlayer ? GameManager.Instance.GetPlayerMainDeck() : null;
+
+        if (deck == null) return;
+
+        List<CardData> targets = deck.FindAll(c => 
+            c.type.Contains("Monster") &&
+            (string.IsNullOrEmpty(race) || c.race == race) &&
+            (string.IsNullOrEmpty(attribute) || c.attribute == attribute) &&
+            (maxAtk == -1 || c.atk <= maxAtk) &&
+            (maxDef == -1 || c.def <= maxDef) &&
+            (maxLevel == -1 || c.level <= maxLevel) &&
+            (string.IsNullOrEmpty(nameContains) || c.name.Contains(nameContains))
+        );
+
+        if (targets.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(targets, "Invocar do Deck", (selected) => {
+                deck.Remove(selected);
+                GameManager.Instance.SpecialSummonFromData(selected, isPlayer);
+                GameManager.Instance.ShuffleDeck(isPlayer);
+            });
+        }
+        else
+        {
+            Debug.Log("Nenhum alvo válido no Deck para Invocação Especial.");
+        }
     }
 
     void Effect_Equip(CardDisplay source, int atkBonus, int defBonus, string requiredRace = "", string requiredAttribute = "")
