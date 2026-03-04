@@ -1567,6 +1567,20 @@ public partial class CardEffectManager
             if (PhaseManager.Instance != null) PhaseManager.Instance.RegisterSkipNextPhase(!attacker.isPlayerCard, GamePhase.Draw);
         }
     }
+
+    public void UpdateAllMegamorphs()
+    {
+        // Encontra todos os links de equipamento ativos para atualizar Megamorphs
+        CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        foreach (var link in links)
+        {
+            if (link.source != null && link.source.CurrentCardData.id == "1200" && link.target != null)
+            {
+                UpdateMegamorphStats(link.source, link.target);
+            }
+        }
+    }
+
     public void OnDamageTaken(bool isPlayer, int amount)
     {
         // Numinous Healer (1360), Attack and Receive (0117) - Geralmente são Traps ativáveis, não automáticas.
