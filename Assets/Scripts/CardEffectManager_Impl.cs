@@ -10,6 +10,16 @@ public partial class CardEffectManager
 
     // --- MÉTODOS UTILITÁRIOS COMUNS (REAPROVEITADOS) ---
 
+    // --- SISTEMA DE MANUTENÇÃO ---
+    private class MaintenanceRequest
+    {
+        public CardDisplay card;
+        public string description;
+        public System.Func<bool> canPay;
+        public System.Action payAction;
+    }
+    private Queue<MaintenanceRequest> maintenanceQueue = new Queue<MaintenanceRequest>();
+
     // --- Helpers para Negação (Chain) ---
     private ChainManager.ChainLink GetLinkToNegate(CardDisplay source)
     {
@@ -2628,21 +2638,18 @@ public partial class CardEffectManager
 
     private void CheckMaintenanceCosts()
     {
+        maintenanceQueue.Clear();
+
         // Imperial Order (0932)
         CheckActiveCards("0932", (card) => {
             if (card.isPlayerCard)
             {
-                if (GameManager.Instance.playerLP > 700)
-                {
-                    Debug.Log("Imperial Order: Manutenção de 700 LP paga.");
-                    GameManager.Instance.DamagePlayer(700);
-                }
-                else
-                {
-                    Debug.Log("Imperial Order: Destruída por falta de LP.");
-                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
-                    Destroy(card.gameObject);
-                }
+                maintenanceQueue.Enqueue(new MaintenanceRequest {
+                    card = card,
+                    description = "700 LP",
+                    canPay = () => GameManager.Instance.playerLP > 700,
+                    payAction = () => GameManager.Instance.PayLifePoints(true, 700)
+                });
             }
         });
 
@@ -2650,35 +2657,99 @@ public partial class CardEffectManager
         CheckActiveCards("1252", (card) => {
             if (card.isPlayerCard)
             {
-                if (GameManager.Instance.playerLP > 2000)
-                {
-                    Debug.Log("Mirror Wall: Manutenção de 2000 LP paga.");
-                    GameManager.Instance.DamagePlayer(2000);
-                }
-                else
-                {
-                    Debug.Log("Mirror Wall: Destruída por falta de LP.");
-                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
-                    Destroy(card.gameObject);
-                }
+                maintenanceQueue.Enqueue(new MaintenanceRequest {
+                    card = card,
+                    description = "2000 LP",
+                    canPay = () => GameManager.Instance.playerLP > 2000,
+                    payAction = () => GameManager.Instance.PayLifePoints(true, 2000)
+                });
             }
         });
 
         // Armor Exe (0102)
         CheckActiveCards("0102", (card) => {
-            // Remove 1 contador do seu campo (qualquer carta)
-            // Se não puder, destrói Armor Exe
-            if (!RemoveSpellCounters(1, card.isPlayerCard))
+            if (card.isPlayerCard)
             {
-                Debug.Log("Armor Exe: Não foi possível remover contador de manutenção. Destruindo.");
-                GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
-                Destroy(card.gameObject);
-            }
-            else
-            {
-                Debug.Log("Armor Exe: Manutenção paga (1 contador removido).");
+                maintenanceQueue.Enqueue(new MaintenanceRequest {
+                    card = card,
+                    description = "1 Spell Counter",
+                    canPay = () => GetTotalSpellCounters(true) > 0,
+                    payAction = () => RemoveSpellCounters(1, true)
+                });
             }
         });
+
+        // Messenger of Peace (1209)
+        CheckActiveCards("1209", (card) => {
+            if (card.isPlayerCard)
+            {
+                maintenanceQueue.Enqueue(new MaintenanceRequest {
+                    card = card,
+                    description = "100 LP",
+                    canPay = () => GameManager.Instance.playerLP > 100,
+                    payAction = () => GameManager.Instance.PayLifePoints(true, 100)
+                });
+            }
+        });
+
+        // Fairy Box (0620)
+        CheckActiveCards("0620", (card) => {
+            if (card.isPlayerCard)
+            {
+                maintenanceQueue.Enqueue(new MaintenanceRequest {
+                    card = card,
+                    description = "500 LP",
+                    canPay = () => GameManager.Instance.playerLP > 500,
+                    payAction = () => GameManager.Instance.PayLifePoints(true, 500)
+                });
+            }
+        });
+
+        ProcessNextMaintenance();
+    }
+
+    private void ProcessNextMaintenance()
+    {
+        if (maintenanceQueue.Count == 0) return;
+
+        var req = maintenanceQueue.Dequeue();
+        
+        // Verifica se a carta ainda está em campo
+        if (req.card == null || !req.card.isOnField) 
+        {
+            ProcessNextMaintenance();
+            return;
+        }
+
+        if (req.canPay())
+        {
+            UIManager.Instance.ShowConfirmation(
+                $"Pagar {req.description} para manter {req.card.CurrentCardData.name}?",
+                () => {
+                    req.payAction();
+                    Debug.Log($"{req.card.CurrentCardData.name}: Manutenção paga.");
+                    ProcessNextMaintenance();
+                },
+                () => {
+                    Debug.Log($"{req.card.CurrentCardData.name}: Manutenção recusada. Destruindo.");
+                    DestroyCardForMaintenance(req.card);
+                    ProcessNextMaintenance();
+                }
+            );
+        }
+        else
+        {
+            Debug.Log($"{req.card.CurrentCardData.name}: Não pode pagar manutenção. Destruindo.");
+            DestroyCardForMaintenance(req.card);
+            ProcessNextMaintenance();
+        }
+    }
+
+    private void DestroyCardForMaintenance(CardDisplay card)
+    {
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
+        GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard, CardLocation.Field, SendReason.Rule);
+        Destroy(card.gameObject);
     }
 
     private void CleanAllExpiredModifiers()
