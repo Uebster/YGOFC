@@ -54,6 +54,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool summonedThisTurn = false;
     [HideInInspector] public bool battledThisTurn = false;
     [HideInInspector] public bool wasSpecialSummoned = false;
+    [HideInInspector] public bool wasSpecialSummoned = false;
     [HideInInspector] public bool hasUsedEffectThisTurn = false;
     [HideInInspector] public int attacksDeclaredThisTurn = 0; // Substitui/Complementa hasAttackedThisTurn
     [HideInInspector] public int maxAttacksPerTurn = 1; // Padrão 1
@@ -468,10 +469,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         foreach (var mod in activeModifiers)
         {
             // 1857 - The Emperor's Holiday: Nega Equip Spells
-            // Fixed: Changed mod.modifierType to mod.modifierType (if that was the error, likely it's just 'type' or similar, but assuming 'modifierType' was the error source, I will try 'type' or keep it if StatModifier definition isn't visible. 
-            // Based on error "does not contain definition for 'modifierType'", I will assume the property is named 'Type' or 'Modifier'. 
-            // Let's assume 'Type' matching the enum name pattern or check usage.
-            if (mod.modifierType == StatModifier.ModifierType.Equipment && GameManager.Instance != null && GameManager.Instance.IsCardActiveOnField("1857"))
+            if (mod.type == StatModifier.ModifierType.Equipment && GameManager.Instance != null && GameManager.Instance.IsCardActiveOnField("1857"))
             {
                 continue;
             }

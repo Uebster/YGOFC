@@ -116,7 +116,7 @@ public class GameManager : MonoBehaviour
     public List<GameObject> opponentHand = new List<GameObject>();
     private List<CardData> opponentGraveyard = new List<CardData>();
     private List<CardData> playerExtraDeck = new List<CardData>();
-    private List<CardData> opponentExtraDeck = new List<CardData>();
+    public List<CardData> opponentExtraDeck = new List<CardData>(); // Tornado público para efeitos (Memory Crusher)
     private List<CardData> playerRemoved = new List<CardData>(); // Novo
     private List<CardData> opponentRemoved = new List<CardData>(); // Novo
 
@@ -772,11 +772,7 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Remove modificadores gerados por esta carta em outras cartas
-        // if (CardEffectManager.Instance != null)
-        // {
-        //    CardEffectManager.Instance.OnCardLeavesField(cardDisplay); // Error: cardDisplay not found
-        // }
+        // Nota: A remoção de modificadores é feita no método Destroy/OnCardLeavesField do CardDisplay, não aqui.
 
         // Notifica o sistema de efeitos (Gatilhos Globais)
         if (CardEffectManager.Instance != null)
