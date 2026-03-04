@@ -197,6 +197,13 @@ public partial class CardEffectManager
         }
     }
 
+    void Effect_1040_KycooTheGhostDestroyer(CardDisplay source)
+    {
+        // Effect: When inflicts battle damage, banish 2 from opp GY. Opp cannot banish from GYs.
+        // Banish logic in OnDamageDealtImpl.
+        Debug.Log("Kycoo the Ghost Destroyer: Efeitos passivos de batalha e bloqueio de GY ativos.");
+    }
+
     void Effect_1046_LabyrinthOfNightmare(CardDisplay source)
     {
         // Effect: End Phase: Change battle position of all face-up monsters.
@@ -1841,6 +1848,12 @@ public partial class CardEffectManager
         // Lógica implementada no OnPhaseStart.
     }
 
+    // 1251 - Mirror Force
+    void Effect_1251_MirrorForce(CardDisplay source)
+    {
+        Effect_MirrorForce(source);
+    }
+
     // 1245 - Miracle Dig
     void Effect_1245_MiracleDig(CardDisplay source)
     {
@@ -2095,6 +2108,12 @@ public partial class CardEffectManager
                 );
             }
         }
+    }
+
+    // 1268 - Monster Reborn
+    void Effect_1268_MonsterReborn(CardDisplay source)
+    {
+        Effect_Revive(source, true); // true = any graveyard
     }
 
     // 1269 - Monster Recovery
@@ -2371,6 +2390,14 @@ public partial class CardEffectManager
                 }
             );
         }
+    }
+
+    // 1296 - Mysterious Puppeteer
+    void Effect_1296_MysteriousPuppeteer(CardDisplay source)
+    {
+        // Effect: Each time a monster is Summoned, gain 500 LP.
+        // Lógica implementada no OnSummonImpl.
+        Debug.Log("Mysterious Puppeteer: Efeito de ganho de LP em invocação ativo.");
     }
 
     // 1301 - Mystic Lamp

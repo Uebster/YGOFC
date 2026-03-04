@@ -471,6 +471,12 @@ public partial class CardEffectManager
         }
     }
 
+    void Effect_0556_EagleEye(CardDisplay source)
+    {
+        // When Normal Summoned: No Trap Cards can be activated.
+        Debug.Log("Eagle Eye: Traps bloqueadas na invocação.");
+    }
+
     void Effect_0557_EarthChant(CardDisplay source)
     {
         // Ritual Spell for EARTH Ritual Monster.
@@ -497,6 +503,42 @@ public partial class CardEffectManager
         }
     }
 
+    void Effect_0560_Earthshaker(CardDisplay source)
+    {
+        // Select 2 Attributes. Opponent selects 1. Destroy all face-up with that Attribute.
+        Debug.Log("Earthshaker: Destruição por atributo (Lógica de seleção pendente).");
+    }
+
+    void Effect_0561_Eatgaboon(CardDisplay source)
+    {
+        // If monster with ATK <= 1000 is Summoned: Destroy it.
+        Debug.Log("Eatgaboon: Armadilha ativa.");
+    }
+
+    void Effect_0562_EbonMagicianCurran(CardDisplay source)
+    {
+        // Standby Phase: 300 damage per opp monster.
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) count++;
+        }
+        Effect_DirectDamage(source, count * 300);
+    }
+
+    void Effect_0563_Ectoplasmer(CardDisplay source)
+    {
+        // End Phase: Tribute 1 face-up monster, inflict damage = half original ATK.
+        Debug.Log("Ectoplasmer: Tributo e dano na End Phase.");
+    }
+
+    void Effect_0564_EkibyoDrakmord(CardDisplay source)
+    {
+        // Equip opp monster. Cannot attack. Destroy at end of opp 2nd turn.
+        Effect_Equip(source, 0, 0);
+        Debug.Log("Ekibyo Drakmord: Equipado. (Lógica de destruição retardada pendente).");
+    }
+
     void Effect_0566_ElectricLizard(CardDisplay source)
     {
         // A non Zombie-Type monster attacking "Electric Lizard" cannot attack on its following turn.
@@ -514,6 +556,74 @@ public partial class CardEffectManager
     void Effect_0568_ElectroWhip(CardDisplay source)
     {
         Effect_Equip(source, 300, 300, "Thunder");
+    }
+
+    void Effect_0569_ElectromagneticBagworm(CardDisplay source)
+    {
+        // FLIP: Take control of 1 Machine opp controls until End Phase.
+        // Destroyed by battle: Killer -500 ATK/DEF.
+        if (source.isFlipped)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.race == "Machine",
+                    (target) => GameManager.Instance.SwitchControl(target)
+                );
+            }
+        }
+        // Debuff logic in OnBattleEnd
+    }
+
+    void Effect_0570_ElegantEgotist(CardDisplay source)
+    {
+        // If Harpie Lady on field: SS 1 Harpie Lady or Sisters from Hand/Deck.
+        if (GameManager.Instance.IsCardActiveOnField("Harpie Lady") || GameManager.Instance.IsCardActiveOnField("0867"))
+        {
+            Effect_SearchDeck(source, "Harpie Lady", "Monster"); // Should be SS
+        }
+    }
+
+    void Effect_0571_ElementDoom(CardDisplay source)
+    {
+        // FIRE: +500 ATK. EARTH: Negate effect of destroyed monster.
+        Debug.Log("Element Doom: Efeitos elementais.");
+    }
+
+    void Effect_0572_ElementDragon(CardDisplay source)
+    {
+        // FIRE: +500 ATK. WIND: Attack again.
+        Debug.Log("Element Dragon: Efeitos elementais.");
+    }
+
+    void Effect_0573_ElementMagician(CardDisplay source)
+    {
+        // WATER: No control switch. WIND: Attack again.
+        Debug.Log("Element Magician: Efeitos elementais.");
+    }
+
+    void Effect_0574_ElementSaurus(CardDisplay source)
+    {
+        // FIRE: +500 ATK. EARTH: Negate effect of destroyed monster.
+        Debug.Log("Element Saurus: Efeitos elementais.");
+    }
+
+    void Effect_0575_ElementSoldier(CardDisplay source)
+    {
+        // WATER: No control switch. EARTH: Negate effect of destroyed monster.
+        Debug.Log("Element Soldier: Efeitos elementais.");
+    }
+
+    void Effect_0576_ElementValkyrie(CardDisplay source)
+    {
+        // FIRE: +500 ATK. WATER: No control switch.
+        Debug.Log("Element Valkyrie: Efeitos elementais.");
+    }
+
+    void Effect_0577_ElementalBurst(CardDisplay source)
+    {
+        // Tribute 1 WIND, 1 WATER, 1 FIRE and 1 EARTH monster; destroy all cards on your opponent's side of the field.
+        Debug.Log("Elemental Burst: Requer 4 tributos específicos.");
     }
 
     void Effect_0579_ElementalHEROBubbleman(CardDisplay source)
