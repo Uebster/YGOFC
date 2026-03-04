@@ -302,7 +302,7 @@ public partial class CardEffectManager
             {
                 if (card.isPlayerCard)
                 {
-                    Effect_0206_BlindDestruction_Logic(card);
+                    Effect_0206_BlindDestruction_Logic_Impl(card);
                 }
             });
 
@@ -2092,7 +2092,7 @@ public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
     }
 
     // Desrook Archfiend (0481): Revive Terrorking
-    if (card.CurrentCardData.name == "Terrorking Archfiend" && card.isPlayerCard)
+    if (target != null && target.CurrentCardData.name == "Terrorking Archfiend" && target.isPlayerCard)
     {
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         CardData desrook = hand.Find(c => c.id == "0481");
@@ -2100,7 +2100,7 @@ public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
         {
             Debug.Log("Desrook Archfiend: Enviando da mão para reviver Terrorking.");
             GameManager.Instance.SendToGraveyard(desrook, true);
-            GameManager.Instance.SpecialSummonFromData(card.CurrentCardData, true);
+            GameManager.Instance.SpecialSummonFromData(target.CurrentCardData, true);
         }
     }
 
@@ -2115,7 +2115,7 @@ public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
 
     // 1925 - Thunder Nyan Nyan
     // 1978 - Troop Dragon
-    if (card.id == "1978" && !isOwnerPlayer) // Destroyed by battle
+    if (target != null && target.CurrentCardData.id == "1978") // Destroyed by battle
     {
         Debug.Log("Troop Dragon: Invocando cópia do Deck.");
         // Effect_SearchDeck(null, "Troop Dragon"); // Requer adaptação para SS
@@ -3054,5 +3054,35 @@ partial void OnBattlePositionChangedImpl(CardDisplay card)
 void Effect_SecretBarrel(CardDisplay source)
 {
     Effect_DirectDamage(source, 1000); // Simplificado
+}
+
+private void Effect_0206_BlindDestruction_Logic_Impl(CardDisplay source)
+{
+    GameManager.Instance.TossCoin(1, (heads) => { // Using TossCoin as Dice proxy
+            int roll = Random.Range(1, 7);
+            Debug.Log($"Blind Destruction: Rolou {roll}.");
+            
+            List<CardDisplay> toDestroy = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                List<CardDisplay> all = new List<CardDisplay>();
+                CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+                
+                foreach(var m in all)
+                {
+                    if (roll == 6)
+                    {
+                        if (m.CurrentCardData.level >= 6) toDestroy.Add(m);
+                    }
+                    else
+                    {
+                        if (m.CurrentCardData.level == roll) toDestroy.Add(m);
+                    }
+                }
+            }
+            
+            DestroyCards(toDestroy, source.isPlayerCard);
+    });
 }
 }

@@ -2258,16 +2258,27 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         {
             // Seleciona Bubbleman
             SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name.Contains("Bubbleman"),
+                (tribute) => tribute.isOnField && tribute.isPlayerCard && tribute.CurrentCardData.name.Contains("Bubbleman"),
                 (bubbleman) => {
                     // Seleciona Oponente
                     SpellTrapManager.Instance.StartTargetSelection(
-                        (opp) => t.isOnField && !t.isPlayerCard && t.position == CardDisplay.BattlePosition.Attack,
+                        (opp) => opp.isOnField && !opp.isPlayerCard && opp.position == CardDisplay.BattlePosition.Attack,
                         (oppMonster) => {
                             bubbleman.ChangePosition();
                             oppMonster.ChangePosition();
                             GameManager.Instance.TributeCard(bubbleman);
-                            // SS da mão (Pendente UI de seleção da mão filtrada por E-Hero)
+                            
+                            // SS da mão
+                            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+                            List<CardData> heroes = hand.FindAll(c => c.name.Contains("Elemental HERO") && c.type.Contains("Monster"));
+                            
+                            if (heroes.Count > 0)
+                            {
+                                GameManager.Instance.OpenCardSelection(heroes, "Invocar E-Hero", (selected) => {
+                                    GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                                    GameManager.Instance.RemoveCardFromHand(selected, source.isPlayerCard);
+                                });
+                            }
                         });
                 });
         }
@@ -4558,7 +4569,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         if (SpellTrapManager.Instance != null)
         {
              SpellTrapManager.Instance.StartTargetSelection(
-                 (t1) => t1.isOnField && t1.isPlayerCard && t1.CurrentCardData.type.Contains("Monster"),
+                 (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
                  (myMonster) => {
                      SpellTrapManager.Instance.StartTargetSelection(
                          (t2) => t2.isOnField && !t2.isPlayerCard && t2.CurrentCardData.type.Contains("Monster"),

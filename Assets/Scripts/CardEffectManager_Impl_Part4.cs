@@ -4932,13 +4932,13 @@ public partial class CardEffectManager
         if (SpellTrapManager.Instance != null)
         {
              SpellTrapManager.Instance.StartTargetSelection(
-                 (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                 (tribute) => tribute.isOnField && tribute.isPlayerCard && tribute.CurrentCardData.type.Contains("Monster"),
                  (own1) => {
                      SpellTrapManager.Instance.StartTargetSelection(
-                         (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster") && t != own1,
+                         (tribute) => tribute.isOnField && tribute.isPlayerCard && tribute.CurrentCardData.type.Contains("Monster") && tribute != own1,
                          (own2) => {
                              SpellTrapManager.Instance.StartTargetSelection(
-                                 (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                                 (tribute) => tribute.isOnField && !tribute.isPlayerCard && tribute.CurrentCardData.type.Contains("Monster"),
                                  (opp) => {
                                      GameManager.Instance.SendToGraveyard(own1.CurrentCardData, true);
                                      Destroy(own1.gameObject);

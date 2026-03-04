@@ -3087,8 +3087,10 @@ public partial class CardEffectManager
                     GameManager.Instance.SendToGraveyard(card, source.isPlayerCard);
                 }
 
-                // Remove da mão
-                foreach(var c in selected) deck.Remove(c);
+                // Remove do deck
+                deck.Remove(selected);
+                foreach(var c in selection) deck.Remove(c);
+                
                 GameManager.Instance.ShuffleDeck(source.isPlayerCard); //Shuffle
             });
         }
@@ -3099,20 +3101,6 @@ public partial class CardEffectManager
     {
         // Tribute to SS Blue-Eyes.
         Debug.Log("Paladin of White Dragon: Ritual. Tributa para invocar Blue-Eyes.");
-    }
-
-    // 1397 - Painful Choice
-    void Effect_1397_PainfulChoice(CardDisplay source)
-    {
-        // Exibir escolha
-        Debug.Log("Painful Choice: Oponente escolhe 1 de 5.");
-    }
-
-    // 1398 - Paladin of White Dragon
-    void Effect_1398_PaladinOfWhiteDragon(CardDisplay source)
-    {
-        // SS Blue-Eyes
-        Debug.Log("Paladin of White Dragon: Tributa para Blue-Eyes.");
     }
 
     // 1400 - Pandemonium
