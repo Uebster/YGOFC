@@ -29,12 +29,15 @@ public class PhaseManager : MonoBehaviour
     [Header("Controle de Pulo de Fase")]
     // Flags para o turno ATUAL
     public bool skipDrawPhase = false;
+    public bool skipStandbyPhase = false;
     public bool skipMain1Phase = false;
     public bool skipBattlePhase = false;
 
     // Flags para o PRÓXIMO turno (armazenamento)
     public bool playerSkipNextDraw = false;
     public bool opponentSkipNextDraw = false;
+    public bool playerSkipNextStandby = false;
+    public bool opponentSkipNextStandby = false;
     public bool playerSkipNextMain1 = false;
     public bool opponentSkipNextMain1 = false;
     public bool playerSkipNextBattle = false;
@@ -75,6 +78,7 @@ public class PhaseManager : MonoBehaviour
     {
         if (SummonManager.Instance != null) SummonManager.Instance.ResetTurnStats();
         if (SpellTrapManager.Instance != null) SpellTrapManager.Instance.ResetTurnStats();
+        if (BattleManager.Instance != null) BattleManager.Instance.ResetTurnStats();
         
         // Configura os pulos de fase para este turno
         bool isPlayer = true;
@@ -82,6 +86,7 @@ public class PhaseManager : MonoBehaviour
 
         // Reseta flags do turno atual
         skipDrawPhase = false;
+        skipStandbyPhase = false;
         skipMain1Phase = false;
         skipBattlePhase = false;
 
@@ -89,17 +94,20 @@ public class PhaseManager : MonoBehaviour
         if (isPlayer)
         {
             if (playerSkipNextDraw) { skipDrawPhase = true; playerSkipNextDraw = false; }
+            if (playerSkipNextStandby) { skipStandbyPhase = true; playerSkipNextStandby = false; }
             if (playerSkipNextMain1) { skipMain1Phase = true; playerSkipNextMain1 = false; }
             if (playerSkipNextBattle) { skipBattlePhase = true; playerSkipNextBattle = false; }
         }
         else
         {
             if (opponentSkipNextDraw) { skipDrawPhase = true; opponentSkipNextDraw = false; }
+            if (opponentSkipNextStandby) { skipStandbyPhase = true; opponentSkipNextStandby = false; }
             if (opponentSkipNextMain1) { skipMain1Phase = true; opponentSkipNextMain1 = false; }
             if (opponentSkipNextBattle) { skipBattlePhase = true; opponentSkipNextBattle = false; }
         }
 
         if (skipDrawPhase) Debug.Log("PhaseManager: Draw Phase será pulada.");
+        if (skipStandbyPhase) Debug.Log("PhaseManager: Standby Phase será pulada.");
         if (skipMain1Phase) Debug.Log("PhaseManager: Main Phase 1 será pulada.");
         if (skipBattlePhase) Debug.Log("PhaseManager: Battle Phase será pulada.");
 
@@ -142,6 +150,12 @@ public class PhaseManager : MonoBehaviour
                 }
                 break;
             case GamePhase.Standby:
+                if (skipStandbyPhase)
+                {
+                    Debug.Log("Standby Phase pulada.");
+                    ChangePhase(GamePhase.Main1);
+                    return;
+                }
                 StartCoroutine(HandleStandbyPhase());
                 break;
             case GamePhase.Main1:
@@ -175,12 +189,14 @@ public class PhaseManager : MonoBehaviour
         if (targetPlayerIsHuman)
         {
             if (phase == GamePhase.Draw) playerSkipNextDraw = true;
+            else if (phase == GamePhase.Standby) playerSkipNextStandby = true;
             else if (phase == GamePhase.Main1) playerSkipNextMain1 = true;
             else if (phase == GamePhase.Battle) playerSkipNextBattle = true;
         }
         else
         {
             if (phase == GamePhase.Draw) opponentSkipNextDraw = true;
+            else if (phase == GamePhase.Standby) opponentSkipNextStandby = true;
             else if (phase == GamePhase.Main1) opponentSkipNextMain1 = true;
             else if (phase == GamePhase.Battle) opponentSkipNextBattle = true;
         }

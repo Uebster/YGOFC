@@ -8,6 +8,10 @@ public partial class CardEffectManager
     public bool redirectSpellTarget = false;
     public bool reverseStats = false; // Para Reverse Trap (1526)
 
+    public bool banishInsteadOfGraveyard = false; // Para Macro Cosmos / Dimensional Fissure / Spirit Elimination
+    
+    public string dnaSurgeryDeclaredType = ""; // Para DNA Surgery (0390)
+
     // --- MÉTODOS UTILITÁRIOS COMUNS (REAPROVEITADOS) ---
 
     // --- SISTEMA DE MANUTENÇÃO ---
@@ -56,8 +60,7 @@ public partial class CardEffectManager
         negateContinuousSpells = false;
         redirectSpellTarget = false;
         reverseStats = false;
-        if (BattleManager.Instance != null) BattleManager.Instance.wabokuActive = false;
-        if (BattleManager.Instance != null) BattleManager.Instance.noBattleDamageThisTurn = false;
+        banishInsteadOfGraveyard = false;
 
         // Aplica efeitos contínuos de mudança de posição (ex: Level Limit - Area B)
         ApplyContinuousPositionChecks();
@@ -1722,11 +1725,17 @@ public partial class CardEffectManager
 
     public bool ShouldBanishInsteadOfGraveyard()
     {
+        // Flag global de turno (ex: Spirit Elimination)
+        if (banishInsteadOfGraveyard) return true;
+
         // Banisher of the Light (0133)
         if (GameManager.Instance.IsCardActiveOnField("0133")) return true;
         
-        // Banisher of the Radiance (1654 - Se implementado)
-        // Macro Cosmos (Se implementado)
+        // Banisher of the Radiance (1654)
+        if (GameManager.Instance.IsCardActiveOnField("1654")) return true;
+        
+        // Macro Cosmos (Se implementado - ID pendente)
+        // if (GameManager.Instance.IsCardActiveOnField("MACRO_ID")) return true;
         
         return false;
     }

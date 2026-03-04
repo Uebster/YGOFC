@@ -51,6 +51,17 @@ public class BattleManager : MonoBehaviour
         Instance = this;
     }
 
+    public void ResetTurnStats()
+    {
+        forceDirectAttack = false;
+        globalPiercing = false;
+        battlePositionsLocked = false;
+        patricianOfDarknessActive = false;
+        wabokuActive = false;
+        noBattleDamageThisTurn = false;
+        gravekeepersProtected = false;
+    }
+
     // Inicia a declaração de ataque
     public void DeclareAttack(CardDisplay attacker)
     {
