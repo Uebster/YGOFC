@@ -274,11 +274,7 @@ public partial class CardEffectManager
             CheckActiveCards("0206", (card) => {
                 if (card.isPlayerCard)
                 {
-                    int roll = Random.Range(1, 7);
-                    Debug.Log($"Blind Destruction: Rolou {roll}.");
-                    // Destrói monstros face-up com nível = roll
-                    // Requer iteração no campo
-                    // DestroyMonstersByLevel(roll); // Helper method needed
+                    Effect_0206_BlindDestruction_Logic(card);
                 }
             });
 

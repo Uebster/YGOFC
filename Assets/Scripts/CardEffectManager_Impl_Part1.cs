@@ -1877,20 +1877,21 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0201_BlastSphere(CardDisplay source)
     {
-        // Efeito: Se atacado face-down, equipa no atacante e destrói na próxima Standby.
-        // Lógica principal tratada no BattleManager (Equip) e CardEffectManager_Impl (Standby).
-        Debug.Log("Blast Sphere: Efeito passivo de batalha/standby.");
+        // Effect: If attacked face-down, equip to attacker. Standby: Destroy & Burn.
+        // Logic handled in BattleManager (Equip) and OnPhaseStart (Destroy/Burn).
+        Debug.Log("Blast Sphere: Efeitos de batalha e standby configurados.");
     }
 
     void Effect_0202_BlastWithChain(CardDisplay source)
     {
-        // Efeito: Equip +500. Se destruído por efeito, destrói 1 carta.
+        // Target 1 face-up monster you control; equip this card to that target. It gains 500 ATK.
+        // If this card is destroyed by a card effect while equipped: Target 1 card on the field; destroy that target.
         Effect_Equip(source, 500, 0);
     }
 
     void Effect_0203_BlastingTheRuins(CardDisplay source)
     {
-        // Efeito: Se houver 30+ cartas no GY, causa 3000 de dano.
+        // Activate only if there are 30 or more cards in your GY. Inflict 3000 damage.
         int gyCount = source.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard().Count : GameManager.Instance.GetOpponentGraveyard().Count;
         if (gyCount >= 30) 
         {
@@ -1904,35 +1905,62 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0205_BlessingsOfTheNile(CardDisplay source)
     {
-        // Efeito Contínuo: Ganha 1000 LP cada vez que cartas são descartadas da mão para o GY por efeito.
-        // Tratado no CardEffectManager_Impl.cs (OnCardDiscarded).
+        // Continuous: Gain 1000 LP when cards are discarded by opponent's effect.
         Debug.Log("Blessings of the Nile: Ativo.");
     }
 
     void Effect_0206_BlindDestruction(CardDisplay source)
     {
-        // Efeito Contínuo: Na Standby Phase, rola dado. Destrói monstros com Nível = Dado.
-        // Tratado no CardEffectManager_Impl.cs (OnPhaseStart).
+        // Continuous Trap. Logic in OnPhaseStart.
         Debug.Log("Blind Destruction: Ativo.");
+    }
+
+    // Helper for Blind Destruction Logic (called from OnPhaseStart)
+    void Effect_0206_BlindDestruction_Logic(CardDisplay source)
+    {
+        GameManager.Instance.TossCoin(1, (heads) => { // Using TossCoin as Dice proxy
+             int roll = Random.Range(1, 7);
+             Debug.Log($"Blind Destruction: Rolou {roll}.");
+             
+             List<CardDisplay> toDestroy = new List<CardDisplay>();
+             if (GameManager.Instance.duelFieldUI != null)
+             {
+                 List<CardDisplay> all = new List<CardDisplay>();
+                 CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                 CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+                 
+                 foreach(var m in all)
+                 {
+                     if (roll == 6)
+                     {
+                         if (m.CurrentCardData.level >= 6) toDestroy.Add(m);
+                     }
+                     else
+                     {
+                         if (m.CurrentCardData.level == roll) toDestroy.Add(m);
+                     }
+                 }
+             }
+             
+             DestroyCards(toDestroy, source.isPlayerCard);
+        });
     }
 
     void Effect_0207_BlindlyLoyalGoblin(CardDisplay source)
     {
-        // Efeito Contínuo: Controle não pode mudar.
-        // Tratado no GameManager.cs (SwitchControl).
-        Debug.Log("Blindly Loyal Goblin: Imune a troca de controle.");
+        // Control cannot switch.
+        Debug.Log("Blindly Loyal Goblin: Controle fixo.");
     }
 
     void Effect_0208_BlockAttack(CardDisplay source)
     {
-        // Efeito: Seleciona 1 monstro em Ataque e muda para Defesa.
+        // Target 1 Attack Position monster; change to Defense.
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.position == CardDisplay.BattlePosition.Attack,
                 (t) => {
                     t.ChangePosition();
-                    Debug.Log($"Block Attack: {t.CurrentCardData.name} mudou para defesa.");
                 }
             );
         }
@@ -1947,8 +1975,34 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0211_BlowbackDragon(CardDisplay source)
     {
-        // Efeito: 3 Moedas. 2+ Caras -> Destrói 1 carta do oponente.
-        Effect_CoinTossDestroy(source, 3, 2, TargetType.Any);
+        // Once per turn: Target 1 card opp controls; toss coin 3 times. 2+ Heads -> Destroy.
+        if (source.hasUsedEffectThisTurn) return;
+        
+        if (SpellTrapManager.Instance != null)
+        {
+            // Effect_CoinTossDestroy handles selection internally if implemented that way, 
+            // but here we use the generic helper which assumes random or pre-selection.
+            // For Blowback, we need to target first.
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard,
+                (target) => {
+                    GameManager.Instance.TossCoin(3, (heads) => {
+                        if (heads >= 2)
+                        {
+                            Debug.Log($"Blowback Dragon: {heads} caras. Destruindo {target.CurrentCardData.name}.");
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                            Destroy(target.gameObject);
+                        }
+                        else
+                        {
+                            Debug.Log($"Blowback Dragon: {heads} caras. Falhou.");
+                        }
+                    });
+                }
+            );
+            source.hasUsedEffectThisTurn = true;
+        }
     }
 
     void Effect_0212_BlueMedicine(CardDisplay source)
@@ -2055,13 +2109,8 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                     GameManager.Instance.SpecialSummonFromData(myZombie, source.isPlayerCard);
                     GameManager.Instance.RemoveFromPlay(oppMonster, !source.isPlayerCard);
                     oppGY.Remove(oppMonster); // Remove manual pois RemoveFromPlay não altera lista de origem
-                    Debug.Log($"Book of Life: Reviveu {myZombie.name} e baniu {oppMonster.name}.");
                 });
             });
-        }
-        else
-        {
-            Debug.Log("Book of Life: Requer Zumbi no seu GY e Monstro no GY do oponente.");
         }
     }
 
@@ -2142,9 +2191,11 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0237_BrainControl(CardDisplay source)
     {
-        // Efeito: Paga 800 LP, controla monstro face-up do oponente até End Phase.
-        Effect_PayLP(source, 800);
-        Effect_ChangeControl(source, true); // true = retorna na End Phase
+        // Pay 800 LP; take control of 1 face-up monster opp controls until End Phase.
+        if (Effect_PayLP(source, 800))
+        {
+            Effect_ChangeControl(source, true);
+        }
     }
 
     void Effect_0238_BrainJacker(CardDisplay source)
