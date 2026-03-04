@@ -463,7 +463,7 @@ public partial class CardEffectManager
                 {
                     if (link.source == card && link.target != null)
                     {
-                        link.target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, -200, card));
+                        link.target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -200, card));
                         Debug.Log($"Stim-Pack: {link.target.CurrentCardData.name} perdeu 200 ATK.");
                     }
                 }
@@ -621,7 +621,7 @@ public partial class CardEffectManager
             CheckActiveCards("1283", (card) => {
                 if (card.isPlayerCard && card.battledThisTurn) // Simplificado: Se batalhou e sobreviveu
                 {
-                    card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 1000, card));
+                    card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 1000, card));
                     Debug.Log("Mucus Yolk: +1000 ATK.");
                 }
             });
@@ -750,8 +750,8 @@ public partial class CardEffectManager
                     // Limite de 4 turnos requer contador
                     if (card.spellCounters < 4)
                     {
-                        card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 100, card));
-                        card.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 100, card));
+                        card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 100, card));
+                        card.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 100, card));
                         card.spellCounters++; // Usa spellCounters para rastrear turnos
                         Debug.Log("Pumpking: +100 ATK/DEF (Standby).");
                     }

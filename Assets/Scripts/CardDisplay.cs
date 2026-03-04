@@ -83,9 +83,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public List<CardData> fusionMaterialsUsed = new List<CardData>();
 
     // Lista de modificadores ativos nesta carta
-    private List<StatModifier> activeModifiers = new List<StatModifier>();
-
-        // Lista de modificadores ativos nesta carta
     public List<StatModifier> activeModifiers = new List<StatModifier>(); // Changed to public
 
     public CardData CurrentCardData => currentCardData; // Propriedade pública para acesso seguro (Renomeado para evitar conflito)
