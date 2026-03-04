@@ -97,9 +97,12 @@ public partial class CardEffectManager : MonoBehaviour
     // public void OnDamageCalculation(CardDisplay attacker, CardDisplay target);
     // public void OnBattleEnd(CardDisplay attacker, CardDisplay target);
     // public void OnLifePointsGained(bool isPlayer, int amount);
-    // partial void OnCounterTrapResolvedImpl(CardDisplay trap);
-    // partial void OnCardAddedToHandImpl(CardDisplay card);
-    // partial void OnTributeImpl(CardDisplay card);
+    partial void OnSummonImpl(CardDisplay card);
+    partial void OnSetImpl(CardDisplay card);
+    partial void OnBattlePositionChangedImpl(CardDisplay card);
+    partial void OnCounterTrapResolvedImpl(CardDisplay trap);
+    partial void OnCardAddedToHandImpl(CardDisplay card);
+    partial void OnTributeImpl(CardDisplay card);
 
     void DestroyAllMonsters(bool targetOpponent, bool targetPlayer)
     {
