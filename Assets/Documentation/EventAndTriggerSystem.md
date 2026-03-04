@@ -268,12 +268,21 @@ Este sistema gerencia efeitos que não acontecem imediatamente, mas em uma fase 
 *   **Tributo Duplo:** O `SummonManager.HasEnoughTributes` agora verifica o monstro alvo. Cartas como *Unshaven Angler* contam como 2 tributos se o monstro invocado for do Atributo correto (WATER).
 
 #### Flags Globais de Turno
-O `BattleManager` e `CardEffectManager` agora suportam flags que alteram regras fundamentais por um turno:
+As flags que alteram regras fundamentais são distribuídas entre os gerenciadores conforme sua responsabilidade:
+
+**No `BattleManager`:**
 *   `forceDirectAttack`: Obriga ataques a serem diretos (*Absolute End*).
 *   `globalPiercing`: Todos os monstros causam dano perfurante (*Meteorain*).
-*   `reverseStats`: Inverte buffs/debuffs (*Reverse Trap*).
 *   `wabokuActive`: Previne dano de batalha e destruição (*Waboku*).
-*   `banishInsteadOfGraveyard`: Redireciona cartas para a zona de banimento (*Spirit Elimination*).
+*   `noBattleDamageThisTurn`: Previne dano de batalha (*Winged Kuriboh*).
+*   `cannotAttackFaceDown`: Impede ataques a monstros virados para baixo (*A Feint Plan*).
+*   `battlePositionsLocked`: Impede mudança de posição (*Mesmeric Control*).
+
+**No `CardEffectManager`:**
+*   `reverseStats`: Inverte buffs/debuffs (*Reverse Trap*).
+*   `banishInsteadOfGraveyard`: Redireciona cartas para a zona de banimento (*Spirit Elimination*, *Macro Cosmos*).
+*   `negateContinuousSpells`: Nega efeitos de magias contínuas (*Mystic Probe*).
+*   `redirectSpellTarget`: Redireciona o alvo de magias (*Mystical Refpanel*).
 
 ## 14. Boas Práticas para Adicionar Novas Cartas
 

@@ -11,8 +11,8 @@ O sistema é composto pelos seguintes arquivos:
 *   **Função:** Contém a estrutura base da classe (`MonoBehaviour`), o Singleton `Instance`, o dicionário de efeitos (`effectDatabase`) e o método `Awake`.
 *   **Métodos de Infraestrutura:** Contém métodos para coletar e destruir cartas em massa (`DestroyAllMonsters`, `CollectCards`).
 
-### 2. `CardEffectManager_Common.cs` (Reutilizáveis)
-*   **Função:** Contém métodos genéricos de efeitos usados por muitas cartas.
+### 2. `CardEffectManager_Impl.cs` (Implementação Base e Utilitários)
+*   **Função:** Contém métodos genéricos de efeitos usados por muitas cartas, lógica de manutenção e hooks de eventos principais (`OnPhaseStart`, `OnCardSentToGraveyard`, etc).
 *   **Exemplos:**
     *   `Effect_DirectDamage`: Causa dano direto.
     *   `Effect_GainLP`: Ganha pontos de vida.

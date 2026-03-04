@@ -14,8 +14,16 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `PerformSpecialSummon(cardGO, data)`: Abre o modal de escolha de posição e realiza Special Summon.
 *   `PlaySpellTrap(cardGO, data, isSet)`: Ativa ou Seta uma Magia/Armadilha.
 *   `ActivateFieldSpellTrap(cardGO)`: Ativa uma carta que já estava setada no campo.
+*   `TributeCard(card)`: Envia uma carta do campo para o cemitério como tributo (com VFX).
 *   `SendToGraveyard(card, isPlayer)`: Envia uma carta para o cemitério e atualiza visuais.
 *   `RemoveFromPlay(card, isPlayer)`: Bane uma carta (Remove de jogo).
+*   `DiscardCard(card)`: Descarta uma carta da mão para o cemitério.
+*   `DiscardHand(isPlayer)`: Descarta toda a mão.
+*   `ReturnToHand(card)`: Retorna uma carta do campo para a mão.
+*   `ReturnToDeck(card, toTop)`: Retorna uma carta para o Deck (topo ou fundo).
+*   `ShuffleDeck(isPlayer)`: Embaralha o deck.
+*   `MillCards(isPlayer, amount)`: Envia cartas do topo do deck para o cemitério.
+*   `CreateCardLink(source, target, type)`: Cria um vínculo lógico (ex: Equipamento) entre duas cartas.
 
 ## Visualização e UI
 *   `UpdateCardViewer(card, isFaceUp)`: Mostra a carta no painel lateral esquerdo (Card Viewer).
@@ -27,6 +35,8 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 ## Vida e Dano
 *   `DamagePlayer(int amount)`: Reduz LP do jogador, atualiza UI e checa derrota.
 *   `DamageOpponent(int amount)`: Reduz LP do oponente, atualiza UI e checa vitória.
+*   `PayLifePoints(isPlayer, amount)`: Tenta pagar LP. Retorna `false` se não tiver o suficiente.
+*   `GainLifePoints(isPlayer, amount)`: Aumenta os LP.
 
 ## Dados e Perfil
 *   `GetPlayerMainDeck()`: Retorna a lista atual do Deck.
@@ -38,3 +48,11 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `effectTestMode`: Habilita menu de teste de VFX.
 *   `canPlayerDrawFromDeck`: Permite clique no deck.
 *   `showOpponentHand`: Mostra cartas do oponente viradas para cima.
+
+## Mecânicas Especiais
+*   `BeginFusionSummon(source)`: Inicia o fluxo de UI para Invocação-Fusão.
+*   `PerformFusionSummon(...)`: Executa a fusão consumindo materiais.
+*   `BeginRitualSummon(source)`: Inicia o fluxo de UI para Invocação-Ritual.
+*   `PerformRitualSummon(...)`: Executa o ritual consumindo tributos.
+*   `TossCoin(count, callback)`: Executa animação de moeda e retorna resultado.
+*   `SpawnToken(...)`: Cria um Token Monster no campo.
