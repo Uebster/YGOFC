@@ -298,11 +298,9 @@ public partial class CardEffectManager
         // Take control of Union monster.
         if (SpellTrapManager.Instance != null)
         {
-            SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.description.Contains("Union") && t.position == CardDisplay.BattlePosition.Attack, // Face-up Union
                 (target) => {
-                    // Equipa o monstro do oponente no Union Rider
-                    GameManager.Instance.EquipMonsterToMonster(target, source);
+
                     
                     // Ganha ATK/DEF do equipado
                     source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, target.originalAtk, source));
@@ -939,7 +937,6 @@ public partial class CardEffectManager
     void Effect_2106_WoodlandSprite(CardDisplay source)
     {
         // Send 1 Equip Card equipped to this card to the GY. Inflict 500 damage.
-        Effect_DirectDamage(source, 500);
         List<CardDisplay> equippedCards = GetEquippedCards(source);
         
         if (equippedCards.Count > 0)
