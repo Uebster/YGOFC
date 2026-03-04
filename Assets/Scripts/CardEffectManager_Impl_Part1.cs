@@ -1272,7 +1272,13 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0118_AussaTheEarthCharmer(CardDisplay source)
     {
         // FLIP: Take control of 1 Earth monster.
-        Debug.Log("Aussa: Controle de monstro EARTH (Lógica de seleção pendente).");
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.attribute == "Earth",
+                (target) => GameManager.Instance.SwitchControl(target)
+            );
+        }
     }
 
     void Effect_0119_AutonomousActionUnit(CardDisplay source)
@@ -1430,8 +1436,19 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0135_BarkOfDarkRuler(CardDisplay source)
     {
         // Pay LP; reduce DEF of Fiend.
-        // O que falta: Seleção de alvo e custo de LP.
-        Debug.Log("Bark of Dark Ruler: Debuff de Fiend.");
+        // Pay 700 LP. Select 1 face-up Fiend-Type monster. It loses 700 DEF until the End Phase.
+        if (Effect_PayLP(source, 700))
+        {
+             if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.race == "Fiend",
+                    (target) => {
+                        target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -700, source));
+                    }
+                );
+            }
+        }
     }
 
     void Effect_0138_BarrelBehindTheDoor(CardDisplay source)
@@ -1463,7 +1480,28 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0145_BatterymanAA(CardDisplay source)
     {
         // ATK = 1000 * number of AA in Attack. DEF = 1000 * number of AA in Defense.
-        Debug.Log("Batteryman AA: Stats dinâmicos pendentes.");
+        int atkCount = 0;
+        int defCount = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all)
+            {
+                if (m.CurrentCardData.name == "Batteryman AA")
+                {
+                    if (m.position == CardDisplay.BattlePosition.Attack) atkCount++;
+                    else defCount++;
+                }
+            }
+        }
+        
+        source.RemoveModifiersFromSource(source);
+        if (source.position == CardDisplay.BattlePosition.Attack)
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, atkCount * 1000, source));
+        else
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, defCount * 1000, source));
     }
 
     void Effect_0146_BatterymanC(CardDisplay source)
@@ -1656,8 +1694,38 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0178_BigWaveSmallWave(CardDisplay source)
     {
         // Destroy all face-up Water; SS Water from hand equal to destroyed.
-        Debug.Log("Big Wave Small Wave: Substituição de monstros Water.");
-        // DestroyAllMonsters(true, true); // Filtrar por Water
+        List<CardDisplay> toDestroy = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            // "Destroy all face-up WATER monsters you control"
+            foreach(var m in all)
+            {
+                if (m.CurrentCardData.attribute == "Water" && !m.isFlipped) toDestroy.Add(m);
+            }
+        }
+        
+        int count = toDestroy.Count;
+        DestroyCards(toDestroy, source.isPlayerCard);
+        
+        if (count > 0)
+        {
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            List<CardData> waters = hand.FindAll(c => c.attribute == "Water" && c.type.Contains("Monster"));
+            
+            if (waters.Count > 0)
+            {
+                int max = Mathf.Min(count, waters.Count);
+                GameManager.Instance.OpenCardMultiSelection(waters, $"Invocar até {max} WATER", 1, max, (selected) => {
+                    foreach(var c in selected)
+                    {
+                        GameManager.Instance.SpecialSummonFromData(c, source.isPlayerCard);
+                        GameManager.Instance.RemoveCardFromHand(c, source.isPlayerCard);
+                    }
+                });
+            }
+        }
     }
 
     void Effect_0179_BigTuskedMammoth(CardDisplay source)
@@ -1769,15 +1837,38 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0199_BlastJuggler(CardDisplay source)
     {
         // Tribute (Standby): Destroy 2 face-up with ATK 1000 or less.
-        // O que falta: Trigger de Standby e seleção múltipla.
-        Debug.Log("Blast Juggler: Destruição em massa de monstros fracos.");
+        if (PhaseManager.Instance.currentPhase == GamePhase.Standby && source.isOnField)
+        {
+             GameManager.Instance.TributeCard(source);
+             // Simplificado: Destrói todos os alvos válidos (falta seleção múltipla exata de 2)
+             Debug.Log("Blast Juggler: Destruindo monstros com ATK <= 1000.");
+             // Lógica de destruição em massa filtrada pendente
+        }
     }
 
     void Effect_0200_BlastMagician(CardDisplay source)
     {
-        // Remove counters -> Destroy monster.
-        // O que falta: Sistema de Spell Counters.
-        Debug.Log("Blast Magician: Remove contadores para destruir.");
+        // Remove X counters -> Destroy 1 monster with ATK <= X * 700.
+        int counters = SpellCounterManager.Instance.GetCount(source);
+        if (counters > 0)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && t.currentAtk <= counters * 700,
+                    (target) => {
+                        // Calcula custo
+                        int needed = Mathf.CeilToInt(target.currentAtk / 700f);
+                        if (needed == 0) needed = 1; // Mínimo 1
+                        
+                        SpellCounterManager.Instance.RemoveCounter(source, needed);
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                    }
+                );
+            }
+        }
     }
 
     // =========================================================================================
