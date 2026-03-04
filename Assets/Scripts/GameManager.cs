@@ -419,7 +419,7 @@ public class GameManager : MonoBehaviour
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
         if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
 
-        // Destrói o objeto visual
+        // Destrói o objeto visual (Banish não vai pro GY, então não chama SendToGraveyard)
         Destroy(card.gameObject);
     }
 
@@ -445,7 +445,7 @@ public class GameManager : MonoBehaviour
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnTribute(card);
 
         // Envia para o GY (Lógica de dados)
-        SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+        SendToGraveyard(card.CurrentCardData, card.isPlayerCard, CardLocation.Field, SendReason.Tribute);
 
         // Destrói o objeto visual
         Destroy(card.gameObject);
@@ -486,7 +486,7 @@ public class GameManager : MonoBehaviour
         {
             CardData card = deck[0];
             deck.RemoveAt(0);
-            SendToGraveyard(card, isPlayer);
+            SendToGraveyard(card, isPlayer, CardLocation.Deck, SendReason.Mill);
             Debug.Log($"Mill: {card.name}");
         }
         UpdatePileVisuals();
@@ -499,7 +499,7 @@ public class GameManager : MonoBehaviour
         if (card.isPlayerCard) playerHand.Remove(card.gameObject);
         else opponentHand.Remove(card.gameObject);
 
-        SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+        SendToGraveyard(card.CurrentCardData, card.isPlayerCard, CardLocation.Hand, SendReason.Discarded);
         
         // Remove modificadores (caso raro de efeito na mão, mas seguro)
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
@@ -807,7 +807,7 @@ public class GameManager : MonoBehaviour
     }
 
     // Método para enviar carta para o cemitério (Exemplo de uso)
-    public void SendToGraveyard(CardData card, bool isPlayer)
+    public void SendToGraveyard(CardData card, bool isPlayer, CardLocation fromLocation = CardLocation.Unknown, SendReason reason = SendReason.Unknown)
     {
         if (isPlayer)
         {
@@ -841,7 +841,7 @@ public class GameManager : MonoBehaviour
         // Notifica o sistema de efeitos (Gatilhos Globais)
         if (CardEffectManager.Instance != null)
         {
-            CardEffectManager.Instance.OnCardSentToGraveyard(card, isPlayer);
+            CardEffectManager.Instance.OnCardSentToGraveyard(card, isPlayer, fromLocation, reason);
         }
 
         UpdatePileVisuals();
@@ -1448,7 +1448,7 @@ public class GameManager : MonoBehaviour
         Debug.Log($"Realizando Invocação-Ritual de {ritualMonster.name}...");
 
         // 1. Envia a Magia de Ritual para o cemitério
-        SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard);
+        SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard, CardLocation.Field, SendReason.Effect);
         Destroy(sourceCard.gameObject);
 
         // 2. Envia os tributos para o cemitério (da mão ou do campo)
@@ -1964,7 +1964,7 @@ public class GameManager : MonoBehaviour
         // 1. Envia a Magia de Fusão para o cemitério (se existir e for Spell)
         if (sourceCard != null)
         {
-            SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard);
+            SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard, CardLocation.Field, SendReason.Effect);
             Destroy(sourceCard.gameObject);
         }
 
@@ -1975,7 +1975,7 @@ public class GameManager : MonoBehaviour
             var handObj = playerHand.FirstOrDefault(go => go.GetComponent<CardDisplay>().CurrentCardData == mat);
             if (handObj != null)
             {
-                SendToGraveyard(mat, true); // Fusão é sempre do player neste contexto de UI
+                SendToGraveyard(mat, true, CardLocation.Hand, SendReason.Effect); // Fusão é sempre do player neste contexto de UI
                 playerHand.Remove(handObj);
                 Destroy(handObj);
             }
@@ -1985,7 +1985,7 @@ public class GameManager : MonoBehaviour
                 var fieldObj = FindCardOnField(mat.id, true);
                 if (fieldObj != null)
                 {
-                    SendToGraveyard(mat, true);
+                    SendToGraveyard(mat, true, CardLocation.Field, SendReason.Effect);
                     Destroy(fieldObj.gameObject);
                 }
             }
@@ -2012,7 +2012,7 @@ public class GameManager : MonoBehaviour
         if (targetZone == null)
         {
             Debug.LogWarning("Sem zona de S/T para equipar o monstro.");
-            SendToGraveyard(equipCard.CurrentCardData, equipCard.isPlayerCard);
+            SendToGraveyard(equipCard.CurrentCardData, equipCard.isPlayerCard, CardLocation.Field, SendReason.Rule);
             Destroy(equipCard.gameObject);
             return;
         }

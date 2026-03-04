@@ -552,11 +552,11 @@ public class BattleManager : MonoBehaviour
                 Debug.Log("Empate! Ambos destruídos.");
                 if (!wabokuActive)
                 {
-                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard, CardLocation.Field, SendReason.Battle);
                     Destroy(target.gameObject);
                 }
                 if (!attackerIsRocketWarrior && !wabokuActive) {
-                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard, CardLocation.Field, SendReason.Battle);
                     Destroy(attacker.gameObject);
                 }
             }
@@ -568,7 +568,7 @@ public class BattleManager : MonoBehaviour
                 Debug.Log("Vitória do Atacante! Alvo destruído (sem dano).");
                 if (!wabokuActive)
                 {
-                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard, CardLocation.Field, SendReason.Battle);
                     Destroy(target.gameObject);
                 }
             }
@@ -598,7 +598,7 @@ public class BattleManager : MonoBehaviour
                 if (GameManager.Instance.IsCardActiveOnField("0323"))
                 {
                     Debug.Log("Continuous Destruction Punch: Destruindo atacante.");
-                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard, CardLocation.Field, SendReason.Effect);
                     Destroy(attacker.gameObject);
                 }
 
@@ -611,7 +611,7 @@ public class BattleManager : MonoBehaviour
                 if (target.CurrentCardData.id == "0473" && atk < def)
                 {
                     Debug.Log("Des Kangaroo: Destruindo atacante (ATK < DEF).");
-                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard, CardLocation.Field, SendReason.Effect);
                     Destroy(attacker.gameObject);
                 }
             }

@@ -1,6 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+public enum CardLocation { Hand, Deck, Field, ExtraDeck, Graveyard, Banished, Unknown }
+public enum SendReason { Battle, Effect, Cost, Tribute, Destroyed, Discarded, Mill, Return, Rule, Unknown }
+
 public partial class CardEffectManager : MonoBehaviour
 {
     public static CardEffectManager Instance;

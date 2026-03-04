@@ -776,7 +776,7 @@ public partial class CardEffectManager
             card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 500, card));
     }
 
-    public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer)
+    public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, SendReason reason)
     {
         // Coffin Seller (0314): Dano quando monstro do oponente vai pro GY
         if (!isOwnerPlayer && card.type.Contains("Monster"))
@@ -803,24 +803,23 @@ public partial class CardEffectManager
         // 2031 - Vampire Lord
         if (card.id == "2031")
         {
-            // Deveria verificar se foi destruído por efeito de carta do oponente
-            Debug.Log("Vampire Lord: Agendado para reviver na próxima Standby.");
-            reviveNextStandby.Add(card);
+            // Revive se destruído por efeito do oponente (Simplificado: qualquer efeito)
+            if (reason == SendReason.Effect || reason == SendReason.Destroyed)
+            {
+                Debug.Log("Vampire Lord: Agendado para reviver na próxima Standby.");
+                reviveNextStandby.Add(card);
+            }
         }
 
         // 2032 - Vampire's Curse
         if (card.id == "2032")
         {
-            // Deveria verificar se foi destruído por batalha
-            Debug.Log("Vampire's Curse: Agendado para reviver na próxima Standby.");
-            reviveNextStandby.Add(card);
-        }
-
-        // 1578 - Sacred Phoenix of Nephthys
-        if (card.id == "1578")
-        {
-            // Deveria verificar se foi destruído por efeito de carta
-            Debug.Log("Sacred Phoenix of Nephthys: Destruído. (Marcar para reviver na próxima Standby).");
+            // Revive se destruído por batalha
+            if (reason == SendReason.Battle)
+            {
+                Debug.Log("Vampire's Curse: Agendado para reviver na próxima Standby.");
+                reviveNextStandby.Add(card);
+            }
         }
 
         // 1587 - Sangan
@@ -832,21 +831,21 @@ public partial class CardEffectManager
             // O método Effect_SearchDeck usa source.isPlayerCard.
             // Vamos criar um CardDisplay temporário ou refatorar Effect_SearchDeck.
             // Por enquanto, assumimos que o dono é o jogador atual se isOwnerPlayer for true.
-            if (isOwnerPlayer)
+            if (isOwnerPlayer && fromLocation == CardLocation.Field)
             {
                 Effect_SearchDeck(null, "Monster", "", 1500); // Precisa de refatoração para aceitar null source ou bool isPlayer
             }
         }
 
         // 2004 - UFO Turtle
-        if (card.id == "2004" && isOwnerPlayer) // Destroyed by battle
+        if (card.id == "2004" && isOwnerPlayer && reason == SendReason.Battle) // Destroyed by battle
         {
             Debug.Log("UFO Turtle: Invocando FIRE do Deck.");
             Effect_SpecialSummonFromDeck(null, attribute: "Fire", maxAtk: 1500, isPlayerOverride: isOwnerPlayer);
         }
 
         // 2005 - UFOroid
-        if (card.id == "2005" && isOwnerPlayer) // Destroyed by battle
+        if (card.id == "2005" && isOwnerPlayer && reason == SendReason.Battle) // Destroyed by battle
         {
             Debug.Log("UFOroid: Invocando Machine do Deck.");
             Effect_SpecialSummonFromDeck(null, race: "Machine", maxAtk: 1500, isPlayerOverride: isOwnerPlayer);
@@ -876,7 +875,7 @@ public partial class CardEffectManager
         }
 
         // 1010 - Keldo
-        if (card.id == "1010" && !isOwnerPlayer) // Destruído por batalha
+        if (card.id == "1010" && !isOwnerPlayer && reason == SendReason.Battle) // Destruído por batalha
         {
             // Shuffle 2 cards from opp GY to Deck
             Debug.Log("Keldo: Embaralhando 2 cartas do GY do oponente no Deck.");
@@ -884,11 +883,14 @@ public partial class CardEffectManager
         }
 
         // Despair from the Dark (0480): SS se enviado do Hand/Deck pelo oponente
-        if (card.id == "0480" && !isOwnerPlayer) // Enviado pelo oponente (simplificado)
+        if (card.id == "0480" && isOwnerPlayer) // Se foi para o MEU cemitério
         {
-            // Deveríamos checar se veio da Hand ou Deck.
-            Debug.Log("Despair from the Dark: Invocando do GY.");
-            GameManager.Instance.SpecialSummonFromData(card, true); // Assume dono é o player
+            // Verifica se veio da Mão ou Deck e se foi por efeito (simplificado: assume efeito do oponente se não for custo)
+            if ((fromLocation == CardLocation.Hand || fromLocation == CardLocation.Deck) && (reason == SendReason.Effect || reason == SendReason.Discarded || reason == SendReason.Mill))
+            {
+                Debug.Log("Despair from the Dark: Invocando do GY.");
+                GameManager.Instance.SpecialSummonFromData(card, true);
+            }
         }
 
         // Maji-Gire Panda (1144): Gain 500 ATK when Beast destroyed
@@ -899,26 +901,25 @@ public partial class CardEffectManager
             });
         }
 
-        // 1144 - Maji-Gire Panda
-        if (card.race == "Beast")
-        {
-            CheckActiveCards("1144", (panda) => {
-                panda.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Add, 500, panda));
-            });
-        }
-
-                // 1419 - Peten the Dark Clown
+        // 1419 - Peten the Dark Clown
         if (card.id == "1419")
         {
+            // Missing Timing Check: Se enviado como Custo ou Tributo, perde o timing.
+            if (reason == SendReason.Cost || reason == SendReason.Tribute)
+            {
+                Debug.Log("Peten the Dark Clown: Perdeu o timing (Enviado como Custo/Tributo).");
+                return;
+            }
+
             // Banish this card to SS Peten from hand/Deck
             // Pergunta ao jogador (Simulado)
-            Debug.Log("Peten: Deseja banir para invocar outro? (Simulado: Sim)");
+            Debug.Log("Peten: Ativando efeito (Banir para invocar).");
             GameManager.Instance.RemoveFromPlay(card, isOwnerPlayer); // Bane do GY
             Effect_SearchDeck(null, "Peten the Dark Clown"); // Deveria ser SS direto
         }
 
         // 1438 - Pixie Knight
-        if (card.id == "1438" && !isOwnerPlayer) // Enviado pelo oponente (batalha)
+        if (card.id == "1438" && !isOwnerPlayer && reason == SendReason.Battle) // Enviado pelo oponente (batalha)
         {
             // Oponente escolhe Spell no GY e põe no topo do Deck
             List<CardData> gy = GameManager.Instance.GetPlayerGraveyard(); // GY do dono do Pixie
@@ -956,7 +957,7 @@ public partial class CardEffectManager
         }
 
         // 1241 - Mine Golem
-        if (card.id == "1241" && !isOwnerPlayer)
+        if (card.id == "1241" && !isOwnerPlayer && reason == SendReason.Battle)
         {
             // Assume destruído por batalha
             GameManager.Instance.DamageOpponent(500);
@@ -988,14 +989,14 @@ public partial class CardEffectManager
         }
 
         // 1331 - Neko Mane King
-        if (card.id == "1331" && !isOwnerPlayer && !GameManager.Instance.isPlayerTurn) // Enviado pelo oponente no turno dele
+        if (card.id == "1331" && isOwnerPlayer && !GameManager.Instance.isPlayerTurn && reason == SendReason.Effect) // Enviado pelo oponente no turno dele por efeito
         {
             Debug.Log("Neko Mane King: Encerrando turno do oponente.");
             if (PhaseManager.Instance != null) PhaseManager.Instance.ChangePhase(GamePhase.End);
         }
 
         // 1338 - Newdoria
-        if (card.id == "1338" && !isOwnerPlayer) // Destruído por batalha
+        if (card.id == "1338" && !isOwnerPlayer && reason == SendReason.Battle) // Destruído por batalha
         {
             if (SpellTrapManager.Instance != null)
             {
@@ -1012,7 +1013,7 @@ public partial class CardEffectManager
         }
 
         // 1346 - Nimble Momonga
-        if (card.id == "1346" && !isOwnerPlayer) // Destruído por batalha
+        if (card.id == "1346" && !isOwnerPlayer && reason == SendReason.Battle) // Destruído por batalha
         {
             GameManager.Instance.GainLifePoints(true, 1000); // Assume dono é player
             List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
@@ -1028,7 +1029,7 @@ public partial class CardEffectManager
         }
 
         // 1412 - Penguin Knight
-        if (card.id == "1412" && !isOwnerPlayer) // Destruído por batalha
+        if (card.id == "1412" && isOwnerPlayer && fromLocation == CardLocation.Deck && reason == SendReason.Mill) // Enviado do Deck ao GY por efeito oponente
         {
             // Shuffle GY into Deck
             Debug.Log("Penguin Knight: GY embaralhado no Deck.");
@@ -1058,7 +1059,7 @@ public partial class CardEffectManager
         }
 
         // 1508 - Regenerating Mummy
-        if (card.id == "1508" && isOwnerPlayer)
+        if (card.id == "1508" && isOwnerPlayer && fromLocation == CardLocation.Hand && reason == SendReason.Discarded)
         {
             // Se enviado da mão para o GY por efeito do oponente
             // Requer verificação de contexto (quem causou o descarte)
@@ -1067,7 +1068,7 @@ public partial class CardEffectManager
         }
 
         // 1548 - Roc from the Valley of Haze
-        if (card.id == "1548" && isOwnerPlayer)
+        if (card.id == "1548" && isOwnerPlayer && fromLocation == CardLocation.Hand)
         {
             // Se enviado da mão para o GY, volta ao Deck
             Debug.Log("Roc from the Valley of Haze: Voltando ao Deck.");
@@ -1088,7 +1089,7 @@ public partial class CardEffectManager
         // Vamos assumir que o CardEffectManager lida com a ativação.
         
         // 1766 - Statue of the Wicked
-        if (card.id == "1766" && isOwnerPlayer) // Se destruída (simplificado, deveria checar face-down)
+        if (card.id == "1766" && isOwnerPlayer && reason == SendReason.Destroyed) // Se destruída
         {
             // Assume que estava face-down se foi destruída por efeito (difícil rastrear aqui)
             Debug.Log("Statue of the Wicked: Invocando Wicked Token.");
@@ -1096,7 +1097,7 @@ public partial class CardEffectManager
         }
         
         // 1870 - The Immortal of Thunder
-        if (card.id == "1870" && isOwnerPlayer)
+        if (card.id == "1870" && isOwnerPlayer && fromLocation == CardLocation.Field)
         {
             GameManager.Instance.PayLifePoints(isOwnerPlayer, 5000);
         }
