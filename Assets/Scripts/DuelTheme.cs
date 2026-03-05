@@ -59,7 +59,8 @@ public class DuelTheme : ScriptableObject
     public float fontSizeMultiplier = 1.0f; // Para ajustar tamanhos se a fonte for pequena
 
     [Header("Outlines & Highlights")]
-    public Color hoverOutlineColor = Color.yellow;
+    public Color playerHoverColor = new Color(0.5f, 1f, 0.5f, 1f); // Verde claro
+    public Color opponentHoverColor = Color.yellow;
     public Color phaseActiveColor = new Color(1f, 0.8f, 0f, 1f);
     public Color phaseInactiveColor = new Color(0.2f, 0.2f, 0.2f, 0.8f);
 

@@ -151,7 +151,8 @@ public class DuelThemeManager : MonoBehaviour
         // 3. Atualiza Cores Globais no GameManager (para CardDisplay usar)
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.themeHoverColor = theme.hoverOutlineColor;
+            GameManager.Instance.playerHoverColor = theme.playerHoverColor;
+            GameManager.Instance.opponentHoverColor = theme.opponentHoverColor;
         }
 
         // 4. Atualiza Phase Manager
@@ -159,7 +160,8 @@ public class DuelThemeManager : MonoBehaviour
         {
             PhaseManager.Instance.phaseActiveColor = theme.phaseActiveColor;
             PhaseManager.Instance.phaseInactiveColor = theme.phaseInactiveColor;
-            PhaseManager.Instance.phaseOutlineColor = theme.hoverOutlineColor; // Reusa a cor de hover ou cria uma nova no Theme
+            // A cor de hover dos botões de fase será atualizada dinamicamente pelo PhaseManager
+            PhaseManager.Instance.UpdateHoverColors(GameManager.Instance.isPlayerTurn);
         }
 
         // 5. Atualiza FX

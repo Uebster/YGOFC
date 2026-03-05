@@ -137,7 +137,8 @@ public class GameManager : MonoBehaviour
     public bool isPlayerTurn = true; // Rastreia de quem é o turno
 
     [Header("Runtime Theme Settings")]
-    public Color themeHoverColor = Color.yellow; // Atualizado pelo DuelThemeManager
+    public Color playerHoverColor = new Color(0.5f, 1f, 0.5f, 1f); // Verde claro
+    public Color opponentHoverColor = Color.yellow;
 
     private bool hasDrawnThisTurn = false; // Controle de draw por turno
     public bool revealOpponentDraw = false; // Pikeru's Second Sight (1431)
@@ -893,6 +894,12 @@ public void ShuffleDeck(bool isPlayer)
     {
         isPlayerTurn = !isPlayerTurn;
         if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
+
+        // Atualiza as cores de hover dos botões de fase para o turno atual
+        if (PhaseManager.Instance != null)
+        {
+            PhaseManager.Instance.UpdateHoverColors(isPlayerTurn);
+        }
         
         // Se for turno do oponente, inicia a IA
         if (!isPlayerTurn && OpponentAI.Instance != null)

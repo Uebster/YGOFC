@@ -21,11 +21,6 @@ public class PhaseManager : MonoBehaviour
     public Color phaseActiveColor = new Color(1f, 0.8f, 0f, 1f);
     public Color phaseInactiveColor = new Color(0.2f, 0.2f, 0.2f, 0.8f);
     
-    [Header("Efeito Neon (Outline)")]
-    public bool enablePhaseNeonEffect = true;
-    public Color phaseOutlineColor = new Color(1f, 0.8f, 0f, 1f); // Cor do brilho
-    public Vector2 phaseOutlineDistance = new Vector2(3, -3); // Espessura/Distância do brilho
-
     [Header("Controle de Pulo de Fase")]
     // Flags para o turno ATUAL
     public bool skipDrawPhase = false;
@@ -66,7 +61,12 @@ public class PhaseManager : MonoBehaviour
                     Image img = pObj.GetComponent<Image>();
 
                     if (btn != null) { phaseButtons[phaseEnum] = btn; }
-                    if (img != null) { phaseImages[phaseEnum] = img; }
+                    if (img != null) 
+                    { 
+                        phaseImages[phaseEnum] = img; 
+                        // Garante que o botão de fase tenha o script MillenniumButton para o hover funcionar
+                        if (btn.GetComponent<MillenniumButton>() == null) btn.gameObject.AddComponent<MillenniumButton>();
+                    }
 
                     if (btn != null) btn.onClick.AddListener(() => TryChangePhase(phaseEnum));
                 }
@@ -224,6 +224,22 @@ public class PhaseManager : MonoBehaviour
         ChangePhase(newPhase);
     }
 
+    public void UpdateHoverColors(bool isPlayerTurn)
+    {
+        if (GameManager.Instance == null) return;
+
+        Color hoverColor = isPlayerTurn ? GameManager.Instance.playerHoverColor : GameManager.Instance.opponentHoverColor;
+
+        foreach (var button in phaseButtons.Values)
+        {
+            MillenniumButton mb = button.GetComponent<MillenniumButton>();
+            if (mb != null)
+            {
+                mb.textHoverColor = hoverColor;
+            }
+        }
+    }
+
     private void UpdatePhaseButtonsUI()
     {
         bool devMode = GameManager.Instance != null && GameManager.Instance.devMode;
@@ -239,19 +255,13 @@ public class PhaseManager : MonoBehaviour
                 bool isCurrent = (phase == currentPhase);
                 image.color = isCurrent ? phaseActiveColor : phaseInactiveColor;
 
+                // O efeito de brilho agora usa a cor de hover do turno atual
                 Outline outline = image.GetComponent<Outline>();
-                if (enablePhaseNeonEffect)
-                {
-                    if (outline == null) outline = image.gameObject.AddComponent<Outline>();
+                if (outline == null) outline = image.gameObject.AddComponent<Outline>();
 
-                    outline.enabled = isCurrent;
-                    outline.effectColor = phaseOutlineColor;
-                    outline.effectDistance = phaseOutlineDistance;
-                }
-                else
-                {
-                    if (outline != null) outline.enabled = false;
-                }
+                outline.enabled = isCurrent;
+                outline.effectColor = GameManager.Instance.isPlayerTurn ? GameManager.Instance.playerHoverColor : GameManager.Instance.opponentHoverColor;
+                outline.effectDistance = new Vector2(3, -3);
             }
 
             // Atualiza a interatividade do botão
