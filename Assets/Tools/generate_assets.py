@@ -55,7 +55,6 @@ def parse_poc_cards(filepath, game_name):
         card = {
             "id": int(num),
             "name": name,
-            "game_of_origin": game_name,
             "description": ""
         }
 
@@ -116,7 +115,6 @@ def parse_fm_cards(filepath, game_name):
             card = {
                 "id": fm_id,
                 "name": name,
-                "game_of_origin": game_name,
                 "description": "No description available."
             }
             
@@ -168,7 +166,6 @@ def parse_tsv_cards(filepath, game_name):
                 card = {
                     "id": int(fm_id),
                     "name": name,
-                    "game_of_origin": game_name,
                     "description": ""
                 }
                 
@@ -201,7 +198,6 @@ def parse_tsv_cards(filepath, game_name):
                 cards[clean_name(parts[1]).lower()] = {
                     "id": int(parts[0]), 
                     "name": clean_name(parts[1]), 
-                    "game_of_origin": game_name
                 }
         except:
             continue
@@ -283,7 +279,6 @@ def generate():
                 # Se a carta atual tem descrição e a antiga não, atualiza
                 if card_data.get("description") and not existing.get("description"):
                     existing["description"] = card_data["description"]
-                    existing["game_of_origin"] = card_data["game_of_origin"] # Atualiza origem para a mais rica
                 
                 count_update += 1
             else:
