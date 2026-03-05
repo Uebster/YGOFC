@@ -139,8 +139,12 @@ def task_executor(tipo, folder, start, end, region):
                     desc = c.get('desc', '').replace('\n', ' ').replace('\r', ' ')
 
                     if "Monster" in tipo_api:
-                        # Identifica subtipo (Normal ou Efeito)
-                        sub_tipo = "Normal" if "Normal" in tipo_api else "Effect"
+                        # Identifica subtipo (Normal, Efeito, Fusão, Ritual)
+                        if "Fusion" in tipo_api: sub_tipo = "Fusion"
+                        elif "Ritual" in tipo_api: sub_tipo = "Ritual"
+                        elif "Normal" in tipo_api: sub_tipo = "Normal"
+                        else: sub_tipo = "Effect"
+                        
                         raca = c.get('race', '-')
                         lv = c.get('level', '-')
                         atk = c.get('atk', '-')

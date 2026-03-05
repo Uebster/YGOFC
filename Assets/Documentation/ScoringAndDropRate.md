@@ -37,13 +37,23 @@ A pontuação final determina o Rank:
 *   **C:** 3000 - 3999 pts.
 *   **D:** < 3000 pts (Vitória pobre ou Derrota).
 
-## Sistema de Drop (Planejado)
-Cada oponente na `CampaignDatabase` possui uma lista de `rewards` (IDs de cartas).
+## Sistema de Drop (Implementado)
+Cada oponente na `CampaignDatabase` possui um objeto `rewards` estruturado por Tiers.
 Ao vencer:
 1.  O jogo calcula o Rank.
-2.  O Rank define a **probabilidade** e o **pool** de saque.
-    *   **Rank S:** Alta chance de cartas Raras/Super Raras do oponente. Pode dropar até 3 cartas.
-    *   **Rank A:** Chance média de cartas Raras. Dropa 1-2 cartas.
-    *   **Rank B/C/D:** Apenas cartas comuns ou "lixo" (Fodder).
+2.  O Rank define as probabilidades de saque de cada pool de cartas:
 
-*Nota: O sistema de entrega de cartas (adicionar ao Trunk) é acionado pelo `GameManager` ao final do duelo, usando os dados do `DuelScoreManager`.*
+| Rank Obtido | S+ (Única) | Pool S (Top) | Pool B (Mid) | Pool C (Low) | Pool D (Fodder) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **S+ (Deck Out)** | **15%** | 34% | 25.5% | 17% | 8.5% |
+| **S / A+ / A** | 0% | **40%** | 30% | 20% | 10% |
+| **B+ / B** | 0% | 10% | **40%** | 30% | 20% |
+| **C+ / C** | 0% | 3% | 17% | **40%** | 40% |
+| **D** | 0% | 1% | 4% | 25% | **70%** |
+
+### Estrutura do JSON
+O campo `rewards` no `characters.json` contém:
+*   `s_plus`: ID único da carta especial.
+*   `s`, `b`, `c`, `d`: Listas (arrays) de IDs de cartas classificadas por poder.
+
+*Nota: No Rank S+, se o sorteio de 15% da carta única falhar, o jogo distribui os 85% restantes proporcionalmente entre os pools S, B, C e D seguindo a distribuição do Rank S (Melhor cenário possível).*

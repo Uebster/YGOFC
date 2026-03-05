@@ -25,6 +25,24 @@ ACT_POOL_RANGES = {
     10: (4.5, 5.5) # God Tier / Banlist
 }
 
+# --- CONFIGURAÇÃO DE CARTAS ASSINATURA ---
+# Mapeia parte do ID do personagem para uma lista de IDs de cartas obrigatórias
+SIGNATURE_CARDS = {
+    "kaiba": ["0217", "0217", "0217"], # Blue-Eyes White Dragon x3
+    "yugi": ["0419"], # Dark Magician
+    "joey": ["1504"], # Red-Eyes B. Dragon
+    "pegasus": ["1513", "1950"], # Relinquished, Toon World
+    "mai": ["0867", "0867", "0867"], # Harpie Lady x3
+    "weevil": ["0825", "0313", "1422"], # Great Moth combo
+    "rex": ["1995"], # Two-Headed King Rex
+    "mako": ["1876"], # The Legendary Fisherman
+    "bandit": ["0139"], # Barrel Dragon
+    "marik": ["1060"], # Lava Golem
+    "bakura": ["0427"], # Dark Necrofear
+    "ishizu": ["0613"], # Exchange of the Spirit
+    "odion": ["0590"], # Embodiment of Apophis
+}
+
 # --- FUNÇÕES AUXILIARES ---
 
 def load_json(path):
@@ -84,10 +102,33 @@ def format_deck_list_custom(deck_list):
     content = ",\n".join(lines)
     return f"[\n{content}\n    ]"
 
-def generate_deck(act, difficulty_modifier, cards_by_pool, all_cards_map, dependency_map):
+def generate_deck(act, difficulty_modifier, cards_by_pool, all_cards_map, dependency_map, forced_cards=None, unique_pool=None):
     deck = []
     extra_deck = []
     
+    # 1. Adiciona Cartas Assinatura (Forced)
+    if forced_cards:
+        for cid in forced_cards:
+            if cid in all_cards_map:
+                c_data = all_cards_map[cid]
+                if "Fusion" in c_data["type"]:
+                    if len(extra_deck) < 15: extra_deck.append(cid)
+                else:
+                    # Adiciona ao deck (mesmo que passe de 40, o loop abaixo não adicionará mais)
+                    deck.append(cid)
+    
+    # 2. Adiciona Cartas Únicas/Exclusivas (Garante que elas estejam no deck para serem dropadas)
+    if unique_pool:
+        for cid in unique_pool:
+            if cid in all_cards_map:
+                c_data = all_cards_map[cid]
+                if "Fusion" in c_data["type"]:
+                    if len(extra_deck) < 15 and extra_deck.count(cid) < 3:
+                        extra_deck.append(cid)
+                elif deck.count(cid) < 3:
+                    # Prioridade alta para entrar no deck
+                    deck.append(cid)
+
     # Define o range de pools
     min_pool, max_pool = ACT_POOL_RANGES.get(act, (1.1, 1.5))
     
@@ -192,6 +233,46 @@ def main():
     # Mapa de dependências
     print("-> Analisando sinergias...")
     dependency_map = build_dependency_map(cards)
+    
+    # --- ALOCAÇÃO DE CARTAS ÚNICAS (EXCLUSIVE DROPS) ---
+    print("-> Distribuindo cartas exclusivas...")
+    used_unique_ids = set()
+    char_unique_map = {} # char_id -> list of card_ids
+
+    # Embaralha personagens para distribuição justa se não houver hardcode
+    # Mas mantemos a ordem para priorizar os primeiros atos com cartas mais fracas
+    
+    for char in characters:
+        char_id = char["id"]
+        act = get_act_from_id(char_id)
+        char_unique_map[char_id] = []
+        
+        # 1. Tenta atribuir Signatures Hardcoded (se ainda não usadas por outro char)
+        char_id_lower = char_id.lower()
+        for key, sigs in SIGNATURE_CARDS.items():
+            if key in char_id_lower:
+                for sig_id in sigs:
+                    if sig_id not in used_unique_ids and sig_id in all_cards_map:
+                        char_unique_map[char_id].append(sig_id)
+                        used_unique_ids.add(sig_id)
+        
+        # 2. Preenche até 7 cartas com cartas aleatórias do Pool do Ato
+        target_count = 7
+        min_p, max_p = ACT_POOL_RANGES.get(act, (1.1, 1.5))
+        
+        # Coleta candidatos do pool atual que ainda não são únicos de ninguém
+        candidates = []
+        for p, ids in cards_by_pool.items():
+            if min_p <= p <= max_p + 0.5: # +0.5 para dar um pouco de "tempero" raro
+                for cid in ids:
+                    if cid not in used_unique_ids:
+                        candidates.append(cid)
+        
+        needed = target_count - len(char_unique_map[char_id])
+        if needed > 0 and candidates:
+            picked = random.sample(candidates, min(len(candidates), needed))
+            char_unique_map[char_id].extend(picked)
+            used_unique_ids.update(picked)
 
     print(f"-> Gerando decks para {len(characters)} personagens...")
     
@@ -199,10 +280,20 @@ def main():
     for char in characters:
         act = get_act_from_id(char["id"])
         
+        # Identifica cartas assinatura pelo ID do personagem
+        forced = []
+        char_id_lower = char["id"].lower()
+        for key, sigs in SIGNATURE_CARDS.items():
+            if key in char_id_lower:
+                forced.extend(sigs)
+
+        # Pega as cartas únicas atribuídas a este personagem
+        uniques = char_unique_map.get(char["id"], [])
+
         # Gera 3 variações
-        char["deck_A"] = generate_deck(act, "A", cards_by_pool, all_cards_map, dependency_map)
-        char["deck_B"] = generate_deck(act, "B", cards_by_pool, all_cards_map, dependency_map)
-        char["deck_C"] = generate_deck(act, "C", cards_by_pool, all_cards_map, dependency_map)
+        char["deck_A"] = generate_deck(act, "A", cards_by_pool, all_cards_map, dependency_map, forced, uniques)
+        char["deck_B"] = generate_deck(act, "B", cards_by_pool, all_cards_map, dependency_map, forced, uniques)
+        char["deck_C"] = generate_deck(act, "C", cards_by_pool, all_cards_map, dependency_map, forced, uniques)
         
         print(f"   [{char['id']}] Ato {act} - Decks Gerados ({len(char['deck_A'])} cartas)")
 
@@ -220,6 +311,10 @@ def main():
             f.write(f'    "id": "{char["id"]}",\n')
             f.write(f'    "name": "{char["name"]}",\n')
             
+            # Salva a lista de drops únicos para o gerador de rewards usar
+            uniques_str = json.dumps(char_unique_map.get(char["id"], []))
+            f.write(f'    "unique_drops": {uniques_str},\n')
+
             # Escreve os decks com formatação especial
             f.write(f'    "deck_A": {format_deck_list_custom(char["deck_A"])},\n')
             f.write(f'    "deck_B": {format_deck_list_custom(char["deck_B"])},\n')

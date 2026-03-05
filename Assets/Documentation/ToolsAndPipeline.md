@@ -51,6 +51,26 @@ Gera o arquivo `characters.json` que define os oponentes da campanha.
 *   **Preenchimento:** Se o deck temático não atingir 40 cartas, o script preenche o restante com cartas aleatórias válidas do banco de dados.
 *   **Saída:** `Assets/StreamingAssets/characters.json` (ou pasta configurada).
 
+### Geração de Decks (`generate_character_decks.py`)
+*   **Função:** Preenche os decks (A, B, C) dos personagens automaticamente.
+*   **Lógica:**
+    *   Analisa o Ato do personagem (ex: ID 015 = Ato 2).
+    *   Seleciona cartas baseadas no Pool permitido para aquele Ato.
+    *   Inclui cartas "Assinatura" (ex: Blue-Eyes para Kaiba) obrigatoriamente.
+    *   Verifica dependências (ex: se adicionar Polimerização, tenta adicionar Fusões).
+*   **Formatação:** Gera o JSON com quebras de linha a cada 10 IDs para facilitar leitura humana.
+
+### Geração de Recompensas (`generate_character_rewards.py`)
+*   **Função:** Define a lista de drops (`rewards`) para cada personagem.
+*   **Estrutura de Drop:**
+    *   **S+ (Única):** Seleciona a carta mais forte ou assinatura do personagem.
+    *   **Pool Geral:** Coleta todas as cartas usadas nos 3 decks + cartas de preenchimento (filler) para atingir ~120 cartas.
+    *   **Classificação:** Ordena o pool por poder e divide em 4 tiers:
+        *   **Rank S/A:** Top 15% mais fortes.
+        *   **Rank B:** Intermediárias (25%).
+        *   **Rank C:** Fracas (30%).
+        *   **Rank D:** Lixo/Fodder (30%).
+
 ## 4. Aquisição de Dados (`download_cards.py`)
 
 Uma ferramenta web (servidor Flask local) para baixar dados brutos e imagens da API *YGOPRODeck*.
