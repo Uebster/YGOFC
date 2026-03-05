@@ -244,14 +244,20 @@ public class PhaseManager : MonoBehaviour
     {
         if (GameManager.Instance == null) return;
 
-        Color hoverColor = isPlayerTurn ? GameManager.Instance.playerHoverColor : GameManager.Instance.opponentHoverColor;
+        // Usa as cores específicas de fase se definidas, senão usa as genéricas, respeitando o switch
+        Color hoverColor = isPlayerTurn ? GameManager.Instance.phaseHoverColorPlayer : GameManager.Instance.phaseHoverColorOpponent;
+        bool enableHover = GameManager.Instance.enablePhaseHoverEffect;
 
         foreach (var button in phaseButtons.Values)
         {
             MillenniumButton mb = button.GetComponent<MillenniumButton>();
             if (mb != null)
             {
-                mb.textHoverColor = hoverColor;
+                // Se o efeito estiver ativado, aplica a cor. Se não, mantém a cor normal (sem efeito visual de hover)
+                // Nota: MillenniumButton usa bgHoverColor para o fundo.
+                mb.useColorTint = enableHover; 
+                if (enableHover) mb.bgHoverColor = hoverColor;
+                // O texto pode manter o hover padrão ou seguir a cor, aqui deixamos opcional
             }
         }
     }
@@ -292,8 +298,9 @@ public class PhaseManager : MonoBehaviour
                 }
                 else
                 {
-                    // No modo normal, só pode avançar. A lógica de qual fase pode ir para qual está em TryChangePhase.
-                    button.interactable = (int)phase > (int)currentPhase;
+                    // No modo normal, só pode avançar E se for turno do jogador
+                    bool isMyTurn = GameManager.Instance != null && GameManager.Instance.isPlayerTurn;
+                    button.interactable = isMyTurn && ((int)phase > (int)currentPhase);
                 }
             }
         }

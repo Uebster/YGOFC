@@ -139,11 +139,18 @@ public class GameManager : MonoBehaviour
     [Header("Runtime Theme Settings")]
     public Color playerHoverColor = new Color(0.5f, 1f, 0.5f, 1f); // Verde claro
     public Color opponentHoverColor = Color.yellow;
+    [Header("Phase Indicator Settings")]
+    public bool enablePhaseHoverEffect = true;
+    public Color phaseHoverColorPlayer = new Color(0.5f, 1f, 0.5f, 0.5f); // Verde semitransparente
+    public Color phaseHoverColorOpponent = new Color(1f, 0.92f, 0.016f, 0.5f); // Amarelo semitransparente
 
     [Header("Visual Feedback")]
     [Tooltip("Habilita o efeito de escurecer a carta ao selecioná-la para atacar.")]
     public bool enableAttackSelectionVisual = true;
     public Color attackSelectionColor = new Color(0.6f, 0.6f, 0.6f, 1f);
+    [Tooltip("Habilita a animação de projétil (espada) durante o ataque.")]
+    public bool enableAttackAnimation = true;
+    public GameObject attackAnimationPrefab; // Prefab da espada/projétil
 
     private bool hasDrawnThisTurn = false; // Controle de draw por turno
     public bool revealOpponentDraw = false; // Pikeru's Second Sight (1431)
@@ -191,6 +198,7 @@ public class GameManager : MonoBehaviour
             InitializePlayerDeck();
             InitializeOpponentDeck();
             DrawInitialHand(5);
+            DrawInitialOpponentHand(5); // Garante que o oponente comece com cartas
         }
     }
 
@@ -269,6 +277,7 @@ public class GameManager : MonoBehaviour
         if (ChainManager.Instance == null) CreateManager<ChainManager>();
         if (SpellCounterManager.Instance == null) CreateManager<SpellCounterManager>();
         if (CardEffectManager.Instance == null) CreateManager<CardEffectManager>();
+        if (OpponentAI.Instance == null) CreateManager<OpponentAI>(); // Garante que a IA exista
 
         // Cria o gerenciador de testes se o modo estiver ativo
         if (effectTestMode && FindFirstObjectByType<EffectTestManager>() == null) CreateManager<EffectTestManager>();

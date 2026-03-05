@@ -178,7 +178,16 @@ public class DuelFXManager : MonoBehaviour
             onHit?.Invoke();
             return;
         }
-        StartCoroutine(AttackRoutine(attacker, target, onHit));
+
+        // Verifica se deve usar a nova animação de projétil (espada) ou a clássica (mover carta)
+        if (GameManager.Instance != null && GameManager.Instance.enableAttackAnimation)
+        {
+            StartCoroutine(AttackProjectileRoutine(attacker, target, onHit));
+        }
+        else
+        {
+            StartCoroutine(AttackRoutine(attacker, target, onHit));
+        }
     }
 
     private IEnumerator AttackRoutine(CardDisplay attacker, CardDisplay target, System.Action onHit)
@@ -217,6 +226,55 @@ public class DuelFXManager : MonoBehaviour
             attacker.transform.position = Vector3.Lerp(targetPos, startPos, t);
             yield return null;
         }
+    }
+
+    // Esqueleto da nova animação de ataque (Espada/Projétil)
+    private IEnumerator AttackProjectileRoutine(CardDisplay attacker, CardDisplay target, System.Action onHit)
+    {
+        Vector3 startPos = attacker.transform.position;
+        Vector3 endPos;
+
+        // Define o destino: Centro da carta alvo ou Avatar do oponente (Ataque Direto)
+        if (target != null)
+        {
+            endPos = target.transform.position;
+        }
+        else
+        {
+            // Ataque Direto: Tenta pegar a posição do avatar do oponente
+            if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null && GameManager.Instance.duelFieldUI.opponentAvatarImage != null)
+                endPos = GameManager.Instance.duelFieldUI.opponentAvatarImage.transform.position;
+            else
+                endPos = startPos + Vector3.up * 5f; // Fallback (cima)
+        }
+
+        // Instancia o projétil (Espada) se houver prefab
+        GameObject projectile = null;
+        if (GameManager.Instance != null && GameManager.Instance.attackAnimationPrefab != null)
+        {
+            projectile = Instantiate(GameManager.Instance.attackAnimationPrefab, startPos, Quaternion.identity);
+            // Faz o projétil olhar para o alvo
+            projectile.transform.LookAt(endPos); 
+            // Se for 2D, pode precisar de ajuste de rotação diferente (ex: LookAt2D)
+        }
+
+        PlaySound(attackSound);
+
+        float duration = 0.4f; // Duração do voo
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            if (projectile != null) projectile.transform.position = Vector3.Lerp(startPos, endPos, elapsed / duration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (projectile != null) Destroy(projectile);
+        
+        // Impacto
+        SpawnVFX(attackVFX, endPos);
+        onHit?.Invoke();
     }
 
     public void PlayDestruction(CardDisplay card)
