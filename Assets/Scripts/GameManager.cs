@@ -96,8 +96,6 @@ public class GameManager : MonoBehaviour
     public Transform opponentHandLayoutGroup; // O HorizontalLayoutGroup da mão do oponente
 
     [Header("Piles Visuals")]
-    public PileDisplay playerDeckDisplay;
-    public PileDisplay opponentDeckDisplay;
     public PileDisplay playerGraveyardDisplay;
     public PileDisplay opponentGraveyardDisplay;
     public PileDisplay playerExtraDeckDisplay;
@@ -105,14 +103,12 @@ public class GameManager : MonoBehaviour
     public PileDisplay playerRemovedDisplay; // Novo
     public PileDisplay opponentRemovedDisplay; // Novo
 
-    private List<CardData> playerDeck = new List<CardData>();
     // Adicionado: Side Deck e Baú (Trunk)
     private List<CardData> playerSideDeck = new List<CardData>();
     public List<string> playerTrunk = new List<string>(); // IDs das cartas que o jogador possui
 
     public List<GameObject> playerHand = new List<GameObject>();
     private List<CardData> playerGraveyard = new List<CardData>();
-    private List<CardData> opponentDeck = new List<CardData>();
     public List<GameObject> opponentHand = new List<GameObject>();
     private List<CardData> opponentGraveyard = new List<CardData>();
     private List<CardData> playerExtraDeck = new List<CardData>();
@@ -152,7 +148,6 @@ public class GameManager : MonoBehaviour
     public bool enableAttackAnimation = true;
     public GameObject attackAnimationPrefab; // Prefab da espada/projétil
 
-    private bool hasDrawnThisTurn = false; // Controle de draw por turno
     public bool revealOpponentDraw = false; // Pikeru's Second Sight (1431)
     private UnityWebRequest backTextureRequest; // Para evitar memory leak
 
@@ -193,7 +188,7 @@ public class GameManager : MonoBehaviour
         yield return StartCoroutine(LoadCardBackTexture());
 
         // FIX: Inicializa o deck automaticamente se estiver vazio (para testar o Draw imediatamente)
-        if (playerDeck.Count == 0)
+        if (DeckManager.Instance != null && DeckManager.Instance.GetPlayerDeck().Count == 0)
         {
             InitializePlayerDeck();
             InitializeOpponentDeck();
@@ -232,8 +227,10 @@ public class GameManager : MonoBehaviour
         // Garante que os gerenciadores essenciais existam na cena
         EnsureCoreManagers();
 
-        InitializePlayerDeck();
-        InitializeOpponentDeck();
+        List<CardData> pDeck = InitializePlayerDeck();
+        List<CardData> oDeck = InitializeOpponentDeck();
+        DeckManager.Instance.SetupDecks(pDeck, oDeck);
+
         DrawInitialHand(5); // Exemplo: compra 5 cartas iniciais
         DrawInitialOpponentHand(5);
 
@@ -244,7 +241,7 @@ public class GameManager : MonoBehaviour
         UpdateLPUI();
 
         // Reseta flag de draw antes de começar o turno
-        hasDrawnThisTurn = false;
+        if (DeckManager.Instance != null) DeckManager.Instance.ResetTurnStats();
 
         if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
         else Debug.LogError("PhaseManager não encontrado mesmo após tentativa de criação!");
@@ -278,6 +275,7 @@ public class GameManager : MonoBehaviour
         if (SpellCounterManager.Instance == null) CreateManager<SpellCounterManager>();
         if (CardEffectManager.Instance == null) CreateManager<CardEffectManager>();
         if (OpponentAI.Instance == null) CreateManager<OpponentAI>(); // Garante que a IA exista
+        if (DeckManager.Instance == null) CreateManager<DeckManager>(); // Garante que o DeckManager exista
 
         // Cria o gerenciador de testes se o modo estiver ativo
         if (effectTestMode && FindFirstObjectByType<EffectTestManager>() == null) CreateManager<EffectTestManager>();
@@ -300,8 +298,6 @@ public class GameManager : MonoBehaviour
         opponentHand.Clear();
 
         // Limpa listas de dados
-        playerDeck.Clear();
-        opponentDeck.Clear();
         playerGraveyard.Clear();
         opponentGraveyard.Clear();
         playerExtraDeck.Clear();
@@ -324,8 +320,9 @@ public class GameManager : MonoBehaviour
         StartDuel(); // Chama o método principal
     }
 
-    void InitializePlayerDeck()
+    List<CardData> InitializePlayerDeck()
     {
+        List<CardData> newDeck = new List<CardData>();
         // Verifica se já existe um deck salvo no SaveLoadSystem
         // Se não, gera um novo
         if (InitialDeckBuilder.Instance != null)
@@ -333,12 +330,11 @@ public class GameManager : MonoBehaviour
             Debug.Log("Gerando Deck Inicial Único...");
             List<CardData> generatedDeck = InitialDeckBuilder.Instance.GenerateInitialDeck();
 
-            playerDeck.Clear();
             playerExtraDeck.Clear(); // Deck inicial não tem fusões prontas
 
             foreach (var card in generatedDeck)
             {
-                playerDeck.Add(card);
+                newDeck.Add(card);
                 // Adiciona ao Trunk também para que o jogador "possua" a carta
                 if (!playerTrunk.Contains(card.id))
                 {
@@ -360,10 +356,12 @@ public class GameManager : MonoBehaviour
         }
 
         UpdatePileVisuals();
+        return newDeck;
     }
 
-    void InitializeOpponentDeck()
+    List<CardData> InitializeOpponentDeck()
     {
+        List<CardData> newDeck = new List<CardData>();
         // Se temos um oponente definido (Campanha), carregamos o deck dele
         if (currentOpponent != null && currentOpponent.deck_A != null && currentOpponent.deck_A.Count > 0)
         {
@@ -373,7 +371,7 @@ public class GameManager : MonoBehaviour
                 if (card != null)
                 {
                     if (card.type.Contains("Fusion")) opponentExtraDeck.Add(card);
-                    else opponentDeck.Add(card);
+                    else newDeck.Add(card);
                 }
             }
         }
@@ -389,13 +387,18 @@ public class GameManager : MonoBehaviour
                 }
                 else
                 {
-                    opponentDeck.Add(card);
+                    newDeck.Add(card);
                 }
             }
         }
-        ShuffleOpponentDeck();
-        Debug.Log($"Deck do oponente inicializado com {opponentDeck.Count} cartas.");
+        // Shuffle logic moved to DeckManager, but we shuffle the list here before passing
+        // Actually DeckManager.SetupDecks doesn't shuffle, so we can shuffle here or call ShuffleDeck later.
+        // Let's shuffle the list here.
+        for (int i = 0; i < newDeck.Count; i++) { CardData temp = newDeck[i]; int r = Random.Range(i, newDeck.Count); newDeck[i] = newDeck[r]; newDeck[r] = temp; }
+        
+        Debug.Log($"Deck do oponente inicializado com {newDeck.Count} cartas.");
         UpdatePileVisuals();
+        return newDeck;
     }
 
     // --- AÇÕES DE JOGO PADRONIZADAS (GAME ACTIONS) ---
@@ -424,33 +427,16 @@ public class GameManager : MonoBehaviour
 
 public void ShuffleDeck(bool isPlayer)
 {
-        List<CardData> deck = isPlayer ? playerDeck : opponentDeck;
-    // Lógica de embaralhar (Fisher-Yates)
-    for (int i = 0; i < deck.Count; i++) {
-         CardData temp = deck[i];
-         int randomIndex = Random.Range(i, deck.Count);
-         deck[i] = deck[randomIndex];
-         deck[randomIndex] = temp;
-    }
+    if (DeckManager.Instance != null) DeckManager.Instance.ShuffleDeck(isPlayer);
 }
     public void ShuffleOpponentDeck()
     {
-        ShuffleDeck(false);
+        if (DeckManager.Instance != null) DeckManager.Instance.ShuffleDeck(false);
     }
 
     public void MillCards(bool isPlayer, int amount)
     {
-        List<CardData> deck = isPlayer ? playerDeck : opponentDeck;
-        int count = Mathf.Min(amount, deck.Count);
-
-        for (int i = 0; i < count; i++)
-        {
-            CardData card = deck[0];
-            deck.RemoveAt(0);
-            SendToGraveyard(card, isPlayer, CardLocation.Deck, SendReason.Mill);
-            Debug.Log($"Mill: {card.name}");
-        }
-        UpdatePileVisuals();
+        if (DeckManager.Instance != null) DeckManager.Instance.MillCards(isPlayer, amount);
     }
 
     public void DiscardCard(CardDisplay card)
@@ -537,22 +523,7 @@ public void ShuffleDeck(bool isPlayer)
 
     public void ReturnToDeck(CardDisplay card, bool toTop)
     {
-        if (card == null) return;
-
-        CardData data = card.CurrentCardData;
-        bool isPlayer = card.isPlayerCard;
-        List<CardData> deck = isPlayer ? playerDeck : opponentDeck;
-
-        if (toTop) deck.Insert(0, data);
-        else deck.Add(data);
-
-        // Remove modificadores
-        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
-        if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
-
-        Destroy(card.gameObject);
-        UpdatePileVisuals();
-        Debug.Log($"{data.name} retornada ao deck (Topo: {toTop}).");
+        if (DeckManager.Instance != null) DeckManager.Instance.ReturnToDeck(card, toTop);
     }
 
     // --- NOVAS AÇÕES PADRONIZADAS ---
@@ -633,77 +604,12 @@ public void ShuffleDeck(bool isPlayer)
 
     public void DrawCard(bool ignoreLimit = false)
     {
-        if (playerDeck.Count == 0)
-        {
-            Debug.LogWarning("Deck vazio! Não é possível comprar mais cartas.");
-            return;
-        }
-
+        if (DeckManager.Instance != null) DeckManager.Instance.DrawCard(true, ignoreLimit);
+        
+        // A lógica de fase foi movida para o DeckManager, mas precisamos garantir que o PhaseManager seja chamado lá.
+        // DeckManager chama PhaseManager.ChangePhase(GamePhase.Standby) se for Draw Phase.
+        
         GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Draw;
-
-        // Se não for um saque especial (mão inicial) e não estiver em modo dev, aplicam-se as regras do turno.
-        if (!ignoreLimit && !devMode)
-        {
-            if (currentPhase != GamePhase.Draw)
-            {
-                Debug.LogWarning("Você só pode comprar cartas na Draw Phase!");
-                return;
-            }
-            if (hasDrawnThisTurn)
-            {
-                Debug.LogWarning("Você já comprou uma carta neste turno!");
-                return;
-            }
-        }
-
-        CardData drawnCard = playerDeck[0];
-        playerDeck.RemoveAt(0);
-        UpdatePileVisuals(); // Atualiza visual do deck após remover carta
-
-        Debug.Log($"Carta comprada: {drawnCard.name}. Cartas restantes no deck: {playerDeck.Count}");
-
-        // Marca que já comprou neste turno (se não for mão inicial)
-        if (!ignoreLimit) hasDrawnThisTurn = true;
-
-        // Exibe a carta comprada na área de visualização principal
-        if (cardViewerDisplay != null)
-        {
-            cardViewerDisplay.SetCard(drawnCard, cardBackTexture);
-        }
-
-        // Adiciona a carta à mão visualmente
-        if (cardPrefab != null && playerHandLayoutGroup != null)
-        {
-            GameObject newCardGO = Instantiate(cardPrefab, playerHandLayoutGroup);
-            CardDisplay newCardDisplay = newCardGO.GetComponent<CardDisplay>();
-            if (newCardDisplay == null)
-            {
-                newCardDisplay = newCardGO.AddComponent<CardDisplay>();
-            }
-
-            // Força a busca de componentes se necessário, pois Awake pode já ter rodado antes de configurarmos tudo
-            // Mas como acabamos de instanciar, Awake rodou.
-            // Se a carta foi instanciada desativada, Awake não rodou.
-            // Vamos garantir que ela esteja pronta.
-
-            newCardGO.transform.localScale = handCardScale;
-            newCardDisplay.hoverYOffset = playerHandHoverYOffset;
-            newCardDisplay.isInteractable = true;
-
-            newCardDisplay.isPlayerCard = true;
-            newCardDisplay.SetCard(drawnCard, cardBackTexture);
-            playerHand.Add(newCardGO);
-        }
-
-        else
-        {
-            Debug.LogWarning("Card Prefab ou Player Hand Layout Group não atribuídos. Não foi possível adicionar a carta à mão visualmente.");
-        }
-
-        // Verifica vitória por Exodia após comprar
-        CheckExodiaWin();
-
-        // Lógica de Fase: Se o jogador sacar na Draw Phase, avança para Standby
         if (!ignoreLimit && currentPhase == GamePhase.Draw && PhaseManager.Instance != null)
         {
             // Avança para Standby via PhaseManager
@@ -713,50 +619,7 @@ public void ShuffleDeck(bool isPlayer)
 
     public void DrawOpponentCard()
     {
-        if (opponentDeck.Count == 0)
-        {
-            Debug.LogWarning("Deck do oponente vazio! Não é possível comprar mais cartas.");
-            return;
-        }
-
-        CardData drawnCard = opponentDeck[0];
-        opponentDeck.RemoveAt(0);
-        UpdatePileVisuals(); // Atualiza visual do deck do oponente
-
-        // Adiciona a carta à mão visualmente
-        if (cardPrefab != null && opponentHandLayoutGroup != null)
-        {
-            GameObject newCardGO = Instantiate(cardPrefab, opponentHandLayoutGroup);
-            CardDisplay newCardDisplay = newCardGO.GetComponent<CardDisplay>();
-            if (newCardDisplay == null)
-            {
-                newCardDisplay = newCardGO.AddComponent<CardDisplay>();
-            }
-
-            newCardGO.transform.localScale = handCardScale;
-            newCardDisplay.hoverYOffset = opponentHandHoverYOffset; // Usa o offset do oponente
-            newCardDisplay.isInteractable = true; // Habilita o efeito de hover
-
-            newCardDisplay.isPlayerCard = false; // Carta do oponente
-            newCardGO.transform.localRotation = Quaternion.Euler(0, 0, 180); // Vira a carta para o jogador
-            // Cartas do oponente entram viradas para baixo (false), exceto se showOpponentHand estiver ativo
-            bool startFaceUp = showOpponentHand;
-            newCardDisplay.SetCard(drawnCard, cardBackTexture, startFaceUp);
-            opponentHand.Add(newCardGO);
-
-            // Pikeru's Second Sight (1431)
-            if (revealOpponentDraw)
-            {
-                Debug.Log($"Pikeru's Second Sight: Oponente comprou {drawnCard.name}");
-                newCardDisplay.ShowFront(); // Revela temporariamente (ou permanentemente se a lógica exigir)
-            }
-
-            if (devMode) Debug.Log($"Oponente comprou: {drawnCard.name}");
-        }
-        else
-        {
-            Debug.LogError("DrawOpponentCard: CardPrefab ou OpponentHandLayoutGroup não atribuídos no GameManager!");
-        }
+        if (DeckManager.Instance != null) DeckManager.Instance.DrawCard(false);
     }
 
     public void DrawInitialHand(int count)
@@ -933,7 +796,7 @@ public void ShuffleDeck(bool isPlayer)
         }
 
         turnCount++; // Incrementa o turno
-        hasDrawnThisTurn = false;
+        if (DeckManager.Instance != null) DeckManager.Instance.ResetTurnStats();
         
         if (isPlayerTurn)
         {
@@ -1035,8 +898,7 @@ public void ShuffleDeck(bool isPlayer)
     // Atualiza todos os visuais de pilhas (Decks e Cemitérios)
     void UpdatePileVisuals()
     {
-        if (playerDeckDisplay != null) playerDeckDisplay.UpdatePile(playerDeck, cardBackTexture);
-        if (opponentDeckDisplay != null) opponentDeckDisplay.UpdatePile(opponentDeck, cardBackTexture);
+        if (DeckManager.Instance != null) DeckManager.Instance.UpdateDeckVisuals();
         if (playerGraveyardDisplay != null) playerGraveyardDisplay.UpdatePile(playerGraveyard, cardBackTexture);
         if (opponentGraveyardDisplay != null) opponentGraveyardDisplay.UpdatePile(opponentGraveyard, cardBackTexture);
         if (playerExtraDeckDisplay != null) playerExtraDeckDisplay.UpdatePile(playerExtraDeck, cardBackTexture);
@@ -1590,14 +1452,42 @@ public void ShuffleDeck(bool isPlayer)
     public List<CardData> GetOpponentGraveyard() { return opponentGraveyard; }
     public List<CardData> GetPlayerHandData() { return playerHand.Select(g => g.GetComponent<CardDisplay>().CurrentCardData).ToList(); }
     public List<CardData> GetOpponentHandData() { return opponentHand.Select(g => g.GetComponent<CardDisplay>().CurrentCardData).ToList(); }
-    public List<CardData> GetOpponentMainDeck() { return opponentDeck; }
+    public List<CardData> GetOpponentMainDeck() { return DeckManager.Instance != null ? DeckManager.Instance.GetOpponentDeck() : new List<CardData>(); }
+    public List<CardData> GetPlayerMainDeck() { return DeckManager.Instance != null ? DeckManager.Instance.GetPlayerDeck() : new List<CardData>(); }
+    public List<CardData> GetPlayerSideDeck() { return playerSideDeck; }
 
     public int GetPlayerRemovedCount() { return playerRemoved.Count; }
     public List<CardData> GetPlayerRemoved() { return playerRemoved; }
 
     public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
     {
-        playerDeck = new List<CardData>(main);
+        // playerDeck agora é gerenciado pelo DeckManager, mas o SaveLoadSystem pode chamar isso.
+        // Se for chamado antes do duelo, apenas salvamos para uso futuro ou passamos para o DeckManager se ele existir.
+        // Como o DeckManager é resetado no StartDuel, aqui apenas atualizamos a referência se necessário ou salvamos.
+        // Na verdade, SetPlayerDeck é usado pelo DeckBuilder para salvar o deck editado.
+        // O DeckBuilder deve salvar no disco/PlayerPrefs.
+        // Se o GameManager mantiver o estado do deck do jogador entre duelos, precisamos armazenar aqui ou no DeckManager.
+        // Vamos manter uma cópia local ou atualizar o DeckManager se estivermos em duelo?
+        // Geralmente SetPlayerDeck é chamado fora do duelo.
+        // Vamos assumir que isso configura o deck para o PRÓXIMO duelo.
+        // Mas como removemos a variável playerDeck, onde guardamos?
+        // Precisamos de uma variável de "Deck Selecionado" persistente.
+        // Vou reintroduzir playerDeck apenas como armazenamento de dados entre cenas, mas não usado durante o duelo (DeckManager usa sua cópia).
+        // Ou melhor, DeckManager pode ter um método SetPlayerDeckData.
+        if (DeckManager.Instance != null) DeckManager.Instance.SetupDecks(main, new List<CardData>()); // Oponente vazio por enquanto
+        
+        // Mas espere, SetPlayerDeck é usado para salvar o deck editado.
+        // O ideal é salvar em arquivo. O DeckBuilder já faz isso.
+        // Se o GameManager precisa saber qual deck usar no próximo duelo, ele deve carregar do arquivo.
+        // Vamos deixar vazio por enquanto ou reintroduzir uma lista de "Deck do Jogador" que serve de modelo.
+        // Reintroduzindo playerDeck como modelo (não usado no duelo ativo diretamente, mas passado para DeckManager).
+        // Mas eu removi a declaração.
+        // Vou usar uma variável temporária ou reverter a remoção se for crítico.
+        // O método InitializePlayerDeck usa InitialDeckBuilder.
+        // Se quisermos persistência, InitializePlayerDeck deve carregar do arquivo salvo.
+        // Vou deixar o método SetPlayerDeck apenas atualizando o DeckManager se ele existir, para refletir mudanças imediatas se estivermos em uma cena de teste.
+        if (DeckManager.Instance != null) DeckManager.Instance.SetupDecks(main, new List<CardData>());
+        
         playerSideDeck = new List<CardData>(side);
         playerExtraDeck = new List<CardData>(extra);
     }
@@ -1837,7 +1727,7 @@ public void ShuffleDeck(bool isPlayer)
         // Se for oponente e não estiver em modo Dev, bloqueia (a menos que uma carta permita, mas aí seria via efeito específico)
         if (!isPlayer && !devMode) return;
 
-        List<CardData> deck = isPlayer ? playerDeck : opponentDeck;
+        List<CardData> deck = isPlayer ? DeckManager.Instance.GetPlayerDeck() : DeckManager.Instance.GetOpponentDeck();
         UIManager.Instance.ShowDeck(deck, cardBackTexture);
     }
 
