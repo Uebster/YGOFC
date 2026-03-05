@@ -1230,37 +1230,12 @@ public void ShuffleDeck(bool isPlayer)
         CardDisplay display = cardGO.GetComponent<CardDisplay>();
         bool isPlayer = display != null ? display.isPlayerCard : true;
 
-        // Chain Energy (0284)
-        if (!CheckChainEnergyCost(isPlayer)) return;
-
-        // 1716 - Spatial Collapse (Limite de 5 cartas)
-        if (IsCardActiveOnField("1716"))
+        // Validações de Efeitos Contínuos
+        if (CardEffectManager.Instance != null)
         {
-            if (GetFieldCardCount(isPlayer) >= 5)
-            {
-                Debug.LogWarning("Spatial Collapse: Limite de 5 cartas no campo atingido.");
-                return;
-            }
-        }
-
-        // 1541 - Rivalry of Warlords (Apenas 1 Tipo)
-        if (IsCardActiveOnField("1541"))
-        {
-            string newRace = cardData.race;
-            bool conflict = false;
-            if (duelFieldUI != null)
-            {
-                Transform[] zones = isPlayer ? duelFieldUI.playerMonsterZones : duelFieldUI.opponentMonsterZones;
-                foreach (var z in zones)
-                {
-                    if (z.childCount > 0)
-                    {
-                        var m = z.GetChild(0).GetComponent<CardDisplay>();
-                        if (m != null && m.CurrentCardData.race != newRace) conflict = true;
-                    }
-                }
-            }
-            if (conflict) { Debug.LogWarning($"Rivalry of Warlords: Você só pode controlar 1 Tipo. Tentativa: {newRace}."); return; }
+            if (!CardEffectManager.Instance.CheckChainEnergy(isPlayer)) return;
+            if (!CardEffectManager.Instance.CheckSpatialCollapse(isPlayer)) return;
+            if (!CardEffectManager.Instance.CheckRivalryOfWarlords(isPlayer, cardData.race)) return;
         }
 
         // 0. Validação de Regras de Invocação (SummonManager)
@@ -1449,17 +1424,11 @@ public void ShuffleDeck(bool isPlayer)
         CardDisplay display = cardGO.GetComponent<CardDisplay>();
         bool isPlayer = display != null ? display.isPlayerCard : true;
 
-        // Chain Energy (0284)
-        if (!CheckChainEnergyCost(isPlayer)) return;
-
-        // 1716 - Spatial Collapse (Limite de 5 cartas)
-        if (IsCardActiveOnField("1716"))
+        // Validações de Efeitos Contínuos
+        if (CardEffectManager.Instance != null)
         {
-            if (GetFieldCardCount(isPlayer) >= 5)
-            {
-                Debug.LogWarning("Spatial Collapse: Limite de 5 cartas no campo atingido.");
-                return;
-            }
+            if (!CardEffectManager.Instance.CheckChainEnergy(isPlayer)) return;
+            if (!CardEffectManager.Instance.CheckSpatialCollapse(isPlayer)) return;
         }
 
         // 0.5 Validação de Armadilha
@@ -1625,19 +1594,6 @@ public void ShuffleDeck(bool isPlayer)
 
     public int GetPlayerRemovedCount() { return playerRemoved.Count; }
     public List<CardData> GetPlayerRemoved() { return playerRemoved; }
-
-    public bool CheckChainEnergyCost(bool isPlayer)
-    {
-        if (IsCardActiveOnField("0284")) // Chain Energy
-        {
-            if (!PayLifePoints(isPlayer, 500))
-            {
-                Debug.Log("Chain Energy: LP insuficientes para realizar a ação.");
-                return false;
-            }
-        }
-        return true;
-    }
 
     public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
     {

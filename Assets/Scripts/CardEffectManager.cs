@@ -87,6 +87,59 @@ public partial class CardEffectManager : MonoBehaviour
     public void OnCardDiscarded(CardDisplay card) { OnCardDiscardedImpl(card); }
     public void OnSpecialSummon(CardDisplay card) { OnSpecialSummonImpl(card); }
 
+    // --- VALIDAÇÕES DE REGRAS DE EFEITO ---
+
+    public bool CheckChainEnergy(bool isPlayer)
+    {
+        if (GameManager.Instance.IsCardActiveOnField("0284")) // Chain Energy
+        {
+            if (!GameManager.Instance.PayLifePoints(isPlayer, 500))
+            {
+                Debug.Log("Chain Energy: LP insuficientes para realizar a ação.");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public bool CheckSpatialCollapse(bool isPlayer)
+    {
+        if (GameManager.Instance.IsCardActiveOnField("1716")) // Spatial Collapse
+        {
+            if (GameManager.Instance.GetFieldCardCount(isPlayer) >= 5)
+            {
+                Debug.LogWarning("Spatial Collapse: Limite de 5 cartas no campo atingido.");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public bool CheckRivalryOfWarlords(bool isPlayer, string newRace)
+    {
+        if (GameManager.Instance.IsCardActiveOnField("1541")) // Rivalry of Warlords
+        {
+            bool conflict = false;
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+                foreach (var z in zones)
+                {
+                    if (z.childCount > 0)
+                    {
+                        var m = z.GetChild(0).GetComponent<CardDisplay>();
+                        if (m != null && m.CurrentCardData.race != newRace) conflict = true;
+                    }
+                }
+            }
+            if (conflict) 
+            { 
+                Debug.LogWarning($"Rivalry of Warlords: Você só pode controlar 1 Tipo. Tentativa: {newRace}."); 
+                return false; 
+            }
+        }
+        return true;
+    }
 
     // Métodos de Eventos (Implementados em CardEffectManager_Impl.cs)
     // public void OnPhaseStart(GamePhase phase);
