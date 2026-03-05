@@ -63,6 +63,11 @@ public class DuelThemeManager : MonoBehaviour
     public Image btnPositionAttack;
     public Image btnPositionDefense;
 
+    [Header("Reward Panel")]
+    public Image rewardPanelBackground;
+    public Image rewardRankBackground;
+    public Image rewardContinueButton;
+
     [Header("Text Containers")]
     // Arraste o objeto pai (Canvas ou Panel_Duel) para buscar todos os textos automaticamente
     public Transform uiRootForTexts; 
@@ -125,6 +130,10 @@ public class DuelThemeManager : MonoBehaviour
         SetSprite(panelPositionSelection, theme.panelPositionSelection);
         SetSprite(btnPositionAttack, theme.btnPositionAttack);
         SetSprite(btnPositionDefense, theme.btnPositionDefense);
+
+        SetSprite(rewardPanelBackground, theme.rewardPanelBackground);
+        SetSprite(rewardRankBackground, theme.rewardRankBackground);
+        SetSprite(rewardContinueButton, theme.rewardContinueButton);
 
         // 2. Aplica Estilos de Texto
         if (uiRootForTexts != null)

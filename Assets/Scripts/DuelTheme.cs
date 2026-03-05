@@ -48,6 +48,11 @@ public class DuelTheme : ScriptableObject
     public Sprite btnPositionAttack;
     public Sprite btnPositionDefense;
 
+    [Header("Reward Panel")]
+    public Sprite rewardPanelBackground;
+    public Sprite rewardRankBackground;
+    public Sprite rewardContinueButton;
+
     [Header("Text Styling")]
     public TMP_FontAsset globalFont; // Fonte global para o duelo
     public Color mainTextColor = Color.white;
