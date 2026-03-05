@@ -170,7 +170,17 @@ public class PhaseManager : MonoBehaviour
             case GamePhase.Main2:
                 // Habilita interações novamente (se possível)
                 break;
-            // ...
+            case GamePhase.End:
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.OnEndPhaseStart();
+                    // Se for turno do jogador, troca o turno automaticamente após processar a End Phase
+                    if (GameManager.Instance.isPlayerTurn)
+                    {
+                        StartCoroutine(AutoSwitchTurn());
+                    }
+                }
+                break;
         }
     }
 
@@ -198,6 +208,12 @@ public class PhaseManager : MonoBehaviour
     {
         yield return new WaitForSeconds(standbyPhaseDuration);
         ChangePhase(GamePhase.Main1);
+    }
+
+    IEnumerator AutoSwitchTurn()
+    {
+        yield return new WaitForSeconds(1.5f); // Pequeno delay para feedback visual
+        if (GameManager.Instance != null) GameManager.Instance.SwitchTurn();
     }
 
     public void TryChangePhase(GamePhase newPhase)

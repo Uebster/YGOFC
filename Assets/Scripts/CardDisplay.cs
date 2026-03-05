@@ -684,6 +684,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (isOnField && isFlipped && (currentCardData.type.Contains("Spell") || currentCardData.type.Contains("Trap")))
         {
             bool canActivate = (GameManager.Instance.devMode) || (!summonedThisTurn);
+            
+            // Regra: Magias Normais, Campo, Equipamento e Ritual podem ser ativadas no turno que foram setadas.
+            // Apenas Armadilhas e Quick-Play Spells precisam esperar.
+            if (currentCardData.type.Contains("Spell") && currentCardData.property != "Quick-Play")
+            {
+                canActivate = true;
+            }
 
             if (canActivate)
             {
