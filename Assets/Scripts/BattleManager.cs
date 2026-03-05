@@ -63,6 +63,38 @@ public class BattleManager : MonoBehaviour
         gravekeepersProtected = false;
     }
 
+    // Prepara o monstro para atacar (Seleção)
+    public void PrepareAttack(CardDisplay attacker)
+    {
+        if (PhaseManager.Instance.currentPhase != GamePhase.Battle) return;
+        if (attacker.position == CardDisplay.BattlePosition.Defense) return;
+
+        // Verifica se pode atacar
+        if (!CanAttack(attacker)) return;
+
+        // Desmarca anterior se houver
+        if (currentAttacker != null)
+        {
+            currentAttacker.SetAttackSelectionVisual(false);
+        }
+
+        currentAttacker = attacker;
+        currentAttacker.SetAttackSelectionVisual(true);
+        
+        Debug.Log($"Ataque preparado com {attacker.CurrentCardData.name}. Selecione um alvo ou o campo do oponente.");
+    }
+
+    // Cancela a seleção de ataque
+    public void CancelAttack()
+    {
+        if (currentAttacker != null)
+        {
+            currentAttacker.SetAttackSelectionVisual(false);
+            currentAttacker = null;
+            Debug.Log("Seleção de ataque cancelada.");
+        }
+    }
+
     // Inicia a declaração de ataque
     public void DeclareAttack(CardDisplay attacker)
     {
@@ -102,24 +134,26 @@ public class BattleManager : MonoBehaviour
         // Verifica restrições de ataque (Gravity Bind, Level Limit, etc)
         if (!CanAttack(attacker)) return;
 
-        currentAttacker = attacker;
-        Debug.Log($"Ataque declarado por {attacker.CurrentCardData.name}. Selecione um alvo.");
+        // Redireciona para o novo fluxo de preparação
+        PrepareAttack(attacker);
+    }
 
-        // Patrician of Darkness (1406): Se o defensor tiver Patrician, ele escolhe o alvo
-        if (patricianOfDarknessActive && !attacker.isPlayerCard)
-        {
-            Debug.Log("Patrician of Darkness: Você escolhe o alvo do ataque do oponente!");
-            // A UI deve permitir selecionar seus próprios monstros como alvo.
-        }
-        
-        // Aqui você pode ativar um modo de seleção visual (brilho nos alvos válidos)
-        // Se o oponente não tiver monstros, pode atacar direto (Direct Attack)
+    // Tenta realizar um ataque direto (chamado ao clicar no campo do oponente)
+    public void TryDirectAttack()
+    {
+        if (currentAttacker == null) return;
+
         if (HasDirectAttackCondition())
         {
-            UIManager.Instance.ShowConfirmation("Atacar diretamente?", () => {
-                if (ChainManager.Instance != null)
-                    ChainManager.Instance.AddToChain(attacker, attacker.isPlayerCard, ChainManager.TriggerType.Attack, null, () => PerformDirectAttack(attacker));
-            });
+             // Realiza o ataque direto
+             if (ChainManager.Instance != null)
+             {
+                ChainManager.Instance.AddToChain(currentAttacker, currentAttacker.isPlayerCard, ChainManager.TriggerType.Attack, null, () => PerformDirectAttack(currentAttacker));
+             }
+        }
+        else
+        {
+            Debug.Log("Não pode atacar diretamente (Oponente tem monstros ou efeito impede).");
         }
     }
 
@@ -388,6 +422,8 @@ public class BattleManager : MonoBehaviour
                 ChainManager.Instance.AddToChain(currentAttacker, currentAttacker.isPlayerCard, ChainManager.TriggerType.Attack, target, () => PerformBattle(currentAttacker, target));
         });
         currentTarget = target;
+        // Limpa a seleção visual após confirmar o alvo
+        if (currentAttacker != null) currentAttacker.SetAttackSelectionVisual(false);
     }
 
     private bool HasDirectAttackCondition()
@@ -456,6 +492,7 @@ public class BattleManager : MonoBehaviour
         attacker.hasAttackedThisTurn = true;
         attacker.attacksDeclaredThisTurn++;
         ClearBattleState();
+        if (attacker != null) attacker.SetAttackSelectionVisual(false); // Garante limpeza visual
     }
 
     private void CheckTrapsAndBattle(CardDisplay attacker, CardDisplay target)
@@ -683,6 +720,7 @@ public class BattleManager : MonoBehaviour
         attacker.hasAttackedThisTurn = true;
         attacker.attacksDeclaredThisTurn++;
         ClearBattleState();
+        if (attacker != null) attacker.SetAttackSelectionVisual(false); // Garante limpeza visual
     }
 
     private void ClearBattleState()

@@ -138,6 +138,14 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
                 });
             }
         }
+        else if (eventData.button == PointerEventData.InputButton.Left)
+        {
+            // Clique esquerdo no campo: Tenta ataque direto se houver atacante selecionado
+            if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+            {
+                BattleManager.Instance.TryDirectAttack();
+            }
+        }
     }
 
     // --- FUNÇÕES AUXILIARES ---

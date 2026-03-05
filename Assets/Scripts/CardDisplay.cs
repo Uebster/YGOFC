@@ -624,6 +624,30 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
     }
 
+    // Define o visual de "Selecionado para Atacar"
+    public void SetAttackSelectionVisual(bool selected)
+    {
+        // Se o efeito estiver desabilitado, garante que a cor da carta esteja normal e sai.
+        if (GameManager.Instance == null || !GameManager.Instance.enableAttackSelectionVisual)
+        {
+            if (cardImage != null) cardImage.color = Color.white;
+            if (outlineImage != null) outlineImage.gameObject.SetActive(false);
+            return;
+        }
+
+        if (cardImage != null)
+        {
+            // Escurece a carta para indicar que está pronta para atacar
+            cardImage.color = selected ? GameManager.Instance.attackSelectionColor : Color.white;
+        }
+        // Opcional: Poderia ativar o outline vermelho também
+        if (outlineImage != null)
+        {
+            outlineImage.color = attackColor;
+            outlineImage.gameObject.SetActive(selected);
+        }
+    }
+
     public void OnPointerClick(PointerEventData eventData)
     {
         // Lógica de Seleção de Tributo (Prioridade Máxima)
@@ -653,6 +677,32 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
 
         Debug.Log($"CardDisplay: Clique detectado na carta {currentCardData?.name}");
+
+        // Lógica de Batalha (Battle Phase)
+        if (GameManager.Instance != null && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle)
+        {
+            // Se for carta do jogador e monstro: Seleciona como atacante
+            if (isOnField && isPlayerCard && currentCardData.type.Contains("Monster"))
+            {
+                if (BattleManager.Instance != null)
+                {
+                    if (BattleManager.Instance.currentAttacker == this)
+                        BattleManager.Instance.CancelAttack(); // Clicar de novo cancela
+                    else
+                        BattleManager.Instance.PrepareAttack(this);
+                }
+                return;
+            }
+            // Se for carta do oponente e monstro: Seleciona como alvo
+            else if (isOnField && !isPlayerCard && currentCardData.type.Contains("Monster"))
+            {
+                if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+                {
+                    BattleManager.Instance.SelectTarget(this);
+                }
+                return;
+            }
+        }
 
         // Lógica para cartas na MÃO (isInteractable é o flag para isso)
         if (isInteractable)

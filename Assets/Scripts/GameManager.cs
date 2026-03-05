@@ -140,6 +140,11 @@ public class GameManager : MonoBehaviour
     public Color playerHoverColor = new Color(0.5f, 1f, 0.5f, 1f); // Verde claro
     public Color opponentHoverColor = Color.yellow;
 
+    [Header("Visual Feedback")]
+    [Tooltip("Habilita o efeito de escurecer a carta ao selecioná-la para atacar.")]
+    public bool enableAttackSelectionVisual = true;
+    public Color attackSelectionColor = new Color(0.6f, 0.6f, 0.6f, 1f);
+
     private bool hasDrawnThisTurn = false; // Controle de draw por turno
     public bool revealOpponentDraw = false; // Pikeru's Second Sight (1431)
     private UnityWebRequest backTextureRequest; // Para evitar memory leak
@@ -1919,6 +1924,54 @@ public void ShuffleDeck(bool isPlayer)
         if (CardEffectManager.Instance != null)
         {
             CardEffectManager.Instance.OnBattlePositionChanged(card);
+        }
+    }
+
+    // Ferramenta de DEV para trocar oponente
+    [ContextMenu("DEV: Next Opponent")]
+    public void Dev_NextOpponent()
+    {
+        if (!devMode || campaignDatabase == null) return;
+
+        int actIndex = 0;
+        int oppIndex = 0;
+        bool found = false;
+
+        // Encontra o índice do oponente atual
+        if (currentOpponent != null)
+        {
+            for(int i=0; i<campaignDatabase.acts.Count; i++)
+            {
+                for(int j=0; j<campaignDatabase.acts[i].opponentIDs.Count; j++)
+                {
+                    if (campaignDatabase.acts[i].opponentIDs[j] == currentOpponent.id)
+                    {
+                        actIndex = i;
+                        oppIndex = j;
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) break;
+            }
+        }
+
+        // Avança para o próximo
+        oppIndex++;
+        if (oppIndex >= campaignDatabase.acts[actIndex].opponentIDs.Count)
+        {
+            oppIndex = 0;
+            actIndex++;
+            if (actIndex >= campaignDatabase.acts.Count) actIndex = 0;
+        }
+
+        string nextID = campaignDatabase.acts[actIndex].opponentIDs[oppIndex];
+        CharacterData nextChar = characterDatabase.GetCharacterById(nextID);
+        
+        if (nextChar != null)
+        {
+            Debug.Log($"Dev: Trocando para {nextChar.name} (Ato {actIndex+1})");
+            StartDuel(nextChar, (actIndex * 10) + oppIndex + 1);
         }
     }
 
