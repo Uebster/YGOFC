@@ -1,15 +1,11 @@
 import json
 import os
 import re
+import tkinter as tk
+from tkinter import filedialog
 
 # Configuração de Caminhos
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-CARDS_DIR = os.path.join(BASE_DIR, "Scripts", "Cards")
-CARDS_OUT = os.path.join(CARDS_DIR, "cards.json")
-
-# Configuração de Processamento
-BATCH_SIZE = 500  # Processar em blocos de 500 linhas/cartas
-IMAGES_SUBDIR = "YuGiOh_OCG_Classic_2147"
 
 # Correções de Nomes (Typos e Padronização)
 NAME_FIXES = {
@@ -206,110 +202,104 @@ def parse_tsv_cards(filepath, game_name):
 
 def generate():
     print("=== Iniciando Geração do Banco de Dados de Cartas ===")
-    print(f"Diretório de Cartas: {CARDS_DIR}")
+    
+    # Inicializa Tkinter e esconde a janela principal
+    root = tk.Tk()
+    root.withdraw()
+
+    # 1. Escolher Arquivo TXT
+    print("-> Selecione o arquivo de texto (.txt) com a lista de cartas...")
+    txt_filepath = filedialog.askopenfilename(
+        title="Selecione o arquivo de lista de cartas (.txt)",
+        filetypes=[("Arquivos de Texto", "*.txt"), ("Todos os Arquivos", "*.*")]
+    )
+    if not txt_filepath:
+        print("Seleção cancelada.")
+        return
+
+    # 2. Escolher Pasta de Imagens
+    print("-> Selecione a pasta onde estão as imagens...")
+    img_dir = filedialog.askdirectory(
+        title="Selecione a pasta das imagens"
+    )
+    if not img_dir:
+        print("Seleção cancelada.")
+        return
+    
+    images_subdir_name = os.path.basename(img_dir)
+
+    # 3. Escolher Destino do JSON
+    print("-> Escolha onde salvar o cards.json...")
+    json_out_path = filedialog.asksaveasfilename(
+        title="Salvar cards.json como...",
+        defaultextension=".json",
+        initialfile="cards.json",
+        filetypes=[("Arquivos JSON", "*.json")]
+    )
+    if not json_out_path:
+        print("Seleção cancelada.")
+        return
     
     master_db = {} # Dicionário para consolidar cartas (Chave = Nome em minúsculo)
     total_processed = 0
     
-    # Verificação de segurança: Cria a pasta se não existir
-    if not os.path.exists(CARDS_DIR):
-        print(f"[ERRO] A pasta não foi encontrada em: {CARDS_DIR}")
-        print("-> Criando a pasta agora... Por favor, mova o arquivo .txt e as imagens para dentro dela e execute novamente.")
-        os.makedirs(CARDS_DIR, exist_ok=True)
-        return
-
-    # Escanear todos os arquivos .txt na pasta Cards
-    files = [f for f in os.listdir(CARDS_DIR) if f.endswith(".txt") and "(Copy)" not in f]
-    files.sort() # Ordenar para consistência
+    filename = os.path.basename(txt_filepath)
+    game_name = os.path.splitext(filename)[0]
+    print(f"\nLendo arquivo: {filename}")
     
-    if not files:
-        print("[AVISO] Nenhum arquivo .txt encontrado na pasta Cards.")
-        return
-
-    for filename in files:
-        filepath = os.path.join(CARDS_DIR, filename)
-        game_name = os.path.splitext(filename)[0] # Usa o nome do arquivo como "Jogo de Origem"
-        print(f"\nLendo arquivo: {filename}")
+    # Detecção simples de formato lendo o início do arquivo
+    format_type = "tsv" # Default
+    with open(txt_filepath, 'r', encoding='utf-8') as f:
+        header = f.read(1000) # Ler mais caracteres para garantir a detecção
+        if "Nº\tNOME\tTIPO" in header: # Header do download_cards.py
+            format_type = "tsv"
+        elif "--" in header and "[" in header and "]" in header:
+            format_type = "poc"
+        elif "Monster (" in header: # Detecta formato novo com subtipos (Normal/Effect)
+            format_type = "tsv"
+        elif "\t" in header and ("Monster" in header or "Magic" in header):
+            format_type = "fm"
+    
+    # Selecionar parser baseado na detecção
+    if format_type == "poc":
+        extracted = parse_poc_cards(txt_filepath, game_name)
+    elif format_type == "fm":
+        extracted = parse_fm_cards(txt_filepath, game_name)
+    else:
+        extracted = parse_tsv_cards(txt_filepath, game_name)
         
-        # Detecção simples de formato lendo o início do arquivo
-        format_type = "tsv" # Default
-        with open(filepath, 'r', encoding='utf-8') as f:
-            header = f.read(1000) # Ler mais caracteres para garantir a detecção
-            if "Nº\tNOME\tTIPO" in header: # Header do download_cards.py
-                format_type = "tsv"
-            elif "--" in header and "[" in header and "]" in header:
-                format_type = "poc"
-            elif "Monster (" in header: # Detecta formato novo com subtipos (Normal/Effect)
-                format_type = "tsv"
-            elif "\t" in header and ("Monster" in header or "Magic" in header):
-                format_type = "fm"
-        
-        # Selecionar parser baseado na detecção
-        if format_type == "poc":
-            extracted = parse_poc_cards(filepath, game_name)
-        elif format_type == "fm":
-            extracted = parse_fm_cards(filepath, game_name)
-        else:
-            extracted = parse_tsv_cards(filepath, game_name)
+    # Mesclar com o banco mestre
+    count_new = 0
+    
+    for name_key, card_data in extracted.items():
+        total_processed += 1
+        master_db[name_key] = card_data
+        count_new += 1
             
-        # Mesclar com o banco mestre
-        count_new = 0
-        count_update = 0
-        local_batch_count = 0
-        
-        for name_key, card_data in extracted.items():
-            # Lógica de Blocos: Monitoramento
-            local_batch_count += 1
-            total_processed += 1
-            if local_batch_count % BATCH_SIZE == 0:
-                print(f"  ... processando bloco: linha {local_batch_count} ...")
-
-            if name_key in master_db:
-                # Atualizar dados existentes (ex: adicionar Password do FM numa carta do Joey)
-                existing = master_db[name_key]
-                
-                # Preservar ID original se for de um jogo prioritário, ou atualizar?
-                # Vamos manter o ID do jogo mais "recente" ou específico se definirmos assim.
-                # Aqui, apenas enriquecemos dados faltantes.
-                if "password" in card_data and "password" not in existing:
-                    existing["password"] = card_data["password"]
-                if "starchips" in card_data and "starchips" not in existing:
-                    existing["starchips"] = card_data["starchips"]
-                
-                # Se a carta atual tem descrição e a antiga não, atualiza
-                if card_data.get("description") and not existing.get("description"):
-                    existing["description"] = card_data["description"]
-                
-                count_update += 1
-            else:
-                master_db[name_key] = card_data
-                count_new += 1
-                
-        print(f"  [Concluído {filename}] Novos: {count_new} | Atualizados: {count_update} | Total lido: {local_batch_count}")
+    print(f"  [Concluído] Total lido: {count_new}")
 
     # Converter para lista e ordenar
     final_list = list(master_db.values())
     final_list.sort(key=lambda x: x["name"])
     
     # Adicionar mapeamento de imagem (Ordem Alfabética -> 1.jpg, 2.jpg...)
-    print(f"  -> Mapeando imagens (Ordem Alfabética) na pasta: {IMAGES_SUBDIR}...")
+    print(f"  -> Mapeando imagens (Ordem Alfabética) na pasta: {images_subdir_name}...")
     for i, card in enumerate(final_list):
         # IDs de imagem sequenciais baseados na ordem alfabética
         formatted_id = f"{i + 1:04d}"
         card["id"] = formatted_id
         card["image_id"] = i + 1
         safe_name = sanitize_filename(card["name"])
-        card["image_filename"] = f"{IMAGES_SUBDIR}/{formatted_id} - {safe_name}.jpg"
+        card["image_filename"] = f"{images_subdir_name}/{formatted_id} - {safe_name}.jpg"
 
     # Salvar
-    os.makedirs(os.path.dirname(CARDS_OUT), exist_ok=True)
-    with open(CARDS_OUT, 'w', encoding='utf-8') as f:
+    with open(json_out_path, 'w', encoding='utf-8') as f:
         json.dump(final_list, f, indent=2)
         
     print(f"\n=== Sucesso! ===")
     print(f"Total de cartas processadas (bruto): {total_processed}")
     print(f"Total de cartas únicas no JSON: {len(final_list)}")
-    print(f"Arquivo salvo em: {CARDS_OUT}")
+    print(f"Arquivo salvo em: {json_out_path}")
 
 if __name__ == "__main__":
     generate()
