@@ -23,7 +23,10 @@ public class RewardPanelUI : MonoBehaviour
     void Start()
     {
         // Adiciona um listener para o botão de continuar, que esconderá o painel.
-        continueButton.onClick.AddListener(HidePanel);
+        if (continueButton != null)
+        {
+            continueButton.onClick.AddListener(HidePanel);
+        }
         gameObject.SetActive(false); // O painel começa desativado.
     }
 
