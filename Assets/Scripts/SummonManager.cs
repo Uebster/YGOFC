@@ -109,7 +109,7 @@ public class SummonManager : MonoBehaviour
         // Se for Normal Summon, verifica limite e tributos
         if (!isSpecial)
         {
-            // Narrow Pass Check
+            // ... (verificações de Narrow Pass e Normal Summon existentes) ...
             if (narrowPassActive)
             {
                 if (narrowPassSummonCount >= 2)
@@ -127,13 +127,15 @@ public class SummonManager : MonoBehaviour
             int tributesNeeded = GetRequiredTributes(card.level);
             if (!HasEnoughTributes(tributesNeeded, isPlayer, card))
             {
-                Debug.LogWarning($"Tributos insuficientes! Precisa de {tributesNeeded}.");
+                // Para a IA, isso não é um erro, é apenas uma verificação
+                if (isPlayer) Debug.LogWarning($"Tributos insuficientes! Precisa de {tributesNeeded}.");
                 return false;
             }
 
             if (tributesNeeded > 0)
             {
-                if (enableAutoTribute)
+                // ALTERAÇÃO AQUI: Se for IA (!isPlayer), força o auto-tributo
+                if (enableAutoTribute || !isPlayer)
                 {
                     ProcessAutoTribute(tributesNeeded, isPlayer);
                 }

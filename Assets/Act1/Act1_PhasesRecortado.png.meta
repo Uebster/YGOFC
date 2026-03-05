@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 51009faf1166dd64c9e29cfc7ea5a631
+guid: 18d72cca3171f994cac7b8af032fe477
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -1290806286166517209
-    second: 13215651_0
+      213: -9098939572161323971
+    second: Act1_PhasesRecortado_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 13215651_0
+      name: Act1_PhasesRecortado_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 576
-        height: 1792
+        width: 459
+        height: 1545
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 72a143f8582261ee0800000000000000
-      internalID: -1290806286166517209
+      spriteID: d3c5498daa21ab180800000000000000
+      internalID: -9098939572161323971
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      13215651_0: -1290806286166517209
+      Act1_PhasesRecortado_0: -9098939572161323971
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -893,6 +893,12 @@ public void ShuffleDeck(bool isPlayer)
     {
         isPlayerTurn = !isPlayerTurn;
         if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
+        
+        // Se for turno do oponente, inicia a IA
+        if (!isPlayerTurn && OpponentAI.Instance != null)
+        {
+            OpponentAI.Instance.StartAITurn();
+        }
     }
 
     // Chamado pelo PhaseManager quando entra na Draw Phase
@@ -907,14 +913,23 @@ public void ShuffleDeck(bool isPlayer)
 
         turnCount++; // Incrementa o turno
         hasDrawnThisTurn = false;
-        if (!canPlayerDrawFromDeck)
+        
+        if (isPlayerTurn)
         {
-            // Verifica exceções de Draw via SpellTrapManager
-            int draws = 1;
-            if (SpellTrapManager.Instance != null) draws += SpellTrapManager.Instance.extraDrawsPerTurn;
+            if (!canPlayerDrawFromDeck)
+            {
+                // Verifica exceções de Draw via SpellTrapManager
+                int draws = 1;
+                if (SpellTrapManager.Instance != null) draws += SpellTrapManager.Instance.extraDrawsPerTurn;
 
-            for (int i = 0; i < draws; i++)
-                DrawCard();
+                for (int i = 0; i < draws; i++)
+                    DrawCard();
+            }
+        }
+        else
+        {
+            // Turno do Oponente: Saca automaticamente
+            DrawOpponentCard();
         }
     }
 
