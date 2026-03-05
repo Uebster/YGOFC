@@ -146,11 +146,9 @@ public class SummonManager : MonoBehaviour
                 }
             }
 
-            if (isPlayer) 
-            {
-                hasPerformedNormalSummon = true;
-                if (narrowPassActive) narrowPassSummonCount++;
-            }
+            // FIX: Marca que a invocação normal foi realizada, seja Player ou IA
+            hasPerformedNormalSummon = true;
+            if (isPlayer && narrowPassActive) narrowPassSummonCount++;
         }
         else
         {

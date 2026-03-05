@@ -68,6 +68,10 @@ public class PhaseManager : MonoBehaviour
                         if (btn.GetComponent<MillenniumButton>() == null) btn.gameObject.AddComponent<MillenniumButton>();
                     }
 
+                    // FIX: Desativa a transição padrão do botão para evitar que ele fique cinza escuro quando não interativo
+                    // Isso permite que nossa lógica de cores (phaseInactiveColor) prevaleça.
+                    if (btn != null) btn.transition = Selectable.Transition.None;
+
                     if (btn != null) btn.onClick.AddListener(() => TryChangePhase(phaseEnum));
                 }
             }
@@ -148,6 +152,8 @@ public class PhaseManager : MonoBehaviour
                 {
                     CardEffectManager.Instance.OnPhaseStart(GamePhase.Standby);
                 }
+                // FIX: Inicia a contagem para avançar automaticamente para a Main Phase 1
+                StartCoroutine(HandleStandbyPhase());
                 break;
             case GamePhase.Main1:
                 if (skipMain1Phase)
@@ -265,6 +271,13 @@ public class PhaseManager : MonoBehaviour
     private void UpdatePhaseButtonsUI()
     {
         bool devMode = GameManager.Instance != null && GameManager.Instance.devMode;
+        
+        // Define a cor ativa baseada no turno (semitransparente)
+        Color activeColor = Color.white;
+        if (GameManager.Instance != null)
+        {
+            activeColor = GameManager.Instance.isPlayerTurn ? GameManager.Instance.phaseHoverColorPlayer : GameManager.Instance.phaseHoverColorOpponent;
+        }
 
         for (int i = 0; i < 6; i++)
         {
@@ -275,14 +288,16 @@ public class PhaseManager : MonoBehaviour
             {
                 Image image = phaseImages[phase];
                 bool isCurrent = (phase == currentPhase);
-                image.color = isCurrent ? phaseActiveColor : phaseInactiveColor;
+                
+                // FIX: Botões inativos ficam totalmente transparentes. Ativo usa a cor do tema.
+                image.color = isCurrent ? activeColor : Color.clear;
 
                 // O efeito de brilho agora usa a cor de hover do turno atual
                 Outline outline = image.GetComponent<Outline>();
                 if (outline == null) outline = image.gameObject.AddComponent<Outline>();
 
                 outline.enabled = isCurrent;
-                outline.effectColor = GameManager.Instance.isPlayerTurn ? GameManager.Instance.playerHoverColor : GameManager.Instance.opponentHoverColor;
+                outline.effectColor = activeColor;
                 outline.effectDistance = new Vector2(3, -3);
             }
 

@@ -69,19 +69,28 @@ public class BattleManager : MonoBehaviour
         if (PhaseManager.Instance.currentPhase != GamePhase.Battle) return;
         if (attacker.position == CardDisplay.BattlePosition.Defense) return;
 
-        // Verifica se pode atacar
-        if (!CanAttack(attacker)) return;
-
-        // Desmarca anterior se houver
-        if (currentAttacker != null)
+        try
         {
-            currentAttacker.SetAttackSelectionVisual(false);
-        }
+            // Verifica se pode atacar
+            if (!CanAttack(attacker)) return;
 
-        currentAttacker = attacker;
-        currentAttacker.SetAttackSelectionVisual(true);
-        
-        Debug.Log($"Ataque preparado com {attacker.CurrentCardData.name}. Selecione um alvo ou o campo do oponente.");
+            // Desmarca anterior se houver
+            if (currentAttacker != null)
+            {
+                currentAttacker.SetAttackSelectionVisual(false);
+            }
+
+            currentAttacker = attacker;
+            currentAttacker.SetAttackSelectionVisual(true);
+            
+            Debug.Log($"Ataque preparado com {attacker.CurrentCardData.name}. Selecione um alvo ou o campo do oponente.");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Erro ao preparar ataque: {e.Message}\n{e.StackTrace}");
+            // Reseta estado para evitar travamento
+            currentAttacker = null;
+        }
     }
 
     // Cancela a seleção de ataque
@@ -159,193 +168,11 @@ public class BattleManager : MonoBehaviour
 
     public bool CanAttack(CardDisplay attacker)
     {
-        // Verifica efeitos contínuos globais (Gravity Bind, Level Limit, Messenger of Peace, etc.)
-        if (CardEffectManager.Instance != null && CardEffectManager.Instance.IsAttackPreventedByContinuousEffect(attacker))
+        if (CardEffectManager.Instance != null)
         {
-            // O log específico já é feito dentro do CardEffectManager
-            return false;
-        }
-
-        // Armor Exe (0102) - Não pode atacar no turno que foi invocado
-        if (attacker.CurrentCardData.id == "0102" && attacker.summonedThisTurn)
-        {
-            Debug.Log("Ataque impedido: Armor Exe não pode atacar no turno de invocação.");
-            return false;
-        }
-
-        // Blue-Eyes Toon Dragon (0215) & Toons
-        if (attacker.CurrentCardData.race == "Toon" || attacker.CurrentCardData.id == "0215")
-        {
-            if (attacker.summonedThisTurn)
-            {
-                Debug.Log("Toon: Não pode atacar no turno que foi invocado.");
-                return false;
-            }
-            if (!GameManager.Instance.PayLifePoints(attacker.isPlayerCard, 500))
-            {
-                Debug.Log("Toon: LP insuficientes para atacar (500).");
-                return false;
-            }
-        }
-
-        // Cave Dragon (0274)
-        if (attacker.CurrentCardData.id == "0274")
-        {
-            // Não pode atacar a menos que controle outro Dragão
-            bool hasOtherDragon = false;
-            Transform[] myZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
-            foreach(var zone in myZones)
-            {
-                if (zone.childCount > 0)
-                {
-                    var cd = zone.GetChild(0).GetComponent<CardDisplay>();
-                    if (cd != null && cd != attacker && cd.CurrentCardData.race == "Dragon") hasOtherDragon = true;
-                }
-            }
-            if (!hasOtherDragon) return false;
-        }
-
-        // 2146 - Zombyra the Dark
-        if (attacker.CurrentCardData.id == "2146")
-        {
-            // Cannot attack directly
-            if (HasDirectAttackCondition())
-            {
-                Debug.Log("Zombyra the Dark: Não pode atacar diretamente.");
-                return false;
-            }
-        }
-
-        // 2012 - Ultimate Obedient Fiend
-        if (attacker.CurrentCardData.id == "2012")
-        {
-            // Só ataca se for o único monstro e mão vazia
-            int handCount = GameManager.Instance.GetPlayerHandData().Count;
-            int monsterCount = GameManager.Instance.GetFieldCardCount(attacker.isPlayerCard); // Isso conta S/T também no método atual, precisa de ajuste ou contagem manual
-            // Contagem manual de monstros
-            int mCount = 0;
-            Transform[] zones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
-            foreach(var z in zones) if(z.childCount > 0) mCount++;
-
-            if (handCount > 0 || mCount > 1)
-            {
-                Debug.Log("Ultimate Obedient Fiend: Não pode atacar (Mão ou Campo não vazios).");
-                return false;
-            }
-        }
-
-        // 2035 - Vengeful Bog Spirit
-        if (GameManager.Instance.IsCardActiveOnField("2035"))
-        {
-            if (attacker.summonedThisTurn)
-            {
-                Debug.Log("Ataque impedido por Vengeful Bog Spirit (Invocado neste turno).");
-                return false;
-            }
-        }
-
-        // 2050 - Wall of Revealing Light
-        // Verifica se o oponente tem a carta ativa
-        if (IsWallOfRevealingLightBlocking(attacker))
-        {
-            Debug.Log("Ataque impedido por Wall of Revealing Light.");
-            return false;
-        }
-
-        // D.D. Borderline (0379)
-        // Se não houver Spells no seu GY, não pode atacar.
-        if (GameManager.Instance.IsCardActiveOnField("0379"))
-        {
-            List<CardData> gy = attacker.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
-            bool hasSpell = gy.Exists(c => c.type.Contains("Spell"));
-            if (!hasSpell) return false;
-        }
-
-        // Dark Elf (0409)
-        if (attacker.CurrentCardData.id == "0409")
-        {
-            if (!GameManager.Instance.PayLifePoints(attacker.isPlayerCard, 1000))
-            {
-                Debug.Log("Dark Elf: LP insuficientes para atacar (1000).");
-                return false;
-            }
-        }
-
-        // Command Knight (0318)
-        // Se controlar outro monstro, não pode ser atacado.
-        // Esta verificação é no alvo, não no atacante.
-        // Deve ser feita no SelectTarget ou CanAttackTarget (se existisse).
-        // Como CanAttack verifica se o atacante pode atacar, vamos adicionar uma verificação de alvo no SelectTarget.
-
-        // Cold Wave (0315)
-        // Se ativa, não pode setar/ativar S/T. (Verificado no SpellTrapManager)
-        // Mas não impede ataque.
-
-        // Para Alligator's Sword Dragon e Amphibious Bugroth MK-3:
-        if (attacker.CurrentCardData.id == "0037" || attacker.CurrentCardData.id == "0053") // IDs
-        {
-            if (AreAllEnemyMonstersEarthWaterOrFire()) return true;
-        }
-
-        // 1402 - Panther Warrior
-        if (attacker.CurrentCardData.id == "1402")
-        {
-            // Requer tributo para atacar
-            // Como não podemos abrir UI aqui facilmente (retorno bool), verificamos se já tributou?
-            // Ou impedimos o ataque se não houver monstros para tributar.
-            // Implementação ideal: Ao clicar para atacar, abre popup "Tributar para atacar?".
-            // Aqui apenas bloqueamos se não houver outros monstros.
-            bool hasFodder = false;
-            // ... check fodder ...
-            if (!hasFodder) return false;
-            
-            // Se tiver, o clique do ataque deve tratar o custo.
-            // Por enquanto, permitimos e logamos o custo.
-            Debug.Log("Panther Warrior: Tributo necessário (Lógica de custo pendente).");
-        }
-
-        return true;
-    }
-
-    private bool AreAllEnemyMonstersEarthWaterOrFire()
-    {
-        if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return false;
-        
-        // Determine enemy zones based on current turn (attacker is current player)
-        Transform[] enemyZones = GameManager.Instance.isPlayerTurn ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
-        
-        foreach (var zone in enemyZones)
-        {
-            if (zone.childCount > 0)
-            {
-                CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
-                if (cd != null && cd.isOnField && !cd.isFlipped)
-                {
-                    string r = cd.CurrentCardData.attribute; // Attribute, not Race? Method name says Earth/Water/Fire which are Attributes usually.
-                    if (r != "Earth" && r != "Water" && r != "Fire") return false;
-                }
-            }
+            return CardEffectManager.Instance.CanDeclareAttack(attacker);
         }
         return true;
-    }
-
-    private bool IsWallOfRevealingLightBlocking(CardDisplay attacker)
-    {
-        bool attackerIsPlayer = attacker.isPlayerCard;
-        Transform[] enemySpellZones = attackerIsPlayer ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
-        
-        foreach (var zone in enemySpellZones)
-        {
-            if (zone.childCount > 0)
-            {
-                CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
-                if (cd != null && cd.isOnField && !cd.isFlipped && cd.CurrentCardData.id == "2050")
-                {
-                    if (attacker.currentAtk <= cd.paidLifePoints) return true;
-                }
-            }
-        }
-        return false;
     }
 
     public void SelectTarget(CardDisplay target)
@@ -439,7 +266,8 @@ public class BattleManager : MonoBehaviour
                 if (currentAttacker != null && (currentAttacker.CurrentCardData.race == "Toon" || currentAttacker.CurrentCardData.id == "0215"))
                 {
                     CardDisplay defender = zone.GetChild(0).GetComponent<CardDisplay>();
-                    if (defender != null && defender.CurrentCardData.race == "Toon") return false; // Has toon, must attack it
+                    // Só considera monstros Toon Face-Up como bloqueadores
+                    if (defender != null && !defender.isFlipped && defender.CurrentCardData.race == "Toon") return false; // Has toon, must attack it
                     continue; // Not a toon, ignore for direct attack condition
                 }
                 return false;
@@ -502,6 +330,9 @@ public class BattleManager : MonoBehaviour
 
     public void PerformBattle(CardDisplay attacker, CardDisplay target)
     {
+        // Captura o estado face-down antes de revelar
+        bool targetWasFaceDown = target.isFlipped;
+
         // Revela o alvo se estiver virado para baixo (Flip)
         if (target.isFlipped)
         {
@@ -515,11 +346,10 @@ public class BattleManager : MonoBehaviour
         }
 
         // Blast Sphere (0201) - Antes do cálculo de dano
-        if (target.CurrentCardData.id == "0201" && target.isFlipped) // Face-down (isFlipped=true means back is showing in CardDisplay logic usually, but let's assume standard logic: isFlipped=true means Face-Down in this context based on previous code)
+        // Verifica se estava face-down no início do ataque
+        if (target.CurrentCardData.id == "0201" && targetWasFaceDown)
         {
-            // Nota: No CardDisplay, isFlipped=true significa VERSO (Face-Down).
             Debug.Log("Blast Sphere: Atacado face-down. Equipando ao atacante...");
-            target.RevealCard();
             // Move Blast Sphere para S/T do dono do Blast Sphere e equipa no atacante
             // Simplificação: Apenas cria o link e destrói o objeto visual do monstro para simular que virou equip
             // Em um sistema completo, moveria para a zona de S/T.
@@ -534,11 +364,15 @@ public class BattleManager : MonoBehaviour
         int atkPoints = attacker.currentAtk; // Usa currentAtk
         int targetPoints = (target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : target.currentDef;
 
-        Debug.Log($"Batalha: {attacker.CurrentCardData.name} ({atkPoints}) vs {target.CurrentCardData.name} ({targetPoints}) [{target.position}]");
+        Debug.Log($"[BattleManager] INICIO Batalha: {attacker.CurrentCardData.name} ({atkPoints}) vs {target.CurrentCardData.name} ({targetPoints})");
 
         if (DuelFXManager.Instance != null)
         {
-            DuelFXManager.Instance.PlayAttack(attacker, target, () => ResolveDamage(attacker, target, atkPoints, targetPoints));
+            Debug.Log("[BattleManager] Solicitando animação ao DuelFXManager...");
+            DuelFXManager.Instance.PlayAttack(attacker, target, () => {
+                Debug.Log("[BattleManager] Animação concluída. Resolvendo dano...");
+                ResolveDamage(attacker, target, atkPoints, targetPoints);
+            });
         }
         else
         {

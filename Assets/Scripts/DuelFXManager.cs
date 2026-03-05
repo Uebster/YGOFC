@@ -180,12 +180,15 @@ public class DuelFXManager : MonoBehaviour
         }
 
         // Verifica se deve usar a nova animação de projétil (espada) ou a clássica (mover carta)
-        if (GameManager.Instance != null && GameManager.Instance.enableAttackAnimation)
+        // FIX: Só usa a nova se estiver habilitada E se o prefab existir
+        if (GameManager.Instance != null && GameManager.Instance.enableAttackAnimation && GameManager.Instance.attackAnimationPrefab != null)
         {
+            Debug.Log("[DuelFXManager] Usando animação de Projétil (Espada).");
             StartCoroutine(AttackProjectileRoutine(attacker, target, onHit));
         }
         else
         {
+            Debug.Log("[DuelFXManager] Usando animação Clássica (Mover Carta).");
             StartCoroutine(AttackRoutine(attacker, target, onHit));
         }
     }
@@ -274,6 +277,7 @@ public class DuelFXManager : MonoBehaviour
         
         // Impacto
         SpawnVFX(attackVFX, endPos);
+        Debug.Log("[DuelFXManager] Projétil atingiu o alvo. Chamando callback.");
         onHit?.Invoke();
     }
 

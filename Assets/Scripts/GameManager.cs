@@ -1323,7 +1323,7 @@ public void ShuffleDeck(bool isPlayer)
     public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false, bool isTributeSummon = false)
     {
         // 2. Encontrar Zona Livre
-        Transform targetZone = isPlayer ? GetFreePlayerMonsterZone() : GetFreeOpponentMonsterZone();
+        Transform targetZone = GetFreeMonsterZone(isPlayer);
         if (targetZone == null)
         {
             Debug.LogWarning("Sem zonas de monstro livres!");
@@ -1376,20 +1376,13 @@ public void ShuffleDeck(bool isPlayer)
         if (DuelScoreManager.Instance != null) DuelScoreManager.Instance.RecordSummon();
     }
 
-    private Transform GetFreePlayerMonsterZone()
+    public Transform GetFreeMonsterZone(bool isPlayer)
     {
-        if (duelFieldUI == null || duelFieldUI.playerMonsterZones == null) return null;
-        foreach (Transform zone in duelFieldUI.playerMonsterZones)
-        {
-            if (zone.childCount == 0) return zone;
-        }
-        return null;
-    }
+        if (duelFieldUI == null) return null;
+        Transform[] zones = isPlayer ? duelFieldUI.playerMonsterZones : duelFieldUI.opponentMonsterZones;
+        if (zones == null) return null;
 
-    private Transform GetFreeOpponentMonsterZone()
-    {
-        if (duelFieldUI == null || duelFieldUI.opponentMonsterZones == null) return null;
-        foreach (Transform zone in duelFieldUI.opponentMonsterZones)
+        foreach (Transform zone in zones)
         {
             if (zone.childCount == 0) return zone;
         }
@@ -1507,7 +1500,7 @@ public void ShuffleDeck(bool isPlayer)
         else
         {
             // Encontrar Zona de Spell Livre
-            targetZone = isPlayer ? GetFreePlayerSpellZone() : GetFreeOpponentSpellZone();
+            targetZone = GetFreeSpellZone(isPlayer);
         }
 
         if (targetZone == null)
@@ -1568,10 +1561,13 @@ public void ShuffleDeck(bool isPlayer)
         }
     }
 
-    private Transform GetFreePlayerSpellZone()
+    public Transform GetFreeSpellZone(bool isPlayer)
     {
-        if (duelFieldUI == null || duelFieldUI.playerSpellZones == null) return null;
-        foreach (Transform zone in duelFieldUI.playerSpellZones)
+        if (duelFieldUI == null) return null;
+        Transform[] zones = isPlayer ? duelFieldUI.playerSpellZones : duelFieldUI.opponentSpellZones;
+        if (zones == null) return null;
+
+        foreach (Transform zone in zones)
         {
             if (zone.childCount == 0) return zone;
         }
@@ -1607,16 +1603,6 @@ public void ShuffleDeck(bool isPlayer)
             // A resolução e execução agora são controladas pelo ChainManager
             // após verificar respostas.
         }
-    }
-
-    private Transform GetFreeOpponentSpellZone()
-    {
-        if (duelFieldUI == null || duelFieldUI.opponentSpellZones == null) return null;
-        foreach (Transform zone in duelFieldUI.opponentSpellZones)
-        {
-            if (zone.childCount == 0) return zone;
-        }
-        return null;
     }
 
     // --- CONTROLE DE FASE (UI) ---
@@ -1711,7 +1697,7 @@ public void ShuffleDeck(bool isPlayer)
     // Sistema de Tokens (Scapegoat, etc)
     public void SpawnToken(bool forPlayer, int atk, int def, string name)
     {
-        Transform targetZone = forPlayer ? GetFreePlayerMonsterZone() : GetFreeOpponentMonsterZone();
+        Transform targetZone = GetFreeMonsterZone(forPlayer);
         if (targetZone == null) return; // Campo cheio
 
         GameObject tokenGO = Instantiate(tokenPrefab != null ? tokenPrefab : cardPrefab, targetZone);
@@ -1754,7 +1740,7 @@ public void ShuffleDeck(bool isPlayer)
         }
 
         bool newOwnerIsPlayer = !card.isPlayerCard;
-        Transform newZone = newOwnerIsPlayer ? GetFreePlayerMonsterZone() : GetFreeOpponentMonsterZone();
+        Transform newZone = GetFreeMonsterZone(newOwnerIsPlayer);
 
         if (newZone == null)
         {
@@ -1812,7 +1798,7 @@ public void ShuffleDeck(bool isPlayer)
     // Invocação Especial direta por dados (para Monster Reborn, etc)
     public CardDisplay SpecialSummonFromData(CardData data, bool forPlayer, bool faceUp = true, bool defense = false)
     {
-        Transform targetZone = forPlayer ? GetFreePlayerMonsterZone() : GetFreeOpponentMonsterZone();
+        Transform targetZone = GetFreeMonsterZone(forPlayer);
         if (targetZone == null) return null;
 
         GameObject cardGO = Instantiate(cardPrefab, targetZone);
@@ -2039,7 +2025,7 @@ public void ShuffleDeck(bool isPlayer)
     public void EquipMonsterToMonster(CardDisplay equipCard, CardDisplay targetMonster)
     {
         // 1. Move equipCard para zona de S/T
-        Transform targetZone = equipCard.isPlayerCard ? GetFreePlayerSpellZone() : GetFreeOpponentSpellZone();
+        Transform targetZone = GetFreeSpellZone(equipCard.isPlayerCard);
         if (targetZone == null)
         {
             Debug.LogWarning("Sem zona de S/T para equipar o monstro.");
