@@ -199,8 +199,8 @@ public class GameManager : MonoBehaviour
         {
             InitializePlayerDeck();
             InitializeOpponentDeck();
-            DrawInitialHand(5);
-            DrawInitialOpponentHand(5); // Garante que o oponente comece com cartas
+            yield return StartCoroutine(DrawInitialHandRoutine(5));
+            yield return StartCoroutine(DrawInitialOpponentHandRoutine(5)); // Garante que o oponente comece com cartas
         }
     }
 
@@ -238,8 +238,8 @@ public class GameManager : MonoBehaviour
         (List<CardData> oMain, List<CardData> oExtra) = InitializeOpponentDeck();
         DeckManager.Instance.SetupDecks(pDeck, playerExtraDeck, oMain, oExtra);
 
-        DrawInitialHand(5); // Exemplo: compra 5 cartas iniciais
-        DrawInitialOpponentHand(5);
+        // DrawInitialHand(5); // Substituído pela sequência de corrotina
+        // DrawInitialOpponentHand(5);
 
         // Inicializa LP
         playerLP = 8000;
@@ -251,8 +251,7 @@ public class GameManager : MonoBehaviour
         // Reseta flag de draw antes de começar o turno
         if (DeckManager.Instance != null) DeckManager.Instance.ResetTurnStats();
 
-        if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
-        else Debug.LogError("PhaseManager não encontrado mesmo após tentativa de criação!");
+        // PhaseManager.Instance.StartTurn() agora é chamado dentro de DuelStartSequence
 
         // Inicia o rastreamento de pontuação para o Rank
         if (DuelScoreManager.Instance != null)
@@ -269,7 +268,19 @@ public class GameManager : MonoBehaviour
             DuelTheme theme = campaignDatabase.GetThemeForLevel(levelToUse);
             if (theme != null)
                 DuelThemeManager.Instance.ApplyTheme(theme);
+            }
+                StartCoroutine(DuelStartSequence());    
         }
+    private IEnumerator DuelStartSequence()
+    {
+        yield return new WaitForSeconds(0.5f); // Delay inicial para respirar
+        yield return StartCoroutine(DrawInitialHandRoutine(5));
+        yield return new WaitForSeconds(0.5f);
+        yield return StartCoroutine(DrawInitialOpponentHandRoutine(5));
+        yield return new WaitForSeconds(1.0f); // Pausa dramática antes de começar
+
+        if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
+        else Debug.LogError("PhaseManager não encontrado mesmo após tentativa de criação!");
     }
 
     // Cria automaticamente os gerenciadores se eles não estiverem na cena
@@ -449,9 +460,17 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             DrawCard(true); // Ignora o limite para a mão inicial
-            yield return new WaitForSeconds(0.2f); // Pequeno delay entre as compras
+            yield return new WaitForSeconds(0.5f); // Delay aumentado para melhor visualização
         }
     }
+    public IEnumerator DrawInitialOpponentHandRoutine(int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+           DrawOpponentCard();            
+           yield return new WaitForSeconds(0.3f); // Oponente compra um pouco mais rápido
+        }
+    }    
 
     // --- AÇÕES DE JOGO PADRONIZADAS (GAME ACTIONS) ---
 
