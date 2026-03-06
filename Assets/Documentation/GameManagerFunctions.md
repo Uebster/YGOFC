@@ -49,9 +49,13 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `testOpponentID`: ID do personagem oponente para teste rápido (ex: "021_kaiba").
 *   `testPlayerID`: ID do personagem para substituir o deck do jogador (ex: "020_pegasus").
 *   `testActThemeIndex`: Número do Ato (1-10) para forçar o carregamento de um tema visual específico.
+*   `showOpponentHand`: Mostra cartas do oponente viradas para cima (Cheat).
 *   `canPlayerDrawFromDeck`: Permite clique no deck.
-*   `showOpponentHand`: Mostra cartas do oponente viradas para cima.
 
+## Notas de Implementação
+*   **Extra Deck:** Agora é renderizado virado para baixo (Face-Down), mas o dono pode visualizar o conteúdo passando o mouse (Card Viewer).
+*   **Nomes na UI:** Ao usar `testPlayerID` ou `testOpponentID`, os nomes na interface de duelo são atualizados automaticamente para corresponder aos personagens carregados.
+*   **Fallback de Deck:** Se o deck do oponente falhar ao carregar (IDs inválidos), um deck aleatório de emergência é gerado para evitar travamento do jogo.
 ## Mecânicas Especiais
 *   `BeginFusionSummon(source)`: Inicia o fluxo de UI para Invocação-Fusão.
 *   `PerformFusionSummon(...)`: Executa a fusão consumindo materiais.

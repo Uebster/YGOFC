@@ -98,12 +98,18 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
                 if (display != null)
                 {
                     display.isInPile = true; // Marca como carta de pilha para controle de hover
-                    bool isFaceUp = (pileType != PileType.Deck); // Tudo exceto Deck é face-up
+                    // Deck e Extra Deck são virados para baixo por padrão
+                    bool isFaceUp = (pileType != PileType.Deck && pileType != PileType.ExtraDeck);
 
-                    if (!isFaceUp)
+                    if (pileType == PileType.Deck)
                     {
                         // Deck: Mostra apenas o verso (otimizado)
                         display.SetCardBackOnly(currentBackTexture);
+                    }
+                    else if (pileType == PileType.ExtraDeck)
+                    {
+                        // Extra Deck: Face-down mas com dados carregados (para permitir visualização do dono)
+                        display.SetCard(data, currentBackTexture, false);
                     }
                     else
                     {

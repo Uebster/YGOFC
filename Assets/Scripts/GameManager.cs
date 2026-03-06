@@ -393,6 +393,12 @@ public class GameManager : MonoBehaviour
                 }
 
                 playerMainDeck = devDeck;
+                
+                // Atualiza nome do jogador na UI
+                playerName = charData.name;
+                if (duelFieldUI != null && duelFieldUI.playerNameText != null)
+                    duelFieldUI.playerNameText.text = playerName;
+
                 UpdatePileVisuals();
                 return playerMainDeck;
             }
@@ -454,6 +460,10 @@ public class GameManager : MonoBehaviour
         if (currentOpponent == null && !string.IsNullOrEmpty(testOpponentID) && characterDatabase != null)
         {
             currentOpponent = characterDatabase.GetCharacterById(testOpponentID);
+            if (currentOpponent == null)
+            {
+                Debug.LogError($"[GameManager] Oponente com ID '{testOpponentID}' não encontrado no banco de dados!");
+            }
         }
 
         // Se temos um oponente definido (Campanha), carregamos o deck dele
@@ -503,6 +513,9 @@ public class GameManager : MonoBehaviour
         else
         {
             // Fallback: Se não tiver oponente (Free Duel genérico), carrega tudo ou aleatório
+            if (duelFieldUI != null && duelFieldUI.opponentNameText != null)
+                duelFieldUI.opponentNameText.text = "Training Opponent";
+
             Debug.Log("Nenhum oponente específico definido. Carregando banco de dados inteiro (Modo Teste).");
             foreach (var card in cardDatabase.cardDatabase)
             {
