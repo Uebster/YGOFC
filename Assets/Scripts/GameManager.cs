@@ -262,6 +262,10 @@ public class GameManager : MonoBehaviour
         (List<CardData> oMain, List<CardData> oExtra) = InitializeOpponentDeck();
         DeckManager.Instance.SetupDecks(pDeck, playerExtraDeck, oMain, oExtra);
 
+        // FIX: Embaralha os decks antes de começar o duelo para garantir aleatoriedade
+        DeckManager.Instance.ShuffleDeck(true);
+        DeckManager.Instance.ShuffleDeck(false);
+
         // DrawInitialHand(5); // Substituído pela sequência de corrotina
         // DrawInitialOpponentHand(5);
 
