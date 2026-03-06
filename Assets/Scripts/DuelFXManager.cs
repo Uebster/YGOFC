@@ -195,6 +195,9 @@ public class DuelFXManager : MonoBehaviour
 
     private IEnumerator AttackRoutine(CardDisplay attacker, CardDisplay target, System.Action onHit)
     {
+        // Safeguard: Evita loop infinito se a velocidade for 0 ou negativa
+        if (animationSpeed <= 0.1f) animationSpeed = 1.5f;
+
         Vector3 startPos = attacker.transform.position;
         Vector3 targetPos = target.transform.position;
 
@@ -234,6 +237,9 @@ public class DuelFXManager : MonoBehaviour
     // Esqueleto da nova animação de ataque (Espada/Projétil)
     private IEnumerator AttackProjectileRoutine(CardDisplay attacker, CardDisplay target, System.Action onHit)
     {
+        // Safeguard
+        if (animationSpeed <= 0.1f) animationSpeed = 1.5f;
+
         Vector3 startPos = attacker.transform.position;
         Vector3 endPos;
 

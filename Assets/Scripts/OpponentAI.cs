@@ -285,24 +285,38 @@ public class OpponentAI : MonoBehaviour
 
             // Avalia o melhor alvo para este atacante
             CardDisplay bestTarget = FindBestTarget(attacker);
+            bool didAttack = false;
 
-            if (bestTarget != null) // Encontrou um alvo vantajoso
+            // Executa a batalha dentro de um bloco try-catch para segurança
+            try
             {
-                Debug.Log($"AI: {attacker.CurrentCardData.name} ataca {bestTarget.CurrentCardData.name}!");
-                BattleManager.Instance.currentAttacker = attacker;
-                BattleManager.Instance.PerformBattle(attacker, bestTarget);
-                yield return new WaitForSeconds(actionDelay + 1.0f);
+                if (bestTarget != null) // Encontrou um alvo vantajoso
+                {
+                    Debug.Log($"AI: {attacker.CurrentCardData.name} ataca {bestTarget.CurrentCardData.name}!");
+                    BattleManager.Instance.currentAttacker = attacker;
+                    BattleManager.Instance.PerformBattle(attacker, bestTarget);
+                    didAttack = true;
+                }
+                else if (GetPlayerMonsterCount() == 0) // Campo aberto
+                {
+                    Debug.Log($"AI: {attacker.CurrentCardData.name} ataca diretamente!");
+                    BattleManager.Instance.currentAttacker = attacker;
+                    BattleManager.Instance.PerformDirectAttack(attacker);
+                    didAttack = true;
+                }
+                else
+                {
+                    Debug.Log($"AI: {attacker.CurrentCardData.name} não encontrou um alvo vantajoso. Não vai atacar.");
+                }
             }
-            else if (GetPlayerMonsterCount() == 0) // Campo aberto
+            catch (System.Exception e)
             {
-                Debug.Log($"AI: {attacker.CurrentCardData.name} ataca diretamente!");
-                BattleManager.Instance.currentAttacker = attacker;
-                BattleManager.Instance.PerformDirectAttack(attacker);
-                yield return new WaitForSeconds(actionDelay + 1.0f);
+                Debug.LogError($"AI Error during battle: {e.Message}\n{e.StackTrace}");
             }
-            else
+
+            if (didAttack)
             {
-                Debug.Log($"AI: {attacker.CurrentCardData.name} não encontrou um alvo vantajoso. Não vai atacar.");
+                yield return new WaitForSeconds(actionDelay + 1.0f);
             }
         }
     }

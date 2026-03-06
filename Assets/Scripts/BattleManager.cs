@@ -19,6 +19,7 @@ public class BattleManager : MonoBehaviour
     public bool patricianOfDarknessActive = false; // Patrician of Darkness (1406)
     public bool wabokuActive = false; // Waboku (2047)
     public bool noBattleDamageThisTurn = false; // Winged Kuriboh (2090)
+    private bool isBattleResolving = false; // Proteção contra reentrada
 
     // Verifica se a ativação de armadilhas está bloqueada (ex: Mirage Dragon)
     public bool IsTrapActivationBlocked(bool isPlayer)
@@ -61,6 +62,7 @@ public class BattleManager : MonoBehaviour
         wabokuActive = false;
         noBattleDamageThisTurn = false;
         gravekeepersProtected = false;
+        isBattleResolving = false;
     }
 
     // Prepara o monstro para atacar (Seleção)
@@ -330,6 +332,13 @@ public class BattleManager : MonoBehaviour
 
     public void PerformBattle(CardDisplay attacker, CardDisplay target)
     {
+        if (isBattleResolving) 
+        {
+            Debug.LogWarning("Batalha já está sendo resolvida. Ignorando chamada duplicada.");
+            return;
+        }
+        isBattleResolving = true;
+
         // Captura o estado face-down antes de revelar
         bool targetWasFaceDown = target.isFlipped;
 
@@ -355,6 +364,7 @@ public class BattleManager : MonoBehaviour
             // Em um sistema completo, moveria para a zona de S/T.
             GameManager.Instance.CreateCardLink(target, attacker, CardLink.LinkType.Equipment);
             target.AddSpellCounter(1); // Marca para destruir na Standby
+            isBattleResolving = false;
             return; // Cancela batalha
         }
 
@@ -372,11 +382,13 @@ public class BattleManager : MonoBehaviour
             DuelFXManager.Instance.PlayAttack(attacker, target, () => {
                 Debug.Log("[BattleManager] Animação concluída. Resolvendo dano...");
                 ResolveDamage(attacker, target, atkPoints, targetPoints);
+                isBattleResolving = false;
             });
         }
         else
         {
             ResolveDamage(attacker, target, atkPoints, targetPoints);
+            isBattleResolving = false;
         }
     }
 
@@ -566,6 +578,7 @@ public class BattleManager : MonoBehaviour
         // noBattleDamageThisTurn = false; // Resetar no PhaseManager
         // patricianOfDarknessActive = false; // Não reseta pois é contínuo enquanto o monstro estiver em campo
         gravekeepersProtected = false; // Reseta no fim da batalha ou turno? Regra diz "until End Phase".
+        // isBattleResolving = false; // Não reseta aqui, pois é controlado no PerformBattle
         // Se for até End Phase, deve ser resetado no PhaseManager ou CardEffectManager.
     }
 

@@ -76,6 +76,11 @@ public class PhaseManager : MonoBehaviour
                 }
             }
         }
+
+        // FIX: Inicializa o visual dos botões imediatamente para esconder os inativos (evita botões brancos no início)
+        UpdatePhaseButtonsUI();
+        // Define a cor de hover inicial (Player começa, então verde)
+        UpdateHoverColors(true);
     }
 
     public void StartTurn()
@@ -291,6 +296,32 @@ public class PhaseManager : MonoBehaviour
                 
                 // FIX: Botões inativos ficam totalmente transparentes. Ativo usa a cor do tema.
                 image.color = isCurrent ? activeColor : Color.clear;
+                
+                // FIX CRÍTICO: Atualiza o MillenniumButton para que ele saiba qual é a "cor normal" deste estado.
+                // Sem isso, o MillenniumButton reseta para Branco (Sólido) ao passar o mouse ou habilitar o objeto.
+                MillenniumButton mb = image.GetComponent<MillenniumButton>();
+                if (mb == null && phaseButtons.ContainsKey(phase)) 
+                    mb = phaseButtons[phase].GetComponent<MillenniumButton>();
+
+                if (mb != null)
+                {
+                    mb.bgNormalColor = isCurrent ? activeColor : Color.clear;
+                    
+                    // FIX: Força a atualização visual imediata se o mouse não estiver sobre o botão
+                    // Isso resolve o problema de fases anteriores ficarem "acesas"
+                    if (image != null)
+                    {
+                        image.color = mb.bgNormalColor;
+                    }
+
+                    // FIX: Atualiza também a imagem do próprio botão (filho), pois o MillenniumButton
+                    // pode estar segurando a cor antiga.
+                    Image btnImage = mb.GetComponent<Image>();
+                    if (btnImage != null && btnImage != image)
+                    {
+                        btnImage.color = mb.bgNormalColor;
+                    }
+                }
 
                 // O efeito de brilho agora usa a cor de hover do turno atual
                 Outline outline = image.GetComponent<Outline>();

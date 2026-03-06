@@ -17,6 +17,13 @@ public partial class CardEffectManager
 
     public bool CanDeclareAttack(CardDisplay attacker)
     {
+        // Regra: Não pode atacar no primeiro turno do duelo
+        if (GameManager.Instance != null && GameManager.Instance.turnCount == 1)
+        {
+             Debug.Log("Não é possível atacar no primeiro turno do duelo.");
+             return false;
+        }
+
         // Verifica efeitos contínuos globais (Gravity Bind, Level Limit, Messenger of Peace, etc.)
         if (IsAttackPreventedByContinuousEffect(attacker))
         {

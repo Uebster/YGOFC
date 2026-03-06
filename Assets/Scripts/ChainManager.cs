@@ -87,7 +87,22 @@ public class ChainManager : MonoBehaviour
                     {
                         // Espera a resposta do jogador humano
                         UIManager.Instance.ShowResponseWindow(responses, () => { playerPassed = true; });
-                        yield return new WaitUntil(() => playerPassed || currentChain.Count > responses.Count); // Espera passar ou uma nova carta ser adicionada
+                        
+                        // FIX: Adicionado timeout para evitar travamento infinito se a UI falhar
+                        float timeout = 15f;
+                        float timer = 0f;
+                        // Adicionado verificação de responses.Count > 0 para evitar loop se a lista for limpa externamente
+                        while (!playerPassed && responses.Count > 0 && timer < timeout)
+                        {
+                            timer += Time.unscaledDeltaTime; // Usa unscaled para não travar se o jogo pausar
+                            yield return null;
+                        }
+                        
+                        if (timer >= timeout)
+                        {
+                            Debug.LogWarning("ChainManager: Timeout aguardando resposta do jogador. Passando automaticamente.");
+                            playerPassed = true;
+                        }
                     }
                     else
                     {
@@ -104,7 +119,7 @@ public class ChainManager : MonoBehaviour
                 }
 
                 // Se uma nova carta foi adicionada à chain, o loop de prioridade reinicia para o outro jogador
-                if (currentChain.Count > responses.Count)
+                if (currentChain.Count > responses.Count) // Lógica simplificada, idealmente checaria currentChain.Count > lastCount
                 {
                     currentPlayerIsPlayer = !GetLastChainLink().isPlayerEffect;
                     i = -1; // Reinicia o loop for

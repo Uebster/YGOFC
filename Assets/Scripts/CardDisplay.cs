@@ -1,5 +1,3 @@
-// Assets/Scripts/CardDisplay.cs
-
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -88,6 +86,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public CardData CurrentCardData => currentCardData; // Propriedade pública para acesso seguro (Renomeado para evitar conflito)
 
     private UnityWebRequest currentRequest; // Rastreia a requisição ativa para descarte correto
+    private bool isAttackSelected = false; // Rastreia se a carta está selecionada para atacar
 
     void Awake()
     {
@@ -526,6 +525,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             else if (GameManager.Instance.cardViewerDisplay == this) shouldShowOutline = GameManager.Instance.enableCardViewerOutline;
         }
 
+        // Se estiver selecionado para ataque, não mostra o outline de hover (verde/amarelo) para não sobrescrever o vermelho
+        if (isAttackSelected) shouldShowOutline = false;
+
         // --- Efeito de Borda (Hover) ---
         if (shouldShowOutline)
         {
@@ -593,10 +595,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (useSimpleOutline)
         {
             Outline outline = GetComponent<Outline>();
-            if (outline != null) outline.enabled = false;
+            // FIX: Só desativa se NÃO estiver selecionado para ataque. Se estiver, mantém o vermelho.
+            if (outline != null && !isAttackSelected) outline.enabled = false;
         }
 
-        if (outlineImage != null)
+        if (outlineImage != null && !isAttackSelected)
         {
             outlineImage.gameObject.SetActive(false);
         }
@@ -627,21 +630,45 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     // Define o visual de "Selecionado para Atacar"
     public void SetAttackSelectionVisual(bool selected)
     {
+        isAttackSelected = selected; // Atualiza o estado
+
         // Se o efeito estiver desabilitado, garante que a cor da carta esteja normal e sai.
         if (GameManager.Instance == null || !GameManager.Instance.enableAttackSelectionVisual)
         {
             if (cardImage != null) cardImage.color = Color.white;
             if (outlineImage != null) outlineImage.gameObject.SetActive(false);
+            if (useSimpleOutline)
+            {
+                Outline outline = GetComponent<Outline>();
+                if (outline != null) outline.enabled = false;
+            }
             return;
         }
 
+        // FIX: Garante que a imagem da carta fique branca (sem tintura cinza/escura)
         if (cardImage != null)
         {
-            // Escurece a carta para indicar que está pronta para atacar
-            cardImage.color = selected ? GameManager.Instance.attackSelectionColor : Color.white;
+            cardImage.color = Color.white;
         }
-        // Opcional: Poderia ativar o outline vermelho também
-        if (outlineImage != null)
+
+        // Aplica o Outline Vermelho
+        if (useSimpleOutline)
+        {
+            Outline outline = GetComponent<Outline>();
+            if (outline == null && selected) outline = gameObject.AddComponent<Outline>();
+
+            if (outline != null)
+            {
+                outline.enabled = selected;
+                if (selected)
+                {
+                    outline.effectColor = attackColor; // Vermelho
+                    outline.effectDistance = new Vector2(4, -4);
+                    outline.useGraphicAlpha = true;
+                }
+            }
+        }
+        else if (outlineImage != null)
         {
             outlineImage.color = attackColor;
             outlineImage.gameObject.SetActive(selected);
