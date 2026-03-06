@@ -103,7 +103,13 @@ public class GameManager : MonoBehaviour
     public PileDisplay playerRemovedDisplay; // Novo
     public PileDisplay opponentRemovedDisplay; // Novo
 
+    // Propriedades de compatibilidade para acesso via DeckManager (Corrige erro no CardEffectManager)
+    public PileDisplay playerDeckDisplay => DeckManager.Instance != null ? DeckManager.Instance.playerDeckDisplay : null;
+    public PileDisplay opponentDeckDisplay => DeckManager.Instance != null ? DeckManager.Instance.opponentDeckDisplay : null;
+
     // Adicionado: Side Deck e Baú (Trunk)
+    public List<CardData> playerMainDeck = new List<CardData>(); // Deck principal persistente
+    public List<CardData> opponentMainDeck = new List<CardData>(); // Deck oponente persistente
     private List<CardData> playerSideDeck = new List<CardData>();
     public List<string> playerTrunk = new List<string>(); // IDs das cartas que o jogador possui
 
@@ -322,6 +328,13 @@ public class GameManager : MonoBehaviour
 
     List<CardData> InitializePlayerDeck()
     {
+        // Se já temos um deck carregado (do Save ou anterior), usamos ele
+        if (playerMainDeck.Count > 0)
+        {
+            UpdatePileVisuals();
+            return playerMainDeck;
+        }
+
         List<CardData> newDeck = new List<CardData>();
         // Verifica se já existe um deck salvo no SaveLoadSystem
         // Se não, gera um novo
@@ -349,12 +362,29 @@ public class GameManager : MonoBehaviour
             // ... código antigo ...
         }
 
+        // Safeguard para garantir que apenas fusões estejam no Extra Deck
+        var nonFusionsInExtra = playerExtraDeck.Where(c => !c.type.Contains("Fusion")).ToList();
+        if (nonFusionsInExtra.Any())
+        {
+            Debug.LogWarning($"Safeguard: {nonFusionsInExtra.Count} carta(s) não-fusão encontradas no Extra Deck do jogador. Movendo para o Deck Principal.");
+            newDeck.AddRange(nonFusionsInExtra);
+            playerExtraDeck.RemoveAll(c => !c.type.Contains("Fusion"));
+        }
+        var fusionsInMain = newDeck.Where(c => c.type.Contains("Fusion")).ToList();
+        if (fusionsInMain.Any())
+        {
+            Debug.LogWarning($"Safeguard: {fusionsInMain.Count} carta(s) de fusão encontradas no Deck Principal do jogador. Movendo para o Extra Deck.");
+            playerExtraDeck.AddRange(fusionsInMain);
+            newDeck.RemoveAll(c => c.type.Contains("Fusion"));
+        }
+
         // Salva o jogo imediatamente para persistir o deck gerado
         if (SaveLoadSystem.Instance != null)
         {
             SaveLoadSystem.Instance.SaveGame(currentSaveID);
         }
 
+        playerMainDeck = newDeck;
         UpdatePileVisuals();
         return newDeck;
     }
@@ -391,11 +421,29 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
+
+                // Safeguard para garantir que apenas fusões estejam no Extra Deck do oponente
+        var oppNonFusionsInExtra = opponentExtraDeck.Where(c => !c.type.Contains("Fusion")).ToList();
+        if (oppNonFusionsInExtra.Any())
+        {
+            Debug.LogWarning($"Safeguard (Oponente): {oppNonFusionsInExtra.Count} carta(s) não-fusão encontradas no Extra Deck. Movendo para o Deck Principal.");
+            newDeck.AddRange(oppNonFusionsInExtra);
+            opponentExtraDeck.RemoveAll(c => !c.type.Contains("Fusion"));
+        }
+        var oppFusionsInMain = newDeck.Where(c => c.type.Contains("Fusion")).ToList();
+        if (oppFusionsInMain.Any())
+        {
+            Debug.LogWarning($"Safeguard (Oponente): {oppFusionsInMain.Count} carta(s) de fusão encontradas no Deck Principal. Movendo para o Extra Deck.");
+            opponentExtraDeck.AddRange(oppFusionsInMain);
+            newDeck.RemoveAll(c => c.type.Contains("Fusion"));
+        }
+        
         // Shuffle logic moved to DeckManager, but we shuffle the list here before passing
         // Actually DeckManager.SetupDecks doesn't shuffle, so we can shuffle here or call ShuffleDeck later.
         // Let's shuffle the list here.
         for (int i = 0; i < newDeck.Count; i++) { CardData temp = newDeck[i]; int r = Random.Range(i, newDeck.Count); newDeck[i] = newDeck[r]; newDeck[r] = temp; }
         
+        opponentMainDeck = newDeck;
         Debug.Log($"Deck do oponente inicializado com {newDeck.Count} cartas.");
         UpdatePileVisuals();
         return newDeck;
@@ -1117,12 +1165,14 @@ public void ShuffleDeck(bool isPlayer)
         // 0. Validação de Permissão
         if (isPlayer && !canPlacePlayerCards)
         {
-            Debug.LogWarning("Ação bloqueada: 'canPlacePlayerCards' está desativado.");
+            Debug.LogWarning("Ação do jogador bloqueada: 'canPlacePlayerCards' está desativado.");
             return;
         }
-        if (!isPlayer && !canPlaceOpponentCards)
+        // Bloqueia se for uma ação para o oponente, durante o turno do jogador, e o modo dev de controle do oponente estiver desligado.
+        // A IA (que roda no turno do oponente) não será bloqueada por esta verificação.
+        if (!isPlayer && isPlayerTurn && !canPlaceOpponentCards)
         {
-            Debug.LogWarning("Ação bloqueada: 'canPlaceOpponentCards' está desativado.");
+            Debug.LogWarning("Ação de controle do oponente bloqueada: 'canPlaceOpponentCards' está desativado.");
             return;
         }
 
@@ -1303,12 +1353,13 @@ public void ShuffleDeck(bool isPlayer)
         // 0. Validação de Permissão
         if (isPlayer && !canPlacePlayerCards)
         {
-            Debug.LogWarning("Ação bloqueada: 'canPlacePlayerCards' está desativado.");
+            Debug.LogWarning("Ação do jogador bloqueada: 'canPlacePlayerCards' está desativado.");
             return;
         }
-        if (!isPlayer && !canPlaceOpponentCards)
+        // Bloqueia se for uma ação para o oponente, durante o turno do jogador, e o modo dev de controle do oponente estiver desligado.
+        if (!isPlayer && isPlayerTurn && !canPlaceOpponentCards)
         {
-            Debug.LogWarning("Ação bloqueada: 'canPlaceOpponentCards' está desativado.");
+            Debug.LogWarning("Ação de controle do oponente bloqueada: 'canPlaceOpponentCards' está desativado.");
             return;
         }
 
@@ -1445,52 +1496,7 @@ public void ShuffleDeck(bool isPlayer)
 
     // --- GERENCIAMENTO DE DECK (ACESSO PÚBLICO) ---
 
-    public List<CardData> GetPlayerMainDeck() { return playerDeck; }
     public List<CardData> GetPlayerSideDeck() { return playerSideDeck; }
-    public List<CardData> GetPlayerExtraDeck() { return playerExtraDeck; }
-    public List<CardData> GetPlayerGraveyard() { return playerGraveyard; }
-    public List<CardData> GetOpponentGraveyard() { return opponentGraveyard; }
-    public List<CardData> GetPlayerHandData() { return playerHand.Select(g => g.GetComponent<CardDisplay>().CurrentCardData).ToList(); }
-    public List<CardData> GetOpponentHandData() { return opponentHand.Select(g => g.GetComponent<CardDisplay>().CurrentCardData).ToList(); }
-    public List<CardData> GetOpponentMainDeck() { return DeckManager.Instance != null ? DeckManager.Instance.GetOpponentDeck() : new List<CardData>(); }
-    public List<CardData> GetPlayerMainDeck() { return DeckManager.Instance != null ? DeckManager.Instance.GetPlayerDeck() : new List<CardData>(); }
-    public List<CardData> GetPlayerSideDeck() { return playerSideDeck; }
-
-    public int GetPlayerRemovedCount() { return playerRemoved.Count; }
-    public List<CardData> GetPlayerRemoved() { return playerRemoved; }
-
-    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
-    {
-        // playerDeck agora é gerenciado pelo DeckManager, mas o SaveLoadSystem pode chamar isso.
-        // Se for chamado antes do duelo, apenas salvamos para uso futuro ou passamos para o DeckManager se ele existir.
-        // Como o DeckManager é resetado no StartDuel, aqui apenas atualizamos a referência se necessário ou salvamos.
-        // Na verdade, SetPlayerDeck é usado pelo DeckBuilder para salvar o deck editado.
-        // O DeckBuilder deve salvar no disco/PlayerPrefs.
-        // Se o GameManager mantiver o estado do deck do jogador entre duelos, precisamos armazenar aqui ou no DeckManager.
-        // Vamos manter uma cópia local ou atualizar o DeckManager se estivermos em duelo?
-        // Geralmente SetPlayerDeck é chamado fora do duelo.
-        // Vamos assumir que isso configura o deck para o PRÓXIMO duelo.
-        // Mas como removemos a variável playerDeck, onde guardamos?
-        // Precisamos de uma variável de "Deck Selecionado" persistente.
-        // Vou reintroduzir playerDeck apenas como armazenamento de dados entre cenas, mas não usado durante o duelo (DeckManager usa sua cópia).
-        // Ou melhor, DeckManager pode ter um método SetPlayerDeckData.
-        if (DeckManager.Instance != null) DeckManager.Instance.SetupDecks(main, new List<CardData>()); // Oponente vazio por enquanto
-        
-        // Mas espere, SetPlayerDeck é usado para salvar o deck editado.
-        // O ideal é salvar em arquivo. O DeckBuilder já faz isso.
-        // Se o GameManager precisa saber qual deck usar no próximo duelo, ele deve carregar do arquivo.
-        // Vamos deixar vazio por enquanto ou reintroduzir uma lista de "Deck do Jogador" que serve de modelo.
-        // Reintroduzindo playerDeck como modelo (não usado no duelo ativo diretamente, mas passado para DeckManager).
-        // Mas eu removi a declaração.
-        // Vou usar uma variável temporária ou reverter a remoção se for crítico.
-        // O método InitializePlayerDeck usa InitialDeckBuilder.
-        // Se quisermos persistência, InitializePlayerDeck deve carregar do arquivo salvo.
-        // Vou deixar o método SetPlayerDeck apenas atualizando o DeckManager se ele existir, para refletir mudanças imediatas se estivermos em uma cena de teste.
-        if (DeckManager.Instance != null) DeckManager.Instance.SetupDecks(main, new List<CardData>());
-        
-        playerSideDeck = new List<CardData>(side);
-        playerExtraDeck = new List<CardData>(extra);
-    }
 
     public bool PlayerHasCard(string cardId)
     {
@@ -1758,7 +1764,6 @@ public void ShuffleDeck(bool isPlayer)
 
     }
 
-
     public void OnBattlePositionChanged(CardDisplay card)
     {
         // Notifica o sistema de efeitos
@@ -1915,5 +1920,71 @@ public void ShuffleDeck(bool isPlayer)
         {
             UIManager.Instance.ShowFusionUI(sourceCard);
         }
+    }
+
+    // --- MÉTODOS ADICIONADOS PARA CORRIGIR ERROS DE COMPILAÇÃO ---
+
+    public List<CardData> GetPlayerMainDeck()
+    {
+        // Se estamos num duelo (DeckManager tem cartas), retorna o deck do duelo
+        if (DeckManager.Instance != null && DeckManager.Instance.GetPlayerDeck() != null && DeckManager.Instance.GetPlayerDeck().Count > 0)
+        {
+            return DeckManager.Instance.GetPlayerDeck();
+        }
+        // Senão, retorna o deck persistente (para DeckBuilder, SaveSystem, etc)
+        return playerMainDeck;
+    }
+
+    public List<CardData> GetOpponentMainDeck()
+    {
+        if (DeckManager.Instance != null && DeckManager.Instance.GetOpponentDeck() != null && DeckManager.Instance.GetOpponentDeck().Count > 0)
+        {
+            return DeckManager.Instance.GetOpponentDeck();
+        }
+        return opponentMainDeck;
+    }
+
+    public List<CardData> GetPlayerExtraDeck() { return playerExtraDeck; }
+    public List<CardData> GetPlayerGraveyard() { return playerGraveyard; }
+    public List<CardData> GetOpponentGraveyard() { return opponentGraveyard; }
+    public List<CardData> GetPlayerRemoved() { return playerRemoved; }
+    public List<CardData> GetOpponentRemoved() { return opponentRemoved; }
+    public int GetPlayerRemovedCount() { return playerRemoved.Count; }
+
+    public List<CardData> GetPlayerHandData()
+    {
+        List<CardData> data = new List<CardData>();
+        foreach (var go in playerHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public List<CardData> GetOpponentHandData()
+    {
+        List<CardData> data = new List<CardData>();
+        foreach (var go in opponentHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
+    {
+        playerMainDeck = new List<CardData>(main);
+        playerSideDeck = new List<CardData>(side);
+        playerExtraDeck = new List<CardData>(extra);
     }
 }

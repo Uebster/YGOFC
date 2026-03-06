@@ -19,6 +19,18 @@ public class DeckManager : MonoBehaviour
         Instance = this;
     }
 
+    void Start()
+    {
+        // Auto-atribuição para robustez, caso não esteja definido no Inspector.
+        if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null)
+        {
+            if (playerDeckDisplay == null && GameManager.Instance.duelFieldUI.playerDeck != null)
+                playerDeckDisplay = GameManager.Instance.duelFieldUI.playerDeck.GetComponent<PileDisplay>();
+            if (opponentDeckDisplay == null && GameManager.Instance.duelFieldUI.opponentDeck != null)
+                opponentDeckDisplay = GameManager.Instance.duelFieldUI.opponentDeck.GetComponent<PileDisplay>();
+        }
+    }
+
     public void SetupDecks(List<CardData> newPlayerDeck, List<CardData> newOpponentDeck)
     {
         playerDeck = new List<CardData>(newPlayerDeck);
