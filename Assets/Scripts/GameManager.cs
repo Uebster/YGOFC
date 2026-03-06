@@ -171,6 +171,12 @@ public class GameManager : MonoBehaviour
     public bool enableAttackAnimation = true;
     public GameObject attackAnimationPrefab; // Prefab da espada/projétil
 
+    [Header("Game Speed Settings")]
+    [Tooltip("Tempo em segundos entre cada carta comprada pelo jogador no início.")]
+    public float playerDrawSpeed = 0.5f;
+    [Tooltip("Tempo em segundos entre cada carta comprada pelo oponente no início.")]
+    public float opponentDrawSpeed = 0.3f;
+
     public bool revealOpponentDraw = false; // Pikeru's Second Sight (1431)
     private UnityWebRequest backTextureRequest; // Para evitar memory leak
 
@@ -599,7 +605,7 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             DrawCard(true); // Ignora o limite para a mão inicial
-            yield return new WaitForSeconds(0.5f); // Delay aumentado para melhor visualização
+            yield return new WaitForSeconds(playerDrawSpeed); // Delay configurável
         }
     }
     public IEnumerator DrawInitialOpponentHandRoutine(int count)
@@ -607,7 +613,7 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
            DrawOpponentCard();            
-           yield return new WaitForSeconds(0.3f); // Oponente compra um pouco mais rápido
+           yield return new WaitForSeconds(opponentDrawSpeed); // Delay configurável
         }
     }    
 

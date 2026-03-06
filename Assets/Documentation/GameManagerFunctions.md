@@ -52,10 +52,16 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `showOpponentHand`: Mostra cartas do oponente viradas para cima (Cheat).
 *   `canPlayerDrawFromDeck`: Permite clique no deck.
 
+## Configurações de Velocidade
+*   `playerDrawSpeed`: Tempo (em segundos) entre cada carta comprada pelo jogador na animação inicial.
+*   `opponentDrawSpeed`: Tempo (em segundos) entre cada carta comprada pelo oponente na animação inicial.
+
 ## Notas de Implementação
 *   **Extra Deck:** Agora é renderizado virado para baixo (Face-Down), mas o dono pode visualizar o conteúdo passando o mouse (Card Viewer).
 *   **Nomes na UI:** Ao usar `testPlayerID` ou `testOpponentID`, os nomes na interface de duelo são atualizados automaticamente para corresponder aos personagens carregados.
 *   **Fallback de Deck:** Se o deck do oponente falhar ao carregar (IDs inválidos), um deck aleatório de emergência é gerado para evitar travamento do jogo.
+*   **Rotação de Decks:** Oponentes agora escolhem aleatoriamente entre seus Decks A, B e C (se disponíveis). Se um deck falhar, o sistema tenta o Deck A como fallback.
+
 ## Mecânicas Especiais
 *   `BeginFusionSummon(source)`: Inicia o fluxo de UI para Invocação-Fusão.
 *   `PerformFusionSummon(...)`: Executa a fusão consumindo materiais.
