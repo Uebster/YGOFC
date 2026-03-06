@@ -84,7 +84,7 @@ public class GameManager : MonoBehaviour
     public bool effectTestMode = false;
     [Tooltip("ID do oponente para teste rápido (ex: 021_kaiba). Deixe vazio para usar o fluxo normal.")]
     public string testOpponentID = ""; 
-    [Tooltip("ID do personagem para substituir o jogador (ex: 020_pegasus). Deixe vazio para usar o deck do save.")]
+    [Tooltip("ID do personagem para substituir o deck do jogador (ex: 020_pegasus). Deixe vazio para usar o deck do save.")]
     public string testPlayerID = "";
     [Tooltip("Número do Ato (1-10) para forçar o tema visual. -1 para usar o padrão.")]
     public int testActThemeIndex = -1;
@@ -372,25 +372,21 @@ public class GameManager : MonoBehaviour
                 Debug.Log($"[DevMode] Jogando como: {charData.name} ({charData.id})");
                 List<CardData> devDeck = new List<CardData>();
                 
-                // Usa o Deck A do personagem como padrão para o jogador
-                if (charData.deck_A != null)
-                {
-                    foreach (string id in charData.deck_A)
-                    {
-                        CardData c = cardDatabase.GetCardById(id);
-                        if (c != null) devDeck.Add(c);
-                    }
-                }
+                // --- SELEÇÃO DE DECK ALEATÓRIA (A, B, C) para o Jogador ---
+                List<string> selectedMain = charData.deck_A;
+                List<string> selectedExtra = charData.extra_deck_A;
+                string variant = "A";
+
+                int rng = Random.Range(0, 3);
+                if (rng == 1 && charData.deck_B != null && charData.deck_B.Count > 0) { selectedMain = charData.deck_B; selectedExtra = charData.extra_deck_B; variant = "B"; }
+                else if (rng == 2 && charData.deck_C != null && charData.deck_C.Count > 0) { selectedMain = charData.deck_C; selectedExtra = charData.extra_deck_C; variant = "C"; }
+
+                Debug.Log($"[DevMode] Usando Deck Variante do Jogador: {variant}");
+
+                if (selectedMain != null) foreach (string id in selectedMain) { CardData c = cardDatabase.GetCardById(id); if (c != null) devDeck.Add(c); }
                 
                 playerExtraDeck.Clear();
-                if (charData.extra_deck_A != null)
-                {
-                    foreach (string id in charData.extra_deck_A)
-                    {
-                        CardData c = cardDatabase.GetCardById(id);
-                        if (c != null) playerExtraDeck.Add(c);
-                    }
-                }
+                if (selectedExtra != null) foreach (string id in selectedExtra) { CardData c = cardDatabase.GetCardById(id); if (c != null) playerExtraDeck.Add(c); }
 
                 playerMainDeck = devDeck;
                 
@@ -456,20 +452,30 @@ public class GameManager : MonoBehaviour
     {
         List<CardData> newDeck = new List<CardData>();
 
+        // DEV MODE: Se um ID de teste estiver definido, limpa o oponente atual para forçar o carregamento correto
+        if (devMode && !string.IsNullOrEmpty(testOpponentID))
+        {
+            currentOpponent = null;
+        }
+
+        // Validação de segurança: Se o objeto oponente existe mas está vazio/inválido (sem ID), reseta
+        if (currentOpponent != null && string.IsNullOrEmpty(currentOpponent.id))
+        {
+            Debug.LogWarning("[GameManager] Oponente atual é inválido (ID vazio). Resetando para tentar carregar novamente.");
+            currentOpponent = null;
+        }
+
         // Se o oponente ainda for nulo aqui (não foi setado no StartDuel), tenta o ID de teste novamente como última tentativa
         if (currentOpponent == null && !string.IsNullOrEmpty(testOpponentID) && characterDatabase != null)
         {
             currentOpponent = characterDatabase.GetCharacterById(testOpponentID);
-            if (currentOpponent == null)
-            {
-                Debug.LogError($"[GameManager] Oponente com ID '{testOpponentID}' não encontrado no banco de dados!");
-            }
         }
 
         // Se temos um oponente definido (Campanha), carregamos o deck dele
         if (currentOpponent != null)
         {
-            // Atualiza visual do nome na UI (se disponível)
+            // Garante referência da UI antes de usar e atualiza o nome
+            if (duelFieldUI == null) duelFieldUI = FindFirstObjectByType<DuelFieldUI>();
             if (duelFieldUI != null && duelFieldUI.opponentNameText != null)
                 duelFieldUI.opponentNameText.text = currentOpponent.name;
 
@@ -478,9 +484,7 @@ public class GameManager : MonoBehaviour
             List<string> selectedExtra = currentOpponent.extra_deck_A;
             string variant = "A";
 
-            int rng = Random.Range(0, 3); // 0, 1, 2
-
-            // Tenta carregar B ou C se sorteado e existente
+            int rng = Random.Range(0, 3);
             if (rng == 1 && currentOpponent.deck_B != null && currentOpponent.deck_B.Count > 0)
             {
                 selectedMain = currentOpponent.deck_B;
@@ -494,18 +498,36 @@ public class GameManager : MonoBehaviour
                 variant = "C";
             }
 
-            Debug.Log($"Inicializando oponente: {currentOpponent.name} | Deck Variante: {variant}");
+            Debug.Log($"[GameManager] Inicializando oponente: {currentOpponent.name} | Tentando Deck Variante: {variant}");
 
             // Carrega Main Deck
-            if (selectedMain != null) 
+            if (selectedMain != null && selectedMain.Count > 0) 
             {
-                foreach (string id in selectedMain) 
-                { 
-                    CardData c = cardDatabase.GetCardById(id); 
-                    if (c != null) newDeck.Add(c); 
-                    // else Debug.LogWarning($"Carta ID {id} não encontrada para o oponente.");
+                foreach (string id in selectedMain) { CardData c = cardDatabase.GetCardById(id); if (c != null) newDeck.Add(c); else Debug.LogWarning($"[GameManager] Carta ID '{id}' não encontrada no DB para o oponente {currentOpponent.name}."); }
+            }
+            else
+            {
+                Debug.LogWarning($"[GameManager] A lista do Deck {variant} do oponente {currentOpponent.name} está vazia ou nula.");
+            }
+
+            // --- FALLBACK DE VARIANTE ---
+            // Se a variante escolhida (B ou C) resultou em deck vazio, tenta o Deck A
+            if (newDeck.Count == 0 && variant != "A")
+            {
+                Debug.LogWarning($"[GameManager] Deck {variant} do oponente resultou em 0 cartas válidas. Tentando Deck A como fallback.");
+                selectedMain = currentOpponent.deck_A;
+                selectedExtra = currentOpponent.extra_deck_A;
+                
+                if (selectedMain != null)
+                {
+                    foreach (string id in selectedMain)
+                    {
+                        CardData c = cardDatabase.GetCardById(id);
+                        if (c != null) newDeck.Add(c);
+                    }
                 }
             }
+
             // Carrega Extra Deck
             opponentExtraDeck.Clear();
             if (selectedExtra != null) foreach (string id in selectedExtra) { CardData c = cardDatabase.GetCardById(id); if (c != null) opponentExtraDeck.Add(c); }
@@ -533,7 +555,7 @@ public class GameManager : MonoBehaviour
         // SAFEGUARD CRÍTICO: Se o deck ainda estiver vazio (falha no load ou IDs errados), gera um aleatório
         if (newDeck.Count == 0)
         {
-            Debug.LogWarning("Deck do oponente vazio após inicialização! Gerando deck de emergência.");
+            Debug.LogError("[GameManager] CRÍTICO: Deck do oponente vazio após todas as tentativas! Gerando deck de emergência aleatório.");
             List<CardData> allCards = new List<CardData>(cardDatabase.cardDatabase);
             var validCards = allCards.Where(c => !c.type.Contains("Fusion") && !c.type.Contains("Synchro") && !c.type.Contains("Xyz") && !c.type.Contains("Token")).ToList();
 
@@ -549,14 +571,14 @@ public class GameManager : MonoBehaviour
         var oppNonFusionsInExtra = opponentExtraDeck.Where(c => !c.type.Contains("Fusion")).ToList();
         if (oppNonFusionsInExtra.Any())
         {
-            Debug.LogWarning($"Safeguard (Oponente): {oppNonFusionsInExtra.Count} carta(s) não-fusão encontradas no Extra Deck. Movendo para o Deck Principal.");
+            // Debug.LogWarning($"Safeguard (Oponente): {oppNonFusionsInExtra.Count} carta(s) não-fusão encontradas no Extra Deck. Movendo para o Deck Principal.");
             newDeck.AddRange(oppNonFusionsInExtra);
             opponentExtraDeck.RemoveAll(c => !c.type.Contains("Fusion"));
         }
         var oppFusionsInMain = newDeck.Where(c => c.type.Contains("Fusion")).ToList();
         if (oppFusionsInMain.Any())
         {
-            Debug.LogWarning($"Safeguard (Oponente): {oppFusionsInMain.Count} carta(s) de fusão encontradas no Deck Principal. Movendo para o Extra Deck.");
+            // Debug.LogWarning($"Safeguard (Oponente): {oppFusionsInMain.Count} carta(s) de fusão encontradas no Deck Principal. Movendo para o Extra Deck.");
             opponentExtraDeck.AddRange(oppFusionsInMain);
             newDeck.RemoveAll(c => c.type.Contains("Fusion"));
         }
@@ -567,7 +589,7 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < newDeck.Count; i++) { CardData temp = newDeck[i]; int r = Random.Range(i, newDeck.Count); newDeck[i] = newDeck[r]; newDeck[r] = temp; }
         
         opponentMainDeck = newDeck;
-        Debug.Log($"Deck do oponente inicializado com {newDeck.Count} cartas.");
+        Debug.Log($"[GameManager] Deck do oponente finalizado com {newDeck.Count} cartas (Extra: {opponentExtraDeck.Count}).");
         UpdatePileVisuals();
         return (opponentMainDeck, opponentExtraDeck);
     }
