@@ -199,7 +199,19 @@ public class DuelFXManager : MonoBehaviour
         if (animationSpeed <= 0.1f) animationSpeed = 1.5f;
 
         Vector3 startPos = attacker.transform.position;
-        Vector3 targetPos = target.transform.position;
+        Vector3 targetPos;
+
+        if (target != null)
+        {
+            targetPos = target.transform.position;
+        }
+        else // Ataque Direto
+        {
+            if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null && GameManager.Instance.duelFieldUI.opponentAvatarImage != null)
+                targetPos = GameManager.Instance.duelFieldUI.opponentAvatarImage.transform.position;
+            else
+                targetPos = startPos + (attacker.transform.up * 200f); // Fallback para evitar erro
+        }
 
         // 1. Recuo (Anticipation)
         float t = 0;

@@ -139,6 +139,7 @@ public class GameManager : MonoBehaviour
     public bool isPlayerTurn = true; // Rastreia de quem é o turno
 
     [Header("Runtime Theme Settings")]
+    public bool isDuelOver = false;
     public Color playerHoverColor = new Color(0.5f, 1f, 0.5f, 1f); // Verde claro
     public Color opponentHoverColor = Color.yellow;
     [Header("Phase Indicator Settings")]
@@ -235,7 +236,8 @@ public class GameManager : MonoBehaviour
 
         List<CardData> pDeck = InitializePlayerDeck();
         List<CardData> oDeck = InitializeOpponentDeck();
-        DeckManager.Instance.SetupDecks(pDeck, oDeck);
+        (List<CardData> oMain, List<CardData> oExtra) = InitializeOpponentDeck(); // InitializeOpponentDeck now returns a tuple
+        DeckManager.Instance.SetupDecks(pDeck, playerExtraDeck, oMain, oExtra); // Pass playerExtraDeck as well
 
         DrawInitialHand(5); // Exemplo: compra 5 cartas iniciais
         DrawInitialOpponentHand(5);
@@ -244,6 +246,7 @@ public class GameManager : MonoBehaviour
         playerLP = 8000;
         opponentLP = 8000;
         turnCount = 0;
+        isDuelOver = false;
         UpdateLPUI();
 
         // Reseta flag de draw antes de começar o turno
@@ -326,7 +329,7 @@ public class GameManager : MonoBehaviour
         StartDuel(); // Chama o método principal
     }
 
-    List<CardData> InitializePlayerDeck()
+    (List<CardData>, List<CardData>) InitializeOpponentDeck() // Return tuple
     {
         // Se já temos um deck carregado (do Save ou anterior), usamos ele
         if (playerMainDeck.Count > 0)
@@ -359,23 +362,6 @@ public class GameManager : MonoBehaviour
         {
             // Fallback antigo (carrega tudo ou aleatório simples)
             Debug.LogWarning("InitialDeckBuilder não encontrado. Usando fallback.");
-            // ... código antigo ...
-        }
-
-        // Safeguard para garantir que apenas fusões estejam no Extra Deck
-        var nonFusionsInExtra = playerExtraDeck.Where(c => !c.type.Contains("Fusion")).ToList();
-        if (nonFusionsInExtra.Any())
-        {
-            Debug.LogWarning($"Safeguard: {nonFusionsInExtra.Count} carta(s) não-fusão encontradas no Extra Deck do jogador. Movendo para o Deck Principal.");
-            newDeck.AddRange(nonFusionsInExtra);
-            playerExtraDeck.RemoveAll(c => !c.type.Contains("Fusion"));
-        }
-        var fusionsInMain = newDeck.Where(c => c.type.Contains("Fusion")).ToList();
-        if (fusionsInMain.Any())
-        {
-            Debug.LogWarning($"Safeguard: {fusionsInMain.Count} carta(s) de fusão encontradas no Deck Principal do jogador. Movendo para o Extra Deck.");
-            playerExtraDeck.AddRange(fusionsInMain);
-            newDeck.RemoveAll(c => c.type.Contains("Fusion"));
         }
 
         // Salva o jogo imediatamente para persistir o deck gerado
@@ -400,8 +386,7 @@ public class GameManager : MonoBehaviour
                 CardData card = cardDatabase.GetCardById(cardId);
                 if (card != null)
                 {
-                    if (card.type.Contains("Fusion")) opponentExtraDeck.Add(card);
-                    else newDeck.Add(card);
+                    // Fusion/Synchro/Xyz already handled by extra_deck_A in CharacterData
                 }
             }
         }
@@ -413,7 +398,7 @@ public class GameManager : MonoBehaviour
             {
                 if (card.type.Contains("Fusion"))
                 {
-                    opponentExtraDeck.Add(card);
+                    // Fallback should also respect extra_deck
                 }
                 else
                 {
@@ -447,6 +432,15 @@ public class GameManager : MonoBehaviour
         Debug.Log($"Deck do oponente inicializado com {newDeck.Count} cartas.");
         UpdatePileVisuals();
         return newDeck;
+    }
+
+        public IEnumerator DrawInitialHandRoutine(int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            DrawCard(true); // Ignora o limite para a mão inicial
+            yield return new WaitForSeconds(0.2f); // Pequeno delay entre as compras
+        }
     }
 
     // --- AÇÕES DE JOGO PADRONIZADAS (GAME ACTIONS) ---
@@ -1020,17 +1014,66 @@ public void ShuffleDeck(bool isPlayer)
     // Chame isso quando o HP de alguém chegar a 0 ou Deck acabar
     public void EndDuel(bool playerWon, bool isDeckOut = false)
     {
+        if (isDuelOver) return; // Previne chamadas múltiplas
+        isDuelOver = true;
+
+        StartCoroutine(EndDuelRoutine(playerWon, isDeckOut));
+    }
+
+    private IEnumerator EndDuelRoutine(bool playerWon, bool isDeckOut)
+    {
+        // 1. Mostra a mensagem de WIN/LOSE
+        if (UIManager.Instance != null && UIManager.Instance.endDuelMessagePanel != null)
+        {
+            TextMeshProUGUI messageText = UIManager.Instance.endDuelMessagePanel.GetComponentInChildren<TextMeshProUGUI>();
+            if (messageText != null)
+            {
+                messageText.text = playerWon ? "YOU WIN" : "YOU LOSE";
+                messageText.color = playerWon ? Color.yellow : new Color(1f, 0.2f, 0.2f);
+            }
+            UIManager.Instance.endDuelMessagePanel.SetActive(true);
+        }
+
+        // Pausa dramática
+        yield return new WaitForSeconds(2.5f);
+
+        // 2. Esconde a mensagem
+        if (UIManager.Instance != null && UIManager.Instance.endDuelMessagePanel != null)
+        {
+            UIManager.Instance.endDuelMessagePanel.SetActive(false);
+        }
+
+        // 3. Calcula pontuação e recompensas
         if (DuelScoreManager.Instance != null)
         {
             DuelScoreManager.Instance.StopDuelTracking(playerWon, isDeckOut, playerLP);
 
             int score;
             DuelRank rank = DuelScoreManager.Instance.CalculateFinalRank(out score);
-
             Debug.Log($"DUELO FINALIZADO! Venceu: {playerWon} | Rank: {rank} | Pontos: {score}");
             Debug.Log(DuelScoreManager.Instance.GetScoreReport());
 
-            // TODO: Chamar UIManager para mostrar tela de Resultado (Vitória/Derrota) com o Rank
+            CardData rewardCard = null;
+            if (playerWon && currentOpponent != null && currentOpponent.rewards.Count > 0)
+            {
+                string rewardId = currentOpponent.rewards[Random.Range(0, currentOpponent.rewards.Count)];
+                rewardCard = cardDatabase.GetCardById(rewardId);
+                Debug.Log($"Recompensa: {rewardCard?.name ?? "Nenhuma"}");
+            }
+            
+            RewardPanelUI rewardPanel = FindFirstObjectByType<RewardPanelUI>(FindObjectsInactive.Include);
+            if (rewardPanel != null)
+            {
+                rewardPanel.Show(rank.ToString(), rewardCard);
+            }
+            else
+            {
+                if (UIManager.Instance != null) UIManager.Instance.Btn_BackToMenu();
+            }
+        }
+        else
+        {
+            if (UIManager.Instance != null) UIManager.Instance.Btn_BackToMenu();
         }
     }
 
@@ -1048,7 +1091,7 @@ public void ShuffleDeck(bool isPlayer)
         // Atualiza a música baseada na nova situação de vida
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.UpdateBGM(playerLP, opponentLP);
 
-        if (playerLP == 0) EndDuel(false);
+        if (playerLP <= 0) EndDuel(false);
 
         // Notifica dano (para cartas como Numinous Healer, etc)
         if (CardEffectManager.Instance != null)
@@ -1069,7 +1112,7 @@ public void ShuffleDeck(bool isPlayer)
         // Atualiza a música baseada na nova situação de vida
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.UpdateBGM(playerLP, opponentLP);
 
-        if (opponentLP == 0) EndDuel(true);
+        if (opponentLP <= 0) EndDuel(true);
 
         // Notifica dano
         if (CardEffectManager.Instance != null)
@@ -1942,49 +1985,5 @@ public void ShuffleDeck(bool isPlayer)
             return DeckManager.Instance.GetOpponentDeck();
         }
         return opponentMainDeck;
-    }
-
-    public List<CardData> GetPlayerExtraDeck() { return playerExtraDeck; }
-    public List<CardData> GetPlayerGraveyard() { return playerGraveyard; }
-    public List<CardData> GetOpponentGraveyard() { return opponentGraveyard; }
-    public List<CardData> GetPlayerRemoved() { return playerRemoved; }
-    public List<CardData> GetOpponentRemoved() { return opponentRemoved; }
-    public int GetPlayerRemovedCount() { return playerRemoved.Count; }
-
-    public List<CardData> GetPlayerHandData()
-    {
-        List<CardData> data = new List<CardData>();
-        foreach (var go in playerHand)
-        {
-            if (go != null)
-            {
-                var display = go.GetComponent<CardDisplay>();
-                if (display != null && display.CurrentCardData != null)
-                    data.Add(display.CurrentCardData);
-            }
-        }
-        return data;
-    }
-
-    public List<CardData> GetOpponentHandData()
-    {
-        List<CardData> data = new List<CardData>();
-        foreach (var go in opponentHand)
-        {
-            if (go != null)
-            {
-                var display = go.GetComponent<CardDisplay>();
-                if (display != null && display.CurrentCardData != null)
-                    data.Add(display.CurrentCardData);
-            }
-        }
-        return data;
-    }
-
-    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
-    {
-        playerMainDeck = new List<CardData>(main);
-        playerSideDeck = new List<CardData>(side);
-        playerExtraDeck = new List<CardData>(extra);
     }
 }

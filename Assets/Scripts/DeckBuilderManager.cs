@@ -105,7 +105,7 @@ public class DeckBuilderManager : MonoBehaviour
         if (GameManager.Instance != null)
         {
             currentMainDeck = new List<CardData>(GameManager.Instance.GetPlayerMainDeck());
-            currentSideDeck = new List<CardData>(GameManager.Instance.GetPlayerSideDeck());
+            currentSideDeck = new List<CardData>(GameManager.Instance.GetPlayerSideDeck()); // This is GameManager's playerSideDeck
             currentExtraDeck = new List<CardData>(GameManager.Instance.GetPlayerExtraDeck());
         }
     }
@@ -399,8 +399,8 @@ public class DeckBuilderManager : MonoBehaviour
         }
 
         if (GameManager.Instance != null)
-        {
-            GameManager.Instance.SetPlayerDeck(currentMainDeck, currentSideDeck, currentExtraDeck);
+        {   // SetPlayerDeck now expects playerExtraDeck
+            GameManager.Instance.SetPlayerDeck(currentMainDeck, currentSideDeck, currentExtraDeck); 
         }
         
         // Volta para o menu anterior

@@ -9,8 +9,14 @@ public class DeckManager : MonoBehaviour
     public PileDisplay playerDeckDisplay;
     public PileDisplay opponentDeckDisplay;
 
+    public PileDisplay playerExtraDeckDisplay; // Novo
+    public PileDisplay opponentExtraDeckDisplay; // Novo
+
     private List<CardData> playerDeck = new List<CardData>();
     private List<CardData> opponentDeck = new List<CardData>();
+    private List<CardData> playerExtraDeck = new List<CardData>(); // Novo
+    private List<CardData> opponentExtraDeck = new List<CardData>(); // Novo
+
 
     private bool hasDrawnThisTurn = false;
 
@@ -19,7 +25,7 @@ public class DeckManager : MonoBehaviour
         Instance = this;
     }
 
-    void Start()
+    public void SetupDecks(List<CardData> newPlayerMainDeck, List<CardData> newPlayerExtraDeck, List<CardData> newOpponentMainDeck, List<CardData> newOpponentExtraDeck)
     {
         // Auto-atribuição para robustez, caso não esteja definido no Inspector.
         if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null)
@@ -28,18 +34,23 @@ public class DeckManager : MonoBehaviour
                 playerDeckDisplay = GameManager.Instance.duelFieldUI.playerDeck.GetComponent<PileDisplay>();
             if (opponentDeckDisplay == null && GameManager.Instance.duelFieldUI.opponentDeck != null)
                 opponentDeckDisplay = GameManager.Instance.duelFieldUI.opponentDeck.GetComponent<PileDisplay>();
+            if (playerExtraDeckDisplay == null && GameManager.Instance.duelFieldUI.playerExtraDeck != null)
+                playerExtraDeckDisplay = GameManager.Instance.duelFieldUI.playerExtraDeck.GetComponent<PileDisplay>();
+            if (opponentExtraDeckDisplay == null && GameManager.Instance.duelFieldUI.opponentExtraDeck != null)
+                opponentExtraDeckDisplay = GameManager.Instance.duelFieldUI.opponentExtraDeck.GetComponent<PileDisplay>();        
         }
-    }
-
-    public void SetupDecks(List<CardData> newPlayerDeck, List<CardData> newOpponentDeck)
-    {
-        playerDeck = new List<CardData>(newPlayerDeck);
-        opponentDeck = new List<CardData>(newOpponentDeck);
+        playerDeck = new List<CardData>(newPlayerMainDeck);
+        playerExtraDeck = new List<CardData>(newPlayerExtraDeck); // Novo
+        opponentDeck = new List<CardData>(newOpponentMainDeck);
+        opponentExtraDeck = new List<CardData>(newOpponentExtraDeck); // Novo
         UpdateDeckVisuals();
     }
 
     public List<CardData> GetPlayerDeck() { return playerDeck; }
     public List<CardData> GetOpponentDeck() { return opponentDeck; }
+    public List<CardData> GetPlayerExtraDeck() { return playerExtraDeck; } // Novo
+    public List<CardData> GetOpponentExtraDeck() { return opponentExtraDeck; } // Novo
+
 
     public void ShuffleDeck(bool isPlayer)
     {
@@ -158,6 +169,8 @@ public class DeckManager : MonoBehaviour
     {
         if (playerDeckDisplay != null) playerDeckDisplay.UpdatePile(playerDeck, GameManager.Instance.GetCardBackTexture());
         if (opponentDeckDisplay != null) opponentDeckDisplay.UpdatePile(opponentDeck, GameManager.Instance.GetCardBackTexture());
+        if (playerExtraDeckDisplay != null) playerExtraDeckDisplay.UpdatePile(playerExtraDeck, GameManager.Instance.GetCardBackTexture()); // Novo
+        if (opponentExtraDeckDisplay != null) opponentExtraDeckDisplay.UpdatePile(opponentExtraDeck, GameManager.Instance.GetCardBackTexture()); // Novo
     }
 
     public void ResetTurnStats()

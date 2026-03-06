@@ -13,6 +13,7 @@ public class UIManager : MonoBehaviour
     public GameObject pressStartScreen;  // 2. Panel_PressStart (Tela de Título)
     public GameObject mainMenuScreen;    // 3. Panel_MainMenu (Menu Principal)
     public GameObject nameInputScreen;   // 3.5 Panel_NameInput (Criação de Perfil)
+    public GameObject endDuelMessagePanel; // Painel para mensagem de WIN/LOSE
     public GameObject duelScreen;        // 4. Panel_Duel (O Jogo)
 
     [Header("Sub-Menus Principais")]
@@ -105,6 +106,7 @@ public class UIManager : MonoBehaviour
         if (mainMenuScreen != null) mainMenuScreen.SetActive(false);
         if (nameInputScreen != null) nameInputScreen.SetActive(false);
         if (duelScreen != null) duelScreen.SetActive(false);
+        if (endDuelMessagePanel != null) endDuelMessagePanel.SetActive(false);
 
         // Adicionado: Desativa todos os outros painéis de sub-menu
         if (newGameMenu != null) newGameMenu.SetActive(false);

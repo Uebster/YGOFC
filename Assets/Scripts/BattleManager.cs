@@ -153,6 +153,8 @@ public class BattleManager : MonoBehaviour
     public void TryDirectAttack()
     {
         if (currentAttacker == null) return;
+        // Adiciona verificação para impedir ataque no turno 1 ou por outros efeitos
+        if (!CanAttack(currentAttacker)) return;
 
         if (HasDirectAttackCondition())
         {
@@ -180,6 +182,8 @@ public class BattleManager : MonoBehaviour
     public void SelectTarget(CardDisplay target)
     {
         if (currentAttacker == null) return;
+        if (!CanAttack(currentAttacker)) return;
+
         if (target.isPlayerCard == currentAttacker.isPlayerCard)
         {
             Debug.LogWarning("Não pode atacar seu próprio monstro.");

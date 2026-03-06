@@ -29,6 +29,7 @@ public class SaveLoadSystem : MonoBehaviour
         public List<string> mainDeck;
         public List<string> sideDeck;
         public List<string> extraDeck;
+        public List<string> playerExtraDeckIDs; // For player's extra deck
     }
 
     public void SaveGame(string saveID)
@@ -44,12 +45,13 @@ public class SaveLoadSystem : MonoBehaviour
         data.trunkCards = new List<string>(GameManager.Instance.playerTrunk);
         
         var main = GameManager.Instance.GetPlayerMainDeck();
-        var side = GameManager.Instance.GetPlayerSideDeck();
-        var extra = GameManager.Instance.GetPlayerExtraDeck();
+        var side = GameManager.Instance.GetPlayerSideDeck(); // This is GameManager's playerSideDeck
+        var extra = GameManager.Instance.GetPlayerExtraDeck(); // This is GameManager's playerExtraDeck
 
         data.mainDeck = main.Select(c => c.id).ToList();
         data.sideDeck = side.Select(c => c.id).ToList();
         data.extraDeck = extra.Select(c => c.id).ToList();
+        data.playerExtraDeckIDs = GameManager.Instance.GetPlayerExtraDeck().Select(c => c.id).ToList(); // Save player's extra deck
 
         string json = JsonUtility.ToJson(data, true);
         string path = Path.Combine(Application.persistentDataPath, saveID + ".save");
@@ -75,7 +77,9 @@ public class SaveLoadSystem : MonoBehaviour
         List<CardData> main = IDsToCards(data.mainDeck);
         List<CardData> side = IDsToCards(data.sideDeck);
         List<CardData> extra = IDsToCards(data.extraDeck);
-        GameManager.Instance.SetPlayerDeck(main, side, extra);
+        List<CardData> playerExtra = IDsToCards(data.playerExtraDeckIDs); // Load player's extra deck
+
+        GameManager.Instance.SetPlayerDeck(main, side, playerExtra); // Pass playerExtra
 
         CampaignManager.Instance.maxUnlockedLevel = data.campaignProgress;
         CampaignManager.Instance.SaveProgress(); // Atualiza PlayerPrefs para sincronizar

@@ -63,23 +63,35 @@ def get_act_from_id(char_id):
 
 def build_dependency_map(cards):
     """Cria um mapa de cartas que citam outras cartas (ex: Polymerization -> Fusões)"""
-    dependency_map = {} # { "Card Name": ["Dependent ID 1", "Dependent ID 2"] }
+    dependency_map = {} # { "Card ID": ["Dependent ID 1", "Dependent ID 2"] }
+    
+    # Primeiro, crie um mapeamento de nome para ID para busca eficiente
     name_to_id = {c["name"].lower(): c["id"] for c in cards}
     
     for card in cards:
         desc = card.get("description", "").lower()
+        
         # Procura nomes de outras cartas na descrição
         for other_name, other_id in name_to_id.items():
-            if other_name in desc and other_id != card["id"]:
-                if other_id not in dependency_map:
-                    dependency_map[other_id] = []
-                dependency_map[other_id].append(card["id"])
-                
-                # Se a carta atual é fusão, adiciona dependência reversa (Materiais -> Fusão)
-                if "Fusion" in card["type"]:
-                    if card["id"] not in dependency_map:
-                        dependency_map[card["id"]] = []
+            # Evita que a carta dependa de si mesma
+            if other_id == card["id"]:
+                continue
+            
+            # Verifica se o nome da outra carta está na descrição desta
+            if other_name in desc:
+                if card["id"] not in dependency_map:
+                    dependency_map[card["id"]] = []
+                # Adiciona a dependência se ainda não estiver lá
+                if other_id not in dependency_map[card["id"]]:
                     dependency_map[card["id"]].append(other_id)
+                    
+        # Adiciona dependência para Polymerization se a carta for um monstro de fusão
+        if "Fusion" in card["type"]:
+            poly_id = name_to_id.get("polymerization")
+            if poly_id and card["id"] not in dependency_map:
+                dependency_map[card["id"]] = []
+            if poly_id and poly_id not in dependency_map[card["id"]]:
+                dependency_map[card["id"]].append(poly_id)
 
     return dependency_map
 
@@ -103,7 +115,7 @@ def format_deck_list_custom(deck_list):
     return f"[\n{content}\n    ]"
 
 def generate_deck(act, difficulty_modifier, cards_by_pool, all_cards_map, dependency_map, forced_cards=None, unique_pool=None):
-    deck = []
+    main_deck = []
     extra_deck = []
     
     # 1. Adiciona Cartas Assinatura (Forced)
@@ -111,23 +123,21 @@ def generate_deck(act, difficulty_modifier, cards_by_pool, all_cards_map, depend
         for cid in forced_cards:
             if cid in all_cards_map:
                 c_data = all_cards_map[cid]
-                if "Fusion" in c_data["type"]:
-                    if len(extra_deck) < 15: extra_deck.append(cid)
+                if "Fusion" in c_data["type"] or "Synchro" in c_data["type"] or "Xyz" in c_data["type"]:
+                    if len(extra_deck) < 15 and extra_deck.count(cid) < 3: extra_deck.append(cid)
                 else:
-                    # Adiciona ao deck (mesmo que passe de 40, o loop abaixo não adicionará mais)
-                    deck.append(cid)
+                    if len(main_deck) < 40 and main_deck.count(cid) < 3: main_deck.append(cid)
     
     # 2. Adiciona Cartas Únicas/Exclusivas (Garante que elas estejam no deck para serem dropadas)
     if unique_pool:
         for cid in unique_pool:
             if cid in all_cards_map:
                 c_data = all_cards_map[cid]
-                if "Fusion" in c_data["type"]:
+                if "Fusion" in c_data["type"] or "Synchro" in c_data["type"] or "Xyz" in c_data["type"]:
                     if len(extra_deck) < 15 and extra_deck.count(cid) < 3:
                         extra_deck.append(cid)
-                elif deck.count(cid) < 3:
-                    # Prioridade alta para entrar no deck
-                    deck.append(cid)
+                elif main_deck.count(cid) < 3:
+                    if len(main_deck) < 40: main_deck.append(cid)
 
     # Define o range de pools
     min_pool, max_pool = ACT_POOL_RANGES.get(act, (1.1, 1.5))
@@ -149,47 +159,51 @@ def generate_deck(act, difficulty_modifier, cards_by_pool, all_cards_map, depend
     if not candidates:
         print(f"AVISO: Nenhum candidato para Ato {act} (Pool {min_pool}-{max_pool}). Usando Pool 1.1")
         candidates = cards_by_pool.get(1.1, [])
+        if not candidates: # Fallback total
+            candidates = [c["id"] for c in all_cards_map.values() if "Monster" in c["type"]]
 
     # Preenche o Main Deck (40 cartas)
-    while len(deck) < 40:
+    while len(main_deck) < 40:
+        if not candidates: break # Evita loop infinito se não houver mais cartas
+        
         card_id = random.choice(candidates)
         card_data = all_cards_map.get(card_id)
         
         if not card_data: continue
         
         # Verifica limite de cópias (max 3)
-        if deck.count(card_id) >= 3: continue
+        if main_deck.count(card_id) >= 3: continue
         
-        # Separa Fusão/Ritual
-        if "Fusion" in card_data["type"]:
+        # Separa Fusão/Synchro/Xyz para o Extra Deck
+        if "Fusion" in card_data["type"] or "Synchro" in card_data["type"] or "Xyz" in card_data["type"]:
             if len(extra_deck) < 15 and extra_deck.count(card_id) < 3:
                 extra_deck.append(card_id)
-                # Tenta adicionar materiais de fusão se possível
-                # (Lógica simplificada: adicionar Polymerization se tiver fusão)
-                poly_id = "1444" # ID padrão da Polymerization
-                if poly_id not in deck and len(deck) < 40:
-                    deck.append(poly_id)
+                # Se adicionou uma fusão, tenta adicionar Polymerization ao main deck
+                if "Fusion" in card_data["type"]:
+                    poly_id = "1444" # ID padrão da Polymerization
+                    if poly_id not in main_deck and len(main_deck) < 40:
+                        main_deck.append(poly_id)
             continue
             
-        deck.append(card_id)
+        main_deck.append(card_id)
         
         # Verifica dependências (Combos)
-        # Se adicionou "Blue-Eyes", tenta adicionar "Blue-Eyes Ultimate" ou suporte
         if card_id in dependency_map:
             related_ids = dependency_map[card_id]
             for related_id in related_ids:
-                if len(deck) >= 40: break
+                if len(main_deck) >= 40: break
                 
                 related_data = all_cards_map.get(related_id)
                 if not related_data: continue
                 
-                # Se for fusão, vai pro extra
-                if "Fusion" in related_data["type"]:
-                    if len(extra_deck) < 15: extra_deck.append(related_id)
+                # Se for fusão/synchro/xyz, vai pro extra
+                if "Fusion" in related_data["type"] or "Synchro" in related_data["type"] or "Xyz" in related_data["type"]:
+                    if len(extra_deck) < 15 and extra_deck.count(related_id) < 3:
+                        extra_deck.append(related_id)
                 # Se for main deck e estiver dentro do pool (ou um pouco acima)
                 elif float(related_data.get("pool", "1.1")) <= max_pool + 1.0:
-                    if deck.count(related_id) < 3:
-                        deck.append(related_id)
+                    if main_deck.count(related_id) < 3:
+                        main_deck.append(related_id)
 
     # Ordena para ficar bonito (Monstros -> Spells -> Traps)
     def sort_key(cid):
@@ -200,27 +214,26 @@ def generate_deck(act, difficulty_modifier, cards_by_pool, all_cards_map, depend
         if "Trap" in c["type"]: return 3
         return 4
         
-    deck.sort(key=sort_key)
+    main_deck.sort(key=sort_key)
     extra_deck.sort(key=sort_key)
     
-    # Combina Main e Extra para o JSON (o jogo separa no loading)
-    return deck + extra_deck
+    return main_deck, extra_deck
 
 # --- MAIN ---
 
 def main():
     print("-> Carregando banco de dados...")
-    cards = load_json(CARDS_JSON_PATH)
-    characters = load_json(CHARACTERS_JSON_PATH)
+    cards_data = load_json(CARDS_JSON_PATH)
+    characters_data = load_json(CHARACTERS_JSON_PATH)
     
-    if not cards or not characters: return
+    if not cards_data or not characters_data: return
 
     # Mapeamento rápido
-    all_cards_map = {c["id"]: c for c in cards}
+    all_cards_map = {c["id"]: c for c in cards_data}
     
     # Agrupa cartas por Pool
     cards_by_pool = {}
-    for c in cards:
+    for c in cards_data:
         try:
             pool_val = float(c.get("pool", "1.1"))
         except:
@@ -232,17 +245,14 @@ def main():
 
     # Mapa de dependências
     print("-> Analisando sinergias...")
-    dependency_map = build_dependency_map(cards)
+    dependency_map = build_dependency_map(cards_data)
     
     # --- ALOCAÇÃO DE CARTAS ÚNICAS (EXCLUSIVE DROPS) ---
     print("-> Distribuindo cartas exclusivas...")
     used_unique_ids = set()
     char_unique_map = {} # char_id -> list of card_ids
 
-    # Embaralha personagens para distribuição justa se não houver hardcode
-    # Mas mantemos a ordem para priorizar os primeiros atos com cartas mais fracas
-    
-    for char in characters:
+    for char in characters_data:
         char_id = char["id"]
         act = get_act_from_id(char_id)
         char_unique_map[char_id] = []
@@ -274,10 +284,10 @@ def main():
             char_unique_map[char_id].extend(picked)
             used_unique_ids.update(picked)
 
-    print(f"-> Gerando decks para {len(characters)} personagens...")
+    print(f"-> Gerando decks para {len(characters_data)} personagens...")
     
     # Processa cada personagem
-    for char in characters:
+    for char in characters_data:
         act = get_act_from_id(char["id"])
         
         # Identifica cartas assinatura pelo ID do personagem
@@ -291,22 +301,26 @@ def main():
         uniques = char_unique_map.get(char["id"], [])
 
         # Gera 3 variações
-        char["deck_A"] = generate_deck(act, "A", cards_by_pool, all_cards_map, dependency_map, forced, uniques)
-        char["deck_B"] = generate_deck(act, "B", cards_by_pool, all_cards_map, dependency_map, forced, uniques)
-        char["deck_C"] = generate_deck(act, "C", cards_by_pool, all_cards_map, dependency_map, forced, uniques)
+        main_A, extra_A = generate_deck(act, "A", cards_by_pool, all_cards_map, dependency_map, forced, uniques)
+        main_B, extra_B = generate_deck(act, "B", cards_by_pool, all_cards_map, dependency_map, forced, uniques)
+        main_C, extra_C = generate_deck(act, "C", cards_by_pool, all_cards_map, dependency_map, forced, uniques)
+
+        char["deck_A"] = main_A
+        char["extra_deck_A"] = extra_A # Novo campo para extra deck
+        char["deck_B"] = main_B
+        char["extra_deck_B"] = extra_B # Novo campo para extra deck
+        char["deck_C"] = main_C
+        char["extra_deck_C"] = extra_C # Novo campo para extra deck
         
-        print(f"   [{char['id']}] Ato {act} - Decks Gerados ({len(char['deck_A'])} cartas)")
+        print(f"   [{char['id']}] Ato {act} - Decks Gerados (Main: {len(char['deck_A'])}, Extra: {len(char['extra_deck_A'])})")
 
     # --- ESCRITA CUSTOMIZADA DO JSON ---
-    # O json.dump padrão não permite formatar arrays em linhas de 10.
-    # Vamos construir a string JSON manualmente para respeitar a formatação pedida.
-    
     print("-> Salvando characters.json formatado...")
     
     with open(CHARACTERS_JSON_PATH, 'w', encoding='utf-8') as f:
         f.write("[\n")
         
-        for i, char in enumerate(characters):
+        for i, char in enumerate(characters_data):
             f.write("  {\n")
             f.write(f'    "id": "{char["id"]}",\n')
             f.write(f'    "name": "{char["name"]}",\n')
@@ -317,8 +331,11 @@ def main():
 
             # Escreve os decks com formatação especial
             f.write(f'    "deck_A": {format_deck_list_custom(char["deck_A"])},\n')
+            f.write(f'    "extra_deck_A": {format_deck_list_custom(char["extra_deck_A"])},\n') # Novo
             f.write(f'    "deck_B": {format_deck_list_custom(char["deck_B"])},\n')
+            f.write(f'    "extra_deck_B": {format_deck_list_custom(char["extra_deck_B"])},\n') # Novo
             f.write(f'    "deck_C": {format_deck_list_custom(char["deck_C"])},\n')
+            f.write(f'    "extra_deck_C": {format_deck_list_custom(char["extra_deck_C"])},\n') # Novo
             
             # Outros campos (mantendo simples para o exemplo)
             rewards_str = json.dumps(char.get("rewards", []))
@@ -327,7 +344,7 @@ def main():
             f.write(f'    "difficulty": "{char.get("difficulty", "Easy")}",\n')
             f.write(f'    "story_role": "{char.get("story_role", "Duelist")}"\n')
             
-            if i < len(characters) - 1:
+            if i < len(characters_data) - 1:
                 f.write("  },\n")
             else:
                 f.write("  }\n") # Último item sem vírgula
@@ -339,3 +356,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

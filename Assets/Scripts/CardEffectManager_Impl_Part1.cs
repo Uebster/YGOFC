@@ -3529,6 +3529,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         if (GameManager.Instance.PayLifePoints(source.isPlayerCard, 5000))
         {
             List<CardData> extra = GameManager.Instance.GetPlayerExtraDeck();
+            List<CardData> targets = extra.FindAll(c => (c.type.Contains("Fusion") || c.type.Contains("Synchro") || c.type.Contains("Xyz")) && c.level <= 6);            
             if (extra.Count > 0)
             {
                 GameManager.Instance.OpenCardSelection(extra, "Invocar Fusão", (selected) => {

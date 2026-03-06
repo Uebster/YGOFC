@@ -44,7 +44,7 @@ public class FusionUI : MonoBehaviour
         ClearContent();
 
         // Popula o Extra Deck (Monstros de Fusão)
-        var extraDeck = GameManager.Instance.GetPlayerExtraDeck().Where(c => c.type.Contains("Fusion")).ToList();
+        var extraDeck = DeckManager.Instance.GetPlayerExtraDeck().Where(c => c.type.Contains("Fusion")).ToList();
         foreach (var card in extraDeck)
         {
             CreateCardItem(card, extraDeckContent, () => SelectFusionMonster(card));

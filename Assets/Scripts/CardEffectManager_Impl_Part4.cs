@@ -2820,7 +2820,7 @@ public partial class CardEffectManager
                 (tribute) => {
                     GameManager.Instance.TributeCard(tribute);
                     
-                    List<CardData> extra = GameManager.Instance.GetPlayerExtraDeck();
+                    List<CardData> extra = DeckManager.Instance.GetPlayerExtraDeck();
                     List<CardData> fusions = extra.FindAll(c => c.type.Contains("Fusion"));
                     
                     if (fusions.Count > 0)
