@@ -46,6 +46,9 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 ## Modos de Jogo (Variáveis Públicas)
 *   `devMode`: Habilita trapaças (sacar a qualquer hora, controlar oponente).
 *   `effectTestMode`: Habilita menu de teste de VFX.
+*   `testOpponentID`: ID do personagem oponente para teste rápido (ex: "021_kaiba").
+*   `testPlayerID`: ID do personagem para substituir o deck do jogador (ex: "020_pegasus").
+*   `testActThemeIndex`: Número do Ato (1-10) para forçar o carregamento de um tema visual específico.
 *   `canPlayerDrawFromDeck`: Permite clique no deck.
 *   `showOpponentHand`: Mostra cartas do oponente viradas para cima.
 

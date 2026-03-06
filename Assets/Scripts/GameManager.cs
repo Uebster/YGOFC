@@ -82,6 +82,12 @@ public class GameManager : MonoBehaviour
     public bool devMode = false;
     [Tooltip("Habilita o menu de testes de efeitos visuais e sonoros.")]
     public bool effectTestMode = false;
+    [Tooltip("ID do oponente para teste rápido (ex: 021_kaiba). Deixe vazio para usar o fluxo normal.")]
+    public string testOpponentID = ""; 
+    [Tooltip("ID do personagem para substituir o jogador (ex: 020_pegasus). Deixe vazio para usar o deck do save.")]
+    public string testPlayerID = "";
+    [Tooltip("Número do Ato (1-10) para forçar o tema visual. -1 para usar o padrão.")]
+    public int testActThemeIndex = -1;
     [Tooltip("Define se as cartas na mão do oponente são visíveis.")]
     public bool showOpponentHand = false;
     [Tooltip("Permite sacar cartas clicando no Deck do jogador.")]
@@ -275,6 +281,12 @@ public class GameManager : MonoBehaviour
             // Se currentDuelIndex for -1 (Free Duel), tenta usar o tema do Ato 1 ou um padrão
             int levelToUse = (currentDuelIndex > 0) ? currentDuelIndex : 1;
 
+            // DEV MODE: Sobrescreve o tema se um Ato de teste for definido
+            if (devMode && testActThemeIndex > 0)
+            {
+                levelToUse = (testActThemeIndex - 1) * 10 + 1; // Ato 1 = Nível 1, Ato 2 = Nível 11...
+            }
+
             DuelTheme theme = campaignDatabase.GetThemeForLevel(levelToUse);
             if (theme != null)
                 DuelThemeManager.Instance.ApplyTheme(theme);
@@ -351,6 +363,45 @@ public class GameManager : MonoBehaviour
 
     List<CardData> InitializePlayerDeck()
     {
+        // DEV MODE: Sobrescreve o deck do jogador com o de um personagem
+        if (devMode && !string.IsNullOrEmpty(testPlayerID) && characterDatabase != null)
+        {
+            CharacterData charData = characterDatabase.GetCharacterById(testPlayerID);
+            if (charData != null)
+            {
+                Debug.Log($"[DevMode] Jogando como: {charData.name} ({charData.id})");
+                List<CardData> devDeck = new List<CardData>();
+                
+                // Usa o Deck A do personagem como padrão para o jogador
+                if (charData.deck_A != null)
+                {
+                    foreach (string id in charData.deck_A)
+                    {
+                        CardData c = cardDatabase.GetCardById(id);
+                        if (c != null) devDeck.Add(c);
+                    }
+                }
+                
+                playerExtraDeck.Clear();
+                if (charData.extra_deck_A != null)
+                {
+                    foreach (string id in charData.extra_deck_A)
+                    {
+                        CardData c = cardDatabase.GetCardById(id);
+                        if (c != null) playerExtraDeck.Add(c);
+                    }
+                }
+
+                playerMainDeck = devDeck;
+                UpdatePileVisuals();
+                return playerMainDeck;
+            }
+            else
+            {
+                Debug.LogWarning($"[DevMode] Personagem {testPlayerID} não encontrado. Usando deck do save.");
+            }
+        }
+
         // Se já temos um deck carregado (do Save ou anterior), usamos ele
         if (playerMainDeck.Count > 0)
         {
@@ -398,28 +449,56 @@ public class GameManager : MonoBehaviour
     (List<CardData>, List<CardData>) InitializeOpponentDeck()
     {
         List<CardData> newDeck = new List<CardData>();
-        // Se temos um oponente definido (Campanha), carregamos o deck dele
-        if (currentOpponent != null && currentOpponent.deck_A != null && currentOpponent.deck_A.Count > 0)
+
+        // Se o oponente ainda for nulo aqui (não foi setado no StartDuel), tenta o ID de teste novamente como última tentativa
+        if (currentOpponent == null && !string.IsNullOrEmpty(testOpponentID) && characterDatabase != null)
         {
-            foreach (string cardId in currentOpponent.deck_A)
+            currentOpponent = characterDatabase.GetCharacterById(testOpponentID);
+        }
+
+        // Se temos um oponente definido (Campanha), carregamos o deck dele
+        if (currentOpponent != null)
+        {
+            // Atualiza visual do nome na UI (se disponível)
+            if (duelFieldUI != null && duelFieldUI.opponentNameText != null)
+                duelFieldUI.opponentNameText.text = currentOpponent.name;
+
+            // --- SELEÇÃO DE DECK ALEATÓRIA (A, B, C) ---
+            List<string> selectedMain = currentOpponent.deck_A;
+            List<string> selectedExtra = currentOpponent.extra_deck_A;
+            string variant = "A";
+
+            int rng = Random.Range(0, 3); // 0, 1, 2
+
+            // Tenta carregar B ou C se sorteado e existente
+            if (rng == 1 && currentOpponent.deck_B != null && currentOpponent.deck_B.Count > 0)
             {
-                CardData card = cardDatabase.GetCardById(cardId);
-                if (card != null)
-                {
-                    // Fusion/Synchro/Xyz already handled by extra_deck_A in CharacterData
-                    newDeck.Add(card);
+                selectedMain = currentOpponent.deck_B;
+                selectedExtra = currentOpponent.extra_deck_B;
+                variant = "B";
+            }
+            else if (rng == 2 && currentOpponent.deck_C != null && currentOpponent.deck_C.Count > 0)
+            {
+                selectedMain = currentOpponent.deck_C;
+                selectedExtra = currentOpponent.extra_deck_C;
+                variant = "C";
+            }
+
+            Debug.Log($"Inicializando oponente: {currentOpponent.name} | Deck Variante: {variant}");
+
+            // Carrega Main Deck
+            if (selectedMain != null) 
+            {
+                foreach (string id in selectedMain) 
+                { 
+                    CardData c = cardDatabase.GetCardById(id); 
+                    if (c != null) newDeck.Add(c); 
+                    // else Debug.LogWarning($"Carta ID {id} não encontrada para o oponente.");
                 }
             }
-            
+            // Carrega Extra Deck
             opponentExtraDeck.Clear();
-            if (currentOpponent.extra_deck_A != null)
-            {
-                foreach (string cardId in currentOpponent.extra_deck_A)
-                {
-                    CardData card = cardDatabase.GetCardById(cardId);
-                    if (card != null) opponentExtraDeck.Add(card);
-                }
-            }
+            if (selectedExtra != null) foreach (string id in selectedExtra) { CardData c = cardDatabase.GetCardById(id); if (c != null) opponentExtraDeck.Add(c); }
         }
         else
         {
@@ -435,6 +514,21 @@ public class GameManager : MonoBehaviour
                 {
                     newDeck.Add(card);
                 }
+            }
+        }
+
+        // SAFEGUARD CRÍTICO: Se o deck ainda estiver vazio (falha no load ou IDs errados), gera um aleatório
+        if (newDeck.Count == 0)
+        {
+            Debug.LogWarning("Deck do oponente vazio após inicialização! Gerando deck de emergência.");
+            List<CardData> allCards = new List<CardData>(cardDatabase.cardDatabase);
+            var validCards = allCards.Where(c => !c.type.Contains("Fusion") && !c.type.Contains("Synchro") && !c.type.Contains("Xyz") && !c.type.Contains("Token")).ToList();
+
+            for (int i = 0; i < 40; i++)
+            {
+                if (validCards.Count == 0) break;
+                CardData randomCard = validCards[Random.Range(0, validCards.Count)];
+                newDeck.Add(randomCard);
             }
         }
 
