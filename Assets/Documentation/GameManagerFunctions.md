@@ -51,6 +51,7 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `testActThemeIndex`: Número do Ato (1-10) para forçar o carregamento de um tema visual específico.
 *   `showOpponentHand`: Mostra cartas do oponente viradas para cima (Cheat).
 *   `canPlayerDrawFromDeck`: Permite clique no deck.
+*   `fillOpponentZonesFromRight`: Define se o oponente preenche as zonas da direita para a esquerda (perspectiva do jogador), simulando a esquerda dele.
 
 ## Configurações de Velocidade
 *   `playerDrawSpeed`: Tempo (em segundos) entre cada carta comprada pelo jogador na animação inicial.

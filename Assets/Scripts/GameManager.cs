@@ -98,6 +98,8 @@ public class GameManager : MonoBehaviour
     public bool canPlacePlayerCards = true;
     [Tooltip("Permite baixar cartas para o campo do oponente (Modo Dev).")]
     public bool canPlaceOpponentCards = false;
+    [Tooltip("Se marcado, o oponente preenche as zonas da direita para a esquerda (perspectiva do jogador), simulando a esquerda dele.")]
+    public bool fillOpponentZonesFromRight = true;
 
     // --- REFERÊNCIAS 2D ---
     [Header("Core References")]
@@ -1486,9 +1488,20 @@ public void ShuffleDeck(bool isPlayer)
         Transform[] zones = isPlayer ? duelFieldUI.playerMonsterZones : duelFieldUI.opponentMonsterZones;
         if (zones == null) return null;
 
-        foreach (Transform zone in zones)
+        // Se for oponente e a opção estiver marcada, inverte a ordem de busca
+        if (!isPlayer && fillOpponentZonesFromRight)
         {
-            if (zone.childCount == 0) return zone;
+            for (int i = zones.Length - 1; i >= 0; i--)
+            {
+                if (zones[i].childCount == 0) return zones[i];
+            }
+        }
+        else
+        {
+            foreach (Transform zone in zones)
+            {
+                if (zone.childCount == 0) return zone;
+            }
         }
         return null;
     }
@@ -1666,9 +1679,20 @@ public void ShuffleDeck(bool isPlayer)
         Transform[] zones = isPlayer ? duelFieldUI.playerSpellZones : duelFieldUI.opponentSpellZones;
         if (zones == null) return null;
 
-        foreach (Transform zone in zones)
+        // Se for oponente e a opção estiver marcada, inverte a ordem de busca
+        if (!isPlayer && fillOpponentZonesFromRight)
         {
-            if (zone.childCount == 0) return zone;
+            for (int i = zones.Length - 1; i >= 0; i--)
+            {
+                if (zones[i].childCount == 0) return zones[i];
+            }
+        }
+        else
+        {
+            foreach (Transform zone in zones)
+            {
+                if (zone.childCount == 0) return zone;
+            }
         }
         return null;
     }
