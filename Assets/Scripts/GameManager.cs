@@ -235,9 +235,8 @@ public class GameManager : MonoBehaviour
         EnsureCoreManagers();
 
         List<CardData> pDeck = InitializePlayerDeck();
-        List<CardData> oDeck = InitializeOpponentDeck();
-        (List<CardData> oMain, List<CardData> oExtra) = InitializeOpponentDeck(); // InitializeOpponentDeck now returns a tuple
-        DeckManager.Instance.SetupDecks(pDeck, playerExtraDeck, oMain, oExtra); // Pass playerExtraDeck as well
+        (List<CardData> oMain, List<CardData> oExtra) = InitializeOpponentDeck();
+        DeckManager.Instance.SetupDecks(pDeck, playerExtraDeck, oMain, oExtra);
 
         DrawInitialHand(5); // Exemplo: compra 5 cartas iniciais
         DrawInitialOpponentHand(5);
@@ -329,7 +328,7 @@ public class GameManager : MonoBehaviour
         StartDuel(); // Chama o método principal
     }
 
-    (List<CardData>, List<CardData>) InitializeOpponentDeck() // Return tuple
+    List<CardData> InitializePlayerDeck()
     {
         // Se já temos um deck carregado (do Save ou anterior), usamos ele
         if (playerMainDeck.Count > 0)
@@ -375,7 +374,7 @@ public class GameManager : MonoBehaviour
         return newDeck;
     }
 
-    List<CardData> InitializeOpponentDeck()
+    (List<CardData>, List<CardData>) InitializeOpponentDeck()
     {
         List<CardData> newDeck = new List<CardData>();
         // Se temos um oponente definido (Campanha), carregamos o deck dele
@@ -387,6 +386,17 @@ public class GameManager : MonoBehaviour
                 if (card != null)
                 {
                     // Fusion/Synchro/Xyz already handled by extra_deck_A in CharacterData
+                    newDeck.Add(card);
+                }
+            }
+            
+            opponentExtraDeck.Clear();
+            if (currentOpponent.extra_deck_A != null)
+            {
+                foreach (string cardId in currentOpponent.extra_deck_A)
+                {
+                    CardData card = cardDatabase.GetCardById(cardId);
+                    if (card != null) opponentExtraDeck.Add(card);
                 }
             }
         }
@@ -431,7 +441,7 @@ public class GameManager : MonoBehaviour
         opponentMainDeck = newDeck;
         Debug.Log($"Deck do oponente inicializado com {newDeck.Count} cartas.");
         UpdatePileVisuals();
-        return newDeck;
+        return (opponentMainDeck, opponentExtraDeck);
     }
 
         public IEnumerator DrawInitialHandRoutine(int count)
@@ -1985,5 +1995,49 @@ public void ShuffleDeck(bool isPlayer)
             return DeckManager.Instance.GetOpponentDeck();
         }
         return opponentMainDeck;
+    }
+    public List<CardData> GetPlayerExtraDeck() { return playerExtraDeck; }
+    public List<CardData> GetOpponentExtraDeck() { return opponentExtraDeck; }
+    public List<CardData> GetPlayerGraveyard() { return playerGraveyard; }
+    public List<CardData> GetOpponentGraveyard() { return opponentGraveyard; }
+    public List<CardData> GetPlayerRemoved() { return playerRemoved; }
+    public List<CardData> GetOpponentRemoved() { return opponentRemoved; }
+    public int GetPlayerRemovedCount() { return playerRemoved.Count; }
+
+    public List<CardData> GetPlayerHandData()
+    {
+        List<CardData> data = new List<CardData>();
+        foreach (var go in playerHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public List<CardData> GetOpponentHandData()
+    {
+        List<CardData> data = new List<CardData>();
+        foreach (var go in opponentHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
+    {
+        playerMainDeck = new List<CardData>(main);
+        playerSideDeck = new List<CardData>(side);
+        playerExtraDeck = new List<CardData>(extra);
     }
 }
