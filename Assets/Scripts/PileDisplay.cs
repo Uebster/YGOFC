@@ -98,6 +98,7 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
                 if (display != null)
                 {
                     display.isInPile = true; // Marca como carta de pilha para controle de hover
+                    display.isPlayerCard = isPlayerPile; // FIX: Define o dono da carta para visualização correta
                     // Deck e Extra Deck são virados para baixo por padrão
                     bool isFaceUp = (pileType != PileType.Deck && pileType != PileType.ExtraDeck);
 
@@ -117,6 +118,14 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
                         display.SetCard(data, currentBackTexture, true);
                     }
                 }
+            }
+
+            // Lógica de Raycast para o TOPO da pilha
+            // Se for a carta do topo visual (último filho), ativamos o raycast para permitir Hover e Clique no CardDisplay
+            if (i == activeCards.Count - 1)
+            {
+                GraphicRaycaster gr = cardObj.GetComponent<GraphicRaycaster>();
+                if (gr != null) gr.enabled = true;
             }
 
             // Aplica o efeito de "montinho" deslocando a posição

@@ -191,7 +191,12 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         else
         {
             if (mask != null) mask.enabled = false;
-            if (parentImage != null) parentImage.enabled = false;
+            if (parentImage != null) 
+            {
+                // Mantém habilitado mas invisível para capturar cliques/hover
+                parentImage.enabled = true;
+                parentImage.color = Color.clear;
+            }
         }
     }
 
@@ -735,6 +740,32 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerClick(PointerEventData eventData)
     {
+        // Lógica para cartas em PILHAS (Cemitério, Extra Deck, Banidas)
+        // Como ativamos o Raycast na carta do topo, ela intercepta o clique do PileDisplay.
+        if (isInPile)
+        {
+            if (GameManager.Instance != null)
+            {
+                Transform parent = transform.parent;
+                // Verifica de qual pilha é pai e abre o visualizador correspondente
+                if (GameManager.Instance.playerGraveyardDisplay != null && parent == GameManager.Instance.playerGraveyardDisplay.contentParent)
+                    GameManager.Instance.ViewGraveyard(true);
+                else if (GameManager.Instance.opponentGraveyardDisplay != null && parent == GameManager.Instance.opponentGraveyardDisplay.contentParent)
+                    GameManager.Instance.ViewGraveyard(false);
+                else if (GameManager.Instance.playerExtraDeckDisplay != null && parent == GameManager.Instance.playerExtraDeckDisplay.contentParent)
+                    GameManager.Instance.ViewExtraDeck(true);
+                else if (GameManager.Instance.playerRemovedDisplay != null && parent == GameManager.Instance.playerRemovedDisplay.contentParent)
+                    GameManager.Instance.ViewRemovedCards(true);
+                else if (GameManager.Instance.opponentRemovedDisplay != null && parent == GameManager.Instance.opponentRemovedDisplay.contentParent)
+                    GameManager.Instance.ViewRemovedCards(false);
+                
+                // Deck: Compra carta (se permitido)
+                else if (GameManager.Instance.playerDeckDisplay != null && parent == GameManager.Instance.playerDeckDisplay.contentParent && GameManager.Instance.canPlayerDrawFromDeck)
+                    GameManager.Instance.DrawCard();
+            }
+            return;
+        }
+
         // Lógica de Seleção de Tributo (Prioridade Máxima)
         if (SummonManager.Instance != null && SummonManager.Instance.isSelectingTributes)
         {
