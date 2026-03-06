@@ -54,10 +54,20 @@ public class GameManager : MonoBehaviour
     public bool enableHandHoverOutline = true;
     [Tooltip("Ativa o contorno de hover nas cartas do campo.")]
     public bool enableFieldHoverOutline = true;
-    [Tooltip("Ativa o contorno de hover nas cartas de pilhas (Deck, Cemitério, etc).")]
-    public bool enablePileHoverOutline = false;
     [Tooltip("Ativa o contorno no visualizador de carta grande.")]
-    public bool enableCardViewerOutline = true;
+
+
+    public bool enableCardViewerOutline = true;    
+    
+    [Header("Pile Outlines")]
+    [Tooltip("Ativa o contorno de hover nas cartas do Deck.")]
+    public bool enableDeckHoverOutline = false;
+    [Tooltip("Ativa o contorno de hover nas cartas do Cemitério.")]
+    public bool enableGraveyardHoverOutline = true;
+    [Tooltip("Ativa o contorno de hover nas cartas do Extra Deck.")]
+    public bool enableExtraDeckHoverOutline = true;
+    [Tooltip("Ativa o contorno de hover nas cartas Removidas.")]
+    public bool enableRemovedHoverOutline = true;
 
     [Header("Rounded Corners")]
     [Tooltip("Arredonda as bordas das cartas no campo.")]

@@ -318,7 +318,11 @@ public class BattleManager : MonoBehaviour
         Debug.Log($"Ataque Direto! Dano: {damage}");
         
         // Aplica dano ao oponente
-        GameManager.Instance.DamageOpponent(damage);
+        // FIX: Verifica quem está atacando para causar dano no alvo correto
+        if (attacker.isPlayerCard)
+            GameManager.Instance.DamageOpponent(damage);
+        else
+            GameManager.Instance.DamagePlayer(damage);
         
         if (DuelFXManager.Instance != null) 
             DuelFXManager.Instance.PlayAttack(attacker, null, null); // Null target = direct
@@ -438,8 +442,11 @@ public class BattleManager : MonoBehaviour
                 int damage = atk - def;
                 Debug.Log($"Vitória do Atacante! Oponente toma {damage} de dano. Alvo destruído.");
                 
-                if (!noBattleDamage && !attacker.cannotInflictBattleDamage) 
-                    GameManager.Instance.DamageOpponent(damage);
+                if (!noBattleDamage && !attacker.cannotInflictBattleDamage)
+                {
+                    if (target.isPlayerCard) GameManager.Instance.DamagePlayer(damage);
+                    else GameManager.Instance.DamageOpponent(damage);
+                }
                 
                 if (!targetIsBES)
                 {
@@ -459,8 +466,12 @@ public class BattleManager : MonoBehaviour
             {
                 int damage = def - atk;
                 Debug.Log($"Vitória do Alvo! Atacante toma {damage} de dano. Atacante destruído.");
-                if (!noBattleDamage) GameManager.Instance.DamagePlayer(damage);
-                
+                if (!noBattleDamage)
+                {
+                    if (attacker.isPlayerCard) GameManager.Instance.DamagePlayer(damage);
+                    else GameManager.Instance.DamageOpponent(damage);
+                }  
+
                 if (!attackerIsRocketWarrior)
                 {
                     GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
@@ -510,7 +521,10 @@ public class BattleManager : MonoBehaviour
                 }
                 
                 Debug.Log($"Defesa Sólida! Atacante toma {damage} de dano.");
-                GameManager.Instance.DamagePlayer(damage);
+
+                if (attacker.isPlayerCard) GameManager.Instance.DamagePlayer(damage);
+                else GameManager.Instance.DamageOpponent(damage);
+
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayAttackFail(attacker);
 
                 // Continuous Destruction Punch (0323)
@@ -547,7 +561,8 @@ public class BattleManager : MonoBehaviour
             {
                 int piercing = atk - def;
                 Debug.Log($"Dano Perfurante! {piercing} de dano.");
-                GameManager.Instance.DamageOpponent(piercing);
+                if (target.isPlayerCard) GameManager.Instance.DamagePlayer(piercing);
+                else GameManager.Instance.DamageOpponent(piercing);            
             }
 
             // Different Dimension Dragon (0492)

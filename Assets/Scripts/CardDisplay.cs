@@ -516,14 +516,52 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public void OnPointerEnter(PointerEventData eventData)
     {
         bool shouldShowOutline = enableHoverOutline;
+        bool isTopGraveyard = false;
+
         if (GameManager.Instance != null)
         {
             if (isOnField) shouldShowOutline = GameManager.Instance.enableFieldHoverOutline;
-            else if (isInPile) shouldShowOutline = GameManager.Instance.enablePileHoverOutline;
+            else if (isInPile)            
+                {
+                Transform parent = transform.parent;
+                // Deck
+                if ((GameManager.Instance.playerDeckDisplay != null && parent == GameManager.Instance.playerDeckDisplay.contentParent) ||
+                    (GameManager.Instance.opponentDeckDisplay != null && parent == GameManager.Instance.opponentDeckDisplay.contentParent))
+                {
+                    shouldShowOutline = GameManager.Instance.enableDeckHoverOutline;
+                }
+                // Graveyard
+                else if ((GameManager.Instance.playerGraveyardDisplay != null && parent == GameManager.Instance.playerGraveyardDisplay.contentParent) ||
+                         (GameManager.Instance.opponentGraveyardDisplay != null && parent == GameManager.Instance.opponentGraveyardDisplay.contentParent))
+                {
+                    shouldShowOutline = GameManager.Instance.enableGraveyardHoverOutline;
+                    // Verifica se é o topo do cemitério
+                    if (transform.GetSiblingIndex() == parent.childCount - 1) isTopGraveyard = true;
+                }
+                // Extra Deck
+                else if ((GameManager.Instance.playerExtraDeckDisplay != null && parent == GameManager.Instance.playerExtraDeckDisplay.contentParent) ||
+                         (GameManager.Instance.opponentExtraDeckDisplay != null && parent == GameManager.Instance.opponentExtraDeckDisplay.contentParent))
+                {
+                    shouldShowOutline = GameManager.Instance.enableExtraDeckHoverOutline;
+                }
+                // Removed
+                else if ((GameManager.Instance.playerRemovedDisplay != null && parent == GameManager.Instance.playerRemovedDisplay.contentParent) ||
+                         (GameManager.Instance.opponentRemovedDisplay != null && parent == GameManager.Instance.opponentRemovedDisplay.contentParent))
+                {
+                    shouldShowOutline = GameManager.Instance.enableRemovedHoverOutline;
+                }
+                else
+                {
+                    shouldShowOutline = false;
+                }
+            }            
             else if (isInteractable) shouldShowOutline = GameManager.Instance.enableHandHoverOutline; // Mão
             // Verifica se é o Card Viewer
             else if (GameManager.Instance.cardViewerDisplay == this) shouldShowOutline = GameManager.Instance.enableCardViewerOutline;
         }
+
+        // Exceção: Se for o topo do cemitério, SEMPRE mostra o outline para indicar interatividade (Power of Chaos style)
+        if (isTopGraveyard) shouldShowOutline = true;
 
         // Se estiver selecionado para ataque, não mostra o outline de hover (verde/amarelo) para não sobrescrever o vermelho
         if (isAttackSelected) shouldShowOutline = false;
@@ -579,6 +617,12 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             // Lógica para visualizar extra deck mesmo virado para baixo
             bool forceShowFaceUp = false;
             if (GameManager.Instance.playerExtraDeckDisplay != null && transform.parent == GameManager.Instance.playerExtraDeckDisplay.contentParent)
+            {
+                forceShowFaceUp = true;
+            }
+
+            // Se for topo do cemitério (calculado acima), força face-up
+            if (isTopGraveyard)
             {
                 forceShowFaceUp = true;
             }
