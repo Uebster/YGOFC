@@ -520,33 +520,47 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
         if (GameManager.Instance != null)
         {
+            // Detecta automaticamente se está em uma pilha verificando os pais
+            // Isso corrige casos onde isInPile não foi setado manualmente
+            bool detectedInPile = isInPile;
+            Transform parent = transform.parent;
+            
+            bool isPlayerDeck = (GameManager.Instance.playerDeckDisplay != null && parent == GameManager.Instance.playerDeckDisplay.contentParent);
+            bool isOpponentDeck = (GameManager.Instance.opponentDeckDisplay != null && parent == GameManager.Instance.opponentDeckDisplay.contentParent);
+            bool isPlayerGY = (GameManager.Instance.playerGraveyardDisplay != null && parent == GameManager.Instance.playerGraveyardDisplay.contentParent);
+            bool isOpponentGY = (GameManager.Instance.opponentGraveyardDisplay != null && parent == GameManager.Instance.opponentGraveyardDisplay.contentParent);
+            bool isPlayerExtra = (GameManager.Instance.playerExtraDeckDisplay != null && parent == GameManager.Instance.playerExtraDeckDisplay.contentParent);
+            bool isOpponentExtra = (GameManager.Instance.opponentExtraDeckDisplay != null && parent == GameManager.Instance.opponentExtraDeckDisplay.contentParent);
+            bool isPlayerRemoved = (GameManager.Instance.playerRemovedDisplay != null && parent == GameManager.Instance.playerRemovedDisplay.contentParent);
+            bool isOpponentRemoved = (GameManager.Instance.opponentRemovedDisplay != null && parent == GameManager.Instance.opponentRemovedDisplay.contentParent);
+
+            if (isPlayerDeck || isOpponentDeck || isPlayerGY || isOpponentGY || isPlayerExtra || isOpponentExtra || isPlayerRemoved || isOpponentRemoved)
+            {
+                detectedInPile = true;
+            }
+
             if (isOnField) shouldShowOutline = GameManager.Instance.enableFieldHoverOutline;
-            else if (isInPile)            
-                {
-                Transform parent = transform.parent;
+            else if (detectedInPile)
+            {
                 // Deck
-                if ((GameManager.Instance.playerDeckDisplay != null && parent == GameManager.Instance.playerDeckDisplay.contentParent) ||
-                    (GameManager.Instance.opponentDeckDisplay != null && parent == GameManager.Instance.opponentDeckDisplay.contentParent))
+                if (isPlayerDeck || isOpponentDeck)
                 {
                     shouldShowOutline = GameManager.Instance.enableDeckHoverOutline;
                 }
                 // Graveyard
-                else if ((GameManager.Instance.playerGraveyardDisplay != null && parent == GameManager.Instance.playerGraveyardDisplay.contentParent) ||
-                         (GameManager.Instance.opponentGraveyardDisplay != null && parent == GameManager.Instance.opponentGraveyardDisplay.contentParent))
+                else if (isPlayerGY || isOpponentGY)
                 {
                     shouldShowOutline = GameManager.Instance.enableGraveyardHoverOutline;
                     // Verifica se é o topo do cemitério
                     if (transform.GetSiblingIndex() == parent.childCount - 1) isTopGraveyard = true;
                 }
                 // Extra Deck
-                else if ((GameManager.Instance.playerExtraDeckDisplay != null && parent == GameManager.Instance.playerExtraDeckDisplay.contentParent) ||
-                         (GameManager.Instance.opponentExtraDeckDisplay != null && parent == GameManager.Instance.opponentExtraDeckDisplay.contentParent))
+                else if (isPlayerExtra || isOpponentExtra)
                 {
                     shouldShowOutline = GameManager.Instance.enableExtraDeckHoverOutline;
                 }
                 // Removed
-                else if ((GameManager.Instance.playerRemovedDisplay != null && parent == GameManager.Instance.playerRemovedDisplay.contentParent) ||
-                         (GameManager.Instance.opponentRemovedDisplay != null && parent == GameManager.Instance.opponentRemovedDisplay.contentParent))
+                else if (isPlayerRemoved || isOpponentRemoved)
                 {
                     shouldShowOutline = GameManager.Instance.enableRemovedHoverOutline;
                 }
@@ -880,6 +894,17 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         Debug.Log("Hierarquia da carta ajustada com sucesso: Pai(Mask) -> Art(RawImage).");
     }
 #endif
+
+    void OnEnable()
+    {
+        // Se a carta foi configurada enquanto estava inativa (ex: dentro de um painel fechado), 
+        // a textura pode não ter carregado porque corrotinas não rodam em objetos inativos.
+        // Tenta carregar agora.
+        if (currentCardData != null && frontTexture == null && cardImage != null)
+        {
+             StartCoroutine(LoadCardFrontTexture(currentCardData.image_filename));
+        }
+    }
 
     void OnDisable()
     {
