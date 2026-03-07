@@ -73,6 +73,9 @@ public class BattleManager : MonoBehaviour
 
         try
         {
+            // Garante que o menu de ação esteja fechado ao iniciar um ataque
+            if (DuelActionMenu.Instance != null) DuelActionMenu.Instance.CloseMenu();
+
             // Verifica se pode atacar
             if (!CanAttack(attacker)) return;
 

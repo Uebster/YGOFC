@@ -75,6 +75,7 @@ public class ChainManager : MonoBehaviour
         {
             playerPassed = false;
             opponentPassed = false;
+            int chainCountAtStart = currentChain.Count; // FIX: Rastreia tamanho da chain para detectar mudanças
 
             // Loop de prioridade para 2 jogadores
             for (int i = 0; i < 2; i++)
@@ -95,20 +96,34 @@ public class ChainManager : MonoBehaviour
                 {
                     if (currentPlayerIsPlayer)
                     {
+                        Debug.Log($"[ChainManager] Aguardando resposta do Jogador. {responses.Count} opções.");
                         // Espera a resposta do jogador humano
-                        UIManager.Instance.ShowResponseWindow(responses, () => { playerPassed = true; });
+                        try 
+                        {
+                            UIManager.Instance.ShowResponseWindow(responses, () => { playerPassed = true; });
+                        }
+                        catch (System.Exception e)
+                        {
+                            Debug.LogError($"[ChainManager] Erro ao mostrar UI: {e.Message}");
+                            playerPassed = true;
+                        }
                         
                         // FIX: Adicionado timeout para evitar travamento infinito se a UI falhar
                         float timeout = 5f; // Reduzido para 5s para feedback mais rápido em caso de erro
                         float timer = 0f;
                         // Adicionado verificação de responses.Count > 0 para evitar loop se a lista for limpa externamente
-                        while (!playerPassed && responses.Count > 0 && timer < timeout)
+                        // FIX: Verifica se a chain cresceu (jogador ativou algo) para sair do loop
+                        while (!playerPassed && responses.Count > 0 && timer < timeout && currentChain.Count == chainCountAtStart)
                         {
                             timer += Time.unscaledDeltaTime; // Usa unscaled para não travar se o jogo pausar
                             yield return null;
                         }
                         
-                        if (timer >= timeout)
+                        if (currentChain.Count > chainCountAtStart)
+                        {
+                             Debug.Log("[ChainManager] Nova carta adicionada à corrente. Interrompendo espera.");
+                        }
+                        else if (timer >= timeout)
                         {
                             Debug.LogWarning("ChainManager: Timeout aguardando resposta do jogador. Passando automaticamente.");
                             playerPassed = true;
@@ -117,7 +132,7 @@ public class ChainManager : MonoBehaviour
                     else
                     {
                         // Lógica da IA
-                        Debug.Log("IA está pensando se responde...");
+                        // Debug.Log("IA está pensando se responde...");
                         yield return new WaitForSeconds(0.5f); // Simula pensamento
                         opponentPassed = true; // IA decide não responder por enquanto
                     }
@@ -129,9 +144,12 @@ public class ChainManager : MonoBehaviour
                 }
 
                 // Se uma nova carta foi adicionada à chain, o loop de prioridade reinicia para o outro jogador
-                if (currentChain.Count > responses.Count) // Lógica simplificada, idealmente checaria currentChain.Count > lastCount
+                // FIX: Usa chainCountAtStart em vez de responses.Count para evitar loop infinito
+                if (currentChain.Count > chainCountAtStart)
                 {
+                    Debug.Log($"[ChainManager] Chain cresceu ({chainCountAtStart} -> {currentChain.Count}). Reiniciando prioridade.");
                     currentPlayerIsPlayer = !GetLastChainLink().isPlayerEffect;
+                    chainCountAtStart = currentChain.Count; // Atualiza para a nova iteração
                     i = -1; // Reinicia o loop for
                     continue;
                 }
