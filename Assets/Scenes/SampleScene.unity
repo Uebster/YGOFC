@@ -12369,7 +12369,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00031096223}
+  m_AnchoredPosition: {x: 0, y: 0.00067939487}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &251103715
@@ -16719,7 +16719,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00031096223}
+  m_AnchoredPosition: {x: 0, y: 0.00066534936}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &322488726
@@ -21930,7 +21930,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00031096223}
+  m_AnchoredPosition: {x: 0, y: 0.00066534936}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &440854236
@@ -27882,7 +27882,7 @@ MonoBehaviour:
   canPlacePlayerCards: 1
   canPlaceOpponentCards: 0
   fillOpponentZonesFromRight: 1
-  isSimulating: 0
+  isSimulating: 1
   cardViewerDisplay: {fileID: 1668354900}
   cardMaskSprite: {fileID: 8700888854079526479, guid: 89f8ad8cd424a8945ad0a6599d8c8ee2, type: 3}
   cardPrefab: {fileID: 8025598697861121516, guid: c725ecdb4f79ef846bd6053b63e028c0, type: 3}
@@ -27931,7 +27931,7 @@ MonoBehaviour:
   phaseHoverColorOpponent: {r: 0.5803922, g: 0, b: 0.8274511, a: 1}
   enableAttackSelectionVisual: 1
   attackSelectionColor: {r: 0.7924528, g: 0.018689923, b: 0.018689923, a: 0.62352943}
-  enableAttackAnimation: 1
+  enableAttackAnimation: 0
   attackAnimationPrefab: {fileID: 0}
   playerDrawSpeed: 0.2
   opponentDrawSpeed: 0.2
@@ -40850,7 +40850,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00031096223}
+  m_AnchoredPosition: {x: 0, y: 0.00067939487}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &822369378
@@ -70546,7 +70546,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00031096223}
+  m_AnchoredPosition: {x: 0, y: 0.00066534936}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1403579448
@@ -70860,7 +70860,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00031096223}
+  m_AnchoredPosition: {x: 0, y: 0.00067939487}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1423252461
@@ -103338,7 +103338,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00031096223}
+  m_AnchoredPosition: {x: 0, y: 0.00066534936}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &2110339344

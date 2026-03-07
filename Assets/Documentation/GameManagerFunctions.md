@@ -57,6 +57,35 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `playerDrawSpeed`: Tempo (em segundos) entre cada carta comprada pelo jogador na animação inicial.
 *   `opponentDrawSpeed`: Tempo (em segundos) entre cada carta comprada pelo oponente na animação inicial.
 
+## Variáveis de Estado e Controle (Inspector)
+
+### Controle de Fluxo
+*   `isDuelOver`: (Read-only) Indica se o duelo terminou. Bloqueia ações de jogo quando verdadeiro.
+*   `isSimulating`: Indica se o "Simulador de Caos" está rodando. Ignora certas travas de segurança e UI.
+*   `turnCount`: Contador de turnos do duelo.
+
+### Regras e Permissões
+*   `canPlacePlayerCards`: Define se o jogador pode baixar cartas da mão (Invocar/Setar/Ativar). Usado para efeitos de restrição.
+*   `canPlaceOpponentCards`: (Dev) Permite ao jogador manipular as cartas da mão do oponente.
+*   `revealOpponentDraw`: Se verdadeiro, as cartas compradas pelo oponente são reveladas (efeito de *Pikeru's Second Sight*).
+
+### Visualização
+*   `use3DFlipEffect`: Define o estilo de virar as cartas (Rotação 3D vs Troca de Textura 2D).
+*   `enableFieldHoverOutline`: Ativa o brilho ao passar o mouse sobre cartas no campo (Monstros/S&T).
+*   `enableDeckHoverOutline` / `enableGraveyardHoverOutline`: Controles granulares para o brilho ao passar o mouse sobre as pilhas (Deck, GY, etc).
+*   `showOpponentHand`: (Dev) Mostra as cartas da mão do oponente viradas para cima.
+
+## Ferramentas de Debug e Teste
+
+### No UIManager (Inspector)
+*   `testDuelDirectly`: Se marcado, o jogo pula todas as telas de menu (Abertura, Start, Seleção de Save) e vai direto para o Duelo ao dar Play no Unity. Essencial para iteração rápida.
+
+### No GameManager (Inspector)
+*   `devMode`: Habilita trapaças gerais e logs detalhados.
+*   `disableDeckShuffle`: Impede o embaralhamento inicial. As cartas virão na ordem que estão no JSON/Lista. Útil para testar combos específicos ("Stacking the Deck").
+*   `forcePlayerGoingFirst`: Força o jogador a sempre ter o primeiro turno, ignorando a aleatoriedade.
+*   `infiniteLP`: O jogador não toma dano. Útil para testar interações de batalha sem risco de Game Over.
+
 ## Notas de Implementação
 *   **Extra Deck:** Agora é renderizado virado para baixo (Face-Down), mas o dono pode visualizar o conteúdo passando o mouse (Card Viewer).
 *   **Nomes na UI:** Ao usar `testPlayerID` ou `testOpponentID`, os nomes na interface de duelo são atualizados automaticamente para corresponder aos personagens carregados.

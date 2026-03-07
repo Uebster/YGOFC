@@ -250,9 +250,20 @@ public class BattleManager : MonoBehaviour
             }
         }
 
+        // Captura as variáveis localmente para garantir que não mudem durante o callback da UI
+        CardDisplay attacker = currentAttacker;
+        CardDisplay targetCard = target;
+
         UIManager.Instance.ShowConfirmation($"Atacar {target.CurrentCardData.name}?", () => {
+            // FIX: Adicionado fallback. Se ChainManager não existir, ataca direto.
             if (ChainManager.Instance != null)
-                ChainManager.Instance.AddToChain(currentAttacker, currentAttacker.isPlayerCard, ChainManager.TriggerType.Attack, target, () => PerformBattle(currentAttacker, target));
+            {
+                ChainManager.Instance.AddToChain(attacker, attacker.isPlayerCard, ChainManager.TriggerType.Attack, targetCard, () => PerformBattle(attacker, targetCard));
+            }
+            else
+            {
+                PerformBattle(attacker, targetCard);
+            }
         });
         currentTarget = target;
         // Limpa a seleção visual após confirmar o alvo
@@ -343,6 +354,14 @@ public class BattleManager : MonoBehaviour
 
     public void PerformBattle(CardDisplay attacker, CardDisplay target)
     {
+        // FIX: Verifica se os monstros ainda existem e estão no campo (podem ter sido destruídos durante a Chain)
+        if (attacker == null || !attacker.isOnField || target == null || !target.isOnField)
+        {
+            Debug.LogWarning("Batalha cancelada: Atacante ou Alvo não estão mais no campo.");
+            isBattleResolving = false;
+            return;
+        }
+
         if (isBattleResolving) 
         {
             Debug.LogWarning("Batalha já está sendo resolvida. Ignorando chamada duplicada.");

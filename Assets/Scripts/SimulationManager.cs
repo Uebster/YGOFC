@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 
 public class SimulationManager : MonoBehaviour
 {
@@ -32,6 +33,7 @@ public class SimulationManager : MonoBehaviour
     // Logs para a GUI
     private List<string> simulationLogs = new List<string>();
     private Vector2 scrollPosition;
+    private string currentLogFile;
 
     void Awake()
     {
@@ -57,6 +59,17 @@ public class SimulationManager : MonoBehaviour
     {
         if (isRunning) return;
         
+        // Cria arquivo de log
+        string fileName = $"SimLog_{System.DateTime.Now:yyyyMMdd_HHmmss}.txt";
+        currentLogFile = Path.Combine(Application.persistentDataPath, fileName);
+        try {
+            File.WriteAllText(currentLogFile, $"=== SIMULATION STARTED: {mode} ===\n");
+            Debug.Log($"[SIM] Logging to: {currentLogFile}");
+        } catch (System.Exception e) {
+            Debug.LogError($"[SIM] Could not create log file: {e.Message}");
+            currentLogFile = null;
+        }
+
         currentMode = mode;
         StartCoroutine(SimulationLoop());
     }
@@ -82,6 +95,15 @@ public class SimulationManager : MonoBehaviour
         simulationLogs.Add(log);
         if (simulationLogs.Count > 50) simulationLogs.RemoveAt(0); // Mantém apenas os últimos 50 logs na tela
         scrollPosition.y = float.MaxValue; // Auto-scroll para o final
+
+        if (!string.IsNullOrEmpty(currentLogFile))
+        {
+            try
+            {
+                File.AppendAllText(currentLogFile, log + "\n");
+            }
+            catch { }
+        }
     }
 
     void OnGUI()
@@ -100,6 +122,10 @@ public class SimulationManager : MonoBehaviour
             GUI.backgroundColor = Color.cyan;
             if (GUILayout.Button("Iniciar Rápido (Log)", GUILayout.Height(30))) 
                 StartSimulation(SimulationMode.FastLog);
+            
+            GUI.backgroundColor = Color.white;
+            if (GUILayout.Button("Abrir Pasta de Logs", GUILayout.Height(25))) 
+                Application.OpenURL(Application.persistentDataPath);
         }
         else
         {

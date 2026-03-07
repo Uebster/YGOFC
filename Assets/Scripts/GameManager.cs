@@ -102,6 +102,12 @@ public class GameManager : MonoBehaviour
     public bool fillOpponentZonesFromRight = true;
     [Tooltip("Indica se uma simulação automática está em andamento (Modo Fantasma).")]
     public bool isSimulating = false;
+    [Tooltip("Se marcado, os decks não serão embaralhados no início (útil para testar ordem de saque).")]
+    public bool disableDeckShuffle = false;
+    [Tooltip("Se marcado, o jogador sempre começa o duelo.")]
+    public bool forcePlayerGoingFirst = false;
+    [Tooltip("Se marcado, o jogador não perde LP (Modo Deus).")]
+    public bool infiniteLP = false;
 
     // --- REFERÊNCIAS 2D ---
     [Header("Core References")]
@@ -264,9 +270,12 @@ public class GameManager : MonoBehaviour
         (List<CardData> oMain, List<CardData> oExtra) = InitializeOpponentDeck();
         DeckManager.Instance.SetupDecks(pDeck, playerExtraDeck, oMain, oExtra);
 
-        // FIX: Embaralha os decks antes de começar o duelo para garantir aleatoriedade
-        DeckManager.Instance.ShuffleDeck(true);
-        DeckManager.Instance.ShuffleDeck(false);
+        // Embaralha os decks (a menos que o debug impeça)
+        if (!disableDeckShuffle)
+        {
+            DeckManager.Instance.ShuffleDeck(true);
+            DeckManager.Instance.ShuffleDeck(false);
+        }
 
         // DrawInitialHand(5); // Substituído pela sequência de corrotina
         // DrawInitialOpponentHand(5);
@@ -276,6 +285,12 @@ public class GameManager : MonoBehaviour
         opponentLP = 8000;
         turnCount = 0;
         isDuelOver = false;
+
+        // Define quem começa
+        if (forcePlayerGoingFirst) isPlayerTurn = true;
+        else if (devMode) isPlayerTurn = true; // Padrão Dev
+        else isPlayerTurn = (Random.value > 0.5f); // Aleatório real
+
         UpdateLPUI();
 
         // Reseta flag de draw antes de começar o turno
@@ -1263,6 +1278,8 @@ public void ShuffleDeck(bool isPlayer)
 
     public void DamagePlayer(int amount)
     {
+        if (infiniteLP) return;
+
         playerLP -= amount;
         if (playerLP < 0) playerLP = 0;
         UpdateLPUI();
