@@ -18,6 +18,7 @@ public class DuelFXManager : MonoBehaviour
     public GameObject spellActivateVFX; // Partículas de magia
     public GameObject trapActivateVFX;  // Partículas de armadilha
     public GameObject summonVFX;        // Invocação Comum
+    public GameObject tributeSummonVFX; // Invocação por Tributo (Novo)
     public GameObject fusionVFX;        // Fusão
     public GameObject tributeVFX;       // Luz azulada / Portal
     public GameObject attackVFX;        // Corte ou impacto
@@ -71,6 +72,7 @@ public class DuelFXManager : MonoBehaviour
         if (theme.spellActivateVFX != null) spellActivateVFX = theme.spellActivateVFX;
         if (theme.trapActivateVFX != null) trapActivateVFX = theme.trapActivateVFX;
         if (theme.summonVFX != null) summonVFX = theme.summonVFX;
+        // if (theme.tributeSummonVFX != null) tributeSummonVFX = theme.tributeSummonVFX; // Adicionar ao DuelTheme se desejar
         if (theme.fusionVFX != null) fusionVFX = theme.fusionVFX;
         if (theme.tributeVFX != null) tributeVFX = theme.tributeVFX;
         if (theme.attackVFX != null) attackVFX = theme.attackVFX;
@@ -318,6 +320,18 @@ public class DuelFXManager : MonoBehaviour
     {
         PlaySound(summonSound);
         SpawnVFX(summonVFX, card.transform.position);
+    }
+
+    public void PlayTributeSummonEffect(CardDisplay card)
+    {
+        PlaySound(summonSound); // Pode ter um som específico se quiser
+        // Usa o prefab específico se existir, senão usa o padrão do GameManager, senão o de summon comum
+        GameObject prefab = tributeSummonVFX;
+        if (GameManager.Instance != null && GameManager.Instance.tributeSummonAnimationPrefab != null)
+            prefab = GameManager.Instance.tributeSummonAnimationPrefab;
+        
+        if (prefab == null) prefab = summonVFX;
+        SpawnVFX(prefab, card.transform.position);
     }
 
     public void PlayFusionEffect(CardDisplay card)

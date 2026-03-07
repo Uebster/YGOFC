@@ -185,11 +185,7 @@ public class PhaseManager : MonoBehaviour
                 if (GameManager.Instance != null)
                 {
                     GameManager.Instance.OnEndPhaseStart();
-                    // Se for turno do jogador, troca o turno automaticamente após processar a End Phase
-                    if (GameManager.Instance.isPlayerTurn)
-                    {
-                        StartCoroutine(AutoSwitchTurn());
-                    }
+                    // A troca de turno agora é gerenciada pelo GameManager após verificar o Hand Limit
                 }
                 break;
         }

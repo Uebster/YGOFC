@@ -124,6 +124,14 @@ public class GameManager : MonoBehaviour
     public bool enableTurnClockVisuals = false;
     public GameObject turnClockPrefab; // Prefab com o script TurnClockController
 
+    [Header("Game Rules")]
+    [Tooltip("Se marcado, aplica a regra de limite de cartas na mão na End Phase.")]
+    public bool enableHandLimit = true;
+    [Tooltip("Número máximo de cartas na mão ao final do turno (Padrão TCG/OCG: 6).")]
+    public int handLimit = 6;
+    [Tooltip("Se marcado, o monstro invocado por tributo ocupará a zona do primeiro monstro sacrificado.")]
+    public bool placeTributeSummonInTributeZone = true;
+
     // --- REFERÊNCIAS 2D ---
     [Header("Core References")]
     public CardDisplay cardViewerDisplay;
@@ -194,6 +202,9 @@ public class GameManager : MonoBehaviour
     public Color attackSelectionColor = new Color(0.6f, 0.6f, 0.6f, 1f);
     [Tooltip("Habilita a animação de projétil (espada) durante o ataque.")]
     public bool enableAttackAnimation = true;
+    [Tooltip("Habilita a animação visual ao realizar uma Invocação-Tributo.")]
+    public bool enableTributeSummonAnimation = true;
+    public GameObject tributeSummonAnimationPrefab; // Prefab do efeito de invocação por tributo
     public GameObject attackAnimationPrefab; // Prefab da espada/projétil
 
     [Header("Game Speed Settings")]
@@ -1088,6 +1099,78 @@ public void ShuffleDeck(bool isPlayer)
         {
             CardEffectManager.Instance.OnPhaseStart(GamePhase.End);
         }
+
+        // Inicia verificação de Limite de Mão
+        StartCoroutine(HandleHandLimitSequence());
+    }
+
+    private IEnumerator HandleHandLimitSequence()
+    {
+        // Verifica se a regra está ativa
+        if (!enableHandLimit)
+        {
+            // Se for turno do jogador, troca o turno automaticamente (já que não haverá descarte)
+            if (isPlayerTurn)
+            {
+                yield return new WaitForSeconds(0.5f);
+                SwitchTurn();
+            }
+            yield break;
+        }
+
+        // Verifica Infinite Cards (0942)
+        int currentLimit = handLimit;
+        if (IsCardActiveOnField("Infinite Cards") || IsCardActiveOnField("0942")) currentLimit = 99;
+
+        List<GameObject> hand = isPlayerTurn ? playerHand : opponentHand;
+        
+        if (hand.Count > currentLimit)
+        {
+            int toDiscard = hand.Count - currentLimit;
+            Debug.Log($"[GameManager] Limite de mão excedido ({hand.Count}/{currentLimit}). Descartando {toDiscard} cartas.");
+
+            if (isPlayerTurn)
+            {
+                yield return StartCoroutine(PlayerDiscardHandLimit(toDiscard));
+            }
+            else
+            {
+                // IA descarta
+                if (OpponentAI.Instance != null)
+                {
+                    OpponentAI.Instance.PerformHandLimitDiscard(toDiscard);
+                    yield return new WaitForSeconds(1.0f); // Tempo para visualização
+                }
+            }
+        }
+
+        // Se for turno do jogador, troca o turno automaticamente após processar a End Phase e Limite de Mão
+        // (A IA troca o turno no final da rotina dela, então não precisamos chamar aqui para ela)
+        if (isPlayerTurn)
+        {
+            yield return new WaitForSeconds(0.5f);
+            SwitchTurn();
+        }
+    }
+
+    private IEnumerator PlayerDiscardHandLimit(int count)
+    {
+        bool done = false;
+        List<CardData> handData = GetPlayerHandData();
+        
+        if (UIManager.Instance != null) UIManager.Instance.ShowMessage($"Limite de mão excedido. Descarte {count} cartas.");
+        yield return new WaitForSeconds(1.5f);
+
+        OpenCardMultiSelection(handData, $"Descarte {count} cartas (Limite de Mão)", count, count, (selected) => {
+            foreach(var c in selected)
+            {
+                GameObject go = playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c);
+                if (go != null) DiscardCard(go.GetComponent<CardDisplay>());
+            }
+            done = true;
+        });
+
+        while (!done) yield return null;
     }
 
     // --- SISTEMA DE MOEDAS ---
@@ -1469,10 +1552,12 @@ public void ShuffleDeck(bool isPlayer)
 
     // Novo método público para finalizar a invocação (chamado pelo SummonManager após tributo manual)
     // Atualizado para suportar Face-Down explicitamente
-    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false, bool isTributeSummon = false)
+    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false, bool isTributeSummon = false, Transform specificZone = null)
     {
         // 2. Encontrar Zona Livre
-        Transform targetZone = GetFreeMonsterZone(isPlayer);
+        Transform targetZone = specificZone;
+        if (targetZone == null) targetZone = GetFreeMonsterZone(isPlayer);
+
         if (targetZone == null)
         {
             Debug.LogWarning("Sem zonas de monstro livres!");
@@ -1517,7 +1602,16 @@ public void ShuffleDeck(bool isPlayer)
 
                 // Toca efeito visual de invocação
                 if (DuelFXManager.Instance != null)
-                    DuelFXManager.Instance.PlaySummonEffect(display);
+                {
+                    if (isTributeSummon && enableTributeSummonAnimation)
+                    {
+                        DuelFXManager.Instance.PlayTributeSummonEffect(display);
+                    }
+                    else
+                    {
+                        DuelFXManager.Instance.PlaySummonEffect(display);
+                    }
+                }
             }
         }
 

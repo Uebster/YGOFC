@@ -375,6 +375,52 @@ public class OpponentAI : MonoBehaviour
         return bestTarget;
     }
 
+    // --- LÓGICA DE LIMITE DE MÃO ---
+
+    public void PerformHandLimitDiscard(int count)
+    {
+        List<GameObject> hand = new List<GameObject>(GameManager.Instance.opponentHand);
+        if (hand.Count == 0) return;
+
+        // Avalia cada carta para decidir qual descartar
+        // Score alto = Bom para manter. Score baixo = Bom para descartar.
+        var scoredCards = hand.Select(go => {
+            var cd = go.GetComponent<CardDisplay>();
+            float score = 0;
+            if (cd != null)
+            {
+                // Mantém cartas chave
+                if (cd.CurrentCardData.id == "1268") score += 100; // Monster Reborn
+                if (cd.CurrentCardData.id == "1447") score += 100; // Pot of Greed
+                if (cd.CurrentCardData.id == "1480") score += 90;  // Raigeki
+
+                // Estratégia: Se tiver Monster Reborn, monstros fortes são bons descartes
+                bool hasRevive = hand.Exists(h => h.GetComponent<CardDisplay>()?.CurrentCardData.id == "1268");
+                
+                if (cd.CurrentCardData.type.Contains("Monster"))
+                {
+                    if (cd.CurrentCardData.level >= 5)
+                    {
+                        if (hasRevive) score -= 50; // Bom para descartar e reviver
+                        else score += cd.CurrentCardData.atk / 100f; // Mantém se for forte
+                    }
+                    else
+                    {
+                        score += 10; // Monstros baixos são úteis
+                    }
+                }
+            }
+            return new { GO = go, Score = score, Display = cd };
+        }).OrderBy(x => x.Score).ToList(); // Ordena do menor score (descartar) para o maior
+
+        // Descarta os 'count' primeiros (menor score)
+        for (int i = 0; i < count && i < scoredCards.Count; i++)
+        {
+            Debug.Log($"AI Hand Limit: Descartando {scoredCards[i].Display.CurrentCardData.name} (Score: {scoredCards[i].Score})");
+            GameManager.Instance.DiscardCard(scoredCards[i].Display);
+        }
+    }
+
     #endregion
 
     #region Helpers de Análise de Campo

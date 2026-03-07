@@ -75,6 +75,7 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `enableDeckHoverOutline` / `enableGraveyardHoverOutline`: Controles granulares para o brilho ao passar o mouse sobre as pilhas (Deck, GY, etc).
 *   `showOpponentHand`: (Dev) Mostra as cartas da mão do oponente viradas para cima.
 *   `enableTurnClockVisuals`: Ativa a exibição de um relógio sobre cartas que possuem contagem de turnos (ex: *Swords of Revealing Light*). Requer `turnClockPrefab`.
+*   `enableTributeSummonAnimation`: Ativa um efeito visual específico ao realizar uma Invocação-Tributo.
 
 ## Ferramentas de Debug e Teste
 
@@ -91,12 +92,17 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `disableFusionCost`: Invocação-Fusão não consome os materiais nem a carta mágica (permite reutilizar *Polymerization*).
 *   `disableRitualCost`: Invocação-Ritual não consome os tributos nem a carta mágica.
 *   `alwaysCoinHead`: Força o resultado do lançamento de moeda a ser sempre "Cara" (Heads). Útil para testar cartas de aposta.
+*   `enableHandLimit`: Ativa/Desativa a regra de limite de cartas na mão.
+*   `handLimit`: Define o limite máximo de cartas na mão ao final do turno (Padrão: 6). Se excedido, o jogador deve descartar.
+*   `placeTributeSummonInTributeZone`: Se marcado, monstros invocados por tributo ocupam a zona do primeiro monstro sacrificado. Se desmarcado, vão para a primeira zona livre.
 
 ## Notas de Implementação
 *   **Extra Deck:** Agora é renderizado virado para baixo (Face-Down), mas o dono pode visualizar o conteúdo passando o mouse (Card Viewer).
 *   **Nomes na UI:** Ao usar `testPlayerID` ou `testOpponentID`, os nomes na interface de duelo são atualizados automaticamente para corresponder aos personagens carregados.
 *   **Fallback de Deck:** Se o deck do oponente falhar ao carregar (IDs inválidos), um deck aleatório de emergência é gerado para evitar travamento do jogo.
 *   **Rotação de Decks:** Oponentes agora escolhem aleatoriamente entre seus Decks A, B e C (se disponíveis). Se um deck falhar, o sistema tenta o Deck A como fallback.
+*   **Posicionamento de Tributo:** Ao realizar uma Invocação-Tributo manual, o novo monstro ocupará a zona do primeiro monstro selecionado como tributo.
+*   **Limite de Mão:** Implementada a regra de descarte na End Phase se a mão exceder o limite (6). A IA possui lógica para descartar estrategicamente (ex: descartar monstros de nível alto se tiver *Monster Reborn*).
 
 ## Mecânicas Especiais
 *   `BeginFusionSummon(source)`: Inicia o fluxo de UI para Invocação-Fusão.

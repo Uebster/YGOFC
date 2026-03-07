@@ -213,6 +213,16 @@ public class SummonManager : MonoBehaviour
 
     private void ConfirmManualTribute()
     {
+        // Captura a zona do primeiro tributo para ocupar o lugar
+        Transform targetZone = null;
+        if (GameManager.Instance != null && GameManager.Instance.placeTributeSummonInTributeZone)
+        {
+            if (currentSelectedTributes.Count > 0 && currentSelectedTributes[0] != null)
+            {
+                targetZone = currentSelectedTributes[0].transform.parent;
+            }
+        }
+
         foreach (var monster in currentSelectedTributes)
         {
             GameManager.Instance.TributeCard(monster);
@@ -225,7 +235,7 @@ public class SummonManager : MonoBehaviour
         if (narrowPassActive) narrowPassSummonCount++;
 
         if (GameManager.Instance != null)
-            GameManager.Instance.FinalizeSummon(pendingCardGO, pendingCardData, pendingIsSet, true, pendingIsSet, true);
+            GameManager.Instance.FinalizeSummon(pendingCardGO, pendingCardData, pendingIsSet, true, pendingIsSet, true, targetZone);
     }
 
     public void CancelTributeSelection()
@@ -261,18 +271,29 @@ public class SummonManager : MonoBehaviour
         // Isso é uma lógica básica para validar o sistema. No futuro, abriremos um menu de seleção.
         availableMonsters.Sort((a, b) => a.CurrentCardData.atk.CompareTo(b.CurrentCardData.atk));
 
+        Transform targetZone = null;
         int tributed = 0;
         foreach (CardDisplay monster in availableMonsters)
         {
             if (tributed >= count) break;
+
+            // Captura a zona do primeiro tributo
+            if (tributed == 0 && GameManager.Instance != null && GameManager.Instance.placeTributeSummonInTributeZone)
+            {
+                targetZone = monster.transform.parent;
+            }
 
             GameManager.Instance.TributeCard(monster);
             tributed++;
         }
         
         // Finaliza como Tribute Summon
-        // Nota: O fluxo original chamava FinalizeSummon no GameManager.TrySummonMonster.
-        // Precisamos garantir que a flag seja passada corretamente lá também se for automático.
+        // Nota: O GameManager.TrySummonMonster chama FinalizeSummon se retornar true.
+        // Como estamos no fluxo automático dentro do TrySummonMonster, precisamos passar a zona de volta ou ajustar o fluxo.
+        // O TrySummonMonster chama FinalizeSummon logo após PerformSummon retornar true.
+        // Para suportar a zona específica no auto-tribute, precisaríamos refatorar o TrySummonMonster para receber a zona do SummonManager.
+        // Por enquanto, o auto-tribute usará a primeira zona livre (comportamento padrão), 
+        // mas o manual (ConfirmManualTribute) usará a zona correta.
     }
 
     public void SelectTributes(int count, bool isPlayer, System.Action<List<CardDisplay>> onComplete)
