@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using System.Linq;
 
 public class CardSelectionUI : MonoBehaviour
 {
@@ -25,6 +26,23 @@ public class CardSelectionUI : MonoBehaviour
 
     void Awake()
     {
+        // AUTO-CONFIGURAÇÃO: Tenta encontrar referências se não estiverem atribuídas
+        if (contentArea == null)
+        {
+            // Busca profunda pelo Content, caso a hierarquia mude levemente
+            var contentTransform = transform.GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(t => t.name == "Content");
+            if (contentTransform != null) contentArea = contentTransform;
+        }
+
+        if (closeButton == null)
+        {
+            // Busca profunda pelo botão de fechar
+            var btnTr = transform.GetComponentsInChildren<Button>(true)
+                .FirstOrDefault(b => b.name == "CloseDeckCards");
+            if (btnTr != null) closeButton = btnTr;
+        }
+
         if (confirmButton) confirmButton.onClick.AddListener(ConfirmSelection);
         if (closeButton) closeButton.onClick.AddListener(CancelSelection);
         // Garante que comece fechado

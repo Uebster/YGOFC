@@ -2129,8 +2129,13 @@ public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
     // 1065 - Legendary Black Belt
     if (attacker != null && target != null)
     {
-        int dmg = target.originalDef;
-        Effect_DirectDamage(attacker, dmg);
+        // FIX: Verifica se o atacante está equipado com Legendary Black Belt (1065)
+        List<CardDisplay> equipped = GetEquippedCards(attacker);
+        if (equipped.Exists(c => c.CurrentCardData.id == "1065"))
+        {
+            int dmg = target.originalDef;
+            Effect_DirectDamage(attacker, dmg);
+        }
     }
 
     // 1308 - Mystical Beast of Serket

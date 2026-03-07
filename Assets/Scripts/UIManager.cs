@@ -44,6 +44,10 @@ public class UIManager : MonoBehaviour
     [Header("Popups")]
     public GameObject exitScreen;
     public GameObject confirmationModal; // Novo modal genérico
+    [Tooltip("Botão 'Sim' do modal de confirmação.")]
+    public Button confirmationYesButton; 
+    [Tooltip("Botão 'Não' do modal de confirmação.")]
+    public Button confirmationNoButton;
     public GraveyardViewer graveyardViewer;
     public GraveyardViewer extraDeckViewer; // Reusa o script GraveyardViewer para o Extra Deck
     public GraveyardViewer removedCardsViewer; // Reusa o script para Cartas Removidas
@@ -259,6 +263,12 @@ public class UIManager : MonoBehaviour
                 else { onPass?.Invoke(); } // Jogador cancelou/passou
             });
         }
+        else
+        {
+            // FIX: Se não houver modal atribuído, passa automaticamente para evitar travamento no ChainManager
+            Debug.LogWarning("UIManager: CardSelectionModal não atribuído! Passando resposta automaticamente.");
+            onPass?.Invoke();
+        }
     }
 
     // Exibe uma mensagem simples (usa o modal de confirmação adaptado)
@@ -281,19 +291,46 @@ public class UIManager : MonoBehaviour
         
         // Configura texto e botões (assumindo que o modal tem um script ou estrutura padrão)
         // Aqui estou buscando componentes dinamicamente para simplificar, mas o ideal é ter um script ConfirmationModalUI
-        TextMeshProUGUI txt = confirmationModal.GetComponentInChildren<TextMeshProUGUI>();
+        TextMeshProUGUI txt = null;
+        Transform txtTr = confirmationModal.transform.Find("Text_Confirmation");
+        if (txtTr != null) txt = txtTr.GetComponent<TextMeshProUGUI>();
+        if (txt == null) txt = confirmationModal.GetComponentInChildren<TextMeshProUGUI>();
+
         if (txt) txt.text = message;
 
-        Button[] btns = confirmationModal.GetComponentsInChildren<Button>();
-        if (btns.Length >= 1) // Botão Confirmar
+        // Usa referências explícitas se disponíveis, senão tenta encontrar
+        Button btnYes = confirmationYesButton;
+        Button btnNo = confirmationNoButton;
+
+        // Tenta encontrar por nome se não estiverem atribuídos
+        if (btnYes == null)
         {
-            btns[0].onClick.RemoveAllListeners();
-            btns[0].onClick.AddListener(() => { confirmationModal.SetActive(false); onConfirm?.Invoke(); });
+            Transform tr = confirmationModal.transform.Find("Btn_Yes");
+            if (tr != null) btnYes = tr.GetComponent<Button>();
         }
-        if (btns.Length >= 2) // Botão Cancelar
+        if (btnNo == null)
         {
-            btns[1].onClick.RemoveAllListeners();
-            btns[1].onClick.AddListener(() => { confirmationModal.SetActive(false); onCancel?.Invoke(); });
+            Transform tr = confirmationModal.transform.Find("Btn_No");
+            if (tr != null) btnNo = tr.GetComponent<Button>();
+        }
+
+        if (btnYes == null || btnNo == null)
+        {
+            Debug.LogWarning("UIManager: Botões de confirmação não encontrados por referência ou nome. Usando busca automática (pode ser impreciso). Por favor, atribua no Inspector.");
+            Button[] btns = confirmationModal.GetComponentsInChildren<Button>();
+            if (btns.Length >= 1) btnYes = btns[0];
+            if (btns.Length >= 2) btnNo = btns[1];
+        }
+
+        if (btnYes != null)
+        {
+            btnYes.onClick.RemoveAllListeners();
+            btnYes.onClick.AddListener(() => { confirmationModal.SetActive(false); onConfirm?.Invoke(); });
+        }
+        if (btnNo != null)
+        {
+            btnNo.onClick.RemoveAllListeners();
+            btnNo.onClick.AddListener(() => { confirmationModal.SetActive(false); onCancel?.Invoke(); });
         }
     }
 

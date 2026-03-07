@@ -79,7 +79,17 @@ public class ChainManager : MonoBehaviour
             // Loop de prioridade para 2 jogadores
             for (int i = 0; i < 2; i++)
             {
-                List<CardDisplay> responses = SpellTrapManager.Instance.GetValidResponses(GetLastChainLink(), currentPlayerIsPlayer);
+                List<CardDisplay> responses = new List<CardDisplay>();
+                try
+                {
+                    responses = SpellTrapManager.Instance.GetValidResponses(GetLastChainLink(), currentPlayerIsPlayer);
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"[ChainManager] Erro ao buscar respostas: {e.Message}");
+                    // Em caso de erro, assume sem resposta para não travar
+                    responses.Clear();
+                }
 
                 if (responses.Count > 0)
                 {
@@ -89,7 +99,7 @@ public class ChainManager : MonoBehaviour
                         UIManager.Instance.ShowResponseWindow(responses, () => { playerPassed = true; });
                         
                         // FIX: Adicionado timeout para evitar travamento infinito se a UI falhar
-                        float timeout = 15f;
+                        float timeout = 5f; // Reduzido para 5s para feedback mais rápido em caso de erro
                         float timer = 0f;
                         // Adicionado verificação de responses.Count > 0 para evitar loop se a lista for limpa externamente
                         while (!playerPassed && responses.Count > 0 && timer < timeout)
