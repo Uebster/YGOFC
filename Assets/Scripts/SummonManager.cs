@@ -55,13 +55,15 @@ public class SummonManager : MonoBehaviour
     // Verifica se pode realizar Normal Summon/Set
     public bool CanNormalSummon()
     {
-        if (GameManager.Instance != null && GameManager.Instance.devMode) return true;
+        if (GameManager.Instance != null && (GameManager.Instance.devMode || GameManager.Instance.infiniteNormalSummons)) return true;
         return !hasPerformedNormalSummon;
     }
 
     // Calcula tributos necessários baseado no nível
     public int GetRequiredTributes(int level)
     {
+        if (GameManager.Instance != null && GameManager.Instance.disableTributeRequirements) return 0;
+
         if (level <= 4) return 0;
         if (level <= 6) return 1;
         return 2;

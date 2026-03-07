@@ -108,6 +108,21 @@ public class GameManager : MonoBehaviour
     public bool forcePlayerGoingFirst = false;
     [Tooltip("Se marcado, o jogador não perde LP (Modo Deus).")]
     public bool infiniteLP = false;
+    [Tooltip("Se marcado, permite invocar monstros de nível alto sem tributo.")]
+    public bool disableTributeRequirements = false;
+    [Tooltip("Se marcado, Invocação-Fusão não consome materiais nem a carta mágica.")]
+    public bool disableFusionCost = false;
+    [Tooltip("Se marcado, Invocação-Ritual não consome tributos nem a carta mágica.")]
+    public bool disableRitualCost = false;
+    [Tooltip("Se marcado, remove o limite de 1 Normal Summon por turno.")]
+    public bool infiniteNormalSummons = false;
+    [Tooltip("Se marcado, o resultado da moeda será sempre CARA (Heads).")]
+    public bool alwaysCoinHead = false;
+    
+    [Header("Turn Clock Visuals")]
+    [Tooltip("Habilita o visual de relógio para contagem de turnos (ex: Swords of Revealing Light). Requer prefab configurado.")]
+    public bool enableTurnClockVisuals = false;
+    public GameObject turnClockPrefab; // Prefab com o script TurnClockController
 
     // --- REFERÊNCIAS 2D ---
     [Header("Core References")]
@@ -1090,6 +1105,10 @@ public void ShuffleDeck(bool isPlayer)
             yield return new WaitForSeconds(0.8f); // Tempo para "animação"
 
             bool isHeads = Random.value > 0.5f;
+            
+            // Debug: Força Cara se a opção estiver ativa
+            if (alwaysCoinHead) isHeads = true;
+
             if (isHeads) headsCount++;
             if (UIManager.Instance != null) UIManager.Instance.ShowMessage(isHeads ? "CARA!" : "COROA!");
             yield return new WaitForSeconds(0.5f);
@@ -1559,13 +1578,20 @@ public void ShuffleDeck(bool isPlayer)
 
         Debug.Log($"Realizando Invocação-Ritual de {ritualMonster.name}...");
 
+        if (disableRitualCost) Debug.Log("[Cheat] Ritual Cost Disabled: Tributos e Magia preservados.");
+
         // 1. Envia a Magia de Ritual para o cemitério
-        SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard, CardLocation.Field, SendReason.Effect);
-        Destroy(sourceCard.gameObject);
+        if (!disableRitualCost)
+        {
+            SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard, CardLocation.Field, SendReason.Effect);
+            Destroy(sourceCard.gameObject);
+        }
 
         // 2. Envia os tributos para o cemitério (da mão ou do campo)
         foreach (var tribute in tributes)
         {
+            if (disableRitualCost) break;
+
             var handObject = playerHand.FirstOrDefault(go => go.GetComponent<CardDisplay>().CurrentCardData == tribute);
             if (handObject != null)
             {
@@ -2095,16 +2121,24 @@ public void ShuffleDeck(bool isPlayer)
 
         Debug.Log($"Realizando Invocação-Fusão de {fusionMonster.name}...");
 
+        // Cheat: Se custo de fusão estiver desativado, não destrói nada
+        if (disableFusionCost) Debug.Log("[Cheat] Fusion Cost Disabled: Materiais e Magia preservados.");
+
         // 1. Envia a Magia de Fusão para o cemitério (se existir e for Spell)
         if (sourceCard != null)
         {
-            SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard, CardLocation.Field, SendReason.Effect);
-            Destroy(sourceCard.gameObject);
+            if (!disableFusionCost)
+            {
+                SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard, CardLocation.Field, SendReason.Effect);
+                Destroy(sourceCard.gameObject);
+            }
         }
 
         // 2. Envia os materiais para o cemitério
         foreach (var mat in materials)
         {
+            if (disableFusionCost) break; // Pula destruição
+
             // Tenta achar na mão
             var handObj = playerHand.FirstOrDefault(go => go.GetComponent<CardDisplay>().CurrentCardData == mat);
             if (handObj != null)

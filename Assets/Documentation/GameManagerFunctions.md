@@ -74,6 +74,7 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `enableFieldHoverOutline`: Ativa o brilho ao passar o mouse sobre cartas no campo (Monstros/S&T).
 *   `enableDeckHoverOutline` / `enableGraveyardHoverOutline`: Controles granulares para o brilho ao passar o mouse sobre as pilhas (Deck, GY, etc).
 *   `showOpponentHand`: (Dev) Mostra as cartas da mão do oponente viradas para cima.
+*   `enableTurnClockVisuals`: Ativa a exibição de um relógio sobre cartas que possuem contagem de turnos (ex: *Swords of Revealing Light*). Requer `turnClockPrefab`.
 
 ## Ferramentas de Debug e Teste
 
@@ -85,6 +86,11 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `disableDeckShuffle`: Impede o embaralhamento inicial. As cartas virão na ordem que estão no JSON/Lista. Útil para testar combos específicos ("Stacking the Deck").
 *   `forcePlayerGoingFirst`: Força o jogador a sempre ter o primeiro turno, ignorando a aleatoriedade.
 *   `infiniteLP`: O jogador não toma dano. Útil para testar interações de batalha sem risco de Game Over.
+*   `infiniteNormalSummons`: Remove o limite de 1 Invocação Normal/Set por turno.
+*   `disableTributeRequirements`: Permite invocar monstros de Nível 5 ou superior sem oferecer tributos.
+*   `disableFusionCost`: Invocação-Fusão não consome os materiais nem a carta mágica (permite reutilizar *Polymerization*).
+*   `disableRitualCost`: Invocação-Ritual não consome os tributos nem a carta mágica.
+*   `alwaysCoinHead`: Força o resultado do lançamento de moeda a ser sempre "Cara" (Heads). Útil para testar cartas de aposta.
 
 ## Notas de Implementação
 *   **Extra Deck:** Agora é renderizado virado para baixo (Face-Down), mas o dono pode visualizar o conteúdo passando o mouse (Card Viewer).

@@ -82,6 +82,7 @@ Este sistema gerencia a Invocação-Fusão.
 | **`GameManager`** | `BeginFusionSummon` abre a UI de fusão. `PerformFusionSummon` executa a lógica final. |
 | **`FusionUI`** | Apresenta ao jogador as opções de Monstros de Fusão do Extra Deck e os materiais disponíveis na mão e no campo. |
 | **`FusionManager`** | `ValidateFusion` verifica se os materiais selecionados são válidos para o monstro de fusão escolhido. |
+| | *Nota:* `disableFusionCost` no GameManager permite realizar a fusão sem consumir materiais. |
 
 ### Fluxo de Fusão
 1.  O jogador ativa uma carta como *Polymerization*.
@@ -102,6 +103,7 @@ Este sistema gerencia a Invocação-Ritual.
 | **`GameManager`** | `BeginRitualSummon` abre a UI de ritual. `PerformRitualSummon` executa a invocação. |
 | **`RitualUI`** | Apresenta ao jogador os Monstros de Ritual na mão e os monstros disponíveis para tributo na mão e no campo. |
 | **`RitualManager`** | `ValidateRitual` verifica se a Magia de Ritual corresponde ao monstro e se a soma dos níveis dos tributos é suficiente. |
+| | *Nota:* `disableRitualCost` no GameManager permite realizar o ritual sem consumir tributos. |
 
 ### Fluxo de Ritual
 1.  O jogador ativa uma Magia de Ritual.
@@ -210,6 +212,7 @@ O `SpellTrapManager` e `GameManager` fornecem métodos para seleção interativa
 #### Sistema de Moedas e Dados
 
 *   `GameManager.Instance.TossCoin(count, callback)`: Rola moedas e retorna o número de caras.
+    *   *Nota:* O resultado pode ser forçado para "Cara" com `alwaysCoinHead` no GameManager (Debug).
 *   `Random.Range(1, 7)`: Usado para rolar dados (D6).
 
 ## 10. Sistema de Manipulação de Fases e Turno (Phase & Turn Manipulation)

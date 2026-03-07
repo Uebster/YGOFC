@@ -70,7 +70,18 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public int spellCounters = 0;
 
     // Sistema de Contadores de Turno (para Swords of Revealing Light, etc)
-    [HideInInspector] public int turnCounter = 0;
+    [SerializeField, HideInInspector] private int _turnCounter = 0;
+    public int turnCounter 
+    {
+        get { return _turnCounter; }
+        set 
+        { 
+            _turnCounter = value;
+            if (_turnCounter > maxTurnCounter) maxTurnCounter = _turnCounter; // Atualiza o máximo histórico
+            UpdateTurnClockVisual();
+        }
+    }
+    [HideInInspector] public int maxTurnCounter = 0; // Armazena o valor máximo que este contador já teve (para calcular a fração)
 
     // Sistema de Efeitos Retardados
     [HideInInspector] public bool scheduledForDestruction = false;
@@ -87,6 +98,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     private UnityWebRequest currentRequest; // Rastreia a requisição ativa para descarte correto
     private bool isAttackSelected = false; // Rastreia se a carta está selecionada para atacar
+    private GameObject turnClockInstance; // Instância do relógio visual
 
     void Awake()
     {
@@ -232,6 +244,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         activeModifiers.Clear(); // Limpa modificadores antigos ao resetar a carta
         spellCounters = 0; // Reseta contadores
         turnCounter = 0; // Reseta contadores de turno
+        maxTurnCounter = 0;
 
         originalScale = transform.localScale; // Salva a escala inicial definida pelo GameManager
 
@@ -249,6 +262,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             StartCoroutine(LoadCardFrontTexture(card.image_filename));
         }
         ApplyRoundedCorners();
+        UpdateTurnClockVisual(); // Garante que o relógio suma se resetar
     }
 
     public void SetCardBackOnly(Texture2D cardBackTexture)
@@ -424,6 +438,38 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     {
         spellCounters = Mathf.Max(0, spellCounters - amount);
         Debug.Log($"{currentCardData.name} perdeu {amount} Spell Counter(s). Total: {spellCounters}");
+    }
+
+    // --- SISTEMA VISUAL DE RELÓGIO (TURN CLOCK) ---
+    
+    private void UpdateTurnClockVisual()
+    {
+        if (GameManager.Instance == null || !GameManager.Instance.enableTurnClockVisuals) 
+        {
+            if (turnClockInstance != null) turnClockInstance.SetActive(false);
+            return;
+        }
+
+        // Se não tem contador, não precisa de relógio
+        if (_turnCounter <= 0 && turnClockInstance == null) return;
+
+        // Instancia se necessário
+        if (turnClockInstance == null && GameManager.Instance.turnClockPrefab != null)
+        {
+            turnClockInstance = Instantiate(GameManager.Instance.turnClockPrefab, transform);
+            turnClockInstance.transform.localPosition = Vector3.zero; // Centralizado na carta
+            turnClockInstance.transform.localScale = Vector3.one;
+            // Dica: O prefab deve ter um Canvas ou ser um elemento de UI world space ajustado
+        }
+
+        if (turnClockInstance != null)
+        {
+            var controller = turnClockInstance.GetComponent<TurnClockController>();
+            if (controller != null)
+            {
+                controller.UpdateClock(_turnCounter, maxTurnCounter);
+            }
+        }
     }
 
     // --- SISTEMA DE MODIFICADORES DE STATS ---
