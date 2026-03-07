@@ -182,6 +182,12 @@ public class BattleManager : MonoBehaviour
         return true;
     }
 
+    // Helper público para verificar se pode atacar direto (usado pelo Quick Attack)
+    public bool CanAttackDirectly()
+    {
+        return HasDirectAttackCondition();
+    }
+
     public void SelectTarget(CardDisplay target)
     {
         if (currentAttacker == null) return;

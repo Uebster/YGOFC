@@ -146,6 +146,12 @@ public class GameManager : MonoBehaviour
     public bool useDirectHandSelection = true;
     [Tooltip("Se marcado, pede confirmação após selecionar a(s) carta(s) na mão durante a seleção direta.")]
     public bool confirmHandSelection = true;
+    [Tooltip("Se marcado, permite invocar monstros da mão com um clique (Esq=Ataque, Dir=Defesa).")]
+    public bool quickSummonFromHand = false;
+    [Tooltip("Se marcado, permite jogar Spells/Traps da mão com um clique (Esq=Ativar, Dir=Setar).")]
+    public bool quickSpellTrapFromHand = false;
+    [Tooltip("Se marcado, clicar no próprio monstro atacante quando o oponente não tem monstros realiza o ataque direto imediatamente.")]
+    public bool quickAttackDirectly = false;
 
 
     // --- REFERÊNCIAS 2D ---

@@ -861,7 +861,18 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                     if (BattleManager.Instance.currentAttacker == this)
                         BattleManager.Instance.CancelAttack(); // Clicar de novo cancela
                     else
+                    {
                         BattleManager.Instance.PrepareAttack(this);
+
+                        // Lógica de Ataque Direto Rápido (Quick Attack)
+                        if (GameManager.Instance.quickAttackDirectly && BattleManager.Instance.currentAttacker == this)
+                        {
+                            if (BattleManager.Instance.CanAttackDirectly())
+                            {
+                                BattleManager.Instance.TryDirectAttack();
+                            }
+                        }
+                    }
                 }
                 return;
             }
@@ -885,17 +896,51 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 return;
             }
 
-            bool canShowMenu = false;
+            bool canInteract = false;
             if (isPlayerCard && GameManager.Instance.canPlacePlayerCards)
             {
-                canShowMenu = true;
+                canInteract = true;
             }
             else if (!isPlayerCard && GameManager.Instance.canPlaceOpponentCards)
             {
-                canShowMenu = true;
+                canInteract = true;
             }
 
-            if (canShowMenu)
+            // --- LÓGICA DE AÇÃO RÁPIDA (QUICK ACTION) ---
+            if (canInteract && GameManager.Instance != null)
+            {
+                bool isMonster = currentCardData.type.Contains("Monster");
+                bool isSpellTrap = currentCardData.type.Contains("Spell") || currentCardData.type.Contains("Trap");
+
+                if (isMonster && GameManager.Instance.quickSummonFromHand)
+                {
+                    if (eventData.button == PointerEventData.InputButton.Left)
+                    {
+                        GameManager.Instance.TrySummonMonster(gameObject, currentCardData, false); // Ataque
+                        return;
+                    }
+                    else if (eventData.button == PointerEventData.InputButton.Right)
+                    {
+                        GameManager.Instance.TrySummonMonster(gameObject, currentCardData, true); // Defesa (Set)
+                        return;
+                    }
+                }
+                else if (isSpellTrap && GameManager.Instance.quickSpellTrapFromHand)
+                {
+                    if (eventData.button == PointerEventData.InputButton.Left)
+                    {
+                        GameManager.Instance.PlaySpellTrap(gameObject, currentCardData, false); // Ativar
+                        return;
+                    }
+                    else if (eventData.button == PointerEventData.InputButton.Right)
+                    {
+                        GameManager.Instance.PlaySpellTrap(gameObject, currentCardData, true); // Setar
+                        return;
+                    }
+                }
+            }
+
+            if (canInteract)
             {
                 DuelActionMenu.Instance.ShowMenu(gameObject, currentCardData);
             }
