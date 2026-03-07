@@ -134,8 +134,8 @@ public class SummonManager : MonoBehaviour
 
             if (tributesNeeded > 0)
             {
-                // ALTERAÇÃO AQUI: Se for IA (!isPlayer), força o auto-tributo
-                if (enableAutoTribute || !isPlayer)
+                // ALTERAÇÃO AQUI: Se for IA (!isPlayer) OU Simulação, força o auto-tributo
+                if (enableAutoTribute || !isPlayer || GameManager.Instance.isSimulating)
                 {
                     ProcessAutoTribute(tributesNeeded, isPlayer);
                 }

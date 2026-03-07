@@ -226,8 +226,51 @@ public class SpellTrapManager : MonoBehaviour
         targetFilter = filter;
         onTargetSelected = callback;
 
-        if (UIManager.Instance != null)
+        // BYPASS DE SIMULAÇÃO
+        if (GameManager.Instance != null && GameManager.Instance.isSimulating)
+        {
+            // Tenta encontrar um alvo válido automaticamente
+            List<CardDisplay> validTargets = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                // Coleta todos os candidatos possíveis
+                List<Transform> allZones = new List<Transform>();
+                allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
+                allZones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+                allZones.AddRange(GameManager.Instance.duelFieldUI.playerSpellZones);
+                allZones.AddRange(GameManager.Instance.duelFieldUI.opponentSpellZones);
+                
+                foreach(var z in allZones)
+                {
+                    if (z.childCount > 0)
+                    {
+                        var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                        if (cd != null && filter(cd)) validTargets.Add(cd);
+                    }
+                }
+            }
+
+            if (validTargets.Count > 0)
+            {
+                // Escolhe um aleatório
+                SelectTarget(validTargets[Random.Range(0, validTargets.Count)]);
+            }
+            else
+            {
+                CancelTargetSelection();
+            }
+            return;
+        }
+
+        if (UIManager.Instance != null && UIManager.Instance.confirmationModal != null)
+        {
             UIManager.Instance.ShowConfirmation("Selecione um alvo no campo.", null, CancelTargetSelection);
+        }
+        else
+        {
+            Debug.LogError("SpellTrapManager: Não foi possível mostrar a UI de seleção de alvo. Cancelando.");
+            CancelTargetSelection();
+        }
         
         Debug.Log("SpellTrapManager: Iniciando seleção de alvo...");
     }

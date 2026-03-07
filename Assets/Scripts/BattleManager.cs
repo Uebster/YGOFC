@@ -256,7 +256,10 @@ public class BattleManager : MonoBehaviour
         });
         currentTarget = target;
         // Limpa a seleção visual após confirmar o alvo
-        if (currentAttacker != null) currentAttacker.SetAttackSelectionVisual(false);
+        if (currentAttacker != null) 
+        {
+            currentAttacker.SetAttackSelectionVisual(false);
+        }
     }
 
     private bool HasDirectAttackCondition()

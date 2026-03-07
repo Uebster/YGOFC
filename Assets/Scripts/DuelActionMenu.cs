@@ -94,7 +94,16 @@ public class DuelActionMenu : MonoBehaviour
             setBtn.gameObject.SetActive(canSet); 
         }
 
-        if (activateBtn) activateBtn.gameObject.SetActive(!isMonster);
+        if (activateBtn) 
+        {
+            bool canActivate = !isMonster;
+            // Traps não podem ser ativadas da mão (exceto em casos raros ou DevMode)
+            if (data.type.Contains("Trap"))
+            {
+                if (GameManager.Instance != null && !GameManager.Instance.devMode) canActivate = false;
+            }
+            activateBtn.gameObject.SetActive(canActivate);
+        }
 
         // Se nenhuma ação for possível, não abre o menu
         if (!summonBtn.gameObject.activeSelf && !setBtn.gameObject.activeSelf && !activateBtn.gameObject.activeSelf)

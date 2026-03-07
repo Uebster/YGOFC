@@ -194,6 +194,14 @@ public class UIManager : MonoBehaviour
 
     public void ShowPositionSelection(CardData card, System.Action<CardDisplay.BattlePosition> onSelected)
     {
+        // BYPASS DE SIMULAÇÃO
+        if (GameManager.Instance != null && GameManager.Instance.isSimulating)
+        {
+            // Escolhe Ataque por padrão ou aleatório
+            onSelected?.Invoke(Random.value > 0.5f ? CardDisplay.BattlePosition.Attack : CardDisplay.BattlePosition.Defense);
+            return;
+        }
+
         if (positionSelectionModal != null)
         {
             positionSelectionModal.Show(card, onSelected);
@@ -207,6 +215,17 @@ public class UIManager : MonoBehaviour
 
     public void ShowCardSelection(List<CardData> cards, string title, int min, int max, System.Action<List<CardData>> onConfirm)
     {
+        // BYPASS DE SIMULAÇÃO
+        if (GameManager.Instance != null && GameManager.Instance.isSimulating)
+        {
+            // Seleciona os primeiros 'min' cards automaticamente
+            List<CardData> autoSelected = new List<CardData>();
+            int count = Mathf.Min(min, cards.Count);
+            for(int i=0; i<count; i++) autoSelected.Add(cards[i]);
+            onConfirm?.Invoke(autoSelected);
+            return;
+        }
+
         if (cardSelectionModal != null)
         {
             cardSelectionModal.Show(cards, title, min, max, onConfirm);
@@ -223,6 +242,17 @@ public class UIManager : MonoBehaviour
 
     public void ShowFusionUI(CardDisplay source)
     {
+        // BYPASS DE SIMULAÇÃO
+        if (GameManager.Instance != null && GameManager.Instance.isSimulating)
+        {
+            // Na simulação, ignoramos a fusão complexa por enquanto para não travar
+            // Enviamos a carta para o GY para "consumir" a ativação
+            Debug.Log("[SIM] Fusão ignorada (Auto-fusão simplificada).");
+            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard, CardLocation.Field, SendReason.Effect);
+            Destroy(source.gameObject);
+            return;
+        }
+
         if (fusionUI != null)
         {
             fusionUI.Show(source);
@@ -235,6 +265,15 @@ public class UIManager : MonoBehaviour
 
     public void ShowRitualUI(CardDisplay source)
     {
+        // BYPASS DE SIMULAÇÃO
+        if (GameManager.Instance != null && GameManager.Instance.isSimulating)
+        {
+            Debug.Log("[SIM] Ritual ignorado (Auto-ritual simplificado).");
+            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard, CardLocation.Field, SendReason.Effect);
+            Destroy(source.gameObject);
+            return;
+        }
+
         if (ritualUI != null)
         {
             ritualUI.Show(source);
@@ -247,6 +286,14 @@ public class UIManager : MonoBehaviour
 
     public void ShowResponseWindow(List<CardDisplay> responseCards, System.Action onPass)
     {
+        // BYPASS DE SIMULAÇÃO
+        if (GameManager.Instance != null && GameManager.Instance.isSimulating)
+        {
+            // IA/Simulador nunca ativa em resposta por enquanto (para evitar loops complexos)
+            onPass?.Invoke();
+            return;
+        }
+
         if (cardSelectionModal != null)
         {
             List<CardData> cardDataList = responseCards.Select(c => c.CurrentCardData).ToList();
@@ -280,6 +327,13 @@ public class UIManager : MonoBehaviour
     // Novo método para mostrar modal de confirmação genérico
     public void ShowConfirmation(string message, System.Action onConfirm, System.Action onCancel = null)
     {
+        // BYPASS DE SIMULAÇÃO
+        if (GameManager.Instance != null && GameManager.Instance.isSimulating)
+        {
+            onConfirm?.Invoke(); // Sempre confirma na simulação
+            return;
+        }
+
         if (confirmationModal == null)
         {
             Debug.LogWarning("UIManager: Confirmation Modal não atribuído!");
@@ -325,12 +379,12 @@ public class UIManager : MonoBehaviour
         if (btnYes != null)
         {
             btnYes.onClick.RemoveAllListeners();
-            btnYes.onClick.AddListener(() => { confirmationModal.SetActive(false); onConfirm?.Invoke(); });
+            btnYes.onClick.AddListener(() => { CloseConfirmation(); onConfirm?.Invoke(); });
         }
         if (btnNo != null)
         {
             btnNo.onClick.RemoveAllListeners();
-            btnNo.onClick.AddListener(() => { confirmationModal.SetActive(false); onCancel?.Invoke(); });
+            btnNo.onClick.AddListener(() => { CloseConfirmation(); onCancel?.Invoke(); });
         }
     }
 
@@ -448,5 +502,24 @@ public class UIManager : MonoBehaviour
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #endif
+    }
+
+    // Fecha o modal de confirmação com segurança
+    public void CloseConfirmation()
+    {
+        if (confirmationModal != null) confirmationModal.SetActive(false);
+    }
+
+    // Fecha todas as janelas flutuantes (útil para iniciar simulação ou resetar)
+    public void CloseAllPopups()
+    {
+        CloseConfirmation();
+        if (cardSelectionModal != null) cardSelectionModal.gameObject.SetActive(false);
+        if (positionSelectionModal != null) positionSelectionModal.gameObject.SetActive(false);
+        if (fusionUI != null) fusionUI.gameObject.SetActive(false);
+        if (ritualUI != null) ritualUI.gameObject.SetActive(false);
+        if (graveyardViewer != null) graveyardViewer.gameObject.SetActive(false);
+        if (extraDeckViewer != null) extraDeckViewer.gameObject.SetActive(false);
+        if (removedCardsViewer != null) removedCardsViewer.gameObject.SetActive(false);
     }
 }

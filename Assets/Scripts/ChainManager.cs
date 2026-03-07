@@ -181,62 +181,74 @@ public class ChainManager : MonoBehaviour
         Debug.Log("Resolvendo Corrente...");
 
         // Resolve de trás para frente (LIFO - Last In, First Out)
-        for (int i = currentChain.Count - 1; i >= 0; i--)
+        try
         {
-            ChainLink link = currentChain[i];
-            Debug.Log($"Resolvendo Chain Link {link.linkNumber}: {link.cardSource.CurrentCardData.name}");
-            
-            if (link.isNegated)
+            for (int i = currentChain.Count - 1; i >= 0; i--)
             {
-                Debug.Log($"Chain Link {link.linkNumber} foi NEGADO e não resolverá.");
-            }
-            else
-            {
-                // Feedback Visual da Resolução
-                if (link.cardSource != null)
+                ChainLink link = currentChain[i];
+                Debug.Log($"Resolvendo Chain Link {link.linkNumber}: {link.cardSource.CurrentCardData.name}");
+                
+                if (link.isNegated)
                 {
-                    // link.cardSource.Highlight(); // Exemplo
+                    Debug.Log($"Chain Link {link.linkNumber} foi NEGADO e não resolverá.");
+                }
+                else
+                {
+                    // Feedback Visual da Resolução
+                    if (link.cardSource != null)
+                    {
+                        // link.cardSource.Highlight(); // Exemplo
+                    }
+
+                    // --- EXECUÇÃO DO EFEITO ---
+                    if (CardEffectManager.Instance != null)
+                    {
+                        try
+                        {
+                            CardEffectManager.Instance.ExecuteCardEffect(link.cardSource);
+                            
+                            // Hook para Counter Traps (Van'Dalgyon)
+                            if (link.cardSource.CurrentCardData.type.Contains("Counter Trap"))
+                            {
+                                CardEffectManager.Instance.OnCounterTrapResolved(link.cardSource);
+                            }
+                        }
+                        catch (System.Exception e)
+                        {
+                            Debug.LogError($"Erro ao executar efeito de {link.cardSource.CurrentCardData.name}: {e.Message}\n{e.StackTrace}");
+                        }
+                    }
                 }
 
-                // --- EXECUÇÃO DO EFEITO ---
-                if (CardEffectManager.Instance != null)
+                yield return new WaitForSeconds(0.5f); // Delay para visualização e impacto
+
+                // --- LIMPEZA PÓS-RESOLUÇÃO ---
+                // Regra: Magias/Armadilhas Normais, Rápidas e Rituais vão para o GY após resolver.
+                // Contínuas, Campo, Equipamento e Pêndulo ficam no campo.
+                if (link.cardSource != null)
                 {
-                    CardEffectManager.Instance.ExecuteCardEffect(link.cardSource);
+                    CardData data = link.cardSource.CurrentCardData;
+                    bool staysOnField = IsContinuousType(data);
                     
-                    // Hook para Counter Traps (Van'Dalgyon)
-                    if (link.cardSource.CurrentCardData.type.Contains("Counter Trap"))
+                    if (!staysOnField)
                     {
-                        CardEffectManager.Instance.OnCounterTrapResolved(link.cardSource);
+                        GameManager.Instance.SendToGraveyard(data, link.isPlayerEffect);
+                        Destroy(link.cardSource.gameObject);
                     }
                 }
             }
-
-            yield return new WaitForSeconds(0.5f); // Delay para visualização e impacto
-
-            // --- LIMPEZA PÓS-RESOLUÇÃO ---
-            // Regra: Magias/Armadilhas Normais, Rápidas e Rituais vão para o GY após resolver.
-            // Contínuas, Campo, Equipamento e Pêndulo ficam no campo.
-            if (link.cardSource != null)
-            {
-                CardData data = link.cardSource.CurrentCardData;
-                bool staysOnField = IsContinuousType(data);
-                
-                if (!staysOnField)
-                {
-                    GameManager.Instance.SendToGraveyard(data, link.isPlayerEffect);
-                    Destroy(link.cardSource.gameObject);
-                }
-            }
         }
-
-        currentChain.Clear();
-        isChainResolving = false;
-        Debug.Log("Corrente Resolvida.");
-
-        // Se o gatilho original não foi negado, executa a ação pós-corrente (ex: o ataque continua)
-        if (onChainResolved != null)
+        finally
         {
-            onChainResolved.Invoke();
+            currentChain.Clear();
+            isChainResolving = false;
+            Debug.Log("Corrente Resolvida (Finalizado).");
+
+            // Se o gatilho original não foi negado, executa a ação pós-corrente (ex: o ataque continua)
+            if (onChainResolved != null)
+            {
+                onChainResolved.Invoke();
+            }
         }
     }
 

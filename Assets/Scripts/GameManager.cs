@@ -100,6 +100,8 @@ public class GameManager : MonoBehaviour
     public bool canPlaceOpponentCards = false;
     [Tooltip("Se marcado, o oponente preenche as zonas da direita para a esquerda (perspectiva do jogador), simulando a esquerda dele.")]
     public bool fillOpponentZonesFromRight = true;
+    [Tooltip("Indica se uma simulação automática está em andamento (Modo Fantasma).")]
+    public bool isSimulating = false;
 
     // --- REFERÊNCIAS 2D ---
     [Header("Core References")]
@@ -1393,7 +1395,8 @@ public void ShuffleDeck(bool isPlayer)
         }
         // Bloqueia se for uma ação para o oponente, durante o turno do jogador, e o modo dev de controle do oponente estiver desligado.
         // A IA (que roda no turno do oponente) não será bloqueada por esta verificação.
-        if (!isPlayer && isPlayerTurn && !canPlaceOpponentCards)
+        // FIX: Se estiver simulando (!isSimulating), ignora essa trava para permitir que o simulador jogue pelos dois lados rapidamente.
+        if (!isPlayer && isPlayerTurn && !canPlaceOpponentCards && !isSimulating)
         {
             Debug.LogWarning("Ação de controle do oponente bloqueada: 'canPlaceOpponentCards' está desativado.");
             return;
@@ -1591,7 +1594,8 @@ public void ShuffleDeck(bool isPlayer)
             return;
         }
         // Bloqueia se for uma ação para o oponente, durante o turno do jogador, e o modo dev de controle do oponente estiver desligado.
-        if (!isPlayer && isPlayerTurn && !canPlaceOpponentCards)
+        // FIX: Se estiver simulando (!isSimulating), ignora essa trava.
+        if (!isPlayer && isPlayerTurn && !canPlaceOpponentCards && !isSimulating)
         {
             Debug.LogWarning("Ação de controle do oponente bloqueada: 'canPlaceOpponentCards' está desativado.");
             return;

@@ -300,6 +300,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     IEnumerator LoadCardFrontTexture(string imagePath)
     {
+        if (string.IsNullOrEmpty(imagePath)) yield break;
+
         string fullPath = Path.Combine(Application.streamingAssetsPath, imagePath);
 
         // FIX: Usa System.Uri para escapar caracteres especiais (como #) corretamente no caminho
