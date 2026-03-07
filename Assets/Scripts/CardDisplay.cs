@@ -814,6 +814,14 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             return;
         }
 
+        // Lógica de Seleção Direta da Mão (GameManager)
+        if (GameManager.Instance != null && GameManager.Instance.isSelectingFromHand && isInteractable)
+        {
+            // Passa o clique para o GameManager gerenciar a seleção
+            GameManager.Instance.HandleHandCardClick(this);
+            return;
+        }
+
         // Lógica de Seleção de Tributo (Prioridade Máxima)
         if (SummonManager.Instance != null && SummonManager.Instance.isSelectingTributes)
         {

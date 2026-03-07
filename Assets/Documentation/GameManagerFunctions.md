@@ -51,6 +51,7 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `testActThemeIndex`: Número do Ato (1-10) para forçar o carregamento de um tema visual específico.
 *   `showOpponentHand`: Mostra cartas do oponente viradas para cima (Cheat).
 *   `canPlayerDrawFromDeck`: Permite clique no deck.
+*   `ToggleFullscreen()`: Alterna entre modo janela e tela cheia (Atalho: F11 em DevMode).
 *   `fillOpponentZonesFromRight`: Define se o oponente preenche as zonas da direita para a esquerda (perspectiva do jogador), simulando a esquerda dele.
 
 ## Configurações de Velocidade
@@ -95,6 +96,14 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `enableHandLimit`: Ativa/Desativa a regra de limite de cartas na mão.
 *   `handLimit`: Define o limite máximo de cartas na mão ao final do turno (Padrão: 6). Se excedido, o jogador deve descartar.
 *   `placeTributeSummonInTributeZone`: Se marcado, monstros invocados por tributo ocupam a zona do primeiro monstro sacrificado. Se desmarcado, vão para a primeira zona livre.
+*   **Atalho F11:** Se `devMode` estiver ativo, pressionar F11 alterna o modo Fullscreen instantaneamente.
+
+### Opções de Input e UI
+*   `enableRightClickPhaseMenu`: Habilita abrir um menu de seleção de fase ao clicar com o botão direito no campo (área vazia).
+*   `confirmBattlePositionChange`: Se desmarcado, a mudança de posição de batalha (Ataque/Defesa) ocorre imediatamente ao clicar, sem janela de confirmação.
+*   `confirmAttackTarget`: Se desmarcado, o ataque ocorre imediatamente ao clicar no alvo, sem janela de confirmação.
+*   `useDirectHandSelection`: Se marcado, permite selecionar cartas da mão (para descarte/efeitos) clicando diretamente nelas, em vez de abrir uma janela de lista.
+*   `confirmHandSelection`: Se marcado, pede confirmação após selecionar a carta na mão durante a seleção direta.
 
 ## Notas de Implementação
 *   **Extra Deck:** Agora é renderizado virado para baixo (Face-Down), mas o dono pode visualizar o conteúdo passando o mouse (Card Viewer).

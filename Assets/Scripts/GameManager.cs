@@ -7,6 +7,9 @@ using UnityEngine.Networking;
 using System.Collections.Generic; // Necessário para List
 using System.Linq; // Necessário para Shuffle
 using UnityEngine.EventSystems;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 public enum GamePhase
 {
@@ -132,6 +135,19 @@ public class GameManager : MonoBehaviour
     [Tooltip("Se marcado, o monstro invocado por tributo ocupará a zona do primeiro monstro sacrificado.")]
     public bool placeTributeSummonInTributeZone = true;
 
+    [Header("Input & UI Options")]
+    [Tooltip("Se marcado, clicar com o botão direito no campo (vazio) abre um menu para trocar de fase.")]
+    public bool enableRightClickPhaseMenu = true;
+    [Tooltip("Se marcado, exibe uma janela de confirmação ao tentar mudar a posição de batalha de um monstro.")]
+    public bool confirmBattlePositionChange = true;
+    [Tooltip("Se marcado, exibe uma janela de confirmação ao selecionar um alvo para ataque.")]
+    public bool confirmAttackTarget = true;
+    [Tooltip("Se marcado, permite selecionar cartas diretamente da mão para efeitos (ex: descarte) sem abrir janela.")]
+    public bool useDirectHandSelection = true;
+    [Tooltip("Se marcado, pede confirmação após selecionar a(s) carta(s) na mão durante a seleção direta.")]
+    public bool confirmHandSelection = true;
+
+
     // --- REFERÊNCIAS 2D ---
     [Header("Core References")]
     public CardDisplay cardViewerDisplay;
@@ -216,9 +232,48 @@ public class GameManager : MonoBehaviour
     public bool revealOpponentDraw = false; // Pikeru's Second Sight (1431)
     private UnityWebRequest backTextureRequest; // Para evitar memory leak
 
+    // --- ESTADO DE SELEÇÃO DE MÃO ---
+    [HideInInspector] public bool isSelectingFromHand = false;
+    private List<CardData> handSelectionCandidates;
+    private List<CardData> currentHandSelection;
+    private int handSelectionCountRequired;
+    private System.Action<List<CardData>> handSelectionCallback;
+
     void Awake()
     {
         Instance = this;
+    }
+
+    void Update()
+    {
+        // Atalho de Desenvolvedor para Fullscreen (F11)
+        bool toggleFullscreen = false;
+#if ENABLE_INPUT_SYSTEM
+        if (Keyboard.current != null && Keyboard.current.f11Key.wasPressedThisFrame) toggleFullscreen = true;
+#else
+        if (Input.GetKeyDown(KeyCode.F11)) toggleFullscreen = true;
+#endif
+
+        if (devMode && toggleFullscreen)
+        {
+            ToggleFullscreen();
+        }
+
+        // Menu de Fases com Botão Direito (se não estiver clicando em uma carta/UI)
+        bool rightClick = false;
+#if ENABLE_INPUT_SYSTEM
+        if (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame) rightClick = true;
+#else
+        if (Input.GetMouseButtonDown(1)) rightClick = true;
+#endif
+
+        if (enableRightClickPhaseMenu && isPlayerTurn && !isDuelOver && rightClick)
+        {
+            if (EventSystem.current != null && !EventSystem.current.IsPointerOverGameObject())
+            {
+                OpenPhaseSelectionMenu();
+            }
+        }
     }
 
     IEnumerator Start()
@@ -524,6 +579,18 @@ public class GameManager : MonoBehaviour
         if (currentOpponent == null && !string.IsNullOrEmpty(testOpponentID) && characterDatabase != null)
         {
             currentOpponent = characterDatabase.GetCharacterById(testOpponentID);
+        }
+
+        // NOVO: Se ainda for nulo (Free Duel sem ID definido), escolhe um aleatório da campanha
+        if (currentOpponent == null && campaignDatabase != null && campaignDatabase.acts.Count > 0)
+        {
+            var allIds = campaignDatabase.acts.SelectMany(a => a.opponentIDs).ToList();
+            if (allIds.Count > 0)
+            {
+                string randomId = allIds[Random.Range(0, allIds.Count)];
+                currentOpponent = characterDatabase.GetCharacterById(randomId);
+                Debug.Log($"[GameManager] Oponente aleatório selecionado: {currentOpponent?.name}");
+            }
         }
 
         // Se temos um oponente definido (Campanha), carregamos o deck dele
@@ -1199,6 +1266,69 @@ public void ShuffleDeck(bool isPlayer)
         onResult?.Invoke(headsCount);
     }
 
+    // --- MENU DE SELEÇÃO DE FASE (Botão Direito) ---
+    public void OpenPhaseSelectionMenu()
+    {
+        if (PhaseManager.Instance == null) return;
+
+        GamePhase current = PhaseManager.Instance.currentPhase;
+        List<CardData> phaseOptions = new List<CardData>();
+
+        // Helper para criar "Cartas de Fase"
+        void AddPhaseOption(GamePhase phase, string desc)
+        {
+            CardData p = new CardData();
+            p.id = "PHASE_" + phase.ToString();
+            p.name = phase.ToString().Replace("Main", "Main ").Replace("1", " 1").Replace("2", " 2"); // Ex: Main Phase 1
+            p.description = desc;
+            p.type = "Game Phase";
+            phaseOptions.Add(p);
+        }
+
+        // Lógica de Fases Possíveis
+        if (devMode)
+        {
+            // DevMode: Todas as fases
+            AddPhaseOption(GamePhase.Draw, "Ir para Draw Phase");
+            AddPhaseOption(GamePhase.Standby, "Ir para Standby Phase");
+            AddPhaseOption(GamePhase.Main1, "Ir para Main Phase 1");
+            AddPhaseOption(GamePhase.Battle, "Ir para Battle Phase");
+            AddPhaseOption(GamePhase.Main2, "Ir para Main Phase 2");
+            AddPhaseOption(GamePhase.End, "Ir para End Phase");
+        }
+        else
+        {
+            // Fluxo Normal
+            if (current == GamePhase.Draw) AddPhaseOption(GamePhase.Standby, "Avançar para Standby Phase");
+            else if (current == GamePhase.Standby) AddPhaseOption(GamePhase.Main1, "Avançar para Main Phase 1");
+            else if (current == GamePhase.Main1)
+            {
+                AddPhaseOption(GamePhase.Battle, "Entrar na Battle Phase");
+                AddPhaseOption(GamePhase.End, "Encerrar Turno");
+            }
+            else if (current == GamePhase.Battle)
+            {
+                AddPhaseOption(GamePhase.Main2, "Ir para Main Phase 2");
+                AddPhaseOption(GamePhase.End, "Encerrar Turno");
+            }
+            else if (current == GamePhase.Main2) AddPhaseOption(GamePhase.End, "Encerrar Turno");
+        }
+
+        if (phaseOptions.Count > 0)
+        {
+            OpenCardMultiSelection(phaseOptions, "Selecionar Próxima Fase", 1, 1, (selected) => {
+                if (selected != null && selected.Count > 0)
+                {
+                    string phaseName = selected[0].id.Replace("PHASE_", "");
+                    if (System.Enum.TryParse(phaseName, out GamePhase nextPhase))
+                    {
+                        TryChangePhase(nextPhase);
+                    }
+                }
+            });
+        }
+    }
+
     private void ResetCardStates(Transform[] zones)
     {
         foreach (Transform zone in zones)
@@ -1374,6 +1504,13 @@ public void ShuffleDeck(bool isPlayer)
         {
             if (UIManager.Instance != null) UIManager.Instance.Btn_BackToMenu();
         }
+    }
+
+    // Alterna entre Tela Cheia e Modo Janela
+    public void ToggleFullscreen()
+    {
+        Screen.fullScreen = !Screen.fullScreen;
+        Debug.Log($"[GameManager] Fullscreen alterado para: {Screen.fullScreen}");
     }
 
     // --- SISTEMA DE DANO E LP ---
@@ -2016,6 +2153,16 @@ public void ShuffleDeck(bool isPlayer)
     // Método para Seleção Múltipla
     public void OpenCardMultiSelection(List<CardData> sourceList, string title, int min, int max, System.Action<List<CardData>> onSelected)
     {
+        // Verifica se a seleção é um subconjunto da mão do jogador e se a quantidade é fixa (min == max)
+        // Isso permite usar a seleção direta da mão
+        bool isHandSubset = sourceList.Count > 0 && sourceList.All(c => playerHand.Exists(go => go.GetComponent<CardDisplay>().CurrentCardData == c));
+
+        if (useDirectHandSelection && isHandSubset && min == max)
+        {
+            StartDirectHandSelection(sourceList, min, onSelected, title);
+            return;
+        }
+
         if (sourceList.Count > 0)
         {
             if (UIManager.Instance != null)
@@ -2031,6 +2178,100 @@ public void ShuffleDeck(bool isPlayer)
         {
             Debug.Log("Nenhuma carta válida para selecionar.");
         }
+    }
+
+    // --- LÓGICA DE SELEÇÃO DIRETA DA MÃO ---
+
+    private void StartDirectHandSelection(List<CardData> candidates, int count, System.Action<List<CardData>> callback, string title)
+    {
+        isSelectingFromHand = true;
+        handSelectionCandidates = candidates;
+        handSelectionCountRequired = count;
+        handSelectionCallback = callback;
+        currentHandSelection = new List<CardData>();
+
+        if (UIManager.Instance != null) UIManager.Instance.ShowMessage(title);
+
+        // Destaca as cartas válidas na mão
+        foreach (var go in playerHand)
+        {
+            var cd = go.GetComponent<CardDisplay>();
+            if (cd != null && handSelectionCandidates.Contains(cd.CurrentCardData))
+            {
+                cd.SetTributeHighlight(true); // Usa o destaque azul para indicar candidatos
+            }
+        }
+        Debug.Log($"[GameManager] Iniciando seleção direta da mão: {title}");
+    }
+
+    public void HandleHandCardClick(CardDisplay card)
+    {
+        if (!isSelectingFromHand) return;
+        if (!handSelectionCandidates.Contains(card.CurrentCardData)) return;
+
+        if (currentHandSelection.Contains(card.CurrentCardData))
+        {
+            // Deselecionar
+            currentHandSelection.Remove(card.CurrentCardData);
+            card.SetAttackSelectionVisual(false); // Remove destaque de seleção (Vermelho)
+            card.SetTributeHighlight(true); // Volta para destaque de candidato (Azul)
+        }
+        else
+        {
+            // Selecionar
+            if (currentHandSelection.Count < handSelectionCountRequired)
+            {
+                currentHandSelection.Add(card.CurrentCardData);
+                card.SetTributeHighlight(false); // Remove destaque de candidato
+                card.SetAttackSelectionVisual(true); // Adiciona destaque de seleção (Vermelho)
+            }
+        }
+
+        // Verifica se completou a seleção
+        if (currentHandSelection.Count == handSelectionCountRequired)
+        {
+            if (confirmHandSelection)
+            {
+                string msg = handSelectionCountRequired == 1 ? $"Selecionar {currentHandSelection[0].name}?" : "Confirmar seleção?";
+                UIManager.Instance.ShowConfirmation(msg, FinishHandSelection, () => {
+                    // Se cancelar, remove a última seleção para permitir trocar
+                    if (currentHandSelection.Count > 0)
+                    {
+                        var last = currentHandSelection[currentHandSelection.Count - 1];
+                        currentHandSelection.RemoveAt(currentHandSelection.Count - 1);
+                        // Atualiza visual da carta cancelada
+                        var go = playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == last);
+                        if (go != null)
+                        {
+                            var cd = go.GetComponent<CardDisplay>();
+                            cd.SetAttackSelectionVisual(false);
+                            cd.SetTributeHighlight(true);
+                        }
+                    }
+                });
+            }
+            else
+            {
+                FinishHandSelection();
+            }
+        }
+    }
+
+    private void FinishHandSelection()
+    {
+        // Limpa visuais
+        foreach (var go in playerHand)
+        {
+            var cd = go.GetComponent<CardDisplay>();
+            if (cd != null)
+            {
+                cd.SetTributeHighlight(false);
+                cd.SetAttackSelectionVisual(false);
+            }
+        }
+
+        isSelectingFromHand = false;
+        handSelectionCallback?.Invoke(currentHandSelection);
     }
 
     // Invocação Especial direta por dados (para Monster Reborn, etc)

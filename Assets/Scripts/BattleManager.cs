@@ -257,17 +257,30 @@ public class BattleManager : MonoBehaviour
         CardDisplay attacker = currentAttacker;
         CardDisplay targetCard = target;
 
-        UIManager.Instance.ShowConfirmation($"Atacar {target.CurrentCardData.name}?", () => {
-            // FIX: Adicionado fallback. Se ChainManager não existir, ataca direto.
-            if (ChainManager.Instance != null)
-            {
-                ChainManager.Instance.AddToChain(attacker, attacker.isPlayerCard, ChainManager.TriggerType.Attack, targetCard, () => PerformBattle(attacker, targetCard));
-            }
-            else
-            {
-                PerformBattle(attacker, targetCard);
-            }
-        });
+        // FIX: Ocultar nome se estiver face-down para não dar spoiler
+        string targetName = target.isFlipped ? target.CurrentCardData.name : "Monstro Face-Down";
+
+        System.Action executeAttack = () => {
+             // FIX: Adicionado fallback. Se ChainManager não existir, ataca direto.
+             if (ChainManager.Instance != null)
+             {
+                 ChainManager.Instance.AddToChain(attacker, attacker.isPlayerCard, ChainManager.TriggerType.Attack, targetCard, () => PerformBattle(attacker, targetCard));
+             }
+             else
+             {
+                 PerformBattle(attacker, targetCard);
+             }
+        };
+
+        if (GameManager.Instance != null && !GameManager.Instance.confirmAttackTarget)
+        {
+            executeAttack();
+        }
+        else
+        {
+            UIManager.Instance.ShowConfirmation($"Atacar {targetName}?", executeAttack);
+        }
+
         currentTarget = target;
         // Limpa a seleção visual após confirmar o alvo
         if (currentAttacker != null) 
@@ -472,6 +485,10 @@ public class BattleManager : MonoBehaviour
                     if (target.isPlayerCard) GameManager.Instance.DamagePlayer(damage);
                     else GameManager.Instance.DamageOpponent(damage);
                 }
+                else
+                {
+                    Debug.Log($"[BattleManager] Dano prevenido! NoBattleDamage: {noBattleDamage}, AttackerCannotInflict: {attacker.cannotInflictBattleDamage}");
+                }
                 
                 if (!targetIsBES)
                 {
@@ -495,7 +512,11 @@ public class BattleManager : MonoBehaviour
                 {
                     if (attacker.isPlayerCard) GameManager.Instance.DamagePlayer(damage);
                     else GameManager.Instance.DamageOpponent(damage);
-                }  
+                }
+                else
+                {
+                    Debug.Log($"[BattleManager] Dano prevenido! NoBattleDamage: {noBattleDamage}");
+                }
 
                 if (!attackerIsRocketWarrior)
                 {
@@ -660,9 +681,19 @@ public class BattleManager : MonoBehaviour
         }
 
         string newPos = card.position == CardDisplay.BattlePosition.Attack ? "Defesa" : "Ataque";
-        UIManager.Instance.ShowConfirmation($"Mudar para {newPos}?", () => {
+        
+        System.Action executeChange = () => {
             card.ChangePosition();
             card.hasChangedPositionThisTurn = true;
-        });
+        };
+
+        if (GameManager.Instance != null && !GameManager.Instance.confirmBattlePositionChange)
+        {
+            executeChange();
+        }
+        else
+        {
+            UIManager.Instance.ShowConfirmation($"Mudar para {newPos}?", executeChange);
+        }
     }
 }
