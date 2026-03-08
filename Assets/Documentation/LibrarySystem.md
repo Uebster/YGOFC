@@ -160,3 +160,25 @@ O desbloqueio é vinculado ao progresso da **História (Campanha)**.
 ## Notas Técnicas
 *   **Persistência:** O estado de "New" das cartas e contagem de vitórias na Arena é salvo no `SaveLoadSystem` dentro da estrutura `LibrarySaveData`.
 *   **Reutilização:** O `CardViewerUI` é amplamente reutilizado aqui. Certifique-se de que ele pode ser configurado para mostrar dados estáticos sem depender do estado de um duelo ativo.
+
+---
+
+## 6. Scripts e Arquitetura
+
+A implementação da Biblioteca é dividida em gerenciadores específicos para cada aba, além de estruturas de dados para persistência.
+
+### Arquivos Principais
+*   **`LibraryDataTypes.cs`**: Define as classes serializáveis para salvar o progresso da biblioteca.
+    *   `DuelistWinRecord`: Armazena o ID do duelista e o número de vitórias.
+    *   `LibrarySaveData`: Armazena a lista de cartas vistas (para remover a tag "New") e os registros de vitórias.
+*   **`DuelistLibraryManager.cs`**: Gerencia a aba de Duelistas.
+    *   Carrega a lista de personagens do `CharacterDatabase`.
+    *   Verifica se o jogador tem pelo menos 1 vitória contra o oponente para exibi-lo na lista.
+    *   Exibe detalhes (Lore, Avatar) ao selecionar.
+*   **`DeckLibraryManager.cs`**: Gerencia a aba de Decks.
+    *   Lista os oponentes desbloqueados.
+    *   Ao selecionar um oponente, verifica o número de vitórias para habilitar os botões de Deck A (50), B (100) e C (200).
+    *   Exibe a lista de cartas do deck selecionado.
+*   **`ArenaLibraryManager.cs`**: Gerencia a aba de Arenas.
+    *   Verifica o progresso da campanha (`CampaignManager.maxUnlockedLevel`) para determinar quais Atos foram concluídos.
+    *   Exibe os temas visuais (`DuelTheme`) correspondentes aos Atos desbloqueados.
