@@ -350,6 +350,10 @@ public class GameManager : MonoBehaviour
         // Limpa o estado anterior (destrói cartas visuais, limpa listas)
         CleanupDuelState();
 
+        // FIX: Garante que a referência da UI do campo esteja atualizada antes de qualquer coisa
+        if (duelFieldUI == null) duelFieldUI = FindFirstObjectByType<DuelFieldUI>();
+        if (duelFieldUI == null) Debug.LogError("GameManager: DuelFieldUI não encontrado na cena! O placar não funcionará.");
+
         // Garante que os gerenciadores essenciais existam na cena
         EnsureCoreManagers();
 
@@ -597,6 +601,10 @@ public class GameManager : MonoBehaviour
                 currentOpponent = characterDatabase.GetCharacterById(randomId);
                 Debug.Log($"[GameManager] Oponente aleatório selecionado: {currentOpponent?.name}");
             }
+        }
+        else if (currentOpponent == null && campaignDatabase == null)
+        {
+            Debug.LogWarning("[GameManager] CampaignDatabase não atribuído! Não foi possível selecionar um oponente aleatório.");
         }
 
         // Se temos um oponente definido (Campanha), carregamos o deck dele
@@ -1597,8 +1605,19 @@ public void ShuffleDeck(bool isPlayer)
     {
         if (duelFieldUI != null)
         {
-            if (duelFieldUI.playerLPText != null) duelFieldUI.playerLPText.text = playerLP.ToString();
-            if (duelFieldUI.opponentLPText != null) duelFieldUI.opponentLPText.text = opponentLP.ToString();
+            if (duelFieldUI.playerLPText != null) 
+                duelFieldUI.playerLPText.text = playerLP.ToString();
+            else 
+                Debug.LogWarning("GameManager: PlayerLPText não atribuído no DuelFieldUI.");
+
+            if (duelFieldUI.opponentLPText != null) 
+                duelFieldUI.opponentLPText.text = opponentLP.ToString();
+            else
+                Debug.LogWarning("GameManager: OpponentLPText não atribuído no DuelFieldUI.");
+        }
+        else
+        {
+            Debug.LogWarning("GameManager: Tentativa de atualizar LP, mas DuelFieldUI é nulo.");
         }
     }
 

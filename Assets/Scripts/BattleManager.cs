@@ -264,7 +264,8 @@ public class BattleManager : MonoBehaviour
         CardDisplay targetCard = target;
 
         // FIX: Ocultar nome se estiver face-down para não dar spoiler
-        string targetName = target.isFlipped ? target.CurrentCardData.name : "Monstro Face-Down";
+        // isFlipped = true significa que está mostrando o verso (Face-Down).
+        string targetName = !target.isFlipped ? target.CurrentCardData.name : "Monstro Face-Down";
 
         System.Action executeAttack = () => {
              // FIX: Adicionado fallback. Se ChainManager não existir, ataca direto.
