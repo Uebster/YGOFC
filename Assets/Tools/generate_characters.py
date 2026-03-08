@@ -137,7 +137,7 @@ def get_character_roster():
         {"id": "094_weevil_final", "name": "Weevil Underwood (Final)", "role": "Final", "difficulty": "Extreme", "field": "Forest"},
         {"id": "095_mako_final", "name": "Mako Tsunami (Final)", "role": "Final", "difficulty": "Extreme", "field": "Umi"},
         {"id": "096_keith_final", "name": "Bandit Keith (Final)", "role": "Final", "difficulty": "Extreme", "field": "Normal"},
-        {"id": "097_espa_final", "name": "Espa Roba (Final)", "role": "Final", "difficulty": "Extreme", "field": "Normal"},
+        {"id": "097_yugi_final", "name": "Yugi Muto (Final)", "role": "Final", "difficulty": "Extreme", "field": "Normal"},
         {"id": "098_pegasus_final", "name": "Pegasus J. Crawford (Final)", "role": "Final", "difficulty": "Extreme", "field": "Normal"},
         {"id": "099_kaiba_final", "name": "Seto Kaiba (Final)", "role": "Final", "difficulty": "Extreme", "field": "Normal"},
         {"id": "100_marik", "name": "Marik Ishtar", "role": "Boss Final", "difficulty": "Extreme", "field": "Yami"}

@@ -1262,6 +1262,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Serenity [Séria]:** (Para o Protagonista) Ele vai tentar travar o jogo para comprar cartas. Seja rápido e agressivo! Não deixe ele completar o quebra-cabeça. Eu confio em você!
 *   **Rare Hunter [Séria]:** A contagem regressiva começou! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Rare Hunter [Medo]:** Impossível... Exodia... falhou novamente? Como você foi mais rápido que o proibido?
+*   **Serenity [Alegria]:** Você conseguiu! O pesadelo acabou. A estratégia dele desmoronou!
+
 ---
 
 ### 062: Rare Elite Rematch (O Despertar da Elite)
@@ -1275,6 +1279,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Rare Elite [Confiança]:** Chega de amadores. Eu represento a elite dos Caçadores de Raras. Meu deck foca em controle total do cemitério. O seu "Forbidden Chaos" vai encontrar o seu mestre hoje!
 *   **Duke [Deboche]:** Falar é fácil. Quero ver você lidar com o caos imprevisível desse deck aqui! Jogue os dados e veja sua sorte acabar!
 *   **Rare Elite [Séria]:** Protocolo de elite ativado. DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Rare Elite [Raiva]:** Minha elite... derrotada por dados? Isso não estava nos cálculos!
+*   **Duke [Alegria]:** Sorte ou habilidade? Talvez os dois. É assim que se joga Dungeon Dice Monsters... digo, Duel Monsters!
 
 ---
 
@@ -1290,6 +1298,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Ishizu [Séria]:** Cuidado. Odion é um mestre da paciência. Cada carta que você ativa pode ser um gatilho para a derrota. Use o instinto do Caos para prever o que está escondido!
 *   **Odion [Confiança]:** Que a melhor estratégia vença. DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Odion [Respeito]:** Você é um verdadeiro guerreiro. Minhas armadilhas não foram suficientes para conter seu espírito.
+*   **Ishizu [Alegria]:** Obrigada por honrar este duelo. Odion encontrou a paz na batalha.
+
 ---
 
 ### 064: Strings Rematch (O Silêncio das Cordas)
@@ -1303,6 +1315,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Strings [Séria]:** *(Nenhuma palavra é dita, apenas o disco de duelo se ativa com um brilho intenso)*
 *   **Marik [Séria]:** Ele vai tentar manter o Slifer no campo e encher a mão de cartas. Se ele conseguir, o poder de ataque será imparável. Corte o fluxo de cartas dele e a vitória será sua!
 *   **Strings [Séria]:** ...DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Strings [Silêncio]:** ... (Strings faz uma reverência lenta)
+*   **Marik [Alegria]:** Ele está livre agora. O Slifer não o controla mais, e ele encontrou sua própria voz no silêncio da derrota.
 
 ---
 
@@ -1318,6 +1334,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Joey [Confiança]:** [Nome do Jogador], ele joga com cartas de "Gamble" (Sorte) e efeitos de destruição. O deck dele é perigoso porque pode virar o jogo em um segundo. Não dê espaço para ele girar os tambores!
 *   **Bandit Keith [Alegria]:** Na América, a gente chama isso de... XEQUE-MATE! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Bandit Keith [Raiva]:** Trapaça! Só pode ser trapaça! Ninguém vence minhas máquinas blindadas!
+*   **Joey [Deboche]:** Chora mais, Keith. Na América ou aqui, perdedor é perdedor.
+
 ---
 
 ### 066: Espa Roba Adv (O Olhar Cibernético)
@@ -1331,6 +1351,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Espa Roba [Confiança]:** Minha conexão com o "Jinzo" nunca foi tão forte! Eu não preciso de truques quando posso ver através da sua estratégia. O Caos é barulhento, mas o meu silêncio tecnológico vai apagar sua voz!
 *   **Mai [Séria]:** (Para o Protagonista) Cuidado com as Armadilhas! Ou melhor, com a falta delas. Ele vai tentar invocar o Jinzo para travar suas defesas. Use efeitos de monstros para passar por cima da tecnologia dele!
 *   **Espa Roba [Séria]:** Frequência de vitória sintonizada. DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Espa Roba [Medo]:** Meus sensores... sobrecarregaram. Eu não consegui prever essa jogada!
+*   **Mai [Confiança]:** A intuição vence a máquina. Você precisa de mais do que truques eletrônicos para nos parar.
 
 ---
 
@@ -1346,6 +1370,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Téa [Medo]:** Ele vai tentar usar o "Mundo Toon" para tornar os monstros dele intocáveis! Você precisa destruir a magia de campo dele o mais rápido possível, ou vai acabar virando um desenho animado!
 *   **Pegasus [Confiança]:** Preparem-se para o show mais fabuloso das suas vidas! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Pegasus [Tristeza]:** Oh my... meu mundo Toon perdeu a cor. Sua realidade é forte demais para minhas fantasias.
+*   **Téa [Alegria]:** A realidade é mais bonita, Sr. Pegasus. E a amizade é a melhor mágica de todas!
+
 ---
 
 ### 068: Ishizu Adv (O Destino nas Cartas)
@@ -1359,6 +1387,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Ishizu [Confiança]:** O futuro não é mais um caminho traçado, mas uma escolha que fazemos a cada turno. [Nome do Jogador], seu deck de Caos desafia o destino. Vamos ver se você pode superar a guardiã das memórias ancestrais!
 *   **Odion [Séria]:** Ela foca em manipular o cemitério e trocar os decks. Se você não tomar cuidado, ficará sem cartas antes de perceber. Mantenha o equilíbrio!
 *   **Ishizu [Alegria]:** Que as estrelas guiem suas jogadas. DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Ishizu [Alegria]:** O futuro mudou... para melhor. Você reescreveu o destino que as cartas mostravam.
+*   **Odion [Respeito]:** Você superou o destino. Minha irmã pode sorrir novamente.
 
 ---
 
@@ -1374,6 +1406,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Yugi [Confiança]:** Kaiba, você nunca entende que o verdadeiro poder vem do elo com as cartas. [Nome do Jogador], você provou ser digno de chegar até aqui. Meu deck não tem apenas magos e dragões; ele tem a confiança de todos os amigos que fizemos. Você está pronto para enfrentar o potencial máximo do Mago Negro?
 *   **Kairo [Séria]:** (Para o Protagonista) Ele usa o deck "Dark Magician" mais rápido e consistente que existe. Ele vai tentar banir suas cartas no turno dele. Você precisa ser imprevisível. O Caos deve ser a resposta para a magia dele!
 *   **Yugi [Confiança]:** Que o Coração das Cartas guie nosso destino. DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Yugi [Alegria]:** Incrível! Você está pronto para o Kaiba. Seu duelo foi perfeito.
+*   **Kairo [Confiança]:** O último degrau antes do topo. Respire fundo, o Imperador aguarda.
 
 ---
 
@@ -1415,6 +1451,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Ishizu [Séria]:** (Para o Protagonista) Ele refinou sua estratégia de "Mill" e invocação do cemitério. O deserto vai tentar engolir suas cartas. Mantenha o fluxo do seu Caos focado no banimento para que os mortos dele não possam retornar!
 *   **Desert Mage [Séria]:** As areias vão julgar seu destino. DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Desert Mage [Tristeza]:** A areia... parou. O tempo volta a fluir.
+*   **Ishizu [Séria]:** O caminho está limpo. As almas antigas reconhecem sua força.
+
 ---
 
 ### 072: Forest Mage Rematch (A Selva dos Espíritos)
@@ -1428,6 +1468,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Forest Mage [Confiança]:** O ciclo da vida e da morte se acelera aqui no Vale. Minhas criaturas evoluíram. O "Forbidden Chaos" é um fogo que eu pretendo sufocar com as raízes da terra primordial. Meu enxame de Insetos e Plantas é agora uma força da natureza imparável!
 *   **Mai [Séria]:** Cuidado! Ela agora usa combos de invocação especial sincronizada. Se você deixar uma única semente no campo, no próximo turno terá uma floresta inteira bloqueando seu caminho. Use o poder destrutivo do Caos para limpar o terreno!
 *   **Forest Mage [Séria]:** A natureza não perdoa invasores. DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Forest Mage [Tristeza]:** A floresta se curva... O Caos é a nova força da natureza.
+*   **Mai [Alegria]:** Nada como um pouco de jardinagem para abrir caminho.
 
 ---
 
@@ -1443,6 +1487,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Joey [Séria]:** (Para o Protagonista) Ele aumentou a velocidade de ataque. O bônus de campo dele agora é permanente e afeta diretamente seus pontos de vida. Não perca tempo na defesa; esse duelo é uma corrida até o topo!
 *   **Mountain Mage [Alegria]:** Sinta a fúria dos céus! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Mountain Mage [Raiva]:** O pico... foi conquistado. O trovão se calou diante do seu rugido.
+*   **Joey [Alegria]:** A vista daqui de cima é ótima! E sem levar choque!
+
 ---
 
 ### 074: Meadow Mage Rematch (O Exército do Sol)
@@ -1456,6 +1504,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Meadow Mage [Confiança]:** Minha estratégia não é mais apenas defesa. Meus Cavaleiros e Guerreiros agora possuem o brilho do sol. O Caos é desordem, e a desordem morre diante da minha lâmina! Meu deck de Guerreiros de Elite vai testar a resistência da sua alma!
 *   **Odion [Séria]:** Ele usa cartas que aumentam o ATK baseadas no número de monstros no campo. Não deixe que ele forme uma linha de frente completa. Golpeie com precisão!
 *   **Meadow Mage [Confiança]:** Pela glória do Egito! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Meadow Mage [Respeito]:** Uma vitória honrada. Meus guerreiros baixam as armas para você.
+*   **Odion [Séria]:** A disciplina venceu. Você tem o porte de um general.
 
 ---
 
@@ -1471,6 +1523,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Mako [Séria]:** (Para o Protagonista) Ele agora usa o "Ocean" como uma arma de negação. Se ele invocar o Neo-Daedalus, o campo inteiro será destruído. Ataca como um tubarão: rápido e sem aviso!
 *   **Ocean Mage [Confiança]:** Afunda no esquecimento! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Ocean Mage [Tristeza]:** O mar recua... As águas do Nilo abrem passagem.
+*   **Mako [Confiança]:** Navegue em frente, campeão. O horizonte é seu.
+
 ---
 
 ### 076: Isis (A Guardiã do Ritual)
@@ -1485,6 +1541,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Ishizu [Séria]:** O deck dela foca em banimento e controle temporal. Ela vai tentar fazer com que as tuas melhores cartas nunca cheguem à tua mão. Confia no teu instinto, pois é a única coisa que ela não pode prever!
 *   **Isis [Séria]:** Que o veredito do tempo seja dado. DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Isis [Alegria]:** O destino aceita sua força. Você é aquele que as estrelas aguardavam.
+*   **Ishizu [Alegria]:** Minha ancestral está orgulhosa. O passado e o futuro estão em harmonia.
+
 ---
 
 ### 077: Secmeton (O Carniceiro do Deserto)
@@ -1498,6 +1558,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Secmeton [Raiva]:** O rugido de Secmeton fará a terra tremer! Eu sou a fúria do sol! O meu deck de Bestas Guerreiras vai estraçalhar a tua defesa. Não haverá nada para enterrar quando eu terminar contigo!
 *   **Kaiba [Deboche]:** Ele foca em destruir os teus monstros por batalha para ganhar ATK infinito. Patético. Usa o efeito das tuas cartas de Caos para removê-lo do jogo antes que ele consiga sequer atacar!
 *   **Secmeton [Alegria]:** Sangue e areia! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Secmeton [Raiva]:** Minha força... quebrada! Como um mortal pode ser mais forte que a fúria do sol?
+*   **Kaiba [Deboche]:** Apenas um animal enjaulado. Força sem cérebro não vale nada.
 
 ---
 
@@ -1514,6 +1578,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Kairo [Confiança]:** (Para o Protagonista) Ele usa o "Necrovalley" para impedir qualquer interação com o cemitério. Você precisa destruir essa magia de campo imediatamente, ou sua estratégia vai desmoronar!
 *   **Martis [Séria]:** O selo da tumba está fechado. DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Martis [Tristeza]:** A tumba foi violada... mas por alguém digno.
+*   **Kairo [Séria]:** Não violada, superada. O segredo está seguro conosco.
+
 ---
 
 ### 079: Kepura (O Escorpião do Deserto)
@@ -1528,6 +1596,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Kepura [Confiança]:** Meu deck de Insetos e Bestas foca em destruir seus monstros e causar dano direto a cada turno. Vocês vão sangrar lentamente até não restar nada além de cascas vazias.
 *   **Joey [Raiva]:** Ele quer ganhar pelo cansaço! [Nome do Jogador], não deixa ele te envenenar. Ataca com tudo e esmaga esse escorpião antes que ele te pique!
 *   **Kepura [Alegria]:** Sinta o veneno correr nas suas veias! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Kepura [Medo]:** O veneno... não funcionou? Você é imune à dor?
+*   **Joey [Alívio]:** Ufa! Achei que ia precisar de um antídoto. Vamos sair logo desse buraco.
 
 ---
 
@@ -1549,3 +1621,433 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Kairo [Medo]:** O que é isso?! Vencer Anubisius deveria ter nos libertado, mas... as sombras estão nos puxando para baixo!
 *   **Bakura (Voz) [Deboche]:** (Risada maligna) Vocês acharam que o passado era o fim? O verdadeiro jogo começa agora, no labirinto da minha alma!
 *   **Kairo [Séria]:** Segure-se! Estamos sendo arrastados para o Domínio das Trevas. Bem-vindo ao Ato 9: O Labirinto Final.
+
+---
+
+## Ato 9: O Labirinto Final
+**Contexto:** O mal se reúne para uma última tentativa de pará-lo. Bakura revela sua verdadeira forma no labirinto.
+
+### 081: Labyrinth Mage Rematch (O Enigma das Paredes Vivas)
+*   **Local:** Corredores Infinitos de Pedra.
+*   **Avatar A:** Joey Wheeler.
+*   **Avatar B:** Labyrinth Mage Rematch.
+
+#### Pré-Duelo
+**(Background: Corredores Infinitos)**
+*   **Joey [Medo]:** Ei! Aquela parede acabou de piscar pra mim? Esse lugar tá me dando um nó na cabeça! [Nome do Jogador], a gente tá andando em círculos ou o labirinto tá jogando contra a gente?
+*   **Labyrinth Mage [Confiança]:** Bem-vindos ao meu domínio refeito. No passado, você apenas atravessou minhas paredes... Agora, você faz parte delas!
+*   **Labyrinth Mage [Séria]:** Meu deck de "Labyrinth Wall" foi fortalecido pelas sombras de Bakura. Você nunca encontrará a saída, pois eu sou o próprio caminho para a sua perdição!
+*   **Joey [Raiva]:** Escuta aqui, seu mestre de obras das trevas! O meu amigo aqui já derrubou deuses, não vai ser um punhado de tijolo que vai parar a gente!
+*   **Joey [Confiança]:** (Para o Protagonista) Ele usa monstros que se escondem na defesa e atacam das sombras. Quebra essas paredes com a força bruta do seu Caos antes que a gente fique preso aqui pra sempre!
+*   **Labyrinth Mage [Confiança]:** Perca-se na eternidade! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Labyrinth Mage [Tristeza]:** As paredes... elas estão sangrando... um código negro está escorrendo pelas frestas! Como a luz desse Caos pôde encontrar uma saída no meu labirinto perfeito? Bakura... você disse que eu seria eterno aqui!
+*   **Joey [Alegria]:** Olha só! O labirinto dele está desmoronando! Parece que o seu deck de Caos é como uma britadeira gigante pra esse amontoado de pedras!
+*   **Labyrinth Mage [Medo]:** NÃO! O teto... ele está vindo abaixo! Eu não quero ser esmagado pelo meu próprio mundo! ARGHHHH!
+*   *(O Mago desaparece enquanto as pedras ao redor implodem em poeira digital, revelando um novo corredor.)*
+
+---
+
+### 082: Gansley Rematch (O Acordo das Sombras)
+*   **Local:** Escritório de Pedra no Vazio.
+*   **Avatar A:** Seto Kaiba.
+*   **Avatar B:** Gansley Rematch.
+
+#### Pré-Duelo
+**(Background: Escritório de Pedra)**
+*   **Kaiba [Raiva]:** Gansley! Nem a morte ou o colapso do mundo virtual livram você da sua mediocridade? Você se aliou ao Bakura agora? Que queda patética para um ex-diretor da minha empresa.
+*   **Gansley [Confiança]:** Seto... no Labirinto de Bakura, as almas são a única moeda que importa. Eu recuperei meu cargo aqui como o coletor de impostos do submundo!
+*   **Gansley [Deboche]:** O seu deck de "Caos" parece um ativo muito valioso, [Nome do Jogador]. Vou tomá-lo como bônus pela minha eficiência! Meu "Deep Sea Warrior" vai afogar suas esperanças!
+*   **Kaiba [Deboche]:** Tente a sorte, verme. (Para o Protagonista) Ele usa um deck de controle que pune você por cada invocação. Não deixe que ele dite as regras desse negócio. Esmague os ativos dele!
+*   **Gansley [Confiança]:** A fusão hostil começou! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Gansley [Medo]:** O balanço... ele deu negativo?! Meus ativos... minha autoridade... sendo deletados da existência?! Como você pode ter tanto poder sem um pingo de estrutura corporativa?
+*   **Kaiba [Alegria]:** Hahaha! Parece que sua "fusão hostil" foi um fracasso total, Gansley. No mundo real ou nas sombras, você continua sendo um burocrata de segunda categoria.
+*   **Gansley [Tristeza]:** O sistema... ele está me ejetando! Bakura me prometeu o controle... mas agora... eu sou apenas um erro contábil sendo apagado! SOCORROOO!
+*   *(Gansley é puxado para baixo por mãos de sombra que emergem do chão de pedra.)*
+
+---
+
+### 083: Crump Rematch (O Recarrego do Pinguim)
+*   **Local:** Geleira de Ossos.
+*   **Avatar A:** Mai Valentine.
+*   **Avatar B:** Crump Rematch.
+
+#### Pré-Duelo
+**(Background: Geleira de Ossos)**
+*   **Mai [Nojo]:** Esse pinguim asqueroso de novo? Bakura realmente não tem bom gosto para recrutar aliados. O cheiro de peixe podre e magia negra aqui é insuportável!
+*   **Crump [Confiança]:** Hehehe... Senhorita Valentine, você continua charmosa mesmo no fim do mundo. Mas Bakura me deu um novo oceano para patinar.
+*   **Crump [Alegria]:** Meu deck de Pinguins agora tem o toque do pesadelo! Cada vez que você tentar atacar, eu vou devolver suas cartas para a mão e rir enquanto você congela de desespero! O "Forbidden Chaos" vai virar um picolé!
+*   **Mai [Séria]:** (Para o Protagonista) Ele refinou o controle de campo. Se você não for rápido, ele vai travar todas as suas zonas de monstros com efeitos de "Bounce". Quebre o gelo dele com o calor escaldante do seu deck!
+*   **Crump [Confiança]:** O inverno eterno chegou para você! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Crump [Raiva]:** O gelo... ele não está rachando... ele está DERRETENDO?! Mas Bakura disse que este seria o frio absoluto das trevas! O calor desse seu deck... ele está fervendo a minha alma!
+*   **Mai [Alegria]:** Parece que o seu "inverno eterno" acabou de virar uma poça de água suja, Crump. O Caos do meu amigo aqui é quente demais para um perdedor como você!
+*   **Crump [Medo]:** Eu não quero voltar para o vazio escuro! Alguém me dê um casaco... está ficando... tão quente... POR QUE OS MEUS PINGUINS ESTÃO SUMINDO?! NÃOOO!
+*   *(O chão de gelo vira um redemoinho de água fervente que o engole.)*
+
+---
+
+### 084: Johnson Rematch (A Lei do Caos no Tribunal)
+*   **Local:** Tribunal de Obsidiana.
+*   **Avatar A:** Joey Wheeler.
+*   **Avatar B:** Johnson Rematch.
+
+#### Pré-Duelo
+**(Background: Tribunal de Obsidiana)**
+*   **Joey [Raiva]:** Eu já disse que odeio tribunais! E esse aqui parece que foi decorado pelo próprio ceifador. Johnson, desiste logo dessa peruca de juiz e luta como um duelista de verdade!
+*   **Johnson [Confiança]:** Silêncio no recinto! No Labirinto de Bakura, a única lei é a dor. Eu fui nomeado o carrasco oficial deste setor e minha palavra é final!
+*   **Johnson [Séria]:** Você foi considerado culpado de existir... e a sentença é a aniquilação total! Meu deck de "Mudança de Vida" vai drenar sua energia vital para alimentar as sombras!
+*   **Joey [Confiança]:** (Para o Protagonista) Ele vai tentar trocar os pontos de vida dele pelos seus quando estiver perdendo. É uma tática de trapaceiro disfarçada de lei! Mantém a pressão e não deixa ele bater o martelo!
+*   **Johnson [Confiança]:** Veredito imediato! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Johnson [Tristeza]:** Anulado... o julgamento foi anulado por uma força que eu não posso processar! O martelo... ele virou cinzas nas minhas mãos! O Caos... ele não segue leis... ele não segue precedentes!
+*   **Joey [Alegria]:** É isso aí! O tribunal fechou cedo hoje, "Sr. Juiz"! No mundo do Caos, a gente é que faz as regras! Sua sentença acaba de ser revogada!
+*   **Johnson [Medo]:** Bakura, a lei falhou! A sentença de morte que eu preparei para ele... ela está voltando contra mim! O veredito... EU SOU O CULPADO?! NÃO! ISSO É CONTRA OS PROTOCOLOS! ARGHHHH!
+*   *(Johnson é atingido por um relâmpago de energia roxa que emerge do seu próprio martelo quebrado.)*
+
+---
+
+### 085: Leichter Rematch (A Artilharia do Fim do Mundo)
+*   **Local:** Arsenal de Ossos e Metal.
+*   **Avatar A:** Mai Valentine.
+*   **Avatar B:** Leichter Rematch.
+
+#### Pré-Duelo
+**(Background: Arsenal de Ossos)**
+*   **Mai [Séria]:** Esse Leichter não parece mais um homem, parece uma máquina de guerra possuída. Bakura realmente deu a ele brinquedos perigosos desta vez. Cuidado com os estilhaços!
+*   **Leichter [Alegria]:** O "Forbidden Chaos" é a bateria perfeita para as minhas armas! Bakura me permitiu converter a energia do seu deck em munição pura para o meu exército.
+*   **Leichter [Confiança]:** Meu deck de Máquinas e Dano Direto foi calibrado para te destruir antes mesmo de você declarar o primeiro ataque. Sinta o peso da artilharia das trevas! O seu destino será escrito em pólvora e sangue!
+*   **Mai [Confiança]:** (Para o Protagonista) Ele vai tentar tirar seus pontos de vida com efeitos de cartas mágicas a cada turno. É um duelo contra o relógio! Não dê tempo para ele carregar os canhões. Destrua a base de operações dele agora!
+*   **Leichter [Confiança]:** Fogo total! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Leichter [Raiva]:** ALERTA! Superaquecimento total! O poder do Caos... ele não é combustível... ele é uma SOBRECARGA! Meus canhões... eles estão disparando contra mim mesmo!
+*   **Mai [Alegria]:** Parece que a sua "artilharia pesada" era apenas fogos de artifício molhados. O Caos do meu amigo aqui é instável demais para as suas máquinas velhas, Leichter!
+*   **Leichter [Medo]:** Eu deveria ser o destruidor de mundos... mas eu sou apenas sucata no labirinto de outro homem! Bakura, você me usou como uma arma descartável! SISTEMA EM COLAPSO! EU VOU EXPLODIR... NÃOOO!
+*   *(O corpo de Leichter explode em uma bola de fogo verde e preta.)*
+
+---
+
+### 086: Nezbitt Rematch (O Engenheiro do Apocalipse)
+*   **Local:** Forja das Almas.
+*   **Avatar A:** Kairo.
+*   **Avatar B:** Nezbitt Rematch.
+
+#### Pré-Duelo
+**(Background: Forja das Almas)**
+*   **Kairo [Séria]:** Este é o último dos Big Five. Nezbitt fundiu sua alma com o mecanismo central deste pesadelo. Se ele vencer, as engrenagens vão esmagar nossa conexão com o mundo real para sempre!
+*   **Nezbitt [Confiança]:** A evolução final! Meu deck de Máquinas agora utiliza a energia das almas para se auto-reparar e evoluir infinitamente.
+*   **Nezbitt [Séria]:** Você destrói uma peça, e eu construo um deus mecânico no lugar! O seu Caos é uma variável primitiva diante da minha lógica de destruição total! Eu sou o arquiteto do seu fim!
+*   **Kairo [Confiança]:** (Para o Protagonista) Mostre a ele que nenhuma máquina pode simular a alma de um duelista e a imprevisibilidade do Caos! Destrua o processador central e pare esse mecanismo infernal de uma vez por todas!
+*   **Nezbitt [Séria]:** Iniciando sequência de aniquilação! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Nezbitt [Tristeza]:** Lógica... fragmentada. Engrenagens... paralisadas. Como o Caos pode ser tão... cirúrgico na destruição? Eu tentei construir a eternidade com metal e ódio...
+*   **Kairo [Alegria]:** A sua "perfeição mecânica" não passa de um castelo de cartas diante do poder do Caos. As engrenagens pararam porque o seu ódio não tem mais onde se apoiar!
+*   **Nezbitt [Medo]:** O Labirinto está parando... e sem o movimento, não há vida para nós. Bakura... a forja apagou... e o frio... o frio está voltando... ADEUS, MUNDO DE DADOS!
+*   *(As engrenagens gigantes ao redor param com um estalo ensurdecedor e Nezbitt se desintegra.)*
+
+---
+
+### 087: Simon Rematch (O Arquiteto das Memórias)
+*   **Local:** Sala do Trono de Pedra.
+*   **Avatar A:** Yami Yugi.
+*   **Avatar B:** Simon Rematch.
+
+#### Pré-Duelo
+**(Background: Sala do Trono de Pedra)**
+*   **Yami Yugi [Séria]:** Simon... o conselheiro real de cinco mil anos atrás. Bakura o trouxe de volta como um espectro para testar se somos dignos. Sinto que ele não luta por ódio, mas por um dever sagrado que o escraviza.
+*   **Simon [Confiança]:** Você caminha pelo Labirinto de Bakura, mas sua alma ainda brilha com a luz do Faraó. Eu sou o guardião das chaves do passado e o protetor do que é proibido!
+*   **Simon [Séria]:** Meu deck de "Exodia" e "Defesa Absoluta" não é um truque, é uma barreira contra o fim do mundo. Se você não puder romper minha guarda, as sombras de Bakura serão sua morada eterna!
+*   **Yami Yugi [Confiança]:** (Para o Protagonista) Ele conhece cada segredo do jogo original e vai tentar ganhar tempo para invocar o Proibido. Você precisa ser a tempestade que derruba o castelo dele antes que o selo se complete!
+*   **Simon [Séria]:** Mostre-me a força da sua era! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Simon [Tristeza]:** Incrível... O trono de pedra racha ao meio sob o impacto do seu Caos... Eu vi milênios de duelistas, mas sua vontade quebrou as correntes que me prendiam!
+*   **Yami Yugi [Alegria]:** Você conseguiu! Simon está livre da influência das sombras. Veja, ele está apontando para o próximo portal com respeito.
+*   **Simon [Alegria]:** Vá... o caminho para o mestre do Labirinto está aberto. Mas cuidado, duelista: o poder que você carrega despertou algo que nem mesmo a história pode apagar.
+*   *(Simon se transforma em poeira estelar dourada, iluminando o caminho sombrio.)*
+
+---
+
+### 088: Shadi Rematch (O Julgamento das Relíquias)
+*   **Local:** O Vazio das Relíquias.
+*   **Avatar A:** Ishizu Ishtar.
+*   **Avatar B:** Shadi Rematch.
+
+#### Pré-Duelo
+**(Background: O Vazio das Relíquias)**
+*   **Ishizu [Medo]:** Shadi... o guardião entre os mundos. Bakura corrompeu a neutralidade dele para usar a Balança do Milênio contra nós. Sinto que o peso de toda a sua jornada será colocado à prova agora!
+*   **Shadi [Confiança]:** Não há segredo que a Balança não possa revelar. O seu deck de Caos é feito de glórias e destruição em partes iguais, [Nome do Jogador]. Eu invoco os espíritos das Relíquias para purificar este Labirinto!
+*   **Shadi [Séria]:** Meu deck de "Controle de Mente" e "Justiça Divina" vai refletir cada jogada sua contra você mesmo! O equilíbrio será restaurado através da sua derrota!
+*   **Ishizu [Séria]:** (Para o Protagonista) Ele vai tentar usar seus próprios monstros contra você! Não confie apenas no que vê no campo; confie na alma do seu deck. Quebre o equilíbrio dele ou seja julgado insuficiente!
+*   **Shadi [Séria]:** Que o julgamento comece. DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Shadi [Raiva]:** O peso... é impossível! A Balança do Milênio está explodindo em chamas purpúreas! Como o Caos em sua alma pode ser mais denso que a própria justiça das Relíquias?!
+*   **Ishizu [Confiança]:** O julgamento dele falhou porque o seu Caos não é maldade, é potencial puro. Shadi não consegue medir algo que é infinito em sua essência!
+*   **Shadi [Medo]:** Bakura... você criou um erro que nem o destino pode conter. A Balança pendeu para a destruição... e o que vem a seguir é o próprio eclipse da alma! FUJA!
+*   *(A Balança gigante ao fundo se despedaça e Shadi desaparece em um clarão púrpura.)*
+
+---
+
+### 089: Bakura Ryou (A Alma Fragmentada)
+*   **Local:** O Cemitério das Cartas Esquecidas.
+*   **Avatar A:** Kairo (Aura Branca).
+*   **Avatar B:** Bakura Ryou.
+
+#### Pré-Duelo
+**(Background: O Cemitério das Cartas Esquecidas)**
+*   **Kairo [Séria]:** Olhe para ele, [Nome do Jogador]. Este é o Bakura "humano", mas ele está sendo usado como um escudo vivo pelo espírito do anel. Ele joga com uma melancolia desesperada... cada carta que ele coloca no campo parece um pedido de socorro.
+*   **Bakura [Tristeza]:** Eu sinto muito... Eu não queria que as coisas terminassem assim para você. Mas o Labirinto exige um sacrifício final para abrir os portões de Zorc.
+*   **Bakura [Medo]:** O meu Anel do Milênio... ele está queimando o meu peito! Meu deck de "Ocultismo e Destruição de Deck" vai transformar sua vitória em cinzas. Se você não puder me derrotar agora, o outro... ele assumirá o controle total e não restará nada de mim!
+*   **Kairo [Confiança]:** (Para o Protagonista) Ele usa a tática de "Bônus de Cemitério" e cartas que removem seu deck de jogo. É um duelo contra a sua própria mente. Vença-o para libertar o que resta da alma dele antes que o eclipse comece!
+*   **Bakura [Tristeza]:** Perdoe-me... eu não tenho escolha! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Bakura [Medo]:** Você... você foi rápido demais... O brilho do seu Caos cortou as cordas que me controlavam... mas é tarde. O selo foi quebrado pelo impacto da nossa batalha!
+*   **Kairo [Medo]:** Bakura! Aguenta firme! (Para o Protagonista) Olhe! O Anel do Milênio dele está emitindo uma fumaça negra colossal... a consciência dele está sendo engolida!
+*   **Bakura [Tristeza]:** Corram... a escuridão absoluta... ela despertou... FUJAM ANTES QUE ELE—!
+*   *(Bakura desmaia e seu corpo flutua, sendo envolto por uma aura roxa e negra.)*
+
+---
+
+### 090: Dark Bakura Final (O Eclipse de Zorc - Chefe do Ato 9)
+*   **Local:** O Abismo de Zorc Necrophades.
+*   **Avatar A:** Kairo (Poder Máximo).
+*   **Avatar B:** Dark Bakura Final.
+
+#### Pré-Duelo
+**(Background: O Abismo de Zorc)**
+*   **Yami Yugi (Voz) [Séria]:** Bakura! Ou devo dizer... o fragmento de Zorc que habita este anel! O seu jogo macabro termina aqui e agora! Eu e este duelista não vamos permitir que você mergulhe o futuro nas trevas do passado!
+*   **Dark Bakura [Alegria]:** (Risada histérica) Hahaha! O Faraó e seu pequeno erro de código! Vocês acham que cartas de papel podem deter a entidade que criou o próprio conceito de sombra? Meu deck de 'Zorc' e 'Dark Sanctuary' vai devorar cada esperança que vocês cultivaram!
+*   **Dark Bakura [Confiança]:** Cada carta que você saca é um segundo a menos de vida para este mundo! O seu 'Forbidden Chaos' é apenas o tempero que faltava para o meu banquete de almas. Bem-vindos ao eclipse final da humanidade!
+*   **Kairo [Confiança]:** (Para o Protagonista) Ele vai usar o "Dark Sanctuary" para tornar cada ataque seu um risco de morte por possessão. Esta é a batalha definitiva. Use todo o poder do seu deck de Caos para iluminar este abismo ou seremos esquecidos para sempre!
+*   **Dark Bakura [Alegria]:** O dado da morte foi lançado e ele sempre cai no meu número! DUELO FINAL!
+
+#### Pós-Duelo (Fim do Ato 9)
+*   **Dark Bakura [Raiva]:** NÃO! ISSO É IMPOSSÍVEL! O tabuleiro... ele está rachando! O meu mundo de trevas eternas... sendo consumido por esse brilho?! ZORC... NÃO ME DEIXE APAGAR!
+*   **Yami Yugi (Voz) [Alegria]:** Acabou, Bakura! Onde há uma luz tão intensa quanto o Caos deste duelista, a sombra não tem onde se esconder! O seu RPG das Trevas foi vencido!
+*   **Kairo [Alegria]:** Veja! O Anel do Milênio está se despedaçando! O Labirinto está colapsando e nos enviando de volta! Nós vencemos o impossível, [Nome do Jogador]!
+*   **Dark Bakura [Tristeza]:** Malditos... vocês venceram esta rodada... mas o poder que você despertou... ele ecoou pelo mundo real... os portadores dos Deuses Egípcios... eles estão vindo... para o desafio final...
+*   *(Uma explosão de energia branca consome a tela, silenciando os gritos de Bakura.)*
+
+---
+
+## Ato 10: A Batalha Suprema
+**Contexto:** O desafio final contra os portadores das Relíquias e Deuses.
+
+### 091: Joey Final (O Coração do Campeão)
+*   **Local:** Arena do Torneio Final - Pôr do Sol.
+*   **Avatar A:** Kairo (Forma Estável).
+*   **Avatar B:** Joey Final.
+
+#### Pré-Duelo
+**(Background: Arena do Torneio Final)**
+*   **Joey [Alegria]:** Caramba! Eu senti aquela explosão de energia lá do outro lado da cidade! [Nome do Jogador], eu sabia que você ia chutar o traseiro do Bakura, mas o que você trouxe de volta... é algo totalmente novo, não é?
+*   **Joey [Confiança]:** Eu treinei como um louco enquanto você estava naquele labirinto. Meu "Red-Eyes Black Dragon" evoluiu e minha sorte nunca esteve tão afiada! Eu não sou mais aquele garoto que dependia só da coragem.
+*   **Joey [Séria]:** Para a gente avançar contra o Marik, eu preciso saber se você consegue aguentar a pressão de um duelo de elite. Meu deck de "Guerreiros e Sorte Máxima" vai te levar ao limite! Não segura nada, amigão!
+*   **Kairo [Confiança]:** (Para o Protagonista) O Joey alcançou o ápice. Ele combina instinto com cartas de fusão poderosas. Ele vai tentar te pegar com efeitos de dados e moedas que podem virar o jogo em um segundo. Mostre a ele o quanto você cresceu!
+*   **Joey [Confiança]:** Vamos fazer desse o duelo das nossas vidas! É HORA DO DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Joey [Alegria]:** (Limpando o suor da testa e rindo) Uau! Que pancada! Eu vi o brilho nos olhos do meu Dragão, mas o seu Caos... ele é simplesmente imparável. Você realmente é o cara, [Nome do Jogador]!
+*   **Kairo [Alegria]:** Isso foi incrível. O Joey provou que tem o espírito de um verdadeiro campeão, e você provou que está pronto para o que vem a seguir.
+*   **Joey [Confiança]:** Escuta, eu vou estar logo ali na arquibancada te dando cobertura. Mas se prepara, porque a Mai está vindo aí, e ela disse que o seu brilho está ofuscando as Harpias dela... e ela não gosta nada de perder o destaque!
+*   *(Joey faz um sinal de positivo e sai de cena enquanto o vento sopra pétalas de rosa pelo campo.)*
+
+---
+
+### 092: Mai Final (O Vento da Vitória)
+*   **Local:** Jardim Suspenso de Luxo.
+*   **Avatar A:** Joey Wheeler (Recuperado).
+*   **Avatar B:** Mai Final.
+
+#### Pré-Duelo
+**(Background: Jardim Suspenso)**
+*   **Mai [Confiança]:** Eu vi o seu duelo com o Joey. Muito barulhento, muita força bruta... típico de garotos. Mas um verdadeiro mestre sabe que a vitória se conquista com elegância e precisão cirúrgica.
+*   **Mai [Deboche]:** O seu "Forbidden Chaos" é fascinante, mas será que ele consegue atingir o que não pode ver? Minhas Harpias atingiram um novo nível de sincronia. Elas não são apenas monstros, são uma tempestade que vai varrer o seu campo antes de você dizer "sacar"!
+*   **Joey [Medo]:** Cuidado, parceiro! A Mai está usando cartas de suporte que eu nunca vi antes. Ela consegue invocar um bando inteiro de Harpias em um único turno e destruir todas as suas cartas mágicas!
+*   **Mai [Confiança]:** (Para o Protagonista) Eu não vou deixar você passar sem testar se a sua mente é tão forte quanto o seu deck. Se você hesitar por um segundo, o vento vai te cortar ao meio. Está pronto para o show?
+*   **Mai [Confiança]:** Prepare-se para cair do pedestal! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Mai [Alegria]:** (Guardando o deck com elegância) Impressionante... o seu Caos não é apenas força, é inteligência. Você previu cada movimento das minhas Harpias. Eu admito... você é mais do que apenas um "novato sortudo".
+*   **Joey [Alegria]:** Eu te avisei, Mai! Esse cara é de outro planeta! Viu como ele lidou com a sua estratégia de campo?
+*   **Mai [Confiança]:** Cale a boca, Joey. (Para o Protagonista) Você tem a minha bênção para seguir em frente. Mas fique de olho no céu... os predadores primitivos sentiram o seu cheiro. O Rex e o Weevil estão formando uma aliança desesperada para tentar te parar.
+*   *(Mai pisca para o jogador e desaparece em um turbilhão de penas perfumadas.)*
+
+---
+
+### 093: Rex Final (O Rugido do Apocalipse)
+*   **Local:** Canteiro de Obras - Crepúsculo.
+*   **Avatar A:** Joey Wheeler.
+*   **Avatar B:** Rex Final.
+
+#### Pré-Duelo
+**(Background: Canteiro de Obras)**
+*   **Joey [Raiva]:** Rex! Eu devia saber que você estaria rastejando por aqui. Ainda não cansou de perder pros meus monstros de metal e pro Caos do meu parceiro?
+*   **Rex Raptor [Confiança]:** Calado, Joey! Você e esse novato podem ter sorte, mas a evolução não para! Eu escavei os fósseis mais sombrios que existem para este momento.
+*   **Rex Raptor [Séria]:** Meu novo deck de "Dinossauros Evoluídos" não conhece a piedade. Eu vou esmagar o seu "Forbidden Chaos" sob o peso de criaturas que dominaram o mundo por milhões de anos! [Nome do Jogador], prepare-se para a extinção!
+*   **Joey [Confiança]:** (Para o Protagonista) Ele está usando monstros de nível alto que entram em campo sem sacrifício! É pura força bruta, parceiro. Mostra pra esse lagarto que o seu Caos é o meteoro que vai mandar ele de volta pra pré-história!
+*   **Rex Raptor [Alegria]:** Sintam a fúria do Jurássico! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Rex Raptor [Tristeza]:** (Caindo de joelhos enquanto o chão treme) Não... meus tiranossauros... eles foram pulverizados por uma luz que eu nem consigo descrever! A evolução... ela falhou contra você...
+*   **Joey [Alegria]:** Haha! Eu te disse, Rex! O seu exército de lagartixas não é páreo para o poder que o meu amigo carrega. Melhor voltar pro museu!
+*   **Rex Raptor [Medo]:** Riam enquanto podem... mas o Weevil está logo ali naquelas vigas acima de nós. Ele disse que se a força bruta falhasse... o veneno dele faria o serviço. Tomem cuidado com o que vocês respiram!
+*   *(Rex desaparece na poeira do canteiro, enquanto um som de asas batendo começa a vir de cima.)*
+
+---
+
+### 094: Weevil Final (O Enxame Supremo)
+*   **Local:** Topo das Vigas de Aço.
+*   **Avatar A:** Mai Valentine.
+*   **Avatar B:** Weevil Final.
+
+#### Pré-Duelo
+**(Background: Topo das Vigas)**
+*   **Mai [Nojo]:** Argh! Eu odeio ter que subir aqui. Weevil, apareça logo! Esse seu cheiro de inseticida barato está estragando o meu perfume.
+*   **Weevil [Deboche]:** Hi-hi-hi-hi! Bem-vindos à minha teia, "Dama das Harpias"! E bem-vindo você também, "Rei do Caos". Vocês acham que podem ganhar com ataques diretos? Que tolos!
+*   **Weevil [Confiança]:** Meu deck de "Infestação Total" foi aprimorado com as toxinas do Marik! Eu vou paralisar seus monstros e drenar seus pontos de vida gota a gota. Vocês vão implorar para o duelo acabar enquanto meus insetos devoram o seu deck!
+*   **Mai [Séria]:** (Para o Protagonista) Ele não está blefando. O Weevil usa cartas que impedem o ataque e causam dano por efeito a cada turno. É uma estratégia covarde, mas mortal. Limpe esse enxame antes que o veneno se espalhe!
+*   **Weevil [Alegria]:** Sintam a picada da morte! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Weevil [Medo]:** (Gritando enquanto suas teias se incineram) MEUS INSETOS! O brilho... ele está queimando as asas deles! Como você pode destruir um enxame de milhares com uma única jogada?!
+*   **Mai [Confiança]:** Viu só, nanico? No fim das contas, você é apenas um inseto sendo esmagado pela bota do destino. Excelente trabalho, [Nome do Jogador].
+*   **Weevil [Tristeza]:** Isso não é justo... hi-hi... mas não pensem que venceram. O oceano está subindo... Mako Tsunami está bloqueando o caminho para o porto, e ele não vai ser tão fácil de "limpar" quanto eu...
+*   *(Weevil foge saltando entre as vigas, enquanto o som de ondas batendo começa a abafar os barulhos da cidade.)*
+
+---
+
+### 095: Mako Final (O Tsunami do Destino)
+*   **Local:** Porto de Battle City - Noite.
+*   **Avatar A:** Mai Valentine.
+*   **Avatar B:** Mako Final.
+
+#### Pré-Duelo
+**(Background: Porto de Battle City)**
+*   **Mai [Séria]:** A névoa está tão espessa que mal consigo ver as luzes do farol. Mako está escondido em algum lugar nessas águas... e ele não é do tipo que desiste sem uma tempestade.
+*   **Mako [Confiança]:** O oceano aceitou o seu desafio, [Nome do Jogador]! Eu treinei sob as ondas mais violentas para este momento. Meu pai me ensinou que a calmaria é apenas o prelúdio do caos!
+*   **Mako [Séria]:** Meu deck de "Leviatãs Lendários" foi despertado. Eu vou submergir o seu "Forbidden Chaos" nas profundezas do abismo marítimo! Aqui, no meu domínio, você é apenas um náufrago lutando por fôlego!
+*   **Mai [Confiança]:** (Para o Protagonista) Ele usa a "Umi" para esconder seus monstros e atacar diretamente. É um jogo de esconde-esconde mortal. Use o poder do seu Caos para evaporar o oceano dele antes que a maré te engula!
+*   **Mako [Alegria]:** Pela honra do mar e da minha linhagem! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Mako [Tristeza]:** (Apoiando-se em um poste de amarra) Incrível... o calor da sua alma ferveu as águas do meu oceano. Minhas criaturas marinhas recuaram diante da sua luz. Foi um duelo que meu pai teria orgulho de presenciar.
+*   **Mai [Alegria]:** Você lutou com honra, Mako. Mas o meu parceiro aqui é uma força que nem o Poseidon conseguiria segurar.
+*   **Mako [Confiança]:** Verdade... Siga em frente, duelista do Caos. Mas tome cuidado ao entrar naquele armazém abandonado... ouvi o som de engrenagens e o cheiro de óleo. Bandit Keith está preparando uma emboscada que não tem nada de honrada!
+*   *(Mako faz uma reverência solene e caminha em direção ao mar.)*
+
+---
+
+### 096: Keith Final (O Metal da Vingança)
+*   **Local:** Armazém Industrial Abandonado.
+*   **Avatar A:** Joey Wheeler.
+*   **Avatar B:** Keith Final.
+
+#### Pré-Duelo
+**(Background: Armazém Industrial)**
+*   **Joey [Raiva]:** Keith! Eu sabia que você ia tentar alguma sujeira no escuro! Apareça e lute como um homem, seu trapaceiro de marca maior!
+*   **Keith [Deboche]:** (Saindo das sombras) Ora, se não é o "cachorrinho" do Wheeler. Eu não luto por medalhas, garoto. Eu luto para destruir quem se atreve a brilhar mais do que eu.
+*   **Keith [Confiança]:** Meu deck de "Máquinas de Assalto" foi blindado com tecnologia roubada da corporação Kaiba e fortalecido pelo ódio que eu guardei todos esses anos. O seu "Forbidden Chaos" vai ser triturado pelas minhas engrenagens e cuspido como sucata!
+*   **Joey [Medo]:** Cuidado, [Nome do Jogador]! Ele usa monstros que não podem ser destruídos por batalha no primeiro turno e cartas de "Gambiarras" que tiram pontos de vida de surpresa. Ele não joga limpo!
+*   **Keith [Alegria]:** Prepare-se para ser fuzilado pelos meus canhões! Não haverá testemunhas! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Keith [Raiva]:** (Socando uma parede de metal) MALDIÇÃO! Como esse lixo de Caos conseguiu atravessar a minha blindagem?! Eu tinha o melhor deck que o dinheiro e o roubo podiam comprar!
+*   **Joey [Alegria]:** Sabe o que o dinheiro não compra, Keith? Coração! E o meu amigo aqui tem de sobra. Suas máquinas agora são apenas ferro-velho, assim como a sua reputação!
+*   **Keith [Medo]:** Isso não acabou... Marik vai acabar com vocês... mas antes... hi-hi... o "Menino Prodígio" está esperando por vocês na praça central. O Yugi Muto quer testar se o Caos de vocês é digno de enfrentar os Deuses!
+*   *(Keith foge pelas sombras de uma saída de emergência.)*
+
+---
+
+### 097: Yugi Muto (O Coração das Cartas)
+*   **Local:** Praça Central de Battle City - Noite.
+*   **Avatar A:** Kairo (Forma de Luz).
+*   **Avatar B:** Yugi Muto.
+
+#### Pré-Duelo
+**(Background: Praça Central)**
+*   **Yugi [Alegria]:** [Nome do Jogador]! Eu estive observando sua jornada desde o primeiro duelo. O Faraó me disse que sentia uma energia vinda do seu deck que nem mesmo as Relíquias do Milênio poderiam explicar completamente.
+*   **Yugi [Confiança]:** Eu não preciso do poder do Faraó para ver que você é um duelista excepcional. Mas para enfrentar o que vem a seguir, você precisa de mais do que poder... você precisa de equilíbrio.
+*   **Yugi [Séria]:** Meu deck de "Magos e Sincronia de Estratégia" vai testar cada fibra do seu raciocínio. Eu vou usar o "Mago Negro" e suas variações para mostrar que a verdadeira força do Caos reside na harmonia das cartas!
+*   **Kairo [Séria]:** (Para o Protagonista) Este é o Yugi original. Ele não usa a força bruta do Faraó, ele usa a inteligência pura. Ele vai tentar prever suas jogadas com cartas mágicas de resposta rápida. Não subestime a doçura dele... ele é um mestre!
+*   **Yugi [Confiança]:** Vamos descobrir juntos o que o seu deck de Caos tem a nos dizer! É HORA DO DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Yugi [Alegria]:** (Estendendo a mão) Incrível... Você não apenas venceu, você fluiu com o seu deck como se fossem um só. O coração das cartas bate forte dentro de você, [Nome do Jogador].
+*   **Kairo [Alegria]:** Vencer o Yugi é o maior selo de qualidade que um duelista pode receber. O caminho agora está iluminado pela verdade!
+*   **Yugi [Confiança]:** Você provou ser digno. Mas olhe para o topo daquela torre... Pegasus está esperando. Ele diz que quer transformar o seu Caos na sua maior obra-prima... ou no seu maior pesadelo. Boa sorte!
+*   *(Yugi se despede com um aceno enquanto o elevador de vidro da Torre Kaiba desce.)*
+
+---
+
+### 098: Pegasus Final (A Ilusão Final)
+*   **Local:** Cobertura da Torre Kaiba - Salão de Artes.
+*   **Avatar A:** Mai Valentine.
+*   **Avatar B:** Pegasus Final.
+
+#### Pré-Duelo
+**(Background: Cobertura da Torre Kaiba)**
+*   **Mai [Medo]:** Pegasus... eu ainda sinto calafrios só de entrar na mesma sala que ele. Ele não precisa mais do Olho do Milênio para ser perigoso; o gênio dele por trás das cartas Toon é o suficiente para enlouquecer qualquer um!
+*   **Pegasus [Alegria]:** Welcome back, [Nome do Jogador]-boy! Ou deveria dizer... o Grande Maestro do Caos? Suas vitórias recentes foram tão... dramáticas! Eu simplesmente tive que pintar um novo cenário para o nosso reencontro.
+*   **Pegasus [Confiança]:** Meu "Mundo Toon" foi refeito com as cores do seu desespero! Eu vou transformar seus monstros de Caos em meras caricaturas cômicas sob o meu comando. O meu deck de "Ilusão e Controle de Mente" vai mostrar que a realidade é apenas o que eu decido desenhar!
+*   **Mai [Raiva]:** Não escuta as piadinhas dele! O Pegasus usa cartas que removem seus monstros do jogo para invocar versões Toon deles. Ele vai tentar virar a sua própria força contra você!
+*   **Pegasus [Deboche]:** It's showtime! Vamos ver se o seu Caos consegue sobreviver à minha imaginação sem limites! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Pegasus [Tristeza]:** (Olhando para uma tela rasgada) Oh, no... minha obra-prima foi despedaçada! O seu Caos é uma cor que eu não consigo misturar na minha paleta... é algo que brilha com uma luz própria, além da minha compreensão!
+*   **Mai [Alegria]:** Parece que o "Mundo Toon" não foi páreo para a realidade do Caos, Pegasus! O show acabou para você.
+*   **Pegasus [Confiança]:** Indeed... você venceu o criador. Mas agora... você deve enfrentar a criatura que domina este império. Seto Kaiba está no heliporto acima de nós. Ele disse que se você não puder vencer o 'Blue-Eyes' dele, você não terá o direito de sequer olhar para o Marik!
+*   *(Pegasus faz uma vênia teatral enquanto as paredes de vidro se abrem.)*
+
+---
+
+### 099: Kaiba Final (O Império do Dragão Branco)
+*   **Local:** Heliporto da Torre Kaiba - Tempestade.
+*   **Avatar A:** Yami Yugi.
+*   **Avatar B:** Kaiba Final.
+
+#### Pré-Duelo
+**(Background: Heliporto da Torre Kaiba)**
+*   **Kaiba [Raiva]:** Então você finalmente chegou, [Nome do Jogador]! Eu vi você esmagar o "Mundo Toon" do Pegasus e brincar com o Yugi, mas comigo... a brincadeira acaba agora! Eu não acredito em "destino" ou em "Caos Proibido". Eu acredito em poder tecnológico e força bruta!
+*   **Kaiba [Confiança]:** Meu "Blue-Eyes White Dragon" não é apenas uma carta; é o ápice da evolução dos duelos! Eu saturei meu deck com as cartas mais raras da Terra. Vou provar que o seu Caos é apenas uma falha estatística diante da minha supremacia!
+*   **Yami Yugi [Séria]:** (Para o Protagonista) Kaiba está possuído por uma obsessão que beira a loucura. Ele vai invocar o "Blue-Eyes Ultimate Dragon" e usar o "Obelisco, o Atormentador" se tiver a chance! Você precisa ser mais rápido que a luz dele. Não deixe o orgulho dele te intimidar!
+*   **Kaiba [Alegria]:** Sinta o rugido que atravessa o tempo e o espaço! Prepare-se para ser varrido do meu império! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Kaiba [Tristeza]:** (Caindo de joelhos) Impossível... O meu Dragão Branco... superado por uma energia que nem os meus supercomputadores conseguem calcular?! Como você... um simples duelista... pôde derrubar o meu legado?!
+*   **Yami Yugi [Alegria]:** Kaiba, você buscou o poder no metal, mas este duelista buscou o poder na alma do Caos. O resultado estava escrito nas estrelas desde o início.
+*   **Kaiba [Raiva]:** (Levantando-se) Cale-se, Faraó! [Nome do Jogador]... você venceu o meu corpo, mas o Marik... o Marik vai devorar a sua alma. Ele está no Dirigível de Comando, logo acima de nós. Se você perder para ele, eu mesmo te deletarei da história! VÁ!
+*   *(Kaiba aciona um controle remoto e uma plataforma elevatória surge.)*
+
+---
+
+### 100: Marik Ishtar (O Sol Alado da Agonia - Grande Chefe Final)
+*   **Local:** O Santuário das Trevas - Dirigível.
+*   **Avatar A:** Kairo (Forma Divina).
+*   **Avatar B:** Marik Ishtar.
+
+#### Pré-Duelo
+**(Background: O Santuário das Trevas)**
+*   **Marik [Alegria]:** (Risada maníaca) Hahaha! Bem-vindo ao seu funeral, escolhido do Caos! Você percorreu um longo caminho para entregar a sua alma diretamente para o meu Dragão Alado de Rá! O eclipse está completo... e o meu reinado de dor está apenas começando!
+*   **Marik [Confiança]:** O seu "Forbidden Chaos" é uma piada diante do Criador da Luz e das Trevas! Eu vou usar o seu sofrimento como combustível para o meu Deus Egípcio. Cada ponto de vida que você perder será sentido na sua pele! Este não é um duelo... é um sacrifício milenar!
+*   **Kairo [Séria]:** (Voz telepática) [Nome do Jogador], este é o momento para o qual você nasceu. O Marik vai usar o "Dragão Alado de Rá" em sua forma de Fênix. Ele vai tentar remover cada carta sua e te deixar sem defesas. Concentre toda a energia do Caos em um único ponto! Nós estamos com você!
+*   **Joey & Mai (Voz) [Confiança]:** Detona esse cara de olhos malucos, parceiro! Pelo Reino dos Duelistas! Mostre a ele que a verdadeira luz não pode ser engolida pelas sombras!
+*   **Marik [Alegria]:** SURJAM AS TREVAS! RÁ, DESPERTE E INCINERE O MUNDO! É O DUELO FINAL!
+
+#### Pós-Duelo (Final do Jogo)
+*   **Marik [Tristeza]:** (O Cetro do Milênio explode) NÃO! O meu Deus... o Sol Alado... ele está se curvando diante do Caos?! Como uma força mortal pode apagar a divindade egípcia?! A escuridão... ela está me levando... NÃOOOOO!
+*   **Kairo [Alegria]:** (Brilhando com luz pura) VOCÊ CONSEGUIU! O ciclo de cinco mil anos de ódio foi quebrado! O Caos Proibido trouxe a ordem de volta ao mundo!
+*   **Joey [Alegria]:** VOCÊ É O REI DOS JOGOS, CARA!
+*   **Yugi [Alegria]:** Você salvou o mundo, meu amigo. A lenda do Caos agora viverá para sempre.
+*   *(O Dirigível explode em luz dourada. A cena corta para você e seus amigos na praia, olhando o sol nascer sobre Battle City. O seu deck de Caos brilha uma última vez e as cartas se tornam brancas, descansando finalmente.)*
+*   **[Sistema]:** CRÉDITOS SOBEM COM IMAGENS DE TODOS OS DUELOS DERROTADOS.
+*   **[Sistema]:** Parabéns! Você zerou "Yu-Gi-Oh! Forbidden Chaos".

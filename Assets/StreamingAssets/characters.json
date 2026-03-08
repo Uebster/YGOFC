@@ -3262,8 +3262,8 @@
     "story_role": "Final"
   },
   {
-    "id": "097_espa_final",
-    "name": "Espa Roba (Final)",
+    "id": "097_yugi_final",
+    "name": "Yugi Final (Final)",
     "unique_drops": ["1082", "0206", "1294", "2054", "0460", "1890", "0607"],
     "deck_A": [
       "0829", "1502", "2129", "0143", "0143", "0143", "0419", "0420", "0731", "1008",

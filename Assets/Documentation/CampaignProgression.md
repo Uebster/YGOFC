@@ -150,7 +150,7 @@ O desafio final contra os portadores das Relíquias e Deuses.
 *   **094:** Weevil Final (094_weevil_final)
 *   **095:** Mako Final (095_mako_final)
 *   **096:** Keith Final (096_keith_final)
-*   **097:** Espa Final (097_espa_final)
+*   **097:** Yugi Final (097_yugi_final)
 *   **098:** Pegasus Final (098_pegasus_final)
 *   **099:** Kaiba Final (099_kaiba_final)
 *   **100:** **Marik** (100_marik) - Chefe

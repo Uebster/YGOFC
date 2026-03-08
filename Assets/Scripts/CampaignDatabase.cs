@@ -122,7 +122,7 @@ public class CampaignDatabase : ScriptableObject
         // Boss: Marik
         AddAct("Act 10: A Batalha Suprema", 
             "O torneio definitivo para decidir o destino do mundo.\n\nMarik possui o Dragão Alado de Rá.",
-            new List<string> { "091_joey_final", "092_mai_final", "093_rex_final", "094_weevil_final", "095_mako_final", "096_keith_final", "097_espa_final", "098_pegasus_final", "099_kaiba_final", "100_marik" });
+            new List<string> { "091_joey_final", "092_mai_final", "093_rex_final", "094_weevil_final", "095_mako_final", "096_keith_final", "097_yugi_final", "098_pegasus_final", "099_kaiba_final", "100_marik" });
 
         Debug.Log("Campanha otimizada carregada com sucesso!");
     }
