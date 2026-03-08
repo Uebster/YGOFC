@@ -188,6 +188,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Kairo [Confiança]:** (Para o Protagonista) Este é o seu momento. Tristan joga com o coração e com monstros de alto ataque. Eu vou ficar por aqui apenas observando... desta vez, a resposta ao desafio deve ser inteiramente sua.
 *   **Tristan [Deboche]:** Pode vir com tudo! Vou te mostrar como um verdadeiro veterano duela!
 
+#### Pós-Duelo (Vitória)
+*   **Tristan [Tristeza]:** Caramba... você é bom mesmo. Minha defesa não aguentou.
+*   **Kairo [Alegria]:** Viu? Força bruta não é tudo. O equilíbrio entre ataque e estratégia é o que define um campeão.
+
 ---
 
 ### 008: Téa Gardner (A Amizade e o Espírito)
@@ -203,6 +207,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Tristan [Deboche]:** Cuidado, hein! Ela parece gentil, mas o deck dela recupera pontos de vida mais rápido do que você consegue tirar!
 *   **Téa [Alegria]:** Pronto para testar seu espírito? Vamos lá!
 
+#### Pós-Duelo (Vitória)
+*   **Téa [Alegria]:** Uau! Você joga com tanto coração! Foi um duelo lindo, mesmo eu perdendo.
+*   **Tristan [Confiança]:** Ele é bom, né? Acho que ele está pronto para conhecer o Vovô.
+
 ---
 
 ### 009: Grandpa Muto (A Sabedoria do Mestre)
@@ -217,6 +225,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Grandpa [Neutro]:** O "Forbidden Chaos" é um poder antigo, meu jovem. Antes de você enfrentar o desafio final deste Ato, eu preciso ter certeza de que você é digno de carregar esse fardo. Meu deck é cheio de segredos e cartas raras que guardo há anos. Mostre-me o seu valor!
 *   **Téa [Confiança]:** O Vovô é uma lenda! Preste atenção em cada jogada dele, é uma aula de Yu-Gi-Oh!
 *   **Grandpa [Alegria]:** Vamos ver se a nova geração está pronta para o que vem por aí!
+
+#### Pós-Duelo (Vitória)
+*   **Grandpa [Alegria]:** Ho ho! Excelente! Você tem o toque de um mestre. Suas cartas confiam em você.
+*   **Téa [Alegria]:** Sabia que ele conseguiria! Kairo escolheu bem.
 
 ---
 
@@ -259,6 +271,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Joey [Confiança]:** (Para o Protagonista) Vai lá! Mostra pra ele que o tamanho do monstro não importa se a estratégia for maior. Detona esses dinossauros!
 *   **Rex Raptor [Confiança]:** Preparem-se para serem pisoteados! É HORA DO DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Rex Raptor [Raiva]:** Meus dinossauros... extintos de novo?! Isso não vai ficar assim!
+*   **Joey [Deboche]:** Volta pra era do gelo, Rex! A gente tem um torneio pra vencer.
+
 ---
 
 ### 012: Weevil Underwood (Armadilha na Floresta)
@@ -274,6 +290,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Joey [Raiva]:** Esse nanico de óculos é um trapaceiro! Ele usa efeitos de veneno e cartas que travam o campo.
 *   **Joey [Confiança]:** Não deixa ele te cercar! Esmaga esses bichos antes que eles se multipliquem!
 *   **Weevil [Deboche]:** Vejam o poder da minha Grande Mariposa! O seu caos vai virar casulo! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Weevil [Tristeza]:** Minha rainha... meus insetos... esmagados! Como você escapou da minha teia?
+*   **Joey [Alegria]:** Nada como um bom inseticida logo de manhã! Vamos sair dessa floresta antes que apareça mais algum bicho.
 
 ---
 
@@ -350,6 +370,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Joey [Raiva]:** (Para o Protagonista) Não dê chances para ele armar os combos. Detone essas máquinas antes que elas se tornem uma fortaleza!
 *   **Bandit Keith [Confiança]:** Prepare-se para ser esmagado pelas engrenagens do destino! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Bandit Keith [Raiva]:** Trapaça! Você deve ter trapaceado! Ninguém vence minhas máquinas!
+*   **Joey [Deboche]:** Aceita, Keith. Na América ou aqui, você perdeu. E sem trapaças, só talento.
+
 ---
 
 ### 017: Espa Roba (A Farsa dos Poderes Psíquicos)
@@ -386,6 +410,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Joey [Raiva]:** Aguenta firme, Bakura!
 *   **Joey [Confiança]:** (Para o Protagonista) Ele está a ser possuído por aquele objeto estranho! Temos que vencer o duelo para quebrar o transe dele. O deck dele usa espíritos e monstros de ocultismo. Não tenhas pena, luta com tudo para o salvar!
 *   **Bakura [Tristeza]:** Sinto muito... aqui vou eu! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Bakura [Alívio]:** Obrigado... a voz parou. Eu me sinto mais leve. Desculpem por causar problemas.
+*   **Joey [Confiança]:** Descansa, amigo. Nós cuidamos do resto. O Anel do Milênio não vai mais te controlar hoje.
 
 ---
 
@@ -454,6 +482,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Yugi [Confiança]:** (Para o Protagonista) Não deixe o medo do Exodia te travar. O "Forbidden Chaos" é imprevisível demais para ser contido por correntes. Ataque com tudo!
 *   **Rare Hunter [Deboche]:** As peças estão se movendo... o fim está próximo para você! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Rare Hunter [Medo]:** O mestre Marik não vai gostar disso... Exodia falhou... Minhas peças...
+*   **Yugi [Séria]:** Diga ao seu mestre que estamos indo atrás dele. Battle City não pertence aos Rare Hunters.
+
 ---
 
 ### 022: Rare Hunter Elite (O Caçador de Elite)
@@ -490,6 +522,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Yugi [Raiva]:** Ele usa cartas de regeneração constante! Se você não destruir os monstros dele de uma vez, eles voltarão turno após turno.
 *   **Yugi [Confiança]:** (Para o Protagonista) Não deixe o silêncio dele te desconcentrar. Foque no ponto cego da defesa dele. O Caos pode romper qualquer ciclo de regeneração!
 *   **Strings [Séria]:** O duelo começa agora. E será o seu último.
+
+#### Pós-Duelo (Vitória)
+*   **Strings [Silêncio]:** ... (O boneco cai de joelhos)
+*   **Yugi [Tristeza]:** A conexão mental foi cortada. Ele está livre agora. Marik perdeu seu controle sobre ele.
 
 ---
 
@@ -528,6 +564,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Yugi [Confiança]:** (Para o Protagonista) Você terá que ser cirúrgico. Se atacar sem pensar, cairá nas garras dele. Use o Caos para desestabilizar a defesa perfeita de Odion!
 *   **Odion [Séria]:** Que o destino decida o vencedor. DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Odion [Respeito]:** Você lutou com honra. Talvez haja esperança para o meu mestre através de você.
+*   **Yugi [Séria]:** Nós vamos salvá-lo, Odion. Eu prometo. A escuridão não vai consumir a família Ishtar.
+
 ---
 
 ### 026: Ishizu Ishtar (O Olhar do Futuro)
@@ -565,6 +605,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Yugi [Séria]:** Mantenha a guarda alta. O "Forbidden Chaos" precisa de equilíbrio agora mais do que nunca!
 *   **Female Duelist GBA [Confiança]:** Que a melhor estratégia vença. DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Female Duelist GBA [Alegria]:** Nada mal para esta dimensão! Vou levar essa derrota como lição para o meu mundo.
+*   **Yugi [Alegria]:** Foi um duelo incrível. É sempre bom ver estilos diferentes de duelo.
+
 ---
 
 ### 028: Grandpa GBA (O Reencontro do Mestre GBA)
@@ -599,6 +643,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Yugi [Séria]:** Mas para ser o Rei dos Jogos, você precisa enfrentar o meu Mago Negro. Eu não vou lutar apenas com cartas; vou lutar com o elo que tenho com cada monstro no meu deck. Se o seu Caos for apenas destruição, ele será consumido pela minha luz. Você está pronto para o duelo que definirá sua lenda?
 *   **[Sistema]:** CONEXÃO COM MENTOR INDISPONÍVEL. O DUELISTA ESTÁ POR CONTA PRÓPRIA.
 *   **Yugi [Confiança]:** Não procure por ajuda nos lados. Olhe apenas para o seu deck. É hora do duelo!
+
+#### Pós-Duelo (Vitória)
+*   **Yugi [Alegria]:** Você me superou! O título de Rei dos Jogos está em boas mãos... por enquanto!
+*   **[Sistema]:** CONEXÃO COM MENTOR RESTABELECIDA. KAIRO RETORNA.
 
 ---
 
@@ -641,6 +689,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Kairo [Alegria]:** Mostre a ele que o seu "Forbidden Chaos" é uma força que transcende as eras!
 *   **Novice GBC [Confiança]:** Prepare o seu disco de duelo antigo! É HORA DO DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Novice GBC [Tristeza]:** Pixel por pixel, você me desmontou. Pode passar, viajante.
+*   **Kairo [Confiança]:** O passado respeita a força. Vamos em frente.
+
 ---
 
 ### 032: Female GBC (A Guardiã das Relíquias)
@@ -676,6 +728,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Kairo [Confiança]:** (Para o Protagonista) Ele usa cartas que reduzem o ataque e travam o campo. Use a natureza explosiva do Caos para romper essa paralisia! Não deixe o duelo se arrastar, ou a tempestade de areia dele será sua ruína.
 *   **Desert Mage [Confiança]:** Que o Saara consuma o seu destino! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Desert Mage [Tristeza]:** A areia cobriu meus monstros... você é o novo oásis neste deserto.
+*   **Kairo [Séria]:** Um a menos. Faltam cinco guardiões.
+
 ---
 
 ### 034: Forest Mage (O Sussurro da Selva Antiga)
@@ -709,6 +765,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Mountain Mage [Deboche]:** Meu deck de Dragões e Bestas Aladas foca em ataques rápidos e devastadores. Se você demorar para preparar sua defesa, minhas criaturas vão te rasgar antes que você possa dizer "duelo". Sinta a pressão das alturas!
 *   **Kairo [Confiança]:** (Para o Protagonista) Ele busca o bônus de campo e o poder de ataque puro. Não tente competir apenas na força bruta; use a instabilidade do Caos para desviar os raios dele e contra-atacar quando ele baixar a guarda.
 *   **Mountain Mage [Alegria]:** O céu está desabando sobre você! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Mountain Mage [Raiva]:** Como?! Minha montanha desmoronou! O trovão foi silenciado!
+*   **Kairo [Deboche]:** Tudo o que sobe, desce. Até mesmo as montanhas.
 
 ---
 
@@ -744,6 +804,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Kairo [Séria]:** (Para o Protagonista) Ele vai tentar "limpar" o seu campo sem destruir suas cartas, apenas removendo-as. Você precisa de invocações rápidas e monstros que tenham resistência a efeitos de retorno. Não deixe a maré dele te arrastar!
 *   **Ocean Mage [Confiança]:** Sinta o frio do abismo! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Ocean Mage [Tristeza]:** A maré baixou... eu me rendo. O abismo não conseguiu te conter.
+*   **Kairo [Séria]:** Respire fundo. O labirinto é o próximo desafio.
+
 ---
 
 ### 038: Labyrinth Mage (O Enigma dos Corredores Infinitos)
@@ -777,6 +841,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Simon Muran [Séria]:** Meu deck é uma combinação de todos os elementos que você enfrentou, refinados em uma estratégia de controle absoluto. Eu vou banir suas esperanças e selar seus monstros nas dobras do tempo. Se você falhar aqui, o "Forbidden Chaos" retornará ao altar e sua memória será apagada!
 *   **Kairo [Séria]:** (Para o Protagonista) Ele mistura as táticas de todos os Magos anteriores. É um duelo de resistência mental. Não se deixe levar pela imponência dele; o Caos dentro de você é a única coisa que ele não pode prever totalmente.
 *   **Simon Muran [Confiança]:** Que o julgamento final comece! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Simon Muran [Alegria]:** Magnífico. Você tem a sabedoria dos antigos. O santuário aceita sua presença.
+*   **Kairo [Confiança]:** O selo está ao nosso alcance. Só resta o guardião final.
 
 ---
 
@@ -818,6 +886,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Joey [Raiva]:** Big Five? Aqueles velhotes da Kaiba Corp? [Nome do Jogador], esse cara de GBC está bloqueando o caminho. O deck dele tem um nível de dificuldade maior do que os anteriores. Não facilita!
 *   **Intermediate GBC [Séria]:** Iniciando protocolo de teste. DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Intermediate GBC [Tristeza]:** Erro de sistema... Derrota registrada. Reiniciando...
+*   **Joey [Alegria]:** Game Over pra você! Vamos nessa!
+
 ---
 
 ### 042: Expert GBC (O Código Especialista)
@@ -831,6 +903,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Expert GBC [Confiança]:** Minhas jogadas são calculadas para a vitória absoluta. Eu não sou um mero programa, sou o ápice da estratégia portátil! Seu "Forbidden Chaos" é apenas uma variável que eu vou aprender a anular em três turnos.
 *   **Mai [Deboche]:** Três turnos? Ele é convencido! [Nome do Jogador], ele joga como um profissional. Fique atento aos combos de cartas mágicas que ele usa para acelerar o deck.
 *   **Expert GBC [Séria]:** Executando estratégia mestre. DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Expert GBC [Raiva]:** Impossível! Meus algoritmos eram perfeitos! Onde foi que eu errei?
+*   **Mai [Deboche]:** A perfeição é chata. O Caos é muito mais divertido.
 
 ---
 
@@ -846,6 +922,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Kairo [Confiança]:** Ele pode ter os dados, mas ele não tem o seu instinto! Mostre a ele que a teoria é bem diferente da prática no campo de batalha.
 *   **Student GBC [Confiança]:** Aula prática iniciada! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Student GBC [Tristeza]:** Meus dados... estavam incompletos? Como você previu minha jogada?
+*   **Kairo [Séria]:** A experiência real supera qualquer simulação. Volte para os livros.
+
 ---
 
 ### 044: Gansley (O Retorno dos Big Five - Negócios Mortais)
@@ -859,6 +939,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Gansley [Confiança]:** Seto... sempre tão arrogante. Mas aqui no mundo virtual, as regras mudaram. Eu sou o Deck Master! E meu objetivo é simples: tomar o corpo deste duelista e voltar para a Kaiba Corp para te tirar do trono!
 *   **Kaiba [Deboche]:** Você não conseguiria gerenciar uma banca de jornal, quanto mais o meu corpo. [Nome do Jogador], esmague esse verme. Ele usa monstros guerreiros e táticas defensivas de covarde. Mostre a ele como um verdadeiro duelista luta!
 *   **Gansley [Confiança]:** Vou ensinar uma lição de economia que você nunca esquecerá: a sua derrota é o meu lucro! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Gansley [Medo]:** Minhas ações... despencaram! Estou falido!
+*   **Kaiba [Deboche]:** Você está demitido, Gansley. De novo. Saia da minha frente.
 
 ---
 
@@ -874,6 +958,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Tea [Raiva]:** Que nojo! [Nome do Jogador], por favor, mande esse pinguim de volta para o zoológico!
 *   **Crump [Confiança]:** Meu deck de Pesadelo Pinguim vai congelar suas cartas e devolvê-las para a sua mão. Prepare-se para tremer! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Crump [Tristeza]:** Não é justo! Eu queria ser jovem de novo! O gelo derreteu...
+*   **Tea [Alívio]:** Ainda bem que acabou. Pinguins me dão arrepios agora.
+
 ---
 
 ### 046: Johnson (A Justiça Distorcida)
@@ -887,6 +975,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Johnson [Séria]:** Silêncio no tribunal! Eu sou Johnson, o consultor jurídico. E vocês são culpados de invadir nosso domínio. A sentença é a perda de seus corpos!
 *   **Johnson [Confiança]:** Meu deck de Juiz vai ditar as regras deste duelo. Eu posso manipular a sorte e garantir que a justiça... a MINHA justiça... prevaleça!
 *   **Joey [Raiva]:** Justiça de araque! [Nome do Jogador], mostra pra ele que a única lei aqui é a do mais forte! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Johnson [Raiva]:** Objeção! Isso foi sorte! Eu exijo um novo julgamento!
+*   **Joey [Deboche]:** Caso encerrado, meritíssimo! A sentença é a sua derrota.
 
 ---
 
@@ -902,6 +994,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Kaiba [Raiva]:** Jinzo? Uma carta poderosa, mas nas mãos de um amador, é inútil. [Nome do Jogador], destrua-o. Ele não merece usar o nome da Kaiba Corp!
 *   **Leichter [Alegria]:** Vamos ver quem vai à falência primeiro! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Leichter [Tristeza]:** A banca quebrou... perdi tudo.
+*   **Kaiba [Confiança]:** Nunca aposte contra mim ou meus aliados. O jogo acabou para você.
+
 ---
 
 ### 048: Nezbitt (O Gigante de Aço)
@@ -916,6 +1012,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Joey [Confiança]:** (Para o Protagonista) Não se assusta com o tamanho dele! Máquinas grandes fazem muito barulho, mas o Caos é mais rápido. Destrói o núcleo de energia dele antes que ele invoque o Cavaleiro Perfeito!
 *   **Nezbitt [Séria]:** Poder total às máquinas! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Nezbitt [Raiva]:** Sistema... crítico... Desligando. A humanidade... é ilógica.
+*   **Joey [Alegria]:** Virou sucata! Mais um pro ferro-velho.
+
 ---
 
 ### 049: Noah Kaiba (O Herdeiro Rejeitado)
@@ -929,6 +1029,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Noah [Alegria]:** Seto, você sempre foi tão limitado. Eu não sou uma memória, eu sou a evolução! E você, [Nome do Jogador], é apenas um convidado indesejado que se tornou perigoso demais. Meu deck da Arca de Noé vai purificar este mundo, começando pela sua derrota!
 *   **Kaiba [Deboche]:** Purificar? Você vai é ser deletado. [Nome do Jogador], Noah usa um deck de Monstros Espíritos que retornam para a mão. É um estilo irritante e evasivo. Acerte-o com tudo antes que ele consiga se esconder atrás dos efeitos dele!
 *   **Noah [Séria]:** O dilúvio digital começou. DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Noah [Tristeza]:** Pai! Por que você escolheu eles?! Eu criei tudo isso para você!
+*   **Kaiba [Séria]:** Porque eles lutam pelo futuro, não pelo passado. Adeus, Noah.
 
 ---
 
@@ -968,6 +1072,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Yugi [Séria]:** O deck dela agora foca em anular suas cartas mágicas e armadilhas. Ela vai tentar te travar completamente enquanto o Selo fortalece os monstros dela. Não deixe a culpa te impedir de duelar com tudo!
 *   **Tea [Séria]:** O selo foi ativado. Não há escapatória! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Tea [Tristeza]:** (O selo desaparece) O que... o que eu fiz? Minha cabeça dói...
+*   **Yugi [Alegria]:** Você voltou, Téa! Está tudo bem agora. O pesadelo acabou.
+
 ---
 
 ### 052: Tristan Taylor Adv (A Fúria do Protetor)
@@ -983,6 +1091,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Yugi [Confiança]:** (Para o Protagonista) Ele está usando monstros de alto nível e cartas de equipamento sombrias. O Orichalcos dá a ele uma linha extra de defesa. Você precisa quebrar o escudo dele para chegar ao coração do duelo!
 *   **Tristan [Séria]:** Pelo poder do Selo... DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Tristan [Alívio]:** Minha cabeça... parece que levei uma surra. Onde eu estou?
+*   **Yugi [Alegria]:** Bem-vindo de volta, amigo. Você lutou bravamente, mas agora descanse.
+
 ---
 
 ### 053: Rex Raptor Adv (O Predador Jurássico Corrompido)
@@ -997,6 +1109,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Joey [Confiança]:** (Para o Protagonista) O deck dele está carregado de monstros com ATK absurdo. Com o bônus do Selo, ele vai tentar te atropelar no primeiro turno. Mostra pra esse lagarto que o Caos é o predador alfa aqui!
 *   **Rex Raptor [Alegria]:** Hora da extinção! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Rex Raptor [Tristeza]:** Meus dinos... eles estavam sofrendo com aquele poder. O que aconteceu?
+*   **Joey [Séria]:** Agora eles podem descansar. E você também. Chega de Orichalcos.
+
 ---
 
 ### 054: Weevil Underwood Adv (O Enxame das Trevas)
@@ -1010,6 +1126,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Weevil [Alegria]:** Hehehe! O Orichalcos transformou meus pequenos insetos em monstros imparáveis! Cada vez que você destrói um, dez novos aparecem para sugar seus pontos de vida. Você vai ficar preso na minha teia eterna!
 *   **Joey [Séria]:** Cuidado! Ele usa táticas de "infecção" — ele vai colocar cartas de inseto no seu deck para travar seus saques. Limpa o campo dele rápido antes que a infestação saia do controle!
 *   **Weevil [Deboche]:** Zumbido de morte para você! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Weevil [Medo]:** O poder se foi... não me machuque! Eu só queria ser forte!
+*   **Joey [Deboche]:** Só sai da minha frente antes que eu pise em você. Inseto.
 
 ---
 
@@ -1026,6 +1146,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Mokuba (Voz) [Raiva]:** Não deixa ele te intimidar! Mostra que o seu deck é um maremoto que ele não pode controlar!
 *   **Mako [Séria]:** Maremoto de Trevas! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Mako [Tristeza]:** O mar se acalmou. Obrigado por me libertar dessa tempestade.
+*   **Serenity [Alegria]:** Mako! Você está salvo! Eu sabia que você voltaria.
+
 ---
 
 ### 056: Joey Wheeler Adv (O Irmão Possuído)
@@ -1039,6 +1163,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Joey [Confiança]:** Equipe? Eu cansei de ser o "segundo melhor". O Orichalcos me deu a visão que eu precisava. O "Forbidden Chaos" é forte, mas o meu Dragão Negro de Olhos Vermelhos agora tem chamas infernais!
 *   **Tea (Voz) [Medo]:** [Nome do Jogador], ele não está blefando. O deck dele agora foca em punir cada jogada sua com dano direto. É um duelo contra o seu melhor amigo... você consegue aguentar o peso disso?
 *   **Joey [Raiva]:** Chega de conversa! Eu vou tomar sua alma e provar que sou o melhor! DUELO!
+
+#### Pós-Duelo (Vitória)
+*   **Joey [Alívio]:** Cara... eu tive um pesadelo horrível. Eu estava atacando vocês...
+*   **Yugi [Alegria]:** Acabou, Joey. Você é um de nós de novo. O Orichalcos não te controla mais.
 
 ---
 
@@ -1055,6 +1183,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Joey [Séria]:** (Para o Protagonista) Ela está fora de controle. O deck dela é focado em destruir suas cartas mágicas e armadilhas sem parar. Você vai ter que lutar no "seco"! Vai com tudo por ela!
 *   **Mai [Alegria]:** O banquete das sombras começou! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Mai [Tristeza]:** Eu me senti tão poderosa... mas tão sozinha. O frio passou.
+*   **Joey [Alegria]:** Você nunca está sozinha, Mai. Nós estamos aqui.
+
 ---
 
 ### 058: Arkana Dark (O Teatro do Horror Digital)
@@ -1069,6 +1201,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Yugi (Voz) [Séria]:** Ele está usando versões "Dark" de todas as magias. Ele vai tentar banir seu deck inteiro! [Nome do Jogador], confie no equilíbrio do Caos para resistir à loucura dele!
 *   **Arkana Dark [Deboche]:** Que as cortinas se fechem para você! DUELO!
 
+#### Pós-Duelo (Vitória)
+*   **Arkana Dark [Medo]:** As sombras... elas estão me puxando de volta! Não! O show não pode acabar assim!
+*   **Kaiba [Séria]:** Um mágico medíocre até o fim. Desapareça.
+
 ---
 
 ### 059: Bakura Spirit (O Último Suspiro do Espírito)
@@ -1082,6 +1218,10 @@ Os personagens possuem sprites fixos com variações faciais para transmitir emo
 *   **Bakura Spirit [Tristeza]:** (Voz ecoante) Por que lutar contra o inevitável? O Caos que você carrega e a Escuridão que eu sou... no fim, ambos levam ao mesmo lugar. O silêncio eterno. O Selo não é uma arma, é um túmulo aberto esperando por nós dois.
 *   **Odion [Séria]:** (Para o Protagonista) Ele joga com o "Deck de Ocultismo". Cada carta que você envia ao cemitério é um passo em direção à sua própria condenação. Não deixe a melancolia dele apagar a chama do seu deck. Se o Caos é destruição, que seja para criar uma saída desta névoa.
 *   **Bakura Spirit [Séria]:** Sinta o frio do esquecimento. DUELO.
+
+#### Pós-Duelo (Vitória)
+*   **Bakura Spirit [Neutro]:** O vazio... recua por enquanto. A luz persiste.
+*   **Odion [Séria]:** O equilíbrio foi restaurado. O espírito maligno foi contido.
 
 ---
 
