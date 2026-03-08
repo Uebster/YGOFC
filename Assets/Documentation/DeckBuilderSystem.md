@@ -104,11 +104,14 @@ Para salvar e sair com um deck válido:
 *   **Extra Deck:** Máximo 15 cartas.
 *   **Cópias:** Máximo de 3 cópias da mesma carta (soma de Main + Side + Extra).
 *   **Ban List (Esqueleto):** Suporte para limitar cartas a 0 (Forbidden), 1 (Limited) ou 2 (Semi-Limited).
+    *   **Opção Global:** Se `GameManager.allowForbiddenCards` estiver ativo, cartas Proibidas são tratadas como Limitadas (1).
 
 ### 4. Persistência
 *   **Save Deck:** Salva a configuração atual no perfil do jogador (`GameManager`), tornando-o o deck ativo para duelos.
 *   **Export Deck:** Salva a lista de IDs das cartas em um arquivo JSON na pasta de dados do aplicativo.
 *   **Import Deck:** Carrega um arquivo JSON. O sistema verifica se o jogador possui as cartas no Baú (Trunk). Se não possuir, a carta não é adicionada.
+
+### 5. Lista de Cartas
 
         // Forbidden (0)
         { "0289", 0 }, // Chaos Emperor Dragon - Envoy of the End
@@ -124,10 +127,10 @@ Para salvar e sair com um deck válido:
         { "0363", 0 }, // Cyber Jar
         { "1134", 0 }, // Magical Scientist
         { "0370", 0 }, // Cyber-Stein
-        { "1252", 0 }, // Mirror Wall (Often limited/forbidden in some classic variants, keeping 0 for balance here)
-        { "1480", 0 }, // Raigeki (Forbidden in Goat)
-        { "1268", 0 }, // Monster Reborn (Forbidden in Goat)
-        { "0485", 0 }, // Destruction Ring (Often forbidden due to errata/power)
+        { "1252", 0 }, // Mirror Wall
+        { "1480", 0 }, // Raigeki
+        { "1268", 0 }, // Monster Reborn
+        { "0485", 0 }, // Destruction Ring
 
         // Limited (1)
         { "0189", 1 }, // Black Luster Soldier - Envoy of the Beginning
@@ -146,12 +149,9 @@ Para salvar e sair com um deck válido:
         { "1513", 1 }, // Relinquished
         { "1790", 1 }, // Summoner Monk
         { "1517", 1 }, // Rescue Cat
-        
-        { "1447", 1 }, // Pot of Greed (Limited)
-        { "1480", 1 }, // Raigeki (Limited)
+        { "1447", 1 }, // Pot of Greed
         { "0791", 1 }, // Graceful Charity
-        { "0414", 1 }, // Dark Hole (Limited)
-        { "1268", 1 }, // Monster Reborn (Limited)
+        { "0414", 1 }, // Dark Hole
         { "0881", 1 }, // Heavy Storm
         { "1683", 1 }, // Snatch Steal
         { "1453", 1 }, // Premature Burial
@@ -183,11 +183,11 @@ Para salvar e sair com um deck válido:
         { "1523", 1 }, // Return from the Different Dimension
         
         // Exodia Pieces (Limited)
-        { "0618", 1 }, // Exodia Head (Limited)
-        { "1061", 1 }, // Left Arm (Limited)
-        { "1062", 1 }, // Left Leg (Limited)
-        { "1530", 1 }, // Right Arm (Limited)
-        { "1531", 1 }, // Right Leg (Limited)
+        { "0618", 1 }, // Exodia Head
+        { "1061", 1 }, // Left Arm
+        { "1062", 1 }, // Left Leg
+        { "1530", 1 }, // Right Arm
+        { "1531", 1 }, // Right Leg
 
         // Semi-Limited (2)
         { "0338", 2 }, // Creature Swap
@@ -204,7 +204,7 @@ Para salvar e sair com um deck válido:
         { "1329", 2 }, // Needle Worm
         { "1163", 2 }, // Marauding Captain
         { "0077", 2 }, // Apprentice Magician
-        { "1138", 2 }, // Magician of Faith (Sometimes 1, sometimes 2)
+        { "1138", 2 }, // Magician of Faith
         { "1162", 2 }, // Manticore of Darkness
         { "0460", 2 }, // Deck Devastation Virus
         { "1604", 2 }, // Second Coin Toss
