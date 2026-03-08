@@ -226,6 +226,8 @@ public class GameManager : MonoBehaviour
     [Tooltip("Habilita o efeito de escurecer a carta ao selecioná-la para atacar.")]
     public bool enableAttackSelectionVisual = true;
     public Color attackSelectionColor = new Color(0.6f, 0.6f, 0.6f, 1f);
+    [Tooltip("Se marcado, ataques diretos visam o avatar do oponente. Se desmarcado, visam o centro da mão/campo (estilo Power of Chaos).")]
+    public bool targetAvatarOnDirectAttack = true;
     [Tooltip("Habilita a animação de projétil (espada) durante o ataque.")]
     public bool enableAttackAnimation = true;
     [Tooltip("Habilita a animação visual ao realizar uma Invocação-Tributo.")]
@@ -1718,7 +1720,16 @@ public void ShuffleDeck(bool isPlayer)
         // Normal Summon/Set: Se isSet=true, é Face-Down Defense. Se false, é Face-Up Attack.
         // Nota: Se houve tributo automático, SummonManager deveria ter lidado, mas aqui assumimos fluxo simples ou 0 tributos
         bool wasTribute = (cardData.level >= 5); // Simplificação para Auto-Tribute implícito se passou pelo SummonManager
-        FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, wasTribute);
+        
+        Transform specificZone = null;
+        if (wasTribute && SummonManager.Instance != null && SummonManager.Instance.lastAutoTributeZone != null)
+        {
+            if (placeTributeSummonInTributeZone)
+            {
+                specificZone = SummonManager.Instance.lastAutoTributeZone;
+            }
+        }
+        FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, wasTribute, specificZone);
     }
 
     // Novo método para Special Summon que pede a posição

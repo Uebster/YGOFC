@@ -16,6 +16,9 @@ public class SummonManager : MonoBehaviour
     public bool narrowPassActive = false;
     public int narrowPassSummonCount = 0;
 
+    // Armazena a zona do último monstro tributado automaticamente (para a IA/Oponente usar a mesma zona)
+    public Transform lastAutoTributeZone;
+
     // Estado da Seleção Manual de Tributo
     [HideInInspector] public bool isSelectingTributes = false;
     private GameObject pendingCardGO;
@@ -49,6 +52,7 @@ public class SummonManager : MonoBehaviour
     {
         hasPerformedNormalSummon = false;
         narrowPassSummonCount = 0;
+        lastAutoTributeZone = null;
         // Resetar contadores de special summon se necessário (geralmente não há limite por turno para special, mas podemos querer rastrear)
     }
 
@@ -253,6 +257,7 @@ public class SummonManager : MonoBehaviour
     private void ProcessAutoTribute(int count, bool isPlayer)
     {
         if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return;
+        lastAutoTributeZone = null; // Reseta antes de processar
 
         Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
         List<CardDisplay> availableMonsters = new List<CardDisplay>();
@@ -271,16 +276,15 @@ public class SummonManager : MonoBehaviour
         // Isso é uma lógica básica para validar o sistema. No futuro, abriremos um menu de seleção.
         availableMonsters.Sort((a, b) => a.CurrentCardData.atk.CompareTo(b.CurrentCardData.atk));
 
-        Transform targetZone = null;
         int tributed = 0;
         foreach (CardDisplay monster in availableMonsters)
         {
             if (tributed >= count) break;
 
             // Captura a zona do primeiro tributo
-            if (tributed == 0 && GameManager.Instance != null && GameManager.Instance.placeTributeSummonInTributeZone)
+            if (tributed == 0)
             {
-                targetZone = monster.transform.parent;
+                lastAutoTributeZone = monster.transform.parent;
             }
 
             GameManager.Instance.TributeCard(monster);

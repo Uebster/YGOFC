@@ -209,16 +209,14 @@ public class DuelFXManager : MonoBehaviour
         }
         else // Ataque Direto
         {
-            if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null && GameManager.Instance.duelFieldUI.opponentAvatarImage != null)
-                targetPos = GameManager.Instance.duelFieldUI.opponentAvatarImage.transform.position;
-            else
-                targetPos = startPos + (attacker.transform.up * 200f); // Fallback para evitar erro
+            targetPos = GetDirectAttackTarget(attacker, startPos + (attacker.transform.up * 200f));
         }
 
         // 1. Recuo (Anticipation)
         float t = 0;
         while (t < 1f)
         {
+            if (attacker == null) yield break; // Previne erro se a carta for destruída durante a animação
             t += Time.deltaTime * (animationSpeed * 2);
             attacker.transform.position = Vector3.Lerp(startPos, startPos - (targetPos - startPos).normalized * 50f, t);
             yield return null;
@@ -229,6 +227,7 @@ public class DuelFXManager : MonoBehaviour
         t = 0;
         while (t < 1f)
         {
+            if (attacker == null) yield break;
             t += Time.deltaTime * (animationSpeed * 5); // Muito rápido
             attacker.transform.position = Vector3.Lerp(startPos, targetPos, t);
             yield return null;
@@ -242,6 +241,7 @@ public class DuelFXManager : MonoBehaviour
         t = 0;
         while (t < 1f)
         {
+            if (attacker == null) yield break;
             t += Time.deltaTime * animationSpeed;
             attacker.transform.position = Vector3.Lerp(targetPos, startPos, t);
             yield return null;
@@ -264,11 +264,7 @@ public class DuelFXManager : MonoBehaviour
         }
         else
         {
-            // Ataque Direto: Tenta pegar a posição do avatar do oponente
-            if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null && GameManager.Instance.duelFieldUI.opponentAvatarImage != null)
-                endPos = GameManager.Instance.duelFieldUI.opponentAvatarImage.transform.position;
-            else
-                endPos = startPos + Vector3.up * 5f; // Fallback (cima)
+            endPos = GetDirectAttackTarget(attacker, startPos + Vector3.up * 5f);
         }
 
         // Instancia o projétil (Espada) se houver prefab
@@ -400,5 +396,28 @@ public class DuelFXManager : MonoBehaviour
             return instance;
         }
         return null;
+    }
+
+    private Vector3 GetDirectAttackTarget(CardDisplay attacker, Vector3 fallbackPos)
+    {
+        if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return fallbackPos;
+
+        bool targetAvatar = GameManager.Instance.targetAvatarOnDirectAttack;
+        DuelFieldUI ui = GameManager.Instance.duelFieldUI;
+        Vector3 targetPos = fallbackPos;
+
+        if (attacker.isPlayerCard) // Player attacking Opponent
+        {
+            if (targetAvatar && ui.opponentAvatarImage != null) targetPos = ui.opponentAvatarImage.transform.position;
+            else if (!targetAvatar && ui.opponentHand != null) targetPos = ui.opponentHand.position;
+            else if (ui.opponentAvatarImage != null) targetPos = ui.opponentAvatarImage.transform.position;
+        }
+        else // Opponent attacking Player
+        {
+            if (targetAvatar && ui.playerAvatarImage != null) targetPos = ui.playerAvatarImage.transform.position;
+            else if (!targetAvatar && ui.playerHand != null) targetPos = ui.playerHand.position;
+            else if (ui.playerAvatarImage != null) targetPos = ui.playerAvatarImage.transform.position;
+        }
+        return targetPos;
     }
 }
