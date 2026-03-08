@@ -11494,6 +11494,7 @@ MonoBehaviour:
   nameInputScreen: {fileID: 977330078}
   endDuelMessagePanel: {fileID: 0}
   duelScreen: {fileID: 1781033776}
+  rewardScreen: {fileID: 0}
   newGameMenu: {fileID: 2043394972}
   continueMenu: {fileID: 2037844059}
   onlineMenu: {fileID: 1075272412}
@@ -16881,7 +16882,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009686095}
+  m_AnchoredPosition: {x: 0, y: 0.0008728357}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &322488726
@@ -22236,7 +22237,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009686095}
+  m_AnchoredPosition: {x: 0, y: 0.0008728357}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &440854236
@@ -28285,7 +28286,7 @@ MonoBehaviour:
   devMode: 1
   effectTestMode: 0
   testOpponentID: 001_novice
-  testPlayerID: 002_student
+  testPlayerID: 097_yugi_final
   testActThemeIndex: -1
   showOpponentHand: 1
   canPlayerDrawFromDeck: 0
@@ -44767,7 +44768,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009975068}
+  m_AnchoredPosition: {x: 0, y: 0.000034151668}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &882301599
@@ -60347,7 +60348,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009975068}
+  m_AnchoredPosition: {x: 0, y: 0.000034151668}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1195268165
@@ -71746,7 +71747,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009686095}
+  m_AnchoredPosition: {x: 0, y: 0.0008728357}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1403579448
@@ -71967,7 +71968,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009975068}
+  m_AnchoredPosition: {x: 0, y: 0.000034151668}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1413832233
@@ -72120,7 +72121,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009934261}
+  m_AnchoredPosition: {x: 0, y: 0.00088011025}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1423252461
@@ -82621,10 +82622,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RewardPanelUI
   titleText: {fileID: 1277067869}
-  rankDisplay: {fileID: 0}
+  rankDisplay: {fileID: 295358666}
   rankText: {fileID: 1447800043}
-  cardArt: {fileID: 0}
-  cardName: {fileID: 0}
+  cardArt: {fileID: 2077544891}
+  cardName: {fileID: 1444028554}
   continueButton: {fileID: 604069164}
 --- !u!1 &1589623850
 GameObject:
@@ -104034,7 +104035,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009975068}
+  m_AnchoredPosition: {x: 0, y: 0.000034151668}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2079048823
@@ -105189,7 +105190,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009686095}
+  m_AnchoredPosition: {x: 0, y: 0.0008728357}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &2110339344

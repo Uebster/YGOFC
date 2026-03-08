@@ -1528,14 +1528,9 @@ public void ShuffleDeck(bool isPlayer)
                 }
             }
             
-            RewardPanelUI rewardPanel = FindFirstObjectByType<RewardPanelUI>(FindObjectsInactive.Include);
-            if (rewardPanel != null)
+            if (UIManager.Instance != null)
             {
-                rewardPanel.Show(rank.ToString(), rewardCard);
-            }
-            else
-            {
-                if (UIManager.Instance != null) UIManager.Instance.Btn_BackToMenu();
+                UIManager.Instance.ShowRewardScreen(rank.ToString(), rewardCard);
             }
         }
         else

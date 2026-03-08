@@ -1,88 +1,71 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System.Collections;
-using UnityEngine.Networking;
-using System.IO;
 
+/// <summary>
+/// Gerencia a interface do painel de recompensas exibido ao final de um duelo.
+/// </summary>
 public class RewardPanelUI : MonoBehaviour
 {
     [Header("UI References")]
+    [Tooltip("Texto do título, ex: 'VITÓRIA'")]
     public TextMeshProUGUI titleText;
-    public Image rankDisplay;
+
+    [Tooltip("Texto que exibirá o Rank obtido, ex: 'RANK: S+'")]
     public TextMeshProUGUI rankText;
-    
-    [Header("Card Display")]
-    public RawImage cardArt; // O "quadradinho" que receberá a textura
-    public TextMeshProUGUI cardName;
-    
-    [Header("Buttons")]
+
+    [Tooltip("Referência ao CardDisplay que mostrará a carta ganha.")]
+    public CardDisplay cardDisplay;
+
+    [Tooltip("Botão para fechar o painel e continuar.")]
     public Button continueButton;
 
-    private void Start()
+    void Start()
     {
+        // Adiciona um listener para o botão de continuar, que esconderá o painel.
         if (continueButton != null)
-            continueButton.onClick.AddListener(ClosePanel);
+        {
+            continueButton.onClick.RemoveAllListeners();
+            continueButton.onClick.AddListener(HidePanel);
+        }
+        gameObject.SetActive(false); // O painel começa desativado.
     }
 
-    public void Show(string rank, CardData card)
+    /// <summary>
+    /// Exibe o painel de recompensas com as informações do duelo.
+    /// </summary>
+    /// <param name="rank">O rank obtido pelo jogador (ex: "S+", "A", "D").</param>
+    /// <param name="wonCard">O objeto CardData da carta ganha.</param>
+    public void Show(string rank, CardData wonCard)
     {
         gameObject.SetActive(true);
-        
-        // Configura Rank
-        if (rankText) rankText.text = rank;
-        
-        // Configura Carta
-        if (card != null)
+
+        if (titleText) titleText.text = "VITÓRIA"; // Ou "DERROTA", se aplicável
+        if (rankText) rankText.text = $"RANK: {rank}";
+
+        if (wonCard != null && cardDisplay != null)
         {
-            if (cardName) cardName.text = card.name;
-            
-            if (cardArt)
-            {
-                // Define a proporção correta (opcional, mas recomendado)
-                // Aspect Ratio de Yu-Gi-Oh é aprox 0.68 (ex: 300x438)
-                // Você define o tamanho final no RectTransform do Unity Editor
-                cardArt.gameObject.SetActive(true);
-                StartCoroutine(LoadCardImage(card.image_filename));
-            }
+            cardDisplay.gameObject.SetActive(true);
+            // Usa a textura de verso do GameManager se disponível
+            Texture2D backTex = GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null;
+            // true = Face Up (Virada para cima)
+            cardDisplay.SetCard(wonCard, backTex, true);
         }
-        else
+        else if (cardDisplay != null)
         {
-            if (cardName) cardName.text = "Nenhuma carta ganha";
-            if (cardArt) cardArt.gameObject.SetActive(false);
+            // Caso nenhuma carta seja ganha (ex: Rank D em alguns cenários)
+            cardDisplay.gameObject.SetActive(false);
         }
     }
 
-    IEnumerator LoadCardImage(string filename)
+    /// <summary>
+    /// Esconde o painel de recompensas e volta ao menu.
+    /// </summary>
+    private void HidePanel()
     {
-        // Caminho para a imagem na pasta StreamingAssets
-        string path = Path.Combine(Application.streamingAssetsPath, "YuGiOh_OCG_Classic_2147", filename);
-        string url = "file://" + path;
-
-        using (UnityWebRequest uwr = UnityWebRequestTexture.GetTexture(url))
-        {
-            yield return uwr.SendWebRequest();
-
-            if (uwr.result == UnityWebRequest.Result.Success)
-            {
-                // Aplica a textura baixada na RawImage
-                cardArt.texture = DownloadHandlerTexture.GetContent(uwr);
-            }
-            else
-            {
-                Debug.LogError($"[RewardPanel] Erro ao carregar imagem {filename}: {uwr.error}");
-            }
-        }
-    }
-
-    void ClosePanel()
-    {
-        // Limpa a textura para economizar memória
-        if (cardArt != null) cardArt.texture = null;
-        
         gameObject.SetActive(false);
-        
-        // Volta para o menu principal
+
+        // Retorna ao menu principal via UIManager
         if (UIManager.Instance != null)
         {
             UIManager.Instance.Btn_BackToMenu();

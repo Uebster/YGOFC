@@ -15,6 +15,7 @@ public class UIManager : MonoBehaviour
     public GameObject nameInputScreen;   // 3.5 Panel_NameInput (Criação de Perfil)
     public GameObject endDuelMessagePanel; // Painel para mensagem de WIN/LOSE
     public GameObject duelScreen;        // 4. Panel_Duel (O Jogo)
+    public GameObject rewardScreen;      // 5. Panel_Reward (Tela de Recompensa)
 
     [Header("Sub-Menus Principais")]
     public GameObject newGameMenu;       // Tela com Campaign, Arcade, Build Deck...
@@ -111,6 +112,7 @@ public class UIManager : MonoBehaviour
         if (nameInputScreen != null) nameInputScreen.SetActive(false);
         if (duelScreen != null) duelScreen.SetActive(false);
         if (endDuelMessagePanel != null) endDuelMessagePanel.SetActive(false);
+        if (rewardScreen != null) rewardScreen.SetActive(false);
 
         // Adicionado: Desativa todos os outros painéis de sub-menu
         if (newGameMenu != null) newGameMenu.SetActive(false);
@@ -149,6 +151,21 @@ public class UIManager : MonoBehaviour
         if (screenToShow != null)
         {
             screenToShow.SetActive(true);
+        }
+    }
+
+    public void ShowRewardScreen(string rank, CardData card)
+    {
+        if (rewardScreen != null)
+        {
+            ShowScreen(rewardScreen); // Isso fecha a DuelScreen e abre a RewardScreen
+            RewardPanelUI ui = rewardScreen.GetComponentInChildren<RewardPanelUI>(true);
+            if (ui != null) ui.Show(rank, card);
+        }
+        else
+        {
+            Debug.LogWarning("UIManager: RewardScreen não atribuído. Voltando ao menu.");
+            Btn_BackToMenu();
         }
     }
 
