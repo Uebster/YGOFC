@@ -3,7 +3,104 @@
 ## Visão Geral
 O `Panel_Duel` é a interface principal do jogo, onde ocorre a batalha entre o jogador e o oponente. Ele é gerenciado principalmente pelos scripts `GameManager`, `DuelFieldUI` e `DuelThemeManager`.
 
-## Hierarquia Visual
+## Hierarquia de Objetos (Unity)
+
+Abaixo está a estrutura exata dos GameObjects na cena, com seus principais componentes entre colchetes `[]`.
+
+*   **Panel_Duel** `[Image]`
+    *   **Panel_CardViewer** `[Image, CardViewerUI]`
+        *   **CardViewer** `[CardViewerUI]`
+            *   **Card2D** `[EventTrigger, CardDisplay, Mask, Image]`
+                *   **Art** `[RawImage]`
+            *   **CardStatsText** `[TextMeshProUGUI]`
+            *   **Panel_Description** `[Image]`
+                *   **CardNameText** `[TextMeshProUGUI]`
+                *   **CardInfoText** `[TextMeshProUGUI]`
+                *   **Scroll View** `[Image, ScrollRect]`
+                    *   **Viewport** `[Image, Mask]`
+                        *   **Content** `[]`
+                        *   **CardDescriptionText** `[TextMeshProUGUI, Scrollbar, ContentSizeFitter]`
+                    *   **Scrollbar Vertical** `[Image, Scrollbar]`
+                        *   **Sliding Area** `[]`
+                            *   **HandleDescription** `[Image]`
+    *   **DuelBoard** `[DuelFieldUI]`
+        *   **BoardBackground** `[Image]`
+        *   **FieldImg** `[Image]`
+        *   **FieldArea** `[Image]`
+        *   **OpponentArea** `[]`
+            *   **OpponentHand** `[HorizontalLayoutGroup]`
+            *   **RemovedCardsOpponent** `[Image, PileDisplay]`
+            *   **Field** `[]`
+                *   **SpellRow** `[HorizontalLayoutGroup]`
+                    *   **S_Zone_1** a **S_Zone_5** `[Image]`
+                *   **MonsterRow** `[HorizontalLayoutGroup]`
+                    *   **M_Zone_1** a **M_Zone_5** `[Image]`
+            *   **FieldSpell** `[Image]`
+            *   **OpponentExtraDeck** `[Image, PileDisplay]`
+            *   **OpponentGraveyard** `[Image, PileDisplay]`
+            *   **OpponentDeck** `[Image, PileDisplay]`
+        *   **PlayerArea** `[]`
+            *   **PlayerHand** `[HorizontalLayoutGroup]`
+            *   **RemovedCardsPlayer** `[Image, PileDisplay]`
+            *   **Field** `[]`
+                *   **MonsterRow** `[HorizontalLayoutGroup]`
+                    *   **M_Zone_1** a **M_Zone_5** `[Image]`
+                *   **SpellRow** `[HorizontalLayoutGroup]`
+                    *   **S_Zone_1** a **S_Zone_5** `[Image]`
+            *   **FieldSpell** `[Image]`
+            *   **PlayerExtraDeck** `[Image, PileDisplay]`
+            *   **PlayerGraveyard** `[Image, PileDisplay]`
+            *   **PlayerDeck** `[Image, PileDisplay]`
+    *   **EffectsCards** `[]` (Container para VFX)
+    *   **StatsArea** `[Image]`
+        *   **PhaseIndicator** `[Image]`
+            *   **Draw Phase** `[Image]` -> **Btn_Draw** `[Image, Button]` -> **Text_Draw** `[TMP]`
+            *   **Standby Phase** `[Image]` -> **Btn_Standby** `[Image, Button]` -> **Text_Standby** `[TMP]`
+            *   **Main Phase 1** `[Image]` -> **Btn_Main1** `[Image, Button]` -> **Text_Main1** `[TMP]`
+            *   **Battle Phase** `[Image]` -> **Btn_Battle** `[Image, Button]` -> **Text_Battle** `[TMP]`
+            *   **Main Phase 2** `[Image]` -> **Btn_Main2** `[Image, Button]` -> **Text_Main2** `[TMP]`
+            *   **End Phase** `[Image]` -> **Btn_End** `[Image, Button]` -> **Text** `[TMP]`
+        *   **PlayerProfile** `[]`
+            *   **Avatar** `[Image]`
+            *   **PanelPlayerProfile** `[Image]`
+            *   **Name** `[TextMeshProUGUI]`
+            *   **LP** `[TextMeshProUGUI]`
+        *   **OpponentProfile** `[]`
+            *   **Avatar** `[Image]`
+            *   **OpponentPlayerProfile** `[Image]`
+            *   **Name** `[TextMeshProUGUI]`
+            *   **LP** `[TextMeshProUGUI]`
+    *   **GraveyardViewerPanel** `[Image, GraveyardViewer]`
+        *   **Scroll View** `[Image, ScrollRect]`
+            *   **Viewport** `[Image, Mask]` -> **Content** `[HorizontalLayoutGroup]`
+            *   **Scrollbar Horizontal** `[Image, Scrollbar]`
+        *   **CloseGraveyard** `[Image, Button]` -> **Close** `[TMP]`
+    *   **ExtraDeckViewerPanel** `[Image, GraveyardViewer]`
+        *   (Estrutura similar ao GraveyardViewerPanel)
+    *   **RemovedCardsViewerPanel** `[Image, GraveyardViewer]`
+        *   (Estrutura similar, mas com GridLayoutGroup no Content)
+    *   **DeckCardsViewerPanel** `[Image, GraveyardViewer]`
+        *   (Estrutura similar, usada para visualizar o Deck em modo Dev)
+    *   **Panel_ActionMenu** `[Image, VerticalLayoutGroup, DuelActionMenu]`
+        *   **Btn_Summon** `[Image, Button]` -> **Summon** `[TMP]`
+        *   **Btn_Set** `[Image, Button]` -> **Set** `[TMP]`
+        *   **Btn_Activate** `[Image, Button]` -> **Activate** `[TMP]`
+        *   **Btn_Cancel** `[Image, Button]` -> **Cancel** `[TMP]`
+    *   **Panel_Confirmation** `[Image]`
+        *   **Text_Confirmation** `[TextMeshProUGUI]`
+        *   **Btn_Yes** `[Image, Button]` -> **Text_Yes** `[TMP]`
+        *   **Btn_No** `[Image, Button]` -> **Text_No** `[TMP]`
+    *   **Panel_PositionSelection** `[Image, PositionSelectionUI]`
+        *   **Text_PositionAsk** `[TextMeshProUGUI]`
+        *   **Btn_SummonPosition** `[Image, Button]` -> **SummonPosition** `[Image]`
+        *   **Btn_SetPosition** `[Image, Button]` -> **SetPosition** `[Image]`
+    *   **Panel_CardSelection** `[Image, CardSelectionUI]`
+        *   **Scroll View** `[Image, ScrollRect]`
+            *   **Viewport** `[Image, Mask]` -> **Content** `[HorizontalLayoutGroup]`
+            *   **Scrollbar Horizontal** `[Image, Scrollbar]`
+        *   **CloseDeckCards** `[Image, Button]`
+
+## Descrição dos Componentes
 
 ### 1. Tabuleiro (`DuelBoard`)
 A área central onde as cartas são jogadas.
