@@ -43,6 +43,33 @@ SIGNATURE_CARDS = {
     "odion": ["0590"], # Embodiment of Apophis
 }
 
+# --- BANLIST (ID -> Limit) ---
+# 0 = Forbidden, 1 = Limited, 2 = Semi-Limited
+BANLIST = {
+    # Forbidden (0)
+    "0289": 0, "2128": 0, "2097": 0, "0932": 0, "0872": 0, "0321": 0, "1863": 0,
+    "0287": 0, "1055": 0, "0639": 0, "0363": 0, "1134": 0, "0370": 0, "1252": 0,
+    "1480": 0, "1268": 0, "0485": 0,
+
+    # Limited (1)
+    "0189": 1, "0293": 1, "0240": 1, "1587": 1, "0975": 1, "1973": 1, "1651": 1,
+    "0616": 1, "0378": 1, "0388": 1, "1277": 1, "1457": 1, "0422": 1, "1513": 1,
+    "1790": 1, "1517": 1, "1447": 1, "0791": 1, "0414": 1, "0881": 1, "1683": 1,
+    "1453": 1, "0259": 1, "1251": 1, "1533": 1, "1955": 1, "1120": 1, "0275": 1,
+    "1499": 1, "1811": 1, "1353": 1, "0228": 1, "1318": 1, "0757": 1, "1563": 1,
+    "2020": 1, "1138": 1, "1170": 1, "1236": 1, "0237": 1, "1088": 1, "1200": 1,
+    "1929": 1, "2050": 1, "1610": 1, "0264": 1, "0497": 1, "1523": 1,
+    "0618": 1, "1061": 1, "1062": 1, "1530": 1, "1531": 1,
+
+    # Semi-Limited (2)
+    "0338": 2, "2024": 2, "1509": 2, "0359": 2, "0011": 2, "0602": 2, "1209": 2,
+    "1077": 2, "0817": 2, "1245": 2, "0786": 2, "1329": 2, "1163": 2, "0077": 2,
+    "1138": 2, "1162": 2, "0460": 2, "1604": 2, "1498": 2
+}
+
+# Configuração Global para permitir proibidas nos decks gerados (ex: Bosses)
+ALLOW_FORBIDDEN = False 
+
 # --- FUNÇÕES AUXILIARES ---
 
 def load_json(path):
@@ -171,8 +198,16 @@ def generate_deck(act, difficulty_modifier, cards_by_pool, all_cards_map, depend
         
         if not card_data: continue
         
-        # Verifica limite de cópias (max 3)
-        if main_deck.count(card_id) >= 3: continue
+        # Verifica limite de cópias (Banlist + Regra de 3)
+        current_count = main_deck.count(card_id) + extra_deck.count(card_id)
+        limit = 3
+        
+        if card_id in BANLIST:
+            limit = BANLIST[card_id]
+            if ALLOW_FORBIDDEN and limit == 0:
+                limit = 1
+        
+        if current_count >= limit: continue
         
         # Separa Fusão/Synchro/Xyz para o Extra Deck
         if "Fusion" in card_data["type"] or "Synchro" in card_data["type"] or "Xyz" in card_data["type"]:
@@ -356,4 +391,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -132,6 +132,8 @@ public class GameManager : MonoBehaviour
     public bool enableHandLimit = true;
     [Tooltip("Número máximo de cartas na mão ao final do turno (Padrão TCG/OCG: 6).")]
     public int handLimit = 6;
+    [Tooltip("Se marcado, permite o uso de cartas Proibidas (Limit 0) como Limitadas (Limit 1).")]
+    public bool allowForbiddenCards = false;
     [Tooltip("Se marcado, o monstro invocado por tributo ocupará a zona do primeiro monstro sacrificado.")]
     public bool placeTributeSummonInTributeZone = true;
 
