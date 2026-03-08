@@ -61,6 +61,12 @@ public class SpellTrapManager : MonoBehaviour
 
         if (card.type.Contains("Spell"))
         {
+            // Verifica se há alvo válido para Equip Spell
+            if (card.property == "Equip")
+            {
+                if (!HasValidTargetForEquip(card)) return false;
+            }
+
             // Regras básicas de Spell
             if (isOwnerTurn) return true;
             if (card.property == "Quick-Play") return true; // Quick-Play pode no turno do oponente se setada (regra geral)
@@ -89,6 +95,49 @@ public class SpellTrapManager : MonoBehaviour
     {
         if (GameManager.Instance == null) return false;
         return GameManager.Instance.IsCardActiveOnField("1563"); // Royal Decree
+    }
+
+    private bool HasValidTargetForEquip(CardData card)
+    {
+        if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return false;
+
+        List<CardDisplay> allMonsters = new List<CardDisplay>();
+        
+        void Collect(Transform[] zones) {
+            foreach(var z in zones) {
+                if(z.childCount > 0) {
+                    var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                    if(cd != null && cd.isOnField) allMonsters.Add(cd);
+                }
+            }
+        }
+        
+        Collect(GameManager.Instance.duelFieldUI.playerMonsterZones);
+        Collect(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+
+        if (allMonsters.Count == 0) return false;
+
+        string desc = card.description.ToLower();
+        string[] types = { "warrior", "dragon", "spellcaster", "fiend", "zombie", "machine", "aqua", "pyro", "rock", "winged beast", "fairy", "beast", "beast-warrior", "dinosaur", "thunder", "fish", "sea serpent", "reptile", "plant", "insect" };
+        
+        foreach (string type in types)
+        {
+            if (desc.Contains("equip only to a " + type) || desc.Contains("equip only to an " + type))
+            {
+                bool found = false;
+                foreach(var m in allMonsters)
+                {
+                    if (!m.isFlipped && m.CurrentCardData.race.ToLower() == type) { found = true; break; }
+                }
+                if (!found) return false;
+            }
+        }
+        
+        // Se não encontrou restrição de tipo específica, verifica se há qualquer monstro face-up
+        bool anyFaceUp = false;
+        foreach(var m in allMonsters) if (!m.isFlipped) anyFaceUp = true;
+        
+        return anyFaceUp;
     }
 
     public void RegisterExtraDraw(int amount)

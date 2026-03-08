@@ -102,6 +102,17 @@ public class DuelActionMenu : MonoBehaviour
             {
                 if (GameManager.Instance != null && !GameManager.Instance.devMode) canActivate = false;
             }
+            
+            // Verifica regras do SpellTrapManager (ex: Equip sem alvo)
+            if (canActivate && SpellTrapManager.Instance != null)
+            {
+                bool isMyTurn = GameManager.Instance != null && GameManager.Instance.isPlayerTurn;
+                if (!SpellTrapManager.Instance.CanActivateCard(data, isMyTurn))
+                {
+                    canActivate = false;
+                }
+            }
+
             activateBtn.gameObject.SetActive(canActivate);
         }
 
