@@ -1517,6 +1517,15 @@ public void ShuffleDeck(bool isPlayer)
                 string rewardId = currentOpponent.rewards[Random.Range(0, currentOpponent.rewards.Count)];
                 rewardCard = cardDatabase.GetCardById(rewardId);
                 Debug.Log($"Recompensa: {rewardCard?.name ?? "Nenhuma"}");
+
+                // LÓGICA DE DROP: Adiciona ao Baú do Jogador
+                if (rewardCard != null)
+                {
+                    playerTrunk.Add(rewardCard.id);
+                    
+                    // Salva o progresso imediatamente para garantir o drop
+                    if (SaveLoadSystem.Instance != null) SaveLoadSystem.Instance.SaveGame(currentSaveID);
+                }
             }
             
             RewardPanelUI rewardPanel = FindFirstObjectByType<RewardPanelUI>(FindObjectsInactive.Include);

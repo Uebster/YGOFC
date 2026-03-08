@@ -166,7 +166,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &4333814709253348873
 RectTransform:
   m_ObjectHideFlags: 0
@@ -219,9 +219,36 @@ MonoBehaviour:
   hoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   tributeColor: {r: 0, g: 0.6, b: 1, a: 1}
   attackColor: {r: 1, g: 0, b: 0, a: 1}
+  isFlipped: 0
   hoverYOffset: 30
   isInteractable: 0
   isPlayerCard: 0
+  isOnField: 0
+  isInPile: 0
+  position: 0
+  hasAttackedThisTurn: 0
+  hasChangedPositionThisTurn: 0
+  summonedThisTurn: 0
+  battledThisTurn: 0
+  wasSpecialSummoned: 0
+  hasUsedEffectThisTurn: 0
+  attacksDeclaredThisTurn: 0
+  maxAttacksPerTurn: 1
+  cannotInflictBattleDamage: 0
+  paidLifePoints: 0
+  isTributeSummoned: 0
+  originalAtk: 0
+  originalDef: 0
+  currentAtk: 0
+  currentDef: 0
+  spellCounters: 0
+  _turnCounter: 0
+  maxTurnCounter: 0
+  scheduledForDestruction: 0
+  destructionTurnCountdown: -1
+  destructionCountdownOwnerIsPlayer: 0
+  fusionMaterialsUsed: []
+  activeModifiers: []
 --- !u!114 &2707252141094400968
 MonoBehaviour:
   m_ObjectHideFlags: 0
