@@ -473,8 +473,13 @@ public class DeckBuilderManager : MonoBehaviour
         int limitCopies = MAX_COPIES;
         if (banList.ContainsKey(card.id))
         {
-            limitCopies = banList[card.id];
-            if (GameManager.Instance != null && GameManager.Instance.allowForbiddenCards && limitCopies == 0) limitCopies = 1;
+            // Se a banlist estiver desativada globalmente, ignora os limites específicos
+            if (GameManager.Instance == null || !GameManager.Instance.disableBanlist)
+            {
+                limitCopies = banList[card.id];
+                // Se permitir proibidas, trata Limit 0 como Limit 1
+                if (GameManager.Instance != null && GameManager.Instance.allowForbiddenCards && limitCopies == 0) limitCopies = 1;
+            }
         }
         
         if (totalCopies >= limitCopies) return false;

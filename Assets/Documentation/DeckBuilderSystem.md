@@ -105,6 +105,7 @@ Para salvar e sair com um deck válido:
 *   **Cópias:** Máximo de 3 cópias da mesma carta (soma de Main + Side + Extra).
 *   **Ban List (Esqueleto):** Suporte para limitar cartas a 0 (Forbidden), 1 (Limited) ou 2 (Semi-Limited).
     *   **Opção Global:** Se `GameManager.allowForbiddenCards` estiver ativo, cartas Proibidas são tratadas como Limitadas (1).
+    *   **Opção Sem Limites:** Se `GameManager.disableBanlist` estiver ativo, a Banlist é ignorada e todas as cartas podem ter até 3 cópias.
 
 ### 4. Persistência
 *   **Save Deck:** Salva a configuração atual no perfil do jogador (`GameManager`), tornando-o o deck ativo para duelos.
@@ -114,6 +115,7 @@ Para salvar e sair com um deck válido:
 ### 5. Banlist (Lista de Restrições)
 
 A lista abaixo reflete o formato clássico (baseado em 2005/Goat Format), adaptado para o equilíbrio da campanha.
+*(Estas restrições são aplicadas a menos que `disableBanlist` esteja ativo no GameManager)*
 
 #### 🚫 Proibidas (0 Cópias)
 Estas cartas não podem ser usadas no Deck (a menos que a opção `allowForbiddenCards` esteja ativa no GameManager).
@@ -146,15 +148,23 @@ Apenas 1 cópia permitida no Deck (Main + Side + Extra).
 
 *   **Monstros:**
     *   Black Luster Soldier - Envoy of the Beginning
+    *   Black Luster Soldier (Ritual)
     *   Chaos Sorcerer
     *   Breaker the Magical Warrior
-    *   Sangan
     *   Jinzo
     *   Tribe-Infecting Virus
     *   Sinister Serpent
     *   Exiled Force
     *   D.D. Assailant
     *   D.D. Warrior Lady
+    *   Ancient Gear Beast
+    *   Armed Dragon LV5 / LV7
+    *   Behemoth the King of All Animals
+    *   Chaos Command Magician
+    *   Injection Fairy Lily
+    *   Reflect Bounder
+    *   Twin-Headed Behemoth
+    *   Vampire Lord
     *   Morphing Jar
     *   Dark Magician of Chaos
     *   Relinquished
@@ -163,8 +173,6 @@ Apenas 1 cópia permitida no Deck (Main + Side + Extra).
     *   Exodia the Forbidden One (e todas as 4 partes)
 *   **Magias:**
     *   Pot of Greed
-    *   Graceful Charity
-    *   Dark Hole
     *   Heavy Storm
     *   Snatch Steal
     *   Premature Burial
@@ -173,7 +181,8 @@ Apenas 1 cópia permitida no Deck (Main + Side + Extra).
     *   Book of Moon
     *   Mystical Space Typhoon
     *   Giant Trunade
-    *   United We Stand
+    *   Mage Power
+    *   Painful Choice
     *   Mind Control
     *   Brain Control
     *   Limiter Removal

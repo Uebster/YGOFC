@@ -134,6 +134,8 @@ public class GameManager : MonoBehaviour
     public int handLimit = 6;
     [Tooltip("Se marcado, permite o uso de cartas Proibidas (Limit 0) como Limitadas (Limit 1).")]
     public bool allowForbiddenCards = false;
+    [Tooltip("Se marcado, ignora completamente a Banlist (todas as cartas podem ter 3 cópias).")]
+    public bool disableBanlist = false;
     [Tooltip("Se marcado, o monstro invocado por tributo ocupará a zona do primeiro monstro sacrificado.")]
     public bool placeTributeSummonInTributeZone = true;
 

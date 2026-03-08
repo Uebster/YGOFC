@@ -95,6 +95,7 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `alwaysCoinHead`: Força o resultado do lançamento de moeda a ser sempre "Cara" (Heads). Útil para testar cartas de aposta.
 *   `enableHandLimit`: Ativa/Desativa a regra de limite de cartas na mão.
 *   `allowForbiddenCards`: Se marcado, permite adicionar cartas Proibidas (Limit 0) aos decks, tratando-as como Limitadas (Limit 1).
+*   `disableBanlist`: Se marcado, ignora completamente a lista de restrições. Todas as cartas (incluindo Proibidas e Limitadas) podem ter até 3 cópias no deck.
 *   `handLimit`: Define o limite máximo de cartas na mão ao final do turno (Padrão: 6). Se excedido, o jogador deve descartar.
 *   `placeTributeSummonInTributeZone`: Se marcado, monstros invocados por tributo ocupam a zona do primeiro monstro sacrificado. Se desmarcado, vão para a primeira zona livre.
 *   **Atalho F11:** Se `devMode` estiver ativo, pressionar F11 alterna o modo Fullscreen instantaneamente.
