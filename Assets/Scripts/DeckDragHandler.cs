@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class DeckDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class DeckDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
 {
     public CardData cardData;
     public DeckZoneType sourceZone;
@@ -61,6 +61,30 @@ public class DeckDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             // Se soltou no nada e veio de um deck, remove (lixeira)
             else if (sourceZone != DeckZoneType.Trunk)
             {
+                DeckBuilderManager.Instance.RemoveCard(cardData, sourceZone);
+            }
+        }
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (eventData.button == PointerEventData.InputButton.Right)
+        {
+            if (DeckBuilderManager.Instance == null) return;
+
+            if (sourceZone == DeckZoneType.Trunk)
+            {
+                // Adiciona ao deck apropriado (Main ou Extra)
+                DeckZoneType target = DeckZoneType.Main;
+                if (cardData.type.Contains("Fusion") || cardData.type.Contains("Synchro") || cardData.type.Contains("Xyz"))
+                {
+                    target = DeckZoneType.Extra;
+                }
+                DeckBuilderManager.Instance.AddCardToDeck(cardData, target);
+            }
+            else
+            {
+                // Remove do deck atual
                 DeckBuilderManager.Instance.RemoveCard(cardData, sourceZone);
             }
         }

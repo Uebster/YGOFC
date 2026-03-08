@@ -27,6 +27,14 @@ public class DeckBuilderManager : MonoBehaviour
     [Header("UI References - Filters")]
     public TMP_InputField searchInput;
     
+    [Header("UI References - Pagination")]
+    public Button btnPrevPage;
+    public Button btnNextPage;
+    public TextMeshProUGUI txtPageInfo;
+    public int itemsPerPage = 50;
+    private int currentPage = 1;
+    private int totalPages = 1;
+    
     [Header("Filter Buttons")]
     public Button btnSortABC;
     public Button btnSortAtk;
@@ -58,6 +66,123 @@ public class DeckBuilderManager : MonoBehaviour
     private const int MAX_EXTRA = 15;
     private const int MAX_COPIES = 3;
 
+    // Banlist (ID -> Limit)
+    private Dictionary<string, int> banList = new Dictionary<string, int>()
+    {
+        // Forbidden (0)
+        { "0289", 0 }, // Chaos Emperor Dragon - Envoy of the End
+        { "1588", 0 }, // Sangan
+        { "2097", 0 }, // Witch of the Black Forest
+        { "2128", 0 }, // Yata-Garasu
+        { "0414", 0 }, // Dark Hole
+        { "0465", 0 }, // Delinquent Duo
+        { "0791", 0 }, // Graceful Charity
+        { "0872", 0 }, // Harpie's Feather Duster
+        { "1268", 0 }, // Monster Reborn
+        { "1480", 0 }, // Raigeki
+        { "2020", 0 }, // United We Stand
+        { "0932", 0 }, // Imperial Order
+        { "1251", 0 }, // Mirror Force
+        // Outras proibições clássicas mantidas para equilíbrio
+        { "0639", 0 }, // Fiber Jar
+        { "0363", 0 }, // Cyber Jar
+        { "1134", 0 }, // Magical Scientist
+        { "0370", 0 }, // Cyber-Stein
+        { "1252", 0 }, // Mirror Wall
+        { "0485", 0 }, // Destruction Ring
+        { "0287", 0 }, // Change of Heart
+        { "0321", 0 }, // Confiscation
+        { "1863", 0 }, // The Forceful Sentry
+
+        // Limited (1)
+        { "0189", 1 }, // Black Luster Soldier - Envoy of the Beginning
+        { "0188", 1 }, // Black Luster Soldier (Ritual)
+        { "0293", 1 }, // Chaos Sorcerer
+        { "0240", 1 }, // Breaker the Magical Warrior
+        { "1587", 1 }, // Sanga of the Thunder (Mantido 1 se for boss piece, ou erro de ID do Sangan antigo)
+        { "0975", 1 }, // Jinzo
+        { "1973", 1 }, // Tribe-Infecting Virus
+        { "1651", 1 }, // Sinister Serpent
+        { "0616", 1 }, // Exiled Force
+        { "0378", 1 }, // D.D. Assailant
+        { "0388", 1 }, // D.D. Warrior Lady
+        { "0058", 1 }, // Ancient Gear Beast
+        { "0097", 1 }, // Armed Dragon LV5
+        { "0098", 1 }, // Armed Dragon LV7
+        { "0166", 1 }, // Behemoth the King of All Animals
+        { "0288", 1 }, // Chaos Command Magician
+        { "0944", 1 }, // Injection Fairy Lily
+        { "1507", 1 }, // Reflect Bounder
+        { "1989", 1 }, // Twin-Headed Behemoth
+        { "2031", 1 }, // Vampire Lord
+        { "1277", 1 }, // Morphing Jar
+        { "1457", 1 }, // Primal Seed
+        { "0422", 1 }, // Dark Magician of Chaos
+        { "1513", 1 }, // Relinquished
+        { "1790", 1 }, // Summoner Monk
+        { "1517", 1 }, // Rescue Cat
+        { "1447", 1 }, // Pot of Greed
+        { "0881", 1 }, // Heavy Storm
+        { "1683", 1 }, // Snatch Steal
+        { "1453", 1 }, // Premature Burial
+        { "0259", 1 }, // Call of the Haunted
+        { "1533", 1 }, // Ring of Destruction
+        { "1955", 1 }, // Torrential Tribute
+        { "1120", 1 }, // Magic Cylinder
+        { "0275", 1 }, // Ceasefire
+        { "1499", 1 }, // Reckless Greed
+        { "1811", 1 }, // Swords of Revealing Light
+        { "0228", 1 }, // Book of Moon
+        { "1318", 1 }, // Mystical Space Typhoon
+        { "0757", 1 }, // Giant Trunade
+        { "1563", 1 }, // Royal Decree
+        { "1119", 1 }, // Mage Power
+        { "1397", 1 }, // Painful Choice
+        { "1462", 1 }, // Protector of the Sanctuary
+        { "1138", 1 }, // Magician of Faith
+        { "1170", 1 }, // Mask of Darkness
+        { "1236", 1 }, // Mind Control
+        { "0237", 1 }, // Brain Control
+        { "1088", 1 }, // Limiter Removal
+        { "1200", 1 }, // Megamorph
+        { "1929", 1 }, // Time Seal
+        { "2050", 1 }, // Wall of Revealing Light
+        { "1610", 1 }, // Self-Destruct Button
+        { "0264", 1 }, // Card Destruction
+        { "0497", 1 }, // Dimension Fusion
+        { "1523", 1 }, // Return from the Different Dimension
+        
+        // Exodia Pieces (Limited)
+        { "0618", 1 }, // Exodia Head
+        { "1061", 1 }, // Left Arm
+        { "1062", 1 }, // Left Leg
+        { "1530", 1 }, // Right Arm
+        { "1531", 1 }, // Right Leg
+
+        // Semi-Limited (2)
+        { "0338", 2 }, // Creature Swap
+        { "1055", 2 }, // Last Turn (User Request)
+        { "1162", 2 }, // Manticore of Darkness
+        { "1163", 2 }, // Marauding Captain
+        { "1278", 2 }, // Morphing Jar #2
+        { "1353", 2 }, // Nobleman of Crossout
+        { "1509", 2 }, // Reinforcement of the Army
+        { "2024", 2 }, // Upstart Goblin
+        { "0359", 2 }, // Cyber Dragon
+        { "0011", 2 }, // A Feint Plan
+        { "0602", 2 }, // Enemy Controller
+        { "1209", 2 }, // Messenger of Peace
+        { "1077", 2 }, // Level Limit - Area B
+        { "0817", 2 }, // Gravity Bind
+        { "1245", 2 }, // Miracle Dig
+        { "0786", 2 }, // Good Goblin Housekeeping
+        { "1329", 2 }, // Needle Worm
+        { "0077", 2 }, // Apprentice Magician
+        { "0460", 2 }, // Deck Devastation Virus
+        { "1604", 2 }, // Second Coin Toss
+        { "1498", 2 }  // Reasoning
+    };
+
     // Estado dos Filtros
     private bool showNormal = true;
     private bool showEffect = true;
@@ -88,7 +213,13 @@ public class DeckBuilderManager : MonoBehaviour
         if (btnFilterFusion) btnFilterFusion.onClick.AddListener(() => ToggleFilter("Fusion"));
         if (btnFilterRitual) btnFilterRitual.onClick.AddListener(() => ToggleFilter("Ritual"));
         
-        if (searchInput) searchInput.onValueChanged.AddListener(delegate { RefreshTrunkUI(); });
+        if (searchInput) searchInput.onValueChanged.AddListener(delegate { 
+            currentPage = 1; // Reseta página ao buscar
+            RefreshTrunkUI(); 
+        });
+
+        if (btnPrevPage) btnPrevPage.onClick.AddListener(PrevPage);
+        if (btnNextPage) btnNextPage.onClick.AddListener(NextPage);
 
         UpdateFilterVisuals();
     }
@@ -97,6 +228,7 @@ public class DeckBuilderManager : MonoBehaviour
     {
         LoadCurrentDeckFromManager();
         LoadTrunk();
+        currentPage = 1; // Reseta página ao abrir
         RefreshAllUI();
     }
 
@@ -185,11 +317,47 @@ public class DeckBuilderManager : MonoBehaviour
             case SortType.Def: filteredList = filteredList.OrderByDescending(c => c.def).ToList(); break;
         }
 
+        // Lógica de Paginação
+        totalPages = Mathf.CeilToInt((float)filteredList.Count / itemsPerPage);
+        if (totalPages < 1) totalPages = 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        UpdatePaginationUI();
+
+        // Pega apenas os itens da página atual
+        var paginatedList = filteredList.Skip((currentPage - 1) * itemsPerPage).Take(itemsPerPage).ToList();
+
         // Cria os objetos
-        foreach (CardData card in filteredList)
+        foreach (CardData card in paginatedList)
         {
             GameObject go = Instantiate(cardItemPrefab, trunkContent);
             SetupCardItem(go, card, DeckZoneType.Trunk);
+        }
+    }
+
+    void UpdatePaginationUI()
+    {
+        if (txtPageInfo) txtPageInfo.text = $"{currentPage}/{totalPages}";
+        if (btnPrevPage) btnPrevPage.interactable = currentPage > 1;
+        if (btnNextPage) btnNextPage.interactable = currentPage < totalPages;
+    }
+
+    public void NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            RefreshTrunkUI();
+        }
+    }
+
+    public void PrevPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            RefreshTrunkUI();
         }
     }
 
@@ -198,6 +366,7 @@ public class DeckBuilderManager : MonoBehaviour
     void SetSort(SortType type)
     {
         currentSort = type;
+        currentPage = 1; // Reseta página ao ordenar
         UpdateFilterVisuals();
         RefreshTrunkUI();
     }
@@ -213,6 +382,7 @@ public class DeckBuilderManager : MonoBehaviour
             case "Fusion": showFusion = !showFusion; break;
             case "Ritual": showRitual = !showRitual; break;
         }
+        currentPage = 1; // Reseta página ao filtrar
         UpdateFilterVisuals();
         RefreshTrunkUI();
     }
@@ -253,7 +423,7 @@ public class DeckBuilderManager : MonoBehaviour
         
         // Carrega textura (usando o sistema existente)
         // Nota: Para otimização em listas grandes, idealmente usaríamos Object Pooling e carregamento assíncrono leve
-        display.SetCard(card, null, true); 
+        display.SetCard(card, GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null, true); 
         display.isInteractable = false; // Não sobe no hover na lista
 
         // Adiciona Drag Handler
@@ -300,7 +470,14 @@ public class DeckBuilderManager : MonoBehaviour
                           currentSideDeck.Count(c => c.id == card.id) + 
                           currentExtraDeck.Count(c => c.id == card.id);
         
-        if (totalCopies >= MAX_COPIES) return false;
+        int limitCopies = MAX_COPIES;
+        if (banList.ContainsKey(card.id))
+        {
+            limitCopies = banList[card.id];
+            if (GameManager.Instance != null && GameManager.Instance.allowForbiddenCards && limitCopies == 0) limitCopies = 1;
+        }
+        
+        if (totalCopies >= limitCopies) return false;
 
         // Regra de Tipo (Fusão vai para Extra)
         if (card.type.Contains("Fusion") && targetZone != DeckZoneType.Extra) return false;

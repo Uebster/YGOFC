@@ -24976,6 +24976,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7ee78edd18f7e9478cf4f4398f3d199, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveLoadSystem
+  libraryData:
+    usedCardIDs: []
+    duelistRecords: []
 --- !u!4 &480735583
 Transform:
   m_ObjectHideFlags: 0
@@ -28285,6 +28288,7 @@ MonoBehaviour:
   turnClockPrefab: {fileID: 0}
   enableHandLimit: 1
   handLimit: 6
+  allowForbiddenCards: 0
   placeTributeSummonInTributeZone: 1
   enableRightClickPhaseMenu: 1
   confirmBattlePositionChange: 1
@@ -48343,6 +48347,10 @@ MonoBehaviour:
   extraDeckCountText: {fileID: 76973864}
   deckNameInput: {fileID: 1693812974}
   searchInput: {fileID: 261182707}
+  btnPrevPage: {fileID: 0}
+  btnNextPage: {fileID: 0}
+  txtPageInfo: {fileID: 0}
+  itemsPerPage: 50
   btnSortABC: {fileID: 0}
   btnSortAtk: {fileID: 0}
   btnSortDef: {fileID: 0}
@@ -55967,7 +55975,7 @@ GameObject:
   - component: {fileID: 1133953564}
   - component: {fileID: 1133953563}
   m_Layer: 5
-  m_Name: Btn_FilterDfs
+  m_Name: Btn_FilterDef
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

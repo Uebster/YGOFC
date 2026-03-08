@@ -111,101 +111,113 @@ Para salvar e sair com um deck válido:
 *   **Export Deck:** Salva a lista de IDs das cartas em um arquivo JSON na pasta de dados do aplicativo.
 *   **Import Deck:** Carrega um arquivo JSON. O sistema verifica se o jogador possui as cartas no Baú (Trunk). Se não possuir, a carta não é adicionada.
 
-### 5. Lista de Cartas
+### 5. Banlist (Lista de Restrições)
 
-        // Forbidden (0)
-        { "0289", 0 }, // Chaos Emperor Dragon - Envoy of the End
-        { "2128", 0 }, // Yata-Garasu
-        { "2097", 0 }, // Witch of the Black Forest
-        { "0932", 0 }, // Imperial Order
-        { "0872", 0 }, // Harpie's Feather Duster
-        { "0321", 0 }, // Confiscation
-        { "1863", 0 }, // The Forceful Sentry
-        { "0287", 0 }, // Change of Heart
-        { "1055", 0 }, // Last Turn
-        { "0639", 0 }, // Fiber Jar
-        { "0363", 0 }, // Cyber Jar
-        { "1134", 0 }, // Magical Scientist
-        { "0370", 0 }, // Cyber-Stein
-        { "1252", 0 }, // Mirror Wall
-        { "1480", 0 }, // Raigeki
-        { "1268", 0 }, // Monster Reborn
-        { "0485", 0 }, // Destruction Ring
+A lista abaixo reflete o formato clássico (baseado em 2005/Goat Format), adaptado para o equilíbrio da campanha.
 
-        // Limited (1)
-        { "0189", 1 }, // Black Luster Soldier - Envoy of the Beginning
-        { "0293", 1 }, // Chaos Sorcerer
-        { "0240", 1 }, // Breaker the Magical Warrior
-        { "1587", 1 }, // Sangan
-        { "0975", 1 }, // Jinzo
-        { "1973", 1 }, // Tribe-Infecting Virus
-        { "1651", 1 }, // Sinister Serpent
-        { "0616", 1 }, // Exiled Force
-        { "0378", 1 }, // D.D. Assailant
-        { "0388", 1 }, // D.D. Warrior Lady
-        { "1277", 1 }, // Morphing Jar
-        { "1457", 1 }, // Primal Seed
-        { "0422", 1 }, // Dark Magician of Chaos
-        { "1513", 1 }, // Relinquished
-        { "1790", 1 }, // Summoner Monk
-        { "1517", 1 }, // Rescue Cat
-        { "1447", 1 }, // Pot of Greed
-        { "0791", 1 }, // Graceful Charity
-        { "0414", 1 }, // Dark Hole
-        { "0881", 1 }, // Heavy Storm
-        { "1683", 1 }, // Snatch Steal
-        { "1453", 1 }, // Premature Burial
-        { "0259", 1 }, // Call of the Haunted
-        { "1251", 1 }, // Mirror Force
-        { "1533", 1 }, // Ring of Destruction
-        { "1955", 1 }, // Torrential Tribute
-        { "1120", 1 }, // Magic Cylinder
-        { "0275", 1 }, // Ceasefire
-        { "1499", 1 }, // Reckless Greed
-        { "1811", 1 }, // Swords of Revealing Light
-        { "1353", 1 }, // Nobleman of Crossout
-        { "0228", 1 }, // Book of Moon
-        { "1318", 1 }, // Mystical Space Typhoon
-        { "0757", 1 }, // Giant Trunade
-        { "1563", 1 }, // Royal Decree
-        { "2020", 1 }, // United We Stand
-        { "1138", 1 }, // Magician of Faith
-        { "1170", 1 }, // Mask of Darkness
-        { "1236", 1 }, // Mind Control
-        { "0237", 1 }, // Brain Control
-        { "1088", 1 }, // Limiter Removal
-        { "1200", 1 }, // Megamorph
-        { "1929", 1 }, // Time Seal
-        { "2050", 1 }, // Wall of Revealing Light
-        { "1610", 1 }, // Self-Destruct Button
-        { "0264", 1 }, // Card Destruction
-        { "0497", 1 }, // Dimension Fusion
-        { "1523", 1 }, // Return from the Different Dimension
-        
-        // Exodia Pieces (Limited)
-        { "0618", 1 }, // Exodia Head
-        { "1061", 1 }, // Left Arm
-        { "1062", 1 }, // Left Leg
-        { "1530", 1 }, // Right Arm
-        { "1531", 1 }, // Right Leg
+#### 🚫 Proibidas (0 Cópias)
+Estas cartas não podem ser usadas no Deck (a menos que a opção `allowForbiddenCards` esteja ativa no GameManager).
 
-        // Semi-Limited (2)
-        { "0338", 2 }, // Creature Swap
-        { "2024", 2 }, // Upstart Goblin
-        { "1509", 2 }, // Reinforcement of the Army
-        { "0359", 2 }, // Cyber Dragon
-        { "0011", 2 }, // A Feint Plan
-        { "0602", 2 }, // Enemy Controller
-        { "1209", 2 }, // Messenger of Peace
-        { "1077", 2 }, // Level Limit - Area B
-        { "0817", 2 }, // Gravity Bind
-        { "1245", 2 }, // Miracle Dig
-        { "0786", 2 }, // Good Goblin Housekeeping
-        { "1329", 2 }, // Needle Worm
-        { "1163", 2 }, // Marauding Captain
-        { "0077", 2 }, // Apprentice Magician
-        { "1138", 2 }, // Magician of Faith
-        { "1162", 2 }, // Manticore of Darkness
-        { "0460", 2 }, // Deck Devastation Virus
-        { "1604", 2 }, // Second Coin Toss
-        { "1498", 2 }  // Reasoning
+*   Chaos Emperor Dragon - Envoy of the End
+*   Sangan
+*   Witch of the Black Forest
+*   Yata-Garasu
+*   Dark Hole
+*   Delinquent Duo
+*   Graceful Charity
+*   Harpie's Feather Duster
+*   Monster Reborn
+*   Raigeki
+*   United We Stand
+*   Imperial Order
+*   Mirror Force
+*   Change of Heart
+*   Confiscation
+*   The Forceful Sentry
+*   Fiber Jar
+*   Cyber Jar
+*   Magical Scientist
+*   Cyber-Stein
+*   Mirror Wall
+*   Destruction Ring
+
+#### ⚠️ Limitadas (1 Cópia)
+Apenas 1 cópia permitida no Deck (Main + Side + Extra).
+
+*   **Monstros:**
+    *   Black Luster Soldier - Envoy of the Beginning
+    *   Chaos Sorcerer
+    *   Breaker the Magical Warrior
+    *   Sangan
+    *   Jinzo
+    *   Tribe-Infecting Virus
+    *   Sinister Serpent
+    *   Exiled Force
+    *   D.D. Assailant
+    *   D.D. Warrior Lady
+    *   Morphing Jar
+    *   Dark Magician of Chaos
+    *   Relinquished
+    *   Summoner Monk
+    *   Rescue Cat
+    *   Exodia the Forbidden One (e todas as 4 partes)
+*   **Magias:**
+    *   Pot of Greed
+    *   Graceful Charity
+    *   Dark Hole
+    *   Heavy Storm
+    *   Snatch Steal
+    *   Premature Burial
+    *   Swords of Revealing Light
+    *   Nobleman of Crossout
+    *   Book of Moon
+    *   Mystical Space Typhoon
+    *   Giant Trunade
+    *   United We Stand
+    *   Mind Control
+    *   Brain Control
+    *   Limiter Removal
+    *   Megamorph
+    *   Card Destruction
+    *   Dimension Fusion
+    *   Primal Seed
+*   **Armadilhas:**
+    *   Call of the Haunted
+    *   Ring of Destruction
+    *   Torrential Tribute
+    *   Magic Cylinder
+    *   Ceasefire
+    *   Reckless Greed
+    *   Royal Decree
+    *   Mask of Darkness
+    *   Time Seal
+    *   Wall of Revealing Light
+    *   Self-Destruct Button
+    *   Return from the Different Dimension
+    *   Protector of the Sanctuary
+
+#### ⚠️⚠️ Semi-Limitadas (2 Cópias)
+Até 2 cópias permitidas no Deck.
+
+*   Creature Swap
+*   Last Turn
+*   Manticore of Darkness
+*   Marauding Captain
+*   Morphing Jar #2
+*   Nobleman of Crossout
+*   Reinforcement of the Army
+*   Upstart Goblin
+*   Cyber Dragon
+*   A Feint Plan
+*   Enemy Controller
+*   Messenger of Peace
+*   Level Limit - Area B
+*   Gravity Bind
+*   Miracle Dig
+*   Good Goblin Housekeeping
+*   Needle Worm
+*   Apprentice Magician
+*   Magician of Faith
+*   Deck Devastation Virus
+*   Second Coin Toss
+*   Reasoning
