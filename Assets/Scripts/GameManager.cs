@@ -444,6 +444,9 @@ public class GameManager : MonoBehaviour
 
         // Cria o gerenciador de testes se o modo estiver ativo
         if (effectTestMode && FindFirstObjectByType<EffectTestManager>() == null) CreateManager<EffectTestManager>();
+        
+        // Garante o TrophyManager
+        if (TrophyManager.Instance == null) CreateManager<TrophyManager>();
     }
 
     void CreateManager<T>() where T : MonoBehaviour
@@ -1550,6 +1553,10 @@ public void ShuffleDeck(bool isPlayer)
         if (DuelScoreManager.Instance != null) DuelScoreManager.Instance.RecordDamageTaken(amount);
         Debug.Log($"Player tomou {amount} de dano. LP Restante: {playerLP}");
 
+        // TROFÉU: Dano Sofrido
+        if (TrophyManager.Instance != null)
+            TrophyManager.Instance.TrackStat("damage_taken", amount);
+
         // Atualiza a música baseada na nova situação de vida
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.UpdateBGM(playerLP, opponentLP);
 
@@ -1570,6 +1577,10 @@ public void ShuffleDeck(bool isPlayer)
 
         if (DuelScoreManager.Instance != null) DuelScoreManager.Instance.RecordDamageDealt(amount);
         Debug.Log($"Oponente tomou {amount} de dano. LP Restante: {opponentLP}");
+
+        // TROFÉU: Dano Causado
+        if (TrophyManager.Instance != null)
+            TrophyManager.Instance.TrackStat("damage_dealt", amount);
 
         // Atualiza a música baseada na nova situação de vida
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.UpdateBGM(playerLP, opponentLP);
@@ -1607,6 +1618,8 @@ public void ShuffleDeck(bool isPlayer)
         {
             Debug.Log("EXODIA OBLITERATE! VITÓRIA AUTOMÁTICA!");
             // TODO: Tocar animação especial do Exodia aqui
+            // TROFÉU: Exodia
+            if (TrophyManager.Instance != null) TrophyManager.Instance.Unlock(80);
             EndDuel(true);
         }
     }
@@ -1789,6 +1802,10 @@ public void ShuffleDeck(bool isPlayer)
 
         // 5. Pontuação
         if (DuelScoreManager.Instance != null) DuelScoreManager.Instance.RecordSummon();
+        
+        // TROFÉU: Tributo
+        if (isTributeSummon && TrophyManager.Instance != null)
+            TrophyManager.Instance.TrackStat("tribute_summon", 1);
     }
 
     public Transform GetFreeMonsterZone(bool isPlayer)
@@ -1873,6 +1890,10 @@ public void ShuffleDeck(bool isPlayer)
         // 3. Invoca o Monstro de Ritual da mão
         RemoveCardFromHand(ritualMonster, sourceCard.isPlayerCard);
         SpecialSummonFromData(ritualMonster, sourceCard.isPlayerCard);
+        
+        // TROFÉU: Ritual
+        if (TrophyManager.Instance != null)
+            TrophyManager.Instance.TrackStat("ritual_summon", 1);
     }
 
     // --- LÓGICA DE SPELL / TRAP ---
@@ -1976,6 +1997,13 @@ public void ShuffleDeck(bool isPlayer)
                     if (isTrap) DuelScoreManager.Instance.RecordTrapActivation();
                     else DuelScoreManager.Instance.RecordSpellActivation();
                 }
+                
+                // TROFÉU: Ativação
+                if (TrophyManager.Instance != null)
+                {
+                    if (isTrap) TrophyManager.Instance.TrackStat("trap_activated", 1);
+                    else TrophyManager.Instance.TrackStat("spell_activated", 1);
+                }
 
                 // Integração com Sistema de Chains
                 if (ChainManager.Instance != null)
@@ -2034,6 +2062,13 @@ public void ShuffleDeck(bool isPlayer)
         {
             if (isTrap) DuelScoreManager.Instance.RecordTrapActivation();
             else DuelScoreManager.Instance.RecordSpellActivation();
+        }
+        
+        // TROFÉU: Ativação (Field Spell)
+        if (TrophyManager.Instance != null)
+        {
+            if (isTrap) TrophyManager.Instance.TrackStat("trap_activated", 1);
+            else TrophyManager.Instance.TrackStat("spell_activated", 1);
         }
 
         // Integração com Sistema de Chains
@@ -2340,6 +2375,10 @@ public void ShuffleDeck(bool isPlayer)
         {
             CardEffectManager.Instance.OnSpecialSummon(display);
         }
+        
+        // TROFÉU: Special Summon
+        if (TrophyManager.Instance != null)
+            TrophyManager.Instance.TrackStat("special_summon", 1);
 
         // Notifica o ChainManager sobre a invocação para abrir janela de resposta (ex: Trap Hole)
         if (ChainManager.Instance != null)
@@ -2540,6 +2579,10 @@ public void ShuffleDeck(bool isPlayer)
         {
             summonedMonster.fusionMaterialsUsed = new List<CardData>(materials);
         }
+        
+        // TROFÉU: Fusão
+        if (TrophyManager.Instance != null)
+            TrophyManager.Instance.TrackStat("fusion_summon", 1);
     }
 
     // Helper para equipar um monstro em outro (Union, Relinquished)

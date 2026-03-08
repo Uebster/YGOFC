@@ -9,6 +9,7 @@ public class SaveLoadSystem : MonoBehaviour
 
     // Dados em tempo de execução
     public LibrarySaveData libraryData = new LibrarySaveData();
+    public TrophySaveData trophyData = new TrophySaveData();
 
     [System.Serializable]
     public class DuelistWinRecord
@@ -22,6 +23,37 @@ public class SaveLoadSystem : MonoBehaviour
     {
         public List<string> usedCardIDs = new List<string>(); // Cartas que já perderam o status "New"
         public List<DuelistWinRecord> duelistRecords = new List<DuelistWinRecord>();
+    }
+
+    [System.Serializable]
+    public class TrophySaveData
+    {
+        public List<int> unlockedTrophies = new List<int>();
+        public PlayerStatistics stats = new PlayerStatistics();
+    }
+
+    [System.Serializable]
+    public class PlayerStatistics
+    {
+        public long totalDamageDealt;
+        public long totalDamageTaken;
+        public long totalDirectDamage;
+        public long totalEffectDamage;
+        public long totalReflectDamage;
+        
+        public int arenaWins;
+        public int arenaDuels;
+        
+        public int spellsActivated;
+        public int trapsActivated;
+        public int monsterEffectsActivated;
+        
+        public int fusionSummons;
+        public int ritualSummons;
+        public int tributeSummons;
+        public int specialSummons;
+        
+        public int highestDamageDealt; // Dano máximo em um único ataque
     }
 
     void Awake()
@@ -48,6 +80,7 @@ public class SaveLoadSystem : MonoBehaviour
         public List<string> extraDeck;
         public List<string> playerExtraDeckIDs; // For player's extra deck
         public LibrarySaveData libraryData;
+        public TrophySaveData trophyData;
     }
 
     public void SaveGame(string saveID)
@@ -71,6 +104,7 @@ public class SaveLoadSystem : MonoBehaviour
         data.extraDeck = extra.Select(c => c.id).ToList();
         data.playerExtraDeckIDs = GameManager.Instance.GetPlayerExtraDeck().Select(c => c.id).ToList(); // Save player's extra deck
         data.libraryData = this.libraryData;
+        data.trophyData = this.trophyData;
 
         string json = JsonUtility.ToJson(data, true);
         string path = Path.Combine(Application.persistentDataPath, saveID + ".save");
@@ -105,6 +139,7 @@ public class SaveLoadSystem : MonoBehaviour
 
         // Carrega dados da biblioteca
         if (data.libraryData != null) this.libraryData = data.libraryData;
+        if (data.trophyData != null) this.trophyData = data.trophyData;
 
         Debug.Log("Jogo carregado com sucesso!");
     }
@@ -181,5 +216,31 @@ public class SaveLoadSystem : MonoBehaviour
     {
         // É nova se o jogador tem no Trunk mas ainda não está na lista de usados
         return GameManager.Instance.playerTrunk.Contains(cardID) && !libraryData.usedCardIDs.Contains(cardID);
+    }
+
+    // --- MÉTODOS DE TROFÉUS ---
+
+    public bool IsTrophyUnlocked(int trophyId)
+    {
+        return trophyData.unlockedTrophies.Contains(trophyId);
+    }
+
+    public void UnlockTrophy(int trophyId)
+    {
+        if (!IsTrophyUnlocked(trophyId))
+        {
+            trophyData.unlockedTrophies.Add(trophyId);
+            // Salva imediatamente para garantir a conquista
+            if (!string.IsNullOrEmpty(GameManager.Instance.currentSaveID))
+                SaveGame(GameManager.Instance.currentSaveID);
+            
+            Debug.Log($"[SaveLoadSystem] Troféu Desbloqueado: {trophyId}");
+            // Aqui você pode chamar um evento de UI para mostrar o popup do troféu
+        }
+    }
+
+    public PlayerStatistics GetStats()
+    {
+        return trophyData.stats;
     }
 }
