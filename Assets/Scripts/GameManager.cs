@@ -1499,6 +1499,12 @@ public void ShuffleDeck(bool isPlayer)
             CardData rewardCard = null;
             if (playerWon && currentOpponent != null && currentOpponent.rewards.Count > 0)
             {
+                // Registra vitória na Biblioteca
+                if (SaveLoadSystem.Instance != null)
+                {
+                    SaveLoadSystem.Instance.RegisterDuelistWin(currentOpponent.id);
+                }
+
                 string rewardId = currentOpponent.rewards[Random.Range(0, currentOpponent.rewards.Count)];
                 rewardCard = cardDatabase.GetCardById(rewardId);
                 Debug.Log($"Recompensa: {rewardCard?.name ?? "Nenhuma"}");

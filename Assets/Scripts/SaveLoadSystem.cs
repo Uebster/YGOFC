@@ -7,6 +7,23 @@ public class SaveLoadSystem : MonoBehaviour
 {
     public static SaveLoadSystem Instance;
 
+    // Dados em tempo de execução
+    public LibrarySaveData libraryData = new LibrarySaveData();
+
+    [System.Serializable]
+    public class DuelistWinRecord
+    {
+        public string duelistID;
+        public int wins;
+    }
+
+    [System.Serializable]
+    public class LibrarySaveData
+    {
+        public List<string> usedCardIDs = new List<string>(); // Cartas que já perderam o status "New"
+        public List<DuelistWinRecord> duelistRecords = new List<DuelistWinRecord>();
+    }
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -30,6 +47,7 @@ public class SaveLoadSystem : MonoBehaviour
         public List<string> sideDeck;
         public List<string> extraDeck;
         public List<string> playerExtraDeckIDs; // For player's extra deck
+        public LibrarySaveData libraryData;
     }
 
     public void SaveGame(string saveID)
@@ -52,6 +70,7 @@ public class SaveLoadSystem : MonoBehaviour
         data.sideDeck = side.Select(c => c.id).ToList();
         data.extraDeck = extra.Select(c => c.id).ToList();
         data.playerExtraDeckIDs = GameManager.Instance.GetPlayerExtraDeck().Select(c => c.id).ToList(); // Save player's extra deck
+        data.libraryData = this.libraryData;
 
         string json = JsonUtility.ToJson(data, true);
         string path = Path.Combine(Application.persistentDataPath, saveID + ".save");
@@ -83,6 +102,9 @@ public class SaveLoadSystem : MonoBehaviour
 
         CampaignManager.Instance.maxUnlockedLevel = data.campaignProgress;
         CampaignManager.Instance.SaveProgress(); // Atualiza PlayerPrefs para sincronizar
+
+        // Carrega dados da biblioteca
+        if (data.libraryData != null) this.libraryData = data.libraryData;
 
         Debug.Log("Jogo carregado com sucesso!");
     }
@@ -121,5 +143,43 @@ public class SaveLoadSystem : MonoBehaviour
             if (c != null) cards.Add(c);
         }
         return cards;
+    }
+
+    // --- MÉTODOS DA BIBLIOTECA ---
+
+    public void RegisterDuelistWin(string duelistID)
+    {
+        var record = libraryData.duelistRecords.Find(r => r.duelistID == duelistID);
+        if (record != null)
+        {
+            record.wins++;
+        }
+        else
+        {
+            libraryData.duelistRecords.Add(new DuelistWinRecord { duelistID = duelistID, wins = 1 });
+        }
+        // Salva automaticamente após registrar vitória para não perder progresso
+        if (!string.IsNullOrEmpty(GameManager.Instance.currentSaveID))
+            SaveGame(GameManager.Instance.currentSaveID);
+    }
+
+    public int GetDuelistWins(string duelistID)
+    {
+        var record = libraryData.duelistRecords.Find(r => r.duelistID == duelistID);
+        return record != null ? record.wins : 0;
+    }
+
+    public void MarkCardAsUsed(string cardID)
+    {
+        if (!libraryData.usedCardIDs.Contains(cardID))
+        {
+            libraryData.usedCardIDs.Add(cardID);
+        }
+    }
+
+    public bool IsCardNew(string cardID)
+    {
+        // É nova se o jogador tem no Trunk mas ainda não está na lista de usados
+        return GameManager.Instance.playerTrunk.Contains(cardID) && !libraryData.usedCardIDs.Contains(cardID);
     }
 }

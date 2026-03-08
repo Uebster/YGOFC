@@ -65,7 +65,7 @@ A enciclopédia de todas as cartas disponíveis no jogo.
 *   **Desbloqueio:** Quando o jogador obtém uma carta pela primeira vez (seja no Deck Inicial, Drop de Duelo ou Password), a carta vira para frente na Biblioteca, permitindo visualização dos detalhes.
 *   **Tag "New":**
     *   Toda carta recém-adquirida recebe uma tag/ícone "New" piscante sobre ela na grade.
-    *   **Regra de Limpeza:** A tag "New" **NÃO** desaparece apenas ao passar o mouse ou clicar na Biblioteca. Ela só desaparece quando o jogador **adiciona a carta a um Deck** no menu *Deck Construction*. Isso incentiva o uso das novas cartas.
+    *   **Regra de Limpeza:** A tag "New" **NÃO** desaparece apenas ao passar o mouse ou clicar na Biblioteca. Ela só desaparece quando o jogador **adiciona a carta a um Deck** no menu *Deck Construction* (implementado via `SaveLoadSystem.MarkCardAsUsed`). Isso incentiva o uso das novas cartas.
 
 ### Estrutura de UI
 *   **Panel_LibCards** `[Image, CardLibraryManager]` - Script principal de controle.
@@ -158,5 +158,5 @@ O desbloqueio é vinculado ao progresso da **História (Campanha)**.
 ---
 
 ## Notas Técnicas
-*   **Persistência:** O estado de "New" das cartas e contagem de vitórias na Arena deve ser salvo no `SaveLoadSystem` (perfil do jogador).
+*   **Persistência:** O estado de "New" das cartas e contagem de vitórias na Arena é salvo no `SaveLoadSystem` dentro da estrutura `LibrarySaveData`.
 *   **Reutilização:** O `CardViewerUI` é amplamente reutilizado aqui. Certifique-se de que ele pode ser configurado para mostrar dados estáticos sem depender do estado de um duelo ativo.

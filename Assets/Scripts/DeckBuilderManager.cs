@@ -306,6 +306,12 @@ public class DeckBuilderManager : MonoBehaviour
         if (card.type.Contains("Fusion") && targetZone != DeckZoneType.Extra) return false;
         if (!card.type.Contains("Fusion") && targetZone == DeckZoneType.Extra) return false;
 
+        // Marca como usada (remove tag "New")
+        if (SaveLoadSystem.Instance != null)
+        {
+            SaveLoadSystem.Instance.MarkCardAsUsed(card.id);
+        }
+
         targetList.Add(card);
         RefreshAllUI();
         return true;
