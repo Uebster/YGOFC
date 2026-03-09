@@ -61,16 +61,20 @@ O sistema de progressão de duelistas funciona em três estágios:
 A enciclopédia de todas as cartas disponíveis no jogo.
 
 ### Lógica de Desbloqueio e "New"
-*   **Visualização:** Inicialmente, todas as cartas aparecem com o verso (Back) virado para cima (bloqueadas).
-*   **Desbloqueio:** Quando o jogador obtém uma carta pela primeira vez (seja no Deck Inicial, Drop de Duelo ou Password), a carta vira para frente na Biblioteca, permitindo visualização dos detalhes.
+*   **Visualização Completa:** A biblioteca exibe **todas** as cartas do banco de dados (ex: 2147 cartas), divididas em páginas.
+    *   **Cartas Não Obtidas:** Aparecem com o verso (Back) virado para cima. O *Card Viewer* não exibe detalhes para manter o mistério.
+    *   **Cartas Obtidas:** Aparecem com a arte visível. O *Card Viewer* exibe todos os dados.
 *   **Tag "New":**
     *   Toda carta recém-adquirida recebe uma tag/ícone "New" piscante sobre ela na grade.
     *   **Regra de Limpeza:** A tag "New" **NÃO** desaparece apenas ao passar o mouse ou clicar na Biblioteca. Ela só desaparece quando o jogador **adiciona a carta a um Deck** no menu *Deck Construction* (implementado via `SaveLoadSystem.MarkCardAsUsed`). Isso incentiva o uso das novas cartas.
+    *   **Exceção (Deck Inicial):** As cartas geradas para o Deck Inicial do jogador já nascem marcadas como "Usadas", pois já fazem parte de um deck ativo.
+    *   **Exceção (Cheat):** Se o jogador usar a opção `unlockAllCards` no GameManager, todas as cartas adicionadas serão marcadas como "Usadas" para evitar poluição visual na biblioteca.
 
 ### Estrutura de UI
 *   **Panel_LibCards** `[Image, CardLibraryManager]` - Script principal de controle.
     *   **Panel_CardViewer** `[Image]` - Visualizador ampliado à esquerda.
         *   **CardViewer** `[CardViewerUI]`
+            *   *Nota:* Este componente é atualizado dinamicamente ao passar o mouse sobre os itens da grade. Se a carta não foi obtida, ele é limpo.
             *   **Card2D** `[RawImage]` - Imagem da carta.
             *   **CardNameText** `[TMP]`
             *   **CardInfoText** `[TMP]` - Tipo/Raça/Atributo.
@@ -82,10 +86,10 @@ A enciclopédia de todas as cartas disponíveis no jogo.
     *   **Title_Text** `[TMP]` - "Card Library"
     *   **Panel_CardLibrary** `[Image]` - Grade de cartas.
         *   **Panel_Header** `[Image]`
-            *   **PageText** `[TMP]`
+            *   **PageText** `[TMP]` - Exibe "Page X/Y".
         *   **Panel_MainArea** `[Image]`
             *   **Scroll View** `[ScrollRect]`
-                *   **Content** `[GridLayoutGroup]` - Slots das cartas (Back ou Front).
+                *   **Content** `[GridLayoutGroup]` - Configurado para 10 colunas x 5 linhas (50 itens por página).
         *   **Panel_Footer** `[Image]`
             *   **Btn_Previous** `[Button]`
             *   **Btn_Next** `[Button]`
