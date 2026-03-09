@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using System.Text;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 public class NameInputScreen : MonoBehaviour
 {
@@ -10,17 +11,31 @@ public class NameInputScreen : MonoBehaviour
     public int maxCharacters = 8; // Forbidden Memories usa 8 caracteres
     public string defaultName = "DUELIST";
 
-    [Header("Keyboard Generation")]
-    public Transform keyboardContainer; // Arraste o objeto com Grid Layout Group
-    public GameObject keyPrefab; // Arraste um prefab de botão simples
-    public string charactersToGenerate = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    public string accentedCharacters = "ÁÀÂÃÉÊÍÓÔÕÚÇ";
-    public string specialCharacters = "!@#$%&*()_+-=[]{};:,.<>/?";
+    [Header("Keyboard Grids")]
+    public GameObject qwertyGrid;
+    public GameObject abcGrid;
+    public GameObject accentsGrid;
+    public GameObject specialsGrid;
+
+    [Header("Control Buttons")]
+    public Button btnSwitchLayout; // Alterna entre ABC e QWERTY
+    public Button btnAccents;
+    public Button btnSpecials;
 
     private StringBuilder currentName = new StringBuilder();
     private bool isShifted = false;
     private bool isCaps = false;
+
+    [Header("Keyboard Generation")]
+    public GameObject keyPrefab; // Arraste um prefab de botão simples
     private List<VirtualKey> generatedKeys = new List<VirtualKey>();
+
+    void Start()
+    {
+        if (btnSwitchLayout) btnSwitchLayout.onClick.AddListener(ToggleKeyboardLayout);
+        if (btnAccents) btnAccents.onClick.AddListener(ShowAccents);
+        if (btnSpecials) btnSpecials.onClick.AddListener(ShowSpecials);
+    }
 
     void OnEnable()
     {
@@ -31,7 +46,8 @@ public class NameInputScreen : MonoBehaviour
         // Reseta o estado do teclado
         isShifted = false;
         isCaps = false;
-        UpdateKeyboardCase();
+        
+        ShowQwerty(); // Padrão
     }
 
     public void ProcessKey(string key)
@@ -143,13 +159,9 @@ public class NameInputScreen : MonoBehaviour
     {
         bool upper = isShifted || isCaps;
         
-        // Busca as teclas se a lista estiver vazia (ex: runtime)
-        if (generatedKeys == null || generatedKeys.Count == 0)
-        {
-            if (keyboardContainer != null)
-                generatedKeys = new List<VirtualKey>(keyboardContainer.GetComponentsInChildren<VirtualKey>());
-        }
-
+        // Atualiza a lista de teclas se necessário (pode ter mudado de grid)
+        RefreshKeyList();
+        
         foreach (var key in generatedKeys)
         {
             if (key == null) continue;
@@ -163,55 +175,148 @@ public class NameInputScreen : MonoBehaviour
         }
     }
 
+    private void RefreshKeyList()
+    {
+        generatedKeys.Clear();
+        // Adiciona teclas de todos os grids ativos e inativos para garantir que o Shift funcione em tudo
+        if (qwertyGrid) generatedKeys.AddRange(qwertyGrid.GetComponentsInChildren<VirtualKey>(true));
+        if (abcGrid) generatedKeys.AddRange(abcGrid.GetComponentsInChildren<VirtualKey>(true));
+        if (accentsGrid) generatedKeys.AddRange(accentsGrid.GetComponentsInChildren<VirtualKey>(true));
+        if (specialsGrid) generatedKeys.AddRange(specialsGrid.GetComponentsInChildren<VirtualKey>(true));
+    }
+
+    // --- CONTROLE DE ABAS ---
+
+    public void ShowQwerty()
+    {
+        if (qwertyGrid) qwertyGrid.SetActive(true);
+        if (abcGrid) abcGrid.SetActive(false);
+        if (accentsGrid) accentsGrid.SetActive(false);
+        if (specialsGrid) specialsGrid.SetActive(false);
+        UpdateKeyboardCase();
+    }
+
+    public void ShowABC()
+    {
+        if (qwertyGrid) qwertyGrid.SetActive(false);
+        if (abcGrid) abcGrid.SetActive(true);
+        if (accentsGrid) accentsGrid.SetActive(false);
+        if (specialsGrid) specialsGrid.SetActive(false);
+        UpdateKeyboardCase();
+    }
+
+    public void ShowAccents()
+    {
+        if (qwertyGrid) qwertyGrid.SetActive(false);
+        if (abcGrid) abcGrid.SetActive(false);
+        if (accentsGrid) accentsGrid.SetActive(true);
+        if (specialsGrid) specialsGrid.SetActive(false);
+        UpdateKeyboardCase();
+    }
+
+    public void ShowSpecials()
+    {
+        if (qwertyGrid) qwertyGrid.SetActive(false);
+        if (abcGrid) abcGrid.SetActive(false);
+        if (accentsGrid) accentsGrid.SetActive(false);
+        if (specialsGrid) specialsGrid.SetActive(true);
+    }
+
+    public void ToggleKeyboardLayout()
+    {
+        if (qwertyGrid != null && qwertyGrid.activeSelf)
+        {
+            ShowABC();
+        }
+        else
+        {
+            ShowQwerty();
+        }
+    }
+
     // --- FERRAMENTA DE GERAÇÃO AUTOMÁTICA ---
     // Clique com o botão direito no script no Inspector e escolha "Generate Keyboard"
     [ContextMenu("Generate Keyboard")]
     public void GenerateKeyboard()
     {
-        if (keyboardContainer == null || keyPrefab == null)
+        if (keyPrefab == null)
         {
-            Debug.LogError("NameInputScreen: Por favor, atribua 'Keyboard Container' e 'Key Prefab' no Inspector.");
+            Debug.LogError("NameInputScreen: Key Prefab não atribuído!");
+            return;
+        }
+        if (qwertyGrid == null || abcGrid == null || accentsGrid == null || specialsGrid == null)
+        {
+            Debug.LogError("NameInputScreen: Um ou mais Grids de Teclado não foram atribuídos no Inspector.");
             return;
         }
 
-        // Limpa botões existentes para evitar duplicatas (apenas no Editor)
-        while (keyboardContainer.childCount > 0)
-        {
-            DestroyImmediate(keyboardContainer.GetChild(0).gameObject);
-        }
+        // Limpa todos os grids antes de gerar
+        ClearGrid(qwertyGrid.transform);
+        ClearGrid(abcGrid.transform);
+        ClearGrid(accentsGrid.transform);
+        ClearGrid(specialsGrid.transform);
 
         generatedKeys.Clear();
 
-        // 1. Layout QWERTY
-        string[] rows = new string[]
-        {
-            "1234567890",
-            "QWERTYUIOP",
-            "ASDFGHJKL",
-            "ZXCVBNM"
-        };
+        // --- Gera Layout QWERTY ---
+        string[] qwertyRows = { "1234567890", "QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM" };
+        GenerateLayout(qwertyGrid.transform, qwertyRows);
+        GenerateFunctionalKeys(qwertyGrid.transform);
 
+        // --- Gera Layout ABC ---
+        string[] abcRows = { "ABCDEFGHI", "JKLMNOPQR", "STUVWXYZ", "0123456789" };
+        GenerateLayout(abcGrid.transform, abcRows);
+        GenerateFunctionalKeys(abcGrid.transform);
+
+        // --- Gera Layout de Acentos ---
+        string[] accentRows = { "ÁÀÂÃÉÊÍ", "ÓÔÕÚÇ" };
+        GenerateLayout(accentsGrid.transform, accentRows);
+        GenerateFunctionalKeys(accentsGrid.transform, true); // Com Shift/Caps
+
+        // --- Gera Layout de Especiais ---
+        string[] specialRows = { "!@#$%&*", "()_+-=[]{}", ";:,.<>/?" };
+        GenerateLayout(specialsGrid.transform, specialRows);
+        GenerateFunctionalKeys(specialsGrid.transform, false); // Sem Shift/Caps
+
+        Debug.Log("Teclados virtuais gerados com sucesso!");
+    }
+
+    private void ClearGrid(Transform grid)
+    {
+        if (grid == null) return;
+        for (int i = grid.childCount - 1; i >= 0; i--)
+        {
+            DestroyImmediate(grid.GetChild(i).gameObject);
+        }
+    }
+
+    private void GenerateLayout(Transform container, string[] rows)
+    {
         foreach (string row in rows)
         {
             foreach (char c in row)
             {
-                CreateKey(c.ToString());
+                CreateKey(c.ToString(), container);
             }
         }
-
-        // 2. Teclas Funcionais
-        CreateKey("SPACE");
-        CreateKey("BS"); // Backspace
-        CreateKey("SHIFT");
-        CreateKey("CAPS");
-        CreateKey("ENTER");
-
-        Debug.Log("Teclado virtual gerado com sucesso!");
     }
 
-    private void CreateKey(string charOrFunc)
+    private void GenerateFunctionalKeys(Transform container, bool includeShiftAndCaps = true)
     {
-        GameObject newKey = Instantiate(keyPrefab, keyboardContainer);
+        CreateKey("SPACE", container);
+        CreateKey("BS", container);
+        if (includeShiftAndCaps)
+        {
+            CreateKey("SHIFT", container);
+            CreateKey("CAPS", container);
+        }
+        CreateKey("ENTER", container);
+    }
+
+    private void CreateKey(string charOrFunc, Transform parent)
+    {
+        if (parent == null) return;
+        GameObject newKey = Instantiate(keyPrefab, parent);
         newKey.name = $"Key_{charOrFunc}";
         
         // Configura o texto do botão

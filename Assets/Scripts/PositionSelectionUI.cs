@@ -16,6 +16,10 @@ public class PositionSelectionUI : MonoBehaviour
 
     private System.Action<CardDisplay.BattlePosition> onSelectionMade;
 
+    // Variável para rastrear o sprite criado e destruí-lo depois
+    private Sprite currentLoadedSprite;
+    private Texture2D currentLoadedTexture;
+
     void Awake()
     {
         // Auto-configuração baseada na hierarquia fornecida
@@ -63,6 +67,9 @@ public class PositionSelectionUI : MonoBehaviour
         if (Text_PositionAsk) 
             Text_PositionAsk.text = $"Invocar {card.name}?";
 
+        // Limpa texturas anteriores antes de carregar novas
+        CleanupPreviousImages();
+
         // Carrega a imagem da carta nas opções
         if (card != null && !string.IsNullOrEmpty(card.image_filename))
         {
@@ -77,7 +84,27 @@ public class PositionSelectionUI : MonoBehaviour
     void SelectPosition(CardDisplay.BattlePosition position)
     {
         gameObject.SetActive(false);
+        // Limpa as imagens ao fechar para liberar memória
+        CleanupPreviousImages();
         onSelectionMade?.Invoke(position);
+    }
+
+    // Método para limpar memória
+    private void CleanupPreviousImages()
+    {
+        if (SummonPosition) SummonPosition.sprite = null;
+        if (SetPosition) SetPosition.sprite = null;
+
+        if (currentLoadedSprite != null)
+        {
+            Destroy(currentLoadedSprite);
+            currentLoadedSprite = null;
+        }
+        if (currentLoadedTexture != null)
+        {
+            Destroy(currentLoadedTexture);
+            currentLoadedTexture = null;
+        }
     }
 
     IEnumerator LoadCardImage(string imagePath)
@@ -94,13 +121,21 @@ public class PositionSelectionUI : MonoBehaviour
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                Texture2D texture = DownloadHandlerTexture.GetContent(request);
-                // Cria um sprite a partir da textura carregada
-                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                // Salva referência para destruir depois
+                currentLoadedTexture = DownloadHandlerTexture.GetContent(request);
                 
-                if (SummonPosition) SummonPosition.sprite = sprite;
-                if (SetPosition) SetPosition.sprite = sprite;
+                // Cria um sprite a partir da textura carregada
+                currentLoadedSprite = Sprite.Create(currentLoadedTexture, new Rect(0, 0, currentLoadedTexture.width, currentLoadedTexture.height), new Vector2(0.5f, 0.5f));
+                
+                if (SummonPosition) SummonPosition.sprite = currentLoadedSprite;
+                if (SetPosition) SetPosition.sprite = currentLoadedSprite;
             }
         }
+    }
+
+    // Garante limpeza se o objeto for destruído
+    void OnDestroy()
+    {
+        CleanupPreviousImages();
     }
 }

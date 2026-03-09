@@ -32,6 +32,7 @@ public class UIManager : MonoBehaviour
     public GameObject libraryMenu;       // Menu da Biblioteca
     public GameObject saveScreen;
     public GameObject loadScreen;
+    public GameObject deleteScreen;      // Novo: Tela de Deletar Save
     public GameObject libDuelistsScreen;
     public GameObject libCardsScreen;
     public GameObject libArenasScreen;
@@ -124,6 +125,7 @@ public class UIManager : MonoBehaviour
         if (libraryMenu != null) libraryMenu.SetActive(false);
         if (saveScreen != null) saveScreen.SetActive(false);
         if (loadScreen != null) loadScreen.SetActive(false);
+        if (deleteScreen != null) deleteScreen.SetActive(false); // Novo
         if (libDuelistsScreen != null) libDuelistsScreen.SetActive(false);
         if (libCardsScreen != null) libCardsScreen.SetActive(false);
         if (libArenasScreen != null) libArenasScreen.SetActive(false);
@@ -455,9 +457,9 @@ public class UIManager : MonoBehaviour
 
     public void Btn_Load() { ShowScreen(loadScreen); }
     public void Btn_DeleteSave() 
-    { 
-        Debug.Log("Abrir popup de deletar save..."); 
-        // Implementar lógica de delete
+    {
+        if (deleteScreen != null) ShowScreen(deleteScreen);
+        else Debug.LogWarning("UIManager: A tela de Deletar (Delete Screen) não foi atribuída no Inspector.");
     }
 
     // --- Navegação Online ---

@@ -15,6 +15,8 @@ public class SaveLoadMenu : MonoBehaviour
     public Transform listContent; // Onde os slots serão criados
     public GameObject slotPrefab; // O prefab do SaveSlotUI
     public Button newSaveButton; // Botão "Novo Save" (Apenas para tela de Save)
+    public Button mainActionButton; // Botão de Ação (Save/Load/Delete)
+    public TextMeshProUGUI mainActionText; // Texto do botão de ação
 
     [Header("Confirmação")]
     public GameObject confirmationPopup;
@@ -23,16 +25,19 @@ public class SaveLoadMenu : MonoBehaviour
     public Button confirmNoButton;
 
     private System.Action pendingAction;
+    private SaveLoadSystem.GameSaveData selectedSave;
 
     void Start()
     {
         if (confirmationPopup != null) confirmationPopup.SetActive(false);
         if (confirmYesButton != null) confirmYesButton.onClick.AddListener(OnConfirmYes);
         if (confirmNoButton != null) confirmNoButton.onClick.AddListener(OnConfirmNo);
+        if (mainActionButton != null) mainActionButton.onClick.AddListener(OnMainActionClicked);
     }
 
     void OnEnable()
     {
+        selectedSave = null;
         RefreshList();
         
         // Configura botão de Novo Save
@@ -43,6 +48,7 @@ public class SaveLoadMenu : MonoBehaviour
             newSaveButton.onClick.AddListener(OnNewSaveClicked);
         }
         
+        UpdateUI();
         CloseConfirmation();
     }
 
@@ -63,51 +69,78 @@ public class SaveLoadMenu : MonoBehaviour
             SaveSlotUI slot = go.GetComponent<SaveSlotUI>();
             if (slot != null)
             {
-                // Passamos true para isSaveMode apenas se for Save, para fins visuais do slot se necessário
-                slot.Setup(save, OnSlotClicked, OnDeleteClicked, menuType == MenuType.Save);
+                bool isSelected = (selectedSave != null && selectedSave.saveID == save.saveID);
+                slot.Setup(save, OnSlotClicked, isSelected);
             }
         }
     }
 
     void OnSlotClicked(SaveLoadSystem.GameSaveData data)
     {
+        selectedSave = data;
+        RefreshList(); // Recarrega para atualizar o destaque visual
+        UpdateUI();
+    }
+
+    void UpdateUI()
+    {
+        if (mainActionButton != null)
+        {
+            mainActionButton.interactable = (selectedSave != null);
+            
+            if (mainActionText != null)
+            {
+                if (menuType == MenuType.Save)
+                    mainActionText.text = (selectedSave != null) ? "Overwrite" : "Select a Slot";
+                else if (menuType == MenuType.Load)
+                    mainActionText.text = "Load Game";
+                else if (menuType == MenuType.Delete)
+                    mainActionText.text = "Delete";
+            }
+        }
+    }
+
+    void OnMainActionClicked()
+    {
+        if (selectedSave == null) return;
+
         switch (menuType)
         {
             case MenuType.Save:
-                ShowConfirmation($"Tem certeza que deseja sobrescrever o save de\n<color=yellow>{data.playerName}</color>?", () => 
+                ShowConfirmation($"Tem certeza que deseja sobrescrever o save de\n<color=yellow>{selectedSave.playerName}</color>?", () => 
                 {
-                    SaveLoadSystem.Instance.SaveGame(data.saveID);
+                    SaveLoadSystem.Instance.SaveGame(selectedSave.saveID);
                     RefreshList();
                 });
                 break;
             case MenuType.Load:
                 // Carregar Save
-                SaveLoadSystem.Instance.LoadGame(data.saveID);
+                SaveLoadSystem.Instance.LoadGame(selectedSave.saveID);
                 if (UIManager.Instance != null) UIManager.Instance.Btn_BackToNewGameMenu(); // Volta ao menu
                 break;
             case MenuType.Delete:
-                OnDeleteClicked(data);
+                ShowConfirmation($"Tem certeza que deseja <color=red>DELETAR</color> o save de\n{selectedSave.playerName}?", () => 
+                {
+                    SaveLoadSystem.Instance.DeleteSave(selectedSave.saveID);
+                    selectedSave = null;
+                    RefreshList();
+                    UpdateUI();
+                });
                 break;
         }
-    }
-
-    void OnDeleteClicked(SaveLoadSystem.GameSaveData data)
-    {
-        ShowConfirmation($"Tem certeza que deseja <color=red>DELETAR</color> o save de\n{data.playerName}?", () => 
-        {
-            SaveLoadSystem.Instance.DeleteSave(data.saveID);
-            RefreshList();
-        });
     }
 
     void OnNewSaveClicked()
     {
         if (GameManager.Instance != null)
         {
-            // Gera ID único baseado no nome e hora
-            string newID = $"{GameManager.Instance.playerName}_{System.DateTime.Now:yyyyMMdd_HHmmss}";
-            SaveLoadSystem.Instance.SaveGame(newID);
-            RefreshList();
+            ShowConfirmation("Criar um novo arquivo de Save?", () =>
+            {
+                // Gera ID único baseado no nome e hora
+                string newID = $"{GameManager.Instance.playerName}_{System.DateTime.Now:yyyyMMdd_HHmmss}";
+                SaveLoadSystem.Instance.SaveGame(newID);
+                RefreshList();
+            });
         }
     }
 
