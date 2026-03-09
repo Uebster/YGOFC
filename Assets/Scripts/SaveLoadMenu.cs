@@ -5,9 +5,11 @@ using TMPro;
 
 public class SaveLoadMenu : MonoBehaviour
 {
+    public enum MenuType { Save, Load, Delete }
+
     [Header("Configuração")]
-    [Tooltip("Marque TRUE se esta for a tela de SALVAR. Desmarque para CARREGAR.")]
-    public bool isSaveMode = false; 
+    [Tooltip("Escolha o comportamento deste menu.")]
+    public MenuType menuType = MenuType.Load;
     
     [Header("Referências UI")]
     public Transform listContent; // Onde os slots serão criados
@@ -36,7 +38,7 @@ public class SaveLoadMenu : MonoBehaviour
         // Configura botão de Novo Save
         if (newSaveButton != null)
         {
-            newSaveButton.gameObject.SetActive(isSaveMode);
+            newSaveButton.gameObject.SetActive(menuType == MenuType.Save);
             newSaveButton.onClick.RemoveAllListeners();
             newSaveButton.onClick.AddListener(OnNewSaveClicked);
         }
@@ -61,26 +63,31 @@ public class SaveLoadMenu : MonoBehaviour
             SaveSlotUI slot = go.GetComponent<SaveSlotUI>();
             if (slot != null)
             {
-                slot.Setup(save, OnSlotClicked, OnDeleteClicked, isSaveMode);
+                // Passamos true para isSaveMode apenas se for Save, para fins visuais do slot se necessário
+                slot.Setup(save, OnSlotClicked, OnDeleteClicked, menuType == MenuType.Save);
             }
         }
     }
 
     void OnSlotClicked(SaveLoadSystem.GameSaveData data)
     {
-        if (isSaveMode)
+        switch (menuType)
         {
-            ShowConfirmation($"Tem certeza que deseja sobrescrever o save de\n<color=yellow>{data.playerName}</color>?", () => 
-            {
-                SaveLoadSystem.Instance.SaveGame(data.saveID);
-                RefreshList();
-            });
-        }
-        else
-        {
-            // Carregar Save
-            SaveLoadSystem.Instance.LoadGame(data.saveID);
-            if (UIManager.Instance != null) UIManager.Instance.Btn_BackToNewGameMenu(); // Volta ao menu
+            case MenuType.Save:
+                ShowConfirmation($"Tem certeza que deseja sobrescrever o save de\n<color=yellow>{data.playerName}</color>?", () => 
+                {
+                    SaveLoadSystem.Instance.SaveGame(data.saveID);
+                    RefreshList();
+                });
+                break;
+            case MenuType.Load:
+                // Carregar Save
+                SaveLoadSystem.Instance.LoadGame(data.saveID);
+                if (UIManager.Instance != null) UIManager.Instance.Btn_BackToNewGameMenu(); // Volta ao menu
+                break;
+            case MenuType.Delete:
+                OnDeleteClicked(data);
+                break;
         }
     }
 

@@ -182,12 +182,21 @@ public class NameInputScreen : MonoBehaviour
 
         generatedKeys.Clear();
 
-        // 1. Caracteres Padrão + Acentos + Especiais
-        string allChars = charactersToGenerate + accentedCharacters + specialCharacters;
-
-        foreach (char c in allChars)
+        // 1. Layout QWERTY
+        string[] rows = new string[]
         {
-            CreateKey(c.ToString());
+            "1234567890",
+            "QWERTYUIOP",
+            "ASDFGHJKL",
+            "ZXCVBNM"
+        };
+
+        foreach (string row in rows)
+        {
+            foreach (char c in row)
+            {
+                CreateKey(c.ToString());
+            }
         }
 
         // 2. Teclas Funcionais
