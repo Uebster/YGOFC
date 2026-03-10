@@ -4,34 +4,53 @@ using TMPro;
 public class SaveSlotUI : MonoBehaviour
 {
     public TextMeshProUGUI nameText;
+    public TextMeshProUGUI dateText;
+    public TextMeshProUGUI infoText;
     public Button actionButton; // O botão principal (fundo do slot)
     public Image selectionHighlight; // Imagem de destaque
 
     private SaveLoadSystem.GameSaveData myData;
     private System.Action<SaveLoadSystem.GameSaveData> onAction;
 
+    public SaveLoadSystem.GameSaveData MyData => myData; // Propriedade para acesso externo
+
     public void Setup(SaveLoadSystem.GameSaveData data, System.Action<SaveLoadSystem.GameSaveData> selectCallback, bool isSelected)
     {
         myData = data;
         onAction = selectCallback;
 
-        // Formata tudo em uma linha: "Nome  |  Data  |  Act X"
+        if (nameText) nameText.text = data.playerName;
+        if (dateText) dateText.text = data.lastPlayedTime;
+
         int act = ((data.campaignProgress - 1) / 10) + 1;
-        string displayText = $"{data.playerName}   |   {data.lastPlayedTime}   |   Act {act}";
-        
-        if (nameText) nameText.text = displayText;
+        if (infoText) infoText.text = $"Act {act}";
 
         // Configura destaque
-        if (selectionHighlight == null) selectionHighlight = GetComponent<Image>();
-        if (selectionHighlight != null)
+        SetSelected(isSelected);
+
+        // Auto-atribuição do botão para robustez
+        if (actionButton == null)
         {
-            selectionHighlight.color = isSelected ? new Color(1f, 1f, 0f, 1f) : new Color(1f, 1f, 1f, 0.5f); // Amarelo se selecionado
+            actionButton = GetComponent<Button>();
         }
 
         if (actionButton)
         {
             actionButton.onClick.RemoveAllListeners();
             actionButton.onClick.AddListener(() => onAction?.Invoke(myData));
+        }
+        else
+        {
+            Debug.LogError($"[SaveSlotUI] Não foi possível encontrar o componente Button no prefab do slot: {gameObject.name}");
+        }
+    }
+
+    public void SetSelected(bool isSelected)
+    {
+        if (selectionHighlight == null) selectionHighlight = GetComponent<Image>();
+        if (selectionHighlight != null)
+        {
+            selectionHighlight.color = isSelected ? new Color(1f, 1f, 0f, 1f) : new Color(1f, 1f, 1f, 0.5f); // Amarelo se selecionado
         }
     }
 }

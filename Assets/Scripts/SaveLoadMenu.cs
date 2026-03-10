@@ -26,6 +26,49 @@ public class SaveLoadMenu : MonoBehaviour
 
     private System.Action pendingAction;
     private SaveLoadSystem.GameSaveData selectedSave;
+    private List<SaveSlotUI> instantiatedSlots = new List<SaveSlotUI>();
+
+    void Awake()
+    {
+        // --- AUTO-CONFIGURAÇÃO BASEADA NA HIERARQUIA ---
+        
+        // 1. Tenta achar o container da lista se não estiver atribuído
+        if (listContent == null) listContent = transform.Find("Scroll View/Viewport/Content");
+
+        // 2. Tenta achar o botão principal (Save, Load ou Delete)
+        if (mainActionButton == null)
+        {
+            Transform btnTr = transform.Find("Btn_SaveGame");
+            if (btnTr == null) btnTr = transform.Find("Btn_LoadGame");
+            if (btnTr == null) btnTr = transform.Find("Btn_DeleteGame");
+
+            if (btnTr != null)
+            {
+                mainActionButton = btnTr.GetComponent<Button>();
+                if (mainActionText == null) mainActionText = btnTr.GetComponentInChildren<TextMeshProUGUI>();
+            }
+        }
+
+        // 3. Tenta achar o Popup de Confirmação correto
+        if (confirmationPopup == null)
+        {
+            Transform popupTr = transform.Find("ConfirmationSave");
+            if (popupTr == null) popupTr = transform.Find("ConfirmationLoad");
+            if (popupTr == null) popupTr = transform.Find("ConfirmationDelete");
+
+            if (popupTr != null)
+            {
+                confirmationPopup = popupTr.gameObject;
+                if (confirmationText == null) confirmationText = popupTr.Find("Text (TMP)")?.GetComponent<TextMeshProUGUI>();
+                
+                Transform yesTr = popupTr.Find("Btn_Yes");
+                if (yesTr != null) confirmYesButton = yesTr.GetComponent<Button>();
+                
+                Transform noTr = popupTr.Find("Btn_No");
+                if (noTr != null) confirmNoButton = noTr.GetComponent<Button>();
+            }
+        }
+    }
 
     void Start()
     {
@@ -58,6 +101,7 @@ public class SaveLoadMenu : MonoBehaviour
 
         // Limpa lista antiga
         foreach (Transform child in listContent) Destroy(child.gameObject);
+        instantiatedSlots.Clear();
 
         // Busca saves do disco
         List<SaveLoadSystem.GameSaveData> saves = SaveLoadSystem.Instance.GetAllSaves();
@@ -71,6 +115,7 @@ public class SaveLoadMenu : MonoBehaviour
             {
                 bool isSelected = (selectedSave != null && selectedSave.saveID == save.saveID);
                 slot.Setup(save, OnSlotClicked, isSelected);
+                instantiatedSlots.Add(slot);
             }
         }
     }
@@ -78,7 +123,13 @@ public class SaveLoadMenu : MonoBehaviour
     void OnSlotClicked(SaveLoadSystem.GameSaveData data)
     {
         selectedSave = data;
-        RefreshList(); // Recarrega para atualizar o destaque visual
+        
+        // Atualiza visualmente apenas o destaque, sem recriar a lista (evita flicker/perda de scroll)
+        foreach (var slot in instantiatedSlots)
+        {
+            if (slot != null) slot.SetSelected(selectedSave != null && selectedSave.saveID == slot.MyData.saveID);
+        }
+
         UpdateUI();
     }
 
