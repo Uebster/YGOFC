@@ -75,6 +75,8 @@ public class DeckBuilderManager : MonoBehaviour
     public List<IconMapping> attributeIcons;
     [Tooltip("Mapeia o nome do tipo (ex: 'Spell') para seu sprite.")]
     public List<IconMapping> typeIcons;
+    [Tooltip("Mapeia a raça do monstro (ex: 'Warrior') para seu sprite.")]
+    public List<IconMapping> monsterRaceIcons;
 
     // Listas de dados atuais
     private List<CardData> mainDeck = new List<CardData>();
@@ -435,7 +437,14 @@ public class DeckBuilderManager : MonoBehaviour
         }
     }
 
-    void SetupCardItem(GameObject go, CardData card, DeckZoneType zoneType) {
+    void SetupCardItem(GameObject go, CardData card, DeckZoneType zoneType)
+    {
+        // --- Configuração do CardDisplay (Arte e Interação) ---
+        CardDisplay display = go.GetComponent<CardDisplay>();
+        if (display == null) display = go.AddComponent<CardDisplay>();
+        display.SetCard(card, GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null, true);
+        display.isInteractable = false;
+
         // --- Referências do Prefab ---
         var cardNameText = go.transform.Find("CardNameText")?.GetComponent<TextMeshProUGUI>();
         var cardStatsText = go.transform.Find("CardStatsText")?.GetComponent<TextMeshProUGUI>();
@@ -443,12 +452,6 @@ public class DeckBuilderManager : MonoBehaviour
         var attributeImage = go.transform.Find("AttributeIcon")?.GetComponent<Image>();
         var typeImage = go.transform.Find("TypeIcon")?.GetComponent<Image>();
         var subTypeImage = go.transform.Find("SubTypeIcon")?.GetComponent<Image>();
-
-        // --- Configuração do CardDisplay (Arte e Interação) ---
-        CardDisplay display = go.GetComponent<CardDisplay>();
-        if (display == null) display = go.AddComponent<CardDisplay>();
-        display.SetCard(card, GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null, true);
-        display.isInteractable = false;
 
         // --- Lógica de Exibição ---
         if (card.type.Contains("Monster")) {
@@ -459,26 +462,35 @@ public class DeckBuilderManager : MonoBehaviour
                 monsterLvlText.gameObject.SetActive(true);
                 monsterLvlText.text = $"x{card.level}";
             }
+            // Mostra o ícone de Atributo (DARK, LIGHT, etc.)
             if (attributeImage) {
                 attributeImage.gameObject.SetActive(true);
                 attributeImage.sprite = attributeIcons.Find(i => i.name.Equals(card.attribute, System.StringComparison.OrdinalIgnoreCase))?.icon;
             }
-            if (typeImage) typeImage.gameObject.SetActive(false);
+            // Mostra o ícone de Raça (Warrior, Fiend, etc.)
+            if (typeImage) {
+                typeImage.gameObject.SetActive(true);
+                typeImage.sprite = monsterRaceIcons.Find(i => i.name.Equals(card.race, System.StringComparison.OrdinalIgnoreCase))?.icon;
+            }
+            // Monstros não usam o SubTypeIcon nesta visualização
             if (subTypeImage) subTypeImage.gameObject.SetActive(false);
         } else {
             // É Magia ou Armadilha
             if (cardNameText) cardNameText.text = card.name;
             if (cardStatsText) cardStatsText.text = "";
             if (monsterLvlText) monsterLvlText.gameObject.SetActive(false);
+            // Esconde o ícone de Atributo, pois S/T não têm
             if (attributeImage) attributeImage.gameObject.SetActive(false);
 
+            // Usa o TypeIcon para o símbolo principal (Magia ou Armadilha)
             if (typeImage) {
                 typeImage.gameObject.SetActive(true);
                 string mainType = card.type.Contains("Spell") ? "Spell" : "Trap";
                 typeImage.sprite = typeIcons.Find(i => i.name.Equals(mainType, System.StringComparison.OrdinalIgnoreCase))?.icon;
             }
+            
+            // Usa o SubTypeIcon para a Propriedade (Continuous, Equip, etc.)
             if (subTypeImage) {
-                // 'property' contém "Quick-Play", "Continuous", etc.
                 Sprite subTypeSprite = typeIcons.Find(i => i.name.Equals(card.property, System.StringComparison.OrdinalIgnoreCase))?.icon;
                 subTypeImage.sprite = subTypeSprite;
                 subTypeImage.gameObject.SetActive(subTypeSprite != null);
