@@ -25,6 +25,12 @@ public class SaveLoadMenu : MonoBehaviour
     public Button confirmYesButton;
     public Button confirmNoButton;
 
+    [Header("Cores de Destaque")]
+    [Tooltip("Cor do slot quando selecionado.")]
+    public Color selectedColor = new Color(1f, 1f, 0f, 1f); // Amarelo
+    [Tooltip("Cor padrão/não selecionado do slot.")]
+    public Color defaultColor = new Color(1f, 1f, 1f, 0.5f);
+
     private System.Action pendingAction;
     private SaveLoadSystem.GameSaveData selectedSave;
     private bool isCreatingNewSave = false;

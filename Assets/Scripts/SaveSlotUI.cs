@@ -11,6 +11,7 @@ public class SaveSlotUI : MonoBehaviour
 
     private SaveLoadSystem.GameSaveData myData;
     private System.Action<SaveLoadSystem.GameSaveData> onAction;
+    private SaveLoadMenu menuManager; // Referência ao menu para pegar as cores
 
     public SaveLoadSystem.GameSaveData MyData => myData; // Propriedade para acesso externo
 
@@ -18,6 +19,7 @@ public class SaveSlotUI : MonoBehaviour
     {
         Debug.Log($"[SaveSlotUI] Configurando slot para: {(data != null ? data.playerName : "null")}");
         myData = data;
+        menuManager = GetComponentInParent<SaveLoadMenu>();
         onAction = selectCallback;
 
         // Auto-atribuição para robustez, caso as referências se percam no Inspector.
@@ -64,6 +66,7 @@ public class SaveSlotUI : MonoBehaviour
     public void SetupForNewSave(System.Action newSaveCallback)
     {
         myData = null; // Este slot não representa um save existente
+        menuManager = GetComponentInParent<SaveLoadMenu>();
 
         // Auto-atribuição para robustez
         if (nameText == null) nameText = transform.Find("Name")?.GetComponent<TextMeshProUGUI>();
@@ -89,7 +92,7 @@ public class SaveSlotUI : MonoBehaviour
         if (selectionHighlight == null) selectionHighlight = GetComponent<Image>();
         if (selectionHighlight != null)
         {
-            selectionHighlight.color = isSelected ? new Color(1f, 1f, 0f, 1f) : new Color(1f, 1f, 1f, 0.5f); // Amarelo se selecionado
+            selectionHighlight.color = isSelected ? menuManager.selectedColor : menuManager.defaultColor;
         }
     }
 }
