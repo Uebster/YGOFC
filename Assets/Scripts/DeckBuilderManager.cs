@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
@@ -35,6 +36,10 @@ public class DeckBuilderManager : MonoBehaviour
     private int currentPage = 1;
     private int totalPages = 1;
     
+    [Header("UI References - Actions")]
+    public Button btnSave;
+    public Button btnExit;
+    
     [Header("Filter Buttons")]
     public Button btnSortABC;
     public Button btnSortAtk;
@@ -58,6 +63,8 @@ public class DeckBuilderManager : MonoBehaviour
     private List<CardData> currentSideDeck = new List<CardData>();
     private List<CardData> currentExtraDeck = new List<CardData>();
     private List<CardData> currentTrunk = new List<CardData>();
+
+    private bool hasUnsavedChanges = false;
 
     // Limites
     private const int MIN_MAIN = 40;
@@ -220,6 +227,9 @@ public class DeckBuilderManager : MonoBehaviour
 
         if (btnPrevPage) btnPrevPage.onClick.AddListener(PrevPage);
         if (btnNextPage) btnNextPage.onClick.AddListener(NextPage);
+        
+        if (btnSave) btnSave.onClick.AddListener(SaveDeck);
+        if (btnExit) btnExit.onClick.AddListener(ExitDeckBuilder);
 
         UpdateFilterVisuals();
     }
@@ -229,6 +239,7 @@ public class DeckBuilderManager : MonoBehaviour
         LoadCurrentDeckFromManager();
         LoadTrunk();
         currentPage = 1; // Reseta página ao abrir
+        hasUnsavedChanges = false;
         RefreshAllUI();
     }
 
@@ -422,7 +433,6 @@ public class DeckBuilderManager : MonoBehaviour
         if (display == null) display = go.AddComponent<CardDisplay>();
         
         // Carrega textura (usando o sistema existente)
-        // Nota: Para otimização em listas grandes, idealmente usaríamos Object Pooling e carregamento assíncrono leve
         display.SetCard(card, GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null, true); 
         display.isInteractable = false; // Não sobe no hover na lista
 
@@ -431,6 +441,14 @@ public class DeckBuilderManager : MonoBehaviour
         if (drag == null) drag = go.AddComponent<DeckDragHandler>();
         drag.cardData = card;
         drag.sourceZone = zoneType;
+
+        // Lógica do Indicador "NEW"
+        Transform newIndicator = go.transform.Find("NewIndicator");
+        if (newIndicator != null)
+        {
+            bool isNew = SaveLoadSystem.Instance != null && SaveLoadSystem.Instance.IsCardNew(card.id);
+            newIndicator.gameObject.SetActive(isNew);
+        }
     }
 
     void UpdateCounts()
@@ -495,16 +513,20 @@ public class DeckBuilderManager : MonoBehaviour
         }
 
         targetList.Add(card);
+        hasUnsavedChanges = true;
         RefreshAllUI();
         return true;
     }
 
     public void RemoveCard(CardData card, DeckZoneType sourceZone)
     {
-        if (sourceZone == DeckZoneType.Main) currentMainDeck.Remove(card);
-        else if (sourceZone == DeckZoneType.Side) currentSideDeck.Remove(card);
-        else if (sourceZone == DeckZoneType.Extra) currentExtraDeck.Remove(card);
+        bool removed = false;
+        if (sourceZone == DeckZoneType.Main) removed = currentMainDeck.Remove(card);
+        else if (sourceZone == DeckZoneType.Side) removed = currentSideDeck.Remove(card);
+        else if (sourceZone == DeckZoneType.Extra) removed = currentExtraDeck.Remove(card);
         
+        if(removed) hasUnsavedChanges = true;
+
         RefreshAllUI();
     }
 
@@ -555,7 +577,8 @@ public class DeckBuilderManager : MonoBehaviour
             AddCardsIfOwned(deckFile.mainDeckIDs, currentMainDeck);
             AddCardsIfOwned(deckFile.sideDeckIDs, currentSideDeck);
             AddCardsIfOwned(deckFile.extraDeckIDs, currentExtraDeck);
-
+            
+            hasUnsavedChanges = true;
             RefreshAllUI();
             Debug.Log("Deck importado com sucesso!");
         }
@@ -577,22 +600,90 @@ public class DeckBuilderManager : MonoBehaviour
         }
     }
 
-    public void SaveAndExit()
+    public void SaveDeck()
     {
         if (currentMainDeck.Count < MIN_MAIN)
         {
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage($"Deck Inválido! O deck principal precisa de no mínimo {MIN_MAIN} cartas.");
             Debug.LogWarning($"Deck inválido! Mínimo de {MIN_MAIN} cartas.");
-            // Opcional: Mostrar popup de erro
             return;
         }
 
         if (GameManager.Instance != null)
-        {   // SetPlayerDeck now expects playerExtraDeck
-            GameManager.Instance.SetPlayerDeck(currentMainDeck, currentSideDeck, currentExtraDeck); 
+        {
+            GameManager.Instance.SetPlayerDeck(currentMainDeck, currentSideDeck, currentExtraDeck);
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Deck Salvo!");
+            Debug.Log("Deck salvo com sucesso no perfil atual!");
         }
-        
-        // Volta para o menu anterior
-        if (UIManager.Instance != null) UIManager.Instance.Btn_BackToNewGameMenu();
+
+        hasUnsavedChanges = false;
+    }
+
+    public void ExitDeckBuilder()
+    {
+        // Primeiro, verifica se o deck atual (não salvo) é inválido
+        if (currentMainDeck.Count < MIN_MAIN)
+        {
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowConfirmation(
+                    $"Seu deck está inválido (menos de {MIN_MAIN} cartas) e não pode ser salvo. Deseja sair mesmo assim?",
+                    () => { if (UIManager.Instance != null) UIManager.Instance.Btn_BackToNewGameMenu(); }
+                );
+            }
+        }
+        else if (hasUnsavedChanges)
+        {
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowConfirmation(
+                    "Você possui alterações não salvas. Deseja sair mesmo assim?",
+                    () => { if (UIManager.Instance != null) UIManager.Instance.Btn_BackToNewGameMenu(); }
+                );
+            }
+        }
+        else
+        {
+            if (UIManager.Instance != null) UIManager.Instance.Btn_BackToNewGameMenu();
+        }
+    }
+
+    // --- VISUAL FEEDBACK ---
+    [Header("Feedback Visual")]
+    public Color invalidMoveColor = Color.red;
+
+    public void TriggerInvalidMoveFeedback(DeckZoneType zoneType)
+    {
+        Transform targetZone = null;
+        switch (zoneType)
+        {
+            case DeckZoneType.Main:
+                targetZone = mainDeckContent;
+                break;
+            case DeckZoneType.Side:
+                targetZone = sideDeckContent;
+                break;
+            case DeckZoneType.Extra:
+                targetZone = extraDeckContent;
+                break;
+        }
+
+        if (targetZone != null)
+        {
+            StartCoroutine(FlashZoneCoroutine(targetZone));
+        }
+    }
+
+    private IEnumerator FlashZoneCoroutine(Transform zoneTransform)
+    {
+        Image image = zoneTransform.GetComponent<Image>();
+        if (image != null)
+        {
+            Color originalColor = image.color;
+            image.color = invalidMoveColor;
+            yield return new WaitForSeconds(0.2f);
+            image.color = originalColor;
+        }
     }
 }
 

@@ -14,7 +14,8 @@ public class SaveLoadMenu : MonoBehaviour
     [Header("Referências UI")]
     public Transform listContent; // Onde os slots serão criados
     public GameObject slotPrefab; // O prefab do SaveSlotUI
-    public Button newSaveButton; // Botão "Novo Save" (Apenas para tela de Save)
+    [Tooltip("Prefab opcional para o slot 'New Save'. Se vazio, usa o slotPrefab normal.")]
+    public GameObject newSaveSlotPrefab; // Prefab para o slot "Novo Save"
     public Button mainActionButton; // Botão de Ação (Save/Load/Delete)
     public TextMeshProUGUI mainActionText; // Texto do botão de ação
 
@@ -26,14 +27,20 @@ public class SaveLoadMenu : MonoBehaviour
 
     private System.Action pendingAction;
     private SaveLoadSystem.GameSaveData selectedSave;
+    private bool isCreatingNewSave = false;
     private List<SaveSlotUI> instantiatedSlots = new List<SaveSlotUI>();
 
     void Awake()
     {
         // --- AUTO-CONFIGURAÇÃO BASEADA NA HIERARQUIA ---
-        
+        Debug.Log($"[SaveLoadMenu - {menuType}] Awake: Iniciando auto-configuração.");
+
         // 1. Tenta achar o container da lista se não estiver atribuído
-        if (listContent == null) listContent = transform.Find("Scroll View/Viewport/Content");
+        if (listContent == null)
+        {
+            listContent = transform.Find("Scroll View/Viewport/Content");
+            if (listContent) Debug.Log("[SaveLoadMenu] 'listContent' encontrado automaticamente.");
+        }
 
         // 2. Tenta achar o botão principal (Save, Load ou Delete)
         if (mainActionButton == null)
@@ -46,7 +53,9 @@ public class SaveLoadMenu : MonoBehaviour
             {
                 mainActionButton = btnTr.GetComponent<Button>();
                 if (mainActionText == null) mainActionText = btnTr.GetComponentInChildren<TextMeshProUGUI>();
+                Debug.Log($"[SaveLoadMenu] Botão de ação principal '{btnTr.name}' encontrado.");
             }
+            else Debug.LogWarning("[SaveLoadMenu] Nenhum botão de ação principal (Btn_SaveGame, Btn_LoadGame, Btn_DeleteGame) foi encontrado.");
         }
 
         // 3. Tenta achar o Popup de Confirmação correto
@@ -59,6 +68,7 @@ public class SaveLoadMenu : MonoBehaviour
             if (popupTr != null)
             {
                 confirmationPopup = popupTr.gameObject;
+                Debug.Log($"[SaveLoadMenu] Popup de confirmação '{popupTr.name}' encontrado.");
                 if (confirmationText == null) confirmationText = popupTr.Find("Text (TMP)")?.GetComponent<TextMeshProUGUI>();
                 
                 Transform yesTr = popupTr.Find("Btn_Yes");
@@ -67,6 +77,7 @@ public class SaveLoadMenu : MonoBehaviour
                 Transform noTr = popupTr.Find("Btn_No");
                 if (noTr != null) confirmNoButton = noTr.GetComponent<Button>();
             }
+            else Debug.LogWarning("[SaveLoadMenu] Nenhum painel de confirmação (ConfirmationSave, etc.) foi encontrado.");
         }
     }
 
@@ -80,31 +91,42 @@ public class SaveLoadMenu : MonoBehaviour
 
     void OnEnable()
     {
+        Debug.Log($"[SaveLoadMenu] OnEnable: Menu ativado como '{menuType}'.");
         selectedSave = null;
+        isCreatingNewSave = false;
         RefreshList();
-        
-        // Configura botão de Novo Save
-        if (newSaveButton != null)
-        {
-            newSaveButton.gameObject.SetActive(menuType == MenuType.Save);
-            newSaveButton.onClick.RemoveAllListeners();
-            newSaveButton.onClick.AddListener(OnNewSaveClicked);
-        }
-        
         UpdateUI();
         CloseConfirmation();
     }
 
     public void RefreshList()
     {
-        if (SaveLoadSystem.Instance == null) return;
+        if (SaveLoadSystem.Instance == null)
+        {
+            Debug.LogError("[SaveLoadMenu] SaveLoadSystem.Instance é nulo. A lista não pode ser carregada.");
+            return;
+        }
 
         // Limpa lista antiga
         foreach (Transform child in listContent) Destroy(child.gameObject);
         instantiatedSlots.Clear();
 
+        // Adiciona o slot "New Save" se estiver na tela de Save
+        if (menuType == MenuType.Save)
+        {
+            GameObject prefabToUse = newSaveSlotPrefab != null ? newSaveSlotPrefab : slotPrefab;
+            GameObject newSlotGo = Instantiate(prefabToUse, listContent);
+            SaveSlotUI newSlot = newSlotGo.GetComponent<SaveSlotUI>();
+            if (newSlot != null)
+            {
+                newSlot.SetupForNewSave(OnNewSaveClicked);
+                instantiatedSlots.Add(newSlot); // Adiciona à lista para controle de seleção
+            }
+        }
+
         // Busca saves do disco
         List<SaveLoadSystem.GameSaveData> saves = SaveLoadSystem.Instance.GetAllSaves();
+        Debug.Log($"[SaveLoadMenu] {saves.Count} saves encontrados no sistema.");
 
         // Cria slots
         foreach (var save in saves)
@@ -113,21 +135,32 @@ public class SaveLoadMenu : MonoBehaviour
             SaveSlotUI slot = go.GetComponent<SaveSlotUI>();
             if (slot != null)
             {
+                // Se um save já está selecionado, mantém a seleção visual
                 bool isSelected = (selectedSave != null && selectedSave.saveID == save.saveID);
                 slot.Setup(save, OnSlotClicked, isSelected);
                 instantiatedSlots.Add(slot);
             }
         }
+        Debug.Log($"[SaveLoadMenu] Lista atualizada com {instantiatedSlots.Count} slots visuais.");
     }
 
     void OnSlotClicked(SaveLoadSystem.GameSaveData data)
     {
+        // Este método só deve ser chamado por slots de save existentes.
+        if (data == null) {
+            Debug.LogError("[SaveLoadMenu] OnSlotClicked foi chamado com dados nulos. Isso não deveria acontecer.");
+            return;
+        }
+        Debug.Log($"[SaveLoadMenu] Slot clicado: {data.playerName} (ID: {data.saveID})");
+        isCreatingNewSave = false;
         selectedSave = data;
         
         // Atualiza visualmente apenas o destaque, sem recriar a lista (evita flicker/perda de scroll)
         foreach (var slot in instantiatedSlots)
         {
-            if (slot != null) slot.SetSelected(selectedSave != null && selectedSave.saveID == slot.MyData.saveID);
+            // Garante que não vai quebrar se o slot for o de "New Save" (MyData é null)
+            bool isThisSlotSelected = slot.MyData != null && selectedSave != null && slot.MyData.saveID == selectedSave.saveID;
+            if (slot != null) slot.SetSelected(isThisSlotSelected);
         }
 
         UpdateUI();
@@ -135,14 +168,20 @@ public class SaveLoadMenu : MonoBehaviour
 
     void UpdateUI()
     {
+        Debug.Log($"[SaveLoadMenu] UpdateUI chamado. Save selecionado: {(selectedSave != null ? selectedSave.playerName : "Nenhum")}, isCreatingNew: {isCreatingNewSave}");
         if (mainActionButton != null)
         {
-            mainActionButton.interactable = (selectedSave != null);
+            mainActionButton.interactable = (selectedSave != null) || (isCreatingNewSave && menuType == MenuType.Save);
             
             if (mainActionText != null)
             {
                 if (menuType == MenuType.Save)
-                    mainActionText.text = (selectedSave != null) ? "Overwrite" : "Select a Slot";
+                {
+                    if (isCreatingNewSave)
+                        mainActionText.text = "Save New";
+                    else
+                        mainActionText.text = (selectedSave != null) ? "Overwrite" : "Save";
+                }
                 else if (menuType == MenuType.Load)
                     mainActionText.text = "Load Game";
                 else if (menuType == MenuType.Delete)
@@ -153,7 +192,33 @@ public class SaveLoadMenu : MonoBehaviour
 
     void OnMainActionClicked()
     {
-        if (selectedSave == null) return;
+        if (isCreatingNewSave && menuType == MenuType.Save)
+        {
+            if (GameManager.Instance != null)
+            {
+                ShowConfirmation("Criar um novo arquivo de Save?", () =>
+                {
+                    var newSave = SaveLoadSystem.Instance.SaveGame(null); // Pega o novo save retornado
+                    if (newSave != null)
+                    {
+                        isCreatingNewSave = false;
+                        selectedSave = newSave; // Seleciona o novo save
+                        RefreshList(); // Recarrega a lista inteira para garantir consistência
+                    }
+                    else
+                    {
+                        Debug.LogError("[SaveLoadMenu] Falha ao criar o novo save. O objeto retornado é nulo.");
+                    }
+                });
+            }
+            return;
+        }
+
+        if (selectedSave == null)
+        {
+            Debug.LogWarning("[SaveLoadMenu] Botão de ação principal clicado, mas nenhum save existente está selecionado.");
+            return;
+        }
 
         switch (menuType)
         {
@@ -183,16 +248,18 @@ public class SaveLoadMenu : MonoBehaviour
 
     void OnNewSaveClicked()
     {
-        if (GameManager.Instance != null)
+        Debug.Log("[SaveLoadMenu] Slot 'New Save' selecionado.");
+        isCreatingNewSave = true;
+        selectedSave = null;
+
+        // Atualiza o destaque visual para o slot de "New Save"
+        foreach (var slot in instantiatedSlots)
         {
-            ShowConfirmation("Criar um novo arquivo de Save?", () =>
-            {
-                // Gera ID único baseado no nome e hora
-                string newID = $"{GameManager.Instance.playerName}_{System.DateTime.Now:yyyyMMdd_HHmmss}";
-                SaveLoadSystem.Instance.SaveGame(newID);
-                RefreshList();
-            });
+            // O slot de "New Save" é o único com MyData == null
+            if (slot != null) slot.SetSelected(slot.MyData == null);
         }
+
+        UpdateUI();
     }
 
     void ShowConfirmation(string message, System.Action action)
