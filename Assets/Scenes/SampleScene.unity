@@ -12201,11 +12201,7 @@ MonoBehaviour:
   nameInputScreen: {fileID: 977330078}
   endDuelMessagePanel: {fileID: 0}
   duelScreen: {fileID: 1781033776}
-<<<<<<< HEAD
-  rewardScreen: {fileID: 0}
-=======
   rewardScreen: {fileID: 1589087929}
->>>>>>> feature/efeitosvisuais
   newGameMenu: {fileID: 2043394972}
   continueMenu: {fileID: 2037844059}
   onlineMenu: {fileID: 1075272412}
@@ -12227,9 +12223,9 @@ MonoBehaviour:
   videoScreen: {fileID: 1691894502}
   controlsScreen: {fileID: 2037389005}
   exitScreen: {fileID: 1116036317}
-  confirmationModal: {fileID: 532281226}
-  confirmationYesButton: {fileID: 1658129676}
-  confirmationNoButton: {fileID: 2074107738}
+  confirmationModal: {fileID: 1628700972}
+  confirmationYesButton: {fileID: 1097393631}
+  confirmationNoButton: {fileID: 1825816960}
   graveyardViewer: {fileID: 1940979129}
   extraDeckViewer: {fileID: 1398106766}
   removedCardsViewer: {fileID: 274826458}
@@ -13544,13 +13540,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-<<<<<<< HEAD
-  m_AnchoredPosition: {x: 0, y: -0.000078012}
-  m_SizeDelta: {x: 0, y: 300}
-=======
-  m_AnchoredPosition: {x: 0, y: 0.000024642475}
-  m_SizeDelta: {x: 0, y: 650.88}
->>>>>>> feature/efeitosvisuais
+  m_AnchoredPosition: {x: 0, y: 0.0004397152}
+  m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &250963708
 MonoBehaviour:
@@ -18362,11 +18353,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-<<<<<<< HEAD
-  m_AnchoredPosition: {x: 0, y: 0.0008728357}
-=======
-  m_AnchoredPosition: {x: 0, y: 0.000004973929}
->>>>>>> feature/efeitosvisuais
+  m_AnchoredPosition: {x: 0, y: 0.0008821313}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &322488726
@@ -26424,11 +26411,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-<<<<<<< HEAD
-  m_AnchoredPosition: {x: 0, y: 0.0008728357}
-=======
-  m_AnchoredPosition: {x: 0, y: 0.000004973929}
->>>>>>> feature/efeitosvisuais
+  m_AnchoredPosition: {x: 0, y: 0.0008821313}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &440854236
@@ -32712,7 +32695,7 @@ MonoBehaviour:
   useHandCardsRounded: 1
   useCardViewerRounded: 1
   devMode: 0
-  testDuelDirectly: 0
+  testDuelDirectly: 1
   effectTestMode: 0
   testOpponentID: 001_novice
   testPlayerID: 097_yugi_final
@@ -36090,11 +36073,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-<<<<<<< HEAD
-  m_AnchoredPosition: {x: 0, y: -391}
-=======
-  m_AnchoredPosition: {x: 0, y: -342}
->>>>>>> feature/efeitosvisuais
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &604069164
@@ -40768,7 +40747,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1701951477}
   m_HandleRect: {fileID: 1701951476}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -48933,11 +48912,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-<<<<<<< HEAD
-  m_AnchoredPosition: {x: 0, y: -0.000078012}
-=======
-  m_AnchoredPosition: {x: 0, y: 0.000035506408}
->>>>>>> feature/efeitosvisuais
+  m_AnchoredPosition: {x: 0, y: 0.00090120756}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &821356746
@@ -52083,11 +52058,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-<<<<<<< HEAD
-  m_AnchoredPosition: {x: 0, y: 0.000034151668}
-=======
-  m_AnchoredPosition: {x: 0, y: -0.00003675541}
->>>>>>> feature/efeitosvisuais
+  m_AnchoredPosition: {x: 0, y: -0.000009805289}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &882301599
@@ -57141,6 +57112,7 @@ MonoBehaviour:
   - name: WIND
     icon: {fileID: -4545939501875754723, guid: 3da82ca2235322d4497cf0c171eaf744, type: 3}
   typeIcons: []
+  monsterRaceIcons: []
 --- !u!1 &977330078
 GameObject:
   m_ObjectHideFlags: 0
@@ -71196,7 +71168,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1995952713}
   m_HandleRect: {fileID: 1995952712}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -71771,11 +71743,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-<<<<<<< HEAD
-  m_AnchoredPosition: {x: 0, y: 0.000034151668}
-=======
-  m_AnchoredPosition: {x: 0, y: 0.0001453195}
->>>>>>> feature/efeitosvisuais
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1195268165
@@ -84501,11 +84469,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-<<<<<<< HEAD
-  m_AnchoredPosition: {x: 0, y: 0.0008728357}
-=======
-  m_AnchoredPosition: {x: 0, y: 0.000004973929}
->>>>>>> feature/efeitosvisuais
+  m_AnchoredPosition: {x: 0, y: 0.0008821313}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1403579448
@@ -84890,11 +84854,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-<<<<<<< HEAD
-  m_AnchoredPosition: {x: 0, y: 0.000034151668}
-=======
-  m_AnchoredPosition: {x: 0, y: -0.00003675541}
->>>>>>> feature/efeitosvisuais
+  m_AnchoredPosition: {x: 0, y: -0.000009805289}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1413832233
@@ -85047,11 +85007,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-<<<<<<< HEAD
-  m_AnchoredPosition: {x: 0, y: 0.00088011025}
-=======
-  m_AnchoredPosition: {x: 0, y: -0.0000034898721}
->>>>>>> feature/efeitosvisuais
+  m_AnchoredPosition: {x: 0, y: 0.00090966397}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1423252461
@@ -86948,13 +86904,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-<<<<<<< HEAD
-  m_AnchoredPosition: {x: 0, y: -325}
-  m_SizeDelta: {x: 300, y: 62.5838}
-=======
-  m_AnchoredPosition: {x: 0, y: -268}
-  m_SizeDelta: {x: 389.623, y: 81.278}
->>>>>>> feature/efeitosvisuais
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1444028554
 MonoBehaviour:
@@ -87003,13 +86954,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-<<<<<<< HEAD
-  m_fontSize: 24
-  m_fontSizeBase: 24
-=======
-  m_fontSize: 28
-  m_fontSizeBase: 28
->>>>>>> feature/efeitosvisuais
+  m_fontSize: 36
+  m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -87339,13 +87285,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-<<<<<<< HEAD
-  m_AnchoredPosition: {x: -0.001049, y: 0}
-  m_SizeDelta: {x: 387.63, y: 173}
-=======
-  m_AnchoredPosition: {x: 0, y: 274}
-  m_SizeDelta: {x: 496.9846, y: 75.0973}
->>>>>>> feature/efeitosvisuais
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1447800043
 MonoBehaviour:
@@ -95571,10 +95512,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RewardPanelUI
   titleText: {fileID: 1277067869}
-  rankDisplay: {fileID: 295358666}
   rankText: {fileID: 1447800043}
-  cardArt: {fileID: 2077544891}
-  cardName: {fileID: 1444028554}
+  cardDisplay: {fileID: 0}
   continueButton: {fileID: 604069164}
   newCardBanner: {fileID: 0}
 --- !u!1 &1589623850
@@ -122266,11 +122205,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-<<<<<<< HEAD
-  m_AnchoredPosition: {x: 0, y: 0.000034151668}
-=======
-  m_AnchoredPosition: {x: 0, y: -0.00003675541}
->>>>>>> feature/efeitosvisuais
+  m_AnchoredPosition: {x: 0, y: -0.000009805289}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2079048823
@@ -124240,11 +124175,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-<<<<<<< HEAD
-  m_AnchoredPosition: {x: 0, y: 0.0008728357}
-=======
-  m_AnchoredPosition: {x: 0, y: 0.000004973929}
->>>>>>> feature/efeitosvisuais
+  m_AnchoredPosition: {x: 0, y: 0.0008821313}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &2109275318
@@ -124931,7 +124862,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000024642475}
+  m_AnchoredPosition: {x: 0, y: 0.00003143616}
   m_SizeDelta: {x: 0, y: 650.88}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2123005588

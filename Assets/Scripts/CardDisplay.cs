@@ -215,7 +215,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     // Este método será chamado pelo GameManager para definir os dados da carta
     public void SetCard(CardData card, Texture2D cardBackTexture, bool startFaceUp = true)
     {
-        if (card == null) return;
+        if (card == null) 
+            {
+        Debug.LogError("SetCard foi chamado com CardData NULO! A carta não será exibida.", this.gameObject);
+        return;
+    }
 
         // Limpa requisição anterior se ainda estiver rodando
         if (currentRequest != null)
