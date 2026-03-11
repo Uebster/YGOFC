@@ -151,6 +151,9 @@ def parse_tsv_cards(filepath, game_name):
     for line in lines:
         parts = line.strip().split('\t')
         if len(parts) < 2: continue
+        
+        # Ignora cabeçalho se existir
+        if parts[0] == "Nº": continue
 
         try:
             # Tenta usar a lógica do FM se tiver colunas suficientes (ID, Nome, Tipo...)
@@ -165,7 +168,29 @@ def parse_tsv_cards(filepath, game_name):
                     "description": ""
                 }
                 
-                if raw_type.startswith("Monster") and len(parts) >= 7:
+                # Detecta formato do download_cards.py (10 colunas ou mais)
+                # 0:Num, 1:Name, 2:Type, 3:Attr, 4:Race/Prop, 5:Lvl, 6:Atk, 7:Def, 8:ID, 9:Desc
+                if len(parts) >= 9 and ("Monster" in raw_type or "Spell" in raw_type or "Trap" in raw_type):
+                    if "Monster" in raw_type:
+                        card["type"] = raw_type
+                        card["attribute"] = parts[3]
+                        card["race"] = parts[4]
+                        card["level"] = int(parts[5]) if parts[5].isdigit() else 0
+                        card["atk"] = int(parts[6]) if parts[6].isdigit() else 0
+                        card["def"] = int(parts[7]) if parts[7].isdigit() else 0
+                        card["password"] = parts[8]
+                        if len(parts) > 9: card["description"] = parts[9]
+                    else:
+                        # Magia ou Armadilha
+                        # Define o Tipo Principal (Spell ou Trap)
+                        card["type"] = "Spell" if "Spell" in raw_type else "Trap"
+                        # Define a Propriedade (Normal, Continuous, Equip, etc.)
+                        card["property"] = parts[4] if parts[4].strip() else "Normal"
+                        card["password"] = parts[8]
+                        if len(parts) > 9: card["description"] = parts[9]
+                
+                # Lógica antiga para outros formatos TSV (ex: GBA dumps)
+                elif raw_type.startswith("Monster") and len(parts) >= 7:
                     card["type"] = raw_type
                     card["race"] = parts[3]
                     card["level"] = int(parts[4])
@@ -173,10 +198,16 @@ def parse_tsv_cards(filepath, game_name):
                     card["def"] = int(parts[6])
                     if len(parts) > 7: card["password"] = parts[7]
                     if len(parts) > 8: card["description"] = parts[8] # Captura descrição
-                elif raw_type in ["Magic", "Spell", "Trap", "Equip", "Ritual", "Field"]:
-                    if raw_type in ["Magic", "Spell"]: card["type"] = "Spell"; card["property"] = "Normal"
-                    elif raw_type == "Trap": card["type"] = "Trap"; card["property"] = "Normal"
-                    else: card["type"] = "Spell"; card["property"] = raw_type
+                elif any(x in raw_type for x in ["Magic", "Spell", "Trap", "Equip", "Ritual", "Field"]):
+                    if "Trap" in raw_type: 
+                        card["type"] = "Trap"
+                        card["property"] = "Normal"
+                    elif raw_type in ["Magic", "Spell"]: 
+                        card["type"] = "Spell"
+                        card["property"] = "Normal"
+                    else: 
+                        card["type"] = "Spell"
+                        card["property"] = raw_type
                     if len(parts) > 3: card["password"] = parts[3]
                 
                     # Suporte para formato estendido (com descrição e ID na coluna 7/8)

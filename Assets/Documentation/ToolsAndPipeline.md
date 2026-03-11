@@ -30,14 +30,21 @@ O processo para definir a raridade das cartas é semiautomático para lidar com 
 
 ## 2. Geração de Banco de Dados (`generate_assets.py`)
 
-Este é o script "mestre" que constrói o banco de dados principal do jogo.
+Este é o script "mestre" que constrói o banco de dados principal do jogo, o `cards.json`. Ele foi projetado para ser flexível, suportando múltiplos formatos de listas de cartas.
 
 *   **Entrada:**
-    *   Arquivos de texto (`.txt`) na pasta `Scripts/Cards/` (suporta formatos Power of Chaos, Forbidden Memories e TSV).
+    *   Um arquivo de texto (`.txt`) com a lista de cartas. O script é inteligente e detecta o formato do arquivo:
+        *   **Formato `download_cards.py` (Recomendado):** Um arquivo TSV (separado por tabulação) com 10 colunas, incluindo `ATRIBUTO` e `RAÇA/PROPRIEDADE`. O script `generate_assets.py` foi otimizado para ler este formato e extrair todos os dados detalhados.
+        *   **Formato Power of Chaos:** Arquivos de texto com o formato `-- NOME -- [ID/TOTAL]`.
+        *   **Formato Forbidden Memories:** Listas simples separadas por tabulação.
     *   Imagens na pasta `YuGiOh_OCG_Classic_2147`.
 *   **Processamento:**
+    *   **Detecção de Formato:** O script lê o cabeçalho do arquivo `.txt` para determinar qual parser usar (`parse_tsv_cards`, `parse_poc_cards`, etc.).
     *   Unifica múltiplas fontes de texto em um único dicionário.
     *   Corrige nomes (Typos conhecidos) e padroniza descrições.
+    *   **Extração de Dados (Novo):**
+        *   Se o formato do `download_cards.py` for detectado, ele extrai corretamente o `attribute` para monstros e o `property` para magias/armadilhas.
+        *   Ele preserva o tipo detalhado do monstro (ex: "Monster (Fusion)").
     *   Mapeia IDs de imagem sequenciais baseados na ordem alfabética.
 *   **Saída:** `Assets/StreamingAssets/cards.json`.
 
@@ -73,12 +80,15 @@ Gera o arquivo `characters.json` que define os oponentes da campanha.
 
 ## 4. Aquisição de Dados (`download_cards.py`)
 
-Uma ferramenta web (servidor Flask local) para baixar dados brutos e imagens da API *YGOPRODeck*.
+Uma ferramenta web (servidor Flask local) para baixar dados brutos e imagens da API *YGOPRODeck*, gerando um arquivo `lista_cartas.txt` completo e padronizado.
 
 *   **Uso:** Execute o script e acesse `http://localhost:5000` no navegador.
 *   **Funcionalidades:**
     *   Filtrar por data (ex: 1999-2005) e região (OCG/TCG).
-    *   Gerar lista `.txt` compatível com o `generate_assets.py`.
+    *   **Gerar Lista TXT Completa:** Cria um arquivo `lista_cartas.txt` com 10 colunas, incluindo:
+        *   `TIPO`: Preserva o tipo completo do monstro (ex: "Fusion Monster").
+        *   `ATRIBUTO`: Preenche com o atributo do monstro (ex: "DARK").
+        *   `RAÇA/PROPRIEDADE`: Preenche com a raça do monstro (ex: "Warrior") ou a propriedade da magia/armadilha (ex: "Continuous").
     *   Baixar imagens das cartas automaticamente.
 
 ## 5. Ferramentas de Teste e Visualização

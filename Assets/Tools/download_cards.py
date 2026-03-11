@@ -129,43 +129,37 @@ def task_executor(tipo, folder, start, end, region):
             progresso["status"] = "Gerando TXT..."
             path_txt = os.path.join(folder, "lista_cartas.txt")
             with open(path_txt, "w", encoding="utf-8") as f:
-                f.write("Nº\tNOME\tTIPO\tRAÇA\tLV\tATK\tDEF\tID\tDESC\n")
+                f.write("Nº\tNOME\tTIPO\tATRIBUTO\tRAÇA/PROPRIEDADE\tLV\tATK\tDEF\tID\tDESC\n")
                 for i, c in enumerate(cards, 1):
+                    progresso["atual"] = i
+                    progresso["card"] = c.get('name', 'Unknown')
+
                     num = f"{i:04d}"
                     name = c.get('name', 'Unknown')
                     tipo_api = c.get('type', '')
                     cid = c.get('id', '')
-                    # Limpa a descrição para uma linha só
                     desc = c.get('desc', '').replace('\n', ' ').replace('\r', ' ')
 
                     if "Monster" in tipo_api:
-                        # Identifica subtipo (Normal, Efeito, Fusão, Ritual)
+                        # Mantém a lógica de subtipo e adiciona o atributo
                         if "Fusion" in tipo_api: sub_tipo = "Fusion"
                         elif "Ritual" in tipo_api: sub_tipo = "Ritual"
                         elif "Normal" in tipo_api: sub_tipo = "Normal"
                         else: sub_tipo = "Effect"
-                        
-                        raca = c.get('race', '-')
-                        lv = c.get('level', '-')
+                        tipo_final = f"Monster ({sub_tipo})"
+
+                        attribute = c.get('attribute', '-').upper()
+                        race = c.get('race', '-')
+                        level = c.get('level', '-')
                         atk = c.get('atk', '-')
-                        dfe = c.get('def', '-')
-                        # Formato: 0001 | Nome | Monster (Normal/Effect) | Raça | LV | ATK | DEF | ID | Desc
-                        linha = f"{num}\t{name}\tMonster ({sub_tipo})\t{raca}\t{lv}\t{atk}\t{dfe}\t{cid}\t{desc}\n"
-                    
-                    elif "Spell" in tipo_api:
-                        # Formato original para Magic: 0001 | Nome | Magic | ID | Desc
-                        linha = f"{num}\t{name}\tMagic\t{cid}\t{desc}\n"
-                    
-                    elif "Trap" in tipo_api:
-                        # Formato original para Trap: 0001 | Nome | Trap | ID | Desc
-                        linha = f"{num}\t{name}\tTrap\t{cid}\t{desc}\n"
-                    
+                        defe = c.get('def', '-')
+                        linha = f"{num}\t{name}\t{tipo_final}\t{attribute}\t{race}\t{level}\t{atk}\t{defe}\t{cid}\t{desc}\n"
                     else:
-                        linha = f"{num}\t{name}\t{tipo_api}\t{cid}\t{desc}\n"
+                        # Adiciona a propriedade (subtipo) para Magias e Armadilhas
+                        property = c.get('race', 'Normal')
+                        linha = f"{num}\t{name}\t{tipo_api}\t\t{property}\t\t\t\t{cid}\t{desc}\n"
                     
                     f.write(linha)
-                    progresso["atual"] = i
-                    progresso["card"] = name
             
             progresso["log"].append(f"✓ Lista TXT gerada!")
 
@@ -173,7 +167,7 @@ def task_executor(tipo, folder, start, end, region):
             progresso["status"] = "Baixando Imagens..."
             for i, c in enumerate(cards, 1):
                 name_raw = c['name']
-                clean_name = "".join([char for char in name_raw if char not in r'<>:\"/\\|?*'])
+                clean_name = "".join([char for char in name_raw if char not in r'<>:"/\\|?*'])
                 img_url = c['card_images'][0]['image_url']
                 progresso["atual"] = i
                 progresso["card"] = name_raw
