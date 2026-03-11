@@ -32,6 +32,7 @@ public class UIManager : MonoBehaviour
     public GameObject libraryMenu;       // Menu da Biblioteca
     public GameObject saveScreen;
     public GameObject loadScreen;
+    public GameObject deleteScreen;      // Novo: Tela de Deletar Save
     public GameObject libDuelistsScreen;
     public GameObject libCardsScreen;
     public GameObject libArenasScreen;
@@ -58,9 +59,6 @@ public class UIManager : MonoBehaviour
     public FusionUI fusionUI; // Novo modal para Fusão
     public RitualUI ritualUI; // Novo modal para Ritual
 
-    [Header("Debug")]
-    public bool testDuelDirectly = false;
-
     // Adicione outras telas aqui conforme precisar (Library, Campaign, etc)
     // public GameObject libraryScreen; 
 
@@ -76,7 +74,7 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
-        if (testDuelDirectly)
+        if (GameManager.Instance != null && GameManager.Instance.testDuelDirectly)
         {
             StartCoroutine(StartDuelDelayed());
             return;
@@ -127,6 +125,7 @@ public class UIManager : MonoBehaviour
         if (libraryMenu != null) libraryMenu.SetActive(false);
         if (saveScreen != null) saveScreen.SetActive(false);
         if (loadScreen != null) loadScreen.SetActive(false);
+        if (deleteScreen != null) deleteScreen.SetActive(false); // Novo
         if (libDuelistsScreen != null) libDuelistsScreen.SetActive(false);
         if (libCardsScreen != null) libCardsScreen.SetActive(false);
         if (libArenasScreen != null) libArenasScreen.SetActive(false);
@@ -154,13 +153,13 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    public void ShowRewardScreen(string rank, CardData card)
+    public void ShowRewardScreen(string rank, CardData card, bool isNew = false)
     {
         if (rewardScreen != null)
         {
             ShowScreen(rewardScreen); // Isso fecha a DuelScreen e abre a RewardScreen
             RewardPanelUI ui = rewardScreen.GetComponentInChildren<RewardPanelUI>(true);
-            if (ui != null) ui.Show(rank, card);
+            if (ui != null) ui.Show(rank, card, isNew);
         }
         else
         {
@@ -458,9 +457,9 @@ public class UIManager : MonoBehaviour
 
     public void Btn_Load() { ShowScreen(loadScreen); }
     public void Btn_DeleteSave() 
-    { 
-        Debug.Log("Abrir popup de deletar save..."); 
-        // Implementar lógica de delete
+    {
+        if (deleteScreen != null) ShowScreen(deleteScreen);
+        else Debug.LogWarning("UIManager: A tela de Deletar (Delete Screen) não foi atribuída no Inspector.");
     }
 
     // --- Navegação Online ---

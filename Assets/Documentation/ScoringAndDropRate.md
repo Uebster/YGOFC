@@ -57,3 +57,8 @@ O campo `rewards` no `characters.json` contém:
 *   `s`, `b`, `c`, `d`: Listas (arrays) de IDs de cartas classificadas por poder.
 
 *Nota: No Rank S+, se o sorteio de 15% da carta única falhar, o jogo distribui os 85% restantes proporcionalmente entre os pools S, B, C e D seguindo a distribuição do Rank S (Melhor cenário possível).*
+
+### Tag "NEW" na Recompensa
+Na tela de vitória (`RewardPanelUI`), a faixa **"NEW"** aparece sobre a carta ganha se, e somente se, o jogador **não possuir nenhuma cópia** daquela carta em seu Baú (Trunk).
+*   Se o jogador já tiver a carta (mesmo que nunca a tenha usado em um deck), a tag "NEW" **não** aparecerá na recompensa.
+*   Isso difere da Biblioteca, onde "New" significa "Nunca usada em um deck".

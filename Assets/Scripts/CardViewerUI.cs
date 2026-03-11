@@ -33,6 +33,26 @@ public class CardViewerUI : MonoBehaviour
     private UnityWebRequest backTextureRequest; // Rastreia a requisição do verso
     private Coroutine loadCardCoroutine;
 
+    void Awake()
+    {
+        // AUTO-CONFIGURAÇÃO: Tenta encontrar referências nos filhos se estiverem nulas
+        if (cardNameText == null) cardNameText = FindChildText("Name");
+        if (cardInfoText == null) cardInfoText = FindChildText("Info");
+        if (cardDescriptionText == null) cardDescriptionText = FindChildText("Description");
+        if (cardStatsText == null) cardStatsText = FindChildText("Stats");
+        
+        // Tenta achar a imagem (RawImage)
+        if (cardImage2D == null) cardImage2D = GetComponentInChildren<RawImage>();
+    }
+
+    // Helper para buscar textos por nome parcial (ex: "CardNameText" acha "Name")
+    TextMeshProUGUI FindChildText(string keyword)
+    {
+        var texts = GetComponentsInChildren<TextMeshProUGUI>(true);
+        foreach(var t in texts) if(t.name.Contains(keyword)) return t;
+        return null;
+    }
+
     void Start()
     {
         // Fallback: Tenta pegar do GameManager se não estiver atribuído
@@ -92,8 +112,6 @@ public class CardViewerUI : MonoBehaviour
     // Novo método para exibir uma carta específica (usado pelo Deck Builder)
     public void DisplayCardData(CardData card)
     {
-        if (card == null) return;
-
         // Limpeza de recursos anteriores
         if (currentRequest != null)
         {
@@ -105,6 +123,20 @@ public class CardViewerUI : MonoBehaviour
         {
             Destroy(frontTexture2D);
             frontTexture2D = null;
+        }
+
+        if (card == null)
+        {
+            if (cardNameText) cardNameText.text = "";
+            if (cardDescriptionText) cardDescriptionText.text = "";
+            if (cardInfoText) cardInfoText.text = "";
+            if (cardStatsText) cardStatsText.text = "";
+            if (cardImage2D != null) 
+            {
+                cardImage2D.texture = backTexture2D != null ? backTexture2D : (GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null);
+                cardImage2D.color = Color.white;
+            }
+            return;
         }
 
         if (cardNameText) cardNameText.text = card.name;

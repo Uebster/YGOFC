@@ -50,12 +50,19 @@ public class DeckDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             if (zone != null)
             {
                 // Soltou em uma zona válida
-                DeckBuilderManager.Instance.AddCardToDeck(cardData, zone.zoneType);
-                
-                // Se moveu de um deck para outro (não do Trunk), remove da origem
-                if (sourceZone != DeckZoneType.Trunk && sourceZone != zone.zoneType)
+                bool success = DeckBuilderManager.Instance.AddCardToDeck(cardData, zone.zoneType);
+                if(success)
                 {
-                    DeckBuilderManager.Instance.RemoveCard(cardData, sourceZone);
+                    // Se moveu de um deck para outro (não do Trunk), remove da origem
+                    if (sourceZone != DeckZoneType.Trunk && sourceZone != zone.zoneType)
+                    {
+                        DeckBuilderManager.Instance.RemoveCard(cardData, sourceZone);
+                    }
+                }
+                else
+                {
+                    // Falha ao adicionar, aciona feedback
+                    DeckBuilderManager.Instance.TriggerInvalidMoveFeedback(zone.zoneType);
                 }
             }
             // Se soltou no nada e veio de um deck, remove (lixeira)
@@ -80,7 +87,12 @@ public class DeckDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 {
                     target = DeckZoneType.Extra;
                 }
-                DeckBuilderManager.Instance.AddCardToDeck(cardData, target);
+                
+                bool success = DeckBuilderManager.Instance.AddCardToDeck(cardData, target);
+                if (!success)
+                {
+                    DeckBuilderManager.Instance.TriggerInvalidMoveFeedback(target);
+                }
             }
             else
             {

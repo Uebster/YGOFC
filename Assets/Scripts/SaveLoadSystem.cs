@@ -83,13 +83,20 @@ public class SaveLoadSystem : MonoBehaviour
         public TrophySaveData trophyData;
     }
 
-    public void SaveGame(string saveID)
+    public GameSaveData SaveGame(string saveID)
     {
-        if (GameManager.Instance == null || CampaignManager.Instance == null) return;
+        if (GameManager.Instance == null || CampaignManager.Instance == null)
+        {
+            Debug.LogError("[SaveLoadSystem] Não é possível salvar. GameManager ou CampaignManager não encontrados.");
+            return null;
+        }
 
         GameSaveData data = new GameSaveData();
-        data.saveID = saveID;
-        data.playerName = GameManager.Instance.playerName;
+
+        // Se saveID for nulo ou vazio, é um novo save. Gera um novo ID.
+        data.saveID = string.IsNullOrEmpty(saveID) ? $"{GameManager.Instance.playerName}_{System.DateTime.Now:yyyyMMdd_HHmmss}" : saveID;
+        
+        data.playerName = string.IsNullOrWhiteSpace(GameManager.Instance.playerName) ? "DUELIST" : GameManager.Instance.playerName;
         data.lastPlayedTime = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm");
         data.campaignProgress = CampaignManager.Instance.maxUnlockedLevel;
         
@@ -107,10 +114,11 @@ public class SaveLoadSystem : MonoBehaviour
         data.trophyData = this.trophyData;
 
         string json = JsonUtility.ToJson(data, true);
-        string path = Path.Combine(Application.persistentDataPath, saveID + ".save");
+        string path = Path.Combine(Application.persistentDataPath, data.saveID + ".save");
         File.WriteAllText(path, json);
         
         Debug.Log($"Jogo salvo em: {path}");
+        return data;
     }
 
     public void LoadGame(string saveID)

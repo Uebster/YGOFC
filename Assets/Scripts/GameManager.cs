@@ -83,6 +83,8 @@ public class GameManager : MonoBehaviour
     [Header("Game Modes")]
     [Tooltip("Habilita funcionalidades de desenvolvedor.")]
     public bool devMode = false;
+    [Tooltip("Se marcado, pula os menus e inicia um duelo livre imediatamente ao dar Play.")]
+    public bool testDuelDirectly = false;
     [Tooltip("Habilita o menu de testes de efeitos visuais e sonoros.")]
     public bool effectTestMode = false;
     [Tooltip("ID do oponente para teste rápido (ex: 021_kaiba). Deixe vazio para usar o fluxo normal.")]
@@ -103,6 +105,8 @@ public class GameManager : MonoBehaviour
     public bool canPlaceOpponentCards = false;
     [Tooltip("Se marcado, o oponente preenche as zonas da direita para a esquerda (perspectiva do jogador), simulando a esquerda dele.")]
     public bool fillOpponentZonesFromRight = true;
+    [Tooltip("Se marcado, desbloqueia 3 cópias de todas as cartas no Baú (Trunk) ao iniciar o jogo (Requer DevMode).")]
+    public bool unlockAllCards = false;
     [Tooltip("Indica se uma simulação automática está em andamento (Modo Fantasma).")]
     public bool isSimulating = false;
     [Tooltip("Se marcado, os decks não serão embaralhados no início (útil para testar ordem de saque).")]
@@ -310,11 +314,43 @@ public class GameManager : MonoBehaviour
         if (duelFieldUI == null)
             duelFieldUI = FindFirstObjectByType<DuelFieldUI>();
 
-        // Inicializa o Baú com todas as cartas se estiver vazio (Modo Sandbox/Teste)
-        if (playerTrunk.Count == 0 && cardDatabase != null)
+        // Garante que o InitialDeckBuilder exista para gerar cartas se necessário
+        if (InitialDeckBuilder.Instance == null)
         {
-            foreach (var card in cardDatabase.cardDatabase)
-                playerTrunk.Add(card.id);
+            GameObject go = new GameObject("InitialDeckBuilder");
+            go.AddComponent<InitialDeckBuilder>();
+        }
+
+        // Inicializa o Baú com todas as cartas se estiver vazio (Modo Sandbox/Teste)
+        // OU se o cheat unlockAllCards estiver ativo (e devMode on)
+        if (cardDatabase != null)
+        {
+            if (devMode && unlockAllCards)
+            {
+                playerTrunk.Clear();
+                foreach (var card in cardDatabase.cardDatabase)
+                {
+                    // Adiciona 3 cópias de cada para deck building irrestrito
+                    playerTrunk.Add(card.id); playerTrunk.Add(card.id); playerTrunk.Add(card.id);
+                    // Marca como usada para não poluir a biblioteca com "NEW"
+                    if (SaveLoadSystem.Instance != null) SaveLoadSystem.Instance.MarkCardAsUsed(card.id);
+                }
+                Debug.Log("[GameManager] Cheat ativado: Todas as cartas desbloqueadas (3x).");
+            }
+            // FIX: Se o baú estiver vazio (Novo Jogo), gera o deck inicial imediatamente
+            else if (playerTrunk.Count == 0)
+            {
+                if (InitialDeckBuilder.Instance != null)
+                {
+                    List<CardData> starterDeck = InitialDeckBuilder.Instance.GenerateInitialDeck();
+                    foreach(var card in starterDeck)
+                    {
+                        playerTrunk.Add(card.id);
+                        if (SaveLoadSystem.Instance != null) SaveLoadSystem.Instance.MarkCardAsUsed(card.id);
+                    }
+                    playerMainDeck = new List<CardData>(starterDeck); // Define como deck atual
+                }
+            }
         }
 
         yield return StartCoroutine(LoadCardBackTexture());
@@ -557,6 +593,12 @@ public class GameManager : MonoBehaviour
                 if (!playerTrunk.Contains(card.id))
                 {
                     playerTrunk.Add(card.id);
+                }
+
+                // FIX: Cartas do deck inicial já começam "usadas" (sem tag NEW na biblioteca)
+                if (SaveLoadSystem.Instance != null)
+                {
+                    SaveLoadSystem.Instance.MarkCardAsUsed(card.id);
                 }
             }
         }
@@ -1506,6 +1548,8 @@ public void ShuffleDeck(bool isPlayer)
             Debug.Log(DuelScoreManager.Instance.GetScoreReport());
 
             CardData rewardCard = null;
+            bool isNewCard = false;
+
             if (playerWon && currentOpponent != null && currentOpponent.rewards.Count > 0)
             {
                 // Registra vitória na Biblioteca
@@ -1521,6 +1565,9 @@ public void ShuffleDeck(bool isPlayer)
                 // LÓGICA DE DROP: Adiciona ao Baú do Jogador
                 if (rewardCard != null)
                 {
+                    // Verifica se é nova (não existe no baú) ANTES de adicionar
+                    isNewCard = !playerTrunk.Contains(rewardCard.id);
+
                     playerTrunk.Add(rewardCard.id);
                     
                     // Salva o progresso imediatamente para garantir o drop
@@ -1530,7 +1577,7 @@ public void ShuffleDeck(bool isPlayer)
             
             if (UIManager.Instance != null)
             {
-                UIManager.Instance.ShowRewardScreen(rank.ToString(), rewardCard);
+                UIManager.Instance.ShowRewardScreen(rank.ToString(), rewardCard, isNewCard);
             }
         }
         else

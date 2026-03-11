@@ -78,13 +78,10 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `enableTurnClockVisuals`: Ativa a exibição de um relógio sobre cartas que possuem contagem de turnos (ex: *Swords of Revealing Light*). Requer `turnClockPrefab`.
 *   `enableTributeSummonAnimation`: Ativa um efeito visual específico ao realizar uma Invocação-Tributo.
 
-## Ferramentas de Debug e Teste
-
-### No UIManager (Inspector)
-*   `testDuelDirectly`: Se marcado, o jogo pula todas as telas de menu (Abertura, Start, Seleção de Save) e vai direto para o Duelo ao dar Play no Unity. Essencial para iteração rápida.
-
-### No GameManager (Inspector)
+## Ferramentas de Debug e Teste (No GameManager)
 *   `devMode`: Habilita trapaças gerais e logs detalhados.
+*   `testDuelDirectly`: Se marcado, o jogo pula todas as telas de menu (Abertura, Start, Seleção de Save) e vai direto para o Duelo ao dar Play no Unity. Essencial para iteração rápida.
+*   `unlockAllCards`: (Requer `devMode`) Se marcado, ao iniciar o jogo, adiciona 3 cópias de TODAS as cartas do banco de dados ao Baú (Trunk). **Nota:** As cartas adicionadas por este método são automaticamente marcadas como "Usadas" para evitar que a Biblioteca fique cheia de tags "New".
 *   `disableDeckShuffle`: Impede o embaralhamento inicial. As cartas virão na ordem que estão no JSON/Lista. Útil para testar combos específicos ("Stacking the Deck").
 *   `forcePlayerGoingFirst`: Força o jogador a sempre ter o primeiro turno, ignorando a aleatoriedade.
 *   `infiniteLP`: O jogador não toma dano. Útil para testar interações de batalha sem risco de Game Over.

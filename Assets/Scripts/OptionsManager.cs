@@ -177,7 +177,14 @@ public class OptionsManager : MonoBehaviour
 
     public void SetRetroFilter(bool isEnabled)
     {
-        if (retroFilterObject != null) retroFilterObject.SetActive(isEnabled);
+        if (retroFilterObject != null) 
+        {
+            retroFilterObject.SetActive(isEnabled);
+        }
+        else if (isEnabled)
+        {
+            Debug.LogWarning("OptionsManager: Retro Filter ativado, mas o objeto 'retroFilterObject' não está atribuído no Inspector.");
+        }
         PlayerPrefs.SetInt("RetroFilter", isEnabled ? 1 : 0);
     }
 
