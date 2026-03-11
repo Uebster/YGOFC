@@ -21,7 +21,14 @@ public class RewardPanelUI : MonoBehaviour
     public Button continueButton;
 
     [Header("New Card Visuals")]
-    public GameObject newCardBanner; // Faixa "NEW"
+    [Tooltip("Prefab customizado para a tag 'NEW'. Se deixado vazio, uma tag dinâmica será criada.")]
+    public GameObject newTagPrefab;
+    [Tooltip("Cor da faixa da tag 'NEW' dinâmica.")]
+    public Color newTagBannerColor = new Color(0, 0, 0, 0.7f); // Preto semitransparente por padrão
+    [Tooltip("Cor do texto da tag 'NEW' dinâmica.")]
+    public Color newTagTextColor = Color.white;
+
+    private GameObject currentNewBanner; // Referência ao banner instanciado
 
     void Start()
     {
@@ -37,63 +44,99 @@ public class RewardPanelUI : MonoBehaviour
     /// <summary>
     /// Exibe o painel de recompensas com as informações do duelo.
     /// </summary>
-    /// <param name="rank">O rank obtido pelo jogador (ex: "S+", "A", "D").</param>
-    /// <param name="wonCard">O objeto CardData da carta ganha.</param>
-    /// <param name="isNew">Se a carta é nova na coleção (não existia no Trunk).</param>
     public void Show(string rank, CardData wonCard, bool isNew = false)
     {
         gameObject.SetActive(true);
 
-        if (titleText) titleText.text = "VITÓRIA"; // Ou "DERROTA", se aplicável
+        if (titleText) titleText.text = "VITÓRIA";
         if (rankText) rankText.text = $"RANK: {rank}";
 
         if (wonCard != null && cardDisplay != null)
         {
             cardDisplay.gameObject.SetActive(true);
             cardDisplay.SetCard(wonCard, GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null, true);
+            HandleNewBanner(isNew); // Aplica a lógica da tag "NEW"
         }
         else if (cardDisplay != null)
         {
-            // Caso nenhuma carta seja ganha (ex: Rank D em alguns cenários)
             cardDisplay.gameObject.SetActive(false);
-            if (newCardBanner != null) newCardBanner.SetActive(false);
+            HandleNewBanner(false); // Esconde a tag se não houver carta
         }
     }
 
     private void HandleNewBanner(bool isNew)
     {
-        if (!isNew)
+        // Destroi banner antigo se existir
+        if (currentNewBanner != null)
         {
-            if (newCardBanner != null) newCardBanner.SetActive(false);
-            return;
+            Destroy(currentNewBanner);
+            currentNewBanner = null;
         }
 
-        // Se não tiver banner atribuído, cria um dinamicamente
-        if (newCardBanner == null && cardDisplay != null)
+        if (!isNew) return;
+
+        if (newTagPrefab != null && cardDisplay != null)
         {
+            // Cria um container para o prefab
+            GameObject bannerContainer = new GameObject("NewTagContainer", typeof(RectTransform));
+            bannerContainer.transform.SetParent(cardDisplay.transform, false);
+            currentNewBanner = bannerContainer; // Define como banner atual para ser destruído depois
+
+            // Configura o RectTransform do container para ser uma faixa central
+            RectTransform containerRect = bannerContainer.GetComponent<RectTransform>();
+            containerRect.anchorMin = new Vector2(0, 0.5f);
+            containerRect.anchorMax = new Vector2(1, 0.5f);
+            containerRect.pivot = new Vector2(0.5f, 0.5f);
+            containerRect.anchoredPosition = Vector2.zero;
+            containerRect.sizeDelta = new Vector2(0, 36); // Altura inicial
+
+            // Adiciona o AspectRatioFitter para manter a proporção
+            AspectRatioFitter fitter = bannerContainer.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.WidthControlsHeight;
+            fitter.aspectRatio = 120f / 36f; // Proporção do prefab original (120x36)
+
+            // Instancia o prefab do usuário DENTRO do container
+            GameObject bannerInstance = Instantiate(newTagPrefab, bannerContainer.transform);
+            bannerInstance.name = "NewTag_Custom_Instance";
+            bannerInstance.SetActive(true);
+
+            // Força o prefab a preencher o container
+            RectTransform bannerRect = bannerInstance.GetComponent<RectTransform>();
+            if (bannerRect != null)
+            {
+                bannerRect.anchorMin = Vector2.zero;
+                bannerRect.anchorMax = Vector2.one;
+                bannerRect.pivot = new Vector2(0.5f, 0.5f);
+                bannerRect.sizeDelta = Vector2.zero;
+                bannerRect.anchoredPosition = Vector2.zero;
+            }
+        }
+        else if (cardDisplay != null)
+        {
+            // Fallback para banner dinâmico
             CreateDynamicBanner();
         }
 
-        if (newCardBanner != null)
+        if (currentNewBanner != null)
         {
-            newCardBanner.SetActive(true);
-            // Garante que fique na frente da carta
-            newCardBanner.transform.SetAsLastSibling();
+            currentNewBanner.transform.SetAsLastSibling();
         }
     }
 
     private void CreateDynamicBanner()
     {
-        GameObject bannerObj = new GameObject("NewBanner", typeof(RectTransform), typeof(Image));
+        GameObject bannerObj = new GameObject("NewBanner_Dynamic", typeof(RectTransform), typeof(Image));
         bannerObj.transform.SetParent(cardDisplay.transform, false);
+        currentNewBanner = bannerObj;
         
         // Configura Fundo (Faixa)
         Image img = bannerObj.GetComponent<Image>();
-        img.color = new Color(0, 0, 0, 0.7f); // Preto semitransparente
+        img.color = newTagBannerColor;
         
         RectTransform rect = bannerObj.GetComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0, 0.4f);
-        rect.anchorMax = new Vector2(1, 0.6f); // Faixa central
+        // Faixa central que ocupa 80% da largura e 25% da altura
+        rect.anchorMin = new Vector2(0.1f, 0.375f);
+        rect.anchorMax = new Vector2(0.9f, 0.625f);
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
 
@@ -107,20 +150,13 @@ public class RewardPanelUI : MonoBehaviour
         txt.fontSize = 36;
         txt.fontStyle = FontStyles.Bold;
         txt.enableAutoSizing = true;
-        
-        // Usa a cor de hover do player se disponível
-        if (GameManager.Instance != null)
-            txt.color = GameManager.Instance.playerHoverColor;
-        else
-            txt.color = Color.green;
+        txt.color = newTagTextColor;
 
         RectTransform textRect = textObj.GetComponent<RectTransform>();
         textRect.anchorMin = Vector2.zero;
         textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
-
-        newCardBanner = bannerObj;
+        textRect.offsetMin = new Vector2(5, 5); // Pequena margem interna
+        textRect.offsetMax = new Vector2(-5, -5);
     }
 
     /// <summary>

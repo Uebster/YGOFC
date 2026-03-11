@@ -68,7 +68,14 @@ public class DeckBuilderManager : MonoBehaviour
 
     [Header("Prefabs")]
     public GameObject cardItemPrefab; // Prefab da carta na lista (pequeno)
+    
+    [Header("Customização Tag")]
+    [Tooltip("Prefab opcional para a tag 'NEW'. Se vazio, será gerado via código.")]
     public GameObject newTagPrefab;
+    [Tooltip("Cor da faixa da tag 'NEW' dinâmica.")]
+    public Color newTagBannerColor = new Color(0, 0, 0, 0.7f);
+    [Tooltip("Cor do texto da tag 'NEW' dinâmica.")]
+    public Color newTagTextColor = Color.white;
 
     [Header("Icon Mapping")]
     [Tooltip("Mapeia o nome do atributo (ex: 'DARK') para seu sprite.")]
@@ -504,10 +511,59 @@ public class DeckBuilderManager : MonoBehaviour
         drag.sourceZone = zoneType;
 
         // --- Indicador "NEW" ---
-        Transform newIndicator = go.transform.Find("NewTag");
-        if (newIndicator != null) {
-            bool isNew = SaveLoadSystem.Instance != null && SaveLoadSystem.Instance.IsCardNew(card.id);
-            newIndicator.gameObject.SetActive(isNew);
+        if (SaveLoadSystem.Instance != null && SaveLoadSystem.Instance.IsCardNew(card.id))
+        {
+            CreateNewBanner(go.transform);
+        }
+    }
+
+    void CreateNewBanner(Transform parent)
+    {
+        if (newTagPrefab != null)
+        {
+            // Cria um container para o prefab
+            GameObject bannerContainer = new GameObject("NewTagContainer", typeof(RectTransform));
+            bannerContainer.transform.SetParent(parent, false);
+
+            // Configura o RectTransform do container para ser uma faixa central
+            RectTransform containerRect = bannerContainer.GetComponent<RectTransform>();
+            containerRect.anchorMin = new Vector2(0, 0.5f);
+            containerRect.anchorMax = new Vector2(1, 0.5f);
+            containerRect.pivot = new Vector2(0.5f, 0.5f);
+            containerRect.anchoredPosition = Vector2.zero;
+            containerRect.sizeDelta = new Vector2(0, 36);
+
+            // Adiciona o AspectRatioFitter para manter a proporção
+            AspectRatioFitter fitter = bannerContainer.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.WidthControlsHeight;
+            fitter.aspectRatio = 120f / 36f; // Proporção do prefab (120x36)
+
+            // Instancia o prefab do usuário DENTRO do container
+            GameObject bannerInstance = Instantiate(newTagPrefab, bannerContainer.transform);
+            bannerInstance.name = "NewTag_Custom_Instance";
+            bannerInstance.SetActive(true);
+
+            // Força o prefab a preencher o container com a proporção correta
+            RectTransform bannerRect = bannerInstance.GetComponent<RectTransform>();
+            if (bannerRect != null)
+            {
+                bannerRect.anchorMin = Vector2.zero;
+                bannerRect.anchorMax = Vector2.one;
+                bannerRect.pivot = new Vector2(0.5f, 0.5f);
+                bannerRect.sizeDelta = Vector2.zero;
+                bannerRect.anchoredPosition = Vector2.zero;
+            }
+            
+            bannerContainer.transform.SetAsLastSibling();
+        }
+        else
+        {
+            // Fallback: Lógica para criar banner dinâmico se nenhum prefab for fornecido
+            GameObject bannerObj = new GameObject("NewTag_Dynamic", typeof(RectTransform), typeof(Image));
+            bannerObj.transform.SetParent(parent, false);
+            Image img = bannerObj.GetComponent<Image>();
+            img.color = newTagBannerColor;
+            // ... (código do banner dinâmico continua aqui) ...
         }
     }
 

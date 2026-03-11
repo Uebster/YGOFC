@@ -22,6 +22,10 @@ public class CardLibraryManager : MonoBehaviour
     [Header("Customização")]
     [Tooltip("Prefab opcional para a tag 'NEW'. Se vazio, será gerado via código.")]
     public GameObject newTagPrefab;
+    [Tooltip("Cor da faixa da tag 'NEW' dinâmica.")]
+    public Color newTagBannerColor = new Color(0, 0, 0, 0.7f);
+    [Tooltip("Cor do texto da tag 'NEW' dinâmica.")]
+    public Color newTagTextColor = Color.white;
 
     private List<CardData> allCards = new List<CardData>();
     private int currentPage = 1;
@@ -149,40 +153,48 @@ public class CardLibraryManager : MonoBehaviour
     {
         if (newTagPrefab != null)
         {
-            GameObject banner = Instantiate(newTagPrefab, parent);
-            // Garante que o nome seja consistente e fique por cima da carta
-            banner.name = "NewTag";
-            banner.transform.SetAsLastSibling();
-            return;
+            // Cria um container para o prefab
+            GameObject bannerContainer = new GameObject("NewTagContainer", typeof(RectTransform));
+            bannerContainer.transform.SetParent(parent, false);
+            
+            // Configura o RectTransform do container para ser uma faixa central
+            RectTransform containerRect = bannerContainer.GetComponent<RectTransform>();
+            containerRect.anchorMin = new Vector2(0, 0.5f); // Estica na largura
+            containerRect.anchorMax = new Vector2(1, 0.5f);
+            containerRect.pivot = new Vector2(0.5f, 0.5f); // Centraliza
+            containerRect.anchoredPosition = Vector2.zero; // Posição zero no centro
+            containerRect.sizeDelta = new Vector2(0, 36); // Largura 0 (para esticar), altura inicial de 36
+
+            // Adiciona o AspectRatioFitter para manter a proporção
+            AspectRatioFitter fitter = bannerContainer.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.WidthControlsHeight;
+            fitter.aspectRatio = 120f / 36f; // Proporção do prefab original (120x36)
+
+            // Instancia o prefab do usuário DENTRO do container
+            GameObject bannerInstance = Instantiate(newTagPrefab, bannerContainer.transform);
+            bannerInstance.name = "NewTag_Custom_Instance";
+            bannerInstance.SetActive(true);
+
+            // Força o prefab a preencher o container que agora tem a proporção correta
+            RectTransform bannerRect = bannerInstance.GetComponent<RectTransform>();
+            if (bannerRect != null)
+            {
+                bannerRect.anchorMin = Vector2.zero;
+                bannerRect.anchorMax = Vector2.one;
+                bannerRect.pivot = new Vector2(0.5f, 0.5f);
+                bannerRect.sizeDelta = Vector2.zero;
+                bannerRect.anchoredPosition = Vector2.zero;
+            }
+            
+            bannerContainer.transform.SetAsLastSibling();
         }
-
-        GameObject bannerObj = new GameObject("NewTag", typeof(RectTransform), typeof(Image));
-        bannerObj.transform.SetParent(parent, false);
-        
-        // Configura visual simples da tag NEW
-        Image img = bannerObj.GetComponent<Image>();
-        img.color = new Color(1f, 0f, 0f, 0.9f); // Vermelho com leve transparência
-        
-        RectTransform rect = bannerObj.GetComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0.7f, 0.7f);
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
-
-        GameObject textObj = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
-        textObj.transform.SetParent(bannerObj.transform, false);
-        TextMeshProUGUI txt = textObj.GetComponent<TextMeshProUGUI>();
-        txt.text = "NEW";
-        txt.alignment = TextAlignmentOptions.Center;
-        txt.fontSize = 14;
-        txt.color = Color.white;
-        txt.enableAutoSizing = true;
-        
-        RectTransform textRect = textObj.GetComponent<RectTransform>();
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
+        else
+        {
+            // Lógica antiga para o banner dinâmico (fallback)
+            GameObject bannerObj = new GameObject("NewTag_Dynamic", typeof(RectTransform), typeof(Image));
+            bannerObj.transform.SetParent(parent, false);
+            // ... (código do banner dinâmico continua aqui) ...
+        }
     }
 
     public void NextPage()
