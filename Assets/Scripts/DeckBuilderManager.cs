@@ -93,8 +93,12 @@ public class DeckBuilderManager : MonoBehaviour
 
     [Header("Icon Mapping")]
     public List<IconMapping> attributeIcons;
+    [Tooltip("Ícones para a Raça do monstro (Warrior, Fiend, etc.).")]
+    public List<IconMapping> raceIcons;
+    [Tooltip("Ícones para o Tipo principal da carta (Spell, Trap).")]
     public List<IconMapping> typeIcons;
-    public List<IconMapping> monsterRaceIcons;
+    [Tooltip("Ícones para o SubTipo da carta (Equip, Continuous, Counter, etc.).")]
+    public List<IconMapping> subTypeIcons;
 
     private List<CardData> mainDeck = new List<CardData>();
     private List<CardData> sideDeck = new List<CardData>();
@@ -182,15 +186,15 @@ public class DeckBuilderManager : MonoBehaviour
         foreach (var card in sideDeck) cardIDsInDecks.Add(card.id);
         foreach (var card in extraDeck) cardIDsInDecks.Add(card.id);
 
-        RefreshDeckZone(mainDeckContent, mainDeck);
-        RefreshDeckZone(sideDeckContent, sideDeck);
-        RefreshDeckZone(extraDeckContent, extraDeck);
+        RefreshDeckZone(mainDeckContent, mainDeck, DeckZoneType.Main);
+        RefreshDeckZone(sideDeckContent, sideDeck, DeckZoneType.Side);
+        RefreshDeckZone(extraDeckContent, extraDeck, DeckZoneType.Extra);
         RefreshTrunkUI();
         UpdateCounts();
     }
 
     // O tipo de deck é desnecessário pois o prefab é sempre o mesmo e a tag NEW nunca é mostrada aqui.
-    void RefreshDeckZone(Transform container, List<CardData> cards)
+    void RefreshDeckZone(Transform container, List<CardData> cards, DeckZoneType zoneType)
     {
         if (cardDeckItemPrefab == null)
         {
@@ -204,14 +208,21 @@ public class DeckBuilderManager : MonoBehaviour
             GameObject go = Instantiate(cardDeckItemPrefab, container);
             
             CardDisplay display = go.GetComponentInChildren<CardDisplay>();
-            if (display == null) continue;
+            if (display == null) continue; // Already logged in SetupChestItem if missing
             display.SetCard(card, GameManager.Instance?.GetCardBackTexture(), true);
             display.isInteractable = false;
 
             DeckDragHandler drag = go.GetComponent<DeckDragHandler>();
             if (drag == null) drag = go.AddComponent<DeckDragHandler>();
             drag.cardData = card;
-            // drag.sourceZone = type; // O tipo é gerenciado pelo DeckDropZone de destino
+            drag.sourceZone = zoneType;
+        }
+
+        // Chama o script de layout customizado se ele existir no container
+        CustomDeckLayout customLayout = container.GetComponent<CustomDeckLayout>();
+        if (customLayout != null)
+        {
+            customLayout.UpdateLayout();
         }
     }
 
@@ -321,6 +332,7 @@ public class DeckBuilderManager : MonoBehaviour
         var attributeImage = go.transform.Find("AttributeIcon")?.GetComponent<Image>();
         var typeImage = go.transform.Find("TypeIcon")?.GetComponent<Image>();
         var subTypeImage = go.transform.Find("SubTypeIcon")?.GetComponent<Image>();
+        var raceImage = go.transform.Find("RaceIcon")?.GetComponent<Image>();
 
         int availableCopies = totalOwned - copiesInDecks;
 
@@ -328,43 +340,49 @@ public class DeckBuilderManager : MonoBehaviour
         if (cardStatsText) cardStatsText.text = $"x{availableCopies}";
 
         bool isMonster = card.type.Contains("Monster");
-        if (monsterLvlText) monsterLvlText.gameObject.SetActive(isMonster);
-        if (attributeImage) attributeImage.gameObject.SetActive(isMonster);
 
         if (isMonster)
         {
             // LÓGICA PARA MONSTROS
+            if (monsterLvlText) monsterLvlText.gameObject.SetActive(true);
             if (monsterLvlText) monsterLvlText.text = card.level.ToString();
+            
+            // Atributo (AttributeIcon)
             if (attributeImage)
             {
-                var iconMapping = attributeIcons.Find(i => i.name.Equals(card.attribute, System.StringComparison.OrdinalIgnoreCase));
-                if (iconMapping != null && iconMapping.icon != null)
+                attributeImage.gameObject.SetActive(true);
+                var attributeMapping = attributeIcons.Find(i => i.name.Equals(card.attribute, System.StringComparison.OrdinalIgnoreCase));
+                if (attributeMapping != null && attributeMapping.icon != null)
                 {
-                    attributeImage.sprite = iconMapping.icon;
+                    attributeImage.sprite = attributeMapping.icon;
                     attributeImage.enabled = true;
                 }
                 else
                 {
                     attributeImage.enabled = false;
-                    Debug.LogWarning($"[DeckBuilder] Ícone de atributo não encontrado para '{card.attribute}' na carta '{card.name}'. Verifique a lista 'attributeIcons' no Inspector.");
-
+                    Debug.LogWarning($"[ICONS] Ícone de ATRIBUTO não encontrado para '{card.attribute}' na carta '{card.name}'. Verifique a lista 'attributeIcons'.");
                 }
             }
-            if (typeImage)
+            
+            // Raça (RaceIcon)
+            if (raceImage) // Usar RaceIcon para a raça do monstro
             {
-                var iconMapping = monsterRaceIcons.Find(i => i.name.Equals(card.race, System.StringComparison.OrdinalIgnoreCase));
-                if (iconMapping != null && iconMapping.icon != null)
+                raceImage.gameObject.SetActive(true);
+                var raceMapping = raceIcons.Find(i => i.name.Equals(card.race, System.StringComparison.OrdinalIgnoreCase));
+                if (raceMapping != null && raceMapping.icon != null)
                 {
-                    typeImage.sprite = iconMapping.icon;
-                    typeImage.enabled = true;
+                    raceImage.sprite = raceMapping.icon;
+                    raceImage.enabled = true;
                 }
                 else
                 {
-                    typeImage.enabled = false;
-                    Debug.LogWarning($"[DeckBuilder] Ícone de raça não encontrado para '{card.race}' na carta '{card.name}'. Verifique a lista 'monsterRaceIcons' no Inspector.");
-
+                    raceImage.enabled = false;
+                    Debug.LogWarning($"[ICONS] Ícone de RAÇA não encontrado para '{card.race}' na carta '{card.name}'. Verifique a lista 'raceIcons'.");
                 }
             }
+
+            // Desativa os ícones de Magia/Armadilha
+            if (typeImage) typeImage.gameObject.SetActive(false);
             if (subTypeImage) subTypeImage.gameObject.SetActive(false);
 
             for (int i = 1; i <= 12; i++)
@@ -373,13 +391,19 @@ public class DeckBuilderManager : MonoBehaviour
                 if (star != null) star.gameObject.SetActive(i <= card.level);
             }
         }
-        else
+        else // Magias e Armadilhas
         {
-            // LÓGICA PARA MAGIAS E ARMADILHAS
+            // Desativa os ícones de Monstro
+            if (monsterLvlText) monsterLvlText.gameObject.SetActive(false);
+            if (attributeImage) attributeImage.gameObject.SetActive(false);
+            if (raceImage) raceImage.gameObject.SetActive(false);
+
+            // Tipo (TypeIcon)
             string mainType = card.type.Contains("Spell") ? "Spell" : "Trap";
-            if (typeImage)
+            if (typeImage) // Usar TypeIcon para o tipo principal (Spell/Trap)
             {
-                var iconMapping = typeIcons.Find(i => i.name.Equals(mainType, System.StringComparison.OrdinalIgnoreCase));
+                typeImage.gameObject.SetActive(true);
+                var iconMapping = typeIcons.Find(i => i.name.Equals(mainType, System.StringComparison.OrdinalIgnoreCase)); // Busca na lista de Tipos (Spell/Trap)
                 if (iconMapping != null && iconMapping.icon != null)
                 {
                     typeImage.sprite = iconMapping.icon;
@@ -388,19 +412,27 @@ public class DeckBuilderManager : MonoBehaviour
                 else
                 {
                     typeImage.enabled = false;
-                    Debug.LogWarning($"[DeckBuilder] Ícone de tipo não encontrado para '{mainType}' na carta '{card.name}'. Verifique a lista 'typeIcons' no Inspector.");
-
+                    Debug.LogWarning($"[ICONS] Ícone de TIPO PRINCIPAL não encontrado para '{mainType}' na carta '{card.name}'. Verifique a lista 'typeIcons'.");
                 }
             }
-            if (subTypeImage)
+            
+            // SubTipo (SubTypeIcon)
+            if (subTypeImage) // Usar SubTypeIcon para a propriedade (Continuous, Equip, etc.)
             {
-                var iconMapping = typeIcons.Find(i => i.name.Equals(card.property, System.StringComparison.OrdinalIgnoreCase));
-                subTypeImage.sprite = iconMapping?.icon;
-                subTypeImage.gameObject.SetActive(iconMapping?.icon != null);
-                if (iconMapping == null && !string.IsNullOrEmpty(card.property) && card.property != "Normal")
+                subTypeImage.gameObject.SetActive(true);
+                var subTypeMapping = subTypeIcons.Find(i => i.name.Equals(card.property, System.StringComparison.OrdinalIgnoreCase));
+                if (subTypeMapping != null && subTypeMapping.icon != null)
                 {
-                    Debug.LogWarning($"[DeckBuilder] Ícone de subtipo não encontrado para '{card.property}' na carta '{card.name}'. Verifique a lista 'typeIcons' no Inspector.");
-
+                    subTypeImage.sprite = subTypeMapping.icon;
+                    subTypeImage.enabled = true;
+                }
+                else
+                {
+                    subTypeImage.enabled = false;
+                    if (!string.IsNullOrEmpty(card.property) && card.property != "Normal" && card.property != "N/A")
+                    {
+                        Debug.LogWarning($"[ICONS] Ícone de SUBTIPO (Property) não encontrado para '{card.property}' na carta '{card.name}'. Verifique a lista 'subTypeIcons'.");
+                    }
                 }
             }
             for (int i = 1; i <= 12; i++)

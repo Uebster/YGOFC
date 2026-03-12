@@ -3333,7 +3333,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 855043084}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99958825
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -5456,7 +5456,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1555180853}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99947876
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -13542,7 +13542,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000016434433}
+  m_AnchoredPosition: {x: 0, y: 0.00006088792}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &250963708
@@ -14572,8 +14572,7 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 2013908560}
+  m_Children: []
   m_Father: {fileID: 900808855}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -18356,7 +18355,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00009507605}
+  m_AnchoredPosition: {x: 0, y: 0.00015290381}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &322488726
@@ -19861,8 +19860,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: -7482177786666212508, guid: 7a551f421cf7c6347aca02b28e8a6b2a, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -26414,7 +26413,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00009507605}
+  m_AnchoredPosition: {x: 0, y: 0.00015290381}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &440854236
@@ -40751,7 +40750,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1701951476}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999199
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -42373,8 +42372,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: -7378506952429663577, guid: a9317189b89619e468a90f3d64d0fa52, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -44928,8 +44927,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 9188709469293079776, guid: 895b27f79149cb044a3dc15ed19b7ed2, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -46678,7 +46677,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 660094935}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99958825
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -48915,7 +48914,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00009507605}
+  m_AnchoredPosition: {x: 0, y: 0.000114570066}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &821356746
@@ -50965,7 +50964,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 847992110}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9995376
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -52061,7 +52060,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00028734852}
+  m_AnchoredPosition: {x: 0, y: 0.00020057012}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &882301599
@@ -53087,6 +53086,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 2013908560}
   - {fileID: 261182708}
   m_Father: {fileID: 2060822332}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -54769,7 +54769,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 466731607}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99958825
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -57117,10 +57117,66 @@ MonoBehaviour:
     icon: {fileID: -8205872879795218714, guid: 0c54b969a8b3fd94b9c62f8cfeb03527, type: 3}
   - name: WIND
     icon: {fileID: -4545939501875754723, guid: 3da82ca2235322d4497cf0c171eaf744, type: 3}
+  raceIcons:
+  - name: Aqua
+    icon: {fileID: -1067448879976835226, guid: 2b3c8ae54baaf1840aeda21f23b40d62, type: 3}
+  - name: Beast
+    icon: {fileID: -5479620187238129941, guid: 789fbad7ee176814fb1c75883c6ca6b7, type: 3}
+  - name: Beast-Warrior
+    icon: {fileID: 36759360024607683, guid: e5fbccac12473104e9002bab99b56e01, type: 3}
+  - name: Creator God
+    icon: {fileID: 2677635606085692705, guid: 10b81cdc55d7bf04fbb69447cdae7785, type: 3}
+  - name: Cyberse
+    icon: {fileID: 5303620960221884998, guid: e36feb05693cc4749a9409377bc2444f, type: 3}
+  - name: Dinosaur
+    icon: {fileID: 7871209099650208439, guid: dc69486916f6ce8499ce7981a7bee438, type: 3}
+  - name: Dragon
+    icon: {fileID: -130185816538010810, guid: c7de581c4e2e41640962eeb92e5bc85e, type: 3}
+  - name: Fairy
+    icon: {fileID: 3242926043527927470, guid: e27b2772ac7692c4784a91ba972a2a7e, type: 3}
+  - name: Fiend
+    icon: {fileID: -801838198919077438, guid: 47240c5408722a7448e9afce34676ec0, type: 3}
+  - name: Fish
+    icon: {fileID: -1915776564401465818, guid: 1c497f631fa71ca44ad9b69bf2f827d2, type: 3}
+  - name: Insect
+    icon: {fileID: -8055624794270069212, guid: 13d89e69ea0ab694cbac508350deb154, type: 3}
+  - name: Machine
+    icon: {fileID: 6641563997647711585, guid: 1af385214f815d34295c1c6272548691, type: 3}
+  - name: Meta
+    icon: {fileID: 5989434088517787981, guid: 131236e1f3d8bcb47bc4cbf8bacde75c, type: 3}
+  - name: Plant
+    icon: {fileID: 906388131340123023, guid: 05f1b8588be6402419b9da7b9d272af3, type: 3}
+  - name: Psychic
+    icon: {fileID: 3708151244641688243, guid: 7d5afa7338edef64e88d5164185aca5e, type: 3}
+  - name: Pyro
+    icon: {fileID: 2428520627553755971, guid: fff429b195e7d0c44a76148114e623c8, type: 3}
+  - name: Reptile
+    icon: {fileID: 6156032726297556276, guid: 9abd4f23f51ce7f4e801c4fb6e59c31b, type: 3}
+  - name: Rock
+    icon: {fileID: 3452003437791708593, guid: 7d5d95342046cab428ce34698a88ef13, type: 3}
+  - name: Sea Serpent
+    icon: {fileID: -960742563321650111, guid: 971f927e3e8d3d647bfc3e6e4ec8480c, type: 3}
+  - name: Spellcaster
+    icon: {fileID: 6544178451434761943, guid: 262d1d6e612faed45a990feefc4143a8, type: 3}
+  - name: Thunder
+    icon: {fileID: -8105560202311982947, guid: bd82987a44d2aca4fa06609f6b8aed8c, type: 3}
+  - name: Warrior
+    icon: {fileID: -8180171696930044909, guid: c3dae59a433d51a4ab706fa1521c4816, type: 3}
+  - name: Winged Beast
+    icon: {fileID: -641769414968482184, guid: 02517f3fae90e604b8e0d851cd32c8b9, type: 3}
+  - name: Wyrm
+    icon: {fileID: 8788433452045232313, guid: 76d6b936a43c05c439d7504c027d50e0, type: 3}
+  - name: 
+    icon: {fileID: 0}
   typeIcons:
+  - name: Spell
+    icon: {fileID: 4250240542740113009, guid: a12d385c459655a43a7d9a47dbc8a3af, type: 3}
+  - name: Trap
+    icon: {fileID: 2099055159055310883, guid: e739b7f1c023f5f44a931e94bed78b62, type: 3}
+  subTypeIcons:
   - name: Continuous
     icon: {fileID: -618869457243993632, guid: e91eeb91e2fed7746abc1dcbe0872417, type: 3}
-  - name: Conter
+  - name: Counter
     icon: {fileID: 4952043566522609014, guid: 4b640192b738a3b45a130bdecc2a0731, type: 3}
   - name: Equip
     icon: {fileID: -7491821541795427111, guid: 6e0a59581c89fbc4ea37a61b33ab7d5e, type: 3}
@@ -57130,61 +57186,6 @@ MonoBehaviour:
     icon: {fileID: 7052665543471558554, guid: 42338f8721422be46b5268e2e0f9e2d5, type: 3}
   - name: Ritual
     icon: {fileID: 5778581690235211729, guid: 62ec6e444eb417c4685bf048a6cef0d8, type: 3}
-  monsterRaceIcons:
-  - name: Aqua
-    icon: {fileID: -1067448879976835226, guid: 58014042c99e6e440a3269e697d8e88e, type: 3}
-  - name: Beast
-    icon: {fileID: -5479620187238129941, guid: a8f39f1676e01dc40929bbc29059b1cd, type: 3}
-  - name: Beast-Warrior
-    icon: {fileID: 36759360024607683, guid: 99ce32fd874313847b6ad2f9201a188b, type: 3}
-  - name: Creator God
-    icon: {fileID: 2677635606085692705, guid: 37c195c4a58ee9c44bc29d3e68f28548, type: 3}
-  - name: Cyberse
-    icon: {fileID: 5303620960221884998, guid: 8d8a9895a39cf994fb23ed00229e7442, type: 3}
-  - name: Dinosaur
-    icon: {fileID: 7871209099650208439, guid: f0ac8f12ad92755439da286b53ad5d59, type: 3}
-  - name: Dragon
-    icon: {fileID: -130185816538010810, guid: 54c683c4ede229d44be71146d5b615f5, type: 3}
-  - name: Fairy
-    icon: {fileID: 3242926043527927470, guid: f134953ae79070549aa90f591a41c5cc, type: 3}
-  - name: Fiend
-    icon: {fileID: -801838198919077438, guid: 4c65776e4396f854090d58860855e8b9, type: 3}
-  - name: Fish
-    icon: {fileID: -1915776564401465818, guid: 8900425ef2cd82743903650dda17d92d, type: 3}
-  - name: Insect
-    icon: {fileID: -8055624794270069212, guid: e1cedbb4c68ffc14a8cbb900ca336a7d, type: 3}
-  - name: Machine
-    icon: {fileID: 6641563997647711585, guid: 8f4210199a2f3bb42bc27de3ff12aa97, type: 3}
-  - name: Meta
-    icon: {fileID: 5989434088517787981, guid: deec959b4b56dc541b9ca2e3b1eea01c, type: 3}
-  - name: Plant
-    icon: {fileID: 906388131340123023, guid: 17f7321e5ad643849a83e29e6a815ea4, type: 3}
-  - name: Psychic
-    icon: {fileID: 3708151244641688243, guid: ff6707871fabcf14da6b2143dec13a8e, type: 3}
-  - name: Pyro
-    icon: {fileID: 2428520627553755971, guid: 09a1e78d3146c6144ac321b1112b7e23, type: 3}
-  - name: Reptile
-    icon: {fileID: 6156032726297556276, guid: 761d8840e1b116949842a42523e00c86, type: 3}
-  - name: Rock
-    icon: {fileID: 3452003437791708593, guid: faa39621c9ce0254ca2c31a533a26809, type: 3}
-  - name: Sea Serpent
-    icon: {fileID: -960742563321650111, guid: 05ffde75ca091a441ad569a6aed8029a, type: 3}
-  - name: Spellcaster
-    icon: {fileID: 6544178451434761943, guid: 2a67313680773974b9aee3c19e8c2aac, type: 3}
-  - name: Thunder
-    icon: {fileID: -8105560202311982947, guid: 302e62eabd31eab45b6cbea33a4fb6da, type: 3}
-  - name: Warrior
-    icon: {fileID: -8180171696930044909, guid: 25926e99183aabf4d80f6672548a241b, type: 3}
-  - name: Winged Beast
-    icon: {fileID: -641769414968482184, guid: 587f705026c7ca640b59b0f9e8d6e40f, type: 3}
-  - name: Wyrm
-    icon: {fileID: 8788433452045232313, guid: 8ccf20a6b5e9c2745bf91cad0bc782ed, type: 3}
-  - name: Zombie
-    icon: {fileID: 6019453725058403666, guid: e0c69389e703d1a49a5ad106cb0ea9d6, type: 3}
-  - name: Spell
-    icon: {fileID: 4250240542740113009, guid: a12d385c459655a43a7d9a47dbc8a3af, type: 3}
-  - name: Trap
-    icon: {fileID: 2099055159055310883, guid: e739b7f1c023f5f44a931e94bed78b62, type: 3}
 --- !u!1 &977330078
 GameObject:
   m_ObjectHideFlags: 0
@@ -64410,7 +64411,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 82258834}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9994788
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -64701,7 +64702,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 595497764}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99947876
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -67254,8 +67255,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 989882269471991407, guid: 24534d5a1af0a804bb0ad9f7237009e1, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -71241,7 +71242,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1995952712}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99975973
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -74600,8 +74601,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 4250240542740113009, guid: c61e4f8768a58734680ad815b0e9db7d, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -81603,8 +81604,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 8776345751298238599, guid: ed0358ef54462ed49a2366e750b8e3d8, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -83805,8 +83806,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 2099055159055310883, guid: 62594377b8470754a9d6fbf012023e96, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -83906,7 +83907,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 2021891560}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99958825
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -84051,8 +84052,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 9091771182309298858, guid: 558a53b309abeab4c9b4bda79156c31a, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -84616,7 +84617,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00009507605}
+  m_AnchoredPosition: {x: 0, y: 0.00015290381}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1403579448
@@ -85001,7 +85002,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00028734852}
+  m_AnchoredPosition: {x: 0, y: 0.00020057012}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1413832233
@@ -85154,7 +85155,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00009538444}
+  m_AnchoredPosition: {x: 0, y: 0.00016600169}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1423252461
@@ -96769,21 +96770,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 1603720486}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
+  m_Script: {fileID: 11500000, guid: 75daf956693c54c4a913c30fdec3a44d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GridLayoutGroup
-  m_Padding:
-    m_Left: 0
-    m_Right: 0
-    m_Top: 0
-    m_Bottom: 0
-  m_ChildAlignment: 0
-  m_StartCorner: 0
-  m_StartAxis: 0
-  m_CellSize: {x: 120, y: 168}
-  m_Spacing: {x: 0, y: 0}
-  m_Constraint: 0
-  m_ConstraintCount: 2
+  m_EditorClassIdentifier: Assembly-CSharp::CustomDeckLayout
+  numberOfRows: 4
+  cardWidth: 96
+  cardHeight: 135
+  verticalSpacing: 3
+  minHorizontalSpacing: -80
+  horizontalPadding: 5
+  verticalPadding: 3
 --- !u!1 &1607691302
 GameObject:
   m_ObjectHideFlags: 0
@@ -98528,8 +98524,8 @@ RectTransform:
   - {fileID: 755673260}
   - {fileID: 1234903062}
   - {fileID: 1387282768}
-  - {fileID: 1895417405}
   - {fileID: 1360440426}
+  - {fileID: 1895417405}
   m_Father: {fileID: 2060822332}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -104654,7 +104650,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1170065776}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99947876
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -112309,8 +112305,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 5778581690235211729, guid: 5585474fdf2e38942a711768436b798d, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -118399,12 +118395,12 @@ RectTransform:
   m_Children:
   - {fileID: 423479882}
   - {fileID: 1136148295}
-  m_Father: {fileID: 261182708}
+  m_Father: {fileID: 900808855}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.4999981}
-  m_SizeDelta: {x: -20, y: -13}
+  m_AnchoredPosition: {x: -0.50341797, y: 1.0101948}
+  m_SizeDelta: {x: -45.90988, y: -34.9009}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2013908561
 MonoBehaviour:
@@ -122408,7 +122404,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00028734852}
+  m_AnchoredPosition: {x: 0, y: 0.00020057012}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2079048823
@@ -124378,7 +124374,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00009507605}
+  m_AnchoredPosition: {x: 0, y: 0.00015290381}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &2109275318
@@ -125065,7 +125061,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00017635929}
+  m_AnchoredPosition: {x: 0, y: 0.00013934776}
   m_SizeDelta: {x: 0, y: 650.88}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2123005588
