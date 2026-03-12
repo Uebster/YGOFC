@@ -40,6 +40,7 @@ public class DeckBuilderManager : MonoBehaviour
     public Button btnPrevPage;
     public Button btnNextPage;
     public TextMeshProUGUI txtPageInfo;
+    [Tooltip("Quantas cartas únicas são mostradas por página no baú.")]
     public int itemsPerPage = 50;
     private int currentPage = 1;
     private int totalPages = 1;
@@ -118,10 +119,104 @@ public class DeckBuilderManager : MonoBehaviour
 
     private Dictionary<string, int> banList = new Dictionary<string, int>()
     {
-        // ... (Banlist data remains unchanged)
+        // --- PROIBIDAS (0 CÓPIAS) ---
+        {"Chaos Emperor Dragon - Envoy of the End", 0},
+        {"Sangan", 0},
+        {"Witch of the Black Forest", 0},
+        {"Yata-Garasu", 0},
+        {"Dark Hole", 0},
+        {"Delinquent Duo", 0},
+        {"Graceful Charity", 0},
+        {"Harpie's Feather Duster", 0},
+        {"Monster Reborn", 0},
+        {"Raigeki", 0},
+        {"United We Stand", 0},
+        {"Imperial Order", 0},
+        {"Mirror Force", 0},
+        {"Change of Heart", 0},
+        {"Confiscation", 0},
+        {"The Forceful Sentry", 0},
+        {"Fiber Jar", 0},
+        {"Cyber Jar", 0},
+        {"Magical Scientist", 0},
+        {"Cyber-Stein", 0},
+        {"Mirror Wall", 0},
+        {"Destruction Ring", 0},
+
+        // --- LIMITADAS (1 CÓPIA) ---
+        {"Black Luster Soldier - Envoy of the Beginning", 1},
+        {"Black Luster Soldier", 1}, // Ritual
+        {"Chaos Sorcerer", 1},
+        {"Breaker the Magical Warrior", 1},
+        {"Jinzo", 1},
+        {"Tribe-Infecting Virus", 1},
+        {"Sinister Serpent", 1},
+        {"Exiled Force", 1},
+        {"D.D. Assailant", 1},
+        {"D.D. Warrior Lady", 1},
+        {"Ancient Gear Beast", 1},
+        {"Armed Dragon LV5", 1},
+        {"Armed Dragon LV7", 1},
+        {"Behemoth the King of All Animals", 1},
+        {"Chaos Command Magician", 1},
+        {"Injection Fairy Lily", 1},
+        {"Reflect Bounder", 1},
+        {"Twin-Headed Behemoth", 1},
+        {"Vampire Lord", 1},
+        {"Morphing Jar", 1},
+        {"Dark Magician of Chaos", 1},
+        {"Relinquished", 1},
+        {"Summoner Monk", 1},
+        {"Rescue Cat", 1},
+        {"Exodia the Forbidden One", 1},
+        {"Right Arm of the Forbidden One", 1},
+        {"Left Arm of the Forbidden One", 1},
+        {"Right Leg of the Forbidden One", 1},
+        {"Left Leg of the Forbidden One", 1},
+        {"Pot of Greed", 1},
+        {"Heavy Storm", 1},
+        {"Snatch Steal", 1},
+        {"Premature Burial", 1},
+        {"Swords of Revealing Light", 1},
+        {"Book of Moon", 1},
+        {"Mystical Space Typhoon", 1},
+        {"Giant Trunade", 1},
+        {"Mage Power", 1},
+        {"Painful Choice", 1},
+        {"Mind Control", 1},
+        {"Brain Control", 1},
+        {"Limiter Removal", 1},
+        {"Megamorph", 1},
+        {"Card Destruction", 1},
+        {"Dimension Fusion", 1},
+        {"Primal Seed", 1},
+        {"Call of the Haunted", 1},
+        {"Ring of Destruction", 1},
+        {"Torrential Tribute", 1},
+        {"Magic Cylinder", 1},
+        {"Ceasefire", 1},
+        {"Reckless Greed", 1},
+        {"Royal Decree", 1},
+        {"Mask of Darkness", 1},
+        {"Time Seal", 1},
+        {"Wall of Revealing Light", 1},
+        {"Self-Destruct Button", 1},
+        {"Return from the Different Dimension", 1},
+        {"Protector of the Sanctuary", 1},
+
+        // --- SEMI-LIMITADAS (2 CÓPIAS) ---
+        {"Creature Swap", 2},
+        {"Manticore of Darkness", 2},
+        {"Marauding Captain", 2},
+        {"Nobleman of Crossout", 2},
+        {"Reinforcement of the Army", 2},
+        {"Upstart Goblin", 2},
+        {"Cyber Dragon", 2},
+        {"Enemy Controller", 2},
+        {"Magician of Faith", 2}
     };
     
-    private enum SortType { ABC, Atk, Def }
+    public enum SortType { ABC, Atk, Def }
     private SortType currentSort = SortType.ABC;
 
     private bool sortAscending = true;
@@ -139,19 +234,35 @@ public class DeckBuilderManager : MonoBehaviour
     void Start()
     {
         // Adiciona listeners para os botões de ação principais
-        if (btnSave) btnSave.onClick.AddListener(SaveDeck);
-        if (btnExit) btnExit.onClick.AddListener(Exit);
+        btnSave?.onClick.AddListener(SaveDeck);
+        btnExit?.onClick.AddListener(Exit);
 
-        // Outros listeners podem estar configurados no Inspector ou em outros scripts
+        // Adiciona listeners para os botões de filtro e ordenação
+        // Ordenação
+        btnSortABC?.onClick.AddListener(() => SetSortType(SortType.ABC));
+        btnSortAtk?.onClick.AddListener(() => SetSortType(SortType.Atk));
+        btnSortDef?.onClick.AddListener(() => SetSortType(SortType.Def));
+
+        // Filtros de Tipo
+        btnFilterNormal?.onClick.AddListener(() => ToggleFilter("Normal"));
+        btnFilterEffect?.onClick.AddListener(() => ToggleFilter("Effect"));
+        btnFilterSpell?.onClick.AddListener(() => ToggleFilter("Spell"));
+        btnFilterTrap?.onClick.AddListener(() => ToggleFilter("Trap"));
+        btnFilterFusion?.onClick.AddListener(() => ToggleFilter("Fusion"));
+        btnFilterRitual?.onClick.AddListener(() => ToggleFilter("Ritual"));
+
+        // Paginação
+        btnPrevPage?.onClick.AddListener(PrevPage);
+        btnNextPage?.onClick.AddListener(NextPage);
+
+        // Pesquisa
+        searchInput?.onValueChanged.AddListener((text) => RefreshTrunkUI());
     }
 
     void OnEnable()
     {
-        LoadCurrentDeckFromManager();
-        LoadTrunk();
-        currentPage = 1;
-        hasUnsavedChanges = false;
-        RefreshAllUI();
+        // ... (código existente)
+        UpdateFilterButtonsVisuals();
     }
 
     void LoadCurrentDeckFromManager()
@@ -186,9 +297,15 @@ public class DeckBuilderManager : MonoBehaviour
         foreach (var card in sideDeck) cardIDsInDecks.Add(card.id);
         foreach (var card in extraDeck) cardIDsInDecks.Add(card.id);
 
+        // Ordena os decks antes de exibir para consistência
+        mainDeck.Sort((a, b) => a.name.CompareTo(b.name));
+        sideDeck.Sort((a, b) => a.name.CompareTo(b.name));
+        extraDeck.Sort((a, b) => a.name.CompareTo(b.name));
+
         RefreshDeckZone(mainDeckContent, mainDeck, DeckZoneType.Main);
         RefreshDeckZone(sideDeckContent, sideDeck, DeckZoneType.Side);
         RefreshDeckZone(extraDeckContent, extraDeck, DeckZoneType.Extra);
+
         RefreshTrunkUI();
         UpdateCounts();
     }
@@ -234,11 +351,10 @@ public class DeckBuilderManager : MonoBehaviour
             return;
         }
 
-        foreach (Transform child in trunkContent)
-        {
-            Destroy(child.gameObject);
-        }
+        // Limpa a lista de cartas do baú
+        foreach (Transform child in trunkContent) Destroy(child.gameObject);
 
+        // --- LÓGICA DE FILTRO E ORDENAÇÃO ---
         string searchText = searchInput != null ? searchInput.text.ToLowerInvariant() : "";
 
         var filteredGroups = currentTrunk
@@ -248,7 +364,7 @@ public class DeckBuilderManager : MonoBehaviour
                 CardData card = g.First();
                 if (!string.IsNullOrEmpty(searchText) && !card.name.ToLowerInvariant().Contains(searchText)) return false;
                 
-                bool isMonster = card.type.Contains("Monster");
+                bool isMonster = card.type.Contains("Monster") && !card.type.Contains("Spell") && !card.type.Contains("Trap");
                 bool isSpell = card.type.Contains("Spell");
                 bool isTrap = card.type.Contains("Trap");
 
@@ -259,7 +375,7 @@ public class DeckBuilderManager : MonoBehaviour
                 {
                     bool isFusion = card.type.Contains("Fusion");
                     bool isRitual = card.type.Contains("Ritual");
-                    bool isNormal = card.type.Contains("Normal");
+                    bool isNormal = card.type.Contains("Normal") && !isFusion && !isRitual;
                     bool isEffect = !isNormal && !isFusion && !isRitual; // Assume que se não for Normal/Fusion/Ritual, é de Efeito
 
                     if (isFusion && !activeFilters["Fusion"]) return false;
@@ -270,6 +386,7 @@ public class DeckBuilderManager : MonoBehaviour
                 return true;
             }).ToList();
 
+        // Aplica a ordenação
         switch (currentSort)
         {
             case SortType.ABC:
@@ -283,11 +400,13 @@ public class DeckBuilderManager : MonoBehaviour
                 break;
         }
 
+        // --- LÓGICA DE PAGINAÇÃO ---
         totalPages = Mathf.CeilToInt((float)filteredGroups.Count / itemsPerPage);
         if (totalPages < 1) totalPages = 1;
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
 
+        // Aplica a paginação
         UpdatePaginationUI();
         var paginatedGroups = filteredGroups.Skip((currentPage - 1) * itemsPerPage).Take(itemsPerPage).ToList();
 
@@ -301,6 +420,7 @@ public class DeckBuilderManager : MonoBehaviour
             return;
         }
 
+        // Popula a UI com as cartas da página atual
         foreach (var group in paginatedGroups)
         {
             CardData card = group.First();
@@ -308,6 +428,7 @@ public class DeckBuilderManager : MonoBehaviour
             int copiesInDecks = deckCardCounts.GetValueOrDefault(card.id, 0);
 
             GameObject go = Instantiate(cardChestItemPrefab, trunkContent);
+            // Configura os detalhes e interações do item
             SetupChestItem(go, card, totalOwned, copiesInDecks);
         }
     }
@@ -322,7 +443,7 @@ public class DeckBuilderManager : MonoBehaviour
         if (display != null)
         {
             display.SetCard(card, GameManager.Instance?.GetCardBackTexture(), true);
-            display.isInteractable = false;
+            display.isInteractable = false; // Desativa o efeito de "pular" da mão, mas permite clique/arrasto
         }
 
         // --- 2. Preenche os textos e ícones ---
@@ -333,6 +454,7 @@ public class DeckBuilderManager : MonoBehaviour
         var typeImage = go.transform.Find("TypeIcon")?.GetComponent<Image>();
         var subTypeImage = go.transform.Find("SubTypeIcon")?.GetComponent<Image>();
         var raceImage = go.transform.Find("RaceIcon")?.GetComponent<Image>();
+        var newTagInstance = go.transform.Find("NewTag"); // Procura por uma tag existente
 
         int availableCopies = totalOwned - copiesInDecks;
 
@@ -346,15 +468,13 @@ public class DeckBuilderManager : MonoBehaviour
             // LÓGICA PARA MONSTROS
             if (monsterLvlText) monsterLvlText.gameObject.SetActive(true);
             if (monsterLvlText) monsterLvlText.text = card.level.ToString();
-            
             // Atributo (AttributeIcon)
-            if (attributeImage)
+            if (attributeImage) 
             {
-                attributeImage.gameObject.SetActive(true);
-                var attributeMapping = attributeIcons.Find(i => i.name.Equals(card.attribute, System.StringComparison.OrdinalIgnoreCase));
-                if (attributeMapping != null && attributeMapping.icon != null)
+                var iconMapping = attributeIcons.Find(i => i.name.Equals(card.attribute, System.StringComparison.OrdinalIgnoreCase)); // Busca na lista de Atributos
+                if (iconMapping != null && iconMapping.icon != null)
                 {
-                    attributeImage.sprite = attributeMapping.icon;
+                    attributeImage.sprite = iconMapping.icon;
                     attributeImage.enabled = true;
                 }
                 else
@@ -365,19 +485,19 @@ public class DeckBuilderManager : MonoBehaviour
             }
             
             // Raça (RaceIcon)
-            if (raceImage) // Usar RaceIcon para a raça do monstro
+            if (raceImage)
             {
                 raceImage.gameObject.SetActive(true);
-                var raceMapping = raceIcons.Find(i => i.name.Equals(card.race, System.StringComparison.OrdinalIgnoreCase));
-                if (raceMapping != null && raceMapping.icon != null)
+                var iconMapping = raceIcons.Find(i => i.name.Equals(card.race, System.StringComparison.OrdinalIgnoreCase)); // Busca na lista de Raças
+                if (iconMapping != null && iconMapping.icon != null)
                 {
-                    raceImage.sprite = raceMapping.icon;
+                    raceImage.sprite = iconMapping.icon;
                     raceImage.enabled = true;
                 }
                 else
                 {
                     raceImage.enabled = false;
-                    Debug.LogWarning($"[ICONS] Ícone de RAÇA não encontrado para '{card.race}' na carta '{card.name}'. Verifique a lista 'raceIcons'.");
+                    if (!string.IsNullOrEmpty(card.race)) Debug.LogWarning($"[ICONS] Ícone de RAÇA não encontrado para '{card.race}' na carta '{card.name}'. Verifique a lista 'raceIcons'.");
                 }
             }
 
@@ -420,19 +540,13 @@ public class DeckBuilderManager : MonoBehaviour
             if (subTypeImage) // Usar SubTypeIcon para a propriedade (Continuous, Equip, etc.)
             {
                 subTypeImage.gameObject.SetActive(true);
-                var subTypeMapping = subTypeIcons.Find(i => i.name.Equals(card.property, System.StringComparison.OrdinalIgnoreCase));
-                if (subTypeMapping != null && subTypeMapping.icon != null)
+                var iconMapping = subTypeIcons.Find(i => i.name.Equals(card.property, System.StringComparison.OrdinalIgnoreCase)); // Busca na lista de SubTipos
+                subTypeImage.sprite = iconMapping?.icon;
+                subTypeImage.gameObject.SetActive(iconMapping?.icon != null);
+                
+                if (iconMapping == null && !string.IsNullOrEmpty(card.property) && card.property != "Normal" && card.property != "N/A")
                 {
-                    subTypeImage.sprite = subTypeMapping.icon;
-                    subTypeImage.enabled = true;
-                }
-                else
-                {
-                    subTypeImage.enabled = false;
-                    if (!string.IsNullOrEmpty(card.property) && card.property != "Normal" && card.property != "N/A")
-                    {
-                        Debug.LogWarning($"[ICONS] Ícone de SUBTIPO (Property) não encontrado para '{card.property}' na carta '{card.name}'. Verifique a lista 'subTypeIcons'.");
-                    }
+                    Debug.LogWarning($"[ICONS] Ícone de SUBTIPO (Property) não encontrado para '{card.property}' na carta '{card.name}'. Verifique a lista 'subTypeIcons'.");
                 }
             }
             for (int i = 1; i <= 12; i++)
@@ -445,13 +559,13 @@ public class DeckBuilderManager : MonoBehaviour
         // --- 3. Lógica da Tag "New" ---
         bool isNew = SaveLoadSystem.Instance != null && SaveLoadSystem.Instance.IsCardNew(card.id);
         bool isInDeck = cardIDsInDecks.Contains(card.id);
-        Transform newTagParent = go.transform.Find("Card2D");
+        Transform newTagParent = card2DTr != null ? card2DTr : go.transform;
         if (isNew && !isInDeck && newTagParent != null)
         {
             CreateNewBanner(newTagParent);
         }
 
-        // --- 4. Lógica de Estado (Inativo) ---
+        // --- 4. Lógica de Estado (Inativo) e Drag & Drop ---
         CanvasGroup canvasGroup = go.GetComponent<CanvasGroup>();
         if (canvasGroup == null) canvasGroup = go.AddComponent<CanvasGroup>();
         DeckDragHandler dragHandler = go.GetComponent<DeckDragHandler>();
@@ -468,7 +582,7 @@ public class DeckBuilderManager : MonoBehaviour
             dragHandler.enabled = isInteractable;
         }
 
-        // --- 5. Adiciona listener para o CardViewer ---
+        // --- 5. Adiciona listener para o CardViewer (Hover) ---
         EventTrigger trigger = go.GetComponent<EventTrigger>();
         if (trigger == null) trigger = go.AddComponent<EventTrigger>();
         trigger.triggers.Clear();
@@ -478,6 +592,9 @@ public class DeckBuilderManager : MonoBehaviour
         trigger.triggers.Add(entry);
     }
 
+    /// <summary>
+    /// Salva o deck atual no GameManager e no sistema de save persistente.
+    /// </summary>
     public void SaveDeck()
     {
         if (!hasUnsavedChanges)
@@ -513,8 +630,12 @@ public class DeckBuilderManager : MonoBehaviour
         hasUnsavedChanges = false;
         Debug.Log("Deck salvo com sucesso!");
         // Opcional: Atualizar a UI para desabilitar o botão de salvar, etc.
+        // RefreshAllUI(); // Atualiza a UI para remover tags NEW
     }
 
+    /// <summary>
+    /// Sai da tela do Deck Builder, verificando se há alterações não salvas.
+    /// </summary>
     public void Exit()
     {
         if (hasUnsavedChanges)
@@ -530,6 +651,9 @@ public class DeckBuilderManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Cria a tag "NEW" em uma carta, usando um prefab ou gerando dinamicamente.
+    /// </summary>
     private void CreateNewBanner(Transform parent)
     {
         if (newTagPrefab != null)
@@ -568,6 +692,9 @@ public class DeckBuilderManager : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Atualiza o CardViewer com a carta que o mouse está sobre.
+    /// </summary>
     public void OnCardHover(CardData card)
     {
         if (cardViewer != null)
@@ -576,14 +703,52 @@ public class DeckBuilderManager : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Adiciona uma carta a um dos decks (Main, Side, Extra), validando as regras.
+    /// </summary>
     public bool AddCardToDeck(CardData card, DeckZoneType targetZone)
     {
-       // ... Lógica de adicionar carta ...
+       // Validação de Limite de Cópias
+       int currentCopies = mainDeck.Count(c => c.id == card.id) + sideDeck.Count(c => c.id == card.id) + extraDeck.Count(c => c.id == card.id);
+       int banlistLimit = banList.ContainsKey(card.name) ? banList[card.name] : MAX_COPIES;
+       if (GameManager.Instance.disableBanlist) banlistLimit = MAX_COPIES;
+       if (currentCopies >= banlistLimit) return false;
+
+       // Validação de Zona
+       if (targetZone == DeckZoneType.Main)
+       {
+           if (card.type.Contains("Fusion")) return false; // Fusões não vão no Main Deck
+           if (mainDeck.Count >= MAX_MAIN) return false;
+           mainDeck.Add(card);
+       }
+       else if (targetZone == DeckZoneType.Side)
+       {
+           if (card.type.Contains("Fusion")) return false;
+           if (sideDeck.Count >= MAX_SIDE) return false;
+           sideDeck.Add(card);
+       }
+       else if (targetZone == DeckZoneType.Extra)
+       {
+           if (!card.type.Contains("Fusion")) return false; // Apenas Fusões no Extra Deck
+           if (extraDeck.Count >= MAX_EXTRA) return false;
+           extraDeck.Add(card);
+       }
+       else if (targetZone == DeckZoneType.Trunk)
+       {
+        // Soltar de volta no Trunk não faz nada, apenas retorna true para o DragHandler
+           return true;
+       }
+       
        hasUnsavedChanges = true;
+        // Marca a carta como "usada" para remover a tag "NEW"
+        if (SaveLoadSystem.Instance != null) SaveLoadSystem.Instance.MarkCardAsUsed(card.id);
        RefreshAllUI(); // Atualiza toda a UI para refletir a mudança
        return true; // Retorna true se foi bem sucedido
     }
 
+    /// <summary>
+    /// Remove uma carta de um deck específico.
+    /// </summary>
     public void RemoveCard(CardData card, DeckZoneType sourceZone)
     {
         // ... Lógica de remover carta ...
@@ -591,10 +756,18 @@ public class DeckBuilderManager : MonoBehaviour
         RefreshAllUI(); // Atualiza toda a UI para refletir a mudança
     }
 
+    /// <summary>
+    /// Aciona um feedback visual (piscar) em uma zona de deck.
+    /// </summary>
     public void TriggerInvalidMoveFeedback(DeckZoneType zone)
     {
         // Lógica para piscar o painel da zona inválida
+        Debug.Log($"Movimento inválido para a zona: {zone}");
     }
+
+    /// <summary>
+    /// Atualiza os textos de contagem de cartas para todos os decks.
+    /// </summary>
 
     private void UpdateCounts()
     {
@@ -603,6 +776,9 @@ public class DeckBuilderManager : MonoBehaviour
         if(extraDeckCountText) extraDeckCountText.text = $"{extraDeck.Count}/{MAX_EXTRA}";
     }
 
+    /// <summary>
+    /// Atualiza a UI de paginação (texto e botões).
+    /// </summary>
     private void UpdatePaginationUI()
     {
         if (txtPageInfo != null)
@@ -612,7 +788,52 @@ public class DeckBuilderManager : MonoBehaviour
         if (btnPrevPage != null) btnPrevPage.interactable = currentPage > 1;
         if (btnNextPage != null) btnNextPage.interactable = currentPage < totalPages;
     }
-    
-    // ... O resto dos métodos como SaveDeck, filtros, etc. permanecem ...
+
+    // --- MÉTODOS PÚBLICOS PARA OS BOTÕES DE UI ---
+
+    public void SetSortType(SortType newSort)
+    {
+        if (currentSort == newSort)
+        {
+            sortAscending = !sortAscending; // Inverte a direção se clicar no mesmo botão
+        }
+        else
+        {
+            currentSort = newSort;
+            sortAscending = true; // Padrão para ascendente ao trocar de tipo
+        }
+        RefreshTrunkUI();
+    }
+
+    public void ToggleFilter(string filterKey)
+    {
+        if (activeFilters.ContainsKey(filterKey))
+        {
+            activeFilters[filterKey] = !activeFilters[filterKey];
+        }
+        UpdateFilterButtonsVisuals();
+        RefreshTrunkUI();
+    }
+
+    private void UpdateFilterButtonsVisuals()
+    {
+        // Torna os botões de filtro cinza/branco para indicar se estão ativos
+        if (btnFilterNormal) btnFilterNormal.GetComponent<Image>().color = activeFilters["Normal"] ? activeColor : inactiveColor;
+        if (btnFilterEffect) btnFilterEffect.GetComponent<Image>().color = activeFilters["Effect"] ? activeColor : inactiveColor;
+        if (btnFilterSpell) btnFilterSpell.GetComponent<Image>().color = activeFilters["Spell"] ? activeColor : inactiveColor;
+        if (btnFilterTrap) btnFilterTrap.GetComponent<Image>().color = activeFilters["Trap"] ? activeColor : inactiveColor;
+        if (btnFilterFusion) btnFilterFusion.GetComponent<Image>().color = activeFilters["Fusion"] ? activeColor : inactiveColor;
+        if (btnFilterRitual) btnFilterRitual.GetComponent<Image>().color = activeFilters["Ritual"] ? activeColor : inactiveColor;
+    }
+
+    public void NextPage()
+    {
+        if (currentPage < totalPages) { currentPage++; RefreshTrunkUI(); }
+    }
+
+    public void PrevPage()
+    {
+        if (currentPage > 1) { currentPage--; RefreshTrunkUI(); }
+    }
 }
 public enum DeckZoneType { Trunk, Main, Side, Extra }

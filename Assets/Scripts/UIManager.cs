@@ -74,10 +74,24 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
-        if (GameManager.Instance != null && GameManager.Instance.testDuelDirectly)
+        if (GameManager.Instance != null)
         {
             StartCoroutine(StartDuelDelayed());
-            return;
+            if (GameManager.Instance.testDeckBuilderDirectly)
+            {
+                ShowScreen(deckBuilderScreen);
+                return;
+            }
+            if (GameManager.Instance.testLibraryDirectly)
+            {
+                ShowScreen(libraryMenu);
+                return;
+            }
+            if (GameManager.Instance.testDuelDirectly)
+            {
+                StartCoroutine(StartDuelDelayed());
+                return;
+            }
         }
 
         // Ao iniciar o jogo, começa pela Abertura

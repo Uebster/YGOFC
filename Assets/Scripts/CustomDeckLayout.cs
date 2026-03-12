@@ -3,9 +3,11 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 
 /// <summary>
-/// Organiza os itens filhos em uma grade com um número fixo de linhas,
-/// distribuindo os itens de forma equilibrada e ajustando o espaçamento
-/// horizontal para caber no contêiner, permitindo sobreposição.
+/// Organiza as cartas em uma grade customizada.
+/// Este script distribui as cartas de forma equilibrada entre um número fixo de linhas.
+/// Conforme mais cartas são adicionadas, o espaçamento horizontal diminui para acomodá-las,
+/// criando um efeito de "empilhamento" ou sobreposição quando necessário.
+/// Todas as propriedades são ajustáveis via Inspector para fácil customização.
 /// </summary>
 [ExecuteInEditMode] // Permite ver as mudanças no Editor sem rodar o jogo
 public class CustomDeckLayout : MonoBehaviour
@@ -14,19 +16,19 @@ public class CustomDeckLayout : MonoBehaviour
     [Tooltip("O número de linhas fixas na grade.")]
     [Range(1, 20)]
     public int numberOfRows = 4;
-
+    
     [Header("Dimensões dos Itens")]
     [Tooltip("A largura de cada carta na grade.")]
     public float cardWidth = 96f;
     [Tooltip("A altura de cada carta na grade.")]
     public float cardHeight = 135f;
-
+    
     [Header("Espaçamento")]
     [Tooltip("Espaçamento vertical entre as linhas.")]
-    public float verticalSpacing = 3f;
+    public float verticalSpacing = 10f;
     [Tooltip("Espaçamento horizontal mínimo, mesmo quando as cartas estão sobrepostas. Use um valor negativo grande para permitir bastante sobreposição.")]
     public float minHorizontalSpacing = -80f;
-
+    
     [Header("Padding (Preenchimento Interno)")]
     [Tooltip("Espaço à esquerda e à direita dentro do contêiner.")]
     public float horizontalPadding = 5f;
@@ -54,7 +56,7 @@ public class CustomDeckLayout : MonoBehaviour
         RectTransform container = GetComponent<RectTransform>();
         if (container == null) return;
 
-        int totalCards = 0;
+        int totalCards = 0; // Usaremos para contar apenas os filhos ativos
         // Conta apenas filhos ativos para ignorar objetos desativados
         for (int i = 0; i < transform.childCount; i++)
         {
@@ -64,15 +66,17 @@ public class CustomDeckLayout : MonoBehaviour
 
         if (totalCards == 0) return;
 
-        // 1. Calcula quantas cartas irão para cada linha (distribuição round-robin)
+        // 1. Calcula a distribuição de cartas por linha.
+        // Ex: Com 41 cartas e 4 linhas, o resultado será [11, 10, 10, 10].
         int[] cardsInRow = new int[numberOfRows];
         for (int i = 0; i < totalCards; i++)
         {
+            // O operador de módulo (%) distribui as cartas uma a uma por linha.
             cardsInRow[i % numberOfRows]++;
         }
 
         float currentY = -verticalPadding;
-        int cardIndex = 0;
+        int cardIndex = 0; // Índice para percorrer os filhos do objeto
 
         // 2. Itera sobre cada linha para posicionar as cartas
         for (int i = 0; i < numberOfRows; i++)
@@ -91,14 +95,14 @@ public class CustomDeckLayout : MonoBehaviour
             else
             {
                 // Calcula o espaçamento ideal para que as cartas preencham a largura disponível.
-                // Se houver mais cartas, o espaçamento diminuirá, podendo ficar negativo (sobreposição).
+                // Se houver mais cartas que o espaço permite, o espaçamento se torna negativo, criando a sobreposição.
                 spacing = (availableWidth - cardWidth) / (cardsThisRow - 1);
             }
 
             // Limita o espaçamento para não ficar menor que o mínimo definido
             spacing = Mathf.Max(spacing, minHorizontalSpacing);
 
-            // Calcula a largura total que a linha de cartas ocupará com o espaçamento atual
+            // Calcula a largura total que a linha de cartas ocupará com o espaçamento atual para poder centralizá-la.
             float totalRowWidth = cardWidth + (Mathf.Max(0, cardsThisRow - 1) * spacing);
             float startX = horizontalPadding;
 
@@ -112,16 +116,20 @@ public class CustomDeckLayout : MonoBehaviour
             {
                 if (cardIndex >= transform.childCount) break;
 
+                // Pega o próximo filho ativo
                 RectTransform cardRect = transform.GetChild(cardIndex) as RectTransform;
                 if (cardRect == null || !cardRect.gameObject.activeSelf) continue;
 
                 float xPos = startX + (j * spacing);
 
-                // Define a âncora no canto superior esquerdo para um posicionamento previsível
+                // Define a âncora no canto superior esquerdo para um posicionamento previsível e consistente.
                 cardRect.anchorMin = new Vector2(0, 1);
                 cardRect.anchorMax = new Vector2(0, 1);
                 cardRect.pivot = new Vector2(0, 1);
                 cardRect.anchoredPosition = new Vector2(xPos, currentY);
+
+                // Garante que a carta tenha o tamanho correto
+                cardRect.sizeDelta = new Vector2(cardWidth, cardHeight);
 
                 cardIndex++;
             }

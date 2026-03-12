@@ -85,6 +85,10 @@ public class GameManager : MonoBehaviour
     public bool devMode = false;
     [Tooltip("Se marcado, pula os menus e inicia um duelo livre imediatamente ao dar Play.")]
     public bool testDuelDirectly = false;
+    [Tooltip("Se marcado, pula para a página de Construção de Deck imediatamente ao dar Play.")]
+    public bool testDeckBuilderDirectly = false;
+    [Tooltip("Se marcado, pula para a página de Card Library imediatamente ao dar Play.")]
+    public bool testLibraryDirectly = false; 
     [Tooltip("Habilita o menu de testes de efeitos visuais e sonoros.")]
     public bool effectTestMode = false;
     [Tooltip("ID do oponente para teste rápido (ex: 021_kaiba). Deixe vazio para usar o fluxo normal.")]
