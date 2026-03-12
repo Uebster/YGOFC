@@ -335,8 +335,15 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             frontTexture = DownloadHandlerTexture.GetContent(currentRequest);
             frontTexture.filterMode = FilterMode.Trilinear;
-            if (cardImage != null)
+
+            // DEBUG: Verifica se a imagem e a textura são válidas
+            if (cardImage == null)
             {
+                Debug.LogError($"[CardDisplay] Falha ao aplicar textura: 'cardImage' (RawImage) é nulo na carta '{currentCardData?.name}'.", gameObject);
+            }
+            else
+            {
+                Debug.Log($"[CardDisplay] Textura para '{currentCardData?.name}' carregada com sucesso. Aplicando agora.");
                 // Só aplica a textura da frente se a carta NÃO estiver virada (isFlipped == false)
                 if (!isFlipped) cardImage.texture = frontTexture;
             }

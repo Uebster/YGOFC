@@ -26,6 +26,8 @@ public class CustomDeckLayout : MonoBehaviour
     [Header("Espaçamento")]
     [Tooltip("Espaçamento vertical entre as linhas.")]
     public float verticalSpacing = 10f;
+    [Tooltip("Espaçamento horizontal máximo entre as cartas.")]
+    public float maxHorizontalSpacing = 15f;
     [Tooltip("Espaçamento horizontal mínimo, mesmo quando as cartas estão sobrepostas. Use um valor negativo grande para permitir bastante sobreposição.")]
     public float minHorizontalSpacing = -80f;
     
@@ -95,23 +97,15 @@ public class CustomDeckLayout : MonoBehaviour
             else
             {
                 // Calcula o espaçamento ideal para que as cartas preencham a largura disponível.
-                // Se houver mais cartas que o espaço permite, o espaçamento se torna negativo, criando a sobreposição.
-                spacing = (availableWidth - cardWidth) / (cardsThisRow - 1);
+                spacing = (availableWidth - (cardsThisRow * cardWidth)) / (cardsThisRow - 1);
             }
 
-            // Limita o espaçamento para não ficar menor que o mínimo definido
-            spacing = Mathf.Max(spacing, minHorizontalSpacing);
+            // --- FIX: Limita o espaçamento para não ficar nem muito grande, nem muito pequeno ---
+            spacing = Mathf.Clamp(spacing, minHorizontalSpacing, maxHorizontalSpacing);
 
-            // Calcula a largura total que a linha de cartas ocupará com o espaçamento atual para poder centralizá-la.
-            float totalRowWidth = cardWidth + (Mathf.Max(0, cardsThisRow - 1) * spacing);
+            // --- FIX: Alinha sempre à esquerda ---
             float startX = horizontalPadding;
-
-            // Centraliza o grupo de cartas se ele não ocupar toda a largura
-            if (totalRowWidth < availableWidth)
-            {
-                startX = (availableWidth - totalRowWidth) / 2 + horizontalPadding;
-            }
-
+            
             for (int j = 0; j < cardsThisRow; j++)
             {
                 if (cardIndex >= transform.childCount) break;
@@ -120,7 +114,7 @@ public class CustomDeckLayout : MonoBehaviour
                 RectTransform cardRect = transform.GetChild(cardIndex) as RectTransform;
                 if (cardRect == null || !cardRect.gameObject.activeSelf) continue;
 
-                float xPos = startX + (j * spacing);
+                float xPos = startX + (j * (cardWidth + spacing));
 
                 // Define a âncora no canto superior esquerdo para um posicionamento previsível e consistente.
                 cardRect.anchorMin = new Vector2(0, 1);

@@ -222,8 +222,8 @@ public class DeckBuilderManager : MonoBehaviour
     private bool sortAscending = true;
     private Dictionary<string, bool> activeFilters = new Dictionary<string, bool>()
     {
-        {"Normal", true}, {"Effect", true}, {"Spell", true},
-        {"Trap", true}, {"Fusion", true}, {"Ritual", true}
+        {"Normal", false}, {"Effect", false}, {"Spell", false},
+        {"Trap", false}, {"Fusion", false}, {"Ritual", false}
     };
 
     void Awake()
@@ -265,6 +265,14 @@ public class DeckBuilderManager : MonoBehaviour
         LoadCurrentDeckFromManager();
         // Carrega o baú do jogador
         LoadTrunk();
+
+        // Adiciona logs para depuração
+        Debug.Log($"[DeckBuilder] OnEnable: {currentTrunk.Count} cards loaded into trunk.");
+        foreach (var filter in activeFilters)
+        {
+            Debug.Log($"[DeckBuilder] Initial Filter State: {filter.Key} = {filter.Value}");
+        }
+
         // Atualiza toda a interface gráfica com os dados carregados
         RefreshAllUI();
         // Atualiza o estado visual dos botões de filtro
@@ -317,6 +325,12 @@ public class DeckBuilderManager : MonoBehaviour
         RefreshTrunkUI();
         UpdateCounts();
     }
+    
+    private bool IsDeckValid()
+    {
+        if (mainDeck.Count < MIN_MAIN || mainDeck.Count > MAX_MAIN) return false;
+        return true;
+    }
 
     // O tipo de deck é desnecessário pois o prefab é sempre o mesmo e a tag NEW nunca é mostrada aqui.
     void RefreshDeckZone(Transform container, List<CardData> cards, DeckZoneType zoneType)
@@ -334,6 +348,7 @@ public class DeckBuilderManager : MonoBehaviour
             
             CardDisplay display = go.GetComponentInChildren<CardDisplay>();
             if (display == null) continue; // Already logged in SetupChestItem if missing
+            display.isPlayerCard = true; // <<<< FIX: Garante que a cor do hover seja a do jogador
             display.SetCard(card, GameManager.Instance?.GetCardBackTexture(), true);
             display.isInteractable = false;
 
@@ -364,35 +379,50 @@ public class DeckBuilderManager : MonoBehaviour
 
         // --- LÓGICA DE FILTRO E ORDENAÇÃO ---
         string searchText = searchInput != null ? searchInput.text.ToLowerInvariant() : "";
+        bool anyFilterActive = activeFilters.Any(kvp => kvp.Value);
 
         var filteredGroups = currentTrunk
             .GroupBy(c => c.id)
             .Where(g =>
             {
                 CardData card = g.First();
-                if (!string.IsNullOrEmpty(searchText) && !card.name.ToLowerInvariant().Contains(searchText)) return false;
-                
+                // Primeiro, o filtro de busca de texto é sempre aplicado
+                if (!string.IsNullOrEmpty(searchText) && !card.name.ToLowerInvariant().Contains(searchText))
+                {
+                    return false;
+                }
+
+                // Se nenhum filtro de botão estiver ativo, a carta passa (pois já passou pelo filtro de busca)
+                if (!anyFilterActive)
+                {
+                    return true;
+                }
+
+                // Se há filtros ativos, a carta precisa corresponder a pelo menos um deles
                 bool isMonster = card.type.Contains("Monster") && !card.type.Contains("Spell") && !card.type.Contains("Trap");
                 bool isSpell = card.type.Contains("Spell");
                 bool isTrap = card.type.Contains("Trap");
 
-                if (isSpell && !activeFilters["Spell"]) return false;
-                if (isTrap && !activeFilters["Trap"]) return false;
+                if (isSpell && activeFilters["Spell"]) return true;
+                if (isTrap && activeFilters["Trap"]) return true;
 
                 if (isMonster)
                 {
                     bool isFusion = card.type.Contains("Fusion");
                     bool isRitual = card.type.Contains("Ritual");
                     bool isNormal = card.type.Contains("Normal") && !isFusion && !isRitual;
-                    bool isEffect = !isNormal && !isFusion && !isRitual; // Assume que se não for Normal/Fusion/Ritual, é de Efeito
+                    bool isEffect = !isNormal && !isFusion && !isRitual; // Assume que, se não for Normal/Fusão/Ritual, é de Efeito
 
-                    if (isFusion && !activeFilters["Fusion"]) return false;
-                    if (isRitual && !activeFilters["Ritual"]) return false;
-                    if (isNormal && !activeFilters["Normal"]) return false;
-                    if (isEffect && !activeFilters["Effect"]) return false;
+                    if (isFusion && activeFilters["Fusion"]) return true;
+                    if (isRitual && activeFilters["Ritual"]) return true;
+                    if (isNormal && activeFilters["Normal"]) return true;
+                    if (isEffect && activeFilters["Effect"]) return true;
                 }
-                return true;
+
+                // Se nenhum dos 'return true' foi atingido, a carta não corresponde a nenhum filtro ativo
+                return false;
             }).ToList();
+
 
         // Aplica a ordenação
         switch (currentSort)
@@ -444,19 +474,18 @@ public class DeckBuilderManager : MonoBehaviour
     void SetupChestItem(GameObject go, CardData card, int totalOwned, int copiesInDecks)
     {
         // --- 1. Encontra os componentes na hierarquia do prefab ---
-        Transform card2DTr = go.transform.Find("Card2D");
-
-        CardDisplay display = card2DTr?.GetComponent<CardDisplay>();
-
+        var display = go.GetComponentInChildren<CardDisplay>();
         if (display != null)
         {
-            display.SetCard(card, GameManager.Instance?.GetCardBackTexture(), true);
-            display.isInteractable = false; // Desativa o efeito de "pular" da mão, mas permite clique/arrasto
+            display.isPlayerCard = true; // <<<< FIX: Garante que a cor do hover seja a do jogador
         }
+
+        Transform card2DTr = go.transform.Find("Card2D");
 
         // --- 2. Preenche os textos e ícones ---
         var cardNameText = go.transform.Find("CardNameText")?.GetComponent<TextMeshProUGUI>();
         var cardStatsText = go.transform.Find("CardStatsText")?.GetComponent<TextMeshProUGUI>();
+        var quantCardText = go.transform.Find("QuantCard")?.GetComponent<TextMeshProUGUI>();
         var monsterLvlText = go.transform.Find("MonsterLvl")?.GetComponent<TextMeshProUGUI>();
         var attributeImage = go.transform.Find("AttributeIcon")?.GetComponent<Image>();
         var typeImage = go.transform.Find("TypeIcon")?.GetComponent<Image>();
@@ -466,19 +495,23 @@ public class DeckBuilderManager : MonoBehaviour
 
         int availableCopies = totalOwned - copiesInDecks;
 
-        if (cardNameText) cardNameText.text = card.name;
-        if (cardStatsText) cardStatsText.text = $"x{availableCopies}";
+        if (cardNameText) cardNameText.text = card.name; // Nome da carta
+        if (quantCardText) quantCardText.text = $"x{availableCopies}"; // Quantidade disponível
 
         bool isMonster = card.type.Contains("Monster");
 
         if (isMonster)
         {
+            // ATK/DEF
+            if (cardStatsText) cardStatsText.text = $"{card.atk} / {card.def}";
+
             // LÓGICA PARA MONSTROS
             if (monsterLvlText) monsterLvlText.gameObject.SetActive(true);
             if (monsterLvlText) monsterLvlText.text = card.level.ToString();
-            // Atributo (AttributeIcon)
+            
             if (attributeImage) 
             {
+                attributeImage.gameObject.SetActive(true);
                 var iconMapping = attributeIcons.Find(i => i.name.Equals(card.attribute, System.StringComparison.OrdinalIgnoreCase)); // Busca na lista de Atributos
                 if (iconMapping != null && iconMapping.icon != null)
                 {
@@ -492,7 +525,6 @@ public class DeckBuilderManager : MonoBehaviour
                 }
             }
             
-            // Raça (RaceIcon)
             if (raceImage)
             {
                 raceImage.gameObject.SetActive(true);
@@ -521,6 +553,9 @@ public class DeckBuilderManager : MonoBehaviour
         }
         else // Magias e Armadilhas
         {
+            // Limpa o texto de stats para não-monstros
+            if (cardStatsText) cardStatsText.text = "";
+
             // Desativa os ícones de Monstro
             if (monsterLvlText) monsterLvlText.gameObject.SetActive(false);
             if (attributeImage) attributeImage.gameObject.SetActive(false);
@@ -577,6 +612,7 @@ public class DeckBuilderManager : MonoBehaviour
         CanvasGroup canvasGroup = go.GetComponent<CanvasGroup>();
         if (canvasGroup == null) canvasGroup = go.AddComponent<CanvasGroup>();
         DeckDragHandler dragHandler = go.GetComponent<DeckDragHandler>();
+        if (dragHandler == null) dragHandler = go.AddComponent<DeckDragHandler>();
 
         bool isInteractable = availableCopies > 0;
         canvasGroup.alpha = isInteractable ? 1.0f : 0.5f;
@@ -605,6 +641,12 @@ public class DeckBuilderManager : MonoBehaviour
     /// </summary>
     public void SaveDeck()
     {
+        if (!IsDeckValid())
+        {
+            UIManager.Instance?.ShowMessage($"Deck inválido! O Deck Principal deve ter entre {MIN_MAIN} e {MAX_MAIN} cartas.");
+            return;
+        }
+
         if (!hasUnsavedChanges)
         {
             Debug.Log("Nenhuma alteração para salvar.");
@@ -646,11 +688,27 @@ public class DeckBuilderManager : MonoBehaviour
     /// </summary>
     public void Exit()
     {
-        if (hasUnsavedChanges)
+        if (hasUnsavedChanges && !IsDeckValid())
+        {
+            UIManager.Instance?.ShowConfirmation(
+                $"Seu Deck Principal é inválido (deve ter entre {MIN_MAIN} e {MAX_MAIN} cartas).\n\nDeseja sair mesmo assim e descartar as alterações?",
+                () => {
+                    // Discard changes by reloading from GameManager
+                    LoadCurrentDeckFromManager();
+                    hasUnsavedChanges = false;
+                    UIManager.Instance.ShowScreen(UIManager.Instance.newGameMenu);
+                }
+            );
+        }
+        else if (hasUnsavedChanges)
         {
             UIManager.Instance?.ShowConfirmation(
                 "Você tem alterações não salvas. Deseja sair sem salvar?",
-                () => UIManager.Instance.ShowScreen(UIManager.Instance.newGameMenu) // Volta para o menu anterior sem salvar
+                () => {
+                    LoadCurrentDeckFromManager();
+                    hasUnsavedChanges = false;
+                    UIManager.Instance.ShowScreen(UIManager.Instance.newGameMenu);
+                }
             );
         }
         else
@@ -759,10 +817,37 @@ public class DeckBuilderManager : MonoBehaviour
     /// </summary>
     public void RemoveCard(CardData card, DeckZoneType sourceZone)
     {
-        // ... Lógica de remover carta ...
-        hasUnsavedChanges = true;
-        RefreshAllUI(); // Atualiza toda a UI para refletir a mudança
-    }
+        bool removed = false;
+        switch (sourceZone)
+        {
+            case DeckZoneType.Main:
+                if (mainDeck.Contains(card))
+                {
+                    mainDeck.Remove(card);
+                    removed = true;
+                }
+                break;
+            case DeckZoneType.Side:
+                if (sideDeck.Contains(card))
+                {
+                    sideDeck.Remove(card);
+                    removed = true;
+                }
+                break;
+            case DeckZoneType.Extra:
+                if (extraDeck.Contains(card))
+                {
+                    extraDeck.Remove(card);
+                    removed = true;
+                }
+                break;
+        }
+
+        if (removed)
+        {
+            hasUnsavedChanges = true;
+            RefreshAllUI();
+        }    }
 
     /// <summary>
     /// Aciona um feedback visual (piscar) em uma zona de deck.
