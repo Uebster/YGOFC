@@ -358,15 +358,6 @@ public class GameManager : MonoBehaviour
         }
 
         yield return StartCoroutine(LoadCardBackTexture());
-
-        // FIX: Inicializa o deck automaticamente se estiver vazio (para testar o Draw imediatamente)
-        if (DeckManager.Instance != null && DeckManager.Instance.GetPlayerDeck().Count == 0)
-        {
-            InitializePlayerDeck();
-            InitializeOpponentDeck();
-            yield return StartCoroutine(DrawInitialHandRoutine(5));
-            yield return StartCoroutine(DrawInitialOpponentHandRoutine(5)); // Garante que o oponente comece com cartas
-        }
     }
 
     public void RemoveCardFromHand(CardData card, bool isPlayer)

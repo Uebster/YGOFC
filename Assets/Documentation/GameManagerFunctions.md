@@ -80,7 +80,11 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 
 ## Ferramentas de Debug e Teste (No GameManager)
 *   `devMode`: Habilita trapaças gerais e logs detalhados.
-*   `testDuelDirectly`: Se marcado, o jogo pula todas as telas de menu (Abertura, Start, Seleção de Save) e vai direto para o Duelo ao dar Play no Unity. Essencial para iteração rápida.
+*   **Hierarquia de Teste Direto:** O sistema agora segue uma prioridade para as flags de teste direto. Se mais de uma estiver marcada, a de maior prioridade será executada.
+    1.  `testDuelDirectly`: (Prioridade 1) Se marcado, o jogo pula todos os menus e inicia um duelo livre imediatamente.
+    2.  `testDeckBuilderDirectly`: (Prioridade 2) Se `testDuelDirectly` estiver desmarcado e este estiver marcado, o jogo pula para a página de Construção de Deck.
+    3.  `testLibraryDirectly`: (Prioridade 3) Se os dois anteriores estiverem desmarcados e este estiver marcado, o jogo pula para a página da Biblioteca de Cartas.
+*   **Nota de Implementação:** O pulo para as telas de teste é feito com um pequeno atraso (1 frame) para garantir que o `GameManager` tenha tempo de inicializar os dados do jogador (como a coleção de cartas) antes que a tela de destino tente acessá-los.
 *   `unlockAllCards`: (Requer `devMode`) Se marcado, ao iniciar o jogo, adiciona 3 cópias de TODAS as cartas do banco de dados ao Baú (Trunk). **Nota:** As cartas adicionadas por este método são automaticamente marcadas como "Usadas" para evitar que a Biblioteca fique cheia de tags "New".
 *   `disableDeckShuffle`: Impede o embaralhamento inicial. As cartas virão na ordem que estão no JSON/Lista. Útil para testar combos específicos ("Stacking the Deck").
 *   `forcePlayerGoingFirst`: Força o jogador a sempre ter o primeiro turno, ignorando a aleatoriedade.

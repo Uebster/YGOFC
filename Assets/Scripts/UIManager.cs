@@ -74,27 +74,28 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
+        // Lógica de Teste Direto: Verifica se alguma flag de "pular para" está ativa.
+        // A ordem aqui define a prioridade: Duelo > Deck Builder > Biblioteca.
         if (GameManager.Instance != null)
         {
-            StartCoroutine(StartDuelDelayed());
-            if (GameManager.Instance.testDeckBuilderDirectly)
-            {
-                ShowScreen(deckBuilderScreen);
-                return;
-            }
-            if (GameManager.Instance.testLibraryDirectly)
-            {
-                ShowScreen(libraryMenu);
-                return;
-            }
             if (GameManager.Instance.testDuelDirectly)
             {
                 StartCoroutine(StartDuelDelayed());
-                return;
+                return; // Encerra para não carregar outras telas
+            }
+            if (GameManager.Instance.testDeckBuilderDirectly)
+            {
+                StartCoroutine(ShowScreenDelayed(deckBuilderScreen));
+                return; // Encerra para não carregar outras telas
+            }
+            if (GameManager.Instance.testLibraryDirectly)
+            {
+                StartCoroutine(ShowScreenDelayed(libraryMenu));
+                return; // Encerra para não carregar outras telas
             }
         }
 
-        // Ao iniciar o jogo, começa pela Abertura
+        // Se nenhuma flag de teste direto estiver ativa, inicia o fluxo normal do jogo.
         ShowScreen(openingScreen);
 
         // Verificações de segurança para evitar erros silenciosos
@@ -112,6 +113,13 @@ public class UIManager : MonoBehaviour
         // Espera um pouco para o GameManager carregar texturas (verso da carta) e banco de dados
         yield return new WaitForSeconds(0.5f);
         Btn_StartFreeDuel();
+    }
+
+    System.Collections.IEnumerator ShowScreenDelayed(GameObject screen)
+    {
+        // Espera um frame para garantir que o Start() do GameManager (que é uma Coroutine) tenha sido executado e populado o baú.
+        yield return null;
+        ShowScreen(screen);
     }
 
     // Função central que desativa tudo e ativa só o que queremos

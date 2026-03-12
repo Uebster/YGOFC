@@ -261,8 +261,16 @@ public class DeckBuilderManager : MonoBehaviour
 
     void OnEnable()
     {
-        // ... (código existente)
+        // Carrega o deck ativo do GameManager
+        LoadCurrentDeckFromManager();
+        // Carrega o baú do jogador
+        LoadTrunk();
+        // Atualiza toda a interface gráfica com os dados carregados
+        RefreshAllUI();
+        // Atualiza o estado visual dos botões de filtro
         UpdateFilterButtonsVisuals();
+        // Reseta o estado de "alterações não salvas" ao abrir a tela
+        hasUnsavedChanges = false;
     }
 
     void LoadCurrentDeckFromManager()
