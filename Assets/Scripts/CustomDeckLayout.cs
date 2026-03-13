@@ -26,9 +26,9 @@ public class CustomDeckLayout : MonoBehaviour
     [Tooltip("Espaçamento vertical entre as linhas.")]
     public float verticalSpacing = 10f;
     [Tooltip("Espaçamento horizontal MÁXIMO entre as cartas. Se o cálculo ultrapassar este valor, usa este valor.")]
-    public float maxHorizontalSpacing = 0f;
+    public float maxHorizontalSpacing = 15f;
     [Tooltip("Espaçamento horizontal mínimo. Use valores negativos para permitir sobreposição.")]
-    public float minHorizontalSpacing = 0f;
+    public float minHorizontalSpacing = -10f;
     
     [Header("Padding (Preenchimento Interno)")]
     [Tooltip("Espaço à esquerda e à direita dentro do contêiner.")]
@@ -60,17 +60,17 @@ public class CustomDeckLayout : MonoBehaviour
         RectTransform container = GetComponent<RectTransform>();
         if (container == null) return;
 
-        // Força o container a ter âncora no topo-esquerdo para posicionamento previsível
-        container.anchorMin = new Vector2(0, 1);
+        // Força o container a ter âncora bottom-left para compatibilidade com ScrollRect
+        container.anchorMin = new Vector2(0, 0);
         container.anchorMax = new Vector2(1, 1);
-        container.pivot = new Vector2(0, 1);
+        container.pivot = new Vector2(0, 0);
         container.anchoredPosition = Vector2.zero; // Reseta posição
 
         // Desabilita VerticalLayoutGroup para evitar conflito
         VerticalLayoutGroup vlg = GetComponent<VerticalLayoutGroup>();
         if (vlg != null) vlg.enabled = false;
 
-        // Coleta apenas filhos ativos
+        // Coleta apenas filhos ativos que são cartas (têm CardDisplay), excluindo o DropTarget
         List<RectTransform> activeCards = new List<RectTransform>();
         for (int i = 0; i < transform.childCount; i++)
         {
@@ -78,7 +78,7 @@ public class CustomDeckLayout : MonoBehaviour
             if (child.gameObject.activeSelf)
             {
                 RectTransform rect = child as RectTransform;
-                if (rect != null)
+                if (rect != null && rect.GetComponent<CardDisplay>() != null)
                     activeCards.Add(rect);
             }
         }
@@ -101,7 +101,7 @@ public class CustomDeckLayout : MonoBehaviour
         }
 
         float availableWidth = container.rect.width - (horizontalPadding * 2);
-        float currentY = -verticalPadding; // Começa do topo (negativo porque Y cresce para baixo)
+        float currentY = container.rect.height - verticalPadding - cardHeight; // Começa do topo (altura total menos padding e altura da carta)
 
         // Processa cada linha
         for (int row = 0; row < numberOfRows; row++)
@@ -112,8 +112,39 @@ public class CustomDeckLayout : MonoBehaviour
             if (cardsThisRow == 0) continue;
 
             // --- CÁLCULO DO ESPAÇAMENTO ---
-            // Forçado a 0 para alinhamento sólido à esquerda
-            float spacing = 0f;
+            float spacing;
+            
+            if (cardsThisRow <= 1)
+            {
+                spacing = 0;
+            }
+            else
+            {
+                // Calcula o espaçamento necessário para preencher a largura disponível
+                float totalCardsWidth = cardsThisRow * cardWidth;
+                float remainingSpace = availableWidth - totalCardsWidth;
+                
+                if (remainingSpace <= 0)
+                {
+                    // Já está estourado: usa espaçamento negativo (sobreposição)
+                    // Distribui o espaço negativo igualmente entre os espaços
+                    spacing = remainingSpace / (cardsThisRow - 1);
+                }
+                else
+                {
+                    // Espaço positivo: calcula o espaçamento ideal
+                    spacing = remainingSpace / (cardsThisRow - 1);
+                    
+                    // SE O ESPAÇAMENTO ULTRAPASSAR O MÁXIMO, USA O MÁXIMO
+                    if (spacing > maxHorizontalSpacing)
+                    {
+                        spacing = maxHorizontalSpacing;
+                    }
+                }
+            }
+
+            // Limita ao mínimo (permite negativo para sobreposição)
+            spacing = Mathf.Max(spacing, minHorizontalSpacing);
 
             // --- POSICIONAMENTO À ESQUERDA ---
             float startX = horizontalPadding;
@@ -124,10 +155,10 @@ public class CustomDeckLayout : MonoBehaviour
                 
                 float xPos = startX + (i * (cardWidth + spacing));
 
-                // Configura âncora no canto superior esquerdo para posicionamento previsível
-                cardRect.anchorMin = new Vector2(0, 1);
-                cardRect.anchorMax = new Vector2(0, 1);
-                cardRect.pivot = new Vector2(0, 1);
+                // Configura âncora no canto inferior esquerdo para posicionamento previsível
+                cardRect.anchorMin = new Vector2(0, 0);
+                cardRect.anchorMax = new Vector2(0, 0);
+                cardRect.pivot = new Vector2(0, 0);
                 cardRect.anchoredPosition = new Vector2(xPos, currentY);
                 cardRect.sizeDelta = new Vector2(cardWidth, cardHeight);
             }
