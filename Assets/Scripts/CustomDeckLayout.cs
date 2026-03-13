@@ -50,10 +50,21 @@ public class CustomDeckLayout : MonoBehaviour
     }
     #endif
 
+    void Start()
+    {
+        UpdateLayout();
+    }
+
     public void UpdateLayout()
     {
         RectTransform container = GetComponent<RectTransform>();
         if (container == null) return;
+
+        // Força o container a ter âncora no topo-esquerdo para posicionamento previsível
+        container.anchorMin = new Vector2(0, 1);
+        container.anchorMax = new Vector2(1, 1);
+        container.pivot = new Vector2(0, 1);
+        container.anchoredPosition = Vector2.zero; // Reseta posição
 
         // Desabilita VerticalLayoutGroup para evitar conflito
         VerticalLayoutGroup vlg = GetComponent<VerticalLayoutGroup>();
@@ -101,39 +112,8 @@ public class CustomDeckLayout : MonoBehaviour
             if (cardsThisRow == 0) continue;
 
             // --- CÁLCULO DO ESPAÇAMENTO ---
-            float spacing;
-            
-            if (cardsThisRow <= 1)
-            {
-                spacing = 0;
-            }
-            else
-            {
-                // Calcula o espaçamento necessário para preencher a largura disponível
-                float totalCardsWidth = cardsThisRow * cardWidth;
-                float remainingSpace = availableWidth - totalCardsWidth;
-                
-                if (remainingSpace <= 0)
-                {
-                    // Já está estourado: usa espaçamento negativo (sobreposição)
-                    // Distribui o espaço negativo igualmente entre os espaços
-                    spacing = remainingSpace / (cardsThisRow - 1);
-                }
-                else
-                {
-                    // Espaço positivo: calcula o espaçamento ideal
-                    spacing = remainingSpace / (cardsThisRow - 1);
-                    
-                    // SE O ESPAÇAMENTO ULTRAPASSAR O MÁXIMO, USA O MÁXIMO
-                    if (spacing > maxHorizontalSpacing)
-                    {
-                        spacing = maxHorizontalSpacing;
-                    }
-                }
-            }
-
-            // Limita ao mínimo (permite negativo para sobreposição)
-            spacing = Mathf.Max(spacing, minHorizontalSpacing);
+            // Forçado a 0 para alinhamento sólido à esquerda
+            float spacing = 0f;
 
             // --- POSICIONAMENTO À ESQUERDA ---
             float startX = horizontalPadding;

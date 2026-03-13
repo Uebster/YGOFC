@@ -68,6 +68,10 @@ public class DeckBuilderManager : MonoBehaviour
     public Color invalidMoveColor = Color.red;
     public float flashDuration = 0.3f;
 
+    [Header("Hover Customization")]
+    [Tooltip("Cor do outline de hover para cartas no deck.")]
+    public Color deckHoverColor = Color.yellow;
+
     [Header("Prefabs")]
     [Tooltip("Prefab para a lista de cartas no baú (formato de lista detalhada).")]
     public GameObject cardChestItemPrefab;
@@ -382,6 +386,7 @@ private void LoadData()
             display.SetCard(card, GameManager.Instance?.GetCardBackTexture(), true);
             display.isInteractable = true; // Permitir hover nas cartas do deck
             display.useSimpleHover = true; // Hover simples para deck
+            display.hoverColor = deckHoverColor; // Define a cor do hover
 
             DeckDragHandler drag = display.gameObject.GetComponent<DeckDragHandler>();
             if (drag == null) drag = display.gameObject.AddComponent<DeckDragHandler>();
