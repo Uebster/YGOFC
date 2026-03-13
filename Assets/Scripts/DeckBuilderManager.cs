@@ -632,7 +632,7 @@ private void LoadData()
 
     void SetupChestItem(GameObject go, CardData card, int availableCopies, int copiesInDecks)
     {
-        ChestCardItem item = go.GetComponent<ChestCardItem>();
+        ChestCardItem item = go.GetComponentInChildren<ChestCardItem>();
         if (item == null)
         {
             Debug.LogError($"Objeto {go.name} no pool não tem o componente ChestCardItem!", go);

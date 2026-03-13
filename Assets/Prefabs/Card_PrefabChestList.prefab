@@ -361,8 +361,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281323232
-  m_fontColor: {r: 0.8773585, g: 0.8072219, b: 0.18623178, a: 1}
+    rgba: 4282893780
+  m_fontColor: {r: 0.8301887, g: 0.7740374, b: 0.27803493, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -798,8 +798,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281243599
-  m_fontColor: {r: 0.8117648, g: 0.5921569, b: 0.18039216, a: 1}
+    rgba: 4282746536
+  m_fontColor: {r: 0.6603774, g: 0.5249432, b: 0.27100393, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -949,6 +949,7 @@ GameObject:
   - component: {fileID: 3332172669835601571}
   - component: {fileID: 1065776442974576332}
   - component: {fileID: 7173932396068933770}
+  - component: {fileID: 3191909628772896478}
   m_Layer: 5
   m_Name: Card_PrefabChestList
   m_TagString: Untagged
@@ -994,7 +995,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -7.3390045, y: 399.47946}
-  m_SizeDelta: {x: 322.64612, y: 104.975586}
+  m_SizeDelta: {x: 322, y: 105}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &282242267489399078
 CanvasRenderer:
@@ -1081,6 +1082,58 @@ MonoBehaviour:
     fusion_materials: []
   sourceZone: 0
   wasDropped: 0
+--- !u!114 &3191909628772896478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3016305097939657138}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d55b4a95b1f2142868046d1c84f6aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChestCardItem
+  cardArtImage: {fileID: 7841993703907651186}
+  cardNameText: {fileID: 2785541786861461952}
+  cardStatsText: {fileID: 8978258304153809620}
+  quantCardText: {fileID: 286335239746118845}
+  monsterLvlText: {fileID: 7079853117730072898}
+  attributeIcon: {fileID: 3819311656246663288}
+  raceIcon: {fileID: 3052313060633812390}
+  typeIcon: {fileID: 3784125523420314095}
+  subTypeIcon: {fileID: 2425765983080277994}
+  stars:
+  - {fileID: 6839441543974563289}
+  - {fileID: 793254862795628364}
+  - {fileID: 1981228228427465979}
+  - {fileID: 3618975795398837301}
+  - {fileID: 8058015052123994017}
+  - {fileID: 2993574714943219107}
+  - {fileID: 4622922351016990974}
+  - {fileID: 2306402311869795904}
+  - {fileID: 7487959585231101976}
+  - {fileID: 1586544410727276115}
+  - {fileID: 298857495015612042}
+  - {fileID: 8695136609916728586}
+  availableColor: {r: 1, g: 1, b: 1, a: 1}
+  unavailableColor: {r: 1, g: 1, b: 1, a: 0.5}
+  cardData:
+    id: 
+    name: 
+    type: 
+    description: 
+    atk: 0
+    def: 0
+    level: 0
+    race: 
+    attribute: 
+    property: 
+    image_filename: 
+    fusion_materials: []
+  availableCopies: 0
+  isNew: 0
+  isInDeck: 0
 --- !u!1 &3252360308678207419
 GameObject:
   m_ObjectHideFlags: 0
