@@ -31,6 +31,17 @@ public class DeckDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             return;
         }
 
+        // Para cartas do baú, verifica se está disponível
+        if (sourceZone == DeckZoneType.Trunk)
+        {
+            ChestCardItem chestItem = GetComponent<ChestCardItem>();
+            if (chestItem != null && chestItem.availableCopies <= 0)
+            {
+                Debug.Log("[DeckDragHandler] Carta indisponível no baú, cancelando drag");
+                return;
+            }
+        }
+
         Canvas canvas = GetComponentInParent<Canvas>();
         if (canvas == null)
         {

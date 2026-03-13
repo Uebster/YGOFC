@@ -57,18 +57,29 @@ public class CustomDeckLayout : MonoBehaviour
 
     public void UpdateLayout()
     {
+        Debug.Log($"[CustomDeckLayout] UpdateLayout chamado para {gameObject.name}");
         RectTransform container = GetComponent<RectTransform>();
-        if (container == null) return;
+        if (container == null) 
+        {
+            Debug.LogError($"[CustomDeckLayout] Container RectTransform é nulo!");
+            return;
+        }
 
-        // Força o container a ter âncora bottom-left para compatibilidade com ScrollRect
-        container.anchorMin = new Vector2(0, 0);
+        Debug.Log($"[CustomDeckLayout] Container anchorMin: {container.anchorMin}, anchorMax: {container.anchorMax}, sizeDelta: {container.sizeDelta}");
+
+        // Força o container a ter âncora no topo-esquerdo para ScrollRect padrão
+        container.anchorMin = new Vector2(0, 1);
         container.anchorMax = new Vector2(1, 1);
-        container.pivot = new Vector2(0, 0);
+        container.pivot = new Vector2(0, 1);
         container.anchoredPosition = Vector2.zero; // Reseta posição
 
         // Desabilita VerticalLayoutGroup para evitar conflito
         VerticalLayoutGroup vlg = GetComponent<VerticalLayoutGroup>();
-        if (vlg != null) vlg.enabled = false;
+        if (vlg != null) 
+        {
+            Debug.Log($"[CustomDeckLayout] Desabilitando VerticalLayoutGroup");
+            vlg.enabled = false;
+        }
 
         // Coleta apenas filhos ativos que são cartas (têm CardDisplay), excluindo o DropTarget
         List<RectTransform> activeCards = new List<RectTransform>();
@@ -82,6 +93,8 @@ public class CustomDeckLayout : MonoBehaviour
                     activeCards.Add(rect);
             }
         }
+
+        Debug.Log($"[CustomDeckLayout] Encontradas {activeCards.Count} cartas ativas");
 
         int totalCards = activeCards.Count;
         if (totalCards == 0) return;
@@ -101,7 +114,7 @@ public class CustomDeckLayout : MonoBehaviour
         }
 
         float availableWidth = container.rect.width - (horizontalPadding * 2);
-        float currentY = container.rect.height - verticalPadding - cardHeight; // Começa do topo (altura total menos padding e altura da carta)
+        float currentY = -verticalPadding; // Começa do topo (âncora 1, Y negativa desce)
 
         // Processa cada linha
         for (int row = 0; row < numberOfRows; row++)
@@ -155,10 +168,10 @@ public class CustomDeckLayout : MonoBehaviour
                 
                 float xPos = startX + (i * (cardWidth + spacing));
 
-                // Configura âncora no canto inferior esquerdo para posicionamento previsível
-                cardRect.anchorMin = new Vector2(0, 0);
-                cardRect.anchorMax = new Vector2(0, 0);
-                cardRect.pivot = new Vector2(0, 0);
+                // Configura âncora no canto superior esquerdo para posicionamento previsível
+                cardRect.anchorMin = new Vector2(0, 1);
+                cardRect.anchorMax = new Vector2(0, 1);
+                cardRect.pivot = new Vector2(0, 1);
                 cardRect.anchoredPosition = new Vector2(xPos, currentY);
                 cardRect.sizeDelta = new Vector2(cardWidth, cardHeight);
             }
@@ -170,6 +183,10 @@ public class CustomDeckLayout : MonoBehaviour
         // Define a altura do container baseada no layout
         float totalHeight = (numberOfRows * cardHeight) + ((numberOfRows - 1) * verticalSpacing) + (verticalPadding * 2);
         container.sizeDelta = new Vector2(container.sizeDelta.x, totalHeight);
+        Debug.Log($"[CustomDeckLayout] Total height calculada: {totalHeight}, sizeDelta setado para {container.sizeDelta}");
+
+        // Força rebuild do layout para atualizar ScrollRect
+        UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(container);
     }
 
     /// <summary>

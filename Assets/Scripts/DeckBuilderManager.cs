@@ -69,8 +69,12 @@ public class DeckBuilderManager : MonoBehaviour
     public float flashDuration = 0.3f;
 
     [Header("Hover Customization")]
-    [Tooltip("Cor do outline de hover para cartas no deck.")]
-    public Color deckHoverColor = Color.yellow;
+    [Tooltip("Usa cor de hover do player.")]
+    public bool usePlayerHover = true;
+    [Tooltip("Usa cor de hover do opponent.")]
+    public bool useOpponentHover = false;
+    [Tooltip("Cor customizada de hover (usada se nenhuma das acima estiver marcada).")]
+    public Color customHoverColor = Color.yellow;
 
     [Header("Prefabs")]
     [Tooltip("Prefab para a lista de cartas no baú (formato de lista detalhada).")]
@@ -382,11 +386,13 @@ private void LoadData()
             
             CardDisplay display = go.GetComponentInChildren<CardDisplay>();
             if (display == null) continue; // Already logged in SetupChestItem if missing
-            display.isPlayerCard = true; // <<<< FIX: Garante que a cor do hover seja a do jogador
+            // Configura hover baseado nas opções
+            if (usePlayerHover) display.isPlayerCard = true;
+            else if (useOpponentHover) display.isPlayerCard = false;
+            else { display.useSimpleHover = true; display.hoverColor = customHoverColor; }
             display.SetCard(card, GameManager.Instance?.GetCardBackTexture(), true);
             display.isInteractable = true; // Permitir hover nas cartas do deck
-            display.useSimpleHover = true; // Hover simples para deck
-            display.hoverColor = deckHoverColor; // Define a cor do hover
+            display.enableHoverLift = false; // Desabilita o efeito de levantar para deck
 
             DeckDragHandler drag = display.gameObject.GetComponent<DeckDragHandler>();
             if (drag == null) drag = display.gameObject.AddComponent<DeckDragHandler>();
@@ -404,12 +410,14 @@ private void LoadData()
 
     void RefreshTrunkUI()
     {
+        Debug.Log($"[DeckBuilderManager] RefreshTrunkUI chamado");
         if (trunkContent == null)
         {
             Debug.LogError("[DeckBuilder] ERRO CRÍTICO: 'Trunk Content' não está atribuído no Inspector! As cartas não aparecerão.");
             return;
         }
 
+        Debug.Log($"[DeckBuilder] Limpando {trunkContent.childCount} filhos do trunkContent");
         // Limpa a lista de cartas do baú
         foreach (Transform child in trunkContent) Destroy(child.gameObject);
 
@@ -495,6 +503,7 @@ private void LoadData()
         }
 
         // Popula a UI com as cartas da página atual
+        Debug.Log($"[DeckBuilder] Populando UI com {paginatedGroups.Count} grupos de cartas");
         foreach (var group in paginatedGroups)
         {
             CardData card = group.First();
@@ -502,8 +511,75 @@ private void LoadData()
             int copiesInDecks = deckCardCounts.GetValueOrDefault(card.id, 0);
 
             GameObject go = Instantiate(cardChestItemPrefab, trunkContent);
+            Debug.Log($"[DeckBuilder] Instanciado item para carta {card.name}, totalOwned: {totalOwned}, copiesInDecks: {copiesInDecks}");
+            // Adiciona LayoutElement para altura fixa nos itens do chest
+            LayoutElement le = go.GetComponent<LayoutElement>();
+            if (le == null) le = go.AddComponent<LayoutElement>();
+            le.preferredHeight = 120f; // Altura preferida para cada item (ajuste se necessário)
+            le.flexibleHeight = 0f; // Não flexível
             // Configura os detalhes e interações do item
             SetupChestItem(go, card, totalOwned, copiesInDecks);
+
+            // Adiciona DeckDragHandler para permitir drag do baú
+            DeckDragHandler drag = go.GetComponent<DeckDragHandler>();
+            if (drag == null) drag = go.AddComponent<DeckDragHandler>();
+            drag.cardData = card;
+            drag.sourceZone = DeckZoneType.Trunk;
+        }
+        Debug.Log($"[DeckBuilder] TrunkContent agora tem {trunkContent.childCount} filhos");
+
+        // Garante que o Content tenha ContentSizeFitter para o scroll funcionar
+        ContentSizeFitter fitter = trunkContent.GetComponent<ContentSizeFitter>();
+        if (fitter == null) 
+        {
+            Debug.Log($"[DeckBuilder] Adicionando ContentSizeFitter ao trunkContent");
+            fitter = trunkContent.gameObject.AddComponent<ContentSizeFitter>();
+        }
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        // Adiciona VerticalLayoutGroup para posicionar os itens verticalmente
+        VerticalLayoutGroup vlg = trunkContent.GetComponent<VerticalLayoutGroup>();
+        if (vlg == null)
+        {
+            Debug.Log($"[DeckBuilder] Adicionando VerticalLayoutGroup ao trunkContent");
+            vlg = trunkContent.gameObject.AddComponent<VerticalLayoutGroup>();
+        }
+        vlg.spacing = 5f; // Espaçamento entre itens
+        vlg.childAlignment = TextAnchor.UpperLeft;
+        vlg.childControlWidth = true;
+        vlg.childControlHeight = false; // Altura fixa dos itens
+        vlg.childForceExpandWidth = true;
+        vlg.childForceExpandHeight = false;
+
+        Debug.Log($"[DeckBuilder] ContentSizeFitter e VerticalLayoutGroup configurados");
+
+        // Move o DeckDropZone para dentro do Content para não interferir no scroll
+        Transform viewport = trunkContent.parent;
+        Transform dropZone = viewport.Find("Image"); // Assumindo que o DeckDropZone é o "Image" no Viewport
+        if (dropZone != null)
+        {
+            dropZone.SetParent(trunkContent, false);
+            RectTransform rt = dropZone.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.sizeDelta = Vector2.zero;
+            rt.anchoredPosition = Vector2.zero;
+            // Garante que fique atrás dos itens
+            dropZone.SetAsFirstSibling();
+        }
+
+        // Linka o Scrollbar ao ScrollRect para o scroll funcionar
+        Transform scrollView = viewport.parent;
+        ScrollRect sr = scrollView.GetComponent<ScrollRect>();
+        if (sr != null)
+        {
+            sr.content = trunkContent.GetComponent<RectTransform>();
+            sr.vertical = true;
+            Transform scrollbar = scrollView.Find("Scrollbar");
+            if (scrollbar != null)
+            {
+                sr.verticalScrollbar = scrollbar.GetComponent<Scrollbar>();
+            }
         }
     }
 
@@ -615,11 +691,16 @@ void SetupChestItem(GameObject go, CardData card, int totalOwned, int copiesInDe
       // DEBUG: Depois de chamar Setup
       Debug.Log($"[DEBUG] SetupChestItem: Setup concluído para '{card.name}'");
 
-      // Configura hover simples para chest
+      // Configura hover para usar cores do GameManager
       CardDisplay chestDisplay = item.cardArtImage.transform.parent.GetComponent<CardDisplay>();
       if (chestDisplay != null)
       {
-          chestDisplay.useSimpleHover = true;
+          // Configura hover baseado nas opções
+          if (usePlayerHover) chestDisplay.isPlayerCard = true;
+          else if (useOpponentHover) chestDisplay.isPlayerCard = false;
+          else { chestDisplay.useSimpleHover = true; chestDisplay.hoverColor = customHoverColor; }
+          chestDisplay.enableHoverLift = false; // Desabilita o efeito de levantar para chest
+          chestDisplay.isInteractable = availableCopies > 0; // Permite hover apenas se houver cópias disponíveis
       }
 
       // Configura o DragHandler (se necessário)

@@ -28,6 +28,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public Color hoverColor = Color.yellow;
     public Color tributeColor = new Color(0f, 0.6f, 1f); // Azul ciano brilhante
     public Color attackColor = Color.red;
+    public bool enableHoverLift = true; // Se true, permite o efeito de levantar a carta no hover
 
     private CardData currentCardData;
     private Texture2D frontTexture;
@@ -676,7 +677,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
         // --- Efeito de Subir (Apenas Mão) ---
         // Verifica se é interativo E se o hover está habilitado no GameManager E não é hover simples (deck)
-        if (isInteractable && !useSimpleHover && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect)
+        if (isInteractable && !useSimpleHover && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect && enableHoverLift)
         {
             // FIX: Usa Canvas Sorting para trazer para frente visualmente sem recalcular o Layout
             canvas.overrideSorting = true;
@@ -732,7 +733,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
 
         // --- Remove Efeito de Subir ---
-        if (isInteractable && !useSimpleHover && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect)
+        if (isInteractable && !useSimpleHover && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect && enableHoverLift)
         {
             // FIX: Reseta o Canvas e a Escala
             canvas.overrideSorting = false;
