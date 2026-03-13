@@ -167,17 +167,9 @@ public class CustomDeckLayout : MonoBehaviour
             currentY -= (cardHeight + verticalSpacing);
         }
 
-        // --- DEBUG VISUAL (removido para não depender do LINQ, mas pode ser reativado se preferir) ---
-        if (Application.isPlaying)
-        {
-            // Versão sem LINQ do debug
-            string rowInfo = "";
-            for (int i = 0; i < numberOfRows; i++)
-            {
-                rowInfo += $"{i}:{cardsPerRow[i].Count} ";
-            }
-            Debug.Log($"[Layout] {totalCards} cartas distribuídas em {numberOfRows} linhas. Linhas: {rowInfo}");
-        }
+        // Define a altura do container baseada no layout
+        float totalHeight = (numberOfRows * cardHeight) + ((numberOfRows - 1) * verticalSpacing) + (verticalPadding * 2);
+        container.sizeDelta = new Vector2(container.sizeDelta.x, totalHeight);
     }
 
     /// <summary>

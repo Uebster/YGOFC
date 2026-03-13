@@ -23,6 +23,9 @@ public class DeckDropZone : MonoBehaviour, IDropHandler
             Image img = dropTarget.AddComponent<Image>();
             img.color = new Color(0, 0, 0, 0); // Invisível
             img.raycastTarget = true;
+
+            // Garante que fique no topo para não ser bloqueado pelas cartas
+            dropTarget.transform.SetAsLastSibling();
         }
     }
 
