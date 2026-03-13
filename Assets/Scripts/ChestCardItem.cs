@@ -30,9 +30,27 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
 
     private DeckBuilderManager manager;
 
+    // Cache de arte estático para todos os ChestCardItems
+    private static Dictionary<string, Texture2D> artCache = new Dictionary<string, Texture2D>();
+
     void Awake()
     {
         manager = DeckBuilderManager.Instance;
+    }
+
+    // Método estático para tentar obter arte do cache
+    private static bool TryGetArtFromCache(string cardId, out Texture2D texture)
+    {
+        return artCache.TryGetValue(cardId, out texture);
+    }
+
+    // Método estático para adicionar arte ao cache
+    private static void AddArtToCache(string cardId, Texture2D texture)
+    {
+        if (!artCache.ContainsKey(cardId))
+        {
+            artCache.Add(cardId, texture);
+        }
     }
 
     public void Setup(CardData card, int available, bool newFlag, bool inDeck)
@@ -191,9 +209,9 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
     {
         if (string.IsNullOrEmpty(imagePath) || cardArtImage == null) yield break;
 
-        Texture2D cachedTex;
+        Texture2D cachedTex = null;
         // 1. Tenta pegar do cache primeiro
-        if (manager != null && manager.TryGetArtFromCache(cardData.id, out cachedTex))
+        if (TryGetArtFromCache(cardData.id, out cachedTex))
         {
             cardArtImage.texture = cachedTex;
             yield break;
@@ -213,7 +231,7 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
                 Texture2D tex = UnityEngine.Networking.DownloadHandlerTexture.GetContent(uwr);
                 cardArtImage.texture = tex;
                 // 3. Adiciona ao cache para uso futuro
-                if (manager != null) manager.AddArtToCache(cardData.id, tex);
+                AddArtToCache(cardData.id, tex);
             }
             else
             {

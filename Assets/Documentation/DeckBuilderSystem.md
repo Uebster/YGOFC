@@ -7,89 +7,120 @@ O **Deck Builder** é a interface onde o jogador gerencia sua coleção de carta
 
 Abaixo está a estrutura hierárquica recomendada dos objetos na cena Unity para o `Panel_DeckBuilder`.
 
-*   **Panel_DeckBuilder** `[Image, DeckBuilderManager]` - *Gerenciador principal.*
-    *   **Panel_CardViewer** `[Image, CardViewerUI]` - *Visualizador de detalhes da carta.*
+*   **Panel_DeckBuilder** `[Image, DeckBuilderManager]`
+    *   **Panel_CardViewer** `[Image, CardViewerUI]`
         *   **CardViewer** `[CardViewerUI]`
             *   **Card2D** `[RawImage, EventTrigger]`
-            *   **CardNameText** `[TMP]`
-            *   **CardInfoText** `[TMP]`
-            *   **CardStatsText** `[TMP]`
+            *   **CardNameText** `[TextMeshProUGUI]`
+            *   **CardInfoText** `[TextMeshProUGUI]`
+            *   **CardStatsText** `[TextMeshProUGUI]`
             *   **Panel_Description** `[Image]`
-                *   **Scroll View** `[ScrollRect]`
-                    *   **Viewport** `[Mask]`
-                        *   **Content**
-                    *   **Scrollbar Vertical** `[Scrollbar]`
-                        *   **Sliding Area**
-                            *   **Handle** `[Image]`
-                *   **CardDescriptionText** `[TMP]`
-        *   **Btn_SaveDeck** `[Button]` - *Salva e define como ativo.*
-            *   **Text** `[TMP]` "Save Deck"
-        *   **Btn_BackToMenu** `[Button]` - *Sai do menu.*
-            *   **Text** `[TMP]` "Back"
-        *   **Btn_ImportDeck** `[Button]` - *Carrega de arquivo JSON.*
-            *   **Text** `[TMP]` "Import Deck"
-        *   **Btn_ExportDeck** `[Button]` - *Salva em arquivo JSON.*
-            *   **Text** `[TMP]` "Export Deck"
-    *   **Deck Construction** `[TMP]` - *Título da Tela.*
-    *   **Panel_Chest** `[Image]` - *Área do Baú (Trunk).*
+                *   **Scroll View** `[Image, ScrollRect]`
+                    *   **Viewport** `[Image, Mask]`
+                    *   **Content** `[VerticalLayoutGroup]`
+                    *   **Scrollbar Vertical** `[Image, Scrollbar]`
+                        *   **Sliding Area** `[]`
+                        *   **Handle** `[Image]`
+                *   **CardDescriptionText** `[TextMeshProUGUI, Scrollbar]`
+    *   **Btn_SaveDeck** `[Image, Button]`
+        *   **Save Deck** `[TextMeshProUGUI]`
+    *   **Btn_BackToMenu** `[Image, Button]`
+        *   **Back** `[TextMeshProUGUI]`
+    *   **Btn_ImportDeck** `[Image, Button]`
+        *   **Import Deck** `[TextMeshProUGUI]`
+    *   **Btn_ExportDeck** `[Image, Button]`
+        *   **Export Deck** `[TextMeshProUGUI]`
+    *   **Deck Construction** `[TextMeshProUGUI]`
+    *   **Panel_Chest** `[Image]`
         *   **Panel_SearchCardInput** `[Image]`
-            *   **Input_SearchCard** `[TMP_InputField]`
-                *   **Text Area** `[RectMask2D]`
-                    *   **Placeholder** `[TMP]`
-                    *   **Text** `[TMP]`
-        *   **Panel_Filters** `[GridLayoutGroup]` - *Botões de Filtro.*
-            *   **Btn_FilterAtk** `[Button]` - *Ordena por ATK.*
-            *   **Btn_FilterDef** `[Button]` - *Ordena por DEF.*
-            *   **Btn_FilterNormal** `[Button]` - *Filtra Normais.*
-            *   **Btn_FilterEffect** `[Button]` - *Filtra Efeito.*
-            *   **Btn_FilterSpell** `[Button]` - *Filtra Magias.*
-            *   **Btn_FilterTrap** `[Button]` - *Filtra Armadilhas.*
-            *   **Btn_FilterRitual** `[Button]` - *Filtra Rituais.*
-            *   **Btn_FilterFusion** `[Button]` - *Filtra Fusões.*
-        *   **Btn_FilterABC** `[Button]` - *Ordena A-Z / Z-A.*
-        *   **Panel_CardChest** `[Image]` - *Container da lista de cartas.*
-            *   **Scroll View** `[ScrollRect]`
-                *   **Viewport** `[Mask]`
-                    *   **Content** `[VerticalLayoutGroup, ContentSizeFitter, DeckDropZone]` - *Onde os prefabs das cartas do baú são instanciados.*
-                *   **Scrollbar Vertical** `[Scrollbar]`
-        *   **ChestTitle** `[Image]`
-            *   **Card List** `[TMP]`
-    *   **Panel_Deck** `[Image]` - *Área dos Decks Ativos.*
-        *   **Panel_MainDeck** `[Image]`
-            *   **Scroll View** `[ScrollRect]`
-                *   **Viewport** `[Mask]`
-                    *   **Content** `[DeckDropZone, CustomDeckLayout]` - *Usa o layout customizado.*
-            *   **Main Deck Count Text** `[TMP]`
-        *   **Panel_MainDeckTitle** `[Image]`
-            *   **Text** `[TMP]` "Main Deck"
-        *   **Panel_SideDeck** `[Image]`
-            *   **Scroll View** `[ScrollRect]`
-                *   **Viewport** `[Mask]`
-                    *   **Content** `[DeckDropZone]`
-            *   **Side Deck Count Text** `[TMP]` - *Exibe "X / 15".*
-        *   **Panel_SideDeckTitle** `[Image]`
-            *   **Text** `[TMP]` "Side Deck"
-        *   **Panel_ExtraDeck** `[Image]`
-            *   **Scroll View** `[ScrollRect]`
-                *   **Viewport** `[Mask]`
-                    *   **Content** `[DeckDropZone]`
-            *   **Extra Deck Count Text** `[TMP]`
-            *   **Panel_ExtraDeckTitle** `[Image]` - *Exibe "X / 15".*
-            *   **Text** `[TMP]` "Extra Deck"
-        *   **InputDeckName** `[TMP_InputField]` - *Nome para exportação.*
             *   **Text Area** `[RectMask2D]`
-                *   **Placeholder** `[TMP]`
-                *   **Text** `[TMP]`
+                *   **Placeholder** `[TextMeshProUGUI, LayoutElement]`
+                *   **Text** `[TextMeshProUGUI]`
+            *   **Input_SearchCard** `[Image, TMP_InputField]`
+        *   **Panel_Filters** `[Image, GridLayoutGroup]`
+            *   **Btn_FilterAtk** `[Image, Button]`
+            *   **Btn_FilterDef** `[Image, Button]`
+            *   **Btn_FilterNormal** `[Image, Button]`
+            *   **Btn_FilterEffect** `[Image, Button]`
+            *   **Btn_FilterSpell** `[Image, Button]`
+            *   **Btn_FilterTrap** `[Image, Button]`
+            *   **Btn_FilterFusion** `[Image, Button]`
+            *   **Btn_FilterRitual** `[Image, Button]`
+            *   **Btn_FilterABC** `[Image, Button]`
+        *   **Panel_CardChest** `[Image]`
+            *   **Scroll View** `[Image, ScrollRect]`
+                *   **Viewport** `[Image, Mask]`
+                *   **Image** `[Image, DeckDropZone]`
+                *   **Content** `[VerticalLayoutGroup, ContentSizeFitter]`
+                *   **Scrollbar** `[Image, Scrollbar]`
+                    *   **Sliding Area** `[]`
+                    *   **Handle** `[Image]`
+        *   **ChestTitle** `[Image]`
+            *   **Card List** `[TextMeshProUGUI]`
+    *   **Panel_Deck** `[Image]`
+        *   **Panel_MainDeck** `[Image]`
+            *   **Scroll View** `[Image]`
+                *   **Viewport** `[Image, Mask]`
+                *   **Image** `[Image]`
+                *   **Content** `[CustomDeckLayout, DeckDropZone]`
+            *   **Main Deck Count Text** `[TextMeshProUGUI]`
+            *   **NumberOfCardsType** `[Image]`
+                *   **NormalQuant** `[Image]`
+                *   **NormalQuantText** `[TextMeshProUGUI]`
+                *   **EffectQuant** `[Image]`
+                *   **EffectQuantText** `[TextMeshProUGUI]`
+                *   **SpellQuant** `[Image]`
+                *   **SpellQuantText** `[TextMeshProUGUI]`
+                *   **TrapQuant** `[Image]`
+                *   **TrapQuantText** `[TextMeshProUGUI]`
+                *   **RitualQuant** `[Image]`
+                *   **RitualQuantText** `[TextMeshProUGUI]`
+            *   **Panel_MainDeckTitle** `[Image]`
+                *   **Main Deck** `[TextMeshProUGUI]`
+        *   **Panel_SideDeck** `[Image]`
+            *   **Scroll View** `[Image]`
+                *   **Viewport** `[Image, Mask]`
+                *   **Image** `[Image, DeckDropZone]`
+                *   **Content** `[CustomDeckLayout]`
+            *   **NumberOfCardsType** `[Image]`
+                *   **NormalQuant** `[Image]`
+                *   **NormalQuantText** `[TextMeshProUGUI]`
+                *   **EffectQuant** `[Image]`
+                *   **EffectQuantText** `[TextMeshProUGUI]`
+                *   **SpellQuant** `[Image]`
+                *   **SpellQuantText** `[TextMeshProUGUI]`
+                *   **TrapQuant** `[Image]`
+                *   **TrapQuantText** `[TextMeshProUGUI]`
+                *   **RitualQuant** `[Image]`
+                *   **RitualQuantText** `[TextMeshProUGUI]`
+            *   **Side Deck Count Text** `[TextMeshProUGUI]`
+            *   **Panel_SideDeckTitle** `[Image]`
+                *   **Side Deck** `[TextMeshProUGUI]`
+        *   **Panel_ExtraDeck** `[Image]`
+            *   **Scroll View** `[Image, ScrollRect]`
+                *   **Viewport** `[Image, Mask]`
+                *   **Image** `[Image, DeckDropZone]`
+                *   **Content** `[CustomDeckLayout]`
+            *   **Extra Deck Count Text** `[TextMeshProUGUI]`
+            *   **Panel_ExtraDeckTitle** `[Image]`
+                *   **Extra Deck** `[TextMeshProUGUI]`
+            *   **NumberOfCardsType** `[Image]`
+                *   **FusionQuant** `[Image]`
+                *   **FusionQuantText** `[TextMeshProUGUI]`
 
 ## Funcionalidades
 
-### Paginação do Baú (Chest Pagination)
-Para lidar com a grande quantidade de cartas do jogo (2147+), a lista do baú é paginada.
-*   **`itemsPerPage`**: Variável no `DeckBuilderManager` que define quantas cartas aparecem por página (padrão: 50).
-*   **`btnPrevPage` / `btnNextPage`**: Botões na UI que permitem ao jogador navegar entre as páginas de sua coleção.
-*   **`txtPageInfo`**: Um campo de texto (`TextMeshProUGUI`) que exibe a informação da página atual, como "Page 1 / 43".
+### Baú de Cartas (Virtual Scrolling)
+Para lidar com a grande quantidade de cartas do jogo (2147+), a lista do baú (`Chest`) utiliza um sistema de **Virtual Scrolling**.
+*   **Performance:** Em vez de instanciar um item de UI para cada carta de uma vez (o que causaria enormes problemas de performance), o sistema gerencia um pequeno "pool" de objetos de UI.
+*   **Reciclagem:** Conforme o jogador rola a lista, os itens que saem da tela são desativados e reciclados para exibir as novas cartas que entram na tela. A `Scrollbar` e a roda do mouse funcionam de forma fluida.
+*   **Fonte de Cartas:** O baú agora exibe **todas as cartas existentes no banco de dados**, permitindo um modo de "construção livre" onde o jogador não é limitado pelas cartas que "possui" no modo campanha.
 
-Isso garante que o jogo não tente renderizar milhares de itens de UI de uma vez, o que causaria lentidão e alto consumo de memória.
+### Contagem Detalhada de Cartas
+A UI agora fornece uma contagem detalhada dos tipos de carta em cada deck (Principal, Lateral e Extra).
+*   Para o Main e Side Deck, a UI exibe contagens separadas para monstros `Normal`, `Effect`, `Ritual`, além de `Spell` e `Trap`.
+*   Para o Extra Deck, a UI exibe a contagem de monstros `Fusion`.
+*   Essa contagem é atualizada em tempo real conforme as cartas são adicionadas ou removidas dos decks, fornecendo feedback instantâneo ao jogador.
 
 ### 1. Filtragem e Ordenação
 O `DeckBuilderManager` gerencia uma lista de cartas do baú (`currentTrunk`) e a re-exibe conforme os filtros e ordenações são aplicados.
@@ -99,7 +130,7 @@ O `DeckBuilderManager` gerencia uma lista de cartas do baú (`currentTrunk`) e a
     *   **ATK:** Ordena por pontos de ataque. Clicar novamente inverte (Maior <-> Menor).
     *   **DEF:** Ordena por pontos de defesa. Clicar novamente inverte (Maior <-> Menor).
     *   *Nota:* A ordenação respeita os filtros ativos.
-*   **Pesquisa por Texto:** O campo `Input_SearchCard` filtra a lista de cartas em tempo real, buscando o texto no nome da carta.
+*   **Pesquisa por Texto:** O campo `Input_SearchCard` filtra a lista de cartas em tempo real (com um pequeno delay para performance), buscando o texto no nome da carta.
 
 ### 2. Sistema de Ícones (4 Campos)
 Para organizar a exibição dos ícones de forma clara, o `DeckBuilderManager` agora possui 4 listas no Inspector, que correspondem diretamente aos `Image` no prefab `Card_PrefabChestList`:
@@ -170,11 +201,13 @@ O script expõe várias propriedades públicas para que você possa ajustar o la
 ## Estrutura do Prefab do Baú (Card_PrefabChestList)
 Este prefab representa um único item na lista rolável do baú. Sua estrutura é projetada para exibir um resumo completo da carta.
 
-*   **Card_PrefabChestList** `[Image, LayoutElement]` - O objeto raiz. O `LayoutElement` é crucial para que o `ContentSizeFitter` do ScrollView funcione corretamente.
-    *   **Card2D** `[EventTrigger, CardDisplay, Mask, Image]` - A imagem da carta em si. `CardDisplay` renderiza a arte, e `EventTrigger` detecta o mouse para o `CardViewer`.
-    *   **CardNameText** `[TMP]` - Exibe o nome da carta.
-    *   **CardStatsText** `[TMP]` - Exibe a quantidade disponível para uso (ex: "x2").
-    *   **MonsterLvl** `[TMP]` - Exibe o nível do monstro.
+*   **Card_PrefabChestList** `[Image, LayoutElement, DeckDragHandler]`
+    *   **Card2D** `[CardDisplay, Mask, Image, CardImageDragProxy]` - A imagem da carta em si. `CardDisplay` renderiza a arte.
+        *   **Art** `[RawImage]`
+    *   **QuantCard** `[TextMeshProUGUI]` - Exibe a quantidade disponível para uso (ex: "x3").
+    *   **CardStatsText** `[TextMeshProUGUI]` - Exibe ATK/DEF.
+    *   **CardNameText** `[TextMeshProUGUI]` - Exibe o nome da carta.
+    *   **MonsterLvl** `[TextMeshProUGUI]` - Exibe o nível do monstro.
     *   **AttributeIcon** `[Image]` - Ícone de Atributo (ex: FIRE).
     *   **RaceIcon** `[Image]` - Ícone de Raça (ex: Warrior).
     *   **TypeIcon** `[Image]` - Ícone de Tipo (ex: Spell).
