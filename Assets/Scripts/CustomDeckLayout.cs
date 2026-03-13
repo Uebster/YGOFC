@@ -8,7 +8,7 @@ using System.Linq; // <<<< ADICIONADO para o método Select
 /// As cartas são distribuídas sequencialmente: Linha 1, 2, 3, 4, 1, 2, 3, 4...
 /// Alinhamento sempre à esquerda com espaçamento máximo controlado.
 /// </summary>
-[ExecuteInEditMode]
+// [ExecuteInEditMode]  // Removido temporariamente para testar se causa erro no editor
 public class CustomDeckLayout : MonoBehaviour
 {
     [Header("Configuração da Grade")]
