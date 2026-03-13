@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Linq;
 using UnityEngine.EventSystems;
 using System.Collections.Generic; // Adicionado para resolver o erro CS0246
 
@@ -32,23 +33,34 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
 
         void Awake()
     {
-        manager = DeckBuilderManager.Instance;
-        
-        // Atribuir referências automaticamente se não estiverem setadas
-        if (attributeIcon == null) attributeIcon = transform.Find("AttributeIcon")?.GetComponent<Image>();
-        if (raceIcon == null) raceIcon = transform.Find("RaceIcon")?.GetComponent<Image>();
-        if (typeIcon == null) typeIcon = transform.Find("TypeIcon")?.GetComponent<Image>();
-        if (subTypeIcon == null) subTypeIcon = transform.Find("SubTypeIcon")?.GetComponent<Image>();
-        
-        // DEBUG: Verificar se o manager foi encontrado
-        if (manager == null)
+    manager = DeckBuilderManager.Instance;
+
+    // Auto-assignment using a more robust method that searches all children.
+    if (cardArtImage == null) cardArtImage = GetComponentsInChildren<RawImage>(true).FirstOrDefault(img => img.name == "Art");
+
+    var allTexts = GetComponentsInChildren<TextMeshProUGUI>(true);
+    if (cardNameText == null) cardNameText = allTexts.FirstOrDefault(txt => txt.name == "CardNameText");
+    if (cardStatsText == null) cardStatsText = allTexts.FirstOrDefault(txt => txt.name == "CardStatsText");
+    if (quantCardText == null) quantCardText = allTexts.FirstOrDefault(txt => txt.name == "QuantCard");
+    if (monsterLvlText == null) monsterLvlText = allTexts.FirstOrDefault(txt => txt.name == "MonsterLvl");
+
+    var allImages = GetComponentsInChildren<Image>(true);
+    if (attributeIcon == null) attributeIcon = allImages.FirstOrDefault(img => img.name == "AttributeIcon");
+    if (raceIcon == null) raceIcon = allImages.FirstOrDefault(img => img.name == "RaceIcon");
+    if (typeIcon == null) typeIcon = allImages.FirstOrDefault(img => img.name == "TypeIcon");
+    if (subTypeIcon == null) subTypeIcon = allImages.FirstOrDefault(img => img.name == "SubTypeIcon");
+
+    // Array de estrelas
+    if (stars == null || stars.Length == 0)
+    {
+        List<GameObject> starList = new List<GameObject>();
+        for (int i = 1; i <= 12; i++)
         {
-            Debug.LogError("[DEBUG] ChestCardItem.Awake: DeckBuilderManager.Instance é nulo!");
+            Transform starTransform = GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == $"Star{i:00}");
+            if (starTransform != null) starList.Add(starTransform.gameObject);
         }
-        else
-        {
-            Debug.Log($"[DEBUG] ChestCardItem.Awake: Manager encontrado. Atributos disponíveis: {manager.attributeIcons?.Count ?? 0}");
-        }
+        stars = starList.ToArray();
+    }
     }
 
         public void Setup(CardData card, int available, bool newFlag, bool inDeck)
@@ -57,9 +69,6 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
         availableCopies = available;
         isNew = newFlag;
         isInDeck = inDeck;
-
-        // DEBUG: Log para verificar dados da carta
-        Debug.Log($"[DEBUG] ChestCardItem.Setup: Carta '{card.name}', Atributo: '{card.attribute}', Tipo: '{card.type}'");
 
         // --- Arte da carta ---
         if (cardArtImage != null && GameManager.Instance != null)
@@ -88,10 +97,6 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
 
                         // --- Configurar ícones e textos conforme o tipo ---
         bool isMonster = card.type.Contains("Monster");
-        
-        // DEBUG: Verificar tipo da carta
-        Debug.Log($"[DEBUG] ChestCardItem: Carta '{card.name}' é monstro? {isMonster}. Tipo: '{card.type}'");
-        Debug.Log($"[DEBUG] ChestCardItem: attributeIcon é nulo? {attributeIcon == null}");
 
         if (isMonster)
         {
@@ -106,71 +111,42 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
                 monsterLvlText.text = card.level.ToString();
             }
 
-            // Atributo - COM DEBUG
+            // Atributo
             if (attributeIcon != null)
             {
-                if (manager == null)
+                if (manager != null && !string.IsNullOrEmpty(card.attribute))
                 {
-                    Debug.LogError("[DEBUG] ChestCardItem: DeckBuilderManager.Instance é nulo!");
-                    attributeIcon.enabled = false;
-                }
-                else
-                {
-                    // DEBUG: Verificar lista de atributos disponíveis
-                    if (manager.attributeIcons != null)
-                    {
-                        Debug.Log($"[DEBUG] Total de ícones de atributo disponíveis: {manager.attributeIcons.Count}");
-                        foreach (var icon in manager.attributeIcons)
-                        {
-                            Debug.Log($"[DEBUG]   - '{icon.name}'");
-                        }
-                    }
+                    string cardAttribute = card.attribute.Trim();
+                    var mapping = manager.attributeIcons.Find(x => x.name.Equals(cardAttribute, System.StringComparison.OrdinalIgnoreCase));
 
-                                        // DEBUG: Verificar atributo exato da carta
-                    Debug.Log($"[DEBUG] Atributo da carta: '{card.attribute}' (Tamanho: {card.attribute?.Length})");
-                    
-                    var mapping = manager.attributeIcons.Find(x => x.name.ToLower() == card.attribute.ToLower());
-                    
-                    // DEBUG: Log do resultado da busca
-                    Debug.Log($"[DEBUG] Buscando atributo '{card.attribute}': Encontrado = {mapping != null}");
-                    
-                    // DEBUG: Verificar todos os mapeamentos disponíveis
-                    if (mapping == null)
-                    {
-                        Debug.LogWarning($"[DEBUG] Nenhum mapeamento encontrado para atributo '{card.attribute}'. Lista de atributos disponíveis:");
-                        foreach (var icon in manager.attributeIcons)
-                        {
-                            Debug.LogWarning($"[DEBUG]   - '{icon.name}' (Tamanho: {icon.name?.Length})");
-                        }
-                    }
-                    
                     if (mapping != null && mapping.icon != null)
                     {
                         attributeIcon.sprite = mapping.icon;
                         attributeIcon.enabled = true;
-                        Debug.Log($"[DEBUG] Ícone de atributo '{card.attribute}' atribuído com sucesso!");
                     }
                     else
                     {
                         attributeIcon.enabled = false;
-                        Debug.LogWarning($"[DEBUG] Ícone de atributo '{card.attribute}' não encontrado!");
+                        Debug.LogWarning($"[ChestCardItem] Ícone de atributo não encontrado para '{cardAttribute}'. Verifique se o nome do ícone corresponde exatamente no DeckBuilderManager.");
                     }
+                }
+                else
+                {
+                    attributeIcon.enabled = false;
                 }
             }
 
             // Raça
             if (raceIcon != null && manager != null)
             {
-                var mapping = manager.raceIcons.Find(x => x.name.ToLower() == card.race.ToLower());
+                string cardRace = card.race?.Trim() ?? "";
+                var mapping = manager.raceIcons.Find(x => x.name.Equals(cardRace, System.StringComparison.OrdinalIgnoreCase));
                 if (mapping != null && mapping.icon != null)
                 {
                     raceIcon.sprite = mapping.icon;
                     raceIcon.enabled = true;
                 }
-                else
-                {
-                    raceIcon.enabled = false;
-                }
+                else { raceIcon.enabled = false; }
             }
 
             // Desativa ícones de Spell/Trap
@@ -189,9 +165,6 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
         }
                 else // Spell / Trap
         {
-            // DEBUG: Log para magias/armadilhas
-            Debug.Log($"[DEBUG] ChestCardItem: Carta '{card.name}' é magia/armadilha. Desativando atributo e raça.");
-            
             // Limpa stats
             if (cardStatsText != null) cardStatsText.text = "";
             if (monsterLvlText != null) monsterLvlText.gameObject.SetActive(false);
@@ -203,7 +176,7 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
             if (typeIcon != null && manager != null)
             {
                 typeIcon.gameObject.SetActive(true);
-                var mapping = manager.typeIcons.Find(x => x.name.ToLower() == mainType.ToLower());
+                var mapping = manager.typeIcons.Find(x => x.name.Equals(mainType, System.StringComparison.OrdinalIgnoreCase));
                 if (mapping != null && mapping.icon != null)
                 {
                     typeIcon.sprite = mapping.icon;
@@ -219,7 +192,8 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
             if (subTypeIcon != null && manager != null && !string.IsNullOrEmpty(card.property) && card.property != "Normal")
             {
                 subTypeIcon.gameObject.SetActive(true);
-                var mapping = manager.subTypeIcons.Find(x => x.name.ToLower() == card.property.ToLower());
+                string cardProperty = card.property.Trim();
+                var mapping = manager.subTypeIcons.Find(x => x.name.Equals(cardProperty, System.StringComparison.OrdinalIgnoreCase));
                 if (mapping != null && mapping.icon != null)
                 {
                     subTypeIcon.sprite = mapping.icon;
