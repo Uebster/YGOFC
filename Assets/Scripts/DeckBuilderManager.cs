@@ -257,29 +257,59 @@ public class DeckBuilderManager : MonoBehaviour
 
         // Pesquisa
         searchInput?.onValueChanged.AddListener((text) => RefreshTrunkUI());
+
+        // Configura as zonas de drop
+        SetupDropZones();
     }
 
-    void OnEnable()
+    void SetupDropZones()
     {
-        // Carrega o deck ativo do GameManager
-        LoadCurrentDeckFromManager();
-        // Carrega o baú do jogador
-        LoadTrunk();
-
-        // Adiciona logs para depuração
-        Debug.Log($"[DeckBuilder] OnEnable: {currentTrunk.Count} cards loaded into trunk.");
-        foreach (var filter in activeFilters)
-        {
-            Debug.Log($"[DeckBuilder] Initial Filter State: {filter.Key} = {filter.Value}");
-        }
-
-        // Atualiza toda a interface gráfica com os dados carregados
-        RefreshAllUI();
-        // Atualiza o estado visual dos botões de filtro
-        UpdateFilterButtonsVisuals();
-        // Reseta o estado de "alterações não salvas" ao abrir a tela
-        hasUnsavedChanges = false;
+        // Adiciona DeckDropZone aos containers se não tiverem
+        AddDropZoneIfNeeded(mainDeckContent, DeckZoneType.Main);
+        AddDropZoneIfNeeded(sideDeckContent, DeckZoneType.Side);
+        AddDropZoneIfNeeded(extraDeckContent, DeckZoneType.Extra);
+        AddDropZoneIfNeeded(trunkContent, DeckZoneType.Trunk);
     }
+
+    void AddDropZoneIfNeeded(Transform container, DeckZoneType zoneType)
+    {
+        if (container == null) return;
+        DeckDropZone dropZone = container.GetComponent<DeckDropZone>();
+        if (dropZone == null)
+        {
+            dropZone = container.gameObject.AddComponent<DeckDropZone>();
+        }
+        dropZone.zoneType = zoneType;
+    }
+
+void OnEnable()
+{
+    // Se GameManager ainda não existe, aguarda um frame
+    if (GameManager.Instance == null)
+    {
+        Debug.LogWarning("DeckBuilderManager: GameManager não encontrado, tentando novamente em 0.1s...");
+        Invoke(nameof(LoadData), 0.1f);
+        return;
+    }
+
+    LoadData();
+}
+
+private void LoadData()
+{
+    if (GameManager.Instance == null)
+    {
+        Debug.LogError("DeckBuilderManager: GameManager ainda é nulo. Não foi possível carregar.");
+        return;
+    }
+
+    LoadCurrentDeckFromManager();
+    LoadTrunk();
+
+    RefreshAllUI();
+    UpdateFilterButtonsVisuals();
+    hasUnsavedChanges = false;
+}
 
     void LoadCurrentDeckFromManager()
     {
@@ -350,10 +380,11 @@ public class DeckBuilderManager : MonoBehaviour
             if (display == null) continue; // Already logged in SetupChestItem if missing
             display.isPlayerCard = true; // <<<< FIX: Garante que a cor do hover seja a do jogador
             display.SetCard(card, GameManager.Instance?.GetCardBackTexture(), true);
-            display.isInteractable = false;
+            display.isInteractable = true; // Permitir hover nas cartas do deck
+            display.useSimpleHover = true; // Hover simples para deck
 
-            DeckDragHandler drag = go.GetComponent<DeckDragHandler>();
-            if (drag == null) drag = go.AddComponent<DeckDragHandler>();
+            DeckDragHandler drag = display.gameObject.GetComponent<DeckDragHandler>();
+            if (drag == null) drag = display.gameObject.AddComponent<DeckDragHandler>();
             drag.cardData = card;
             drag.sourceZone = zoneType;
         }
@@ -470,171 +501,131 @@ public class DeckBuilderManager : MonoBehaviour
             SetupChestItem(go, card, totalOwned, copiesInDecks);
         }
     }
-    
-    void SetupChestItem(GameObject go, CardData card, int totalOwned, int copiesInDecks)
+
+  // Método auxiliar para debug da hierarquia
+  private void LogHierarchy(Transform transform, int depth)
+  {
+    string indent = new string(' ', depth * 2);
+    Debug.Log($"{indent}- {transform.name} ({transform.GetType().Name})");
+      
+    for (int i = 0; i < transform.childCount; i++)
     {
-        // --- 1. Encontra os componentes na hierarquia do prefab ---
-        var display = go.GetComponentInChildren<CardDisplay>();
-        if (display != null)
-        {
-            display.isPlayerCard = true; // <<<< FIX: Garante que a cor do hover seja a do jogador
-        }
-
-        Transform card2DTr = go.transform.Find("Card2D");
-
-        // --- 2. Preenche os textos e ícones ---
-        var cardNameText = go.transform.Find("CardNameText")?.GetComponent<TextMeshProUGUI>();
-        var cardStatsText = go.transform.Find("CardStatsText")?.GetComponent<TextMeshProUGUI>();
-        var quantCardText = go.transform.Find("QuantCard")?.GetComponent<TextMeshProUGUI>();
-        var monsterLvlText = go.transform.Find("MonsterLvl")?.GetComponent<TextMeshProUGUI>();
-        var attributeImage = go.transform.Find("AttributeIcon")?.GetComponent<Image>();
-        var typeImage = go.transform.Find("TypeIcon")?.GetComponent<Image>();
-        var subTypeImage = go.transform.Find("SubTypeIcon")?.GetComponent<Image>();
-        var raceImage = go.transform.Find("RaceIcon")?.GetComponent<Image>();
-        var newTagInstance = go.transform.Find("NewTag"); // Procura por uma tag existente
-
-        int availableCopies = totalOwned - copiesInDecks;
-
-        if (cardNameText) cardNameText.text = card.name; // Nome da carta
-        if (quantCardText) quantCardText.text = $"x{availableCopies}"; // Quantidade disponível
-
-        bool isMonster = card.type.Contains("Monster");
-
-        if (isMonster)
-        {
-            // ATK/DEF
-            if (cardStatsText) cardStatsText.text = $"{card.atk} / {card.def}";
-
-            // LÓGICA PARA MONSTROS
-            if (monsterLvlText) monsterLvlText.gameObject.SetActive(true);
-            if (monsterLvlText) monsterLvlText.text = card.level.ToString();
-            
-            if (attributeImage) 
-            {
-                attributeImage.gameObject.SetActive(true);
-                var iconMapping = attributeIcons.Find(i => i.name.Equals(card.attribute, System.StringComparison.OrdinalIgnoreCase)); // Busca na lista de Atributos
-                if (iconMapping != null && iconMapping.icon != null)
-                {
-                    attributeImage.sprite = iconMapping.icon;
-                    attributeImage.enabled = true;
-                }
-                else
-                {
-                    attributeImage.enabled = false;
-                    Debug.LogWarning($"[ICONS] Ícone de ATRIBUTO não encontrado para '{card.attribute}' na carta '{card.name}'. Verifique a lista 'attributeIcons'.");
-                }
-            }
-            
-            if (raceImage)
-            {
-                raceImage.gameObject.SetActive(true);
-                var iconMapping = raceIcons.Find(i => i.name.Equals(card.race, System.StringComparison.OrdinalIgnoreCase)); // Busca na lista de Raças
-                if (iconMapping != null && iconMapping.icon != null)
-                {
-                    raceImage.sprite = iconMapping.icon;
-                    raceImage.enabled = true;
-                }
-                else
-                {
-                    raceImage.enabled = false;
-                    if (!string.IsNullOrEmpty(card.race)) Debug.LogWarning($"[ICONS] Ícone de RAÇA não encontrado para '{card.race}' na carta '{card.name}'. Verifique a lista 'raceIcons'.");
-                }
-            }
-
-            // Desativa os ícones de Magia/Armadilha
-            if (typeImage) typeImage.gameObject.SetActive(false);
-            if (subTypeImage) subTypeImage.gameObject.SetActive(false);
-
-            for (int i = 1; i <= 12; i++)
-            {
-                var star = go.transform.Find($"Star{i:00}");
-                if (star != null) star.gameObject.SetActive(i <= card.level);
-            }
-        }
-        else // Magias e Armadilhas
-        {
-            // Limpa o texto de stats para não-monstros
-            if (cardStatsText) cardStatsText.text = "";
-
-            // Desativa os ícones de Monstro
-            if (monsterLvlText) monsterLvlText.gameObject.SetActive(false);
-            if (attributeImage) attributeImage.gameObject.SetActive(false);
-            if (raceImage) raceImage.gameObject.SetActive(false);
-
-            // Tipo (TypeIcon)
-            string mainType = card.type.Contains("Spell") ? "Spell" : "Trap";
-            if (typeImage) // Usar TypeIcon para o tipo principal (Spell/Trap)
-            {
-                typeImage.gameObject.SetActive(true);
-                var iconMapping = typeIcons.Find(i => i.name.Equals(mainType, System.StringComparison.OrdinalIgnoreCase)); // Busca na lista de Tipos (Spell/Trap)
-                if (iconMapping != null && iconMapping.icon != null)
-                {
-                    typeImage.sprite = iconMapping.icon;
-                    typeImage.enabled = true;
-                }
-                else
-                {
-                    typeImage.enabled = false;
-                    Debug.LogWarning($"[ICONS] Ícone de TIPO PRINCIPAL não encontrado para '{mainType}' na carta '{card.name}'. Verifique a lista 'typeIcons'.");
-                }
-            }
-            
-            // SubTipo (SubTypeIcon)
-            if (subTypeImage) // Usar SubTypeIcon para a propriedade (Continuous, Equip, etc.)
-            {
-                subTypeImage.gameObject.SetActive(true);
-                var iconMapping = subTypeIcons.Find(i => i.name.Equals(card.property, System.StringComparison.OrdinalIgnoreCase)); // Busca na lista de SubTipos
-                subTypeImage.sprite = iconMapping?.icon;
-                subTypeImage.gameObject.SetActive(iconMapping?.icon != null);
-                
-                if (iconMapping == null && !string.IsNullOrEmpty(card.property) && card.property != "Normal" && card.property != "N/A")
-                {
-                    Debug.LogWarning($"[ICONS] Ícone de SUBTIPO (Property) não encontrado para '{card.property}' na carta '{card.name}'. Verifique a lista 'subTypeIcons'.");
-                }
-            }
-            for (int i = 1; i <= 12; i++)
-            {
-                var star = go.transform.Find($"Star{i:00}");
-                if (star != null) star.gameObject.SetActive(false);
-            }
-        }
-
-        // --- 3. Lógica da Tag "New" ---
-        bool isNew = SaveLoadSystem.Instance != null && SaveLoadSystem.Instance.IsCardNew(card.id);
-        bool isInDeck = cardIDsInDecks.Contains(card.id);
-        Transform newTagParent = card2DTr != null ? card2DTr : go.transform;
-        if (isNew && !isInDeck && newTagParent != null)
-        {
-            CreateNewBanner(newTagParent);
-        }
-
-        // --- 4. Lógica de Estado (Inativo) e Drag & Drop ---
-        CanvasGroup canvasGroup = go.GetComponent<CanvasGroup>();
-        if (canvasGroup == null) canvasGroup = go.AddComponent<CanvasGroup>();
-        DeckDragHandler dragHandler = go.GetComponent<DeckDragHandler>();
-        if (dragHandler == null) dragHandler = go.AddComponent<DeckDragHandler>();
-
-        bool isInteractable = availableCopies > 0;
-        canvasGroup.alpha = isInteractable ? 1.0f : 0.5f;
-        canvasGroup.interactable = isInteractable;
-        canvasGroup.blocksRaycasts = isInteractable;
-
-        if (dragHandler != null)
-        {
-            dragHandler.cardData = card;
-            dragHandler.sourceZone = DeckZoneType.Trunk;
-            dragHandler.enabled = isInteractable;
-        }
-
-        // --- 5. Adiciona listener para o CardViewer (Hover) ---
-        EventTrigger trigger = go.GetComponent<EventTrigger>();
-        if (trigger == null) trigger = go.AddComponent<EventTrigger>();
-        trigger.triggers.Clear();
-        EventTrigger.Entry entry = new EventTrigger.Entry();
-        entry.eventID = EventTriggerType.PointerEnter;
-        entry.callback.AddListener((eventData) => { OnCardHover(card); });
-        trigger.triggers.Add(entry);
+        LogHierarchy(transform.GetChild(i), depth + 1);
     }
+}
+void SetupChestItem(GameObject go, CardData card, int totalOwned, int copiesInDecks)
+{
+    // DEBUG: Iniciando SetupChestItem
+    Debug.Log($"[DEBUG] SetupChestItem: Configurando carta '{card?.name}' no objeto '{go.name}'");
+    
+    // DEBUG: Verificar hierarquia do objeto
+    Debug.Log($"[DEBUG] SetupChestItem: Hierarquia de '{go.name}':");
+    LogHierarchy(go.transform, 0);
+    
+    // Pega ou adiciona o componente ChestCardItem
+    ChestCardItem item = go.GetComponent<ChestCardItem>();
+    if (item == null)
+    {
+        Debug.Log("[DEBUG] SetupChestItem: Adicionando componente ChestCardItem");
+        item = go.AddComponent<ChestCardItem>();
+    }
+
+        // Se as referências não foram arrastadas no prefab, tenta encontrá-las automaticamente
+    if (item.cardArtImage == null)
+    {
+        Transform art = go.transform.Find("Card2D/Art");
+        if (art != null) item.cardArtImage = art.GetComponent<RawImage>();
+    }
+    if (item.cardNameText == null)
+    {
+        Transform nameText = go.transform.Find("CardNameText");
+        Debug.Log($"[DEBUG] SetupChestItem: CardNameText encontrado? {nameText != null}");
+        item.cardNameText = nameText?.GetComponent<TextMeshProUGUI>();
+    }
+    if (item.cardStatsText == null)
+    {
+        Transform statsText = go.transform.Find("CardStatsText");
+        Debug.Log($"[DEBUG] SetupChestItem: CardStatsText encontrado? {statsText != null}");
+        item.cardStatsText = statsText?.GetComponent<TextMeshProUGUI>();
+    }
+    if (item.quantCardText == null)
+    {
+        Transform quantText = go.transform.Find("QuantCard");
+        Debug.Log($"[DEBUG] SetupChestItem: QuantCard encontrado? {quantText != null}");
+        item.quantCardText = quantText?.GetComponent<TextMeshProUGUI>();
+    }
+    if (item.monsterLvlText == null)
+    {
+        Transform monsterLvl = go.transform.Find("MonsterLvl");
+        Debug.Log($"[DEBUG] SetupChestItem: MonsterLvl encontrado? {monsterLvl != null}");
+        item.monsterLvlText = monsterLvl?.GetComponent<TextMeshProUGUI>();
+    }
+        if (item.attributeIcon == null)
+    {
+        Transform attribute = go.transform.Find("AttributeIcon");
+        Debug.Log($"[DEBUG] SetupChestItem: AttributeIcon encontrado? {attribute != null} (Caminho: AttributeIcon)");
+        item.attributeIcon = attribute?.GetComponent<Image>();
+    }
+    if (item.raceIcon == null)
+    {
+        Transform race = go.transform.Find("RaceIcon");
+        Debug.Log($"[DEBUG] SetupChestItem: RaceIcon encontrado? {race != null} (Caminho: RaceIcon)");
+        item.raceIcon = race?.GetComponent<Image>();
+    }
+    if (item.typeIcon == null)
+    {
+        Transform type = go.transform.Find("TypeIcon");
+        Debug.Log($"[DEBUG] SetupChestItem: TypeIcon encontrado? {type != null} (Caminho: TypeIcon)");
+        item.typeIcon = type?.GetComponent<Image>();
+    }
+    if (item.subTypeIcon == null)
+    {
+        Transform subType = go.transform.Find("SubTypeIcon");
+        Debug.Log($"[DEBUG] SetupChestItem: SubTypeIcon encontrado? {subType != null} (Caminho: SubTypeIcon)");
+        item.subTypeIcon = subType?.GetComponent<Image>();
+    }
+
+    // Array de estrelas
+    if (item.stars == null || item.stars.Length == 0)
+    {
+        List<GameObject> starList = new List<GameObject>();
+        for (int i = 1; i <= 12; i++)
+        {
+            Transform star = go.transform.Find($"Star{i:00}");
+            if (star != null) starList.Add(star.gameObject);
+        }
+        item.stars = starList.ToArray();
+    }
+
+    int availableCopies = totalOwned - copiesInDecks;
+    bool isNew = SaveLoadSystem.Instance != null && SaveLoadSystem.Instance.IsCardNew(card.id);
+    bool isInDeck = cardIDsInDecks.Contains(card.id);
+
+          // DEBUG: Antes de chamar Setup
+      Debug.Log($"[DEBUG] SetupChestItem: Chamando item.Setup() - attributeIcon é nulo? {item.attributeIcon == null}");
+      
+      // Configura o item
+      item.Setup(card, availableCopies, isNew, isInDeck);
+      
+      // DEBUG: Depois de chamar Setup
+      Debug.Log($"[DEBUG] SetupChestItem: Setup concluído para '{card.name}'");
+
+      // Configura hover simples para chest
+      CardDisplay chestDisplay = item.cardArtImage.transform.parent.GetComponent<CardDisplay>();
+      if (chestDisplay != null)
+      {
+          chestDisplay.useSimpleHover = true;
+      }
+
+      // Configura o DragHandler (se necessário)
+      DeckDragHandler dragHandler = item.cardArtImage.transform.parent.gameObject.GetComponent<DeckDragHandler>();
+      if (dragHandler == null)
+          dragHandler = item.cardArtImage.transform.parent.gameObject.AddComponent<DeckDragHandler>();
+
+      dragHandler.cardData = card;
+      dragHandler.sourceZone = DeckZoneType.Trunk;
+      dragHandler.enabled = availableCopies > 0;
+  }
 
     /// <summary>
     /// Salva o deck atual no GameManager e no sistema de save persistente.
@@ -647,7 +638,7 @@ public class DeckBuilderManager : MonoBehaviour
             return;
         }
 
-        if (!hasUnsavedChanges)
+       if (!hasUnsavedChanges)
         {
             Debug.Log("Nenhuma alteração para salvar.");
             return;
@@ -720,7 +711,7 @@ public class DeckBuilderManager : MonoBehaviour
     /// <summary>
     /// Cria a tag "NEW" em uma carta, usando um prefab ou gerando dinamicamente.
     /// </summary>
-    private void CreateNewBanner(Transform parent)
+public void CreateNewBanner(Transform parent)
     {
         if (newTagPrefab != null)
         {

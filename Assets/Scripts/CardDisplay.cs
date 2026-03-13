@@ -24,6 +24,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [Tooltip("Se marcado, usa o componente Outline do Unity para criar uma borda simples (senão, usa a imagem 'outlineImage').")]
     public bool useSimpleOutline = true;
     public bool enableHoverOutline = true;
+    public bool useSimpleHover = false; // Se true, usa apenas hoverColor simples
     public Color hoverColor = Color.yellow;
     public Color tributeColor = new Color(0f, 0.6f, 1f); // Azul ciano brilhante
     public Color attackColor = Color.red;
@@ -120,25 +121,22 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             }
         }
 
-        // AUTO-FIX: Se cardImage não estiver atribuído, tenta encontrar automaticamente
+        // --- FIX: Lógica simplificada e mais robusta para encontrar a imagem da carta ---
         if (cardImage == null)
         {
-            // 1. Tenta achar o filho "Art" (Padrão novo)
-            Transform art = transform.Find("Art");
-            if (art != null)
+            cardImage = GetComponentInChildren<RawImage>(true);
+            if (cardImage == null)
             {
-                cardImage = art.GetComponent<RawImage>();
-                // FIX EXTRA: Se o objeto "Art" existe mas está sem o componente RawImage, adiciona agora
-                if (cardImage == null) cardImage = art.gameObject.AddComponent<RawImage>();
+                 Debug.LogError($"[CardDisplay] Crítico: Nenhum componente 'RawImage' encontrado nos filhos do objeto '{gameObject.name}'. A arte da carta não pode ser exibida.");
             }
-
-            // 2. Se não achou, tenta pegar do próprio objeto (Padrão antigo) ou qualquer filho
-            if (cardImage == null) cardImage = GetComponentInChildren<RawImage>();
         }
 
         // FIX: Garante que a imagem da carta não bloqueie o mouse (para o Hover no pai funcionar)
-        if (cardImage != null)
+        if (cardImage != null && cardImage.gameObject != this.gameObject)
+        {
+             // Apenas desativa o raycast se a imagem for um objeto filho, para não desativar o clique no pai.
             cardImage.raycastTarget = false;
+        }
 
         // FIX: Configura a Borda para esticar na carta toda e não bloquear cliques
         if (outlineImage != null)
@@ -655,7 +653,14 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 if (outline == null) outline = gameObject.AddComponent<Outline>();
 
                 // Usa a cor do tema se disponível, senão usa a cor local
-                outline.effectColor = (GameManager.Instance != null) ? (isPlayerCard ? GameManager.Instance.playerHoverColor : GameManager.Instance.opponentHoverColor) : hoverColor;
+                if (useSimpleHover)
+                {
+                    outline.effectColor = hoverColor;
+                }
+                else
+                {
+                    outline.effectColor = (GameManager.Instance != null) ? (isPlayerCard ? GameManager.Instance.playerHoverColor : GameManager.Instance.opponentHoverColor) : hoverColor;
+                }
                 outline.effectDistance = new Vector2(4, -4); // Espessura da borda
                 // FIX: Usa o alpha do gráfico (sprite arredondado) para desenhar a borda
                 outline.useGraphicAlpha = true;
@@ -670,8 +675,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
 
         // --- Efeito de Subir (Apenas Mão) ---
-        // Verifica se é interativo E se o hover está habilitado no GameManager
-        if (isInteractable && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect)
+        // Verifica se é interativo E se o hover está habilitado no GameManager E não é hover simples (deck)
+        if (isInteractable && !useSimpleHover && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect)
         {
             // FIX: Usa Canvas Sorting para trazer para frente visualmente sem recalcular o Layout
             canvas.overrideSorting = true;
@@ -727,7 +732,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
 
         // --- Remove Efeito de Subir ---
-        if (isInteractable && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect)
+        if (isInteractable && !useSimpleHover && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect)
         {
             // FIX: Reseta o Canvas e a Escala
             canvas.overrideSorting = false;
