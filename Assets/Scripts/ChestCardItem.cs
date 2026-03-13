@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System.Linq;
 using UnityEngine.EventSystems;
 using System.Collections.Generic; // Adicionado para resolver o erro CS0246
 
@@ -31,39 +30,12 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
 
     private DeckBuilderManager manager;
 
-        void Awake()
+    void Awake()
     {
-    manager = DeckBuilderManager.Instance;
-
-    // Auto-assignment using a more robust method that searches all children.
-    if (cardArtImage == null) cardArtImage = GetComponentsInChildren<RawImage>(true).FirstOrDefault(img => img.name == "Art");
-
-    var allTexts = GetComponentsInChildren<TextMeshProUGUI>(true);
-    if (cardNameText == null) cardNameText = allTexts.FirstOrDefault(txt => txt.name == "CardNameText");
-    if (cardStatsText == null) cardStatsText = allTexts.FirstOrDefault(txt => txt.name == "CardStatsText");
-    if (quantCardText == null) quantCardText = allTexts.FirstOrDefault(txt => txt.name == "QuantCard");
-    if (monsterLvlText == null) monsterLvlText = allTexts.FirstOrDefault(txt => txt.name == "MonsterLvl");
-
-    var allImages = GetComponentsInChildren<Image>(true);
-    if (attributeIcon == null) attributeIcon = allImages.FirstOrDefault(img => img.name == "AttributeIcon");
-    if (raceIcon == null) raceIcon = allImages.FirstOrDefault(img => img.name == "RaceIcon");
-    if (typeIcon == null) typeIcon = allImages.FirstOrDefault(img => img.name == "TypeIcon");
-    if (subTypeIcon == null) subTypeIcon = allImages.FirstOrDefault(img => img.name == "SubTypeIcon");
-
-    // Array de estrelas
-    if (stars == null || stars.Length == 0)
-    {
-        List<GameObject> starList = new List<GameObject>();
-        for (int i = 1; i <= 12; i++)
-        {
-            Transform starTransform = GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == $"Star{i:00}");
-            if (starTransform != null) starList.Add(starTransform.gameObject);
-        }
-        stars = starList.ToArray();
-    }
+        manager = DeckBuilderManager.Instance;
     }
 
-        public void Setup(CardData card, int available, bool newFlag, bool inDeck)
+    public void Setup(CardData card, int available, bool newFlag, bool inDeck)
     {
         cardData = card;
         availableCopies = available;
@@ -73,11 +45,7 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
         // --- Arte da carta ---
         if (cardArtImage != null && GameManager.Instance != null)
         {
-            // Carrega a textura de forma assíncrona? Para performance, podemos carregar同步? 
-            // Mas para 2000+ cartas, o ideal é carregar sob demanda ou usar sprites.
-            // Por enquanto, usamos o CardDisplay ou carregamento simples.
-            // Vamos usar o mesmo método do CardDisplay, mas de forma simplificada:
-            StartCoroutine(LoadArt(card.image_filename));
+            StartCoroutine(LoadArtWithCache(card.image_filename));
         }
 
         // --- Nome ---
@@ -93,9 +61,9 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
         if (cg == null) cg = gameObject.AddComponent<CanvasGroup>();
         cg.alpha = availableCopies > 0 ? 1f : 0.5f;
         cg.interactable = availableCopies > 0;
-        cg.blocksRaycasts = true; // Sempre permite hover para mostrar no cardviewer
+        cg.blocksRaycasts = availableCopies > 0;
 
-                        // --- Configurar ícones e textos conforme o tipo ---
+        // --- Configurar ícones e textos conforme o tipo ---
         bool isMonster = card.type.Contains("Monster");
 
         if (isMonster)
@@ -112,23 +80,13 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
             }
 
             // Atributo
-            if (attributeIcon != null)
+            if (attributeIcon != null && manager != null)
             {
-                if (manager != null && !string.IsNullOrEmpty(card.attribute))
+                var mapping = manager.attributeIcons.Find(x => x.name.Equals(card.attribute, System.StringComparison.OrdinalIgnoreCase));
+                if (mapping != null && mapping.icon != null)
                 {
-                    string cardAttribute = card.attribute.Trim();
-                    var mapping = manager.attributeIcons.Find(x => x.name.Equals(cardAttribute, System.StringComparison.OrdinalIgnoreCase));
-
-                    if (mapping != null && mapping.icon != null)
-                    {
-                        attributeIcon.sprite = mapping.icon;
-                        attributeIcon.enabled = true;
-                    }
-                    else
-                    {
-                        attributeIcon.enabled = false;
-                        Debug.LogWarning($"[ChestCardItem] Ícone de atributo não encontrado para '{cardAttribute}'. Verifique se o nome do ícone corresponde exatamente no DeckBuilderManager.");
-                    }
+                    attributeIcon.sprite = mapping.icon;
+                    attributeIcon.enabled = true;
                 }
                 else
                 {
@@ -139,14 +97,16 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
             // Raça
             if (raceIcon != null && manager != null)
             {
-                string cardRace = card.race?.Trim() ?? "";
-                var mapping = manager.raceIcons.Find(x => x.name.Equals(cardRace, System.StringComparison.OrdinalIgnoreCase));
+                var mapping = manager.raceIcons.Find(x => x.name.Equals(card.race, System.StringComparison.OrdinalIgnoreCase));
                 if (mapping != null && mapping.icon != null)
                 {
                     raceIcon.sprite = mapping.icon;
                     raceIcon.enabled = true;
                 }
-                else { raceIcon.enabled = false; }
+                else
+                {
+                    raceIcon.enabled = false;
+                }
             }
 
             // Desativa ícones de Spell/Trap
@@ -163,7 +123,7 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
                 }
             }
         }
-                else // Spell / Trap
+        else // Spell / Trap
         {
             // Limpa stats
             if (cardStatsText != null) cardStatsText.text = "";
@@ -192,8 +152,7 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
             if (subTypeIcon != null && manager != null && !string.IsNullOrEmpty(card.property) && card.property != "Normal")
             {
                 subTypeIcon.gameObject.SetActive(true);
-                string cardProperty = card.property.Trim();
-                var mapping = manager.subTypeIcons.Find(x => x.name.Equals(cardProperty, System.StringComparison.OrdinalIgnoreCase));
+                var mapping = manager.subTypeIcons.Find(x => x.name.Equals(card.property, System.StringComparison.OrdinalIgnoreCase));
                 if (mapping != null && mapping.icon != null)
                 {
                     subTypeIcon.sprite = mapping.icon;
@@ -225,30 +184,41 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
             {
                 manager.CreateNewBanner(card2D);
             }
-                }
+        }
     }
 
-    private System.Collections.IEnumerator LoadArt(string imagePath)
+    private System.Collections.IEnumerator LoadArtWithCache(string imagePath)
     {
         if (string.IsNullOrEmpty(imagePath) || cardArtImage == null) yield break;
 
+        Texture2D cachedTex;
+        // 1. Tenta pegar do cache primeiro
+        if (manager != null && manager.TryGetArtFromCache(cardData.id, out cachedTex))
+        {
+            cardArtImage.texture = cachedTex;
+            yield break;
+        }
+
+        // 2. Se não estiver no cache, carrega da web/disco
         string fullPath = System.IO.Path.Combine(Application.streamingAssetsPath, imagePath);
         string url = "file://" + fullPath;
-        // Escapa caracteres especiais
         try { url = new System.Uri(fullPath).AbsoluteUri; } catch { }
 
         using (UnityEngine.Networking.UnityWebRequest uwr = UnityEngine.Networking.UnityWebRequestTexture.GetTexture(url))
         {
             yield return uwr.SendWebRequest();
 
-            if (uwr.result == UnityEngine.Networking.UnityWebRequest.Result.Success)
+            if (uwr.result == UnityEngine.Networking.UnityWebRequest.Result.Success && cardArtImage != null)
             {
                 Texture2D tex = UnityEngine.Networking.DownloadHandlerTexture.GetContent(uwr);
                 cardArtImage.texture = tex;
+                // 3. Adiciona ao cache para uso futuro
+                if (manager != null) manager.AddArtToCache(cardData.id, tex);
             }
             else
             {
                 Debug.LogWarning($"Falha ao carregar arte da carta: {imagePath}");
+                cardArtImage.texture = null; // Limpa a textura em caso de falha
             }
         }
     }

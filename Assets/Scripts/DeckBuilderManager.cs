@@ -114,10 +114,18 @@ public class DeckBuilderManager : MonoBehaviour
     private List<CardData> extraDeck = new List<CardData>();
     private List<CardData> currentTrunk = new List<CardData>();
 
+    // Performance cache
+    private Dictionary<string, Texture2D> artCache = new Dictionary<string, Texture2D>();
+
     // Conjunto de IDs de cartas nos decks para verificação rápida da tag "NEW".
     private HashSet<string> cardIDsInDecks = new HashSet<string>();
 
     private bool hasUnsavedChanges = false;
+
+    [Header("Pooling")]
+    [Tooltip("Tamanho inicial do pool de itens do chest para performance.")]
+    public int initialPoolSize = 50;
+    private List<GameObject> chestItemPool = new List<GameObject>();
 
     private const int MIN_MAIN = 40;
     private const int MAX_MAIN = 60;
@@ -268,6 +276,28 @@ public class DeckBuilderManager : MonoBehaviour
 
         // Configura as zonas de drop
         SetupDropZones();
+
+        // Inicializa o pool de itens do chest
+        InitializeChestItemPool();
+    }
+
+    void InitializeChestItemPool()
+    {
+        if (cardChestItemPrefab == null) return;
+
+        // Clear existing pool
+        foreach (var item in chestItemPool)
+        {
+            if (item != null) Destroy(item);
+        }
+        chestItemPool.Clear();
+
+        for (int i = 0; i < initialPoolSize; i++)
+        {
+            GameObject go = Instantiate(cardChestItemPrefab, trunkContent);
+            go.SetActive(false);
+            chestItemPool.Add(go);
+        }
     }
 
     void SetupDropZones()
@@ -301,6 +331,19 @@ void OnEnable()
     }
 
     LoadData();
+}
+
+void OnDisable()
+{
+    ClearArtCache();
+}
+
+private void ClearArtCache()
+{
+    foreach (var tex in artCache.Values)
+        if (tex != null) Destroy(tex);
+    artCache.Clear();
+    Debug.Log("[DeckBuilderManager] Cache de arte limpo.");
 }
 
 private void LoadData()
@@ -418,8 +461,12 @@ private void LoadData()
         }
 
         Debug.Log($"[DeckBuilder] Limpando {trunkContent.childCount} filhos do trunkContent");
-        // Limpa a lista de cartas do baú
-        foreach (Transform child in trunkContent) Destroy(child.gameObject);
+        // Desativa todos os itens do pool em vez de destruí-los
+        foreach (GameObject item in chestItemPool)
+        {
+            if (item != null)
+                item.SetActive(false);
+        }
 
         // --- LÓGICA DE FILTRO E ORDENAÇÃO ---
         string searchText = searchInput != null ? searchInput.text.ToLowerInvariant() : "";
@@ -502,33 +549,9 @@ private void LoadData()
             return;
         }
 
-        // Popula a UI com as cartas da página atual
-        Debug.Log($"[DeckBuilder] Populando UI com {paginatedGroups.Count} grupos de cartas");
-        foreach (var group in paginatedGroups)
-        {
-            CardData card = group.First();
-            int totalOwned = group.Count();
-            int copiesInDecks = deckCardCounts.GetValueOrDefault(card.id, 0);
-
-            GameObject go = Instantiate(cardChestItemPrefab, trunkContent);
-            Debug.Log($"[DeckBuilder] Instanciado item para carta {card.name}, totalOwned: {totalOwned}, copiesInDecks: {copiesInDecks}");
-            // Adiciona LayoutElement para altura fixa nos itens do chest
-            LayoutElement le = go.GetComponent<LayoutElement>();
-            if (le == null) le = go.AddComponent<LayoutElement>();
-            le.preferredHeight = 120f; // Altura preferida para cada item (ajuste se necessário)
-            le.flexibleHeight = 0f; // Não flexível
-            // Configura os detalhes e interações do item
-            SetupChestItem(go, card, totalOwned, copiesInDecks);
-
-            // Adiciona DeckDragHandler para permitir drag do baú
-            DeckDragHandler drag = go.GetComponent<DeckDragHandler>();
-            if (drag == null) drag = go.AddComponent<DeckDragHandler>();
-            drag.cardData = card;
-            drag.sourceZone = DeckZoneType.Trunk;
-        }
-        Debug.Log($"[DeckBuilder] TrunkContent agora tem {trunkContent.childCount} filhos");
-
-        // Garante que o Content tenha ContentSizeFitter para o scroll funcionar
+                  // Popula a UI com as cartas da página atual (assíncrono)
+          Debug.Log($"[DeckBuilder] Populando UI com {paginatedGroups.Count} grupos de cartas (assíncrono)");
+          StartCoroutine(PopulateChestAsync(paginatedGroups, deckCardCounts));
         ContentSizeFitter fitter = trunkContent.GetComponent<ContentSizeFitter>();
         if (fitter == null) 
         {
@@ -551,36 +574,25 @@ private void LoadData()
         vlg.childForceExpandWidth = true;
         vlg.childForceExpandHeight = false;
 
-        Debug.Log($"[DeckBuilder] ContentSizeFitter e VerticalLayoutGroup configurados");
-
-        // Move o DeckDropZone para dentro do Content para não interferir no scroll
-        Transform viewport = trunkContent.parent;
-        Transform dropZone = viewport.Find("Image"); // Assumindo que o DeckDropZone é o "Image" no Viewport
-        if (dropZone != null)
-        {
-            dropZone.SetParent(trunkContent, false);
-            RectTransform rt = dropZone.GetComponent<RectTransform>();
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.sizeDelta = Vector2.zero;
-            rt.anchoredPosition = Vector2.zero;
-            // Garante que fique atrás dos itens
-            dropZone.SetAsFirstSibling();
-        }
-
-        // Linka o Scrollbar ao ScrollRect para o scroll funcionar
-        Transform scrollView = viewport.parent;
-        ScrollRect sr = scrollView.GetComponent<ScrollRect>();
+        // Garante que o ScrollRect esteja configurado para rolar o conteúdo
+        ScrollRect sr = trunkContent.GetComponentInParent<ScrollRect>();
         if (sr != null)
         {
             sr.content = trunkContent.GetComponent<RectTransform>();
             sr.vertical = true;
-            Transform scrollbar = scrollView.Find("Scrollbar");
-            if (scrollbar != null)
+            sr.horizontal = false;
+            sr.scrollSensitivity = 30f; // Adjust sensitivity as needed for mouse wheel
+
+            // Garante que a barra de rolagem esteja vinculada
+            if (sr.verticalScrollbar == null)
             {
-                sr.verticalScrollbar = scrollbar.GetComponent<Scrollbar>();
+                // Tenta encontrar a scrollbar como filha do objeto ScrollView
+                Scrollbar scrollbar = sr.transform.GetComponentInChildren<Scrollbar>();
+                if (scrollbar != null) sr.verticalScrollbar = scrollbar;
             }
         }
+
+        Debug.Log($"[DeckBuilder] ContentSizeFitter, VerticalLayoutGroup e ScrollRect configurados");
     }
 
   // Método auxiliar para debug da hierarquia
@@ -594,6 +606,21 @@ private void LoadData()
         LogHierarchy(transform.GetChild(i), depth + 1);
     }
 }
+
+    // --- Métodos de Cache de Arte ---
+    public bool TryGetArtFromCache(string cardId, out Texture2D texture)
+    {
+        return artCache.TryGetValue(cardId, out texture);
+    }
+
+    public void AddArtToCache(string cardId, Texture2D texture)
+    {
+        if (!artCache.ContainsKey(cardId))
+        {
+            artCache.Add(cardId, texture);
+        }
+    }
+
 void SetupChestItem(GameObject go, CardData card, int totalOwned, int copiesInDecks)
 {
     // DEBUG: Iniciando SetupChestItem
@@ -1001,9 +1028,47 @@ public void CreateNewBanner(Transform parent)
         if (currentPage < totalPages) { currentPage++; RefreshTrunkUI(); }
     }
 
-    public void PrevPage()
-    {
-        if (currentPage > 1) { currentPage--; RefreshTrunkUI(); }
+          public void PrevPage()
+      {
+          if (currentPage > 1) { currentPage--; RefreshTrunkUI(); }
+      }
+  
+      // Método para carregar cartas de forma assíncrona (performance)
+      private System.Collections.IEnumerator PopulateChestAsync(List<System.Linq.IGrouping<string, CardData>> paginatedGroups, System.Collections.Generic.Dictionary<string, int> deckCardCounts)
+      {
+        int batchSize = 10; // Processa 10 cartas por frame para evitar picos de lag
+        int poolIndex = 0;
+
+        for (int i = 0; i < paginatedGroups.Count; i++)
+        {
+            var group = paginatedGroups[i];
+            CardData card = group.First();
+            int totalOwned = group.Count();
+            int copiesInDecks = deckCardCounts.GetValueOrDefault(card.id, 0);
+
+            GameObject go;
+            if (poolIndex < chestItemPool.Count)
+            {
+                go = chestItemPool[poolIndex];
+            }
+            else
+            {
+                go = Instantiate(cardChestItemPrefab, trunkContent);
+                chestItemPool.Add(go);
+            }
+            poolIndex++;
+
+            go.SetActive(true);
+            go.transform.SetAsLastSibling();
+
+            SetupChestItem(go, card, totalOwned, copiesInDecks);
+
+            if (i % batchSize == 0)
+                yield return null;
+        }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(trunkContent.GetComponent<RectTransform>());
+        Debug.Log($"[DeckBuilder] Carregamento assíncrono concluído: {paginatedGroups.Count} cartas");
     }
 }
 public enum DeckZoneType { Trunk, Main, Side, Extra }
