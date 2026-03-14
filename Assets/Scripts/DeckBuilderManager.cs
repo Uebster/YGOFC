@@ -489,10 +489,18 @@ private void LoadData()
     LoadCurrentDeckFromManager();
     LoadTrunk();
 
-    RefreshAllUI();
+    // A UI é atualizada em uma corrotina para garantir que o layout do Unity
+    // tenha tempo de calcular as dimensões corretas, corrigindo o bug do scroll.
+    StartCoroutine(RefreshAllUIAfterFrame());
+
     UpdateFilterButtonsVisuals();
     hasUnsavedChanges = false;
 }
+    private IEnumerator RefreshAllUIAfterFrame()
+    {
+        yield return new WaitForEndOfFrame();
+        RefreshAllUI();
+    }
 
     void LoadCurrentDeckFromManager()
     {
@@ -579,7 +587,7 @@ private void LoadData()
         CustomDeckLayout customLayout = container.GetComponent<CustomDeckLayout>();
         if (customLayout != null)
         {
-            customLayout.UpdateLayout();
+            customLayout.RefreshLayout();
         }
     }
 
@@ -621,7 +629,7 @@ private void LoadData()
                 
                 string cardType = card.type;
                 if (activeFilters["Normal"] && cardType == "Normal Monster") return true;
-                if (activeFilters["Effect"] && cardType == "Effect Monster") return true;
+                if (activeFilters["Effect"] && cardType.Contains("Effect Monster")) return true;
                 if (activeFilters["Ritual"] && cardType.Contains("Ritual")) return true;
                 if (activeFilters["Fusion"] && cardType.Contains("Fusion")) return true;
                 if (activeFilters["Spell"] && cardType.Contains("Spell")) return true;
@@ -1114,7 +1122,22 @@ public void CreateNewBanner(Transform parent)
     {
         if (activeFilters.ContainsKey(filterKey))
         {
-            activeFilters[filterKey] = !activeFilters[filterKey];
+            // Verifica se o filtro que estamos clicando já estava ativo.
+            bool wasActive = activeFilters[filterKey];
+
+            // Primeiro, desliga todos os filtros para garantir exclusividade.
+            var keys = new List<string>(activeFilters.Keys);
+            foreach (var key in keys)
+            {
+                activeFilters[key] = false;
+            }
+
+            // Se o filtro clicado NÃO estava ativo, nós o ativamos.
+            // Se ele JÁ estava ativo, ele permanecerá desligado, como todos os outros.
+            if (!wasActive)
+            {
+                activeFilters[filterKey] = true;
+            }
         }
         UpdateFilterButtonsVisuals();
         RefreshTrunkUI();

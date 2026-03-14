@@ -124,7 +124,7 @@ A UI agora fornece uma contagem detalhada dos tipos de carta em cada deck (Princ
 
 ### 1. Filtragem e Ordenação
 O `DeckBuilderManager` gerencia uma lista de cartas do baú (`currentTrunk`) e a re-exibe conforme os filtros e ordenações são aplicados.
-*   **Filtros de Tipo:** Botões como *Normal, Effect, Spell, Trap, Ritual, Fusion* funcionam como "toggles". Se ativos, mostram aquele tipo de carta. Múltiplos filtros podem estar ativos simultaneamente.
+*   **Filtros de Tipo:** Botões como *Normal, Effect, Spell, Trap, Ritual, Fusion* são mutuamente exclusivos. Apenas um filtro de tipo pode estar ativo por vez. Clicar em um filtro ativo o desativa, mostrando todas as cartas novamente.
 *   **Ordenação (Sort):**
     *   **ABC:** Ordena alfabeticamente pelo nome. Clicar novamente inverte a ordem (A-Z <-> Z-A).
     *   **ATK:** Ordena por pontos de ataque. Clicar novamente inverte (Maior <-> Menor).

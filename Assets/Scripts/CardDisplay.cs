@@ -805,6 +805,15 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerClick(PointerEventData eventData)
     {
+        // FIX: Adiciona uma trava de segurança. Se não estivermos em um duelo ativo
+        // (o PhaseManager não existe ou o duelo acabou), o clique esquerdo não faz nada.
+        // O clique direito e o arrastar são gerenciados pelo DeckDragHandler.
+        if (PhaseManager.Instance == null || (GameManager.Instance != null && GameManager.Instance.isDuelOver))
+        {
+            // No DeckBuilder, o DeckDragHandler cuida das interações.
+            return;
+        }
+
         // Lógica para cartas em PILHAS (Cemitério, Extra Deck, Banidas)
         // Como ativamos o Raycast na carta do topo, ela intercepta o clique do PileDisplay.
         if (isInPile)

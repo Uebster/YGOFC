@@ -1,23 +1,30 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class CardImageDragProxy : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
+public class CardImageDragProxy : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler, IPointerEnterHandler
 {
     private DeckDragHandler parentDragHandler;
+    private ChestCardItem parentCardItem; // Para o hover
     private bool hasDragHandler = false;
 
-void Start()
-{
-    parentDragHandler = GetComponentInParent<DeckDragHandler>();
-    if (parentDragHandler == null)
-        Debug.LogError("CardImageDragProxy: DeckDragHandler não encontrado no pai!", this);
-    else
-        Debug.Log("CardImageDragProxy: DeckDragHandler encontrado!");
-}
+    void Awake()
+    {
+        parentDragHandler = GetComponentInParent<DeckDragHandler>();
+        parentCardItem = GetComponentInParent<ChestCardItem>();
+
+        if (parentDragHandler != null && parentCardItem != null)
+        {
+            hasDragHandler = true;
+        }
+        else
+        {
+            Debug.LogError("CardImageDragProxy: Não foi possível encontrar DeckDragHandler ou ChestCardItem no pai!", this);
+        }
+    }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (hasDragHandler && parentDragHandler != null)
+        if (hasDragHandler)
         {
             parentDragHandler.OnBeginDrag(eventData);
         }
@@ -25,7 +32,7 @@ void Start()
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (hasDragHandler && parentDragHandler != null)
+        if (hasDragHandler)
         {
             parentDragHandler.OnDrag(eventData);
         }
@@ -33,7 +40,7 @@ void Start()
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        if (hasDragHandler && parentDragHandler != null)
+        if (hasDragHandler)
         {
             parentDragHandler.OnEndDrag(eventData);
         }
@@ -41,9 +48,17 @@ void Start()
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (hasDragHandler && parentDragHandler != null)
+        if (hasDragHandler)
         {
             parentDragHandler.OnPointerClick(eventData);
+        }
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (hasDragHandler)
+        {
+            parentCardItem.OnPointerEnter(eventData);
         }
     }
 }
