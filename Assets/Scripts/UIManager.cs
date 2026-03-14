@@ -31,6 +31,8 @@ public class UIManager : MonoBehaviour
     public GameObject deckBuilderScreen;
     public GameObject libraryMenu;       // Menu da Biblioteca
     public GameObject saveScreen;
+    public GameObject importScreen;      // Novo: Panel_Import
+    public GameObject exportScreen;      // Novo: Panel_Export
     public GameObject loadScreen;
     public GameObject deleteScreen;      // Novo: Tela de Deletar Save
     public GameObject libDuelistsScreen;
@@ -146,6 +148,8 @@ public class UIManager : MonoBehaviour
         if (deckBuilderScreen != null) deckBuilderScreen.SetActive(false);
         if (libraryMenu != null) libraryMenu.SetActive(false);
         if (saveScreen != null) saveScreen.SetActive(false);
+        if (importScreen != null) importScreen.SetActive(false);
+        if (exportScreen != null) exportScreen.SetActive(false);
         if (loadScreen != null) loadScreen.SetActive(false);
         if (deleteScreen != null) deleteScreen.SetActive(false); // Novo
         if (libDuelistsScreen != null) libDuelistsScreen.SetActive(false);
@@ -356,6 +360,30 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    // Chamado pelo botão de Importar no DeckBuilder
+    public void Btn_ShowImportPanel()
+    {
+        if (importScreen == null) return;
+        ShowScreen(importScreen);
+        DeckImportExportManager manager = importScreen.GetComponent<DeckImportExportManager>();
+        if (manager != null)
+        {
+            manager.Setup(DeckImportExportManager.MenuType.Import);
+        }
+    }
+
+    // Chamado pelo botão de Exportar no DeckBuilder
+    public void Btn_ShowExportPanel()
+    {
+        if (exportScreen == null) return;
+        ShowScreen(exportScreen);
+        DeckImportExportManager manager = exportScreen.GetComponent<DeckImportExportManager>();
+        if (manager != null)
+        {
+            manager.Setup(DeckImportExportManager.MenuType.Export);
+        }
+    }
+
     // Exibe uma mensagem simples (usa o modal de confirmação adaptado)
     public void ShowMessage(string message)
     {
@@ -465,6 +493,7 @@ public class UIManager : MonoBehaviour
     public void Btn_Campaign() { ShowScreen(campaignScreen); }
     public void Btn_Arcade() { ShowScreen(arcadeScreen); }
     public void Btn_BuildDeck() { ShowScreen(deckBuilderScreen); }
+    public void Btn_BackToDeckBuilder() { ShowScreen(deckBuilderScreen); }
     
     public void Btn_Library() { ShowScreen(libraryMenu); }
     // Sub-menu Library

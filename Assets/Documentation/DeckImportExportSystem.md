@@ -50,3 +50,8 @@ A persistência dos decks é gerenciada pelo sistema de save principal.
 *   Os botões `Btn_Import` e `Btn_Export` no `Panel_DeckBuilder` agora ativam o `Panel_ImportExport`.
 *   O `DeckBuilderManager` chama o método `Setup()` do `DeckImportExportManager` para configurar o modo correto (Importar ou Exportar).
 *   Foram adicionados os métodos públicos `ExportCurrentDeck(string deckName)` e `ImportDeck(string deckName)` para serem chamados pelo `DeckImportExportManager`, servindo como uma ponte entre a UI de import/export e a lógica de construção de decks.
+
+## Prefab do Slot de Deck
+*   **ImportExportItem** `[Image, Button, SaveSlotUI]`
+    *   **Name** `[TextMeshProUGUI]`
+    *   **Date** `[TextMeshProUGUI]`

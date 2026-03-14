@@ -68,7 +68,6 @@ public class DeckBuilderManager : MonoBehaviour
     public Button btnExit;
     public Button btnImport;
     public Button btnExport;
-    public GameObject importExportPanel; // O painel que contém os painéis de Import e Export
     
     [Header("Filter Buttons")]
     public Button btnSortABC;
@@ -287,15 +286,15 @@ public class DeckBuilderManager : MonoBehaviour
     void Start()
     {
         // Esconde o painel de import/export no início
-        if (importExportPanel != null)
-            importExportPanel.SetActive(false);
 
         // Adiciona listeners para os botões de ação principais
         btnSave?.onClick.AddListener(SaveDeck);
         btnExit?.onClick.AddListener(Exit);
 
-        // Adiciona listeners para os botões de filtro e ordenação
-        // Ordenação
+        // Adiciona listeners para os botões de Import/Export
+        btnImport?.onClick.AddListener(UIManager.Instance.Btn_ShowImportPanel);
+        btnExport?.onClick.AddListener(UIManager.Instance.Btn_ShowExportPanel);
+
         btnSortABC?.onClick.AddListener(() => SetSortType(SortType.ABC));
         btnSortAtk?.onClick.AddListener(() => SetSortType(SortType.Atk));
         btnSortDef?.onClick.AddListener(() => SetSortType(SortType.Def));
@@ -1007,28 +1006,6 @@ public void CreateNewBanner(Transform parent)
     }
 
     // --- SISTEMA DE IMPORTAÇÃO/EXPORTAÇÃO (INTERNO) ---
-
-    private void OnImportButtonClicked()
-    {
-        if (importExportPanel == null) return;
-        importExportPanel.SetActive(true);
-        DeckImportExportManager manager = importExportPanel.GetComponent<DeckImportExportManager>();
-        if (manager != null)
-        {
-            manager.Setup(DeckImportExportManager.MenuType.Import);
-        }
-    }
-
-    private void OnExportButtonClicked()
-    {
-        if (importExportPanel == null) return;
-        importExportPanel.SetActive(true);
-        DeckImportExportManager manager = importExportPanel.GetComponent<DeckImportExportManager>();
-        if (manager != null)
-        {
-            manager.Setup(DeckImportExportManager.MenuType.Export);
-        }
-    }
 
     public void ExportCurrentDeck(string deckName)
     {

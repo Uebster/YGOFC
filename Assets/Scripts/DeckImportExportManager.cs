@@ -16,11 +16,12 @@ public class DeckImportExportManager : MonoBehaviour
     [Header("Referências de UI")]
     public GameObject importPanel;
     public GameObject exportPanel;
+    public TextMeshProUGUI panelTitle; // Novo: Título do painel (Import/Export)
     public Button btnAction; // Botão principal (Import ou Export)
     public Button btnBack;
     public TMP_InputField inputDeckName; // Apenas para o painel de Export
     public Transform listContent;
-    public GameObject deckSlotPrefab; // Prefab para exibir um deck salvo
+    public GameObject deckSlotPrefab; // Prefab ImportExportItem
 
     private string selectedDeckName;
     private List<GameObject> spawnedSlots = new List<GameObject>();
@@ -35,18 +36,25 @@ public class DeckImportExportManager : MonoBehaviour
     {
         currentMenuType = menuType;
         gameObject.SetActive(true);
-
-        if (importPanel != null) importPanel.SetActive(menuType == MenuType.Import);
-        if (exportPanel != null) exportPanel.SetActive(menuType == MenuType.Export);
+        
+        // A visibilidade dos painéis agora é controlada pelo UIManager.
+        // Este script apenas configura o painel em que está.
 
         TextMeshProUGUI actionButtonText = btnAction?.GetComponentInChildren<TextMeshProUGUI>();
         if (actionButtonText != null)
         {
             actionButtonText.text = menuType.ToString();
         }
+        
+        if (panelTitle != null)
+        {
+            panelTitle.text = (menuType == MenuType.Import) ? "Import Deck" : "Export Deck";
+        }
 
         if (inputDeckName != null)
         {
+            // O campo de input só deve existir no painel de Export
+            inputDeckName.gameObject.SetActive(menuType == MenuType.Export);
             inputDeckName.text = "";
         }
 
@@ -55,7 +63,8 @@ public class DeckImportExportManager : MonoBehaviour
 
     private void ClosePanel()
     {
-        gameObject.SetActive(false);
+        // Pede ao UIManager para voltar para a tela anterior (DeckBuilder)
+        UIManager.Instance?.ShowScreen(UIManager.Instance.deckBuilderScreen);
     }
 
     private void PerformAction()
@@ -68,6 +77,12 @@ public class DeckImportExportManager : MonoBehaviour
                 DeckBuilderManager.Instance.ExportCurrentDeck(deckName);
                 RefreshList(); // Atualiza a lista para mostrar o novo deck salvo
                 inputDeckName.text = "";
+                UIManager.Instance?.ShowMessage($"Deck '{deckName}' exportado com sucesso!");
+            }
+            else
+            {
+                // Plano B: Informar erro se o nome estiver vazio
+                UIManager.Instance?.ShowMessage("Por favor, digite um nome para o deck antes de exportar.");
             }
         }
         else // Import
@@ -100,14 +115,19 @@ public class DeckImportExportManager : MonoBehaviour
         {
             GameObject slotGO = Instantiate(deckSlotPrefab, listContent);
             spawnedSlots.Add(slotGO);
-
-            // Assumindo que o prefab tem um TextMeshProUGUI e um Button
-            TextMeshProUGUI nameText = slotGO.GetComponentInChildren<TextMeshProUGUI>();
-            if (nameText != null)
+            
+            // Usa o SaveSlotUI para configurar o prefab
+            SaveSlotUI slotUI = slotGO.GetComponent<SaveSlotUI>();
+            if (slotUI != null)
             {
-                nameText.text = deckRecipe.deckName;
+                // Criamos um GameSaveData "falso" para reutilizar a lógica do SaveSlotUI
+                var fakeSaveData = new SaveLoadSystem.GameSaveData
+                {
+                    playerName = deckRecipe.deckName,
+                    lastPlayedTime = "" // Não precisamos de data aqui
+                };
+                slotUI.Setup(fakeSaveData, (data) => OnSlotClicked(data.playerName, slotGO), false);
             }
-
             Button slotButton = slotGO.GetComponent<Button>();
             if (slotButton != null)
             {
@@ -140,12 +160,11 @@ public class DeckImportExportManager : MonoBehaviour
     {
         foreach (GameObject slot in spawnedSlots)
         {
-            Image bgImage = slot.GetComponent<Image>();
-            TextMeshProUGUI nameText = slot.GetComponentInChildren<TextMeshProUGUI>();
-            if (bgImage != null && nameText != null)
+            SaveSlotUI slotUI = slot.GetComponent<SaveSlotUI>();
+            if (slotUI != null && slotUI.MyData != null)
             {
-                bool isSelected = nameText.text == selectedDeckName;
-                bgImage.color = isSelected ? selectedColor : defaultColor;
+                bool isSelected = slotUI.MyData.playerName == selectedDeckName;
+                slotUI.SetSelected(isSelected);
             }
         }
     }
