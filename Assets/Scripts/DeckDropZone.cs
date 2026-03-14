@@ -33,14 +33,6 @@ public class DeckDropZone : MonoBehaviour, IDropHandler
                 {
                     DeckBuilderManager.Instance?.RemoveCard(DeckDragHandler.currentDragged.cardData, DeckDragHandler.currentDragged.sourceZone);
                 }
-                else
-                {
-                    // Remove uma cópia do baú
-                    if (GameManager.Instance != null)
-                    {
-                        GameManager.Instance.playerTrunk.Remove(DeckDragHandler.currentDragged.cardData.id);
-                    }
-                }
                 DeckDragHandler.currentDragged.wasDropped = true;
             }
             else

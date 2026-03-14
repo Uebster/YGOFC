@@ -1,4 +1,4 @@
-# Sistema de Save/Load
+﻿# Sistema de Save/Load
 
 ## Visão Geral
 O sistema de Save/Load é composto por dois scripts principais: `SaveLoadSystem.cs` e `SaveLoadMenu.cs`. O primeiro lida com a lógica de salvar e carregar os dados em arquivos, enquanto o segundo gerencia a interface do usuário (UI) para apresentar e interagir com esses arquivos.
@@ -13,7 +13,7 @@ Este é um Singleton persistente (`DontDestroyOnLoad`) que atua como o back-end 
 *   **Serialização:** Converte os dados de jogo (progresso, decks, coleção) em formato JSON para serem salvos em disco.
 *   **Leitura de Arquivos:** Lê os arquivos `.save` do disco e os converte de volta para objetos C# (`GameSaveData`).
 *   **Gerenciamento de Dados:** Contém as estruturas de dados principais que são salvas, como `GameSaveData`, `LibrarySaveData` e `TrophySaveData`.
-*   **Operações de CRUD:** Fornece métodos públicos para `SaveGame`, `LoadGame`, `GetAllSaves` e `DeleteSave`.
+*   **Operações de CRUD:** Fornece métodos públicos para `SaveGame`, `LoadGame`, `GetAllSaves`, `DeleteSave` e para gerenciar receitas de decks.
 
 ### Estrutura de Dados (`GameSaveData`)
 A classe principal que representa um arquivo de save. Contém:
@@ -25,6 +25,14 @@ A classe principal que representa um arquivo de save. Contém:
 *   `mainDeck`, `sideDeck`, `extraDeck`: Listas de IDs das cartas nos respectivos decks.
 *   `libraryData`: Dados da biblioteca (cartas vistas, vitórias contra oponentes).
 *   `trophyData`: Conquistas e estatísticas do jogador.
+*   `savedDecks`: Uma lista de `DeckRecipe`, contendo todos os decks que o jogador exportou internamente.
+
+### Estrutura de Dados (`DeckRecipe`)
+Uma classe simples que armazena a "receita" de um deck salvo.
+*   `deckName`: O nome que o jogador deu ao deck.
+*   `mainDeckCardIDs`: Lista de IDs das cartas no deck principal.
+*   `sideDeckCardIDs`: Lista de IDs das cartas no deck lateral.
+*   `extraDeckCardIDs`: Lista de IDs das cartas no deck extra.
 
 ## Localização dos Arquivos
 *   **Caminho:** `Application.persistentDataPath` (uma pasta segura e específica do sistema operacional).
@@ -65,6 +73,15 @@ O script pode operar em três modos, definidos por um `enum` no Inspector:
 *   **Save (New):** Pede confirmação e chama `SaveGame(null)`.
 *   **Load:** Chama `LoadGame(selectedSave.saveID)` e transiciona para o menu principal do jogo.
 *   **Delete:** Pede confirmação e chama `DeleteSave(selectedSave.saveID)`, limpando a seleção e atualizando a lista.
+
+### 6. Funções de Import/Export (Novas)
+O `SaveLoadSystem` agora possui métodos para gerenciar as receitas de decks salvas no perfil do jogador.
+*   **`GetSavedDecks()`**: Retorna a lista de todas as `DeckRecipe` salvas no `currentSaveData`.
+*   **`SaveDeckRecipe(...)`**: Recebe um nome e as listas de cartas do deck atual, cria uma nova `DeckRecipe` e a salva (ou sobrescreve) na lista `savedDecks` do `currentSaveData`.
+*   **`LoadDeckFromRecipe(...)`**: Procura uma `DeckRecipe` pelo nome e retorna as listas de IDs de cartas.
+*   **`DeleteDeckRecipe(...)`**: Remove uma `DeckRecipe` da lista pelo nome.
+
+**Importante:** Após qualquer modificação nas receitas de deck (`SaveDeckRecipe` ou `DeleteDeckRecipe`), é crucial chamar `SaveGame()` para persistir essas alterações no arquivo `.save`.
 
 #### 6. Auto-Configuração (`Awake`)
 *   Para aumentar a robustez e facilitar o setup no editor, o método `Awake` procura automaticamente por referências essenciais da UI (como `listContent`, `mainActionButton`, `confirmationPopup`) usando `transform.Find()`. Isso reduz a chance de erros por referências não atribuídas no Inspector.

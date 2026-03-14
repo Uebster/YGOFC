@@ -6,7 +6,7 @@ using System.Linq;
 public class SaveLoadSystem : MonoBehaviour
 {
     public static SaveLoadSystem Instance;
-
+    private GameSaveData currentSaveData = new GameSaveData();
     // Dados em tempo de execução
     public LibrarySaveData libraryData = new LibrarySaveData();
     public TrophySaveData trophyData = new TrophySaveData();
@@ -81,6 +81,16 @@ public class SaveLoadSystem : MonoBehaviour
         public List<string> playerExtraDeckIDs; // For player's extra deck
         public LibrarySaveData libraryData;
         public TrophySaveData trophyData;
+        public List<DeckRecipe> savedDecks = new List<DeckRecipe>();
+    }
+
+    [System.Serializable]
+    public class DeckRecipe
+    {
+    public string deckName;
+    public List<string> mainDeckCardIDs = new List<string>();
+    public List<string> sideDeckCardIDs = new List<string>();
+    public List<string> extraDeckCardIDs = new List<string>();
     }
 
     public GameSaveData SaveGame(string saveID)
@@ -91,10 +101,15 @@ public class SaveLoadSystem : MonoBehaviour
             return null;
         }
 
-        GameSaveData data = new GameSaveData();
+        // Se for um novo jogo sem dados carregados, cria um novo container.
+        if (currentSaveData == null)
+            currentSaveData = new GameSaveData();
+
+        // Usa o currentSaveData como o objeto a ser populado e salvo.
+        GameSaveData data = currentSaveData;
 
         // Se saveID for nulo ou vazio, é um novo save. Gera um novo ID.
-        data.saveID = string.IsNullOrEmpty(saveID) ? $"{GameManager.Instance.playerName}_{System.DateTime.Now:yyyyMMdd_HHmmss}" : saveID;
+        data.saveID = string.IsNullOrEmpty(saveID) ? $"{GameManager.Instance.playerName}_{System.DateTime.Now:yyyyMMdd_HHmmss}" : saveID;        
         
         data.playerName = string.IsNullOrWhiteSpace(GameManager.Instance.playerName) ? "DUELIST" : GameManager.Instance.playerName;
         data.lastPlayedTime = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm");
@@ -117,6 +132,9 @@ public class SaveLoadSystem : MonoBehaviour
         string path = Path.Combine(Application.persistentDataPath, data.saveID + ".save");
         File.WriteAllText(path, json);
         
+        // Atualiza o save em memória
+        this.currentSaveData = data;
+
         Debug.Log($"Jogo salvo em: {path}");
         return data;
     }
@@ -128,6 +146,9 @@ public class SaveLoadSystem : MonoBehaviour
 
         string json = File.ReadAllText(path);
         GameSaveData data = JsonUtility.FromJson<GameSaveData>(json);
+
+        // Atualiza o save em memória
+        this.currentSaveData = data;
 
         // Aplica aos Gerentes
         GameManager.Instance.playerName = data.playerName;
@@ -245,6 +266,58 @@ public class SaveLoadSystem : MonoBehaviour
             Debug.Log($"[SaveLoadSystem] Troféu Desbloqueado: {trophyId}");
             // Aqui você pode chamar um evento de UI para mostrar o popup do troféu
         }
+    }
+
+    // --- DECK IMPORT/EXPORT ---
+
+    public List<DeckRecipe> GetSavedDecks()
+    {
+        if (currentSaveData == null) return new List<DeckRecipe>();
+        return currentSaveData.savedDecks;
+    }
+
+    public void SaveDeckRecipe(string deckName, List<CardData> mainDeck, List<CardData> sideDeck, List<CardData> extraDeck)
+    {
+        if (currentSaveData == null) return;
+
+        // Remove a receita antiga se já existir uma com o mesmo nome (sobrescrever)
+        currentSaveData.savedDecks.RemoveAll(d => d.deckName.Equals(deckName, System.StringComparison.OrdinalIgnoreCase));
+
+        DeckRecipe newRecipe = new DeckRecipe
+        {
+            deckName = deckName,
+            mainDeckCardIDs = mainDeck.Select(c => c.id).ToList(),
+            sideDeckCardIDs = sideDeck.Select(c => c.id).ToList(),
+            extraDeckCardIDs = extraDeck.Select(c => c.id).ToList()
+        };
+
+        currentSaveData.savedDecks.Add(newRecipe);
+    }
+
+    public bool LoadDeckFromRecipe(string deckName, out List<string> mainIDs, out List<string> sideIDs, out List<string> extraIDs)
+    {
+        mainIDs = new List<string>();
+        sideIDs = new List<string>();
+        extraIDs = new List<string>();
+
+        if (currentSaveData == null) return false;
+
+        DeckRecipe recipe = currentSaveData.savedDecks.FirstOrDefault(d => d.deckName.Equals(deckName, System.StringComparison.OrdinalIgnoreCase));
+
+        if (recipe != null)
+        {
+            mainIDs = recipe.mainDeckCardIDs;
+            sideIDs = recipe.sideDeckCardIDs;
+            extraIDs = recipe.extraDeckCardIDs;
+            return true;
+        }
+        return false;
+    }
+
+    public void DeleteDeckRecipe(string deckName)
+    {
+        if (currentSaveData == null) return;
+        currentSaveData.savedDecks.RemoveAll(d => d.deckName.Equals(deckName, System.StringComparison.OrdinalIgnoreCase));
     }
 
     public PlayerStatistics GetStats()

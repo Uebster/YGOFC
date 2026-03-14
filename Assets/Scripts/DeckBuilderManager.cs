@@ -66,6 +66,9 @@ public class DeckBuilderManager : MonoBehaviour
     [Header("UI References - Actions")]
     public Button btnSave;
     public Button btnExit;
+    public Button btnImport;
+    public Button btnExport;
+    public GameObject importExportPanel; // O painel que contém os painéis de Import e Export
     
     [Header("Filter Buttons")]
     public Button btnSortABC;
@@ -127,6 +130,12 @@ public class DeckBuilderManager : MonoBehaviour
     [Tooltip("Ícones para o SubTipo da carta (Equip, Continuous, Counter, etc.).")]
     public List<IconMapping> subTypeIcons;
 
+    // Dicionários para acesso rápido em runtime (Otimização)
+    [HideInInspector] public Dictionary<string, Sprite> attributeIconsDict;
+    [HideInInspector] public Dictionary<string, Sprite> raceIconsDict;
+    [HideInInspector] public Dictionary<string, Sprite> typeIconsDict;
+    [HideInInspector] public Dictionary<string, Sprite> subTypeIconsDict;
+
     private List<CardData> mainDeck = new List<CardData>();
     private List<CardData> sideDeck = new List<CardData>();
     private List<CardData> extraDeck = new List<CardData>();
@@ -145,10 +154,13 @@ public class DeckBuilderManager : MonoBehaviour
 
     private bool hasUnsavedChanges = false;
 
-    [Header("Pooling")]
+        [Header("Pooling")]
     [Tooltip("Tamanho inicial do pool de itens do chest para performance.")]
-    public int initialPoolSize = 50;
-    private List<GameObject> chestItemPool = new List<GameObject>();
+    public int initialPoolSize = 30;
+    
+    // Sistema de Pooling para melhor performance (Queue-based)
+    private Queue<GameObject> availableChestItems = new Queue<GameObject>();
+    private List<GameObject> activeChestItems = new List<GameObject>();
 
     private const int MIN_MAIN = 40;
     private const int MAX_MAIN = 60;
@@ -268,10 +280,16 @@ public class DeckBuilderManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
+        InitializeIconDictionaries();
+        InitializeChestItemPool(); // MOVIDO: Garante que o pool exista antes de OnEnable/Start
     }
 
     void Start()
     {
+        // Esconde o painel de import/export no início
+        if (importExportPanel != null)
+            importExportPanel.SetActive(false);
+
         // Adiciona listeners para os botões de ação principais
         btnSave?.onClick.AddListener(SaveDeck);
         btnExit?.onClick.AddListener(Exit);
@@ -306,9 +324,30 @@ public class DeckBuilderManager : MonoBehaviour
 
         // Configura as zonas de drop
         SetupDropZones();
+    }
 
-        // Inicializa o pool de itens do chest
-        InitializeChestItemPool();
+    // Novo método para otimização
+    private void InitializeIconDictionaries()
+    {
+        attributeIconsDict = new Dictionary<string, Sprite>(System.StringComparer.OrdinalIgnoreCase);
+        foreach (var mapping in attributeIcons)
+            if (!attributeIconsDict.ContainsKey(mapping.name))
+                attributeIconsDict.Add(mapping.name, mapping.icon);
+
+        raceIconsDict = new Dictionary<string, Sprite>(System.StringComparer.OrdinalIgnoreCase);
+        foreach (var mapping in raceIcons)
+            if (!raceIconsDict.ContainsKey(mapping.name))
+                raceIconsDict.Add(mapping.name, mapping.icon);
+
+        typeIconsDict = new Dictionary<string, Sprite>(System.StringComparer.OrdinalIgnoreCase);
+        foreach (var mapping in typeIcons)
+            if (!typeIconsDict.ContainsKey(mapping.name))
+                typeIconsDict.Add(mapping.name, mapping.icon);
+
+        subTypeIconsDict = new Dictionary<string, Sprite>(System.StringComparer.OrdinalIgnoreCase);
+        foreach (var mapping in subTypeIcons)
+            if (!subTypeIconsDict.ContainsKey(mapping.name))
+                subTypeIconsDict.Add(mapping.name, mapping.icon);
     }
 
     private void OnSearchInputChanged(string newText)
@@ -326,22 +365,67 @@ public class DeckBuilderManager : MonoBehaviour
         RefreshTrunkUI();
     }
 
-    void InitializeChestItemPool()
+        void InitializeChestItemPool()
     {
         if (cardChestItemPrefab == null) return;
 
-        // Clear existing pool
-        foreach (var item in chestItemPool) if (item != null) Destroy(item);
-        chestItemPool.Clear();
+        // Limpa pool antigo (destroi objetos)
+        foreach (var item in availableChestItems) if (item != null) Destroy(item);
+        availableChestItems.Clear();
+        activeChestItems.Clear();
 
-        // Pre-populate the pool
-        int poolSize = Mathf.Max(initialPoolSize, itemsPerPage);
+        int poolSize = Mathf.Max(initialPoolSize, itemsPerPage) + 5; // buffer
         for (int i = 0; i < poolSize; i++)
         {
             GameObject go = Instantiate(cardChestItemPrefab, trunkContent);
             go.SetActive(false);
-            chestItemPool.Add(go);
+
+            // Verifica se o componente existe (se não, já mostra erro)
+            if (go.GetComponent<ChestCardItem>() == null)
+            {
+                Debug.LogError($"[Pool] Prefab não tem ChestCardItem! Objeto {go.name} será destruído.", go);
+                Destroy(go);
+                continue;
+            }
+
+            availableChestItems.Enqueue(go);
         }
+        Debug.Log($"[Pool] Inicializado com {availableChestItems.Count} itens.");
+    }
+
+    /// <summary>
+    /// Obtém um item do pool ou cria um novo se necessário
+    /// </summary>
+    private GameObject GetPooledChestItem()
+    {
+        if (availableChestItems.Count > 0)
+        {
+            GameObject item = availableChestItems.Dequeue();
+            item.SetActive(true);
+            return item;
+        }
+        else
+        {
+            Debug.LogWarning("[Pool] Pool esgotado, instanciando novo item. Ajuste o tamanho do pool.");
+            GameObject go = Instantiate(cardChestItemPrefab, trunkContent);
+            if (go.GetComponent<ChestCardItem>() == null)
+            {
+                Debug.LogError("Novo item instanciado sem ChestCardItem!");
+                Destroy(go);
+                return null;
+            }
+            return go;
+        }
+    }
+
+    /// <summary>
+    /// Devolve um item ao pool para reutilização
+    /// </summary>
+    private void ReturnPooledChestItem(GameObject item)
+    {
+        if (item == null) return;
+        item.SetActive(false);
+        availableChestItems.Enqueue(item);
     }
 
     void SetupDropZones()
@@ -378,9 +462,14 @@ void OnEnable()
 }
 
 void OnDisable()
-{
-    ClearArtCache();
-}
+  {
+      ClearArtCache();
+      
+      // Limpa o pool de itens
+      foreach (var item in activeChestItems)
+          if (item != null) ReturnPooledChestItem(item);
+      activeChestItems.Clear();
+  }
 
 private void ClearArtCache()
 {
@@ -446,6 +535,7 @@ private void LoadData()
         RefreshDeckZone(sideDeckContent, sideDeck, DeckZoneType.Side);
         RefreshDeckZone(extraDeckContent, extraDeck, DeckZoneType.Extra);
 
+        // A atualização do Trunk agora é a última coisa a ser feita
         RefreshTrunkUI();
         UpdateCounts();
     }
@@ -505,8 +595,12 @@ private void LoadData()
             return;
         }
 
-        foreach (GameObject item in chestItemPool)
-            if (item != null && item.activeSelf) item.SetActive(false);
+                  // Devolve todos os itens ativos ao pool
+          foreach (var item in activeChestItems)
+          {
+              if (item != null) ReturnPooledChestItem(item);
+          }
+          activeChestItems.Clear();
 
         string searchText = searchInput != null ? searchInput.text.ToLowerInvariant() : "";
         bool anyFilterActive = activeFilters.Any(kvp => kvp.Value);
@@ -588,47 +682,53 @@ private void LoadData()
         OnScroll(Vector2.zero);
     }
 
-    private void OnScroll(Vector2 scrollPos)
-    {
-        if (!isVirtualScrollInitialized || trunkScrollRect == null || itemHeight <= 0) return;
+          private void OnScroll(Vector2 scrollPos)
+      {
+          if (!isVirtualScrollInitialized || trunkScrollRect == null || itemHeight <= 0) return;
 
-        foreach (var item in chestItemPool)
-        {
-            if (item != null && item.activeSelf) item.SetActive(false);
-        }
+          // --- 1. Recolher todos os itens atualmente ativos de volta ao pool ---
+          foreach (var item in activeChestItems)
+          {
+              if (item != null) ReturnPooledChestItem(item);
+          }
+          activeChestItems.Clear();
 
-        float viewportHeight = (trunkScrollRect.viewport as RectTransform).rect.height;
-        float scrollPosition = (trunkContent as RectTransform).anchoredPosition.y;
+          // --- 2. Calcular índices visíveis ---
+          float viewportHeight = (trunkScrollRect.viewport as RectTransform).rect.height;
+          float scrollPosition = (trunkContent as RectTransform).anchoredPosition.y;
 
-        int firstVisibleIndex = Mathf.Max(0, Mathf.FloorToInt(scrollPosition / itemHeight));
-        int lastVisibleIndex = Mathf.Min(filteredCardGroups.Count - 1, Mathf.CeilToInt((scrollPosition + viewportHeight) / itemHeight));
+          int firstVisibleIndex = Mathf.Max(0, Mathf.FloorToInt(scrollPosition / itemHeight));
+          int lastVisibleIndex = Mathf.Min(filteredCardGroups.Count - 1, Mathf.CeilToInt((scrollPosition + 
+viewportHeight) / itemHeight));
 
-        for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++)
-        {
-            if (i < 0 || i >= filteredCardGroups.Count) continue;
+          // --- 3. Para cada índice visível, obter item do pool, posicionar e configurar ---
+          for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++)
+          {
+              if (i < 0 || i >= filteredCardGroups.Count) continue;
 
-            GameObject itemGO = chestItemPool[i % chestItemPool.Count];
-            if (itemGO == null) continue;
-            
-            RectTransform itemRect = itemGO.GetComponent<RectTransform>();
-            itemRect.anchoredPosition = new Vector2(0, -i * itemHeight);
+              GameObject itemGO = GetPooledChestItem();
+              if (itemGO == null) continue;
 
-            var group = filteredCardGroups[i];
-            CardData card = group.First();
+              // Posiciona
+              RectTransform itemRect = itemGO.GetComponent<RectTransform>();
+              itemRect.anchoredPosition = new Vector2(0, -i * itemHeight);
 
-            // Lógica para Free Build: a quantidade "possuída" é sempre o limite máximo permitido.
-            int limit = banList.ContainsKey(card.name) ? banList[card.name] : MAX_COPIES;
-            if (GameManager.Instance != null && GameManager.Instance.disableBanlist) limit = MAX_COPIES;
-            int totalOwned = limit;
+              // Configura os dados da carta
+              var group = filteredCardGroups[i];
+              CardData card = group.First();
 
-            int copiesInDecks = mainDeck.Count(c => c.id == card.id) + sideDeck.Count(c => c.id == card.id) + extraDeck.Count(c => c.id == card.id);
-            int availableCopies = totalOwned - copiesInDecks;
+              int limit = banList.ContainsKey(card.name) ? banList[card.name] : MAX_COPIES;
+              if (GameManager.Instance != null && GameManager.Instance.disableBanlist) limit = MAX_COPIES;
+              int totalOwned = limit;
 
-            // O setup agora usa a contagem de cópias disponíveis
-            SetupChestItem(itemGO, card, availableCopies, copiesInDecks);
-            itemGO.SetActive(true);
-        }
-    }
+              int copiesInDecks = mainDeck.Count(c => c.id == card.id) + sideDeck.Count(c => c.id == card.id) + 
+extraDeck.Count(c => c.id == card.id);
+              int availableCopies = totalOwned - copiesInDecks;
+
+              SetupChestItem(itemGO, card, availableCopies, copiesInDecks);
+              activeChestItems.Add(itemGO);
+          }
+      }
 
     void SetupChestItem(GameObject go, CardData card, int availableCopies, int copiesInDecks)
     {
@@ -882,8 +982,84 @@ public void CreateNewBanner(Transform parent)
     /// </summary>
     public void TriggerInvalidMoveFeedback(DeckZoneType zone)
     {
-        // Lógica para piscar o painel da zona inválida
-        Debug.Log($"Movimento inválido para a zona: {zone}");
+        Image zoneImage = null;
+        switch (zone)
+        {
+            case DeckZoneType.Main:
+                zoneImage = mainDeckContent.GetComponentInParent<Image>();
+                break;
+            case DeckZoneType.Side:
+                zoneImage = sideDeckContent.GetComponentInParent<Image>();
+                break;
+            case DeckZoneType.Extra:
+                zoneImage = extraDeckContent.GetComponentInParent<Image>();
+                break;
+        }
+
+        if (zoneImage != null)
+        {
+            StartCoroutine(FlashImageColor(zoneImage, invalidMoveColor, flashDuration));
+        }
+        else
+        {
+            Debug.LogWarning($"Movimento inválido para a zona: {zone}, mas não foi possível encontrar a imagem do painel para piscar.");
+        }
+    }
+
+    // --- SISTEMA DE IMPORTAÇÃO/EXPORTAÇÃO (INTERNO) ---
+
+    private void OnImportButtonClicked()
+    {
+        if (importExportPanel == null) return;
+        importExportPanel.SetActive(true);
+        DeckImportExportManager manager = importExportPanel.GetComponent<DeckImportExportManager>();
+        if (manager != null)
+        {
+            manager.Setup(DeckImportExportManager.MenuType.Import);
+        }
+    }
+
+    private void OnExportButtonClicked()
+    {
+        if (importExportPanel == null) return;
+        importExportPanel.SetActive(true);
+        DeckImportExportManager manager = importExportPanel.GetComponent<DeckImportExportManager>();
+        if (manager != null)
+        {
+            manager.Setup(DeckImportExportManager.MenuType.Export);
+        }
+    }
+
+    public void ExportCurrentDeck(string deckName)
+    {
+        if (string.IsNullOrWhiteSpace(deckName))
+        {
+            // Idealmente, mostrar uma mensagem de erro na UI
+            Debug.LogError("O nome do deck não pode ser vazio.");
+            return;
+        }
+        SaveLoadSystem.Instance.SaveDeckRecipe(deckName, mainDeck, sideDeck, extraDeck);
+        // Salva o jogo para persistir a nova receita de deck
+        SaveLoadSystem.Instance.SaveGame(GameManager.Instance.currentSaveID);
+        Debug.Log($"Deck '{deckName}' exportado para o save.");
+    }
+
+    public void ImportDeck(string deckName)
+    {
+        if (SaveLoadSystem.Instance.LoadDeckFromRecipe(deckName, out var mainIDs, out var sideIDs, out var extraIDs))
+        {
+            mainDeck = mainIDs.Select(id => GameManager.Instance.cardDatabase.GetCardById(id)).Where(c => c != null).ToList();
+            sideDeck = sideIDs.Select(id => GameManager.Instance.cardDatabase.GetCardById(id)).Where(c => c != null).ToList();
+            extraDeck = extraIDs.Select(id => GameManager.Instance.cardDatabase.GetCardById(id)).Where(c => c != null).ToList();
+
+            hasUnsavedChanges = true;
+            RefreshAllUI();
+            Debug.Log($"Deck '{deckName}' importado com sucesso.");
+        }
+        else
+        {
+            Debug.LogError($"Não foi possível encontrar a receita do deck '{deckName}'.");
+        }
     }
 
     /// <summary>
@@ -988,5 +1164,13 @@ public void CreateNewBanner(Transform parent)
           if (currentPage > 1) { currentPage--; RefreshTrunkUI(); }
       }
 
+    private IEnumerator FlashImageColor(Image image, Color flashColor, float duration)
+    {
+        if (image == null) yield break;
+        Color originalColor = image.color;
+        image.color = flashColor;
+        yield return new WaitForSeconds(duration);
+        if (image != null) image.color = originalColor; // Verifica se o objeto ainda existe
+    }
 }
 public enum DeckZoneType { Trunk, Main, Side, Extra }

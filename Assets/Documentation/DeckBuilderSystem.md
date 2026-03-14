@@ -26,10 +26,10 @@ Abaixo está a estrutura hierárquica recomendada dos objetos na cena Unity para
         *   **Save Deck** `[TextMeshProUGUI]`
     *   **Btn_BackToMenu** `[Image, Button]`
         *   **Back** `[TextMeshProUGUI]`
-    *   **Btn_ImportDeck** `[Image, Button]`
-        *   **Import Deck** `[TextMeshProUGUI]`
-    *   **Btn_ExportDeck** `[Image, Button]`
-        *   **Export Deck** `[TextMeshProUGUI]`
+    *   **Btn_Import** `[Image, Button]`
+        *   **Import** `[TextMeshProUGUI]`
+    *   **Btn_Export** `[Image, Button]`
+        *   **Export** `[TextMeshProUGUI]`
     *   **Deck Construction** `[TextMeshProUGUI]`
     *   **Panel_Chest** `[Image]`
         *   **Panel_SearchCardInput** `[Image]`
@@ -201,10 +201,11 @@ O script expõe várias propriedades públicas para que você possa ajustar o la
 ## Estrutura do Prefab do Baú (Card_PrefabChestList)
 Este prefab representa um único item na lista rolável do baú. Sua estrutura é projetada para exibir um resumo completo da carta.
 
-*   **Card_PrefabChestList** `[Image, LayoutElement, DeckDragHandler]`
-    *   **Card2D** `[CardDisplay, Mask, Image, CardImageDragProxy]` - A imagem da carta em si. `CardDisplay` renderiza a arte.
+*   **Card_PrefabChestList** `[Image, LayoutElement, DeckDragHandler, ChestCardItem]` - Objeto raiz do prefab.
+    *   **Card2D** `[Image, CardImageDragProxy]` - A imagem da carta em si. Deve ter `Raycast Target` ativo para o drag and drop funcionar.
         *   **Art** `[RawImage]`
     *   **QuantCard** `[TextMeshProUGUI]` - Exibe a quantidade disponível para uso (ex: "x3").
+    *   *(Outros componentes de texto e ícones devem ter `Raycast Target` desativado para não interferir com o drag and drop da carta)*
     *   **CardStatsText** `[TextMeshProUGUI]` - Exibe ATK/DEF.
     *   **CardNameText** `[TextMeshProUGUI]` - Exibe o nome da carta.
     *   **MonsterLvl** `[TextMeshProUGUI]` - Exibe o nível do monstro.
