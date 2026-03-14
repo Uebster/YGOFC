@@ -286,7 +286,6 @@ GameObject:
   - component: {fileID: 2251974411438713743}
   - component: {fileID: 6624728808668534308}
   - component: {fileID: 1608198031100721216}
-  - component: {fileID: 1254706338912134651}
   m_Layer: 5
   m_Name: ImportExportItem
   m_TagString: Untagged
@@ -397,20 +396,3 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &1254706338912134651
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9154638150067920418}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0651782bac28caf4ba1c9bdd8617a9d7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SaveSlotUI
-  nameText: {fileID: 3833134786885219873}
-  dateText: {fileID: 0}
-  infoText: {fileID: 0}
-  actionButton: {fileID: 0}
-  selectionHighlight: {fileID: 0}

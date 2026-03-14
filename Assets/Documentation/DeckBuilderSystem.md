@@ -173,7 +173,28 @@ A validação é feita em tempo real pelo `DeckBuilderManager.AddCardToDeck` e v
 *   **Sair (Back):** O botão `Btn_BackToMenu` chama `ExitDeckBuilder()`. Se `hasUnsavedChanges` for `true`, ele exibe um pop-up de confirmação antes de sair, para evitar a perda de alterações.
 *   **Export/Import Deck:** (A ser implementado) Salva/carrega a lista de IDs das cartas em um arquivo JSON. A importação deve verificar se o jogador possui as cartas no Baú.
 
-### 5. Indicador de Cartas "New"
+### 6. Importar/Exportar Decks
+O sistema permite que o jogador salve "receitas" de decks para importá-las posteriormente, facilitando a troca rápida de estratégias.
+
+#### Estrutura de UI (Hierarquia)
+Abaixo está a estrutura recomendada para os painéis de Importação e Exportação.
+
+*   **Panel_Export** `[Image, DeckImportExportManager]`
+    *   **Panel_ExportHeader** `[Image]`
+        *   **Text (TMP)** `[TextMeshProUGUI]` (Título: "Export Deck")
+    *   **Scroll View** `[Image, ScrollRect]`
+        *   **Viewport** `[Image, Mask]`
+            *   **Content** `[VerticalLayoutGroup]` (Onde os `DeckSlotUI` são instanciados)
+    *   **InputDeckName** `[Image, TMP_InputField]`
+    *   **Btn_ExportDeck** `[Image, Button]` (Botão de Ação Principal)
+    *   **Btn_DeleteDeck** `[Image, Button]` (Botão para Deletar Deck Selecionado)
+    *   **Panel_ImportFooter** `[Image]`
+        *   **Btn_BackToDeckBuilder** `[Image, Button]`
+
+*   **Panel_Import** `[Image, DeckImportExportManager]`
+    *   *(Estrutura similar ao Export, mas sem os botões de Input e Delete)*
+
+### 7. Indicador de Cartas "New"
 *   Ao popular a lista do baú, o `DeckBuilderManager` verifica cada carta com `SaveLoadSystem.Instance.IsCardNew(card.id)`.
 *   Se for `true`, ele instancia o `newTagPrefab` como filho do item da carta, criando o indicador visual.
 *   Ao adicionar uma carta a qualquer deck, o `DeckBuilderManager` chama `SaveLoadSystem.Instance.MarkCardAsUsed(card.id)`, garantindo que a tag "New" desapareça na próxima vez que a biblioteca ou o construtor de decks for aberto.

@@ -411,6 +411,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveSlotUI
   nameText: {fileID: 8593247027764332569}
+  dateText: {fileID: 826368977071842531}
+  infoText: {fileID: 7942546001572825920}
   actionButton: {fileID: 0}
   selectionHighlight: {fileID: 0}
 --- !u!1 &8027376531008578060

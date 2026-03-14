@@ -612,6 +612,13 @@ private void LoadData()
         string searchText = searchInput != null ? searchInput.text.ToLowerInvariant() : "";
         bool anyFilterActive = activeFilters.Any(kvp => kvp.Value);
 
+        // LOG ADICIONADO
+        if (anyFilterActive)
+        {
+            var activeFilterNames = activeFilters.Where(kvp => kvp.Value).Select(kvp => kvp.Key);
+            Debug.Log($"[Filter] Filtros ativos: {string.Join(", ", activeFilterNames)}");
+        }
+
         filteredCardGroups = currentTrunk
             .GroupBy(c => c.id)
             .Where(g =>
@@ -628,8 +635,8 @@ private void LoadData()
                 }
                 
                 string cardType = card.type;
-                if (activeFilters["Normal"] && cardType == "Normal Monster") return true;
-                if (activeFilters["Effect"] && cardType.Contains("Effect Monster")) return true;
+                if (activeFilters["Normal"] && cardType == "Monster (Normal)") return true;
+                if (activeFilters["Effect"] && cardType == "Monster (Effect)") return true;
                 if (activeFilters["Ritual"] && cardType.Contains("Ritual")) return true;
                 if (activeFilters["Fusion"] && cardType.Contains("Fusion")) return true;
                 if (activeFilters["Spell"] && cardType.Contains("Spell")) return true;

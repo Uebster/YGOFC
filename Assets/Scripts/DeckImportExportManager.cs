@@ -19,23 +19,27 @@ public class DeckImportExportManager : MonoBehaviour
     public TextMeshProUGUI panelTitle; // Novo: Título do painel (Import/Export)
     public Button btnAction; // Botão principal (Import ou Export)
     public Button btnBack;
+    public Button btnDelete; // Botão para deletar
     public TMP_InputField inputDeckName; // Apenas para o painel de Export
     public Transform listContent;
     public GameObject deckSlotPrefab; // Prefab ImportExportItem
 
     private string selectedDeckName;
     private List<GameObject> spawnedSlots = new List<GameObject>();
+    private bool isCreatingNewDeck = false;
 
     void Awake()
     {
         btnBack?.onClick.AddListener(ClosePanel);
         btnAction?.onClick.AddListener(PerformAction);
+        btnDelete?.onClick.AddListener(OnDeleteClicked);
     }
 
     public void Setup(MenuType menuType)
     {
         currentMenuType = menuType;
         gameObject.SetActive(true);
+        isCreatingNewDeck = false; // Reseta o estado ao abrir
         
         // A visibilidade dos painéis agora é controlada pelo UIManager.
         // Este script apenas configura o painel em que está.
@@ -53,8 +57,6 @@ public class DeckImportExportManager : MonoBehaviour
 
         if (inputDeckName != null)
         {
-            // O campo de input só deve existir no painel de Export
-            inputDeckName.gameObject.SetActive(menuType == MenuType.Export);
             inputDeckName.text = "";
         }
 
@@ -71,13 +73,22 @@ public class DeckImportExportManager : MonoBehaviour
     {
         if (currentMenuType == MenuType.Export)
         {
+            // Se não estiver criando um novo e nenhum deck estiver selecionado para sobrescrever, não faz nada.
+            if (!isCreatingNewDeck && string.IsNullOrEmpty(selectedDeckName))
+            {
+                UIManager.Instance?.ShowMessage("Selecione um deck para sobrescrever ou crie um novo.");
+                return;
+            }
+
             string deckName = inputDeckName?.text.Trim();
             if (!string.IsNullOrEmpty(deckName))
             {
-                DeckBuilderManager.Instance.ExportCurrentDeck(deckName);
-                RefreshList(); // Atualiza a lista para mostrar o novo deck salvo
-                inputDeckName.text = "";
-                UIManager.Instance?.ShowMessage($"Deck '{deckName}' exportado com sucesso!");
+                // Confirmação para sobrescrever
+                UIManager.Instance?.ShowConfirmation($"Salvar deck como '{deckName}'?", () => {
+                    DeckBuilderManager.Instance.ExportCurrentDeck(deckName);
+                    RefreshList();
+                    UIManager.Instance?.ShowMessage($"Deck '{deckName}' salvo com sucesso!");
+                });
             }
             else
             {
@@ -107,6 +118,18 @@ public class DeckImportExportManager : MonoBehaviour
 
         if (SaveLoadSystem.Instance == null || deckSlotPrefab == null) return;
 
+        // Adiciona o slot "New Deck" se estiver na tela de Export
+        if (currentMenuType == MenuType.Export)
+        {
+            GameObject newSlotGo = Instantiate(deckSlotPrefab, listContent);
+            spawnedSlots.Add(newSlotGo);
+            DeckSlotUI newSlot = newSlotGo.GetComponent<DeckSlotUI>();
+            if (newSlot != null)
+            {
+                newSlot.SetupForNewDeck(OnNewDeckClicked);
+            }
+        }
+
         List<SaveLoadSystem.DeckRecipe> savedDecks = SaveLoadSystem.Instance.GetSavedDecks();
 
         if (savedDecks == null) return;
@@ -116,56 +139,73 @@ public class DeckImportExportManager : MonoBehaviour
             GameObject slotGO = Instantiate(deckSlotPrefab, listContent);
             spawnedSlots.Add(slotGO);
             
-            // Usa o SaveSlotUI para configurar o prefab
-            SaveSlotUI slotUI = slotGO.GetComponent<SaveSlotUI>();
+            // Usa o DeckSlotUI para configurar o prefab
+            DeckSlotUI slotUI = slotGO.GetComponent<DeckSlotUI>();
             if (slotUI != null)
             {
-                // Criamos um GameSaveData "falso" para reutilizar a lógica do SaveSlotUI
-                var fakeSaveData = new SaveLoadSystem.GameSaveData
-                {
-                    playerName = deckRecipe.deckName,
-                    lastPlayedTime = "" // Não precisamos de data aqui
-                };
-                slotUI.Setup(fakeSaveData, (data) => OnSlotClicked(data.playerName, slotGO), false);
-            }
-            Button slotButton = slotGO.GetComponent<Button>();
-            if (slotButton != null)
-            {
-                string deckName = deckRecipe.deckName; // Captura para o lambda
-                slotButton.onClick.AddListener(() => OnSlotClicked(deckName, slotGO));
+                slotUI.Setup(deckRecipe, OnSlotClicked, (selectedDeckName == deckRecipe.deckName));
             }
         }
-        UpdateSelectionVisuals();
+        UpdateUIState();
     }
 
-    private void OnSlotClicked(string deckName, GameObject clickedSlot)
+    private void OnSlotClicked(SaveLoadSystem.DeckRecipe recipe)
     {
-        selectedDeckName = deckName;
+        if (recipe == null) return;
+        isCreatingNewDeck = false;
+        selectedDeckName = recipe.deckName;
         if (currentMenuType == MenuType.Export && inputDeckName != null)
         {
-            inputDeckName.text = deckName; // Preenche o nome para sobrescrever
+            inputDeckName.text = recipe.deckName; // Preenche o nome para sobrescrever
         }
-        UpdateSelectionVisuals();
-    }
-    
-    private void OnDeleteClicked(string deckName)
-    {
-        // Lógica para deletar um deck
-        SaveLoadSystem.Instance.DeleteDeckRecipe(deckName);
-        SaveLoadSystem.Instance.SaveGame(GameManager.Instance.currentSaveID);
-        RefreshList();
+        UpdateUIState();
     }
 
-    private void UpdateSelectionVisuals()
+    private void OnNewDeckClicked()
     {
-        foreach (GameObject slot in spawnedSlots)
+        isCreatingNewDeck = true;
+        selectedDeckName = null;
+        if (inputDeckName != null) inputDeckName.text = "";
+        UpdateUIState();
+    }
+
+    private void UpdateUIState()
+    {
+        // Atualiza o destaque visual
+        foreach (var slotGO in spawnedSlots)
         {
-            SaveSlotUI slotUI = slot.GetComponent<SaveSlotUI>();
-            if (slotUI != null && slotUI.MyData != null)
+            var slotUI = slotGO.GetComponent<DeckSlotUI>();
+            if (slotUI != null)
             {
-                bool isSelected = slotUI.MyData.playerName == selectedDeckName;
+                bool isSelected = (slotUI.MyData != null && slotUI.MyData.deckName == selectedDeckName) || (slotUI.MyData == null && isCreatingNewDeck);
                 slotUI.SetSelected(isSelected);
             }
         }
+
+        // Habilita/Desabilita input e botão de ação
+        bool canInteract = isCreatingNewDeck || !string.IsNullOrEmpty(selectedDeckName);
+        bool existingDeckSelected = !isCreatingNewDeck && !string.IsNullOrEmpty(selectedDeckName);
+
+        if (inputDeckName != null) inputDeckName.interactable = isCreatingNewDeck;
+        if (btnAction != null) btnAction.interactable = canInteract;
+
+        if (btnDelete != null)
+        {
+            // O botão de deletar só deve aparecer e funcionar na tela de Export
+            btnDelete.gameObject.SetActive(currentMenuType == MenuType.Export);
+            btnDelete.interactable = existingDeckSelected;
+        }
+    }
+
+    private void OnDeleteClicked()
+    {
+        if (string.IsNullOrEmpty(selectedDeckName) || isCreatingNewDeck) return;
+
+        UIManager.Instance?.ShowConfirmation($"Tem certeza que deseja deletar o deck '{selectedDeckName}'?", () => {
+            SaveLoadSystem.Instance.DeleteDeckRecipe(selectedDeckName);
+            SaveLoadSystem.Instance.SaveGame(GameManager.Instance.currentSaveID); // Persiste a deleção
+            RefreshList();
+            UIManager.Instance?.ShowMessage($"Deck '{selectedDeckName}' deletado.");
+        });
     }
 }
