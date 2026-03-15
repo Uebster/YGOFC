@@ -161,6 +161,10 @@ public class DeckManager : MonoBehaviour
         if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
 
         Destroy(card.gameObject);
+
+        // Se for um Token (ex: foi alvo de efeito que volta pro deck), ele evapora e não suja o deck.
+        if (data.id == "TOKEN") return;
+
         UpdateDeckVisuals();
         Debug.Log($"{data.name} retornada ao deck (Topo: {toTop}).");
     }

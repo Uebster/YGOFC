@@ -39,6 +39,12 @@ public class DiceRollUI : MonoBehaviour
     private List<int> finalResults = new List<int>();
     private int diceSpunCount = 0;
 
+    void Awake()
+    {
+        // Garante que o painel comece invisível, mesmo se deixado ativo no Editor
+        gameObject.SetActive(false);
+    }
+
     void Start()
     {
         // Configura os botões de palpite de 1 a 6 automaticamente

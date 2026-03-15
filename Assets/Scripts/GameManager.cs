@@ -979,6 +979,9 @@ public void ShuffleDeck(bool isPlayer)
     // Helper para adicionar carta à mão visualmente (usado por ReturnToHand e Search)
     public void AddCardToHand(CardData cardData, bool isPlayer)
     {
+        // Tokens não podem existir na mão. Evaporam.
+        if (cardData == null || cardData.id == "TOKEN") return;
+
         Transform handTransform = isPlayer ? playerHandLayoutGroup : opponentHandLayoutGroup;
         if (cardPrefab == null || handTransform == null) return;
 
@@ -1038,6 +1041,9 @@ public void ShuffleDeck(bool isPlayer)
     // Método para enviar carta para o cemitério (Exemplo de uso)
     public void SendToGraveyard(CardData card, bool isPlayer, CardLocation fromLocation = CardLocation.Unknown, SendReason reason = SendReason.Unknown)
     {
+        // Tokens evaporam ao sair do campo, não entram no GY.
+        if (card == null || card.id == "TOKEN") return;
+
         if (isPlayer)
         {
             playerGraveyard.Add(card);
@@ -1075,6 +1081,9 @@ public void ShuffleDeck(bool isPlayer)
     // Novo método para remover de jogo (Banir)
     public void RemoveFromPlay(CardData card, bool isPlayer)
     {
+        // Tokens evaporam, não vão para a pilha de banidos
+        if (card == null || card.id == "TOKEN") return;
+
         if (isPlayer)
         {
             playerRemoved.Add(card);
@@ -2225,7 +2234,7 @@ public void ShuffleDeck(bool isPlayer)
     }
 
     // Sistema de Tokens (Scapegoat, etc)
-    public void SpawnToken(bool forPlayer, int atk, int def, string name)
+    public void SpawnToken(bool forPlayer, int atk, int def, string name, int level = 1, string race = "Token", string attribute = "Earth")
     {
         Transform targetZone = GetFreeMonsterZone(forPlayer);
         if (targetZone == null) return; // Campo cheio
@@ -2239,10 +2248,11 @@ public void ShuffleDeck(bool isPlayer)
         tokenData.id = "TOKEN";
         tokenData.name = name;
         tokenData.type = "Monster (Normal)";
-        tokenData.race = "Token"; // Ou Beast, etc, dependendo do efeito
+        tokenData.race = race;
+        tokenData.attribute = attribute;
         tokenData.atk = atk;
         tokenData.def = def;
-        tokenData.level = 1;
+        tokenData.level = level;
         tokenData.description = "Token Monster";
 
         display.isPlayerCard = forPlayer;
