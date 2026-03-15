@@ -141,6 +141,29 @@ public partial class CardEffectManager : MonoBehaviour
         return true;
     }
 
+    // --- HELPERS DE SISTEMAS GLOBAIS (MINIGAMES) ---
+
+    /// <summary>
+    /// Rola um ou mais dados (1 a 6) e retorna a lista de resultados no callback.
+    /// Prepara o terreno para futura UI de dados 3D.
+    /// </summary>
+    public void RollDice(int amount, System.Action<List<int>> onResult)
+    {
+        List<int> results = new List<int>();
+        for (int i = 0; i < amount; i++) results.Add(Random.Range(1, 7));
+        // TODO: Chamar GameManager.Instance.ShowDiceUI(results, onResult) no futuro
+        onResult?.Invoke(results);
+    }
+
+    /// <summary>
+    /// Ativa o sistema visual de relógio e contagem regressiva em uma carta.
+    /// </summary>
+    public void SetClockCounter(CardDisplay target, int turns)
+    {
+        if (target == null) return;
+        target.turnCounter = turns; // O setter do turnCounter já aciona o UpdateTurnClockVisual nativamente
+    }
+
     // Métodos de Eventos (Implementados em CardEffectManager_Impl.cs)
     // public void OnPhaseStart(GamePhase phase);
     // public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer);

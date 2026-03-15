@@ -287,7 +287,42 @@ As flags que alteram regras fundamentais são distribuídas entre os gerenciador
 *   `negateContinuousSpells`: Nega efeitos de magias contínuas (*Mystic Probe*).
 *   `redirectSpellTarget`: Redireciona o alvo de magias (*Mystical Refpanel*).
 
-## 14. Boas Práticas para Adicionar Novas Cartas
+## 14. Padrões de Implementação por Subtipos (Subtypes)
+O sistema foi desenhado para facilitar a criação de magias e armadilhas complexas reutilizando Helpers globais:
+
+*   **Equip (Equipamento):** Utilize `Effect_Equip(source, atkBonus, defBonus, requiredRace, requiredAttribute)`. Este helper cuida de toda a criação do `CardLink`, valida o alvo e aplica os `StatModifiers` corretamente.
+*   **Field (Campo):** Utilize `Effect_Field(source, atkBonus, defBonus, requiredRace, requiredAttribute)`. Ele varre o campo automaticamente aplicando os bônus aos tipos especificados.
+*   **Continuous (Contínuo):** Não necessita de um helper de ativação direta. O segredo é adicionar a lógica passiva dentro do evento adequado, utilizando `CheckActiveCards("ID_DA_CARTA", (card) => { ... })` para varrer os campos e aplicar efeitos apenas se a carta contínua estiver ativada.
+*   **Counter (Resposta):** Utilize a dupla de métodos nativos do ChainManager: `GetLinkToNegate(source)` para pegar o alvo, seguido de `NegateAndDestroy(source, link)`. A velocidade da carta (Speed 3) é tratada automaticamente pela Engine.
+*   **Quick-Play (Rápida):** A velocidade (Speed 2) permite ativação livre. Se a carta possui um efeito direto, use os helpers padrão de destruição ou buff.
+*   **Ritual:** Chame diretamente `GameManager.Instance.BeginRitualSummon(source)`.
+
+## 15. Sistemas de Sorte e Tempo (Minigames)
+A engine fornece suporte embutido para mecânicas de moedas, dados e contagem de turnos. Use sempre os métodos oficiais em vez de funções de Random isoladas para facilitar a futura integração de interface gráfica (UI).
+
+#### Sistema de Moedas (Coin Toss)
+*   **`GameManager.Instance.TossCoin(int count, Action<int> callback, bool loopUntilTails = false)`**
+    *   O sistema visual interage com o jogador, abstraindo escolhas e interações físicas. O callback sempre retorna a quantidade absoluta de **Acertos**.
+    *   **Variação 1 (Aposta Simples):** `TossCoin(1, result => ...)` -> Ideal para *Time Wizard*. Exibe os botões de escolha e joga 1 moeda. Retorna 1 se o jogador acertou a previsão, 0 se errou.
+    *   **Variação 2 (Múltiplas Moedas):** `TossCoin(3, result => ...)` -> Ideal para *Barrel Dragon*. Pula os botões de escolha, instancia 3 moedas na tela de uma vez e as gira, retornando o número total de vitórias (Caras).
+    *   **Variação 3 (Loop Contínuo):** `TossCoin(1, result => ..., true)` -> O loop gira a moeda. Se o jogador ganhar, o sistema não fecha, mas oferece a chance de girar de novo para acumular a "Streak" até que ele perca, retornando o acumulado.
+    *   **Configurações do GameManager (Inspect):**
+        *   `coinTossRequiresChoice`: Se ativado, a "Variação 1 e 3" vai perguntar se o jogador quer Cara ou Coroa antes de começar. Se desativado, o jogo pula a tela de botões e assume que "Cara = Vitória".
+        *   `coinTossManualSpin`: Se ativado, as moedas spawnadas ficam congeladas aguardando o jogador **Clicar** sobre elas fisicamente para fazê-las pular e girar no ar. Se desativado (automático), elas começam a pular sozinhas assim que aparecem com um leve delay de cascata.
+        *   `alwaysCoinHead`: Se ativado, serve como trapaça (Cheat) para testes, garantindo que o resultado será sempre o de vitória.
+*   **Helper:** `Effect_CoinTossDestroy(source, numCoins, requiredHeads, targetType)` automatiza a rolagem e a destruição condicional de alvos no campo.
+
+#### Sistema de Dados (Dice Roll)
+*   **`CardEffectManager.Instance.RollDice(int amount, Action<List<int>> callback)`**
+    *   Rola *N* dados de 6 faces e retorna uma lista com o resultado de cada dado exato.
+    *   Deve ser usado por cartas como *Roulette Barrel*, *Snipe Hunter*, etc.
+
+#### Sistema de Relógio (Clock / Turn Counters)
+*   **Ativação:** `CardEffectManager.Instance.SetClockCounter(targetCard, turns)`
+    *   Força uma carta a receber um "relógio" visual e inicia o contador com o número máximo de turnos (Ex: *Swords of Revealing Light*).
+*   **Manutenção:** Em `OnPhaseStart`, utilize a função genérica `HandleTurnCounter(card)` para decrementar o relógio automaticamente. Quando chegar a 0, a carta é destruída pelo sistema.
+
+## 16. Boas Práticas para Adicionar Novas Cartas
 
 1.  **Verifique se já existe um Hook:** Antes de criar um novo sistema, veja se o efeito se encaixa em um dos eventos acima.
 2.  **Use IDs:** Sempre verifique `card.CurrentCardData.id` para lógica específica de uma carta.

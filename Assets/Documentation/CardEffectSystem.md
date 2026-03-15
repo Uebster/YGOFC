@@ -41,6 +41,30 @@ Estes arquivos contêm apenas as chamadas `AddEffect("ID", Lógica)` para regist
     void Effect_0031_AirknightParshath(CardDisplay source) { ... }
     ```
 
+## Padronização de Subtipos (Subtypes)
+
+A engine foi projetada para que você não precise recriar lógicas complexas do zero. Ao implementar Magias e Armadilhas, utilize os Helpers globais disponíveis no `CardEffectManager`:
+
+*   **Equip (Equipamento):** Para cartas mágicas de equipamento, use `Effect_Equip(source, atkBonus, defBonus, requiredRace, requiredAttribute)`. Ele gerencia a criação do vínculo (`CardLink`) e aplica os modificadores de status (StatModifiers) automaticamente.
+*   **Field (Campo):** Utilize o `Effect_Field(source, atk, def, race, attribute)`. Ele aplica modificadores do tipo `Field` varrendo o tabuleiro inteiro.
+*   **Continuous (Contínuo):** Cartas contínuas geralmente não precisam de um "efeito de ativação". A lógica delas deve existir dentro de Hooks globais como `OnPhaseStart` ou `OnSummon`, encapsulada em um bloco `CheckActiveCards("ID_DA_CARTA", (card) => { ... })`.
+*   **Counter (Resposta):** Para armadilhas de resposta (Speed 3), a infraestrutura do `ChainManager` resolve tudo. Apenas use a combinação: `GetLinkToNegate(source)` para pegar o alvo, e `NegateAndDestroy(source, link)`.
+*   **Quick-Play (Rápida):** Magias rápidas (Speed 2) funcionam normalmente graças ao controle nativo da engine. Basta implementar o que a carta faz (destruir, curar, buffar).
+*   **Ritual:** Centralizado no GameManager. A carta mágica apenas precisa invocar `GameManager.Instance.BeginRitualSummon(source)`.
+
+## Sistemas de Sorte e Minigames
+
+Para integrar as cartas com a Interface Visual (UI) do jogo sem acoplar código, utilize os métodos oficiais da engine em vez de gerar números aleatórios isolados (`Random.Range`):
+
+*   **Moedas (Coin Toss):**
+    *   Use `GameManager.Instance.TossCoin(int count, Action<int> callback)` para rolar 1 ou mais moedas. O sistema aguardará a animação da UI terminar e retornará a contagem exata de "Caras" (Heads) no callback.
+    *   Para o caso padrão de destruir ao acertar a moeda, utilize o atalho `Effect_CoinTossDestroy(source, moedas, acertosNecessarios, tipoAlvo)`.
+*   **Dados (Dice Roll):**
+    *   Use `CardEffectManager.Instance.RollDice(int amount, Action<List<int>> callback)`. Isso invocará a UI de dados 3D rolando na tela e devolverá os resultados de cada dado no final.
+*   **Relógio/Turnos (Clock System):**
+    *   Para cartas que ficam no campo por um tempo limite (ex: *Swords of Revealing Light*), use `SetClockCounter(targetCard, turnos)` no momento da ativação. O sistema desenhará um relógio holográfico sobre a carta.
+    *   Dentro do evento `OnPhaseStart`, chame `HandleTurnCounter(card)` para que a engine cuide do decréscimo e destrua a carta sozinha quando o tempo acabar.
+
 ## Como Adicionar uma Nova Carta
 
 1.  **Identifique o ID:** Encontre o ID da carta no banco de dados JSON (ex: "0001").

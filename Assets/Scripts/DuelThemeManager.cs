@@ -169,6 +169,13 @@ public class DuelThemeManager : MonoBehaviour
         {
             DuelFXManager.Instance.UpdateThemeFX(theme);
         }
+
+        // 6. Atualiza Sprites de Minigames (Moeda)
+        if (GameManager.Instance != null && GameManager.Instance.coinTossUI != null)
+        {
+            if (theme.coinHeadsSprite != null) GameManager.Instance.coinTossUI.headsSprite = theme.coinHeadsSprite;
+            if (theme.coinTailsSprite != null) GameManager.Instance.coinTossUI.tailsSprite = theme.coinTailsSprite;
+        }
     }
 
     void SetSprite(Image img, Sprite sprite)
