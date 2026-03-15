@@ -37,6 +37,19 @@ O objetivo principal é garantir alta performance e uma experiência de usuário
 7.  Ele calcula o primeiro item visível e, em um loop, posiciona os itens do pool e chama `item.UpdateContent(cardData)` para cada um.
 8.  O `TrunkCardScrollItem` recebe os dados, consulta o `DeckBuilderManager` para obter contagens e chama o `Setup()` do `ChestCardItem` para exibir a carta na tela.
 
+### Cuidados Especiais (Troubleshooting)
+**1. Cartas Renderizando Fora da Tela:**
+Para que a matemática de `xPos` e `yPos` do `TrunkScrollManager` funcione perfeitamente, as âncoras e o pivô do Content e dos itens (prefabs) **precisam** estar no canto superior esquerdo `(0, 1)`. O script agora força essa configuração via código no método `CreatePool` para evitar problemas de montagem na Unity.
+
+**2. Bug de Imagem Piscando/Trocada (Flickering):**
+Quando o jogador rola a lista muito rápido, as caixas de UI (prefabs) são recicladas e reaproveitadas antes mesmo da imagem antiga terminar de baixar. Para evitar que a imagem de uma carta "A" apareça na caixa quando ela já virou a carta "B":
+*   O `ChestCardItem.Setup` agora usa `StopAllCoroutines()` no momento em que é reaproveitado.
+*   A requisição atual (`UnityWebRequest`) é armazenada em uma variável e cancelada (`.Dispose()`) imediatamente caso seja reciclada ou a janela seja fechada (`OnDisable()`).
+*   Isso previne *Memory Leaks* e sobreposição de imagens.
+
+**3. Tamanho Dinâmico da Janela (Altura = 0):**
+Se o painel acabou de ser ativado, a Unity ainda não tem as dimensões finais do `ScrollRect.viewport`. O script utiliza `Canvas.ForceUpdateCanvases()` para forçar a Unity a calcular o layout no mesmo frame, garantindo que o pool de itens não seja instanciado com o número errado de cartas (ex: 2 cartas em vez de 20).
+
 ## Estrutura de UI (Hierarquia)
 
 Abaixo está a estrutura hierárquica recomendada dos objetos na cena Unity para o `Panel_DeckBuilder`.

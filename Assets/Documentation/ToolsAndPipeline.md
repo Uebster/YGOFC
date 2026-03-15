@@ -140,3 +140,16 @@ Esta seção descreve ferramentas customizadas que rodam dentro do Editor do Uni
             - Handle [Image]
     ```
 *   **Observação:** O script ignora componentes comuns como `Transform` e `CanvasRenderer` para manter a saída limpa e focada nos scripts e componentes de UI mais importantes.
+
+## 8. In-Game Debug Console (`InGameDebugConsole.cs`)
+
+Para facilitar o rastreamento de bugs e o envio de logs de erro durante as builds do jogo sem precisar depender apenas do Editor da Unity, foi implementado um console de debug integrado ao jogo.
+
+### Como Usar
+*   **Atalho:** Pressione a combinação **Ctrl + Shift + D** no teclado em qualquer momento do jogo para abrir ou fechar a janela do console.
+*   **Características:**
+    *   Armazena as últimas 1000 mensagens disparadas via `Debug.Log`, `Debug.LogWarning` e `Debug.LogError`.
+    *   **Auto-Scroll:** A lista desce automaticamente com uso de `ContentSizeFitter` e corrotinas para esperar o fim do frame da Unity.
+    *   **Botão "Copy":** Copia todo o texto do console formatado diretamente para a Área de Transferência (Clipboard) do Windows, ideal para relatar erros. O *StackTrace* é incluído automaticamente em casos de Erros e Exceções para facilitar a busca pela linha do código problemática.
+    *   **Botão "Clear":** Limpa o histórico de logs visuais para facilitar a leitura de novos eventos e testes.
+    *   É um objeto `DontDestroyOnLoad`, sobrevivendo a todas as transições de tela e coletando logs de qualquer cena.
