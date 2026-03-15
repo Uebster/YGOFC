@@ -257,6 +257,12 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             cardImage.texture = backTexture;
         }
+        else if (!isFlipped && cardImage != null && backTexture != null)
+        {
+            // FIX: Coloca a textura do verso temporariamente para não mostrar um bloco branco
+            // enquanto a textura real da carta está sendo baixada na corrotina.
+            cardImage.texture = backTexture;
+        }
 
         // FIX: Verifica se o objeto está ativo antes de iniciar a corrotina para evitar erro
         if (gameObject.activeInHierarchy)
@@ -325,40 +331,43 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         string url = "file://" + fullPath;
         try { url = new System.Uri(fullPath).AbsoluteUri; } catch { }
 
-        // Não usamos 'using' aqui para poder descartar manualmente se a corrotina for interrompida
-        currentRequest = UnityWebRequestTexture.GetTexture(url);
+        UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
+        currentRequest = request; // Salva na global para OnDisable poder abortar
 
-        yield return currentRequest.SendWebRequest();
+        yield return request.SendWebRequest();
 
-        if (currentRequest == null) yield break; // FIX: Previne NRE se a requisição foi cancelada ou o perfil trocado durante o download
-
-        if (currentRequest.result == UnityWebRequest.Result.Success)
+        // Se a global mudou (outra corrotina iniciou) ou ficou nula (OnDisable), aborta esta execução
+        if (currentRequest != request)
         {
-            frontTexture = DownloadHandlerTexture.GetContent(currentRequest);
+            request.Dispose();
+            yield break;
+        }
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            frontTexture = DownloadHandlerTexture.GetContent(request);
             frontTexture.filterMode = FilterMode.Trilinear;
 
-            // DEBUG: Verifica se a imagem e a textura são válidas
             if (cardImage == null)
             {
                 Debug.LogError($"[CardDisplay] Falha ao aplicar textura: 'cardImage' (RawImage) é nulo na carta '{currentCardData?.name}'.", gameObject);
             }
             else
             {
-                Debug.Log($"[CardDisplay] Textura para '{currentCardData?.name}' carregada com sucesso. Aplicando agora.");
                 // Só aplica a textura da frente se a carta NÃO estiver virada (isFlipped == false)
                 if (!isFlipped) cardImage.texture = frontTexture;
             }
         }
         else
         {
-            Debug.LogError($"Falha ao carregar imagem da frente da carta: {fullPath} | Erro: {currentRequest.error}");
+            Debug.LogError($"Falha ao carregar imagem da frente da carta: {fullPath} | Erro: {request.error}");
         }
 
-        if (currentRequest != null)
+        if (currentRequest == request)
         {
-            currentRequest.Dispose();
             currentRequest = null;
         }
+        request.Dispose();
     }
 
     public void FlipCard()
@@ -1043,7 +1052,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Se a carta foi configurada enquanto estava inativa (ex: dentro de um painel fechado), 
         // a textura pode não ter carregado porque corrotinas não rodam em objetos inativos.
         // Tenta carregar agora.
-        if (currentCardData != null && frontTexture == null && cardImage != null)
+        if (currentCardData != null && frontTexture == null && cardImage != null && currentRequest == null)
         {
              StartCoroutine(LoadCardFrontTexture(currentCardData.image_filename));
         }

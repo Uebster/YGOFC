@@ -333,7 +333,15 @@ A engine fornece suporte embutido para mecânicas de moedas, dados e contagem de
 *   **Overflow (Transbordamento):** Se um efeito exigir mais de 12 turnos (Ex: *Final Countdown* - 20 turnos), o sistema instanciará **múltiplos relógios** lado a lado no `clocksContainer` (ex: 1 relógio cheio com 12, e 1 relógio com 8 fatias).
 *   **Unity Setup:** Utiliza o componente nativo `Image.fillAmount` configurado como `Radial 360` para mascarar as fatias perfeitamente sem precisar de texturas adicionais.
 
-## 16. Boas Práticas para Adicionar Novas Cartas
+## 16. Sistema de Fichas (Tokens)
+
+Fichas são monstros ilusórios criados por efeitos (ex: *Scapegoat*). Elas possuem uma regra fundamental: **só podem existir no campo**.
+
+*   **Criação:** Use `GameManager.Instance.SpawnToken(forPlayer, atk, def, name, level, race, attribute)`. O sistema automaticamente assinala o ID mágico `"TOKEN"` a esta carta.
+*   **Aparência:** O sistema utiliza o `TokenPrefab` (geralmente uma carta com fundo cinza/prata) definido no GameManager.
+*   **Evaporação (Destruição Absoluta):** Graças à barreira de ID implementada no GameManager e DeckManager, se um Token for alvo de efeitos que o enviariam para a Mão (ex: *Penguin Soldier*), Cemitério, Deck ou Pilha de Banidos, a engine detecta o ID `"TOKEN"`, destrói o GameObject e **aborta** a adição nas listas de dados, fazendo-o "evaporar" perfeitamente de acordo com as regras do TCG.
+
+## 17. Boas Práticas para Adicionar Novas Cartas
 
 1.  **Verifique se já existe um Hook:** Antes de criar um novo sistema, veja se o efeito se encaixa em um dos eventos acima.
 2.  **Use IDs:** Sempre verifique `card.CurrentCardData.id` para lógica específica de uma carta.

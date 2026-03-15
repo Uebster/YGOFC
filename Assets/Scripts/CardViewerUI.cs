@@ -164,6 +164,8 @@ public class CardViewerUI : MonoBehaviour
         backTextureRequest = UnityWebRequestTexture.GetTexture(url);
         yield return backTextureRequest.SendWebRequest();
 
+        if (backTextureRequest == null) yield break; // Previne erro se cancelado
+
         if (backTextureRequest.result == UnityWebRequest.Result.Success)
         {
             Texture2D texture = DownloadHandlerTexture.GetContent(backTextureRequest);
@@ -182,13 +184,21 @@ public class CardViewerUI : MonoBehaviour
         string url = "file://" + fullPath;
         try { url = new System.Uri(fullPath).AbsoluteUri; } catch { }
 
-        currentRequest = UnityWebRequestTexture.GetTexture(url);
+        UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
+        currentRequest = request; // Salva na global para o OnDisable abortar se necessário
         
-        yield return currentRequest.SendWebRequest();
+        yield return request.SendWebRequest();
 
-        if (currentRequest.result == UnityWebRequest.Result.Success)
+        // Se a requisição global mudou (outra corrotina iniciou) ou ficou nula (OnDisable), aborta esta execução
+        if (currentRequest != request) 
         {
-            frontTexture2D = DownloadHandlerTexture.GetContent(currentRequest);
+            request.Dispose();
+            yield break;
+        }
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            frontTexture2D = DownloadHandlerTexture.GetContent(request);
             frontTexture2D.filterMode = FilterMode.Trilinear;
 
             // Atualiza o 2D
@@ -197,8 +207,9 @@ public class CardViewerUI : MonoBehaviour
                 cardImage2D.texture = frontTexture2D;
             }
         }
-        currentRequest.Dispose();
-        currentRequest = null;
+        
+        if (currentRequest == request) currentRequest = null;
+        request.Dispose();
     }
 
     // --- Funções de Interação ---
@@ -244,7 +255,11 @@ public class CardViewerUI : MonoBehaviour
             currentRequest.Dispose();
             currentRequest = null;
         }
-        if (backTextureRequest != null && !backTextureRequest.isDone) backTextureRequest.Dispose();
+        if (backTextureRequest != null && !backTextureRequest.isDone) 
+        {
+            backTextureRequest.Dispose();
+            backTextureRequest = null; // A Causa do Crash: Faltava anular a variável após descartar!
+        }
     }
 
     void OnDestroy()

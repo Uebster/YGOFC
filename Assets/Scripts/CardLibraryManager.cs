@@ -30,6 +30,10 @@ public class CardLibraryManager : MonoBehaviour
     private List<CardData> allCards = new List<CardData>();
     private int currentPage = 1;
     private int totalPages = 1;
+    
+    private List<GameObject> pooledItems = new List<GameObject>();
+    private Dictionary<GameObject, GameObject> pooledNewTags = new Dictionary<GameObject, GameObject>();
+    private HashSet<string> ownedIDsCache = new HashSet<string>();
 
     void Start()
     {
@@ -71,6 +75,9 @@ public class CardLibraryManager : MonoBehaviour
         
         // Carrega TODAS as cartas do banco de dados para mostrar os slots vazios (verso)
         allCards.AddRange(GameManager.Instance.cardDatabase.cardDatabase);
+        
+        // Cacheia as cartas possuídas uma única vez para performance
+        ownedIDsCache = new HashSet<string>(GameManager.Instance.playerTrunk);
 
         // Calcula total de páginas
         totalPages = Mathf.CeilToInt((float)allCards.Count / itemsPerPage);
@@ -79,68 +86,81 @@ public class CardLibraryManager : MonoBehaviour
         // Atualiza contador de coleção (Únicas obtidas / Total no DB)
         if (cardCountText != null)
         {
-            HashSet<string> ownedIDs = new HashSet<string>(GameManager.Instance.playerTrunk);
             int ownedCount = 0;
             foreach (var card in allCards)
             {
-                if (ownedIDs.Contains(card.id)) ownedCount++;
+                if (ownedIDsCache.Contains(card.id)) ownedCount++;
             }
             cardCountText.text = $"{ownedCount}/{allCards.Count}";
         }
 
+        InitializePool();
         currentPage = 1;
         UpdatePage();
     }
 
-    void UpdatePage()
+    void InitializePool()
     {
         if (gridContent == null || cardItemPrefab == null) return;
+        
+        // Cria exatamente a quantidade de itens por página uma única vez
+        if (pooledItems.Count == 0)
+        {
+            for (int i = 0; i < itemsPerPage; i++)
+            {
+                GameObject go = Instantiate(cardItemPrefab, gridContent);
+                CardDisplay display = go.GetComponent<CardDisplay>();
+                if (display == null) display = go.AddComponent<CardDisplay>();
+                
+                LibraryCardInteraction interaction = go.AddComponent<LibraryCardInteraction>();
+                interaction.manager = this;
+                
+                display.isInteractable = false; // Desativa comportamento de mão
+                display.isPlayerCard = true;    // Cor de outline do jogador
+                
+                go.SetActive(false);
+                pooledItems.Add(go);
+            }
+        }
+    }
 
-        // Limpa grid atual
-        foreach (Transform child in gridContent) Destroy(child.gameObject);
-
+    void UpdatePage()
+    {
         int startIndex = (currentPage - 1) * itemsPerPage;
-        int count = Mathf.Min(itemsPerPage, allCards.Count - startIndex);
-
-        // Cache do Trunk para performance (HashSet é mais rápido para Contains)
-        HashSet<string> ownedIDs = new HashSet<string>(GameManager.Instance.playerTrunk);
         Texture2D backTexture = GameManager.Instance.GetCardBackTexture();
 
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < itemsPerPage; i++)
         {
-            CardData card = allCards[startIndex + i];
-            GameObject go = Instantiate(cardItemPrefab, gridContent);
+            GameObject go = pooledItems[i];
             
-            CardDisplay display = go.GetComponent<CardDisplay>();
-            if (display == null) display = go.AddComponent<CardDisplay>();
-            
-            bool isOwned = ownedIDs.Contains(card.id);
-
-            if (isOwned)
+            if (startIndex + i < allCards.Count)
             {
-                // Se possui, mostra a frente
-                display.SetCard(card, backTexture, true);
+                go.SetActive(true);
+                CardData card = allCards[startIndex + i];
+                CardDisplay display = go.GetComponent<CardDisplay>();
+                LibraryCardInteraction interaction = go.GetComponent<LibraryCardInteraction>();
                 
-                // Verifica se é "New"
-                if (SaveLoadSystem.Instance != null && SaveLoadSystem.Instance.IsCardNew(card.id))
+                bool isOwned = ownedIDsCache.Contains(card.id);
+                interaction.myCard = card;
+                interaction.isOwned = isOwned;
+
+                if (isOwned)
                 {
-                    CreateNewBanner(go.transform);
+                    display.SetCard(card, backTexture, true);
+                    bool isNew = SaveLoadSystem.Instance != null && SaveLoadSystem.Instance.IsCardNew(card.id);
+                    ToggleNewBanner(go, isNew);
+                }
+                else
+                {
+                    display.SetCardBackOnly(backTexture);
+                    ToggleNewBanner(go, false);
                 }
             }
             else
             {
-                // Se não possui, mostra apenas o verso (bloqueada)
-                display.SetCardBackOnly(backTexture);
+                go.SetActive(false);
+                ToggleNewBanner(go, false);
             }
-
-            display.isInteractable = false; // Desativa o efeito de "subir" (comportamento de mão)
-            display.isPlayerCard = true;    // Força o uso da cor de outline do jogador
-
-            // Adiciona interatividade para o Viewer
-            LibraryCardInteraction interaction = go.AddComponent<LibraryCardInteraction>();
-            interaction.manager = this;
-            interaction.myCard = card;
-            interaction.isOwned = isOwned; // Passa o estado para saber se pode ver detalhes
         }
 
         // Atualiza UI
@@ -149,7 +169,19 @@ public class CardLibraryManager : MonoBehaviour
         if (nextButton) nextButton.interactable = currentPage < totalPages;
     }
 
-    void CreateNewBanner(Transform parent)
+    void ToggleNewBanner(GameObject parentCard, bool show)
+    {
+        if (!pooledNewTags.ContainsKey(parentCard))
+        {
+            if (!show) return; // Se não precisa mostrar e não existe, nem cria.
+            pooledNewTags[parentCard] = CreateNewBannerObject(parentCard.transform);
+        }
+
+        pooledNewTags[parentCard].SetActive(show);
+        if (show) pooledNewTags[parentCard].transform.SetAsLastSibling();
+    }
+
+    GameObject CreateNewBannerObject(Transform parent)
     {
         if (newTagPrefab != null)
         {
@@ -186,14 +218,15 @@ public class CardLibraryManager : MonoBehaviour
                 bannerRect.anchoredPosition = Vector2.zero;
             }
             
-            bannerContainer.transform.SetAsLastSibling();
+            return bannerContainer;
         }
         else
         {
             // Lógica antiga para o banner dinâmico (fallback)
             GameObject bannerObj = new GameObject("NewTag_Dynamic", typeof(RectTransform), typeof(Image));
             bannerObj.transform.SetParent(parent, false);
-            // ... (código do banner dinâmico continua aqui) ...
+            // ... (Você pode adicionar a montagem do texto dinâmico aqui se não usar o Prefab) ...
+            return bannerObj;
         }
     }
 
