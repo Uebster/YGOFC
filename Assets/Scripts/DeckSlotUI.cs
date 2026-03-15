@@ -1,76 +1,94 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Linq;
 
+/// <summary>
+/// Controla a exibição e interação de um único slot na lista de Importação/Exportação de Decks.
+/// </summary>
 public class DeckSlotUI : MonoBehaviour
 {
-    [Header("UI References")]
-    public TextMeshProUGUI nameText;
-    public TextMeshProUGUI dateText; // Usaremos para mostrar a contagem de cartas
-    public TextMeshProUGUI infoText; // Não usado por enquanto, mas mantido para consistência
-    public Button actionButton;
-    public Image selectionHighlight;
+    [Header("UI References (Assign in Prefab)")]
+    [SerializeField] private TextMeshProUGUI nameText;
+    [Tooltip("Usado para mostrar a contagem de cartas (M:X E:Y S:Z).")]
+    [SerializeField] private TextMeshProUGUI cardCountText;
+    [SerializeField] private Button actionButton;
+    [SerializeField] private Image selectionHighlight;
 
+    // Internal State
     private SaveLoadSystem.DeckRecipe myData;
-    private System.Action<SaveLoadSystem.DeckRecipe> onAction;
     private DeckImportExportManager menuManager;
 
+    /// <summary>
+    /// Os dados da receita de deck associados a este slot.
+    /// </summary>
     public SaveLoadSystem.DeckRecipe MyData => myData;
 
-    public void Setup(SaveLoadSystem.DeckRecipe data, System.Action<SaveLoadSystem.DeckRecipe> selectCallback, bool isSelected)
+    void Awake()
+    {
+        // Auto-find references if not assigned in the Inspector.
+        // This makes the prefab more robust to hierarchy changes.
+        if (actionButton == null) actionButton = GetComponent<Button>();
+        if (selectionHighlight == null) selectionHighlight = GetComponent<Image>();
+
+        // Find text components by name if not assigned.
+        if (nameText == null || cardCountText == null)
+        {
+            var allTexts = GetComponentsInChildren<TextMeshProUGUI>(true);
+            if (nameText == null) nameText = allTexts.FirstOrDefault(t => t.name == "Name");
+            // For backward compatibility with prefabs where this field is still named "Date"
+            if (cardCountText == null) cardCountText = allTexts.FirstOrDefault(t => t.name == "Date");
+        }
+        
+        menuManager = GetComponentInParent<DeckImportExportManager>();
+    }
+
+    /// <summary>
+    /// Configures the slot to display an existing deck recipe.
+    /// </summary>
+    /// <param name="data">The deck recipe data to display.</param>
+    /// <param name="selectCallback">The action to perform when the slot is clicked.</param>
+    public void Setup(SaveLoadSystem.DeckRecipe data, System.Action<SaveLoadSystem.DeckRecipe> selectCallback)
     {
         myData = data;
-        menuManager = GetComponentInParent<DeckImportExportManager>();
-        onAction = selectCallback;
-
-        // Auto-configuração
-        if (nameText == null) nameText = transform.Find("Name")?.GetComponent<TextMeshProUGUI>();
-        if (dateText == null) dateText = transform.Find("Date")?.GetComponent<TextMeshProUGUI>();
-        if (infoText == null) infoText = transform.Find("Info")?.GetComponent<TextMeshProUGUI>();
 
         if (data == null)
         {
             if (nameText) nameText.text = "--- ERRO ---";
-            if (dateText) dateText.text = "";
+            if (cardCountText) cardCountText.text = "";
             if (actionButton) actionButton.interactable = false;
             return;
         }
 
         if (nameText) nameText.text = data.deckName;
         
-        // Reutiliza o campo de data para mostrar a contagem
-        if (dateText)
+        // Display card counts for Main, Extra, and Side decks.
+        if (cardCountText)
         {
             int main = data.mainDeckCardIDs?.Count ?? 0;
             int extra = data.extraDeckCardIDs?.Count ?? 0;
             int side = data.sideDeckCardIDs?.Count ?? 0;
-            dateText.text = $"M:{main} E:{extra} S:{side}";
+            cardCountText.text = $"M:{main}  E:{extra}  S:{side}";
         }
 
-        SetSelected(isSelected);
-
-        if (actionButton == null) actionButton = GetComponent<Button>();
         if (actionButton)
         {
             actionButton.onClick.RemoveAllListeners();
-            actionButton.onClick.AddListener(() => onAction?.Invoke(myData));
+            actionButton.onClick.AddListener(() => selectCallback?.Invoke(myData));
         }
     }
 
+    /// <summary>
+    /// Configures the slot to be the "[ Create New Deck ]" button.
+    /// </summary>
+    /// <param name="newDeckCallback">The action to perform when this slot is clicked.</param>
     public void SetupForNewDeck(System.Action newDeckCallback)
     {
         myData = null;
-        menuManager = GetComponentInParent<DeckImportExportManager>();
-
-        if (nameText == null) nameText = transform.Find("Name")?.GetComponent<TextMeshProUGUI>();
-        if (dateText == null) dateText = transform.Find("Date")?.GetComponent<TextMeshProUGUI>();
 
         if (nameText) nameText.text = "[ Create New Deck ]";
-        if (dateText) dateText.text = "";
+        if (cardCountText) cardCountText.text = "Crie e salve uma nova receita de deck.";
 
-        SetSelected(false);
-
-        if (actionButton == null) actionButton = GetComponent<Button>();
         if (actionButton)
         {
             actionButton.onClick.RemoveAllListeners();
@@ -78,12 +96,20 @@ public class DeckSlotUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Updates the visual state (color) of the slot based on whether it is selected.
+    /// </summary>
+    /// <param name="isSelected">True if the slot should be highlighted as selected.</param>
     public void SetSelected(bool isSelected)
     {
-        if (selectionHighlight == null) selectionHighlight = GetComponent<Image>();
         if (selectionHighlight != null && menuManager != null)
         {
             selectionHighlight.color = isSelected ? menuManager.selectedColor : menuManager.defaultColor;
+        }
+        else if (selectionHighlight != null)
+        {
+            // Fallback if manager is not found, just use simple colors.
+            selectionHighlight.color = isSelected ? Color.yellow : Color.white;
         }
     }
 }

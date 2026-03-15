@@ -3,6 +3,40 @@
 ## Visão Geral
 O **Deck Builder** é a interface onde o jogador gerencia sua coleção de cartas do Baú (`Trunk`) e constrói os baralhos que usará nos duelos. O sistema permite filtrar, ordenar, pesquisar, importar/exportar e validar a legalidade dos decks em tempo real.
 
+## Baú de Cartas (Virtual Scrolling)
+
+Para lidar com a grande quantidade de cartas do jogo (2147+), a lista do baú (`Chest`) utiliza um sistema de **Virtual Scrolling**. A lógica foi terceirizada para scripts dedicados, mantendo o `DeckBuilderManager` focado apenas em gerenciar os dados.
+
+### Objetivo
+O objetivo principal é garantir alta performance e uma experiência de usuário fluida, mesmo ao exibir milhares de cartas. Em vez de instanciar um objeto de UI para cada carta de uma vez (o que travaria o jogo), o sistema cria e gerencia apenas os objetos que estão visíveis na tela, reciclando-os conforme o jogador rola a lista.
+
+### Arquitetura e Scripts Envolvidos
+
+1.  **`DeckBuilderManager.cs` (O Gerente de Dados):**
+    *   Sua responsabilidade é **filtrar e ordenar** a lista completa de cartas (`currentTrunk`) com base nas ações do jogador (pesquisa de texto, filtros de tipo, ordenação).
+    *   Após processar a lista, ele **entrega o resultado final** para o `TrunkScrollManager`, chamando o método `Initialize()`. Ele não se envolve mais com a criação ou posicionamento de objetos de UI do baú.
+
+2.  **`TrunkScrollManager.cs` (O Cérebro do Scroll):**
+    *   Este script é adicionado ao `Scroll View` do baú e substitui a lógica de layout padrão do Unity.
+    *   **Pooling:** Ele cria um "pool" de objetos de UI (prefabs da carta) em quantidade suficiente apenas para preencher a tela.
+    *   **Cálculo de Posição:** Ele escuta o evento `onValueChanged` do `ScrollRect`. A cada movimento, ele calcula quais índices da lista de cartas deveriam estar visíveis.
+    *   **Reciclagem:** Pega os objetos do pool, move-os para a posição correta na grade e chama o `TrunkCardScrollItem` para que ele se atualize com os novos dados da carta. Itens que saem da tela são desativados.
+
+3.  **`TrunkCardScrollItem.cs` (O Item da Lista):**
+    *   Este script é adicionado ao prefab da carta no baú (`Card_PrefabChestList`).
+    *   Sua única função é atuar como uma ponte. Ele recebe os dados de uma carta (`IGrouping<string, CardData>`) do `TrunkScrollManager`.
+    *   Ele então busca informações adicionais no `DeckBuilderManager` (como o número de cópias já no deck) e passa todos os dados para o script `ChestCardItem`, que é o responsável final por atualizar os elementos visuais (nome, imagem, estrelas, etc.).
+
+### Fluxo de Execução
+1.  O jogador aplica um filtro ou busca no `DeckBuilderManager`.
+2.  `DeckBuilderManager` processa a lista de 2147+ cartas e gera uma lista final `filteredCardGroups`.
+3.  `DeckBuilderManager` chama `trunkScrollManager.Initialize(filteredCardGroups)`.
+4.  `TrunkScrollManager` calcula a altura total do conteúdo para que a barra de rolagem funcione corretamente e cria seu pool de itens de UI.
+5.  O jogador move a barra de rolagem.
+6.  O método `OnScroll` do `TrunkScrollManager` é acionado.
+7.  Ele calcula o primeiro item visível e, em um loop, posiciona os itens do pool e chama `item.UpdateContent(cardData)` para cada um.
+8.  O `TrunkCardScrollItem` recebe os dados, consulta o `DeckBuilderManager` para obter contagens e chama o `Setup()` do `ChestCardItem` para exibir a carta na tela.
+
 ## Estrutura de UI (Hierarquia)
 
 Abaixo está a estrutura hierárquica recomendada dos objetos na cena Unity para o `Panel_DeckBuilder`.
@@ -11,9 +45,6 @@ Abaixo está a estrutura hierárquica recomendada dos objetos na cena Unity para
     *   **Panel_CardViewer** `[Image, CardViewerUI]`
         *   **CardViewer** `[CardViewerUI]`
             *   **Card2D** `[RawImage, EventTrigger]`
-            *   **CardNameText** `[TextMeshProUGUI]`
-            *   **CardInfoText** `[TextMeshProUGUI]`
-            *   **CardStatsText** `[TextMeshProUGUI]`
             *   **Panel_Description** `[Image]`
                 *   **Scroll View** `[Image, ScrollRect]`
                     *   **Viewport** `[Image, Mask]`
@@ -22,6 +53,9 @@ Abaixo está a estrutura hierárquica recomendada dos objetos na cena Unity para
                         *   **Sliding Area** `[]`
                         *   **Handle** `[Image]`
                 *   **CardDescriptionText** `[TextMeshProUGUI, Scrollbar]`
+            *   **CardNameText** `[TextMeshProUGUI]`
+            *   **CardInfoText** `[TextMeshProUGUI]`
+            *   **CardStatsText** `[TextMeshProUGUI]`
     *   **Btn_SaveDeck** `[Image, Button]`
         *   **Save Deck** `[TextMeshProUGUI]`
     *   **Btn_BackToMenu** `[Image, Button]`
@@ -48,10 +82,9 @@ Abaixo está a estrutura hierárquica recomendada dos objetos na cena Unity para
             *   **Btn_FilterRitual** `[Image, Button]`
             *   **Btn_FilterABC** `[Image, Button]`
         *   **Panel_CardChest** `[Image]`
-            *   **Scroll View** `[Image, ScrollRect]`
+            *   **Scroll View** `[Image, ScrollRect, TrunkScrollManager]`
                 *   **Viewport** `[Image, Mask]`
-                *   **Image** `[Image, DeckDropZone]`
-                *   **Content** `[VerticalLayoutGroup, ContentSizeFitter]`
+                *   **Content** `[RectTransform, DeckDropZone]`
                 *   **Scrollbar** `[Image, Scrollbar]`
                     *   **Sliding Area** `[]`
                     *   **Handle** `[Image]`
@@ -110,18 +143,6 @@ Abaixo está a estrutura hierárquica recomendada dos objetos na cena Unity para
 
 ## Funcionalidades
 
-### Baú de Cartas (Virtual Scrolling)
-Para lidar com a grande quantidade de cartas do jogo (2147+), a lista do baú (`Chest`) utiliza um sistema de **Virtual Scrolling**.
-*   **Performance:** Em vez de instanciar um item de UI para cada carta de uma vez (o que causaria enormes problemas de performance), o sistema gerencia um pequeno "pool" de objetos de UI.
-*   **Reciclagem:** Conforme o jogador rola a lista, os itens que saem da tela são desativados e reciclados para exibir as novas cartas que entram na tela. A `Scrollbar` e a roda do mouse funcionam de forma fluida.
-*   **Fonte de Cartas:** O baú agora exibe **todas as cartas existentes no banco de dados**, permitindo um modo de "construção livre" onde o jogador não é limitado pelas cartas que "possui" no modo campanha.
-
-### Contagem Detalhada de Cartas
-A UI agora fornece uma contagem detalhada dos tipos de carta em cada deck (Principal, Lateral e Extra).
-*   Para o Main e Side Deck, a UI exibe contagens separadas para monstros `Normal`, `Effect`, `Ritual`, além de `Spell` e `Trap`.
-*   Para o Extra Deck, a UI exibe a contagem de monstros `Fusion`.
-*   Essa contagem é atualizada em tempo real conforme as cartas são adicionadas ou removidas dos decks, fornecendo feedback instantâneo ao jogador.
-
 ### 1. Filtragem e Ordenação
 O `DeckBuilderManager` gerencia uma lista de cartas do baú (`currentTrunk`) e a re-exibe conforme os filtros e ordenações são aplicados.
 *   **Filtros de Tipo:** Botões como *Normal, Effect, Spell, Trap, Ritual, Fusion* são mutuamente exclusivos. Apenas um filtro de tipo pode estar ativo por vez. Clicar em um filtro ativo o desativa, mostrando todas as cartas novamente.
@@ -131,6 +152,12 @@ O `DeckBuilderManager` gerencia uma lista de cartas do baú (`currentTrunk`) e a
     *   **DEF:** Ordena por pontos de defesa. Clicar novamente inverte (Maior <-> Menor).
     *   *Nota:* A ordenação respeita os filtros ativos.
 *   **Pesquisa por Texto:** O campo `Input_SearchCard` filtra a lista de cartas em tempo real (com um pequeno delay para performance), buscando o texto no nome da carta.
+
+### Contagem Detalhada de Cartas
+A UI agora fornece uma contagem detalhada dos tipos de carta em cada deck (Principal, Lateral e Extra).
+*   Para o Main e Side Deck, a UI exibe contagens separadas para monstros `Normal`, `Effect`, `Ritual`, além de `Spell` e `Trap`.
+*   Para o Extra Deck, a UI exibe a contagem de monstros `Fusion`.
+*   Essa contagem é atualizada em tempo real conforme as cartas são adicionadas ou removidas dos decks, fornecendo feedback instantâneo ao jogador.
 
 ### 2. Sistema de Ícones (4 Campos)
 Para organizar a exibição dos ícones de forma clara, o `DeckBuilderManager` agora possui 4 listas no Inspector, que correspondem diretamente aos `Image` no prefab `Card_PrefabChestList`:
@@ -150,7 +177,7 @@ A lógica de exibição é a seguinte:
 
 Isso garante que cada tipo de carta mostre apenas os ícones relevantes, mantendo a interface limpa e informativa.
 
-### 2. Drag and Drop (Arrastar e Soltar)
+### 3. Drag and Drop (Arrastar e Soltar)
 A lógica é dividida entre `DeckDragHandler` (na carta) e `DeckDropZone` (nas áreas de deck).
 *   Cartas podem ser arrastadas do Baú (Trunk) para qualquer zona de deck (Main, Side, Extra).
 *   Cartas podem ser movidas entre zonas de deck.
@@ -158,7 +185,7 @@ A lógica é dividida entre `DeckDragHandler` (na carta) e `DeckDropZone` (nas �
 *   **Validação de Zona:** O `DeckBuilderManager.AddCardToDeck` impede, por exemplo, colocar Monstros de Fusão no Main Deck.
 *   **Feedback Visual:** Se uma jogada for inválida (ex: 4ª cópia, zona errada, deck cheio), a área do deck alvo piscará em vermelho.
 
-### 3. Regras de Construção (Limites)
+### 4. Regras de Construção (Limites)
 A validação é feita em tempo real pelo `DeckBuilderManager.AddCardToDeck` e verificada novamente ao salvar.
 *   **Main Deck:** Mínimo 40, Máximo 60 cartas.
 *   **Side Deck:** Máximo 15 cartas.
@@ -168,31 +195,18 @@ A validação é feita em tempo real pelo `DeckBuilderManager.AddCardToDeck` e v
     *   **Opção Global:** Se `GameManager.allowForbiddenCards` estiver ativo, cartas Proibidas são tratadas como Limitadas (1).
     *   **Opção Sem Limites:** Se `GameManager.disableBanlist` estiver ativo, a Banlist é ignorada e todas as cartas podem ter até 3 cópias.
 
-### 4. Persistência
+### 5. Persistência
 *   **Save Deck:** O botão `Btn_SaveDeck` chama `SaveDeck()`. Este método primeiro valida o deck. Se for válido, ele atualiza o deck ativo no `GameManager` e marca que não há mais alterações pendentes (`hasUnsavedChanges = false`).
 *   **Sair (Back):** O botão `Btn_BackToMenu` chama `ExitDeckBuilder()`. Se `hasUnsavedChanges` for `true`, ele exibe um pop-up de confirmação antes de sair, para evitar a perda de alterações.
-*   **Export/Import Deck:** (A ser implementado) Salva/carrega a lista de IDs das cartas em um arquivo JSON. A importação deve verificar se o jogador possui as cartas no Baú.
 
-### 6. Importar/Exportar Decks
-O sistema permite que o jogador salve "receitas" de decks para importá-las posteriormente, facilitando a troca rápida de estratégias.
+### 6. Importação e Exportação de Decks
+O Deck Builder também permite que o jogador salve ("exporte") e carregue ("importe") receitas de decks para uso futuro. Esta funcionalidade é gerenciada por um sistema dedicado para manter a organização.
 
-#### Estrutura de UI (Hierarquia)
-Abaixo está a estrutura recomendada para os painéis de Importação e Exportação.
-
-*   **Panel_Export** `[Image, DeckImportExportManager]`
-    *   **Panel_ExportHeader** `[Image]`
-        *   **Text (TMP)** `[TextMeshProUGUI]` (Título: "Export Deck")
-    *   **Scroll View** `[Image, ScrollRect]`
-        *   **Viewport** `[Image, Mask]`
-            *   **Content** `[VerticalLayoutGroup]` (Onde os `DeckSlotUI` são instanciados)
-    *   **InputDeckName** `[Image, TMP_InputField]`
-    *   **Btn_ExportDeck** `[Image, Button]` (Botão de Ação Principal)
-    *   **Btn_DeleteDeck** `[Image, Button]` (Botão para Deletar Deck Selecionado)
-    *   **Panel_ImportFooter** `[Image]`
-        *   **Btn_BackToDeckBuilder** `[Image, Button]`
-
-*   **Panel_Import** `[Image, DeckImportExportManager]`
-    *   *(Estrutura similar ao Export, mas sem os botões de Input e Delete)*
+*   **Lógica de UI:** O script `DeckImportExportManager.cs` controla um painel separado que é ativado pelos botões "Import" e "Export". Ele é responsável por listar os decks salvos e capturar o nome para um novo deck.
+*   **Armazenamento:** As receitas de deck são salvas diretamente no arquivo de save do jogador (`.save`) como uma lista de objetos `DeckRecipe`. O `SaveLoadSystem.cs` gerencia a leitura e escrita desses dados.
+*   **Integração:** O `DeckBuilderManager` atua como uma ponte, fornecendo os métodos `ExportCurrentDeck(deckName)` e `ImportDeck(deckName)`.
+    *   `ExportCurrentDeck`: Pega as listas de cartas atuais (Main, Side, Extra) e as envia para o `SaveLoadSystem` para serem salvas.
+    *   `ImportDeck`: Recebe uma lista de IDs de cartas do `SaveLoadSystem` e as carrega no Deck Builder, limpando o deck anterior.
 
 ### 7. Indicador de Cartas "New"
 *   Ao popular a lista do baú, o `DeckBuilderManager` verifica cada carta com `SaveLoadSystem.Instance.IsCardNew(card.id)`.

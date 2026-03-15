@@ -36,6 +36,11 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
     void Awake()
     {
         manager = DeckBuilderManager.Instance;
+        if (manager == null)
+        {
+            Debug.LogError("[ChestCardItem] Awake: DeckBuilderManager.Instance é NULO!");
+        }
+        // Debug.Log("[ChestCardItem] Awake: Prefab do item do baú inicializado.");
     }
 
     // Método estático para tentar obter arte do cache
@@ -61,9 +66,11 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
         isInDeck = inDeck;
 
         // --- Arte da carta ---
-        if (cardArtImage != null && GameManager.Instance != null)
+        // A corotina foi movida para OnEnable para evitar erro com o objeto inativo.
+        // Apenas limpamos a arte antiga ou definimos um placeholder aqui.
+        if (cardArtImage != null)
         {
-            StartCoroutine(LoadArtWithCache(card.image_filename));
+            cardArtImage.texture = null;
         }
 
         // --- Nome ---
@@ -83,13 +90,115 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
 
         // --- Configurar ícones e textos conforme o tipo ---
         bool isMonster = card.type.Contains("Monster");
+
         if (isMonster)
         {
-            SetupMonsterUI(card);
+            // ATK/DEF
+            if (cardStatsText != null)
+                cardStatsText.text = $"{card.atk} / {card.def}";
+
+            // Nível
+            if (monsterLvlText != null)
+            {
+                monsterLvlText.gameObject.SetActive(true);
+                monsterLvlText.text = card.level.ToString();
+            }
+
+            // Atributo
+            if (attributeIcon != null && manager != null)
+            {
+                var mapping = manager.attributeIcons.Find(x => x.name.Equals(card.attribute, System.StringComparison.OrdinalIgnoreCase));
+                if (mapping != null && mapping.icon != null)
+                {
+                    attributeIcon.sprite = mapping.icon;
+                    attributeIcon.enabled = true;
+                }
+                else
+                {
+                    attributeIcon.enabled = false;
+                }
+            }
+
+            // Raça
+            if (raceIcon != null && manager != null)
+            {
+                var mapping = manager.raceIcons.Find(x => x.name.Equals(card.race, System.StringComparison.OrdinalIgnoreCase));
+                if (mapping != null && mapping.icon != null)
+                {
+                    raceIcon.sprite = mapping.icon;
+                    raceIcon.enabled = true;
+                }
+                else
+                {
+                    raceIcon.enabled = false;
+                }
+            }
+
+            // Desativa ícones de Spell/Trap
+            if (typeIcon != null) typeIcon.gameObject.SetActive(false);
+            if (subTypeIcon != null) subTypeIcon.gameObject.SetActive(false);
+
+            // Estrelas
+            if (stars != null && stars.Length > 0)
+            {
+                for (int i = 0; i < stars.Length; i++)
+                {
+                    if (stars[i] != null)
+                        stars[i].SetActive(i < card.level);
+                }
+            }
         }
         else // Spell / Trap
         {
-            SetupSpellTrapUI(card);
+            // Limpa stats
+            if (cardStatsText != null) cardStatsText.text = "";
+            if (monsterLvlText != null) monsterLvlText.gameObject.SetActive(false);
+            if (attributeIcon != null) attributeIcon.enabled = false;
+            if (raceIcon != null) raceIcon.enabled = false;
+
+            // Tipo principal (Spell/Trap)
+            string mainType = card.type.Contains("Spell") ? "Spell" : "Trap";
+            if (typeIcon != null && manager != null)
+            {
+                typeIcon.gameObject.SetActive(true);
+                var mapping = manager.typeIcons.Find(x => x.name.Equals(mainType, System.StringComparison.OrdinalIgnoreCase));
+                if (mapping != null && mapping.icon != null)
+                {
+                    typeIcon.sprite = mapping.icon;
+                    typeIcon.enabled = true;
+                }
+                else
+                {
+                    typeIcon.enabled = false;
+                }
+            }
+
+            // Subtipo (propriedade)
+            if (subTypeIcon != null && manager != null && !string.IsNullOrEmpty(card.property) && card.property != "Normal")
+            {
+                subTypeIcon.gameObject.SetActive(true);
+                var mapping = manager.subTypeIcons.Find(x => x.name.Equals(card.property, System.StringComparison.OrdinalIgnoreCase));
+                if (mapping != null && mapping.icon != null)
+                {
+                    subTypeIcon.sprite = mapping.icon;
+                    subTypeIcon.enabled = true;
+                }
+                else
+                {
+                    subTypeIcon.enabled = false;
+                }
+            }
+            else if (subTypeIcon != null)
+            {
+                subTypeIcon.gameObject.SetActive(false);
+            }
+
+            // Esconde estrelas
+            if (stars != null)
+            {
+                foreach (var star in stars)
+                    if (star != null) star.SetActive(false);
+            }
         }
 
         // --- Tag "NEW" (opcional) ---
@@ -103,111 +212,20 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
         }
     }
 
-    private void SetupMonsterUI(CardData card)
+    void OnEnable()
     {
-        // ATK/DEF
-        if (cardStatsText != null)
-            cardStatsText.text = $"{card.atk} / {card.def}";
-
-        // Nível
-        if (monsterLvlText != null)
+        // A corotina é iniciada aqui para garantir que o GameObject está ativo.
+        if (cardData != null && cardArtImage != null)
         {
-            monsterLvlText.gameObject.SetActive(true);
-            monsterLvlText.text = card.level.ToString();
-        }
-
-        // Atributo
-        if (attributeIcon != null && manager != null)
-        {
-            if (manager.attributeIconsDict.TryGetValue(card.attribute, out Sprite icon))
-            {
-                attributeIcon.sprite = icon;
-                attributeIcon.enabled = true;
-            }
-            else
-            {
-                attributeIcon.enabled = false;
-            }
-        }
-
-        // Raça
-        if (raceIcon != null && manager != null)
-        {
-            if (manager.raceIconsDict.TryGetValue(card.race, out Sprite icon))
-            {
-                raceIcon.sprite = icon;
-                raceIcon.enabled = true;
-            }
-            else
-            {
-                raceIcon.enabled = false;
-            }
-        }
-
-        // Desativa ícones de Spell/Trap
-        if (typeIcon != null) typeIcon.gameObject.SetActive(false);
-        if (subTypeIcon != null) subTypeIcon.gameObject.SetActive(false);
-
-        // Estrelas
-        if (stars != null && stars.Length > 0)
-        {
-            for (int i = 0; i < stars.Length; i++)
-            {
-                if (stars[i] != null)
-                    stars[i].SetActive(i < card.level);
-            }
+            StartCoroutine(LoadArtWithCache(cardData.image_filename));
         }
     }
 
-    private void SetupSpellTrapUI(CardData card)
+    void OnDisable()
     {
-        // Limpa stats de monstro
-        if (cardStatsText != null) cardStatsText.text = "";
-        if (monsterLvlText != null) monsterLvlText.gameObject.SetActive(false);
-        if (attributeIcon != null) attributeIcon.enabled = false;
-        if (raceIcon != null) raceIcon.enabled = false;
-
-        // Tipo principal (Spell/Trap)
-        string mainType = card.type.Contains("Spell") ? "Spell" : "Trap";
-        if (typeIcon != null && manager != null)
-        {
-            typeIcon.gameObject.SetActive(true);
-            if (manager.typeIconsDict.TryGetValue(mainType, out Sprite icon))
-            {
-                typeIcon.sprite = icon;
-                typeIcon.enabled = true;
-            }
-            else
-            {
-                typeIcon.enabled = false;
-            }
-        }
-
-        // Subtipo (propriedade)
-        if (subTypeIcon != null && manager != null && !string.IsNullOrEmpty(card.property) && card.property != "Normal")
-        {
-            subTypeIcon.gameObject.SetActive(true);
-            if (manager.subTypeIconsDict.TryGetValue(card.property, out Sprite icon))
-            {
-                subTypeIcon.sprite = icon;
-                subTypeIcon.enabled = true;
-            }
-            else
-            {
-                subTypeIcon.enabled = false;
-            }
-        }
-        else if (subTypeIcon != null)
-        {
-            subTypeIcon.gameObject.SetActive(false);
-        }
-
-        // Esconde estrelas
-        if (stars != null)
-        {
-            foreach (var star in stars)
-                if (star != null) star.SetActive(false);
-        }
+        // Para a corotina se o objeto for desativado (por exemplo, ao sair do viewport).
+        // Isso evita que web requests finalizem e tentem atribuir a um objeto inativo.
+        StopAllCoroutines();
     }
 
     private System.Collections.IEnumerator LoadArtWithCache(string imagePath)

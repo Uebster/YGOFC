@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using UnityEngine.EventSystems;
-
 [System.Serializable]
 public class IconMapping
 {
@@ -25,8 +24,7 @@ public class DeckBuilderManager : MonoBehaviour
     public Transform mainDeckContent;
     public Transform sideDeckContent;
     public Transform extraDeckContent;
-    public Transform trunkContent;
-    private ScrollRect trunkScrollRect; // Para virtual scrolling
+    public TrunkScrollManager trunkScrollManager;
 
     [Header("UI References - Info")]
     public TextMeshProUGUI mainDeckCountText;
@@ -54,20 +52,12 @@ public class DeckBuilderManager : MonoBehaviour
     [Header("UI References - Filters")]
     public TMP_InputField searchInput;
     
-    [Header("UI References - Pagination")]
-    public Button btnPrevPage;
-    public Button btnNextPage;
-    public TextMeshProUGUI txtPageInfo;
-    [Tooltip("Quantas cartas únicas são mostradas por página no baú.")]
-    public int itemsPerPage = 50;
-    private int currentPage = 1;
-    private int totalPages = 1;
-    
     [Header("UI References - Actions")]
     public Button btnSave;
     public Button btnExit;
     public Button btnImport;
     public Button btnExport;
+    public GameObject importExportPanel; // O painel que contém os painéis de Import e Export
     
     [Header("Filter Buttons")]
     public Button btnSortABC;
@@ -139,27 +129,15 @@ public class DeckBuilderManager : MonoBehaviour
     private List<CardData> sideDeck = new List<CardData>();
     private List<CardData> extraDeck = new List<CardData>();
     private List<CardData> currentTrunk = new List<CardData>();
+    private Dictionary<string, Texture2D> artCache = new Dictionary<string, Texture2D>();
     private List<IGrouping<string, CardData>> filteredCardGroups = new List<IGrouping<string, CardData>>();
 
-    [Header("Virtual Scrolling")]
-    public float itemHeight = 125f; // Altura de cada item da lista + espaçamento
-    private bool isVirtualScrollInitialized = false;
-
-    private Dictionary<string, Texture2D> artCache = new Dictionary<string, Texture2D>();
     private Coroutine searchDebounceCoroutine;
 
     // Conjunto de IDs de cartas nos decks para verificação rápida da tag "NEW".
     private HashSet<string> cardIDsInDecks = new HashSet<string>();
 
     private bool hasUnsavedChanges = false;
-
-        [Header("Pooling")]
-    [Tooltip("Tamanho inicial do pool de itens do chest para performance.")]
-    public int initialPoolSize = 30;
-    
-    // Sistema de Pooling para melhor performance (Queue-based)
-    private Queue<GameObject> availableChestItems = new Queue<GameObject>();
-    private List<GameObject> activeChestItems = new List<GameObject>();
 
     private const int MIN_MAIN = 40;
     private const int MAX_MAIN = 60;
@@ -280,21 +258,20 @@ public class DeckBuilderManager : MonoBehaviour
     {
         Instance = this;
         InitializeIconDictionaries();
-        InitializeChestItemPool(); // MOVIDO: Garante que o pool exista antes de OnEnable/Start
     }
 
     void Start()
     {
         // Esconde o painel de import/export no início
+        if (importExportPanel != null)
+            importExportPanel.SetActive(false);
 
         // Adiciona listeners para os botões de ação principais
         btnSave?.onClick.AddListener(SaveDeck);
         btnExit?.onClick.AddListener(Exit);
 
-        // Adiciona listeners para os botões de Import/Export
-        btnImport?.onClick.AddListener(UIManager.Instance.Btn_ShowImportPanel);
-        btnExport?.onClick.AddListener(UIManager.Instance.Btn_ShowExportPanel);
-
+        // Adiciona listeners para os botões de filtro e ordenação
+        // Ordenação
         btnSortABC?.onClick.AddListener(() => SetSortType(SortType.ABC));
         btnSortAtk?.onClick.AddListener(() => SetSortType(SortType.Atk));
         btnSortDef?.onClick.AddListener(() => SetSortType(SortType.Def));
@@ -307,19 +284,8 @@ public class DeckBuilderManager : MonoBehaviour
         btnFilterFusion?.onClick.AddListener(() => ToggleFilter("Fusion"));
         btnFilterRitual?.onClick.AddListener(() => ToggleFilter("Ritual"));
 
-        // Paginação
-        btnPrevPage?.onClick.AddListener(PrevPage);
-        btnNextPage?.onClick.AddListener(NextPage);
-
         // Pesquisa
         searchInput?.onValueChanged.AddListener(OnSearchInputChanged);
-
-        // Virtual Scrolling Setup
-        trunkScrollRect = trunkContent.GetComponentInParent<ScrollRect>();
-        if (trunkScrollRect != null)
-        {
-            trunkScrollRect.onValueChanged.AddListener(OnScroll);
-        }
 
         // Configura as zonas de drop
         SetupDropZones();
@@ -364,76 +330,13 @@ public class DeckBuilderManager : MonoBehaviour
         RefreshTrunkUI();
     }
 
-        void InitializeChestItemPool()
-    {
-        if (cardChestItemPrefab == null) return;
-
-        // Limpa pool antigo (destroi objetos)
-        foreach (var item in availableChestItems) if (item != null) Destroy(item);
-        availableChestItems.Clear();
-        activeChestItems.Clear();
-
-        int poolSize = Mathf.Max(initialPoolSize, itemsPerPage) + 5; // buffer
-        for (int i = 0; i < poolSize; i++)
-        {
-            GameObject go = Instantiate(cardChestItemPrefab, trunkContent);
-            go.SetActive(false);
-
-            // Verifica se o componente existe (se não, já mostra erro)
-            if (go.GetComponent<ChestCardItem>() == null)
-            {
-                Debug.LogError($"[Pool] Prefab não tem ChestCardItem! Objeto {go.name} será destruído.", go);
-                Destroy(go);
-                continue;
-            }
-
-            availableChestItems.Enqueue(go);
-        }
-        Debug.Log($"[Pool] Inicializado com {availableChestItems.Count} itens.");
-    }
-
-    /// <summary>
-    /// Obtém um item do pool ou cria um novo se necessário
-    /// </summary>
-    private GameObject GetPooledChestItem()
-    {
-        if (availableChestItems.Count > 0)
-        {
-            GameObject item = availableChestItems.Dequeue();
-            item.SetActive(true);
-            return item;
-        }
-        else
-        {
-            Debug.LogWarning("[Pool] Pool esgotado, instanciando novo item. Ajuste o tamanho do pool.");
-            GameObject go = Instantiate(cardChestItemPrefab, trunkContent);
-            if (go.GetComponent<ChestCardItem>() == null)
-            {
-                Debug.LogError("Novo item instanciado sem ChestCardItem!");
-                Destroy(go);
-                return null;
-            }
-            return go;
-        }
-    }
-
-    /// <summary>
-    /// Devolve um item ao pool para reutilização
-    /// </summary>
-    private void ReturnPooledChestItem(GameObject item)
-    {
-        if (item == null) return;
-        item.SetActive(false);
-        availableChestItems.Enqueue(item);
-    }
-
     void SetupDropZones()
     {
         // Adiciona DeckDropZone aos containers se não tiverem
         AddDropZoneIfNeeded(mainDeckContent, DeckZoneType.Main);
         AddDropZoneIfNeeded(sideDeckContent, DeckZoneType.Side);
         AddDropZoneIfNeeded(extraDeckContent, DeckZoneType.Extra);
-        AddDropZoneIfNeeded(trunkContent, DeckZoneType.Trunk);
+        if (trunkScrollManager != null) AddDropZoneIfNeeded(trunkScrollManager.GetComponent<ScrollRect>().content, DeckZoneType.Trunk);
     }
 
     void AddDropZoneIfNeeded(Transform container, DeckZoneType zoneType)
@@ -463,15 +366,11 @@ void OnEnable()
 void OnDisable()
   {
       ClearArtCache();
-      
-      // Limpa o pool de itens
-      foreach (var item in activeChestItems)
-          if (item != null) ReturnPooledChestItem(item);
-      activeChestItems.Clear();
   }
 
 private void ClearArtCache()
 {
+    // Erro CS0103 corrigido aqui
     foreach (var tex in artCache.Values)
         if (tex != null) Destroy(tex);
     artCache.Clear();
@@ -489,22 +388,16 @@ private void LoadData()
     LoadCurrentDeckFromManager();
     LoadTrunk();
 
-    // A UI é atualizada em uma corrotina para garantir que o layout do Unity
-    // tenha tempo de calcular as dimensões corretas, corrigindo o bug do scroll.
-    StartCoroutine(RefreshAllUIAfterFrame());
-
+    RefreshAllUI();
     UpdateFilterButtonsVisuals();
     hasUnsavedChanges = false;
+    Debug.Log("[DeckBuilderManager] LoadData: Processo de carregamento de dados finalizado.");
 }
-    private IEnumerator RefreshAllUIAfterFrame()
-    {
-        yield return new WaitForEndOfFrame();
-        RefreshAllUI();
-    }
 
     void LoadCurrentDeckFromManager()
     {
         if (GameManager.Instance == null) return;
+        Debug.Log("[DeckBuilderManager] LoadCurrentDeckFromManager: Carregando decks do GameManager.");
         mainDeck = new List<CardData>(GameManager.Instance.GetPlayerMainDeck());
         sideDeck = new List<CardData>(GameManager.Instance.GetPlayerSideDeck());
         extraDeck = new List<CardData>(GameManager.Instance.GetPlayerExtraDeck());
@@ -522,7 +415,7 @@ private void LoadData()
         // Carrega TODAS as cartas do banco de dados para o chest/trunk.
         currentTrunk = new List<CardData>(GameManager.Instance.cardDatabase.cardDatabase);
         
-        Debug.Log($"[DeckBuilder] Loaded {currentTrunk.Count} cards from the main database into the trunk.");
+        Debug.Log($"[DeckBuilderManager] LoadTrunk: Carregou {currentTrunk.Count} cartas do banco de dados para o baú.");
     }
 
     public void RefreshAllUI()
@@ -593,34 +486,14 @@ private void LoadData()
 
     void RefreshTrunkUI()
     {
+        Debug.Log("[DeckBuilderManager] RefreshTrunkUI: Iniciando atualização da UI do baú.");
         // DEBUG: Verifique se o baú tem cartas antes de filtrar.
-        Debug.Log($"[DeckBuilderManager] RefreshTrunkUI called. currentTrunk has {currentTrunk.Count} cards.");
-
-        if (trunkContent == null)
-        {
-            Debug.LogError("[DeckBuilder] CRITICAL ERROR: 'Trunk Content' is not assigned in the Inspector! Cards will not appear.");
-            return;
-        }
-
-                  // Devolve todos os itens ativos ao pool
-          foreach (var item in activeChestItems)
-          {
-              if (item != null) ReturnPooledChestItem(item);
-          }
-          activeChestItems.Clear();
 
         string searchText = searchInput != null ? searchInput.text.ToLowerInvariant() : "";
         bool anyFilterActive = activeFilters.Any(kvp => kvp.Value);
 
-        // LOG ADICIONADO
-        if (anyFilterActive)
-        {
-            var activeFilterNames = activeFilters.Where(kvp => kvp.Value).Select(kvp => kvp.Key);
-            Debug.Log($"[Filter] Filtros ativos: {string.Join(", ", activeFilterNames)}");
-        }
-
         filteredCardGroups = currentTrunk
-            .GroupBy(c => c.id)
+            .GroupBy(c => c.id) // Agrupa por ID para tratar cópias
             .Where(g =>
             {
                 CardData card = g.First();
@@ -635,8 +508,8 @@ private void LoadData()
                 }
                 
                 string cardType = card.type;
-                if (activeFilters["Normal"] && cardType == "Monster (Normal)") return true;
-                if (activeFilters["Effect"] && cardType == "Monster (Effect)") return true;
+                if (activeFilters["Normal"] && cardType == "Normal Monster") return true;
+                if (activeFilters["Effect"] && cardType == "Effect Monster") return true;
                 if (activeFilters["Ritual"] && cardType.Contains("Ritual")) return true;
                 if (activeFilters["Fusion"] && cardType.Contains("Fusion")) return true;
                 if (activeFilters["Spell"] && cardType.Contains("Spell")) return true;
@@ -663,119 +536,45 @@ private void LoadData()
                                    .ThenByDescending(g => sortAscending ? -g.First().def : g.First().def).ToList();
                 break;
         }
+        Debug.Log($"[DeckBuilderManager] RefreshTrunkUI: Encontrados {filteredCardGroups.Count} grupos de cartas após filtros e ordenação.");
 
-        // --- VIRTUAL SCROLLING SETUP ---
-        if (btnPrevPage) btnPrevPage.gameObject.SetActive(false);
-        if (btnNextPage) btnNextPage.gameObject.SetActive(false);
-        if (txtPageInfo) txtPageInfo.text = $"{filteredCardGroups.Count} / {currentTrunk.Count} Cards";
- 
-        Debug.Log($"[DeckBuilderManager] Found {filteredCardGroups.Count} card groups after filtering.");
- 
-        float totalHeight = filteredCardGroups.Count * itemHeight;
-        RectTransform contentRect = trunkContent as RectTransform;
-        if (contentRect != null)
+        if (trunkScrollManager != null)
         {
-            contentRect.sizeDelta = new Vector2(contentRect.sizeDelta.x, totalHeight);
+            Debug.Log("[DeckBuilderManager] RefreshTrunkUI: Chamando trunkScrollManager.Initialize().");
+            trunkScrollManager.Initialize(filteredCardGroups);
         }
- 
-        if (trunkScrollRect != null)
+        else
         {
-            trunkScrollRect.content = contentRect;
-            trunkScrollRect.vertical = true;
-            trunkScrollRect.horizontal = false;
-            trunkScrollRect.scrollSensitivity = 30f;
- 
-            if (trunkScrollRect.verticalScrollbar == null)
-            {
-                Scrollbar scrollbar = trunkScrollRect.transform.GetComponentInChildren<Scrollbar>();
-                if (scrollbar != null) trunkScrollRect.verticalScrollbar = scrollbar;
-            }
+            Debug.LogError("TrunkScrollManager não está atribuído no DeckBuilderManager!");
         }
- 
-        isVirtualScrollInitialized = true;
-        OnScroll(Vector2.zero);
     }
 
-          private void OnScroll(Vector2 scrollPos)
-      {
-          if (!isVirtualScrollInitialized || trunkScrollRect == null || itemHeight <= 0) return;
-
-          // --- 1. Recolher todos os itens atualmente ativos de volta ao pool ---
-          foreach (var item in activeChestItems)
-          {
-              if (item != null) ReturnPooledChestItem(item);
-          }
-          activeChestItems.Clear();
-
-          // --- 2. Calcular índices visíveis ---
-          float viewportHeight = (trunkScrollRect.viewport as RectTransform).rect.height;
-          float scrollPosition = (trunkContent as RectTransform).anchoredPosition.y;
-
-          int firstVisibleIndex = Mathf.Max(0, Mathf.FloorToInt(scrollPosition / itemHeight));
-          int lastVisibleIndex = Mathf.Min(filteredCardGroups.Count - 1, Mathf.CeilToInt((scrollPosition + 
-viewportHeight) / itemHeight));
-
-          // --- 3. Para cada índice visível, obter item do pool, posicionar e configurar ---
-          for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++)
-          {
-              if (i < 0 || i >= filteredCardGroups.Count) continue;
-
-              GameObject itemGO = GetPooledChestItem();
-              if (itemGO == null) continue;
-
-              // Posiciona
-              RectTransform itemRect = itemGO.GetComponent<RectTransform>();
-              itemRect.anchoredPosition = new Vector2(0, -i * itemHeight);
-
-              // Configura os dados da carta
-              var group = filteredCardGroups[i];
-              CardData card = group.First();
-
-              int limit = banList.ContainsKey(card.name) ? banList[card.name] : MAX_COPIES;
-              if (GameManager.Instance != null && GameManager.Instance.disableBanlist) limit = MAX_COPIES;
-              int totalOwned = limit;
-
-              int copiesInDecks = mainDeck.Count(c => c.id == card.id) + sideDeck.Count(c => c.id == card.id) + 
-extraDeck.Count(c => c.id == card.id);
-              int availableCopies = totalOwned - copiesInDecks;
-
-              SetupChestItem(itemGO, card, availableCopies, copiesInDecks);
-              activeChestItems.Add(itemGO);
-          }
-      }
-
-    void SetupChestItem(GameObject go, CardData card, int availableCopies, int copiesInDecks)
+    // --- MÉTODOS PÚBLICOS PARA O SCROLL MANAGER ---
+    public IGrouping<string, CardData> GetFilteredCardGroup(int index)
     {
-        ChestCardItem item = go.GetComponentInChildren<ChestCardItem>();
-        if (item == null)
-        {
-            Debug.LogError($"Objeto {go.name} no pool não tem o componente ChestCardItem!", go);
-            return;
-        }
-        
-        bool isNew = SaveLoadSystem.Instance != null && SaveLoadSystem.Instance.IsCardNew(card.id);
-        bool isInDeck = copiesInDecks > 0;
+        if (index < 0 || index >= filteredCardGroups.Count)
+            return null;
+        return filteredCardGroups[index];
+    }
 
-        item.Setup(card, availableCopies, isNew, isInDeck);
-        
-        CardDisplay chestDisplay = go.GetComponentInChildren<CardDisplay>();
-        if (chestDisplay != null)
-        {
-            if (usePlayerHover) chestDisplay.isPlayerCard = true;
-            else if (useOpponentHover) chestDisplay.isPlayerCard = false;
-            else { chestDisplay.useSimpleHover = true; chestDisplay.hoverColor = customHoverColor; }
-            
-            chestDisplay.enableHoverLift = false;
-            chestDisplay.isInteractable = availableCopies > 0;
-        }
+    public int GetCardLimit(string cardName)
+    {
+        if (GameManager.Instance != null && GameManager.Instance.disableBanlist)
+            return MAX_COPIES;
 
-        DeckDragHandler dragHandler = go.GetComponentInChildren<DeckDragHandler>();
-        if (dragHandler != null)
-        {
-            dragHandler.cardData = card;
-            dragHandler.sourceZone = DeckZoneType.Trunk;
-            dragHandler.enabled = availableCopies > 0;
-        }
+        if (banList.TryGetValue(cardName, out int limit))
+            return limit;
+
+        return MAX_COPIES;
+    }
+
+    public int GetCopiesInDecks(string cardId)
+    {
+        int count = 0;
+        count += mainDeck.Count(c => c.id == cardId);
+        count += sideDeck.Count(c => c.id == cardId);
+        count += extraDeck.Count(c => c.id == cardId);
+        return count;
     }
 
     /// <summary>
@@ -789,7 +588,7 @@ extraDeck.Count(c => c.id == card.id);
             return;
         }
 
-       if (!hasUnsavedChanges)
+        if (!hasUnsavedChanges)
         {
             Debug.Log("Nenhuma alteração para salvar.");
             return;
@@ -803,26 +602,8 @@ extraDeck.Count(c => c.id == card.id);
             GameManager.Instance.SetPlayerDeck(mainDeck, sideDeck, extraDeck);
         }
 
-        // Marca as cartas do deck como "usadas" para remover a tag "New" permanentemente
-        if (SaveLoadSystem.Instance != null)
-        {
-            var allDeckCards = mainDeck.Concat(sideDeck).Concat(extraDeck);
-            foreach (var card in allDeckCards)
-            {
-                SaveLoadSystem.Instance.MarkCardAsUsed(card.id);
-            }
-        }
-
-        // Salva o estado do jogo
-        if (SaveLoadSystem.Instance != null && GameManager.Instance != null)
-        {
-            SaveLoadSystem.Instance.SaveGame(GameManager.Instance.currentSaveID);
-        }
-
         hasUnsavedChanges = false;
         Debug.Log("Deck salvo com sucesso!");
-        // Opcional: Atualizar a UI para desabilitar o botão de salvar, etc.
-        // RefreshAllUI(); // Atualiza a UI para remover tags NEW
     }
 
     /// <summary>
@@ -905,7 +686,9 @@ public void CreateNewBanner(Transform parent)
     /// </summary>
     public void OnCardHover(CardData card)
     {
-        if (cardViewer != null)
+        // Correção para o erro de Coroutine: Só atualiza o visualizador se o painel dele estiver ativo
+        // e se não estivermos no meio de uma resolução de chain (evita pop-ups indesejados).
+        if (cardViewer != null && cardViewer.gameObject.activeInHierarchy)
         {
             cardViewer.DisplayCardData(card);
         }
@@ -1020,8 +803,6 @@ public void CreateNewBanner(Transform parent)
         }
     }
 
-    // --- SISTEMA DE IMPORTAÇÃO/EXPORTAÇÃO (INTERNO) ---
-
     public void ExportCurrentDeck(string deckName)
     {
         if (string.IsNullOrWhiteSpace(deckName))
@@ -1033,24 +814,67 @@ public void CreateNewBanner(Transform parent)
         SaveLoadSystem.Instance.SaveDeckRecipe(deckName, mainDeck, sideDeck, extraDeck);
         // Salva o jogo para persistir a nova receita de deck
         SaveLoadSystem.Instance.SaveGame(GameManager.Instance.currentSaveID);
-        Debug.Log($"Deck '{deckName}' exportado para o save.");
+        Debug.Log($"[DeckBuilderManager] Deck '{deckName}' exportado para o save.");
     }
 
     public void ImportDeck(string deckName)
     {
+        if (SaveLoadSystem.Instance == null) return;
+
         if (SaveLoadSystem.Instance.LoadDeckFromRecipe(deckName, out var mainIDs, out var sideIDs, out var extraIDs))
         {
-            mainDeck = mainIDs.Select(id => GameManager.Instance.cardDatabase.GetCardById(id)).Where(c => c != null).ToList();
-            sideDeck = sideIDs.Select(id => GameManager.Instance.cardDatabase.GetCardById(id)).Where(c => c != null).ToList();
-            extraDeck = extraIDs.Select(id => GameManager.Instance.cardDatabase.GetCardById(id)).Where(c => c != null).ToList();
+            mainDeck.Clear();
+            sideDeck.Clear();
+            extraDeck.Clear();
+
+            // Carrega apenas cartas que o jogador possui
+            foreach (string id in mainIDs) { CardData c = GameManager.Instance.cardDatabase.GetCardById(id); if (c != null) mainDeck.Add(c); }
+            foreach (string id in sideIDs) { CardData c = GameManager.Instance.cardDatabase.GetCardById(id); if (c != null) sideDeck.Add(c); }
+            foreach (string id in extraIDs) { CardData c = GameManager.Instance.cardDatabase.GetCardById(id); if (c != null) extraDeck.Add(c); }
 
             hasUnsavedChanges = true;
             RefreshAllUI();
-            Debug.Log($"Deck '{deckName}' importado com sucesso.");
+            Debug.Log($"Deck '{deckName}' carregado.");
         }
-        else
+    }
+
+    public void DeleteDeckRecipe(string deckName)
+    {
+        if (string.IsNullOrWhiteSpace(deckName)) return;
+
+        if (SaveLoadSystem.Instance != null)
         {
-            Debug.LogError($"Não foi possível encontrar a receita do deck '{deckName}'.");
+            SaveLoadSystem.Instance.DeleteDeckRecipe(deckName);
+            SaveLoadSystem.Instance.SaveGame(GameManager.Instance.currentSaveID); // Salva a deleção
+            Debug.Log($"Receita de deck deletada: {deckName}");
+        }
+    }
+
+    /// <summary>
+    /// Atualiza os textos de contagem de cartas para todos os decks.
+    /// </summary>
+
+    // --- SISTEMA DE IMPORTAÇÃO/EXPORTAÇÃO (INTERNO) ---
+
+    private void OnImportButtonClicked()
+    {
+        if (importExportPanel == null) return;
+        importExportPanel.SetActive(true);
+        DeckImportExportManager manager = importExportPanel.GetComponent<DeckImportExportManager>();
+        if (manager != null)
+        {
+            manager.Setup(DeckImportExportManager.MenuType.Import);
+        }
+    }
+
+    private void OnExportButtonClicked()
+    {
+        if (importExportPanel == null) return;
+        importExportPanel.SetActive(true);
+        DeckImportExportManager manager = importExportPanel.GetComponent<DeckImportExportManager>();
+        if (manager != null)
+        {
+            manager.Setup(DeckImportExportManager.MenuType.Export);
         }
     }
 
@@ -1096,20 +920,6 @@ public void CreateNewBanner(Transform parent)
         if (extraFusionCountText) extraFusionCountText.text = extraFusion.ToString();
     }
 
-    /// <summary>
-    /// Atualiza a UI de paginação (texto e botões).
-    /// </summary>
-    private void UpdatePaginationUI()
-    {
-        if (txtPageInfo != null)
-        {
-            txtPageInfo.text = $"Page {currentPage} / {totalPages}";
-        }
-        if (btnPrevPage != null) btnPrevPage.interactable = currentPage > 1;
-        if (btnNextPage != null) btnNextPage.interactable = currentPage < totalPages;
-    }
-
-    // --- MÉTODOS PÚBLICOS PARA OS BOTÕES DE UI ---
 
     public void SetSortType(SortType newSort)
     {
@@ -1129,22 +939,7 @@ public void CreateNewBanner(Transform parent)
     {
         if (activeFilters.ContainsKey(filterKey))
         {
-            // Verifica se o filtro que estamos clicando já estava ativo.
-            bool wasActive = activeFilters[filterKey];
-
-            // Primeiro, desliga todos os filtros para garantir exclusividade.
-            var keys = new List<string>(activeFilters.Keys);
-            foreach (var key in keys)
-            {
-                activeFilters[key] = false;
-            }
-
-            // Se o filtro clicado NÃO estava ativo, nós o ativamos.
-            // Se ele JÁ estava ativo, ele permanecerá desligado, como todos os outros.
-            if (!wasActive)
-            {
-                activeFilters[filterKey] = true;
-            }
+            activeFilters[filterKey] = !activeFilters[filterKey];
         }
         UpdateFilterButtonsVisuals();
         RefreshTrunkUI();
@@ -1160,16 +955,6 @@ public void CreateNewBanner(Transform parent)
         if (btnFilterFusion) btnFilterFusion.GetComponent<Image>().color = activeFilters["Fusion"] ? activeColor : inactiveColor;
         if (btnFilterRitual) btnFilterRitual.GetComponent<Image>().color = activeFilters["Ritual"] ? activeColor : inactiveColor;
     }
-
-    public void NextPage()
-    {
-        if (currentPage < totalPages) { currentPage++; RefreshTrunkUI(); }
-    }
-
-          public void PrevPage()
-      {
-          if (currentPage > 1) { currentPage--; RefreshTrunkUI(); }
-      }
 
     private IEnumerator FlashImageColor(Image image, Color flashColor, float duration)
     {

@@ -4,54 +4,69 @@
 Este sistema permite ao jogador salvar ("exportar") e carregar ("importar") receitas de decks. Diferente de um sistema baseado em arquivos `.ydk` externos, este mecanismo salva as listas de decks diretamente no arquivo de save do jogador (`.save`), garantindo que os decks estejam vinculados ao perfil e progresso do jogador.
 
 ## Estrutura da UI
-O sistema utiliza um painel principal (`Panel_ImportExport`) que contém dois sub-painéis, um para importação e outro para exportação. A visibilidade deles é controlada pelo `DeckImportExportManager`.
+O sistema utiliza um painel principal (`Panel_ImportExport`) que é ativado a partir do Deck Builder. A sua aparência e funcionalidade são alteradas dinamicamente pelo `DeckImportExportManager` dependendo da ação (Importar ou Exportar).
 
-### Panel_Import
-Usado para selecionar um deck salvo e carregá-lo no Deck Builder.
-*   **Scroll View**: Lista os decks salvos no perfil atual.
-*   **Btn_ImportDeck**: Botão de ação que carrega o deck selecionado.
-*   **Btn_BackToDeckBuilder**: Fecha o painel e retorna ao Deck Builder.
+*   **Scroll View**: Em ambos os modos, exibe uma lista dos decks já salvos no perfil atual.
+*   **Botão de Ação Principal**: Muda de "Import" para "Export" dependendo do modo.
+*   **Campo de Nome (`Input_DeckName`):** Visível apenas no modo `Export`. Permite ao jogador nomear o deck a ser salvo. Clicar em um deck existente na lista preenche este campo, facilitando a sobrescrita.
+*   **Botão de Deletar:** Permite apagar um deck selecionado da lista.
 
-### Panel_Export
-Usado para nomear o deck atual e salvá-lo no perfil.
-*   **Input_DeckName**: Campo de texto para o jogador digitar o nome do deck.
-*   **Scroll View**: Lista os decks já salvos. Clicar em um preenche o campo de nome, permitindo sobrescrever.
-*   **Btn_ExportDeck**: Botão de ação que salva o deck atual com o nome fornecido.
-*   **Btn_BackToDeckBuilder**: Fecha o painel.
+#### Estrutura de UI (Hierarquia)
+Abaixo está a estrutura recomendada para os painéis de Importação e Exportação.
 
-## Script Principal: `DeckImportExportManager.cs`
-Este script gerencia a lógica para os painéis de importação e exportação.
+*   **Panel_Export** `[Image, DeckImportExportManager]`
+    *   **Panel_ExportHeader** `[Image]`
+        *   **Text (TMP)** `[TextMeshProUGUI]` (Título: "Export Deck")
+    *   **Scroll View** `[Image, ScrollRect]`
+        *   **Viewport** `[Image, Mask]`
+            *   **Content** `[VerticalLayoutGroup]` (Onde os `DeckSlotUI` são instanciados)
+    *   **InputDeckName** `[Image, TMP_InputField]`
+    *   **Btn_ExportDeck** `[Image, Button]` (Botão de Ação Principal)
+    *   **Btn_DeleteDeck** `[Image, Button]` (Botão para Deletar Deck Selecionado)
+    *   **Panel_ImportFooter** `[Image]`
+        *   **Btn_BackToDeckBuilder** `[Image, Button]`
+    *   **ConfirmationExport** `[Image]`
+        *   **Text (TMP)** `[TextMeshProUGUI]`
+        *   **Btn_Yes** `[Image, Button]`
+            *   **Text (TMP)** `[TextMeshProUGUI]`
+        *   **Btn_No** `[Image, Button]`
+            *   **Text (TMP)** `[TextMeshProUGUI]`
 
+*   **Panel_Import** `[Image, DeckImportExportManager]`
+    *   *(Estrutura similar ao Export, mas sem os botões de Input e Delete)*
+
+## Arquitetura e Scripts
+
+### 1. `DeckImportExportManager.cs` (Gerenciador da UI)
+Este script é o cérebro do painel de import/export.
 *   **Modos de Operação (`MenuType` enum):**
-    *   `Import`: Configura o painel para o modo de importação.
-    *   `Export`: Configura o painel para o modo de exportação, exibindo o campo de input de nome.
+    *   `Import`: Configura o painel para carregar um deck. O botão de ação principal importará o deck selecionado.
+    *   `Export`: Configura o painel para salvar o deck atual. O campo de nome fica visível.
 *   **`Setup(MenuType menuType)`**: Método chamado pelo `DeckBuilderManager` para inicializar o painel no modo correto.
-*   **`RefreshList()`**: Carrega a lista de `DeckRecipe` do `SaveLoadSystem` e popula a `ScrollView` com prefabs que representam cada deck salvo.
-*   **Ações:**
-    *   **Exportar:** Pega o nome do `TMP_InputField`, chama `DeckBuilderManager.Instance.ExportCurrentDeck(deckName)` para salvar a receita no `SaveLoadSystem`, e atualiza a lista.
-    *   **Importar:** Pega o nome do deck selecionado, chama `DeckBuilderManager.Instance.ImportDeck(deckName)` para carregar as cartas no Deck Builder, e fecha o painel.
+*   **`RefreshList()`**: Carrega a lista de `DeckRecipe` do `SaveLoadSystem` e popula a `ScrollView` com prefabs `DeckSlotUI`, que exibem o nome e a contagem de cartas de cada deck salvo.
 
-## Armazenamento de Dados (`SaveLoadSystem.cs`)
-A persistência dos decks é gerenciada pelo sistema de save principal.
-
+### 2. `SaveLoadSystem.cs` (Persistência de Dados)
+O sistema de save principal é responsável por armazenar os decks.
 *   **`DeckRecipe` (classe):** Uma nova estrutura de dados que contém:
     *   `deckName` (string)
     *   `mainDeckCardIDs` (List<string>)
     *   `sideDeckCardIDs` (List<string>)
     *   `extraDeckCardIDs` (List<string>)
 *   **`GameSaveData` (classe):** A classe principal de save agora contém uma `List<DeckRecipe> savedDecks`.
-*   **Métodos no `SaveLoadSystem`:**
+*   **Métodos de Acesso:**
     *   `GetSavedDecks()`: Retorna a lista de receitas de deck do save atual.
     *   `SaveDeckRecipe(...)`: Cria ou sobrescreve uma `DeckRecipe` no save atual.
     *   `LoadDeckFromRecipe(...)`: Retorna as listas de IDs de um deck salvo pelo nome.
     *   `DeleteDeckRecipe(...)`: Remove uma receita de deck do save.
+    *   **Importante:** Após qualquer modificação nas receitas (`SaveDeckRecipe` ou `DeleteDeckRecipe`), é crucial chamar `SaveLoadSystem.Instance.SaveGame()` para persistir essas alterações no arquivo `.save`.
 
-## Integração com `DeckBuilderManager.cs`
-*   Os botões `Btn_Import` e `Btn_Export` no `Panel_DeckBuilder` agora ativam o `Panel_ImportExport`.
-*   O `DeckBuilderManager` chama o método `Setup()` do `DeckImportExportManager` para configurar o modo correto (Importar ou Exportar).
-*   Foram adicionados os métodos públicos `ExportCurrentDeck(string deckName)` e `ImportDeck(string deckName)` para serem chamados pelo `DeckImportExportManager`, servindo como uma ponte entre a UI de import/export e a lógica de construção de decks.
+### 3. `DeckBuilderManager.cs` (Ponte de Lógica)
+Atua como uma ponte entre a UI de import/export e a lógica de construção de decks.
+*   **`ExportCurrentDeck(string deckName)`**: Chamado pelo `DeckImportExportManager`, este método coleta as listas de cartas atuais (Main, Side, Extra) e as passa para o `SaveLoadSystem` para serem salvas.
+*   **`ImportDeck(string deckName)`**: Chamado pelo `DeckImportExportManager`, este método recebe as listas de IDs de cartas do `SaveLoadSystem` e as carrega no Deck Builder, limpando o deck anterior.
 
-## Prefab do Slot de Deck
-*   **ImportExportItem** `[Image, Button, SaveSlotUI]`
-    *   **Name** `[TextMeshProUGUI]`
-    *   **Date** `[TextMeshProUGUI]`
+### 4. `DeckSlotUI.cs` (Prefab do Slot)
+Este script está no prefab que representa um item na lista de decks salvos.
+*   **Responsabilidade:** Exibir o nome do deck e a contagem de cartas (M/S/E).
+*   **Interação:** Ao ser clicado, chama um callback no `DeckImportExportManager` para selecionar aquele deck.
+*   **Modo Export:** No modo de exportação, um slot especial `[ Create New Deck ]` é adicionado para permitir salvar um deck com um nome totalmente novo.

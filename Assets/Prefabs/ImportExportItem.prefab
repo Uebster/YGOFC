@@ -34,8 +34,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 473, y: 3.3298}
-  m_SizeDelta: {x: 365.7138, y: 66.039}
+  m_AnchoredPosition: {x: 471.7, y: 0.000026941}
+  m_SizeDelta: {x: 365, y: 66}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &366605368900723569
 CanvasRenderer:
@@ -137,7 +137,7 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!1 &7041870749868461036
+--- !u!1 &3383325980578225593
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -145,9 +145,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7335730024770234600}
-  - component: {fileID: 8759363562428380918}
-  - component: {fileID: 3833134786885219873}
+  - component: {fileID: 3236195310313699246}
+  - component: {fileID: 2748035624047964287}
+  - component: {fileID: 5170977360113220306}
   m_Layer: 5
   m_Name: Name
   m_TagString: Untagged
@@ -155,13 +155,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!224 &7335730024770234600
+--- !u!224 &3236195310313699246
 RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7041870749868461036}
+  m_GameObject: {fileID: 3383325980578225593}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -171,24 +171,24 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -348.16333, y: 1.2115}
-  m_SizeDelta: {x: 636.9902, y: 66.039}
+  m_AnchoredPosition: {x: -324.9, y: 0.000007391}
+  m_SizeDelta: {x: 660, y: 66}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &8759363562428380918
+--- !u!222 &2748035624047964287
 CanvasRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7041870749868461036}
+  m_GameObject: {fileID: 3383325980578225593}
   m_CullTransparentMesh: 1
---- !u!114 &3833134786885219873
+--- !u!114 &5170977360113220306
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7041870749868461036}
+  m_GameObject: {fileID: 3383325980578225593}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
@@ -268,7 +268,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 16.140259, y: 0, z: 0, w: 0}
+  m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -286,6 +286,8 @@ GameObject:
   - component: {fileID: 2251974411438713743}
   - component: {fileID: 6624728808668534308}
   - component: {fileID: 1608198031100721216}
+  - component: {fileID: 6121682984015041985}
+  - component: {fileID: 4296802469519146316}
   m_Layer: 5
   m_Name: ImportExportItem
   m_TagString: Untagged
@@ -305,8 +307,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7335730024770234600}
   - {fileID: 6922451539715675042}
+  - {fileID: 3236195310313699246}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -396,3 +398,59 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6121682984015041985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9154638150067920418}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70e489ea7b7af9841bdb65cd1714b1b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeckSlotUI
+  nameText: {fileID: 5170977360113220306}
+  cardCountText: {fileID: 0}
+  actionButton: {fileID: 0}
+  selectionHighlight: {fileID: 0}
+--- !u!114 &4296802469519146316
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9154638150067920418}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d55b4a95b1f2142868046d1c84f6aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChestCardItem
+  cardArtImage: {fileID: 0}
+  cardNameText: {fileID: 0}
+  cardStatsText: {fileID: 0}
+  quantCardText: {fileID: 0}
+  monsterLvlText: {fileID: 0}
+  attributeIcon: {fileID: 0}
+  raceIcon: {fileID: 0}
+  typeIcon: {fileID: 0}
+  subTypeIcon: {fileID: 0}
+  stars: []
+  availableColor: {r: 1, g: 1, b: 1, a: 1}
+  unavailableColor: {r: 1, g: 1, b: 1, a: 0.5}
+  cardData:
+    id: 
+    name: 
+    type: 
+    description: 
+    atk: 0
+    def: 0
+    level: 0
+    race: 
+    attribute: 
+    property: 
+    image_filename: 
+    fusion_materials: []
+  availableCopies: 0
+  isNew: 0
+  isInDeck: 0

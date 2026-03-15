@@ -950,6 +950,7 @@ GameObject:
   - component: {fileID: 1065776442974576332}
   - component: {fileID: 7173932396068933770}
   - component: {fileID: 3191909628772896478}
+  - component: {fileID: -916112575396628494}
   m_Layer: 5
   m_Name: Card_PrefabChestList
   m_TagString: Untagged
@@ -1134,6 +1135,18 @@ MonoBehaviour:
   availableCopies: 0
   isNew: 0
   isInDeck: 0
+--- !u!114 &-916112575396628494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3016305097939657138}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31aa2234efc081448a0f4a15245c8d37, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrunkCardScrollItem
 --- !u!1 &3252360308678207419
 GameObject:
   m_ObjectHideFlags: 0

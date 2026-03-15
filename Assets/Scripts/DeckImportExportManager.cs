@@ -9,41 +9,80 @@ public class DeckImportExportManager : MonoBehaviour
     public enum MenuType { Import, Export }
 
     [Header("Configuração")]
-    public MenuType currentMenuType;
     public Color selectedColor = Color.yellow;
     public Color defaultColor = Color.white;
+
+    public MenuType currentMenuType;
 
     [Header("Referências de UI")]
     public GameObject importPanel;
     public GameObject exportPanel;
-    public TextMeshProUGUI panelTitle; // Novo: Título do painel (Import/Export)
+    public TextMeshProUGUI panelTitle;
     public Button btnAction; // Botão principal (Import ou Export)
     public Button btnBack;
     public Button btnDelete; // Botão para deletar
+    public GameObject confirmationDialog;
     public TMP_InputField inputDeckName; // Apenas para o painel de Export
+
     public Transform listContent;
     public GameObject deckSlotPrefab; // Prefab ImportExportItem
 
-    private string selectedDeckName;
     private List<GameObject> spawnedSlots = new List<GameObject>();
     private bool isCreatingNewDeck = false;
+    private SaveLoadSystem.DeckRecipe selectedDeck;
+    
+    // Ação pendente para o diálogo de confirmação local
+    private System.Action pendingLocalConfirmAction;
 
     void Awake()
     {
         btnBack?.onClick.AddListener(ClosePanel);
         btnAction?.onClick.AddListener(PerformAction);
         btnDelete?.onClick.AddListener(OnDeleteClicked);
+        inputDeckName?.onValueChanged.AddListener(delegate { UpdateUIState(); });
+
+        // Configuração do Diálogo de Confirmação Local (se atribuído)
+        if (confirmationDialog != null)
+        {
+            // Tenta encontrar os botões dentro do painel de confirmação
+            Button localYes = confirmationDialog.transform.Find("Btn_Yes")?.GetComponent<Button>();
+            Button localNo = confirmationDialog.transform.Find("Btn_No")?.GetComponent<Button>();
+
+            // Se não achar por nome exato, tenta pegar componentes nos filhos (ordem: Sim, Não)
+            if (localYes == null || localNo == null)
+            {
+                Button[] buttons = confirmationDialog.GetComponentsInChildren<Button>(true);
+                if (buttons.Length >= 1) localYes = buttons[0];
+                if (buttons.Length >= 2) localNo = buttons[1];
+            }
+
+            if (localYes != null)
+            {
+                localYes.onClick.RemoveAllListeners();
+                localYes.onClick.AddListener(OnLocalConfirmYes);
+            }
+            else Debug.LogWarning("[DeckImportExportManager] Botão 'Sim' não encontrado no Confirmation Dialog local.");
+
+            if (localNo != null)
+            {
+                localNo.onClick.RemoveAllListeners();
+                localNo.onClick.AddListener(OnLocalConfirmNo);
+            }
+            else Debug.LogWarning("[DeckImportExportManager] Botão 'Não' não encontrado no Confirmation Dialog local.");
+
+            confirmationDialog.SetActive(false);
+        }
     }
 
     public void Setup(MenuType menuType)
     {
+        Debug.Log($"[DeckImportExportManager] Setup: Configurando painel para o modo {menuType}.");
         currentMenuType = menuType;
-        gameObject.SetActive(true);
-        isCreatingNewDeck = false; // Reseta o estado ao abrir
+        isCreatingNewDeck = false;
+        selectedDeck = null;
         
-        // A visibilidade dos painéis agora é controlada pelo UIManager.
-        // Este script apenas configura o painel em que está.
-
+        gameObject.SetActive(true);
+        
         TextMeshProUGUI actionButtonText = btnAction?.GetComponentInChildren<TextMeshProUGUI>();
         if (actionButtonText != null)
         {
@@ -57,7 +96,15 @@ public class DeckImportExportManager : MonoBehaviour
 
         if (inputDeckName != null)
         {
+            inputDeckName.gameObject.SetActive(menuType == MenuType.Export);
             inputDeckName.text = "";
+            inputDeckName.interactable = true;
+        }
+
+        if (btnDelete != null)
+        {
+            // Botão delete só deve aparecer no Export ou se quisermos permitir deletar no Import também
+            btnDelete.gameObject.SetActive(true); 
         }
 
         RefreshList();
@@ -65,7 +112,6 @@ public class DeckImportExportManager : MonoBehaviour
 
     private void ClosePanel()
     {
-        // Pede ao UIManager para voltar para a tela anterior (DeckBuilder)
         UIManager.Instance?.ShowScreen(UIManager.Instance.deckBuilderScreen);
     }
 
@@ -73,65 +119,82 @@ public class DeckImportExportManager : MonoBehaviour
     {
         if (currentMenuType == MenuType.Export)
         {
-            // Se não estiver criando um novo e nenhum deck estiver selecionado para sobrescrever, não faz nada.
-            if (!isCreatingNewDeck && string.IsNullOrEmpty(selectedDeckName))
+            string nameToSave = inputDeckName != null ? inputDeckName.text.Trim() : "";
+
+            if (string.IsNullOrEmpty(nameToSave))
             {
-                UIManager.Instance?.ShowMessage("Selecione um deck para sobrescrever ou crie um novo.");
+                UIManager.Instance?.ShowMessage("Por favor, insira um nome para o deck.");
                 return;
             }
 
-            string deckName = inputDeckName?.text.Trim();
-            if (!string.IsNullOrEmpty(deckName))
+            System.Action exportAction = () => {
+                DeckBuilderManager.Instance.ExportCurrentDeck(nameToSave);
+                RefreshList();
+                UIManager.Instance?.ShowMessage($"Deck '{nameToSave}' salvo!");
+                
+                // Após salvar, seleciona o deck na lista
+                var savedDeck = SaveLoadSystem.Instance.GetSavedDecks().FirstOrDefault(d => d.deckName.Equals(nameToSave, System.StringComparison.OrdinalIgnoreCase));
+                if(savedDeck != null) {
+                    SelectDeckRecipe(savedDeck);
+                }
+            };
+
+            bool isOverwriting = SaveLoadSystem.Instance.GetSavedDecks().Any(d => d.deckName.Equals(nameToSave, System.StringComparison.OrdinalIgnoreCase));
+
+            if (isOverwriting)
             {
-                // Confirmação para sobrescrever
-                UIManager.Instance?.ShowConfirmation($"Salvar deck como '{deckName}'?", () => {
-                    DeckBuilderManager.Instance.ExportCurrentDeck(deckName);
-                    RefreshList();
-                    UIManager.Instance?.ShowMessage($"Deck '{deckName}' salvo com sucesso!");
-                });
+                ShowConfirmation($"O deck '{nameToSave}' já existe. Deseja sobrescrevê-lo?", exportAction);
             }
             else
             {
-                // Plano B: Informar erro se o nome estiver vazio
-                UIManager.Instance?.ShowMessage("Por favor, digite um nome para o deck antes de exportar.");
+                ShowConfirmation($"Deseja salvar o novo deck '{nameToSave}'?", exportAction);
             }
         }
         else // Import
         {
-            if (!string.IsNullOrEmpty(selectedDeckName))
+            if (selectedDeck != null)
             {
-                DeckBuilderManager.Instance.ImportDeck(selectedDeckName);
-                ClosePanel();
+                ShowConfirmation($"Deseja importar o deck '{selectedDeck.deckName}'? O deck em edição será substituído.", () => {
+                    Debug.Log($"Importing deck: {selectedDeck.deckName}");
+                    DeckBuilderManager.Instance.ImportDeck(selectedDeck.deckName);
+                    ClosePanel();
+                });
             }
         }
     }
 
     private void RefreshList()
     {
+        Debug.Log("[DeckImportExportManager] RefreshList: Atualizando a lista de decks salvos.");
         // Limpa a lista antiga
         foreach (GameObject slot in spawnedSlots)
         {
             Destroy(slot);
         }
         spawnedSlots.Clear();
-        selectedDeckName = null;
 
-        if (SaveLoadSystem.Instance == null || deckSlotPrefab == null) return;
+        if (SaveLoadSystem.Instance == null || deckSlotPrefab == null)
+        {
+            Debug.LogError("[DeckImportExportManager] RefreshList: SaveLoadSystem ou deckSlotPrefab é nulo. Abortando.");
+            return;
+        }
 
-        // Adiciona o slot "New Deck" se estiver na tela de Export
+        // --- Adiciona opção "Create New Deck" se for Export ---
         if (currentMenuType == MenuType.Export)
         {
-            GameObject newSlotGo = Instantiate(deckSlotPrefab, listContent);
-            spawnedSlots.Add(newSlotGo);
-            DeckSlotUI newSlot = newSlotGo.GetComponent<DeckSlotUI>();
-            if (newSlot != null)
+            GameObject newSlotGO = Instantiate(deckSlotPrefab, listContent);
+            spawnedSlots.Add(newSlotGO);
+            DeckSlotUI newSlotUI = newSlotGO.GetComponent<DeckSlotUI>();
+            if (newSlotUI != null)
             {
-                newSlot.SetupForNewDeck(OnNewDeckClicked);
+                newSlotUI.SetupForNewDeck(OnNewDeckClicked);
+                newSlotUI.SetSelected(isCreatingNewDeck);
             }
         }
 
+        // --- Lista Decks Salvos ---
         List<SaveLoadSystem.DeckRecipe> savedDecks = SaveLoadSystem.Instance.GetSavedDecks();
-
+        Debug.Log($"[DeckImportExportManager] RefreshList: Encontrados {savedDecks?.Count ?? 0} decks salvos.");
         if (savedDecks == null) return;
 
         foreach (SaveLoadSystem.DeckRecipe deckRecipe in savedDecks.OrderBy(d => d.deckName))
@@ -139,73 +202,135 @@ public class DeckImportExportManager : MonoBehaviour
             GameObject slotGO = Instantiate(deckSlotPrefab, listContent);
             spawnedSlots.Add(slotGO);
             
-            // Usa o DeckSlotUI para configurar o prefab
             DeckSlotUI slotUI = slotGO.GetComponent<DeckSlotUI>();
             if (slotUI != null)
             {
-                slotUI.Setup(deckRecipe, OnSlotClicked, (selectedDeckName == deckRecipe.deckName));
+                slotUI.Setup(deckRecipe, SelectDeckRecipe);
             }
         }
-        UpdateUIState();
-    }
-
-    private void OnSlotClicked(SaveLoadSystem.DeckRecipe recipe)
-    {
-        if (recipe == null) return;
-        isCreatingNewDeck = false;
-        selectedDeckName = recipe.deckName;
-        if (currentMenuType == MenuType.Export && inputDeckName != null)
-        {
-            inputDeckName.text = recipe.deckName; // Preenche o nome para sobrescrever
-        }
+        
         UpdateUIState();
     }
 
     private void OnNewDeckClicked()
     {
         isCreatingNewDeck = true;
-        selectedDeckName = null;
-        if (inputDeckName != null) inputDeckName.text = "";
+        selectedDeck = null;
+        if (inputDeckName != null)
+        {
+            inputDeckName.text = "";
+            inputDeckName.interactable = true;
+            inputDeckName.Select(); // Foca no campo de texto
+        }
+        UpdateUIState();
+    }
+
+    public void SelectDeckRecipe(SaveLoadSystem.DeckRecipe deck)
+    {
+        isCreatingNewDeck = false;
+        selectedDeck = deck;
+        
+        if (currentMenuType == MenuType.Export && inputDeckName != null)
+        {
+            inputDeckName.text = deck.deckName; // Preenche o nome para facilitar sobrescrever
+        }
         UpdateUIState();
     }
 
     private void UpdateUIState()
     {
-        // Atualiza o destaque visual
+        // Atualiza visual dos slots
         foreach (var slotGO in spawnedSlots)
         {
             var slotUI = slotGO.GetComponent<DeckSlotUI>();
             if (slotUI != null)
             {
-                bool isSelected = (slotUI.MyData != null && slotUI.MyData.deckName == selectedDeckName) || (slotUI.MyData == null && isCreatingNewDeck);
+                // Se for o slot "New Deck" (MyData é null), destaca se isCreatingNewDeck for true
+                // Se for um slot normal, destaca se selectedDeck bater
+                bool isSelected = (slotUI.MyData == null && isCreatingNewDeck) || 
+                                  (slotUI.MyData != null && slotUI.MyData == selectedDeck);
                 slotUI.SetSelected(isSelected);
             }
         }
 
-        // Habilita/Desabilita input e botão de ação
-        bool canInteract = isCreatingNewDeck || !string.IsNullOrEmpty(selectedDeckName);
-        bool existingDeckSelected = !isCreatingNewDeck && !string.IsNullOrEmpty(selectedDeckName);
+        // Habilita botões
+        bool hasSelection = (selectedDeck != null);
+        bool hasName = inputDeckName != null && !string.IsNullOrEmpty(inputDeckName.text);
 
-        if (inputDeckName != null) inputDeckName.interactable = isCreatingNewDeck;
-        if (btnAction != null) btnAction.interactable = canInteract;
+        if (currentMenuType == MenuType.Export)
+        {
+            // Pode exportar se estiver criando novo (e tiver nome) OU se selecionou um existente (sobrescrever)
+            btnAction.interactable = (isCreatingNewDeck && hasName) || (hasSelection) || (hasName); 
+            // Opcionalmente, pode forçar que tenha nome sempre
+        }
+        else // Import
+        {
+            btnAction.interactable = hasSelection;
+        }
 
         if (btnDelete != null)
         {
-            // O botão de deletar só deve aparecer e funcionar na tela de Export
-            btnDelete.gameObject.SetActive(currentMenuType == MenuType.Export);
-            btnDelete.interactable = existingDeckSelected;
+            btnDelete.interactable = hasSelection;
         }
     }
 
-    private void OnDeleteClicked()
+    public void OnDeleteClicked()
     {
-        if (string.IsNullOrEmpty(selectedDeckName) || isCreatingNewDeck) return;
+        Debug.Log("[DeckImportExportManager] OnDeleteClicked: Botão de deletar pressionado.");
+        if (selectedDeck == null)
+        {
+            Debug.Log("[DeckImportExportManager] Nenhum deck selecionado para deletar.");
+            return;
+        }
 
-        UIManager.Instance?.ShowConfirmation($"Tem certeza que deseja deletar o deck '{selectedDeckName}'?", () => {
-            SaveLoadSystem.Instance.DeleteDeckRecipe(selectedDeckName);
-            SaveLoadSystem.Instance.SaveGame(GameManager.Instance.currentSaveID); // Persiste a deleção
-            RefreshList();
-            UIManager.Instance?.ShowMessage($"Deck '{selectedDeckName}' deletado.");
+        ShowConfirmation($"Tem certeza que deseja deletar o deck '{selectedDeck.deckName}'?", () => 
+        {
+            if (DeckBuilderManager.Instance != null)
+            {
+                DeckBuilderManager.Instance.DeleteDeckRecipe(selectedDeck.deckName);
+                // Limpa seleção após deletar
+                selectedDeck = null;
+                if (inputDeckName != null) inputDeckName.text = "";
+                RefreshList();
+            }
         });
+    }
+
+    // Wrapper para decidir se usa Confirmação Local ou Global
+    private void ShowConfirmation(string message, System.Action onConfirm)
+    {
+        if (confirmationDialog != null)
+        {
+            Debug.Log("[DeckImportExportManager] Usando diálogo de confirmação LOCAL.");
+            pendingLocalConfirmAction = onConfirm;
+            
+            TextMeshProUGUI txt = confirmationDialog.GetComponentInChildren<TextMeshProUGUI>();
+            if (txt != null) txt.text = message;
+            
+            confirmationDialog.SetActive(true);
+        }
+        else if (UIManager.Instance != null)
+        {
+            Debug.Log("[DeckImportExportManager] Usando diálogo de confirmação GLOBAL (UIManager).");
+            UIManager.Instance.ShowConfirmation(message, onConfirm);
+        }
+        else
+        {
+            Debug.LogWarning("[DeckImportExportManager] Nenhum diálogo de confirmação encontrado. Executando ação direta.");
+            onConfirm?.Invoke();
+        }
+    }
+
+    private void OnLocalConfirmYes()
+    {
+        if (confirmationDialog != null) confirmationDialog.SetActive(false);
+        pendingLocalConfirmAction?.Invoke();
+        pendingLocalConfirmAction = null;
+    }
+
+    private void OnLocalConfirmNo()
+    {
+        if (confirmationDialog != null) confirmationDialog.SetActive(false);
+        pendingLocalConfirmAction = null;
     }
 }
