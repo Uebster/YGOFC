@@ -604,11 +604,11 @@ private void LoadData()
                 if (!string.IsNullOrEmpty(searchText))
                 {
                     // Pesquisa aprimorada por Contains em vários campos simultaneamente
-                    bool match = card.name.ToLowerInvariant().Contains(searchText) ||
-                                 card.description.ToLowerInvariant().Contains(searchText) ||
-                                 card.race.ToLowerInvariant().Contains(searchText) ||
-                                 card.type.ToLowerInvariant().Contains(searchText) ||
-                                 card.attribute.ToLowerInvariant().Contains(searchText);
+                    bool match = (card.name ?? "").ToLowerInvariant().Contains(searchText) ||
+                                 (card.description ?? "").ToLowerInvariant().Contains(searchText) ||
+                                 (card.race ?? "").ToLowerInvariant().Contains(searchText) ||
+                                 (card.type ?? "").ToLowerInvariant().Contains(searchText) ||
+                                 (card.attribute ?? "").ToLowerInvariant().Contains(searchText);
                     if (!match) return false;
                 }
 
