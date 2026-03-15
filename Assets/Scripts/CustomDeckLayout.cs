@@ -55,7 +55,7 @@ public class CustomDeckLayout : MonoBehaviour
         {
             Transform child = transform.GetChild(i);
             // Garante que só pegamos cartas, e não outros objetos como o DropZone
-            if (child.gameObject.activeSelf && child.GetComponent<CardDisplay>() != null)
+            if (child.gameObject.activeSelf && child.GetComponentInChildren<CardDisplay>() != null)
             {
                 RectTransform rect = child as RectTransform;
                 if (rect != null)
@@ -116,6 +116,7 @@ public class CustomDeckLayout : MonoBehaviour
                 cardRect.anchorMin = new Vector2(0, 1);
                 cardRect.anchorMax = new Vector2(0, 1);
                 cardRect.pivot = new Vector2(0, 1);
+                cardRect.sizeDelta = new Vector2(cardWidth, cardHeight);
                 cardRect.anchoredPosition = new Vector2(xPos, currentY);
 
                 cardIndex++;

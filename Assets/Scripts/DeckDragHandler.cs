@@ -113,6 +113,18 @@ public class DeckDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         }
     }
 
+    void OnDisable()
+    {
+        if (dragObject != null) Destroy(dragObject);
+        isDragging = false;
+        currentDragged = null;
+    }
+
+    void OnDestroy()
+    {
+        if (dragObject != null) Destroy(dragObject);
+    }
+
     public void OnEndDrag(PointerEventData eventData)
     {
         if (!isDragging) return;
@@ -156,7 +168,8 @@ public class DeckDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             if (sourceZone == DeckZoneType.Trunk)
             {
                 DeckZoneType target = DeckZoneType.Main;
-                if (cardData.type.Contains("Fusion") || cardData.type.Contains("Synchro") || cardData.type.Contains("Xyz"))
+                string tLower = cardData.type.ToLowerInvariant();
+                if (tLower.Contains("fusion") || tLower.Contains("synchro") || tLower.Contains("xyz"))
                 {
                     target = DeckZoneType.Extra;
                 }

@@ -53,27 +53,23 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
         }
     }
 
-    private UnityEngine.Networking.UnityWebRequest currentRequest;
-
     public void Setup(CardData card, int available, bool newFlag, bool inDeck)
     {
-        // Pára qualquer carregamento de imagem anterior caso a caixa tenha sido reciclada no scroll
-        StopAllCoroutines();
-        if (currentRequest != null)
-        {
-            currentRequest.Dispose();
-            currentRequest = null;
-        }
-
         cardData = card;
         availableCopies = available;
         isNew = newFlag;
         isInDeck = inDeck;
 
+        // --- Atualiza o DragHandler para garantir que a carta arrastada tenha os dados corretos ---
+        DeckDragHandler drag = GetComponent<DeckDragHandler>();
+        if (drag != null)
+        {
+            drag.cardData = card;
+            drag.sourceZone = DeckZoneType.Trunk;
+        }
+
         // --- Arte da carta ---
-        if (cardArtImage != null) cardArtImage.texture = null; // Limpa a arte velha na hora
-        
-        if (cardArtImage != null && GameManager.Instance != null && gameObject.activeInHierarchy)
+        if (cardArtImage != null && GameManager.Instance != null)
         {
             StartCoroutine(LoadArtWithCache(card.image_filename));
         }
@@ -217,16 +213,6 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
         }
     }
 
-    void OnDisable()
-    {
-        StopAllCoroutines();
-        if (currentRequest != null)
-        {
-            currentRequest.Dispose();
-            currentRequest = null;
-        }
-    }
-
     private System.Collections.IEnumerator LoadArtWithCache(string imagePath)
     {
         if (string.IsNullOrEmpty(imagePath) || cardArtImage == null) yield break;
@@ -244,25 +230,23 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
         string url = "file://" + fullPath;
         try { url = new System.Uri(fullPath).AbsoluteUri; } catch { }
 
-        // Removido o bloco 'using' para permitir interrupção segura via StopAllCoroutines
-        currentRequest = UnityEngine.Networking.UnityWebRequestTexture.GetTexture(url);
-        yield return currentRequest.SendWebRequest();
+        using (UnityEngine.Networking.UnityWebRequest uwr = UnityEngine.Networking.UnityWebRequestTexture.GetTexture(url))
+        {
+            yield return uwr.SendWebRequest();
 
-        if (currentRequest.result == UnityEngine.Networking.UnityWebRequest.Result.Success && cardArtImage != null)
-        {
-            Texture2D tex = UnityEngine.Networking.DownloadHandlerTexture.GetContent(currentRequest);
-            cardArtImage.texture = tex;
-            // 3. Adiciona ao cache para uso futuro
-            AddArtToCache(cardData.id, tex);
+            if (uwr.result == UnityEngine.Networking.UnityWebRequest.Result.Success && cardArtImage != null)
+            {
+                Texture2D tex = UnityEngine.Networking.DownloadHandlerTexture.GetContent(uwr);
+                cardArtImage.texture = tex;
+                // 3. Adiciona ao cache para uso futuro
+                AddArtToCache(cardData.id, tex);
+            }
+            else
+            {
+                Debug.LogWarning($"Falha ao carregar arte da carta: {imagePath}");
+                cardArtImage.texture = null; // Limpa a textura em caso de falha
+            }
         }
-        else
-        {
-            // Se falhar ou for interrompido, garante que a textura fique vazia
-            if (cardArtImage != null) cardArtImage.texture = null;
-        }
-        
-        if (currentRequest != null) currentRequest.Dispose();
-        currentRequest = null;
     }
 
     public void OnPointerEnter(PointerEventData eventData)

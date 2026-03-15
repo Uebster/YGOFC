@@ -507,13 +507,13 @@ private void LoadData()
                     return true;
                 }
                 
-                string cardType = card.type;
-                if (activeFilters["Normal"] && cardType.Contains("Normal") && cardType.Contains("Monster")) return true;
-                if (activeFilters["Effect"] && cardType.Contains("Effect") && cardType.Contains("Monster")) return true;
-                if (activeFilters["Ritual"] && cardType.Contains("Ritual")) return true;
-                if (activeFilters["Fusion"] && cardType.Contains("Fusion")) return true;
-                if (activeFilters["Spell"] && cardType.Contains("Spell")) return true;
-                if (activeFilters["Trap"] && cardType.Contains("Trap")) return true;
+                string cardType = card.type.ToLowerInvariant();
+                if (activeFilters["Normal"] && cardType.Contains("normal") && cardType.Contains("monster")) return true;
+                if (activeFilters["Effect"] && cardType.Contains("effect") && cardType.Contains("monster")) return true;
+                if (activeFilters["Ritual"] && cardType.Contains("ritual")) return true;
+                if (activeFilters["Fusion"] && cardType.Contains("fusion")) return true;
+                if (activeFilters["Spell"] && cardType.Contains("spell")) return true;
+                if (activeFilters["Trap"] && cardType.Contains("trap")) return true;
 
                 return false;
             }).ToList();
@@ -708,22 +708,24 @@ public void CreateNewBanner(Transform parent)
 
        if (currentCopies >= limit) return false;
 
+       bool isExtra = card.type.ToLowerInvariant().Contains("fusion") || card.type.ToLowerInvariant().Contains("synchro") || card.type.ToLowerInvariant().Contains("xyz");
+
        // Validação de Zona
        if (targetZone == DeckZoneType.Main)
        {
-           if (card.type.Contains("Fusion")) return false; // Fusões não vão no Main Deck
+           if (isExtra) return false; // Extra Deck cards não vão no Main Deck
            if (mainDeck.Count >= MAX_MAIN) return false;
            mainDeck.Add(card);
        }
        else if (targetZone == DeckZoneType.Side)
        {
-           if (card.type.Contains("Fusion")) return false;
+           if (isExtra) return false;
            if (sideDeck.Count >= MAX_SIDE) return false;
            sideDeck.Add(card);
        }
        else if (targetZone == DeckZoneType.Extra)
        {
-           if (!card.type.Contains("Fusion")) return false; // Apenas Fusões no Extra Deck
+           if (!isExtra) return false; // Apenas Fusões/Synchro/Xyz no Extra Deck
            if (extraDeck.Count >= MAX_EXTRA) return false;
            extraDeck.Add(card);
        }
