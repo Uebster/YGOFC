@@ -508,8 +508,8 @@ private void LoadData()
                 }
                 
                 string cardType = card.type;
-                if (activeFilters["Normal"] && cardType == "Normal Monster") return true;
-                if (activeFilters["Effect"] && cardType == "Effect Monster") return true;
+                if (activeFilters["Normal"] && cardType.Contains("Normal") && cardType.Contains("Monster")) return true;
+                if (activeFilters["Effect"] && cardType.Contains("Effect") && cardType.Contains("Monster")) return true;
                 if (activeFilters["Ritual"] && cardType.Contains("Ritual")) return true;
                 if (activeFilters["Fusion"] && cardType.Contains("Fusion")) return true;
                 if (activeFilters["Spell"] && cardType.Contains("Spell")) return true;
@@ -700,10 +700,13 @@ public void CreateNewBanner(Transform parent)
     public bool AddCardToDeck(CardData card, DeckZoneType targetZone)
     {
        // Validação de Limite de Cópias
-       int currentCopies = mainDeck.Count(c => c.id == card.id) + sideDeck.Count(c => c.id == card.id) + extraDeck.Count(c => c.id == card.id);
-       int banlistLimit = banList.ContainsKey(card.name) ? banList[card.name] : MAX_COPIES;
-       if (GameManager.Instance.disableBanlist) banlistLimit = MAX_COPIES;
-       if (currentCopies >= banlistLimit) return false;
+       int currentCopies = GetCopiesInDecks(card.id);
+       int limit = GetCardLimit(card.name);
+
+       // Permite 1 cópia de cartas proibidas se a opção estiver ativa
+       if (GameManager.Instance != null && GameManager.Instance.allowForbiddenCards && limit == 0) limit = 1;
+
+       if (currentCopies >= limit) return false;
 
        // Validação de Zona
        if (targetZone == DeckZoneType.Main)
@@ -733,7 +736,7 @@ public void CreateNewBanner(Transform parent)
        hasUnsavedChanges = true;
         // Marca a carta como "usada" para remover a tag "NEW"
         if (SaveLoadSystem.Instance != null) SaveLoadSystem.Instance.MarkCardAsUsed(card.id);
-       RefreshAllUI(); // Atualiza toda a UI para refletir a mudança
+       // ATENÇÃO: A atualização da UI agora é responsabilidade do chamador (ex: DeckDropZone)
        return true; // Retorna true se foi bem sucedido
     }
 
@@ -771,7 +774,7 @@ public void CreateNewBanner(Transform parent)
         if (removed)
         {
             hasUnsavedChanges = true;
-            RefreshAllUI();
+            // ATENÇÃO: A atualização da UI agora é responsabilidade do chamador (ex: DeckDropZone)
         }    }
 
     /// <summary>
@@ -945,7 +948,16 @@ public void CreateNewBanner(Transform parent)
     {
         if (activeFilters.ContainsKey(filterKey))
         {
-            activeFilters[filterKey] = !activeFilters[filterKey];
+            bool wasActive = activeFilters[filterKey];
+            
+            // Desativa todos os filtros para manter a exclusividade mútua (apenas 1 por vez)
+            var keys = new List<string>(activeFilters.Keys);
+            foreach (var key in keys)
+            {
+                activeFilters[key] = false;
+            }
+
+            activeFilters[filterKey] = !wasActive; // Alterna apenas o clicado
         }
         UpdateFilterButtonsVisuals();
         RefreshTrunkUI();

@@ -26,19 +26,41 @@ public class DeckDropZone : MonoBehaviour, IDropHandler
     {
         if (DeckDragHandler.currentDragged != null)
         {
-            bool success = DeckBuilderManager.Instance?.AddCardToDeck(DeckDragHandler.currentDragged.cardData, zoneType) ?? false;
-            if (success)
+            var dragHandler = DeckDragHandler.currentDragged;
+            var manager = DeckBuilderManager.Instance;
+            if (manager == null) return;
+
+            CardData card = dragHandler.cardData;
+            DeckZoneType fromZone = dragHandler.sourceZone;
+
+            // Se soltar na mesma zona de onde veio, não faz nada, apenas finaliza o drag.
+            if (fromZone == zoneType)
             {
-                if (DeckDragHandler.currentDragged.sourceZone != DeckZoneType.Trunk)
+                dragHandler.wasDropped = true;
+                manager.RefreshAllUI(); // Apenas para o item voltar ao normal
+                return;
+            }
+
+            // Lógica de Movimentação: Remove primeiro, depois tenta adicionar.
+            if (fromZone != DeckZoneType.Trunk)
+            {
+                manager.RemoveCard(card, fromZone);
+            }
+
+            bool success = manager.AddCardToDeck(card, zoneType);
+
+            if (!success)
+            {
+                // Adição falhou, devolve a carta para a zona de origem (se não for o baú)
+                if (fromZone != DeckZoneType.Trunk)
                 {
-                    DeckBuilderManager.Instance?.RemoveCard(DeckDragHandler.currentDragged.cardData, DeckDragHandler.currentDragged.sourceZone);
+                    manager.AddCardToDeck(card, fromZone);
                 }
-                DeckDragHandler.currentDragged.wasDropped = true;
+                manager.TriggerInvalidMoveFeedback(zoneType);
             }
-            else
-            {
-                DeckBuilderManager.Instance?.TriggerInvalidMoveFeedback(zoneType);
-            }
+
+            dragHandler.wasDropped = true; // Marca como dropado para não ser removido no OnEndDrag
+            manager.RefreshAllUI(); // Atualiza a UI uma única vez no final de toda a operação.
         }
     }
 }

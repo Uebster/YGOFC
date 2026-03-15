@@ -129,7 +129,9 @@ public class DeckDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         // Se não foi dropped em uma zona, e veio de um deck, remove (lixeira)
         if (!wasDropped && sourceZone != DeckZoneType.Trunk && DeckBuilderManager.Instance != null)
         {
-            DeckBuilderManager.Instance.RemoveCard(cardData, sourceZone);
+            var manager = DeckBuilderManager.Instance;
+            manager.RemoveCard(cardData, sourceZone);
+            manager.RefreshAllUI(); // Atualiza a UI após a remoção
         }
 
         currentDragged = null;
@@ -164,10 +166,12 @@ public class DeckDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 {
                     DeckBuilderManager.Instance.TriggerInvalidMoveFeedback(target);
                 }
+                DeckBuilderManager.Instance.RefreshAllUI(); // Atualiza a UI após a ação
             }
             else
             {
                 DeckBuilderManager.Instance.RemoveCard(cardData, sourceZone);
+                DeckBuilderManager.Instance.RefreshAllUI(); // Atualiza a UI após a ação
             }
         }
     }
