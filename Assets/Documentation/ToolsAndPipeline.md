@@ -110,3 +110,33 @@ Scripts auxiliares para validar a integridade dos dados sem precisar abrir o Uni
 ### Gerador de Arenas (`generate_fields.py`)
 *   **Entrada:** `Scripts/Fields/Arenas.txt`.
 *   **Função:** Converte uma lista simples de texto em um JSON estruturado (`fields.json`) contendo IDs e nomes de arenas, usado pelo sistema de seleção de cenários.
+
+---
+
+## 7. Ferramentas de Editor (Unity Editor Tools)
+
+Esta seção descreve ferramentas customizadas que rodam dentro do Editor do Unity para auxiliar no desenvolvimento e debugging.
+
+### `HierarchyDumper.cs`
+
+*   **Localização do Script:** `Assets/Scripts/Editor/HierarchyDumper.cs`
+*   **Função:** Uma ferramenta de debugging de UI extremamente útil para copiar a estrutura de um `GameObject` e seus componentes para a área de transferência. O texto formatado é ideal para colar em chats ou documentos para análise.
+*   **Uso:**
+    1.  No Editor do Unity, encontre o `GameObject` que você deseja inspecionar na janela **Hierarchy**.
+    2.  Clique com o botão direito no `GameObject`.
+    3.  No menu de contexto, selecione a opção **"Dump Hierarchy (Copiar Texto)"**.
+    4.  A estrutura completa do objeto, incluindo todos os filhos e seus componentes principais, será copiada para sua área de transferência.
+    5.  Um log de confirmação aparecerá no Console do Unity.
+*   **Exemplo de Saída:**
+    ```
+    ESTRUTURA DE: Panel_CardChest
+    - Panel_CardChest [Image]
+      - Scroll View [Image, ScrollRect, TrunkScrollManager]
+        - Viewport [Image, Mask]
+          - Image [Image, DeckDropZone]
+          - Content []
+        - Scrollbar Vertical [Image, Scrollbar]
+          - Sliding Area []
+            - Handle [Image]
+    ```
+*   **Observação:** O script ignora componentes comuns como `Transform` e `CanvasRenderer` para manter a saída limpa e focada nos scripts e componentes de UI mais importantes.

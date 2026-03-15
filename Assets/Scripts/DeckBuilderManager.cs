@@ -835,6 +835,12 @@ public void CreateNewBanner(Transform parent)
             hasUnsavedChanges = true;
             RefreshAllUI();
             Debug.Log($"Deck '{deckName}' carregado.");
+
+            // Adiciona um aviso se o deck importado for inválido
+            if (!IsDeckValid())
+            {
+                UIManager.Instance?.ShowMessage($"Atenção: O deck importado '{deckName}' é inválido (Principal: {mainDeck.Count} cartas). Ajuste-o para poder salvá-lo.");
+            }
         }
     }
 
