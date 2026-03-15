@@ -318,24 +318,32 @@ public class DeckBuilderManager : MonoBehaviour
     private void InitializeIconDictionaries()
     {
         attributeIconsDict = new Dictionary<string, Sprite>(System.StringComparer.OrdinalIgnoreCase);
-        foreach (var mapping in attributeIcons)
-            if (!attributeIconsDict.ContainsKey(mapping.name))
-                attributeIconsDict.Add(mapping.name, mapping.icon);
+        if (attributeIcons != null) {
+            foreach (var mapping in attributeIcons)
+                if (!attributeIconsDict.ContainsKey(mapping.name))
+                    attributeIconsDict.Add(mapping.name, mapping.icon);
+        }
 
         raceIconsDict = new Dictionary<string, Sprite>(System.StringComparer.OrdinalIgnoreCase);
-        foreach (var mapping in raceIcons)
-            if (!raceIconsDict.ContainsKey(mapping.name))
-                raceIconsDict.Add(mapping.name, mapping.icon);
+        if (raceIcons != null) {
+            foreach (var mapping in raceIcons)
+                if (!raceIconsDict.ContainsKey(mapping.name))
+                    raceIconsDict.Add(mapping.name, mapping.icon);
+        }
 
         typeIconsDict = new Dictionary<string, Sprite>(System.StringComparer.OrdinalIgnoreCase);
-        foreach (var mapping in typeIcons)
-            if (!typeIconsDict.ContainsKey(mapping.name))
-                typeIconsDict.Add(mapping.name, mapping.icon);
+        if (typeIcons != null) {
+            foreach (var mapping in typeIcons)
+                if (!typeIconsDict.ContainsKey(mapping.name))
+                    typeIconsDict.Add(mapping.name, mapping.icon);
+        }
 
         subTypeIconsDict = new Dictionary<string, Sprite>(System.StringComparer.OrdinalIgnoreCase);
-        foreach (var mapping in subTypeIcons)
-            if (!subTypeIconsDict.ContainsKey(mapping.name))
-                subTypeIconsDict.Add(mapping.name, mapping.icon);
+        if (subTypeIcons != null) {
+            foreach (var mapping in subTypeIcons)
+                if (!subTypeIconsDict.ContainsKey(mapping.name))
+                    subTypeIconsDict.Add(mapping.name, mapping.icon);
+        }
     }
 
     private void OnSearchInputChanged(string newText)
@@ -393,10 +401,11 @@ void OnDisable()
 
 private void ClearArtCache()
 {
-    // Erro CS0103 corrigido aqui
     foreach (var tex in artCache.Values)
         if (tex != null) Destroy(tex);
     artCache.Clear();
+        // Limpa também o cache estático das caixinhas (previne Memory Leak crítico e Crash no Reload)
+    ChestCardItem.ClearStaticArtCache();
     Debug.Log("[DeckBuilderManager] Cache de arte limpo.");
 }
 
@@ -584,7 +593,7 @@ private void LoadData()
         Debug.Log("[DeckBuilderManager] RefreshTrunkUI: Iniciando atualização da UI do baú.");
         // DEBUG: Verifique se o baú tem cartas antes de filtrar.
 
-        string searchText = searchInput != null ? searchInput.text.ToLowerInvariant() : "";
+        string searchText = searchInput != null ? searchInput.text.Trim().ToLowerInvariant() : "";
         bool anyFilterActive = activeFilters.Any(kvp => kvp.Value);
 
         filteredCardGroups = currentTrunk
@@ -592,9 +601,15 @@ private void LoadData()
             .Where(g =>
             {
                 CardData card = g.First();
-                if (!string.IsNullOrEmpty(searchText) && !card.name.ToLowerInvariant().Contains(searchText))
+                if (!string.IsNullOrEmpty(searchText))
                 {
-                    return false;
+                    // Pesquisa aprimorada por Contains em vários campos simultaneamente
+                    bool match = card.name.ToLowerInvariant().Contains(searchText) ||
+                                 card.description.ToLowerInvariant().Contains(searchText) ||
+                                 card.race.ToLowerInvariant().Contains(searchText) ||
+                                 card.type.ToLowerInvariant().Contains(searchText) ||
+                                 card.attribute.ToLowerInvariant().Contains(searchText);
+                    if (!match) return false;
                 }
 
                 if (!anyFilterActive)
@@ -733,6 +748,7 @@ private void LoadData()
 
     private void ExitToMenu()
     {
+        ResetDeckBuilderState();
         UIManager.Instance?.ShowScreen(UIManager.Instance.newGameMenu);
     }
 
@@ -954,10 +970,24 @@ public void CreateNewBanner(Transform parent)
             sideDeck.Clear();
             extraDeck.Clear();
 
-            // Carrega apenas cartas que o jogador possui
-            foreach (string id in mainIDs) { CardData c = GameManager.Instance.cardDatabase.GetCardById(id); if (c != null) mainDeck.Add(c); }
-            foreach (string id in sideIDs) { CardData c = GameManager.Instance.cardDatabase.GetCardById(id); if (c != null) sideDeck.Add(c); }
-            foreach (string id in extraIDs) { CardData c = GameManager.Instance.cardDatabase.GetCardById(id); if (c != null) extraDeck.Add(c); }
+            bool devUnlock = GameManager.Instance != null && GameManager.Instance.devMode && GameManager.Instance.unlockAllCards;
+            Dictionary<string, int> usedCounts = new Dictionary<string, int>();
+
+            // Função auxiliar para garantir que importamos apenas a quantidade exata que o jogador possui no Baú
+            void TryAddCard(string id, List<CardData> targetDeck)
+            {
+                CardData c = GameManager.Instance.cardDatabase.GetCardById(id);
+                if (c == null) return;
+                int owned = currentTrunk.Count(card => card.id == id);
+                if (devUnlock) owned = 3;
+                int used = usedCounts.ContainsKey(id) ? usedCounts[id] : 0;
+                if (used < owned) { targetDeck.Add(c); usedCounts[id] = used + 1; }
+            }
+
+            // Importa as cartas aplicando o limite da coleção real do jogador
+            foreach (string id in mainIDs) TryAddCard(id, mainDeck);
+            foreach (string id in sideIDs) TryAddCard(id, sideDeck);
+            foreach (string id in extraIDs) TryAddCard(id, extraDeck);
 
             hasUnsavedChanges = true;
             RefreshTrunkUI();
@@ -1108,6 +1138,21 @@ public void CreateNewBanner(Transform parent)
         image.color = flashColor;
         yield return new WaitForSeconds(duration);
         if (image != null) image.color = originalColor; // Verifica se o objeto ainda existe
+    }
+
+    // Limpa todos os dados temporários, pesquisas e visuais ao sair do Deck Builder
+    private void ResetDeckBuilderState()
+    {
+        if (searchInput != null) searchInput.text = "";
+        
+        var keys = new List<string>(activeFilters.Keys);
+        foreach (var key in keys) activeFilters[key] = false;
+        
+        currentSort = SortType.ABC;
+        sortAscending = true;
+        UpdateFilterButtonsVisuals();
+        
+        ClearArtCache();
     }
 }
 public enum DeckZoneType { Trunk, Main, Side, Extra }

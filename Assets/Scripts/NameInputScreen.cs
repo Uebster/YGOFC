@@ -28,6 +28,16 @@ public class NameInputScreen : MonoBehaviour
 
     [Header("Keyboard Generation")]
     public GameObject keyPrefab; // Arraste um prefab de botão simples
+    
+    [Header("Keyboard Styling")]
+    public Sprite backgroundSprite;
+    public Color normalTextColor = Color.white;
+    public Color hoverTextColor = new Color(1f, 0.84f, 0f);
+    public bool useBackgroundColorTint = true;
+    public Color bgNormalColor = Color.white;
+    public Color bgHoverColor = new Color(0.2f, 0.2f, 0.2f, 0.9f);
+    public float hoverScaleAmount = 1.2f;
+    
     private List<VirtualKey> generatedKeys = new List<VirtualKey>();
 
     void Start()
@@ -35,6 +45,16 @@ public class NameInputScreen : MonoBehaviour
         if (btnSwitchLayout) btnSwitchLayout.onClick.AddListener(ToggleKeyboardLayout);
         if (btnAccents) btnAccents.onClick.AddListener(ShowAccents);
         if (btnSpecials) btnSpecials.onClick.AddListener(ShowSpecials);
+
+        // Se os grids estiverem vazios, gera os teclados automaticamente ao iniciar
+        if (qwertyGrid != null && qwertyGrid.transform.childCount == 0)
+        {
+            GenerateKeyboard();
+        }
+        else
+        {
+            RefreshKeyList();
+        }
     }
 
     void OnEnable()
@@ -286,7 +306,12 @@ public class NameInputScreen : MonoBehaviour
         if (grid == null) return;
         for (int i = grid.childCount - 1; i >= 0; i--)
         {
-            DestroyImmediate(grid.GetChild(i).gameObject);
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                DestroyImmediate(grid.GetChild(i).gameObject);
+            else
+#endif
+                Destroy(grid.GetChild(i).gameObject);
         }
     }
 
@@ -321,18 +346,34 @@ public class NameInputScreen : MonoBehaviour
         
         // Configura o texto do botão
         TextMeshProUGUI btnText = newKey.GetComponentInChildren<TextMeshProUGUI>();
-        if (btnText != null) btnText.text = charOrFunc;
+        if (btnText != null) 
+        {
+            btnText.text = charOrFunc;
+            btnText.color = normalTextColor;
+        }
+
+        // Configura o Fundo
+        Image bgImage = newKey.GetComponent<Image>();
+        if (bgImage != null)
+        {
+            if (backgroundSprite != null) bgImage.sprite = backgroundSprite;
+            bgImage.color = useBackgroundColorTint ? bgNormalColor : Color.white;
+        }
 
         // Adiciona/Configura o script VirtualKey
         VirtualKey vKey = newKey.GetComponent<VirtualKey>();
         if (vKey == null) vKey = newKey.AddComponent<VirtualKey>();
         vKey.character = charOrFunc;
         
-        // Adiciona MillenniumButton para efeito de Hover (Aumentar tamanho)
+        // Adiciona MillenniumButton para efeito de Hover completo
         MillenniumButton mb = newKey.GetComponent<MillenniumButton>();
         if (mb == null) mb = newKey.AddComponent<MillenniumButton>();
-        mb.scaleAmount = 1.2f; // Aumenta 20%
-        mb.useColorTint = false; // Desativa a mudança de cor, usa apenas escala
+        mb.scaleAmount = hoverScaleAmount; 
+        mb.useColorTint = useBackgroundColorTint;
+        mb.textNormalColor = normalTextColor;
+        mb.textHoverColor = hoverTextColor;
+        mb.bgNormalColor = bgNormalColor;
+        mb.bgHoverColor = bgHoverColor;
         mb.animationDuration = 0.1f;
 
         generatedKeys.Add(vKey);

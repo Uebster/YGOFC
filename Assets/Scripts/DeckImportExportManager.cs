@@ -168,8 +168,10 @@ public class DeckImportExportManager : MonoBehaviour
             {
                 ShowConfirmation($"Deseja importar o deck '{selectedDeck.deckName}'? O deck em edição será substituído.", () => {
                     Debug.Log($"Importing deck: {selectedDeck.deckName}");
-                    DeckBuilderManager.Instance.ImportDeck(selectedDeck.deckName);
+                    string deckToImport = selectedDeck.deckName;
+                    // ATENÇÃO: Fecha o painel de Import primeiro para reativar a UI do DeckBuilder. Isso impede o crash de corrotinas!
                     ClosePanel();
+                    DeckBuilderManager.Instance.ImportDeck(deckToImport);
                 });
             }
         }

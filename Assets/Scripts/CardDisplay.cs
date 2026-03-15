@@ -330,6 +330,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
         yield return currentRequest.SendWebRequest();
 
+        if (currentRequest == null) yield break; // FIX: Previne NRE se a requisição foi cancelada ou o perfil trocado durante o download
+
         if (currentRequest.result == UnityWebRequest.Result.Success)
         {
             frontTexture = DownloadHandlerTexture.GetContent(currentRequest);
@@ -352,8 +354,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             Debug.LogError($"Falha ao carregar imagem da frente da carta: {fullPath} | Erro: {currentRequest.error}");
         }
 
-        currentRequest.Dispose();
-        currentRequest = null;
+        if (currentRequest != null)
+        {
+            currentRequest.Dispose();
+            currentRequest = null;
+        }
     }
 
     public void FlipCard()

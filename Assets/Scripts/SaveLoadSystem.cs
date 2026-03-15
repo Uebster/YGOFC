@@ -153,13 +153,13 @@ public class SaveLoadSystem : MonoBehaviour
         // Aplica aos Gerentes
         GameManager.Instance.playerName = data.playerName;
         GameManager.Instance.currentSaveID = data.saveID;
-        GameManager.Instance.playerTrunk = new List<string>(data.trunkCards);
+        GameManager.Instance.playerTrunk = data.trunkCards != null ? new List<string>(data.trunkCards) : new List<string>();
         
         // Reconstrói os Decks (IDs -> CardData)
-        List<CardData> main = IDsToCards(data.mainDeck);
-        List<CardData> side = IDsToCards(data.sideDeck);
-        List<CardData> extra = IDsToCards(data.extraDeck);
-        List<CardData> playerExtra = IDsToCards(data.playerExtraDeckIDs); // Load player's extra deck
+        List<CardData> main = IDsToCards(data.mainDeck ?? new List<string>());
+        List<CardData> side = IDsToCards(data.sideDeck ?? new List<string>());
+        List<CardData> extra = IDsToCards(data.extraDeck ?? new List<string>());
+        List<CardData> playerExtra = IDsToCards(data.playerExtraDeckIDs ?? new List<string>()); // Load player's extra deck
 
         GameManager.Instance.SetPlayerDeck(main, side, playerExtra); // Pass playerExtra
 

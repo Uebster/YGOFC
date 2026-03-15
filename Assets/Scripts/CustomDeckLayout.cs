@@ -59,6 +59,8 @@ public class CustomDeckLayout : MonoBehaviour
         for (int i = 0; i < transform.childCount; i++)
         {
             Transform child = transform.GetChild(i);
+            if (child == null) continue; // Evita exceção se o objeto foi destruído pela Unity neste frame
+            
             // Garante que só pegamos cartas, e não outros objetos como o DropZone
             if (child.gameObject.activeSelf && child.GetComponentInChildren<CardDisplay>() != null)
             {

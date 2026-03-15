@@ -53,6 +53,16 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
         }
     }
 
+    // Novo: Método público para limpar o cache de arte (Usado para evitar Crash e Memory Leak ao trocar de perfil)
+    public static void ClearStaticArtCache()
+    {
+        foreach (var tex in artCache.Values)
+        {
+            if (tex != null) Destroy(tex);
+        }
+        artCache.Clear();
+    }
+
     public void Setup(CardData card, int available, bool newFlag, bool inDeck)
     {
         cardData = card;
