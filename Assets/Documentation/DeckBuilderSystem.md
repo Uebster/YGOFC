@@ -208,6 +208,8 @@ A validação é feita em tempo real pelo `DeckBuilderManager.AddCardToDeck` e v
     *   **Opção Global:** Se `GameManager.allowForbiddenCards` estiver ativo, cartas Proibidas são tratadas como Limitadas (1).
     *   **Opção Sem Limites:** Se `GameManager.disableBanlist` estiver ativo, a Banlist é ignorada e todas as cartas podem ter até 3 cópias.
 
+A validação do Deck é gerenciada pelo método inteligente `ValidateDeck()`, que checa não apenas limites de tamanho, mas também itera sobre todas as cópias únicas do deck validando sua legalidade. Ao tentar salvar ou sair, mensagens detalhadas (ex: *"O deck possui cópias em excesso de: Pot of Greed (Limitada a 1). Atual: 3"*) são exibidas para orientar o jogador a consertar o erro.
+
 ### 5. Persistência
 *   **Save Deck:** O botão `Btn_SaveDeck` chama `SaveDeck()`. Este método primeiro valida o deck. Se for válido, ele atualiza o deck ativo no `GameManager` e marca que não há mais alterações pendentes (`hasUnsavedChanges = false`).
 *   **Sair (Back):** O botão `Btn_BackToMenu` chama `ExitDeckBuilder()`. Se `hasUnsavedChanges` for `true`, ele exibe um pop-up de confirmação antes de sair, para evitar a perda de alterações.
@@ -219,7 +221,7 @@ O Deck Builder também permite que o jogador salve ("exporte") e carregue ("impo
 *   **Armazenamento:** As receitas de deck são salvas diretamente no arquivo de save do jogador (`.save`) como uma lista de objetos `DeckRecipe`. O `SaveLoadSystem.cs` gerencia a leitura e escrita desses dados.
 *   **Integração:** O `DeckBuilderManager` atua como uma ponte, fornecendo os métodos `ExportCurrentDeck(deckName)` e `ImportDeck(deckName)`.
     *   `ExportCurrentDeck`: Pega as listas de cartas atuais (Main, Side, Extra) e as envia para o `SaveLoadSystem` para serem salvas.
-    *   `ImportDeck`: Recebe uma lista de IDs de cartas do `SaveLoadSystem` e as carrega no Deck Builder, limpando o deck anterior.
+    *   `ImportDeck`: Recebe uma lista de IDs de cartas do `SaveLoadSystem` e as carrega no Deck Builder, limpando o deck anterior. Ele cruza os IDs importados com a coleção atual do jogador (`playerTrunk`), carregando apenas as cartas que o jogador de fato possui, e utiliza a função `ValidateDeck()` para alertar o usuário caso a receita importada viole alguma restrição da Banlist atual.
 
 ### 7. Indicador de Cartas "New"
 *   Ao popular a lista do baú, o `DeckBuilderManager` verifica cada carta com `SaveLoadSystem.Instance.IsCardNew(card.id)`.
@@ -245,6 +247,7 @@ A cada atualização (`RefreshLayout`), ele executa um sistema de **Flow Layout*
 
 ### Parâmetros (Inspector)
 O script expõe várias propriedades públicas para que você possa ajustar o layout diretamente no Unity Editor:
+*   **`dynamicPerRow`**: Quando ativo, aplica uma quebra escalonada e elegante das linhas baseada no total de cartas (10 cartas até 40, 11 até 44, e assim sucessivamente). Ideal para gerar o efeito visual de "cascata" suave no Main Deck.
 *   **`maxCardsPerRow`**: O número máximo de cartas antes de quebrar a linha (ex: 15).
 *   **`cardWidth` / `cardHeight`**: As dimensões exatas do seu prefab de carta.
 *   **`verticalSpacing`**: O espaço vertical entre as linhas.

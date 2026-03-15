@@ -22,6 +22,7 @@ public class DeckImportExportManager : MonoBehaviour
     public Button btnBack;
     public Button btnDelete; // Botão para deletar
     public GameObject confirmationDialog;
+    public GameObject warningDialog;
     public TMP_InputField inputDeckName; // Apenas para o painel de Export
 
     public Transform listContent;
@@ -71,6 +72,17 @@ public class DeckImportExportManager : MonoBehaviour
             else Debug.LogWarning("[DeckImportExportManager] Botão 'Não' não encontrado no Confirmation Dialog local.");
 
             confirmationDialog.SetActive(false);
+        }
+
+        // Configuração do Diálogo de Aviso Local (se atribuído)
+        if (warningDialog != null)
+        {
+            Button localOk = warningDialog.transform.Find("Btn_Ok")?.GetComponent<Button>() ?? warningDialog.GetComponentInChildren<Button>(true);
+            if (localOk != null)
+            {
+                localOk.onClick.AddListener(() => warningDialog.SetActive(false));
+            }
+            warningDialog.SetActive(false);
         }
     }
 
@@ -123,14 +135,14 @@ public class DeckImportExportManager : MonoBehaviour
 
             if (string.IsNullOrEmpty(nameToSave))
             {
-                UIManager.Instance?.ShowMessage("Por favor, insira um nome para o deck.");
+                ShowWarning("Por favor, insira um nome para o deck.");
                 return;
             }
 
             System.Action exportAction = () => {
                 DeckBuilderManager.Instance.ExportCurrentDeck(nameToSave);
                 RefreshList();
-                UIManager.Instance?.ShowMessage($"Deck '{nameToSave}' salvo!");
+                ShowWarning($"Deck '{nameToSave}' salvo com sucesso!");
                 
                 // Após salvar, seleciona o deck na lista
                 var savedDeck = SaveLoadSystem.Instance.GetSavedDecks().FirstOrDefault(d => d.deckName.Equals(nameToSave, System.StringComparison.OrdinalIgnoreCase));
@@ -318,6 +330,20 @@ public class DeckImportExportManager : MonoBehaviour
         {
             Debug.LogWarning("[DeckImportExportManager] Nenhum diálogo de confirmação encontrado. Executando ação direta.");
             onConfirm?.Invoke();
+        }
+    }
+
+    private void ShowWarning(string message)
+    {
+        if (warningDialog != null)
+        {
+            TextMeshProUGUI txt = warningDialog.GetComponentInChildren<TextMeshProUGUI>();
+            if (txt != null) txt.text = message;
+            warningDialog.SetActive(true);
+        }
+        else if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowMessage(message);
         }
     }
 

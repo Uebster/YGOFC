@@ -467,9 +467,45 @@ private void LoadData()
         UpdateCounts();
     }
     
-    private bool IsDeckValid()
+    /// <summary>
+    /// Valida o deck completo contra regras de quantidade e Banlist.
+    /// Retorna true se for válido. Se falso, preenche o errorMessage com o motivo exato.
+    /// </summary>
+    private bool ValidateDeck(out string errorMessage)
     {
-        if (mainDeck.Count < MIN_MAIN || mainDeck.Count > MAX_MAIN) return false;
+        errorMessage = "";
+        if (mainDeck.Count < MIN_MAIN || mainDeck.Count > MAX_MAIN)
+        {
+            errorMessage = $"Deck Principal inválido!\nDeve ter entre {MIN_MAIN} e {MAX_MAIN} cartas.\nAtual: {mainDeck.Count}";
+            return false;
+        }
+        if (sideDeck.Count > MAX_SIDE)
+        {
+            errorMessage = $"Side Deck inválido!\nMáximo de {MAX_SIDE} cartas.\nAtual: {sideDeck.Count}";
+            return false;
+        }
+        if (extraDeck.Count > MAX_EXTRA)
+        {
+            errorMessage = $"Extra Deck inválido!\nMáximo de {MAX_EXTRA} cartas.\nAtual: {extraDeck.Count}";
+            return false;
+        }
+
+        var allCards = mainDeck.Concat(sideDeck).Concat(extraDeck);
+        var grouped = allCards.GroupBy(c => c.id);
+        foreach (var group in grouped)
+        {
+            CardData card = group.First();
+            int limit = GetCardLimit(card.name);
+            if (GameManager.Instance != null && GameManager.Instance.allowForbiddenCards && limit == 0) limit = 1;
+            
+            if (group.Count() > limit)
+            {
+                string limitText = limit == 0 ? "Proibida (0)" : $"Limitada a {limit}";
+                errorMessage = $"O deck possui cópias em excesso de:\n{card.name}\nLimite: {limitText}\nAtual: {group.Count()}";
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -639,9 +675,10 @@ private void LoadData()
     /// </summary>
     public void SaveDeck()
     {
-        if (!IsDeckValid())
+        string errorMsg;
+        if (!ValidateDeck(out errorMsg))
         {
-            ShowWarning($"Deck inválido!\nO Deck Principal deve ter entre {MIN_MAIN} e {MAX_MAIN} cartas.");
+            ShowWarning(errorMsg);
             return;
         }
 
@@ -668,19 +705,16 @@ private void LoadData()
     /// </summary>
     public void Exit()
     {
-        if (hasUnsavedChanges && !IsDeckValid())
+        if (hasUnsavedChanges)
         {
-            ShowConfirmation(
-                $"Seu Deck Principal é inválido (deve ter entre {MIN_MAIN} e {MAX_MAIN} cartas).\n\nDeseja sair mesmo assim e descartar as alterações?",
-                DiscardAndExit
-            );
-        }
-        else if (hasUnsavedChanges)
-        {
-            ShowConfirmation(
-                "Você tem alterações não salvas. Deseja sair sem salvar?",
-                DiscardAndExit
-            );
+            string errorMsg;
+            bool isValid = ValidateDeck(out errorMsg);
+            
+            string msg = isValid 
+                ? "Você tem alterações não salvas.\n\nDeseja sair sem salvar e perder o progresso?"
+                : $"Atenção! Seu deck atual é INVÁLIDO e não pode ser salvo:\n\n{errorMsg}\n\nDeseja sair mesmo assim e descartar as alterações?";
+            
+            ShowConfirmation(msg, DiscardAndExit);
         }
         else
         {
@@ -924,10 +958,11 @@ public void CreateNewBanner(Transform parent)
             Debug.Log($"Deck '{deckName}' carregado.");
 
             // Adiciona um aviso se o deck importado for inválido
-            if (!IsDeckValid())
+            string errorMsg;
+            if (!ValidateDeck(out errorMsg))
             {
-                UIManager.Instance?.ShowMessage($"Atenção: O deck importado '{deckName}' é inválido (Principal: {mainDeck.Count} cartas). Ajuste-o para poder salvá-lo.");
-                ShowWarning($"Atenção: O deck importado '{deckName}' é inválido (Principal: {mainDeck.Count} cartas). Ajuste-o para poder salvá-lo.");
+                UIManager.Instance?.ShowMessage($"Atenção: O deck importado '{deckName}' possui problemas e precisará ser ajustado antes de salvar:\n\n{errorMsg}");
+                ShowWarning($"Atenção: O deck importado '{deckName}' possui problemas e precisará ser ajustado antes de salvar:\n\n{errorMsg}");
             }
         }
     }

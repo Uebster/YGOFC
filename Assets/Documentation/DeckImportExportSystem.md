@@ -31,9 +31,13 @@ Abaixo está a estrutura recomendada para os painéis de Importação e Exporta�
             *   **Text (TMP)** `[TextMeshProUGUI]`
         *   **Btn_No** `[Image, Button]`
             *   **Text (TMP)** `[TextMeshProUGUI]`
+    *   **WarningExport** `[Image]`
+        *   **Text (TMP)** `[TextMeshProUGUI]`
+        *   **Btn_Ok** `[Image, Button]`
+            *   **Text (TMP)** `[TextMeshProUGUI]`
 
 *   **Panel_Import** `[Image, DeckImportExportManager]`
-    *   *(Estrutura similar ao Export, mas sem os botões de Input e Delete)*
+    *   *(Estrutura similar ao Export, com seus respectivos ConfirmationImport e WarningImport, mas sem os botões de Input e Delete)*
 
 ## Arquitetura e Scripts
 
