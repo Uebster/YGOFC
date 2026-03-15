@@ -36,11 +36,6 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
     void Awake()
     {
         manager = DeckBuilderManager.Instance;
-        if (manager == null)
-        {
-            Debug.LogError("[ChestCardItem] Awake: DeckBuilderManager.Instance é NULO!");
-        }
-        // Debug.Log("[ChestCardItem] Awake: Prefab do item do baú inicializado.");
     }
 
     // Método estático para tentar obter arte do cache
@@ -58,19 +53,29 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
         }
     }
 
+    private UnityEngine.Networking.UnityWebRequest currentRequest;
+
     public void Setup(CardData card, int available, bool newFlag, bool inDeck)
     {
+        // Pára qualquer carregamento de imagem anterior caso a caixa tenha sido reciclada no scroll
+        StopAllCoroutines();
+        if (currentRequest != null)
+        {
+            currentRequest.Dispose();
+            currentRequest = null;
+        }
+
         cardData = card;
         availableCopies = available;
         isNew = newFlag;
         isInDeck = inDeck;
 
         // --- Arte da carta ---
-        // A corotina foi movida para OnEnable para evitar erro com o objeto inativo.
-        // Apenas limpamos a arte antiga ou definimos um placeholder aqui.
-        if (cardArtImage != null)
+        if (cardArtImage != null) cardArtImage.texture = null; // Limpa a arte velha na hora
+        
+        if (cardArtImage != null && GameManager.Instance != null && gameObject.activeInHierarchy)
         {
-            cardArtImage.texture = null;
+            StartCoroutine(LoadArtWithCache(card.image_filename));
         }
 
         // --- Nome ---
@@ -212,20 +217,14 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
         }
     }
 
-    void OnEnable()
-    {
-        // A corotina é iniciada aqui para garantir que o GameObject está ativo.
-        if (cardData != null && cardArtImage != null)
-        {
-            StartCoroutine(LoadArtWithCache(cardData.image_filename));
-        }
-    }
-
     void OnDisable()
     {
-        // Para a corotina se o objeto for desativado (por exemplo, ao sair do viewport).
-        // Isso evita que web requests finalizem e tentem atribuir a um objeto inativo.
         StopAllCoroutines();
+        if (currentRequest != null)
+        {
+            currentRequest.Dispose();
+            currentRequest = null;
+        }
     }
 
     private System.Collections.IEnumerator LoadArtWithCache(string imagePath)
@@ -245,23 +244,25 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
         string url = "file://" + fullPath;
         try { url = new System.Uri(fullPath).AbsoluteUri; } catch { }
 
-        using (UnityEngine.Networking.UnityWebRequest uwr = UnityEngine.Networking.UnityWebRequestTexture.GetTexture(url))
-        {
-            yield return uwr.SendWebRequest();
+        // Removido o bloco 'using' para permitir interrupção segura via StopAllCoroutines
+        currentRequest = UnityEngine.Networking.UnityWebRequestTexture.GetTexture(url);
+        yield return currentRequest.SendWebRequest();
 
-            if (uwr.result == UnityEngine.Networking.UnityWebRequest.Result.Success && cardArtImage != null)
-            {
-                Texture2D tex = UnityEngine.Networking.DownloadHandlerTexture.GetContent(uwr);
-                cardArtImage.texture = tex;
-                // 3. Adiciona ao cache para uso futuro
-                AddArtToCache(cardData.id, tex);
-            }
-            else
-            {
-                Debug.LogWarning($"Falha ao carregar arte da carta: {imagePath}");
-                cardArtImage.texture = null; // Limpa a textura em caso de falha
-            }
+        if (currentRequest.result == UnityEngine.Networking.UnityWebRequest.Result.Success && cardArtImage != null)
+        {
+            Texture2D tex = UnityEngine.Networking.DownloadHandlerTexture.GetContent(currentRequest);
+            cardArtImage.texture = tex;
+            // 3. Adiciona ao cache para uso futuro
+            AddArtToCache(cardData.id, tex);
         }
+        else
+        {
+            // Se falhar ou for interrompido, garante que a textura fique vazia
+            if (cardArtImage != null) cardArtImage.texture = null;
+        }
+        
+        if (currentRequest != null) currentRequest.Dispose();
+        currentRequest = null;
     }
 
     public void OnPointerEnter(PointerEventData eventData)
