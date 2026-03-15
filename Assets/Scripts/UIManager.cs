@@ -106,6 +106,16 @@ public class UIManager : MonoBehaviour
         if (duelScreen == null) Debug.LogWarning("UIManager: Duel Screen não atribuída!");
         if (graveyardViewer == null) Debug.LogWarning("UIManager: Graveyard Viewer não atribuído!");
 
+        // Garante que os popups locais comecem desativados
+        if (newGameMenu != null) {
+            Transform p = newGameMenu.transform.Find("ConfirmationExitToMainMenu");
+            if (p != null) p.gameObject.SetActive(false);
+        }
+        if (mainMenuScreen != null) {
+            Transform p = mainMenuScreen.transform.Find("ConfirmationExitGame");
+            if (p != null) p.gameObject.SetActive(false);
+        }
+
         // DICA: Se quiser que a abertura passe sozinha após 3 segundos, descomente a linha abaixo:
         // Invoke("FinishOpening", 3f);
     }
@@ -562,13 +572,50 @@ public class UIManager : MonoBehaviour
         // Aqui você poderia adicionar lógica para limpar o tabuleiro se quisesse
     }
 
+    // Novo: Botão de voltar do New Game (Deslogar)
+    public void Btn_LogOutToMainMenu()
+    {
+        ShowLocalOrGlobalConfirmation(newGameMenu, "ConfirmationExitToMainMenu", "Deseja deslogar e voltar ao Menu Principal?", () => {
+            ShowScreen(mainMenuScreen);
+        });
+    }
+
     public void Btn_ExitGame()
     {
-        Debug.Log("Saindo do Jogo...");
-        Application.Quit();
+        ShowLocalOrGlobalConfirmation(mainMenuScreen, "ConfirmationExitGame", "Deseja realmente sair do jogo?", () => {
+            Debug.Log("Saindo do Jogo...");
+            Application.Quit();
 #if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
+            UnityEditor.EditorApplication.isPlaying = false;
 #endif
+        });
+    }
+
+    // Procura o popup local dentro do painel atual, configura os textos/botões e o exibe.
+    private void ShowLocalOrGlobalConfirmation(GameObject parentPanel, string popupName, string message, System.Action onConfirm)
+    {
+        if (parentPanel != null)
+        {
+            Transform popupTr = parentPanel.transform.Find(popupName);
+            if (popupTr != null)
+            {
+                GameObject popup = popupTr.gameObject;
+                TextMeshProUGUI txt = popup.transform.Find("Text (TMP)")?.GetComponent<TextMeshProUGUI>() ?? popup.GetComponentInChildren<TextMeshProUGUI>();
+                if (txt != null) txt.text = message;
+
+                Button btnYes = popup.transform.Find("Btn_Yes")?.GetComponent<Button>();
+                Button btnNo = popup.transform.Find("Btn_No")?.GetComponent<Button>();
+
+                if (btnYes != null) { btnYes.onClick.RemoveAllListeners(); btnYes.onClick.AddListener(() => { popup.SetActive(false); onConfirm?.Invoke(); }); }
+                if (btnNo != null) { btnNo.onClick.RemoveAllListeners(); btnNo.onClick.AddListener(() => { popup.SetActive(false); }); }
+
+                popup.SetActive(true);
+                return;
+            }
+        }
+        
+        // Se não encontrou o painel local, usa o modal de confirmação global padrão
+        ShowConfirmation(message, onConfirm);
     }
 
     // Fecha o modal de confirmação com segurança

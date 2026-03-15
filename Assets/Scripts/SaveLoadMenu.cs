@@ -236,9 +236,11 @@ public class SaveLoadMenu : MonoBehaviour
                 });
                 break;
             case MenuType.Load:
-                // Carregar Save
-                SaveLoadSystem.Instance.LoadGame(selectedSave.saveID);
-                if (UIManager.Instance != null) UIManager.Instance.Btn_BackToNewGameMenu(); // Volta ao menu
+                ShowConfirmation($"Tem certeza que deseja carregar o save de\n<color=yellow>{selectedSave.playerName}</color>?\nTodo o progresso atual não salvo será perdido.", () => 
+                {
+                    SaveLoadSystem.Instance.LoadGame(selectedSave.saveID);
+                    if (UIManager.Instance != null) UIManager.Instance.Btn_BackToNewGameMenu(); // Volta ao menu
+                });
                 break;
             case MenuType.Delete:
                 ShowConfirmation($"Tem certeza que deseja <color=red>DELETAR</color> o save de\n{selectedSave.playerName}?", () => 
