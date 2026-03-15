@@ -34,6 +34,8 @@ public class DuelTheme : ScriptableObject
     [Header("Minigames (Sorte/Tempo)")]
     public Sprite coinHeadsSprite;
     public Sprite coinTailsSprite;
+    [Tooltip("As 6 faces do dado customizado para este tema (Ordem: 1, 2, 3, 4, 5, 6).")]
+    public Sprite[] diceFaceSprites;
 
     [Header("Action Menu")]
     public Sprite panelActionMenu;

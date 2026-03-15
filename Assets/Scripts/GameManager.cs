@@ -1,12 +1,14 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
 using System.IO;
 using System.Collections;
 using UnityEngine.Networking;
 using System.Collections.Generic; // Necessário para List
 using System.Linq; // Necessário para Shuffle
 using UnityEngine.EventSystems;
+using Random = UnityEngine.Random;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -129,7 +131,9 @@ public class GameManager : MonoBehaviour
     public bool infiniteNormalSummons = false;
     [Tooltip("Se marcado, o resultado da moeda será sempre CARA (Heads).")]
     public bool alwaysCoinHead = false;
-    
+    [Tooltip("Se marcado, o resultado do dado será sempre 6. Útil para testar cartas de aposta.")]
+    public bool alwaysDiceSix = false;
+ 
     [Header("Turn Clock Visuals")]
     [Tooltip("Habilita o visual de relógio para contagem de turnos (ex: Swords of Revealing Light). Requer prefab configurado.")]
     public bool enableTurnClockVisuals = false;
@@ -165,7 +169,16 @@ public class GameManager : MonoBehaviour
     [Tooltip("Se marcado, clicar no próprio monstro atacante quando o oponente não tem monstros realiza o ataque direto imediatamente.")]
     public bool quickAttackDirectly = false;
 
-
+    [Header("Minigames Settings")]
+    [Tooltip("Ativa a escolha manual de Cara/Coroa para os lançamentos de moeda.")]
+    public bool coinTossRequiresChoice = true;
+    [Tooltip("Exige que o jogador clique fisicamente na moeda na tela para ela pular e girar.")]
+    public bool coinTossManualSpin = true;
+    public CoinTossUI coinTossUI;
+    [Tooltip("Exige que o jogador clique fisicamente no dado na tela para ele rolar.")]
+    public bool diceRollManualSpin = true;
+    public DiceRollUI diceRollUI;
+    
     // --- REFERÊNCIAS 2D ---
     [Header("Core References")]
     public CardDisplay cardViewerDisplay;
@@ -1324,6 +1337,21 @@ public void ShuffleDeck(bool isPlayer)
             yield return new WaitForSeconds(0.5f);
         }
         onResult?.Invoke(headsCount);
+    }
+
+    // --- SISTEMA DE DADOS ---
+    public void RollDice(int count, bool requireChoice, Action<List<int>> callback)
+    {
+        if (diceRollUI != null)
+        {
+            diceRollUI.ShowRoll(count, requireChoice, diceRollManualSpin, callback, alwaysDiceSix);
+        }
+        else
+        {
+            List<int> results = new List<int>();
+            for (int i = 0; i < count; i++) results.Add(alwaysDiceSix ? 6 : UnityEngine.Random.Range(1, 7));
+            callback?.Invoke(results);
+        }
     }
 
     // --- MENU DE SELEÇÃO DE FASE (Botão Direito) ---

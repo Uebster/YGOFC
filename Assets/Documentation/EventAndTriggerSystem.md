@@ -313,9 +313,14 @@ A engine fornece suporte embutido para mecânicas de moedas, dados e contagem de
 *   **Helper:** `Effect_CoinTossDestroy(source, numCoins, requiredHeads, targetType)` automatiza a rolagem e a destruição condicional de alvos no campo.
 
 #### Sistema de Dados (Dice Roll)
-*   **`CardEffectManager.Instance.RollDice(int amount, Action<List<int>> callback)`**
-    *   Rola *N* dados de 6 faces e retorna uma lista com o resultado de cada dado exato.
-    *   Deve ser usado por cartas como *Roulette Barrel*, *Snipe Hunter*, etc.
+*   **`GameManager.Instance.RollDice(int count, bool requireChoice, Action<List<int>> callback)`**
+    *   O sistema visual interage com o jogador, abstraindo a física da rolagem. O callback retorna a lista com o resultado exato de cada dado (1 a 6).
+    *   **Variação 1 (Rolagem Simples/Múltipla):** `RollDice(2, false, result => ...)` -> Ideal para *Snipe Hunter*. Joga 2 dados na tela e retorna os resultados.
+    *   **Variação 2 (Adivinhação Prévia):** `RollDice(1, true, result => ...)` -> Ideal para *Blind Destruction*. Abre um painel de UI para o jogador escolher um palpite (1 a 6) antes de rolar o dado.
+    *   **Configurações do GameManager (Inspect):**
+        *   `diceRollManualSpin`: Se ativado, os dados esperam que o jogador clique fisicamente neles para rodopiar. Se desativado, rolam automaticamente.
+        *   `alwaysDiceSix`: Se ativado, serve como trapaça (Cheat) garantindo que o resultado sempre será 6.
+*   **Helper:** `CardEffectManager.Instance.RollDice(amount, callback, requireChoice)` repassa a chamada para as cartas de forma simplificada.
 
 #### Sistema de Relógio (Clock / Turn Counters)
 *   **Ativação:** `CardEffectManager.Instance.SetClockCounter(targetCard, turns)`
