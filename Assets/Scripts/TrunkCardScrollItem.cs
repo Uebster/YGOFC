@@ -34,8 +34,15 @@ public class TrunkCardScrollItem : MonoBehaviour
         gameObject.SetActive(true);
         CardData card = cardGroup.First();
         int limit = DeckBuilderManager.Instance.GetCardLimit(card.name);
+        
+        if (GameManager.Instance != null && GameManager.Instance.allowForbiddenCards && limit == 0) limit = 1;
+
+        int ownedCopies = cardGroup.Count();
+        if (GameManager.Instance != null && GameManager.Instance.devMode && GameManager.Instance.unlockAllCards) ownedCopies = 3;
+
+        int maxAllowed = Mathf.Min(ownedCopies, limit);
         int copiesInDecks = DeckBuilderManager.Instance.GetCopiesInDecks(card.id);
-        int availableCopies = limit - copiesInDecks;
+        int availableCopies = maxAllowed - copiesInDecks;
 
         bool isNew = SaveLoadSystem.Instance != null && SaveLoadSystem.Instance.IsCardNew(card.id);
         bool isInDeck = copiesInDecks > 0;

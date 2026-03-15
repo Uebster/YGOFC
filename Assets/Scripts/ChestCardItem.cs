@@ -202,10 +202,22 @@ public class ChestCardItem : MonoBehaviour, IPointerEnterHandler
             }
         }
 
+        // --- Limpa tags NEW antigas antes de recriar (Para garantir limpeza no pool de reciclagem) ---
+        Transform card2D = transform.Find("Card2D");
+        if (card2D != null)
+        {
+            foreach (Transform child in card2D)
+            {
+                if (child.name.Contains("NewTag") || child.name.Contains("NewBanner"))
+                {
+                    Destroy(child.gameObject);
+                }
+            }
+        }
+
         // --- Tag "NEW" (opcional) ---
         if (isNew && !isInDeck)
         {
-            Transform card2D = transform.Find("Card2D");
             if (card2D != null && manager != null)
             {
                 manager.CreateNewBanner(card2D);

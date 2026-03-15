@@ -437,8 +437,12 @@ private void LoadData()
             return;
         }
 
-        // Carrega TODAS as cartas do banco de dados para o chest/trunk.
-        currentTrunk = new List<CardData>(GameManager.Instance.cardDatabase.cardDatabase);
+        // O Baú carrega apenas as cópias das cartas que o jogador realmente possui
+        foreach (string cardId in GameManager.Instance.playerTrunk)
+        {
+            CardData card = GameManager.Instance.cardDatabase.GetCardById(cardId);
+            if (card != null) currentTrunk.Add(card);
+        }
         
         Debug.Log($"[DeckBuilderManager] LoadTrunk: Carregou {currentTrunk.Count} cartas do banco de dados para o baú.");
     }
@@ -460,9 +464,7 @@ private void LoadData()
         RefreshDeckZone(sideDeckContent, sideDeck, DeckZoneType.Side);
         RefreshDeckZone(extraDeckContent, extraDeck, DeckZoneType.Extra);
 
-        // A atualização do Trunk agora é a última coisa a ser feita
-        RefreshTrunkUI();
-        // Atualiza a aparência do baú em tempo real (esgotamento de cartas) sem perder o scroll
+        // Atualiza a aparência do baú em tempo real (esgotamento de cópias e tag NEW) sem resetar o scroll
         if (trunkScrollManager != null) trunkScrollManager.RefreshVisibleItems();
         UpdateCounts();
     }
@@ -820,7 +822,12 @@ public void CreateNewBanner(Transform parent)
        // Permite 1 cópia de cartas proibidas se a opção estiver ativa
        if (GameManager.Instance != null && GameManager.Instance.allowForbiddenCards && limit == 0) limit = 1;
 
-       if (currentCopies >= limit) return false;
+       int ownedCopies = currentTrunk.Count(c => c.id == card.id);
+       if (GameManager.Instance != null && GameManager.Instance.devMode && GameManager.Instance.unlockAllCards) ownedCopies = 3;
+
+       int maxAllowed = Mathf.Min(ownedCopies, limit);
+
+       if (currentCopies >= maxAllowed) return false;
 
        bool isExtra = card.type.ToLowerInvariant().Contains("fusion") || card.type.ToLowerInvariant().Contains("synchro") || card.type.ToLowerInvariant().Contains("xyz");
 

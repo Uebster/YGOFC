@@ -563,6 +563,11 @@ public class GameManager : MonoBehaviour
 
                 playerMainDeck = devDeck;
                 
+                // FIX: Adiciona as cartas do dev deck ao Trunk para que o Deck Builder não fique vazio e não crashe
+                playerTrunk.Clear();
+                foreach (var c in devDeck) playerTrunk.Add(c.id);
+                foreach (var c in playerExtraDeck) playerTrunk.Add(c.id);
+                
                 // Atualiza nome do jogador na UI
                 playerName = charData.name;
                 if (duelFieldUI != null && duelFieldUI.playerNameText != null)
