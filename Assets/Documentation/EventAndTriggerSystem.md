@@ -327,6 +327,12 @@ A engine fornece suporte embutido para mecânicas de moedas, dados e contagem de
     *   Força uma carta a receber um "relógio" visual e inicia o contador com o número máximo de turnos (Ex: *Swords of Revealing Light*).
 *   **Manutenção:** Em `OnPhaseStart`, utilize a função genérica `HandleTurnCounter(card)` para decrementar o relógio automaticamente. Quando chegar a 0, a carta é destruída pelo sistema.
 
+#### Lógica Visual do Relógio (TurnClockUI)
+*   **Fatias de Pizza:** O visual do relógio é dividido dinamicamente com base no total de turnos da carta. Se a carta dura 3 turnos, o relógio é dividido em 3 fatias de 120 graus. O ponteiro (`clockHand`) avança exatamente uma fatia por turno.
+*   **Limite de 12 Turnos:** Cada mostrador de relógio suporta no máximo 12 turnos (semelhante a um relógio real). 
+*   **Overflow (Transbordamento):** Se um efeito exigir mais de 12 turnos (Ex: *Final Countdown* - 20 turnos), o sistema instanciará **múltiplos relógios** lado a lado no `clocksContainer` (ex: 1 relógio cheio com 12, e 1 relógio com 8 fatias).
+*   **Unity Setup:** Utiliza o componente nativo `Image.fillAmount` configurado como `Radial 360` para mascarar as fatias perfeitamente sem precisar de texturas adicionais.
+
 ## 16. Boas Práticas para Adicionar Novas Cartas
 
 1.  **Verifique se já existe um Hook:** Antes de criar um novo sistema, veja se o efeito se encaixa em um dos eventos acima.

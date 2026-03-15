@@ -170,7 +170,7 @@ public class DuelThemeManager : MonoBehaviour
             DuelFXManager.Instance.UpdateThemeFX(theme);
         }
 
-        // 6. Atualiza Sprites de Minigames (Moeda e Dado)
+        // 6. Atualiza Sprites de Minigames (Moeda, Dado e Relógio)
         if (GameManager.Instance != null)
         {
             if (GameManager.Instance.coinTossUI != null)
@@ -182,6 +182,12 @@ public class DuelThemeManager : MonoBehaviour
             if (GameManager.Instance.diceRollUI != null && theme.diceFaceSprites != null && theme.diceFaceSprites.Length == 6)
             {
                 GameManager.Instance.diceRollUI.diceFaces = theme.diceFaceSprites;
+            }
+            
+            if (GameManager.Instance.turnClockUI != null)
+            {
+                SetSprite(GameManager.Instance.turnClockUI.clockBaseImage, theme.clockBaseSprite);
+                SetSprite(GameManager.Instance.turnClockUI.clockHandImage, theme.clockHandSprite);
             }
         }
     }

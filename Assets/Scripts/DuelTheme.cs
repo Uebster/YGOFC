@@ -36,6 +36,10 @@ public class DuelTheme : ScriptableObject
     public Sprite coinTailsSprite;
     [Tooltip("As 6 faces do dado customizado para este tema (Ordem: 1, 2, 3, 4, 5, 6).")]
     public Sprite[] diceFaceSprites;
+    [Tooltip("Opcional: Sprite de fundo do relógio de turnos.")]
+    public Sprite clockBaseSprite;
+    [Tooltip("Opcional: Sprite do ponteiro do relógio de turnos.")]
+    public Sprite clockHandSprite;
 
     [Header("Action Menu")]
     public Sprite panelActionMenu;

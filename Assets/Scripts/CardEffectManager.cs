@@ -164,6 +164,24 @@ public partial class CardEffectManager : MonoBehaviour
         target.turnCounter = turns; // O setter do turnCounter já aciona o UpdateTurnClockVisual nativamente
     }
 
+    /// <summary>
+    /// Processa o tick de um relógio visualmente chamando o painel central, e depois aplica a lógica de continuidade.
+    /// Uso recomendado dentro de OnPhaseStart para decrementar Espadas da Luz Reveladora, etc.
+    /// </summary>
+    public void TickClock(CardDisplay card, System.Action onComplete)
+    {
+        if (card == null || card.turnCounter <= 0) { onComplete?.Invoke(); return; }
+
+        int oldTurns = card.turnCounter;
+        card.turnCounter--; // Decrementa os dados
+
+        if (GameManager.Instance != null && GameManager.Instance.turnClockUI != null && GameManager.Instance.enableTurnClockVisuals)
+        {
+            GameManager.Instance.turnClockUI.AnimateTick(card.CurrentCardData.name, oldTurns, card.turnCounter, card.maxTurnCounter, onComplete);
+        }
+        else { onComplete?.Invoke(); }
+    }
+
     // Métodos de Eventos (Implementados em CardEffectManager_Impl.cs)
     // public void OnPhaseStart(GamePhase phase);
     // public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer);

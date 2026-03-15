@@ -100,7 +100,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     private UnityWebRequest currentRequest; // Rastreia a requisição ativa para descarte correto
     private bool isAttackSelected = false; // Rastreia se a carta está selecionada para atacar
-    private GameObject turnClockInstance; // Instância do relógio visual
 
     void Awake()
     {
@@ -304,6 +303,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         string info = $"[{currentCardData.type}]";
         if (!string.IsNullOrEmpty(currentCardData.race)) info += $" / {currentCardData.race}";
         if (currentCardData.level > 0) info += $" / LV: {currentCardData.level}";
+        if (_turnCounter > 0) info += $" / <color=yellow>⏳ {_turnCounter}</color>";
         if (cardInfoText != null) cardInfoText.text = info;
 
         if (cardStatsText != null)
@@ -455,31 +455,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     private void UpdateTurnClockVisual()
     {
         if (GameManager.Instance == null || !GameManager.Instance.enableTurnClockVisuals) 
-        {
-            if (turnClockInstance != null) turnClockInstance.SetActive(false);
             return;
-        }
 
-        // Se não tem contador, não precisa de relógio
-        if (_turnCounter <= 0 && turnClockInstance == null) return;
-
-        // Instancia se necessário
-        if (turnClockInstance == null && GameManager.Instance.turnClockPrefab != null)
-        {
-            turnClockInstance = Instantiate(GameManager.Instance.turnClockPrefab, transform);
-            turnClockInstance.transform.localPosition = Vector3.zero; // Centralizado na carta
-            turnClockInstance.transform.localScale = Vector3.one;
-            // Dica: O prefab deve ter um Canvas ou ser um elemento de UI world space ajustado
-        }
-
-        if (turnClockInstance != null)
-        {
-            var controller = turnClockInstance.GetComponent<TurnClockController>();
-            if (controller != null)
-            {
-                controller.UpdateClock(_turnCounter, maxTurnCounter);
-            }
-        }
+        // O Relógio agora é um painel central.
+        // Aqui apenas atualizamos os detalhes da carta para mostrar o ícone pequeno de texto ⏳
+        DisplayCardDetails();
     }
 
     // --- SISTEMA DE MODIFICADORES DE STATS ---

@@ -135,9 +135,9 @@ public class GameManager : MonoBehaviour
     public bool alwaysDiceSix = false;
  
     [Header("Turn Clock Visuals")]
-    [Tooltip("Habilita o visual de relógio para contagem de turnos (ex: Swords of Revealing Light). Requer prefab configurado.")]
-    public bool enableTurnClockVisuals = false;
-    public GameObject turnClockPrefab; // Prefab com o script TurnClockController
+    [Tooltip("Habilita o visual de relógio central para contagem de turnos.")]
+    public bool enableTurnClockVisuals = true;
+    public TurnClockUI turnClockUI; // Referência ao painel central
 
     [Header("Game Rules")]
     [Tooltip("Se marcado, aplica a regra de limite de cartas na mão na End Phase.")]
