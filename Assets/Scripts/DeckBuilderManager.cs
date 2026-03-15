@@ -58,6 +58,16 @@ public class DeckBuilderManager : MonoBehaviour
     public Button btnImport;
     public Button btnExport;
     public GameObject importExportPanel; // O painel que contém os painéis de Import e Export
+
+    [Header("UI References - Popups")]
+    public GameObject panelConfirmation;
+    public TextMeshProUGUI textConfirmation;
+    public Button btnConfirmYes;
+    public Button btnConfirmNo;
+
+    public GameObject panelWarning;
+    public TextMeshProUGUI textWarning;
+    public Button btnWarningOk;
     
     [Header("Filter Buttons")]
     public Button btnSortABC;
@@ -136,6 +146,8 @@ public class DeckBuilderManager : MonoBehaviour
 
     // Conjunto de IDs de cartas nos decks para verificação rápida da tag "NEW".
     private HashSet<string> cardIDsInDecks = new HashSet<string>();
+
+    private System.Action onConfirmYesAction;
 
     private bool hasUnsavedChanges = false;
 
@@ -287,6 +299,17 @@ public class DeckBuilderManager : MonoBehaviour
         // Pesquisa
         searchInput?.onValueChanged.AddListener(OnSearchInputChanged);
 
+        // Configura Popups de Aviso e Confirmação
+        btnWarningOk?.onClick.AddListener(() => { if (panelWarning != null) panelWarning.SetActive(false); });
+        btnConfirmNo?.onClick.AddListener(() => { if (panelConfirmation != null) panelConfirmation.SetActive(false); });
+        btnConfirmYes?.onClick.AddListener(() => { 
+            if (panelConfirmation != null) panelConfirmation.SetActive(false);
+            onConfirmYesAction?.Invoke();
+        });
+
+        if (panelConfirmation != null) panelConfirmation.SetActive(false);
+        if (panelWarning != null) panelWarning.SetActive(false);
+
         // Configura as zonas de drop
         SetupDropZones();
     }
@@ -388,6 +411,8 @@ private void LoadData()
     LoadCurrentDeckFromManager();
     LoadTrunk();
 
+    UpdateFilterButtonsVisuals();
+    RefreshTrunkUI(); // Garante a criação da lista
     RefreshAllUI();
     UpdateFilterButtonsVisuals();
     hasUnsavedChanges = false;
@@ -437,6 +462,8 @@ private void LoadData()
 
         // A atualização do Trunk agora é a última coisa a ser feita
         RefreshTrunkUI();
+        // Atualiza a aparência do baú em tempo real (esgotamento de cartas) sem perder o scroll
+        if (trunkScrollManager != null) trunkScrollManager.RefreshVisibleItems();
         UpdateCounts();
     }
     
@@ -455,18 +482,39 @@ private void LoadData()
             return;
         }
 
-        foreach (Transform child in container) Destroy(child.gameObject);
-        foreach (CardData card in cards)
+        int childCount = container.childCount;
+        int cardsCount = cards.Count;
+
+        // Reaproveita as caixas de UI existentes para economizar performance (Object Pooling)
+        for (int i = 0; i < cardsCount; i++)
         {
-            GameObject go = Instantiate(cardDeckItemPrefab, container);
+            GameObject go;
+            if (i < childCount)
+            {
+                go = container.GetChild(i).gameObject;
+                go.SetActive(true);
+            }
+            else
+            {
+                go = Instantiate(cardDeckItemPrefab, container);
+            }
             
             CardDisplay display = go.GetComponentInChildren<CardDisplay>();
             if (display == null) continue; // Already logged in SetupChestItem if missing
+            
+            CardData card = cards[i];
+
             // Configura hover baseado nas opções
             if (usePlayerHover) display.isPlayerCard = true;
             else if (useOpponentHover) display.isPlayerCard = false;
             else { display.useSimpleHover = true; display.hoverColor = customHoverColor; }
-            display.SetCard(card, GameManager.Instance?.GetCardBackTexture(), true);
+            
+            // Só atualiza a textura se a carta naquela posição for diferente
+            if (display.CurrentCardData == null || display.CurrentCardData.id != card.id)
+            {
+                display.SetCard(card, GameManager.Instance?.GetCardBackTexture(), true);
+            }
+
             display.isInteractable = true; // Permitir hover nas cartas do deck
             display.enableHoverLift = false; // Desabilita o efeito de levantar para deck
 
@@ -474,6 +522,15 @@ private void LoadData()
             if (drag == null) drag = display.gameObject.AddComponent<DeckDragHandler>();
             drag.cardData = card;
             drag.sourceZone = zoneType;
+            drag.wasDropped = false;
+        }
+
+        // Destrói os objetos excedentes que sobraram no final (quando você remove cartas do deck)
+        for (int i = childCount - 1; i >= cardsCount; i--)
+        {
+            GameObject excessObj = container.GetChild(i).gameObject;
+            excessObj.SetActive(false); // Desativa antes para o CustomDeckLayout ignorar no mesmo frame
+            Destroy(excessObj);
         }
 
         // Chama o script de layout customizado se ele existir no container
@@ -584,7 +641,7 @@ private void LoadData()
     {
         if (!IsDeckValid())
         {
-            UIManager.Instance?.ShowMessage($"Deck inválido! O Deck Principal deve ter entre {MIN_MAIN} e {MAX_MAIN} cartas.");
+            ShowWarning($"Deck inválido!\nO Deck Principal deve ter entre {MIN_MAIN} e {MAX_MAIN} cartas.");
             return;
         }
 
@@ -603,7 +660,7 @@ private void LoadData()
         }
 
         hasUnsavedChanges = false;
-        Debug.Log("Deck salvo com sucesso!");
+        ShowWarning("Deck salvo com sucesso!");
     }
 
     /// <summary>
@@ -613,30 +670,53 @@ private void LoadData()
     {
         if (hasUnsavedChanges && !IsDeckValid())
         {
-            UIManager.Instance?.ShowConfirmation(
+            ShowConfirmation(
                 $"Seu Deck Principal é inválido (deve ter entre {MIN_MAIN} e {MAX_MAIN} cartas).\n\nDeseja sair mesmo assim e descartar as alterações?",
-                () => {
-                    // Discard changes by reloading from GameManager
-                    LoadCurrentDeckFromManager();
-                    hasUnsavedChanges = false;
-                    UIManager.Instance.ShowScreen(UIManager.Instance.newGameMenu);
-                }
+                DiscardAndExit
             );
         }
         else if (hasUnsavedChanges)
         {
-            UIManager.Instance?.ShowConfirmation(
+            ShowConfirmation(
                 "Você tem alterações não salvas. Deseja sair sem salvar?",
-                () => {
-                    LoadCurrentDeckFromManager();
-                    hasUnsavedChanges = false;
-                    UIManager.Instance.ShowScreen(UIManager.Instance.newGameMenu);
-                }
+                DiscardAndExit
             );
         }
         else
         {
-            UIManager.Instance?.ShowScreen(UIManager.Instance.newGameMenu);
+            ExitToMenu();
+        }
+    }
+
+    private void DiscardAndExit()
+    {
+        LoadCurrentDeckFromManager();
+        hasUnsavedChanges = false;
+        ExitToMenu();
+    }
+
+    private void ExitToMenu()
+    {
+        UIManager.Instance?.ShowScreen(UIManager.Instance.newGameMenu);
+    }
+
+    public void ShowWarning(string message)
+    {
+        if (panelWarning != null)
+        {
+            if (textWarning != null) textWarning.text = message;
+            panelWarning.SetActive(true);
+        }
+        else { Debug.LogWarning(message); }
+    }
+
+    public void ShowConfirmation(string message, System.Action onYes)
+    {
+        if (panelConfirmation != null)
+        {
+            if (textConfirmation != null) textConfirmation.text = message;
+            onConfirmYesAction = onYes;
+            panelConfirmation.SetActive(true);
         }
     }
 
@@ -814,6 +894,7 @@ public void CreateNewBanner(Transform parent)
         {
             // Idealmente, mostrar uma mensagem de erro na UI
             Debug.LogError("O nome do deck não pode ser vazio.");
+            ShowWarning("O nome do deck não pode ser vazio.");
             return;
         }
         SaveLoadSystem.Instance.SaveDeckRecipe(deckName, mainDeck, sideDeck, extraDeck);
@@ -838,6 +919,7 @@ public void CreateNewBanner(Transform parent)
             foreach (string id in extraIDs) { CardData c = GameManager.Instance.cardDatabase.GetCardById(id); if (c != null) extraDeck.Add(c); }
 
             hasUnsavedChanges = true;
+            RefreshTrunkUI();
             RefreshAllUI();
             Debug.Log($"Deck '{deckName}' carregado.");
 
@@ -845,6 +927,7 @@ public void CreateNewBanner(Transform parent)
             if (!IsDeckValid())
             {
                 UIManager.Instance?.ShowMessage($"Atenção: O deck importado '{deckName}' é inválido (Principal: {mainDeck.Count} cartas). Ajuste-o para poder salvá-lo.");
+                ShowWarning($"Atenção: O deck importado '{deckName}' é inválido (Principal: {mainDeck.Count} cartas). Ajuste-o para poder salvá-lo.");
             }
         }
     }

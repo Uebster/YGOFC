@@ -229,20 +229,26 @@ O Deck Builder também permite que o jogador salve ("exporte") e carregue ("impo
 ## Layout Customizado do Deck (CustomDeckLayout.cs)
 O comportamento de organização das cartas no Main Deck (distribuição em linhas e empilhamento) é muito específico e não pode ser alcançado com os componentes de Layout padrão do Unity. Para isso, foi criado o script `CustomDeckLayout.cs`.
 
+### Regras de Arquitetura e Prevenção de Erros (Troubleshooting)
+*   **Invariância de Texto:** Filtros, Tipos e Atributos sempre utilizam a conversão para minúsculas (`ToLowerInvariant()`) ou `.Contains()`. O formato da base de dados (Ex: "Fusion", "FUSION") nunca deve ser verificado com igualdade estrita (`==`), prevenindo falhas na lógica do Extra Deck.
+*   **Object Pooling vs Dados:** Em listas virtuais (ex: Baú), as instâncias visuais são recicladas. É OBRIGATÓRIO garantir que o script recarregado atualize o `CardData` de todos os componentes atrelados (como o `DeckDragHandler`), do contrário o usuário pode arrastar um dado de carta "fantasma" que resultará em uma carta branca.
+*   **Otimização do RefreshAllUI:** O redesenho da tela (Refresh) não destrói e recria todos os GameObjects do zero (o que causa lag/flickering). A lógica agora reaproveita os GameObjects existentes e apenas atualiza a arte através do `SetCard()` caso o ID da carta naquela posição tenha mudado.
+
 ### Explicação
 Este script deve ser adicionado ao objeto `Content` do `Panel_MainDeck`. Ele remove qualquer outro componente de layout e assume o controle total do posicionamento de seus filhos (as cartas).
 
-A cada atualização (`UpdateLayout`), ele:
-1.  Conta o número total de cartas no deck.
-2.  Distribui esse total entre o número de linhas (`numberOfRows`) de forma equilibrada. Ex: 41 cartas em 4 linhas resulta em uma linha com 11 e três com 10.
-3.  Para cada linha, calcula o espaçamento horizontal necessário para que as cartas preencham o espaço disponível. Se o número de cartas exceder o espaço, o espaçamento se torna negativo, criando o efeito de sobreposição.
+A cada atualização (`RefreshLayout`), ele executa um sistema de **Flow Layout** (Fluxo Contínuo):
+1.  Pega o total de cartas ativas e vai enchendo a primeira linha da esquerda para a direita.
+2.  Se a linha não couber todas as cartas, ele aplica o espaçamento negativo (sobreposição) até que atinja o limite de `maxCardsPerRow` (Ex: 15 cartas).
+3.  A 16ª carta inicia uma nova linha de forma fluida, garantindo que o deck não forme "buracos".
 4.  Posiciona cada carta em sua coordenada `(x, y)` calculada.
 
 ### Parâmetros (Inspector)
 O script expõe várias propriedades públicas para que você possa ajustar o layout diretamente no Unity Editor:
-*   **`numberOfRows`**: O número de linhas fixas na grade (ex: 4).
+*   **`maxCardsPerRow`**: O número máximo de cartas antes de quebrar a linha (ex: 15).
 *   **`cardWidth` / `cardHeight`**: As dimensões exatas do seu prefab de carta.
 *   **`verticalSpacing`**: O espaço vertical entre as linhas.
+*   **`maxHorizontalSpacing`**: O espaço limite entre as cartas quando a linha tem poucas cartas (evita que duas cartas fiquem nas pontas extremas da tela).
 *   **`minHorizontalSpacing`**: O espaçamento horizontal mínimo, mesmo quando as cartas estão sobrepostas. Use um valor negativo grande (ex: -80) para permitir bastante sobreposição.
 *   **`horizontalPadding` / `verticalPadding`**: O preenchimento interno nas bordas do painel `Content`.
 

@@ -143,7 +143,6 @@ public class DeckDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             var manager = DeckBuilderManager.Instance;
             manager.RemoveCard(cardData, sourceZone);
-            manager.RefreshAllUI(); // Atualiza a UI após a remoção
         }
 
         currentDragged = null;
@@ -153,6 +152,12 @@ public class DeckDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (scrollRect != null)
         {
             scrollRect.enabled = true;
+        }
+
+        // AGORA ATUALIZA A TELA, DEPOIS QUE TUDO DO ARRASTO TERMINOU
+        if (DeckBuilderManager.Instance != null)
+        {
+            DeckBuilderManager.Instance.RefreshAllUI();
         }
     }
 

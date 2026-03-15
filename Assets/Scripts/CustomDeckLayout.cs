@@ -10,10 +10,13 @@ using System.Collections.Generic;
 [ExecuteInEditMode]
 public class CustomDeckLayout : MonoBehaviour
 {
-    [Header("Configuração da Grade")]
-    [Tooltip("O número de linhas fixas na grade (padrão: 4 para Main Deck).")]
-    [Range(1, 10)]
-    public int numberOfRows = 4;
+    [Header("Configuração da Grade (Flow)")]
+    [Tooltip("Ativa a quebra dinâmica de linhas (10 cartas até 40, 11 até 44...). Ideal para o Main Deck.")]
+    public bool dynamicPerRow = false;
+    
+    [Tooltip("O número máximo de cartas por linha (usado como padrão ou se a opção dinâmica estiver desligada).")]
+    [Range(1, 60)]
+    public int maxCardsPerRow = 15;
     
     [Header("Dimensões dos Itens")]
     [Tooltip("A largura de cada carta na grade.")]
@@ -24,6 +27,8 @@ public class CustomDeckLayout : MonoBehaviour
     [Header("Espaçamento")]
     [Tooltip("Espaçamento vertical entre as linhas.")]
     public float verticalSpacing = 5f;
+    [Tooltip("Espaçamento horizontal máximo quando há poucas cartas na linha.")]
+    public float maxHorizontalSpacing = 10f;
     [Tooltip("Espaçamento horizontal mínimo. Use valores negativos para permitir sobreposição.")]
     public float minHorizontalSpacing = -80f;
     
@@ -70,46 +75,48 @@ public class CustomDeckLayout : MonoBehaviour
             return;
         }
 
-        // --- Lógica de Distribuição ---
-        // Tenta distribuir as cartas igualmente, mas se uma linha ficar muito cheia, move para a próxima.
-        int[] cardsInEachRow = new int[numberOfRows];
-        int baseCardsPerRow = totalCards / numberOfRows;
-        int remainder = totalCards % numberOfRows;
+        int currentMaxPerRow = maxCardsPerRow;
+        if (dynamicPerRow)
+        {
+            if (totalCards <= 40) currentMaxPerRow = 10;
+            else if (totalCards <= 44) currentMaxPerRow = 11;
+            else if (totalCards <= 48) currentMaxPerRow = 12;
+            else if (totalCards <= 52) currentMaxPerRow = 13;
+            else if (totalCards <= 56) currentMaxPerRow = 14;
+            else currentMaxPerRow = 15;
+        }
 
-        for (int i = 0; i < numberOfRows; i++)
-            cardsInEachRow[i] = baseCardsPerRow + (i < remainder ? 1 : 0);
+        // --- Lógica de Flow Layout ---
+        // Calcula quantas linhas reais teremos baseado no maxCardsPerRow
+        int actualRows = Mathf.CeilToInt((float)totalCards / currentMaxPerRow);
+        if (actualRows == 0) actualRows = 1;
 
         float currentY = -verticalPadding;
-        int cardIndex = 0;
 
-        for (int row = 0; row < numberOfRows; row++)
+        for (int row = 0; row < actualRows; row++)
         {
-            int cardsThisRow = cardsInEachRow[row];
-            if (cardsThisRow == 0) continue;
+            int startIndex = row * currentMaxPerRow;
+            int cardsThisRow = Mathf.Min(currentMaxPerRow, totalCards - startIndex);
 
             float availableWidth = container.rect.width - (horizontalPadding * 2);
-            float spacing;
+            float spacing = 0;
 
-            if (cardsThisRow <= 1)
+            if (cardsThisRow > 1)
             {
-                spacing = 0;
-            }
-            else
-            {
-                // Calcula o espaçamento ideal para preencher a largura
+                // Calcula o espaçamento ideal para distribuir na tela
                 spacing = (availableWidth - (cardsThisRow * cardWidth)) / (cardsThisRow - 1);
+                // Previne que fiquem muito longe e permite sobreposição natural
+                spacing = Mathf.Clamp(spacing, minHorizontalSpacing, maxHorizontalSpacing);
             }
-
-            // Garante que o espaçamento não seja menor que o mínimo permitido
-            spacing = Mathf.Max(spacing, minHorizontalSpacing);
 
             float startX = horizontalPadding;
 
             for (int i = 0; i < cardsThisRow; i++)
             {
-                if (cardIndex >= activeCards.Count) break;
-
+                int cardIndex = startIndex + i;
                 RectTransform cardRect = activeCards[cardIndex];
+                
+                // Sempre alinha da esquerda para a direita fluidamente
                 float xPos = startX + (i * (cardWidth + spacing));
 
                 // Configura âncora e pivô para posicionamento a partir do canto superior esquerdo
@@ -118,8 +125,6 @@ public class CustomDeckLayout : MonoBehaviour
                 cardRect.pivot = new Vector2(0, 1);
                 cardRect.sizeDelta = new Vector2(cardWidth, cardHeight);
                 cardRect.anchoredPosition = new Vector2(xPos, currentY);
-
-                cardIndex++;
             }
 
             currentY -= (cardHeight + verticalSpacing);

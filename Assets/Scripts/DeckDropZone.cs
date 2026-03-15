@@ -37,7 +37,6 @@ public class DeckDropZone : MonoBehaviour, IDropHandler
             if (fromZone == zoneType)
             {
                 dragHandler.wasDropped = true;
-                manager.RefreshAllUI(); // Apenas para o item voltar ao normal
                 return;
             }
 
@@ -60,7 +59,6 @@ public class DeckDropZone : MonoBehaviour, IDropHandler
             }
 
             dragHandler.wasDropped = true; // Marca como dropado para não ser removido no OnEndDrag
-            manager.RefreshAllUI(); // Atualiza a UI uma única vez no final de toda a operação.
         }
     }
 }

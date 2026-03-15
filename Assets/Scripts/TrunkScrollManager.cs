@@ -132,6 +132,15 @@ public class TrunkScrollManager : MonoBehaviour
         Debug.Log("[TrunkScrollManager] Pool de itens destruído.");
     }
 
+    /// <summary>
+    /// Atualiza visualmente os itens que estão na tela (ex: escurecer carta que acabou a quantidade)
+    /// sem reconstruir a lista ou perder a posição do scroll.
+    /// </summary>
+    public void RefreshVisibleItems()
+    {
+        if (cardGroups == null || itemPool.Count == 0) return;
+        OnScroll(Vector2.zero); // Força os itens visíveis a chamarem UpdateContent() novamente
+    }
 
     private void CreatePool()
     {
