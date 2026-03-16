@@ -435,6 +435,15 @@ public partial class CardEffectManager
                     card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, amazonessCount * 400, card));
                 }
             });
+
+            // 0814 - Graverobber's Retribution
+            CheckActiveCards("0814", (card) => {
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn)
+                {
+                    int banished = card.isPlayerCard ? GameManager.Instance.GetOpponentRemoved().Count : GameManager.Instance.GetPlayerRemoved().Count;
+                    if (banished > 0) Effect_DirectDamage(card, banished * 100);
+                }
+            });
         }
 
         if (phase == GamePhase.Battle)
@@ -931,6 +940,15 @@ public partial class CardEffectManager
             CheckActiveCards("0252", (card) => UpdateBusterBladerBuff(card)); // Buster Blader
             CheckActiveCards("0292", (card) => UpdateChaosNecromancerBuff(card)); // Chaos Necromancer
             CheckActiveCards("0214", (card) => UpdateBlueEyesShiningBuff(card)); // Blue-Eyes Shining Dragon
+
+            // 0832 - Gren Maju Da Eiza
+            CheckActiveCards("0832", (card) => {
+                int removedCount = card.isPlayerCard ? GameManager.Instance.GetPlayerRemovedCount() : GameManager.Instance.GetOpponentRemoved().Count;
+                int stats = removedCount * 400;
+                card.RemoveModifiersFromSource(card);
+                card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, stats, card));
+                card.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, stats, card));
+            });
 
             // Manticore of Darkness (1162): Revive loop
             List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
@@ -1839,6 +1857,52 @@ public partial class CardEffectManager
             else GameManager.Instance.DrawOpponentCard();
         }
 
+        // 0821 - Great Dezard (Rastreio de destruição)
+        if (attacker != null && attacker.CurrentCardData.id == "0821" && target != null)
+        {
+            int atk = attacker.currentAtk;
+            int def = (target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : target.currentDef;
+            if (atk > def) attacker.spellCounters++; // Usa counter para marcar mortes
+        }
+
+        // 0826 - Great Phantom Thief
+        if (attacker.CurrentCardData.id == "0826" && amount > 0)
+        {
+            if (GlobalCardSearchUI.Instance != null && attacker.isPlayerCard) {
+                GlobalCardSearchUI.Instance.Show("Declare o nome de 1 carta", (declaredCard) => {
+                    if (declaredCard == null) return;
+                    
+                    List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+                    List<CardData> hits = oppHand.FindAll(c => c.name == declaredCard.name);
+                    
+                    if (hits.Count > 0)
+                    {
+                        Debug.Log($"Great Phantom Thief: Acertou! Oponente descarta as cópias de {declaredCard.name}.");
+                        GameManager.Instance.DiscardCardsByName(false, declaredCard.name);
+                    }
+                    else
+                    {
+                        Debug.Log("Great Phantom Thief: Errou!");
+                    }
+                });
+            }
+        }
+
+        // 0840 - Guardian Angel Joan
+        if (attacker != null && attacker.CurrentCardData.id == "0840" && target != null)
+        {
+            int atk = target.originalAtk;
+            Effect_GainLP(attacker, atk);
+            Debug.Log($"Guardian Angel Joan: Ganha {atk} LP.");
+        }
+
+        // 0841 - Guardian Baou
+        if (attacker != null && attacker.CurrentCardData.id == "0841" && target != null)
+        {
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 1000, attacker));
+            Debug.Log($"Guardian Baou: +1000 ATK.");
+        }
+
         // 0516 - Don Zaloog
         if (attacker.CurrentCardData.id == "0516" && amount > 0)
         {
@@ -1887,6 +1951,13 @@ public partial class CardEffectManager
         {
             Debug.Log("Cestus of Dagla: Ganha LP igual ao dano.");
             Effect_GainLP(attacker, amount);
+        }
+
+        // 0822 - Great Long Nose
+        if (attacker.CurrentCardData.id == "0822" && amount > 0)
+        {
+            Debug.Log("Great Long Nose: Oponente pulará a próxima Battle Phase.");
+            if (PhaseManager.Instance != null) PhaseManager.Instance.RegisterSkipNextPhase(!attacker.isPlayerCard, GamePhase.Battle);
         }
     }
 
@@ -2338,6 +2409,41 @@ public partial class CardEffectManager
                 }
             });
             while (isWaiting) yield return null;
+        }
+        
+        // 0803 - Gravekeeper's Assailant
+        if (attacker.CurrentCardData.id == "0803" && GameManager.Instance.IsCardActiveOnField("1324") && target != null)
+        {
+            if (attacker.isPlayerCard)
+            {
+                isWaiting = true;
+                UIManager.Instance.ShowConfirmation("Gravekeeper's Assailant: Mudar posição do alvo?",
+                    () => { target.ChangePosition(); isWaiting = false; },
+                    () => { isWaiting = false; }
+                );
+                while(isWaiting) yield return null;
+            }
+            else
+            {
+                if (target.position == CardDisplay.BattlePosition.Attack) target.ChangePosition();
+            }
+        }
+
+        // 0808 - Gravekeeper's Servant
+        bool servantFound = false;
+        CardDisplay servantCard = null;
+        CheckActiveCards("0808", (c) => { if (c.isPlayerCard != attacker.isPlayerCard) { servantFound = true; servantCard = c; }});
+        if (servantFound)
+        {
+            List<CardData> atkDeck = attacker.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+            if (atkDeck.Count > 0)
+            {
+                GameManager.Instance.MillCards(attacker.isPlayerCard, 1);
+            }
+            else
+            {
+                attackCanceled = true;
+            }
         }
         
         if (!attackCanceled && !trapped) onContinue?.Invoke();
