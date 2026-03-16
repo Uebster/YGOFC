@@ -570,9 +570,7 @@ public partial class CardEffectManager
 
     void Effect_0550_DropOff(CardDisplay source)
     {
-        // Opponent discards card they just drew.
-        // Trigger logic in OnDraw.
-        Debug.Log("Drop Off: Descarte forçado.");
+        Debug.Log("Drop Off: Resolvido no trigger OnCardDrawn.");
     }
 
     void Effect_0551_DummyGolem(CardDisplay source)
@@ -735,9 +733,7 @@ public partial class CardEffectManager
 
     void Effect_0567_ElectricSnake(CardDisplay source)
     {
-        // When this card is discarded from your hand to the Graveyard by an effect of a card controlled by your opponent, draw 2 cards.
-        // Lógica no OnCardDiscarded.
-        Debug.Log("Electric Snake: Efeito passivo de descarte.");
+        Debug.Log("Electric Snake: Resolvido no trigger OnCardDiscarded.");
     }
 
     void Effect_0568_ElectroWhip(CardDisplay source)
@@ -827,10 +823,10 @@ public partial class CardEffectManager
                     var m = z.GetChild(0).GetComponent<CardDisplay>();
                     if (m != null)
                     {
-                        if (m.CurrentCardData.attribute == "Wind") hasWind = true;
-                        if (m.CurrentCardData.attribute == "Water") hasWater = true;
-                        if (m.CurrentCardData.attribute == "Fire") hasFire = true;
-                        if (m.CurrentCardData.attribute == "Earth") hasEarth = true;
+                        if (CardEffectManager.Instance.HasAttribute(m, "Wind")) hasWind = true;
+                        if (CardEffectManager.Instance.HasAttribute(m, "Water")) hasWater = true;
+                        if (CardEffectManager.Instance.HasAttribute(m, "Fire")) hasFire = true;
+                        if (CardEffectManager.Instance.HasAttribute(m, "Earth")) hasEarth = true;
                     }
                 }
             }
@@ -928,16 +924,12 @@ public partial class CardEffectManager
 
     void Effect_0586_ElephantStatueOfBlessing(CardDisplay source)
     {
-        // If sent from hand to GY by opponent's card effect: Gain 2000 LP.
-        // Lógica no OnCardDiscarded (precisa verificar se foi efeito do oponente).
-        Debug.Log("Elephant Statue of Blessing: Efeito passivo de descarte.");
+        Debug.Log("Elephant Statue of Blessing: Resolvido no trigger OnCardDiscarded.");
     }
 
     void Effect_0587_ElephantStatueOfDisaster(CardDisplay source)
     {
-        // If sent from hand to GY by opponent's card effect: 2000 damage to opponent.
-        // Lógica no OnCardDiscarded.
-        Debug.Log("Elephant Statue of Disaster: Efeito passivo de descarte.");
+        Debug.Log("Elephant Statue of Disaster: Resolvido no trigger OnCardDiscarded.");
     }
 
     void Effect_0588_ElfsLight(CardDisplay source)
@@ -1218,8 +1210,7 @@ public partial class CardEffectManager
 
     void Effect_0611_ExarionUniverse(CardDisplay source)
     {
-        // During your Battle Step, if this card attacks a Defense Position monster: You can make this card lose exactly 400 ATK, and if it does, it will inflict piercing battle damage.
-        Debug.Log("Exarion Universe: Opção de perfurar (Passivo/Ativável na batalha).");
+        Debug.Log("Exarion Universe: Lógica de ativação movida para o OnAttackDeclared (Sistema 2).");
     }
 
     void Effect_0612_Exchange(CardDisplay source)
@@ -1371,8 +1362,7 @@ public partial class CardEffectManager
 
     void Effect_0620_FairyBox(CardDisplay source)
     {
-        // Coin toss on attack -> 0 ATK. Maintenance 500 LP.
-        Debug.Log("Fairy Box: Efeito de batalha e manutenção.");
+        Debug.Log("Fairy Box: Efeito de moeda movido para o OnAttackDeclared (Sistema 2).");
     }
 
     void Effect_0622_FairyGuardian(CardDisplay source)
@@ -1911,8 +1901,7 @@ public partial class CardEffectManager
 
     void Effect_0693_FreedTheMatchlessGeneral(CardDisplay source)
     {
-        // Negate Spell targeting this card. Draw Phase: Add Lv4- Warrior instead of draw.
-        Debug.Log("Freed General: Imune a Magias de alvo. Busca Warrior na Draw Phase.");
+        Debug.Log("Freed General: Imune a Magias de alvo. Efeito de Busca movido para OnPreDrawPhase.");
     }
 
     void Effect_0694_FreezingBeast(CardDisplay source)
@@ -1968,10 +1957,10 @@ public partial class CardEffectManager
             {
                 if (!m.isFlipped)
                 {
-                    if (m.CurrentCardData.attribute == "Wind") wind = true;
-                    if (m.CurrentCardData.attribute == "Water") water = true;
-                    if (m.CurrentCardData.attribute == "Fire") fire = true;
-                    if (m.CurrentCardData.attribute == "Earth") earth = true;
+                    if (CardEffectManager.Instance.HasAttribute(m, "Wind")) wind = true;
+                    if (CardEffectManager.Instance.HasAttribute(m, "Water")) water = true;
+                    if (CardEffectManager.Instance.HasAttribute(m, "Fire")) fire = true;
+                    if (CardEffectManager.Instance.HasAttribute(m, "Earth")) earth = true;
                 }
             }
         }
@@ -2510,7 +2499,7 @@ public partial class CardEffectManager
 
     void Effect_0768_GilfordTheLightning(CardDisplay source)
     {
-        if (source.summonedThisTurn && source.isTributeSummoned)
+        if (source.summonedThisTurn && source.isTributeSummoned && source.tributeCount >= 3)
         {
             Debug.Log("Gilford the Lightning: Destruindo monstros do oponente.");
             DestroyAllMonsters(true, false);
@@ -3698,9 +3687,7 @@ public partial class CardEffectManager
 
     void Effect_0944_InjectionFairyLily(CardDisplay source)
     {
-        // Pay 2000 LP during damage calc -> +3000 ATK.
-        // Lógica no OnDamageCalculation.
-        Debug.Log("Injection Fairy Lily: Efeito de batalha (Paga 2000 LP).");
+        Debug.Log("Injection Fairy Lily: Efeito de pagar LP movido para OnDamageCalculation (Sistema 2).");
     }
 
     void Effect_0946_InsectArmorWithLaserCannon(CardDisplay source)

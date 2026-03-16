@@ -80,8 +80,8 @@ Este sistema gerencia a Invocação-Fusão.
 | :--- | :--- |
 | **`CardEffectManager`** | A carta de fusão (ex: *Polymerization*) chama `GameManager.BeginFusionSummon(sourceCard)`. |
 | **`GameManager`** | `BeginFusionSummon` abre a UI de fusão. `PerformFusionSummon` executa a lógica final. |
-| **`FusionUI`** | Apresenta ao jogador as opções de Monstros de Fusão do Extra Deck e os materiais disponíveis na mão e no campo. |
-| **`FusionManager`** | `ValidateFusion` verifica se os materiais selecionados são válidos para o monstro de fusão escolhido. |
+| **`FusionUI`** | Apresenta as opções de Fusão. Quando finalizado, chama `FusionManager.PerformFusionSummon(...)`. |
+| **`FusionManager`** | `ValidateFusion` garante que no máximo **1 material substituto** (Curinga) seja usado por vez. `PerformFusionSummon` é quem de fato envia os materiais para o GY ou **Banimento** (se for ativado por Fusion Gate ou Dragon's Mirror). |
 | | *Nota:* `disableFusionCost` no GameManager permite realizar a fusão sem consumir materiais. |
 
 ### Fluxo de Fusão
@@ -89,7 +89,7 @@ Este sistema gerencia a Invocação-Fusão.
 2.  `GameManager.BeginFusionSummon` é chamado.
 3.  `UIManager` exibe a `FusionUI`.
 4.  O jogador seleciona o Monstro de Fusão e os materiais. A UI chama `FusionManager.ValidateFusion` a cada seleção para habilitar/desabilitar o botão de confirmação.
-5.  Ao confirmar, `GameManager.PerformFusionSummon` é chamado.
+5.  Ao confirmar, `FusionManager.PerformFusionSummon` assume o controle.
 6.  Os materiais e a carta de magia são enviados para o cemitério.
 7.  O Monstro de Fusão é invocado do Extra Deck para o campo.
 
@@ -268,7 +268,9 @@ Este sistema gerencia efeitos que não acontecem imediatamente, mas em uma fase 
 *   **Restrições de Ataque:** `BattleManager.CanAttack` verifica condições complexas como *Wall of Revealing Light* (baseado em `paidLifePoints`) e *Vengeful Bog Spirit*.
 
 #### Tributos Especiais
-*   **Tributo Duplo:** O `SummonManager.HasEnoughTributes` agora verifica o monstro alvo. Cartas como *Unshaven Angler* contam como 2 tributos se o monstro invocado for do Atributo correto (WATER).
+*   **Tributos Múltiplos (Valores Passivos):** O `SummonManager.HasEnoughTributes` agora verifica o monstro alvo. Cartas como *Unshaven Angler* contam como 2 tributos se o monstro invocado for do Atributo correto (WATER).
+*   **Tributos Dinâmicos e Custos Alternativos:** As invocações especiais do tipo "Tributar 3 para ganhar efeito" (ex: *Gilford the Lightning*, *Moisture Creature*), ou "Invocar sem tributo com metade do ATK" (ex: *Fusilier Dragon*) são agora interceptadas internamente pelo `SummonManager.ExecuteSummonFlow`. A lógica interrompe o jogo, exibe uma Popup UI de decisão ao jogador, e altera o status final da carta invocada (setando a variável `tributeCount` do `CardDisplay` para os demais scripts).
+*   **Seleção Recursiva de Tributos:** O método `SummonManager.SelectTributes(count)` agora utiliza chamadas recursivas visuais para permitir que a engine colete "1, 2, 3 ou X" monstros com o cursor livre antes de prosseguir com uma invocação complexa.
 
 #### Flags Globais de Turno
 As flags que alteram regras fundamentais são distribuídas entre os gerenciadores conforme sua responsabilidade:

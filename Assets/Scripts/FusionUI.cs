@@ -132,7 +132,7 @@ public class FusionUI : MonoBehaviour
     private void OnConfirm()
     {
         Debug.Log("Confirmando Fusão...");
-        GameManager.Instance.PerformFusionSummon(sourceCard, selectedFusionMonster, selectedMaterials);
+        FusionManager.Instance.PerformFusionSummon(sourceCard, selectedFusionMonster, selectedMaterials);
         Close();
     }
 

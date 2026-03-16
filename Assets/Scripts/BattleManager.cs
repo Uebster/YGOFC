@@ -195,15 +195,27 @@ public class BattleManager : MonoBehaviour
 
         if (HasDirectAttackCondition())
         {
+                CardDisplay attacker = currentAttacker;
+
+             System.Action triggerAttackEffect = () => {
+                 if (CardEffectManager.Instance != null)
+                 {
+                     CardEffectManager.Instance.OnAttackDeclared(attacker, null, () => PerformDirectAttack(attacker));
+                 }
+                 else
+                 {
+                     PerformDirectAttack(attacker);
+                 }
+             };
              // Realiza o ataque direto
              if (ChainManager.Instance != null)
              {
-                ChainManager.Instance.AddToChain(currentAttacker, currentAttacker.isPlayerCard, ChainManager.TriggerType.Attack, null, () => PerformDirectAttack(currentAttacker));
+                ChainManager.Instance.AddToChain(attacker, attacker.isPlayerCard, ChainManager.TriggerType.Attack, null, triggerAttackEffect);
              }
         }
         else
         {
-            Debug.Log("Não pode atacar diretamente (Oponente tem monstros ou efeito impede).");
+                 triggerAttackEffect();
         }
     }
 
@@ -329,15 +341,28 @@ public class BattleManager : MonoBehaviour
         // isFlipped = true significa que está mostrando o verso (Face-Down).
         string targetName = !target.isFlipped ? target.CurrentCardData.name : "Monstro Face-Down";
 
+        System.Action triggerAttackEffect = () => {
+            if (CardEffectManager.Instance != null)
+            {
+                CardEffectManager.Instance.OnAttackDeclared(attacker, targetCard, () => {
+                    PerformBattle(attacker, targetCard);
+                });
+            }
+            else
+            {
+                PerformBattle(attacker, targetCard);
+            }
+        };
+
         System.Action executeAttack = () => {
              // FIX: Adicionado fallback. Se ChainManager não existir, ataca direto.
              if (ChainManager.Instance != null)
              {
-                 ChainManager.Instance.AddToChain(attacker, attacker.isPlayerCard, ChainManager.TriggerType.Attack, targetCard, () => PerformBattle(attacker, targetCard));
+                 ChainManager.Instance.AddToChain(attacker, attacker.isPlayerCard, ChainManager.TriggerType.Attack, targetCard, triggerAttackEffect);
              }
              else
              {
-                 PerformBattle(attacker, targetCard);
+                 triggerAttackEffect();
              }
         };
 
@@ -435,29 +460,35 @@ public class BattleManager : MonoBehaviour
 
     public void PerformDirectAttack(CardDisplay attacker)
     {
+        System.Action continueAttack = () => {
+            int damage = attacker.currentAtk; // Usa currentAtk (pode ter mudado no hook acima)
+            Debug.Log($"Ataque Direto! Dano: {damage}");
+            
+            // Aplica dano ao oponente
+            // FIX: Verifica quem está atacando para causar dano no alvo correto
+            if (attacker.isPlayerCard)
+                GameManager.Instance.DamageOpponent(damage);
+            else
+                GameManager.Instance.DamagePlayer(damage);
+            
+            if (DuelFXManager.Instance != null) 
+                DuelFXManager.Instance.PlayAttack(attacker, null, null); // Null target = direct
+            
+            attacker.attacksDeclaredThisTurn++;
+            if (attacker.attacksDeclaredThisTurn >= attacker.maxAttacksPerTurn) attacker.hasAttackedThisTurn = true;
+            ClearBattleState();
+            if (attacker != null) attacker.SetAttackSelectionVisual(false); // Garante limpeza visual
+        };
+
         // Hook OnDamageCalculation (para Injection Fairy Lily, etc)
         if (CardEffectManager.Instance != null)
         {
-            CardEffectManager.Instance.OnDamageCalculation(attacker, null);
+            CardEffectManager.Instance.OnDamageCalculation(attacker, null, continueAttack);
         }
-
-        int damage = attacker.currentAtk; // Usa currentAtk (pode ter mudado no hook acima)
-        Debug.Log($"Ataque Direto! Dano: {damage}");
-        
-        // Aplica dano ao oponente
-        // FIX: Verifica quem está atacando para causar dano no alvo correto
-        if (attacker.isPlayerCard)
-            GameManager.Instance.DamageOpponent(damage);
         else
-            GameManager.Instance.DamagePlayer(damage);
-        
-        if (DuelFXManager.Instance != null) 
-            DuelFXManager.Instance.PlayAttack(attacker, null, null); // Null target = direct
-        
-        attacker.attacksDeclaredThisTurn++;
-        if (attacker.attacksDeclaredThisTurn >= attacker.maxAttacksPerTurn) attacker.hasAttackedThisTurn = true;
-        ClearBattleState();
-        if (attacker != null) attacker.SetAttackSelectionVisual(false); // Garante limpeza visual
+        {
+            continueAttack();
+        }
     }
 
     private void CheckTrapsAndBattle(CardDisplay attacker, CardDisplay target)
@@ -491,73 +522,79 @@ public class BattleManager : MonoBehaviour
             target.RevealCard(true); // true = triggered by attack
         }
 
+        System.Action continueBattle = () => {
+            // Blast Sphere (0201) - Antes do cálculo de dano
+            // Verifica se estava face-down no início do ataque
+            if (target.CurrentCardData.id == "0201" && targetWasFaceDown)
+            {
+                Debug.Log("Blast Sphere: Atacado face-down. Equipando ao atacante...");
+                // Move Blast Sphere para S/T do dono do Blast Sphere e equipa no atacante
+                // Simplificação: Apenas cria o link e destrói o objeto visual do monstro para simular que virou equip
+                // Em um sistema completo, moveria para a zona de S/T.
+                GameManager.Instance.CreateCardLink(target, attacker, CardLink.LinkType.Equipment);
+                target.AddSpellCounter(1); // Marca para destruir na Standby
+                isBattleResolving = false;
+                return; // Cancela batalha
+            }
+
+            // 0062 - Ancient Lamp
+            if (target.CurrentCardData.id == "0062" && targetWasFaceDown)
+            {
+                Debug.Log("Ancient Lamp: Redirecionando ataque para monstro do oponente!");
+                Transform[] oppZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+                List<CardDisplay> validTargets = new List<CardDisplay>();
+                foreach (var z in oppZones)
+                {
+                    if (z.childCount > 0)
+                    {
+                        var m = z.GetChild(0).GetComponent<CardDisplay>();
+                        if (m != null && m != attacker) validTargets.Add(m);
+                    }
+                }
+                if (validTargets.Count > 0)
+                {
+                    CardDisplay newTarget = validTargets[Random.Range(0, validTargets.Count)]; // Automático
+                    Debug.Log($"Ancient Lamp forçou {attacker.CurrentCardData.name} a atacar {newTarget.CurrentCardData.name}!");
+                    
+                    // Retira seleção de ataque e muda o alvo
+                    target = newTarget;
+                    targetWasFaceDown = target.isFlipped;
+                    if (target.isFlipped) target.RevealCard(true);
+                }
+            }
+
+            attacker.battledThisTurn = true;
+            target.battledThisTurn = true;
+
+            int atkPoints = attacker.currentAtk; // Usa currentAtk
+            int targetPoints = (target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : target.currentDef;
+
+            Debug.Log($"[BattleManager] INICIO Batalha: {attacker.CurrentCardData.name} ({atkPoints}) vs {target.CurrentCardData.name} ({targetPoints})");
+
+            if (DuelFXManager.Instance != null)
+            {
+                Debug.Log("[BattleManager] Solicitando animação ao DuelFXManager...");
+                DuelFXManager.Instance.PlayAttack(attacker, target, () => {
+                    Debug.Log("[BattleManager] Animação concluída. Resolvendo dano...");
+                    ResolveDamage(attacker, target, atkPoints, targetPoints);
+                    isBattleResolving = false;
+                });
+            }
+            else
+            {
+                ResolveDamage(attacker, target, atkPoints, targetPoints);
+                isBattleResolving = false;
+            }
+        };
+
         // Hook OnDamageCalculation (Skyscraper, etc)
         if (CardEffectManager.Instance != null)
         {
-            CardEffectManager.Instance.OnDamageCalculation(attacker, target);
-        }
-
-        // Blast Sphere (0201) - Antes do cálculo de dano
-        // Verifica se estava face-down no início do ataque
-        if (target.CurrentCardData.id == "0201" && targetWasFaceDown)
-        {
-            Debug.Log("Blast Sphere: Atacado face-down. Equipando ao atacante...");
-            // Move Blast Sphere para S/T do dono do Blast Sphere e equipa no atacante
-            // Simplificação: Apenas cria o link e destrói o objeto visual do monstro para simular que virou equip
-            // Em um sistema completo, moveria para a zona de S/T.
-            GameManager.Instance.CreateCardLink(target, attacker, CardLink.LinkType.Equipment);
-            target.AddSpellCounter(1); // Marca para destruir na Standby
-            isBattleResolving = false;
-            return; // Cancela batalha
-        }
-
-        // 0062 - Ancient Lamp
-        if (target.CurrentCardData.id == "0062" && targetWasFaceDown)
-        {
-            Debug.Log("Ancient Lamp: Redirecionando ataque para monstro do oponente!");
-            Transform[] oppZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
-            List<CardDisplay> validTargets = new List<CardDisplay>();
-            foreach (var z in oppZones)
-            {
-                if (z.childCount > 0)
-                {
-                    var m = z.GetChild(0).GetComponent<CardDisplay>();
-                    if (m != null && m != attacker) validTargets.Add(m);
-                }
-            }
-            if (validTargets.Count > 0)
-            {
-                CardDisplay newTarget = validTargets[Random.Range(0, validTargets.Count)]; // Automático
-                Debug.Log($"Ancient Lamp forçou {attacker.CurrentCardData.name} a atacar {newTarget.CurrentCardData.name}!");
-                
-                // Retira seleção de ataque e muda o alvo
-                target = newTarget;
-                targetWasFaceDown = target.isFlipped;
-                if (target.isFlipped) target.RevealCard(true);
-            }
-        }
-
-        attacker.battledThisTurn = true;
-        target.battledThisTurn = true;
-
-        int atkPoints = attacker.currentAtk; // Usa currentAtk
-        int targetPoints = (target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : target.currentDef;
-
-        Debug.Log($"[BattleManager] INICIO Batalha: {attacker.CurrentCardData.name} ({atkPoints}) vs {target.CurrentCardData.name} ({targetPoints})");
-
-        if (DuelFXManager.Instance != null)
-        {
-            Debug.Log("[BattleManager] Solicitando animação ao DuelFXManager...");
-            DuelFXManager.Instance.PlayAttack(attacker, target, () => {
-                Debug.Log("[BattleManager] Animação concluída. Resolvendo dano...");
-                ResolveDamage(attacker, target, atkPoints, targetPoints);
-                isBattleResolving = false;
-            });
+            CardEffectManager.Instance.OnDamageCalculation(attacker, target, continueBattle);
         }
         else
         {
-            ResolveDamage(attacker, target, atkPoints, targetPoints);
-            isBattleResolving = false;
+            continueBattle();
         }
     }
 

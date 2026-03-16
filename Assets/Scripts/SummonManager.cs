@@ -109,65 +109,131 @@ public class SummonManager : MonoBehaviour
         return tributeValue >= requiredTributes;
     }
 
-    // Realiza a invocação (lógica de regras)
-    public bool PerformSummon(GameObject cardGO, CardData card, bool isSet, bool isSpecial, bool isPlayer, bool ignoreLimit = false)
+    // Executa todo o fluxo de invocação e gerencia exceções antes de finalizar no GameManager
+    public void ExecuteSummonFlow(GameObject cardGO, CardData card, bool isSet, bool isSpecial, bool isPlayer, bool ignoreLimit = false)
     {
-        // Se for Normal Summon, verifica limite e tributos
-        if (!isSpecial)
-        {
-            // ... (verificações de Narrow Pass e Normal Summon existentes) ...
-            if (narrowPassActive)
-            {
-                if (narrowPassSummonCount >= 2)
-                {
-                    Debug.LogWarning("Narrow Pass: Limite de 2 invocações adicionais atingido.");
-                    return false;
-                }
-            }
-            else if (!CanNormalSummon() && !ignoreLimit)
-            {
-                Debug.LogWarning("Já realizou Normal Summon neste turno.");
-                return false;
-            }
-
-            int tributesNeeded = GetRequiredTributes(card.level);
-            if (!HasEnoughTributes(tributesNeeded, isPlayer, card))
-            {
-                // Para a IA, isso não é um erro, é apenas uma verificação
-                if (isPlayer) Debug.LogWarning($"Tributos insuficientes! Precisa de {tributesNeeded}.");
-                return false;
-            }
-
-            if (tributesNeeded > 0)
-            {
-                // ALTERAÇÃO AQUI: Se for IA (!isPlayer) OU Simulação, força o auto-tributo
-                if (enableAutoTribute || !isPlayer || GameManager.Instance.isSimulating)
-                {
-                    ProcessAutoTribute(tributesNeeded, isPlayer);
-                }
-                else
-                {
-                    StartManualTributeSelection(cardGO, card, isSet, isPlayer, tributesNeeded);
-                    return false; // Interrompe o fluxo imediato para esperar a seleção
-                }
-            }
-
-            // FIX: Marca que a invocação normal foi realizada, seja Player ou IA
-            hasPerformedNormalSummon = true;
-            if (isPlayer && narrowPassActive) narrowPassSummonCount++;
-        }
-        else
+        if (isSpecial)
         {
             // Lógica de contagem de Special Summon
             if (isPlayer)
             {
                 if (card.type.Contains("Fusion")) fusionSummonCount++;
                 else if (card.type.Contains("Ritual")) ritualSummonCount++;
-                // Outros tipos...
+            }
+            GameManager.Instance.FinalizeSummon(cardGO, card, isSet, isPlayer, isSet, false, null);
+            return;
+        }
+
+        // INTERCEPTAÇÃO: Condições Alternativas de Invocação e Custos Dinâmicos (Sistema 4)
+        if (isPlayer && !ignoreLimit && UIManager.Instance != null && !isSet && !GameManager.Instance.isSimulating)
+        {
+            CardDisplay display = cardGO.GetComponent<CardDisplay>();
+            
+            // 0706 - Fusilier Dragon (Normal sem tributo, stats cortados)
+            if (card.id == "0706") 
+            {
+                UIManager.Instance.ShowConfirmation("Fusilier Dragon: Invocar sem Tributo (ATK/DEF reduzidos pela metade)?", 
+                () => {
+                    display.tributeCount = 0;
+                    hasPerformedNormalSummon = true;
+                    GameManager.Instance.FinalizeSummon(cardGO, card, false, isPlayer, false, false, null);
+                    display.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Multiply, 0.5f, display));
+                    display.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Multiply, 0.5f, display));
+                }, 
+                () => { ProcessStandardSummon(cardGO, card, isSet, isPlayer, ignoreLimit); });
+                return; // Espera a UI
+            }
+            // 0768 - Gilford the Lightning / 1257 - Moisture Creature (Tributos massivos)
+            else if ((card.id == "0768" || card.id == "1257") && GameManager.Instance.GetMonsterCount(isPlayer) >= 3) 
+            {
+                UIManager.Instance.ShowConfirmation($"Usar 3 Tributos para ativar o efeito especial de {card.name}?", 
+                () => {
+                    SelectTributes(3, true, (tributes) => {
+                        foreach(var t in tributes) GameManager.Instance.TributeCard(t);
+                        display.isTributeSummoned = true;
+                        display.tributeCount = 3; 
+                        hasPerformedNormalSummon = true;
+                        GameManager.Instance.FinalizeSummon(cardGO, card, isSet, isPlayer, isSet, true, null);
+                    });
+                }, 
+                () => { ProcessStandardSummon(cardGO, card, isSet, isPlayer, ignoreLimit); });
+                return; // Espera a UI
+            }
+            // 0166 - Behemoth the King of All Animals (Tributo único = 2000 ATK)
+            else if (card.id == "0166" && GameManager.Instance.GetMonsterCount(isPlayer) >= 1) 
+            {
+                UIManager.Instance.ShowConfirmation("Invocar com apenas 1 Tributo (ATK original torna-se 2000)?",
+                () => {
+                    SelectTributes(1, true, (tributes) => {
+                        foreach(var t in tributes) GameManager.Instance.TributeCard(t);
+                        display.isTributeSummoned = true;
+                        display.tributeCount = 1;
+                        hasPerformedNormalSummon = true;
+                        GameManager.Instance.FinalizeSummon(cardGO, card, isSet, isPlayer, isSet, true, null);
+                        display.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Set, 2000, display));
+                    });
+                },
+                () => { ProcessStandardSummon(cardGO, card, isSet, isPlayer, ignoreLimit); });
+                return; // Espera a UI
             }
         }
 
-        return true;
+        // Se não foi interceptado, segue o fluxo normal
+        ProcessStandardSummon(cardGO, card, isSet, isPlayer, ignoreLimit);
+    }
+
+    private void ProcessStandardSummon(GameObject cardGO, CardData card, bool isSet, bool isPlayer, bool ignoreLimit)
+    {
+        if (narrowPassActive)
+        {
+            if (narrowPassSummonCount >= 2)
+            {
+                Debug.LogWarning("Narrow Pass: Limite de 2 invocações adicionais atingido.");
+                return;
+            }
+        }
+        else if (!CanNormalSummon() && !ignoreLimit)
+        {
+            Debug.LogWarning("Já realizou Normal Summon neste turno.");
+            return;
+        }
+
+        int tributesNeeded = GetRequiredTributes(card.level);
+        if (!HasEnoughTributes(tributesNeeded, isPlayer, card))
+        {
+            if (isPlayer) Debug.LogWarning($"Tributos insuficientes! Precisa de {tributesNeeded}.");
+            return;
+        }
+
+        if (tributesNeeded > 0)
+        {
+            if (enableAutoTribute || !isPlayer || GameManager.Instance.isSimulating)
+            {
+                ProcessAutoTribute(tributesNeeded, isPlayer);
+                
+                hasPerformedNormalSummon = true;
+                if (isPlayer && narrowPassActive) narrowPassSummonCount++;
+
+                CardDisplay cd = cardGO.GetComponent<CardDisplay>();
+                if (cd != null) cd.tributeCount = tributesNeeded;
+
+                Transform specificZone = null;
+                if (lastAutoTributeZone != null && GameManager.Instance.placeTributeSummonInTributeZone) specificZone = lastAutoTributeZone;
+
+                GameManager.Instance.FinalizeSummon(cardGO, card, isSet, isPlayer, isSet, true, specificZone);
+            }
+            else
+            {
+                StartManualTributeSelection(cardGO, card, isSet, isPlayer, tributesNeeded);
+            }
+        }
+        else
+        {
+            hasPerformedNormalSummon = true;
+            if (isPlayer && narrowPassActive) narrowPassSummonCount++;
+
+            GameManager.Instance.FinalizeSummon(cardGO, card, isSet, isPlayer, isSet, false, null);
+        }
     }
 
     // Inicia o modo de seleção manual
@@ -237,6 +303,9 @@ public class SummonManager : MonoBehaviour
         // Marca que a invocação normal foi realizada (pois o PerformSummon retornou false para esperar esta seleção)
         hasPerformedNormalSummon = true;
         if (narrowPassActive) narrowPassSummonCount++;
+        
+        CardDisplay cd = pendingCardGO.GetComponent<CardDisplay>();
+        if (cd != null) cd.tributeCount = currentTributesRequired;
 
         if (GameManager.Instance != null)
             GameManager.Instance.FinalizeSummon(pendingCardGO, pendingCardData, pendingIsSet, true, pendingIsSet, true, targetZone);
@@ -290,31 +359,28 @@ public class SummonManager : MonoBehaviour
             GameManager.Instance.TributeCard(monster);
             tributed++;
         }
-        
-        // Finaliza como Tribute Summon
-        // Nota: O GameManager.TrySummonMonster chama FinalizeSummon se retornar true.
-        // Como estamos no fluxo automático dentro do TrySummonMonster, precisamos passar a zona de volta ou ajustar o fluxo.
-        // O TrySummonMonster chama FinalizeSummon logo após PerformSummon retornar true.
-        // Para suportar a zona específica no auto-tribute, precisaríamos refatorar o TrySummonMonster para receber a zona do SummonManager.
-        // Por enquanto, o auto-tribute usará a primeira zona livre (comportamento padrão), 
-        // mas o manual (ConfirmManualTribute) usará a zona correta.
     }
 
-    public void SelectTributes(int count, bool isPlayer, System.Action<List<CardDisplay>> onComplete)
+    public void SelectTributes(int count, bool isPlayer, System.Action<List<CardDisplay>> onComplete, List<CardDisplay> current = null)
     {
-        // Simplificado: Usa seleção automática ou abre UI se implementado
-        if (enableAutoTribute)
+        if (current == null) current = new List<CardDisplay>();
+
+        if (current.Count == count)
         {
-            // Lógica de auto-tributo (não retorna lista, apenas executa)
-            // Para este método que requer callback, precisamos simular a seleção
-            // ...
-            Debug.LogWarning("SelectTributes: Auto-tributo não suporta callback de lista ainda.");
+            onComplete?.Invoke(current);
+            return;
         }
-        else
+
+        if (SpellTrapManager.Instance != null)
         {
-            // Inicia seleção manual (requer adaptação para retornar lista via callback em vez de finalizar summon)
-            // Por enquanto, log de erro
-            Debug.LogError("SelectTributes: Seleção manual com callback não implementada.");
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard == isPlayer && t.CurrentCardData.type.Contains("Monster") && !current.Contains(t),
+                (selected) =>
+                {
+                    current.Add(selected);
+                    SelectTributes(count, isPlayer, onComplete, current);
+                }
+            );
         }
     }
 }

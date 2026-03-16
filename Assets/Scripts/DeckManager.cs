@@ -108,6 +108,9 @@ public class DeckManager : MonoBehaviour
             GameManager.Instance.AddCardToHand(drawnCard, true);
             GameManager.Instance.CheckExodiaWin();
 
+            if (CardEffectManager.Instance != null) 
+                CardEffectManager.Instance.OnCardDrawn(drawnCard, true);
+
             if (!ignoreLimit && currentPhase == GamePhase.Draw && PhaseManager.Instance != null)
             {
                 PhaseManager.Instance.ChangePhase(GamePhase.Standby);
@@ -128,6 +131,9 @@ public class DeckManager : MonoBehaviour
             GameManager.Instance.AddCardToHand(drawnCard, false);
             
             if (GameManager.Instance.devMode) Debug.Log($"Oponente comprou: {drawnCard.name}");
+
+            if (CardEffectManager.Instance != null) 
+                CardEffectManager.Instance.OnCardDrawn(drawnCard, false);
         }
     }
 

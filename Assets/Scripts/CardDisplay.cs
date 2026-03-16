@@ -61,6 +61,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public int paidLifePoints = 0; // Para Wall of Revealing Light
 
     [HideInInspector] public bool isTributeSummoned = false; // Novo: Rastreia Invocação por Tributo
+    [HideInInspector] public int tributeCount = 0; // Quantos monstros foram tributados para invocar esta carta
 
     // Sistema Trap Monster
     [HideInInspector] public bool isTrapMonster = false;

@@ -84,8 +84,10 @@ public partial class CardEffectManager : MonoBehaviour
     public void OnCounterTrapResolved(CardDisplay trap) { OnCounterTrapResolvedImpl(trap); }
     public void OnCardAddedToHand(CardDisplay card) { OnCardAddedToHandImpl(card); }
     public void OnTribute(CardDisplay card) { OnTributeImpl(card); }
-    public void OnCardDiscarded(CardDisplay card) { OnCardDiscardedImpl(card); }
+    public void OnCardDiscarded(CardDisplay card, bool causedByOpponent) { OnCardDiscardedImpl(card, causedByOpponent); }
+    public void OnCardDrawn(CardData card, bool isPlayer) { OnCardDrawnImpl(card, isPlayer); }
     public void OnSpecialSummon(CardDisplay card) { OnSpecialSummonImpl(card); }
+    public void OnPreDrawPhase(bool isPlayerTurn, System.Action onContinue) { OnPreDrawPhaseImpl(isPlayerTurn, onContinue); }
 
     // --- VALIDAÇÕES DE REGRAS DE EFEITO ---
 
@@ -143,6 +145,15 @@ public partial class CardEffectManager : MonoBehaviour
             }
         }
         return true;
+    }
+
+    /// <summary>
+    /// Retorna verdadeiro se a carta possuir o dom de substituir 1 material de fusão nomeado.
+    /// </summary>
+    public bool IsFusionSubstitute(string cardIdOrName)
+    {
+        string[] subs = { "0781", "1315", "2037", "1850", "1856", "1877", "Goddess with the Third Eye", "Mystical Sheep #1", "Versago the Destroyer", "The Dark - Hex-Sealed Fusion", "The Earth - Hex-Sealed Fusion", "The Light - Hex-Sealed Fusion" };
+        return System.Array.Exists(subs, element => element == cardIdOrName);
     }
 
     // --- HELPERS DE SISTEMAS GLOBAIS (MINIGAMES) ---
@@ -203,8 +214,10 @@ public partial class CardEffectManager : MonoBehaviour
     partial void OnCounterTrapResolvedImpl(CardDisplay trap);
     partial void OnCardAddedToHandImpl(CardDisplay card);
     partial void OnTributeImpl(CardDisplay card);
-    partial void OnCardDiscardedImpl(CardDisplay card);
+    partial void OnCardDiscardedImpl(CardDisplay card, bool causedByOpponent);
     partial void OnSpecialSummonImpl(CardDisplay card);
+    partial void OnCardDrawnImpl(CardData card, bool isPlayer);
+    partial void OnPreDrawPhaseImpl(bool isPlayerTurn, System.Action onContinue);
 
     void DestroyAllMonsters(bool targetOpponent, bool targetPlayer)
     {

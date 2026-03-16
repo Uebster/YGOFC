@@ -851,7 +851,7 @@ public void ShuffleDeck(bool isPlayer)
         if (DeckManager.Instance != null) DeckManager.Instance.MillCards(isPlayer, amount);
     }
 
-    public void DiscardCard(CardDisplay card)
+    public void DiscardCard(CardDisplay card, bool causedByOpponent = false)
     {
         if (card == null) return;
 
@@ -862,13 +862,13 @@ public void ShuffleDeck(bool isPlayer)
 
         // Remove modificadores (caso raro de efeito na mão, mas seguro)
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
-        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardDiscarded(card);
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardDiscarded(card, causedByOpponent);
         if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
 
         Destroy(card.gameObject);
     }
 
-    public void DiscardRandomHand(bool isPlayer, int amount)
+    public void DiscardRandomHand(bool isPlayer, int amount, bool causedByOpponent = false)
     {
         List<GameObject> hand = isPlayer ? playerHand : opponentHand;
         if (hand.Count == 0) return;
@@ -881,12 +881,12 @@ public void ShuffleDeck(bool isPlayer)
             int rnd = Random.Range(0, hand.Count);
             GameObject cardGO = hand[rnd];
             CardDisplay cd = cardGO.GetComponent<CardDisplay>();
-            DiscardCard(cd);
+            DiscardCard(cd, causedByOpponent);
         }
     }
 
     // Novo método para Mind Crush e similares
-    public void DiscardCardsByName(bool isPlayer, string cardName)
+    public void DiscardCardsByName(bool isPlayer, string cardName, bool causedByOpponent = false)
     {
         List<GameObject> hand = isPlayer ? playerHand : opponentHand;
         // Itera de trás para frente para remover com segurança
@@ -896,12 +896,12 @@ public void ShuffleDeck(bool isPlayer)
             CardDisplay cd = go.GetComponent<CardDisplay>();
             if (cd != null && cd.CurrentCardData.name == cardName)
             {
-                DiscardCard(cd);
+                DiscardCard(cd, causedByOpponent);
             }
         }
     }
 
-    public void DiscardHand(bool isPlayer)
+    public void DiscardHand(bool isPlayer, bool causedByOpponent = false)
     {
         List<GameObject> hand = isPlayer ? playerHand : opponentHand;
         // Cria uma cópia da lista para iterar com segurança enquanto removemos
@@ -910,7 +910,7 @@ public void ShuffleDeck(bool isPlayer)
         foreach (GameObject cardGO in toDiscard)
         {
             CardDisplay cd = cardGO.GetComponent<CardDisplay>();
-            if (cd != null) DiscardCard(cd);
+            if (cd != null) DiscardCard(cd, causedByOpponent);
         }
     }
 
@@ -1761,6 +1761,17 @@ public void ShuffleDeck(bool isPlayer)
         return count;
     }
 
+    public int GetMonsterCount(bool isPlayer)
+    {
+        int count = 0;
+        if (duelFieldUI != null)
+        {
+            Transform[] zones = isPlayer ? duelFieldUI.playerMonsterZones : duelFieldUI.opponentMonsterZones;
+            foreach (var z in zones) if (z.childCount > 0) count++;
+        }
+        return count;
+    }
+
     // --- LÓGICA DE INVOCACÃO ---
 
     // Renomeado para TrySummonMonster para indicar que é o início do processo
@@ -1775,20 +1786,6 @@ public void ShuffleDeck(bool isPlayer)
             if (!CardEffectManager.Instance.CheckChainEnergy(isPlayer)) return;
             if (!CardEffectManager.Instance.CheckSpatialCollapse(isPlayer)) return;
             if (!CardEffectManager.Instance.CheckRivalryOfWarlords(isPlayer, cardData.race)) return;
-        }
-
-        // 0. Validação de Regras de Invocação (SummonManager)
-        if (SummonManager.Instance != null)
-        {
-            // Verifica se pode invocar (Normal Summon, Tributos, etc)
-            // Nota: isSpecial = false (por enquanto, invocação da mão é Normal)
-            // Passamos o GameObject agora para o SummonManager poder controlar o fluxo manual
-            if (!SummonManager.Instance.PerformSummon(cardGO, cardData, isSet, false, isPlayer, ignoreLimit))
-            {
-                // Se retornou false, pode ser porque iniciou a seleção manual de tributo
-                // ou porque falhou a validação. Em ambos os casos, paramos aqui.
-                return;
-            }
         }
 
         // 0. Validação de Permissão
@@ -1814,20 +1811,12 @@ public void ShuffleDeck(bool isPlayer)
             return;
         }
 
-        // Se passou por tudo (ou foi auto-tribute), finaliza
-        // Normal Summon/Set: Se isSet=true, é Face-Down Defense. Se false, é Face-Up Attack.
-        // Nota: Se houve tributo automático, SummonManager deveria ter lidado, mas aqui assumimos fluxo simples ou 0 tributos
-        bool wasTribute = (cardData.level >= 5); // Simplificação para Auto-Tribute implícito se passou pelo SummonManager
-        
-        Transform specificZone = null;
-        if (wasTribute && SummonManager.Instance != null && SummonManager.Instance.lastAutoTributeZone != null)
+        if (SummonManager.Instance != null)
         {
-            if (placeTributeSummonInTributeZone)
-            {
-                specificZone = SummonManager.Instance.lastAutoTributeZone;
-            }
+            SummonManager.Instance.ExecuteSummonFlow(cardGO, cardData, isSet, false, isPlayer, ignoreLimit);
         }
-        FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, wasTribute, specificZone);
+            // Fallback caso não tenha o Manager
+            FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, cardData.level >= 5, null);
     }
 
     // Novo método para Special Summon que pede a posição
@@ -1915,6 +1904,13 @@ public void ShuffleDeck(bool isPlayer)
         // TROFÉU: Tributo
         if (isTributeSummon && TrophyManager.Instance != null)
             TrophyManager.Instance.TrackStat("tribute_summon", 1);
+
+        // Avisa a Engine e Correntes Nativas que o monstro desceu!
+        if (ChainManager.Instance != null)
+            ChainManager.Instance.AddToChain(display, isPlayer, ChainManager.TriggerType.Summon);
+        
+        if (CardEffectManager.Instance != null)
+            CardEffectManager.Instance.OnSummon(display);
     }
 
     public Transform GetFreeMonsterZone(bool isPlayer)
@@ -2663,67 +2659,6 @@ public void ShuffleDeck(bool isPlayer)
     }
 
     // --- SISTEMA DE FUSÃO ---
-
-    public void PerformFusionSummon(CardDisplay sourceCard, CardData fusionMonster, List<CardData> materials)
-    {
-        if (fusionMonster == null || materials == null || materials.Count == 0) return;
-
-        Debug.Log($"Realizando Invocação-Fusão de {fusionMonster.name}...");
-
-        // Cheat: Se custo de fusão estiver desativado, não destrói nada
-        if (disableFusionCost) Debug.Log("[Cheat] Fusion Cost Disabled: Materiais e Magia preservados.");
-
-        // 1. Envia a Magia de Fusão para o cemitério (se existir e for Spell)
-        if (sourceCard != null)
-        {
-            if (!disableFusionCost)
-            {
-                SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard, CardLocation.Field, SendReason.Effect);
-                Destroy(sourceCard.gameObject);
-            }
-        }
-
-        // 2. Envia os materiais para o cemitério
-        foreach (var mat in materials)
-        {
-            if (disableFusionCost) break; // Pula destruição
-
-            // Tenta achar na mão
-            var handObj = playerHand.FirstOrDefault(go => go.GetComponent<CardDisplay>().CurrentCardData == mat);
-            if (handObj != null)
-            {
-                SendToGraveyard(mat, true, CardLocation.Hand, SendReason.Effect); // Fusão é sempre do player neste contexto de UI
-                playerHand.Remove(handObj);
-                Destroy(handObj);
-            }
-            else
-            {
-                // Tenta achar no campo
-                var fieldObj = FindCardOnField(mat.id, true);
-                if (fieldObj != null)
-                {
-                    SendToGraveyard(mat, true, CardLocation.Field, SendReason.Effect);
-                    Destroy(fieldObj.gameObject);
-                }
-            }
-        }
-
-        // 3. Invoca o Monstro de Fusão
-        if (playerExtraDeck.Contains(fusionMonster))
-            playerExtraDeck.Remove(fusionMonster);
-
-        CardDisplay summonedMonster = SpecialSummonFromData(fusionMonster, true);
-
-        // 4. Registra os materiais usados (para UFOroid Fighter, etc)
-        if (summonedMonster != null)
-        {
-            summonedMonster.fusionMaterialsUsed = new List<CardData>(materials);
-        }
-        
-        // TROFÉU: Fusão
-        if (TrophyManager.Instance != null)
-            TrophyManager.Instance.TrackStat("fusion_summon", 1);
-    }
 
     // Helper para equipar um monstro em outro (Union, Relinquished)
     public void EquipMonsterToMonster(CardDisplay equipCard, CardDisplay targetMonster)

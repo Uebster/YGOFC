@@ -2008,7 +2008,7 @@ public partial class CardEffectManager
         // Requer saber quantos tributos foram usados.
         // Como o sistema atual não passa a contagem exata (apenas flag bool), assumimos que se foi Tribute Summoned, o jogador cumpriu o requisito se escolheu essa opção.
         // Em um sistema completo, precisaríamos de `source.tributeCount`.
-        if (source.summonedThisTurn && source.isTributeSummoned)
+        if (source.summonedThisTurn && source.isTributeSummoned && source.tributeCount >= 3)
         {
             Debug.Log("Moisture Creature: Destruindo S/T do oponente.");
             Effect_HarpiesFeatherDuster(source);

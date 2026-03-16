@@ -147,7 +147,25 @@ public class PhaseManager : MonoBehaviour
                     }
                     else
                     {
-                        GameManager.Instance.OnDrawPhaseStart();
+                        if (CardEffectManager.Instance != null)
+                        {
+                            CardEffectManager.Instance.OnPreDrawPhase(GameManager.Instance.isPlayerTurn, () => {
+                                GameManager.Instance.OnDrawPhaseStart();
+                            });
+                        }
+                        else
+                        {
+                        if (CardEffectManager.Instance != null)
+                        {
+                            CardEffectManager.Instance.OnPreDrawPhase(GameManager.Instance.isPlayerTurn, () => {
+                                GameManager.Instance.OnDrawPhaseStart();
+                            });
+                        }
+                        else
+                        {
+                            GameManager.Instance.OnDrawPhaseStart();
+                        }
+                        }
                     }
                 }
                 break;

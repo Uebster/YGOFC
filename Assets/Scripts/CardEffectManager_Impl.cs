@@ -2088,6 +2088,19 @@ public partial class CardEffectManager
         return card.isTrapMonster ? card.trapMonsterAttribute : card.CurrentCardData.attribute;
     }
 
+    public bool HasAttribute(CardDisplay card, string attribute)
+    {
+        string effectiveAttr = GetEffectiveAttribute(card);
+        if (effectiveAttr.Equals(attribute, System.StringComparison.OrdinalIgnoreCase)) return true;
+
+        if (card.CurrentCardData.id == "0585" && card.isOnField && !card.isFlipped)
+        {
+            string attrLower = attribute.ToLowerInvariant();
+            if (attrLower == "wind" || attrLower == "water" || attrLower == "fire" || attrLower == "earth") return true;
+        }
+        return false;
+    }
+
     private void ApplyContinuousPositionChecks()
     {
         // Level Limit - Area B (1077) - Change Level 4+ to Defense
@@ -2154,6 +2167,84 @@ public partial class CardEffectManager
 
     public void OnAttackDeclared(CardDisplay attacker, CardDisplay target, System.Action onContinue)
     {
+        StartCoroutine(OnAttackDeclaredRoutine(attacker, target, onContinue));
+    }
+
+    private IEnumerator OnAttackDeclaredRoutine(CardDisplay attacker, CardDisplay target, System.Action onContinue)
+    {
+        bool isWaiting = false;
+        bool attackCanceled = false;
+
+        // 1592 - Sasuke Samurai #4 (Moeda Assíncrona)
+        if (attacker.CurrentCardData.id == "1592" && target != null)
+        {
+            isWaiting = true;
+            GameManager.Instance.TossCoin(1, (heads) =>
+            {
+                if (heads == 1) // Cara = Sucesso
+                {
+                    Debug.Log("Sasuke Samurai #4: Acertou! Destruindo alvo.");
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                    Destroy(target.gameObject);
+                    attackCanceled = true;
+                }
+                else
+                {
+                    Debug.Log("Sasuke Samurai #4: Errou.");
+                }
+                isWaiting = false;
+            });
+            while (isWaiting) yield return null;
+            if (attackCanceled) yield break; // Sai da corrotina, interrompendo o ataque
+        }
+
+        // 0611 - Exarion Universe (Escolha Assíncrona)
+        if (attacker.CurrentCardData.id == "0611" && target != null && target.position == CardDisplay.BattlePosition.Defense)
+        {
+            if (attacker.isPlayerCard)
+            {
+                isWaiting = true;
+                UIManager.Instance.ShowConfirmation("Ativar Exarion Universe? (-400 ATK e ganha Dano Perfurante)",
+                    () => {
+                        attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -400, attacker));
+                        Debug.Log("Exarion Universe: ATK reduzido. Dano perfurante ativo.");
+                        // Nota: Requer flag de piercing no BattleManager no futuro
+                        isWaiting = false;
+                    },
+                    () => { isWaiting = false; }
+                );
+                while (isWaiting) yield return null;
+            }
+            else
+            {
+                // IA: Sempre usa o efeito se puder perfurar uma defesa mais fraca
+                attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -400, attacker));
+                Debug.Log("Exarion Universe (Oponente): Dano perfurante ativo.");
+            }
+        }
+
+        // 0620 - Fairy Box (Moeda Assíncrona)
+        bool fairyBoxFound = false;
+        CheckActiveCards("0620", (box) => {
+            if (!fairyBoxFound && box.isPlayerCard != attacker.isPlayerCard) {
+                fairyBoxFound = true;
+                isWaiting = true;
+                GameManager.Instance.TossCoin(1, (heads) => {
+                    if (heads == 1) {
+                        attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 0, box));
+                        Debug.Log("Fairy Box: Acertou! ATK do atacante reduzido a 0!");
+                    } else {
+                        Debug.Log("Fairy Box: Oponente falhou na moeda.");
+                    }
+                    isWaiting = false;
+                });
+            }
+        });
+        if (fairyBoxFound) {
+            while (isWaiting) yield return null;
+        }
+
         // 1507 - Reflect Bounder
         if (target != null && target.CurrentCardData.id == "1507" && !target.isFlipped && target.position == CardDisplay.BattlePosition.Attack)
         {
@@ -2168,28 +2259,6 @@ public partial class CardEffectManager
         {
             target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -500, attacker));
             Debug.Log("Rocket Warrior: Alvo perdeu 500 ATK.");
-        }
-
-        // 1592 - Sasuke Samurai #4
-        if (attacker.CurrentCardData.id == "1592" && target != null)
-        {
-            GameManager.Instance.TossCoin(1, (heads) =>
-            {
-                if (heads == 1) // Cara = Sucesso
-                {
-                    Debug.Log("Sasuke Samurai #4: Acertou! Destruindo alvo.");
-                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
-                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-                    Destroy(target.gameObject);
-                    // Não chama onContinue pois o alvo foi destruído
-                }
-                else
-                {
-                    Debug.Log("Sasuke Samurai #4: Errou.");
-                    onContinue?.Invoke();
-                }
-            });
-            return; // Interrompe fluxo síncrono
         }
 
         // 1770 - Steamroid
@@ -2217,6 +2286,7 @@ public partial class CardEffectManager
                 if (trap.isPlayerCard != attacker.isPlayerCard && !trapped)
                 {
                     trapped = true;
+                    isWaiting = true;
                     if (UIManager.Instance != null) {
                         UIManager.Instance.ShowConfirmation($"Ativar {trap.CurrentCardData.name}?", () => {
                             GameManager.Instance.SendToGraveyard(trap.CurrentCardData, trap.isPlayerCard);
@@ -2228,17 +2298,26 @@ public partial class CardEffectManager
                             
                             DestroyCards(toDestroy, trap.isPlayerCard);
                             Effect_DirectDamage(trap, 1000);
-                        }, () => { onContinue?.Invoke(); });
+                            isWaiting = false;
+                        }, () => { trapped = false; isWaiting = false; });
                     }
                 }
             });
+            while (isWaiting) yield return null;
         }
         
-        if (!trapped) onContinue?.Invoke();
+        if (!attackCanceled && !trapped) onContinue?.Invoke();
     }
 
-    public void OnDamageCalculation(CardDisplay attacker, CardDisplay target)
+    public void OnDamageCalculation(CardDisplay attacker, CardDisplay target, System.Action onContinue)
     {
+        StartCoroutine(OnDamageCalculationRoutine(attacker, target, onContinue));
+    }
+
+    private IEnumerator OnDamageCalculationRoutine(CardDisplay attacker, CardDisplay target, System.Action onContinue)
+    {
+        bool isWaiting = false;
+
         // Skyscraper (63035430)
         // Se E-Hero atacando monstro mais forte, +1000 ATK.
         if (GameManager.Instance.IsCardActiveOnField("63035430"))
@@ -2269,19 +2348,63 @@ public partial class CardEffectManager
             Destroy(target.gameObject);
         }
 
-        // 1008 - Kazejin
-        if (target != null && target.CurrentCardData.id == "1008" && !target.hasUsedEffectThisTurn) // Simplificado: 1x por turno
+        // Trio de Suijin / Kazejin / Sanga (Interrupção Assíncrona)
+        if (target != null && (target.CurrentCardData.id == "1008" || target.CurrentCardData.id == "1586" || target.CurrentCardData.id == "1790") && !target.hasUsedEffectThisTurn)
         {
-            Debug.Log("Kazejin: Zerando ATK do atacante.");
-            attacker.ModifyStats(-attacker.currentAtk, 0);
-            target.hasUsedEffectThisTurn = true;
+            if (target.isPlayerCard)
+            {
+                isWaiting = true;
+                UIManager.Instance.ShowConfirmation($"{target.CurrentCardData.name}: Zerar o ATK do atacante?",
+                    () => {
+                        attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 0, target));
+                        target.hasUsedEffectThisTurn = true;
+                        Debug.Log($"{target.CurrentCardData.name}: ATK do atacante zerado.");
+                        isWaiting = false;
+                    }, () => { isWaiting = false; }
+                );
+                while(isWaiting) yield return null;
+            }
+            else
+            {
+                // IA: Zera o ATK apenas se for ser destruído
+                if (attacker.currentAtk >= target.currentAtk || attacker.currentAtk >= target.currentDef) {
+                    attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 0, target));
+                    target.hasUsedEffectThisTurn = true;
+                }
+            }
         }
 
-        // 1586 - Sanga of the Thunder
-        if (target != null && target.CurrentCardData.id == "1586" && !target.isPlayerCard)
+        // 0944 / 79575620 - Injection Fairy Lily (Custo de Vida no Dano)
+        CardDisplay lily = (attacker != null && (attacker.CurrentCardData.id == "0944" || attacker.CurrentCardData.id == "79575620")) ? attacker : 
+                           (target != null && (target.CurrentCardData.id == "0944" || target.CurrentCardData.id == "79575620") ? target : null);
+        
+        if (lily != null)
         {
-            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 0, target));
-            Debug.Log("Sanga of the Thunder: ATK do atacante zerado.");
+            int currentLP = lily.isPlayerCard ? GameManager.Instance.playerLP : GameManager.Instance.opponentLP;
+            if (currentLP > 2000)
+            {
+                if (lily.isPlayerCard)
+                {
+                    isWaiting = true;
+                    UIManager.Instance.ShowConfirmation("Injection Fairy Lily: Pagar 2000 LP para +3000 ATK?",
+                        () => {
+                            if (GameManager.Instance.PayLifePoints(true, 2000)) {
+                                lily.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 3000, lily));
+                            }
+                            isWaiting = false;
+                        }, () => { isWaiting = false; }
+                    );
+                    while(isWaiting) yield return null;
+                }
+                else
+                {
+                    // IA: Paga se estiver com vida sobrando e precisar do ataque
+                    if (currentLP > 4000) {
+                        GameManager.Instance.PayLifePoints(false, 2000);
+                        lily.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 3000, lily));
+                    }
+                }
+            }
         }
 
         // 1780 - Stone Statue of the Aztecs
@@ -2328,8 +2451,6 @@ public partial class CardEffectManager
                 Destroy(attacker.gameObject);
             }
         }
-
-        // Injection Fairy Lily (79575620) - Lógica de pagar LP seria aqui
 
         // Buster Rancher (0253)
         // Se equipado batalhar com monstro >= 2500 ATK, ganha ATK
@@ -2430,6 +2551,8 @@ public partial class CardEffectManager
                 // TODO: Agendar destruição na End Phase do 2º turno do oponente
             }
         }
+        
+        onContinue?.Invoke();
     }
 public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
 {
@@ -3173,7 +3296,7 @@ void Effect_DestroyType(CardDisplay source, string type)
     // DestroyAllMonsters(true, true, (m) => m.CurrentCardData.race == type);
 }
 
-void Effect_SearchDeck(CardDisplay source, string term, string typeFilter = "", int maxAtk = 9999)
+void Effect_SearchDeck(CardDisplay source, string term, string typeFilter = "", int maxAtk = 9999, int maxLevel = 99)
 {
     bool isPlayer = source != null ? source.isPlayerCard : true;
     List<CardData> deck = isPlayer ? GameManager.Instance.GetPlayerMainDeck() : null;
@@ -3183,7 +3306,8 @@ void Effect_SearchDeck(CardDisplay source, string term, string typeFilter = "", 
     List<CardData> results = deck.FindAll(c =>
         c.name.Contains(term) &&
         (string.IsNullOrEmpty(typeFilter) || c.type.Contains(typeFilter)) &&
-        c.atk <= maxAtk
+        c.atk <= maxAtk &&
+        c.level <= maxLevel
     );
 
     if (results.Count > 0)
@@ -3767,4 +3891,110 @@ private void Effect_0206_BlindDestruction_Logic_Impl(CardDisplay source)
             DestroyCards(toDestroy, source.isPlayerCard);
     });
 }
+
+    partial void OnPreDrawPhaseImpl(bool isPlayerTurn, System.Action onContinue)
+    {
+        StartCoroutine(PreDrawRoutine(isPlayerTurn, onContinue));
+    }
+
+    private IEnumerator PreDrawRoutine(bool isPlayerTurn, System.Action onContinue)
+    {
+        bool isWaiting = false;
+        bool skipNormalDraw = false;
+
+        // 0693 - Freed the Matchless General
+        bool hasFreed = false;
+        CardDisplay freedCard = null;
+        CheckActiveCards("0693", (card) => {
+            if (card.isPlayerCard == isPlayerTurn && !hasFreed) {
+                hasFreed = true;
+                freedCard = card;
+            }
+        });
+
+        if (hasFreed && freedCard.isPlayerCard)
+        {
+            isWaiting = true;
+            if (UIManager.Instance != null) {
+                UIManager.Instance.ShowConfirmation("Ativar efeito de Freed the Matchless General? (Pula o Draw para buscar um Warrior Lv4-)",
+                    () => {
+                        skipNormalDraw = true;
+                        Effect_SearchDeck(freedCard, "", "Warrior", 9999, 4);
+                        isWaiting = false;
+                    },
+                    () => { isWaiting = false; }
+                );
+            }
+            while (isWaiting) yield return null;
+        }
+
+        if (skipNormalDraw)
+        {
+            if (PhaseManager.Instance != null) PhaseManager.Instance.ChangePhase(GamePhase.Standby);
+        }
+        else
+        {
+            onContinue?.Invoke();
+        }
+    }
+
+    partial void OnCardDrawnImpl(CardData card, bool isPlayer)
+    {
+        // 0550 - Drop Off
+        if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Draw)
+        {
+            bool hasDropOff = false;
+            CardDisplay dropOffTrap = null;
+
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                Transform[] zones = !isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+                foreach(var z in zones)
+                {
+                    if (z.childCount > 0)
+                    {
+                        var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                        if (cd != null && cd.isFlipped && cd.CurrentCardData.id == "0550") { hasDropOff = true; dropOffTrap = cd; break; }
+                    }
+                }
+            }
+
+            if (hasDropOff && dropOffTrap.isPlayerCard)
+            {
+                if (UIManager.Instance != null) {
+                    UIManager.Instance.ShowConfirmation("Ativar Drop Off? O oponente descartará a carta sacada.", () => {
+                        GameManager.Instance.ActivateFieldSpellTrap(dropOffTrap.gameObject);
+                        Debug.Log($"Drop Off: Oponente descarta {card.name}.");
+                        GameManager.Instance.DiscardCardsByName(!isPlayer, card.name, true);
+                    });
+                }
+            }
+        }
+    }
+
+    partial void OnCardDiscardedImpl(CardDisplay card, bool causedByOpponent)
+    {
+        if (card.CurrentCardData.id == "0567" && causedByOpponent)
+        {
+            Debug.Log("Electric Snake: Descartada pelo oponente. Compre 2 cartas.");
+            if (card.isPlayerCard) { GameManager.Instance.DrawCard(); GameManager.Instance.DrawCard(); }
+            else { GameManager.Instance.DrawOpponentCard(); GameManager.Instance.DrawOpponentCard(); }
+        }
+        if (card.CurrentCardData.id == "0586" && causedByOpponent)
+        {
+            Debug.Log("Elephant Statue of Blessing: Ganha 2000 LP.");
+            GameManager.Instance.GainLifePoints(card.isPlayerCard, 2000);
+        }
+        if (card.CurrentCardData.id == "0587" && causedByOpponent)
+        {
+            Debug.Log("Elephant Statue of Disaster: 2000 de dano ao oponente.");
+            if (card.isPlayerCard) GameManager.Instance.DamageOpponent(2000);
+            else GameManager.Instance.DamagePlayer(2000);
+        }
+        if (card.CurrentCardData.id == "1235" && causedByOpponent)
+        {
+            if (card.isPlayerCard) GameManager.Instance.DamageOpponent(1000);
+            else GameManager.Instance.DamagePlayer(1000);
+        }
+    }
 }
