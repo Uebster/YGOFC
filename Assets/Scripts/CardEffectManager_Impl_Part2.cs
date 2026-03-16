@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public partial class CardEffectManager
 {
@@ -3625,7 +3626,9 @@ public partial class CardEffectManager
     {
         if (source.summonedThisTurn && !source.wasSpecialSummoned)
         {
-            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Multiply, 0.5f, source));
+            StatModifier mod = new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Multiply, 0, source);
+            mod.multiplier = 0.5f;
+            source.AddStatModifier(mod);
         }
     }
 

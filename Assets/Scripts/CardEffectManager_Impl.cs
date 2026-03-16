@@ -2088,33 +2088,6 @@ public partial class CardEffectManager
         return false;
     }
 
-    public bool IsAttackPreventedByContinuousEffect(CardDisplay attacker)
-    {
-        // Gravity Bind (0817) - Level 4+ cannot attack
-        if (GameManager.Instance.IsCardActiveOnField("0817") && attacker.CurrentCardData.level >= 4)
-            return true;
-
-        // Level Limit - Area B (1077) - Level 4+ cannot attack
-        if (GameManager.Instance.IsCardActiveOnField("1077") && attacker.CurrentCardData.level >= 4)
-            return true;
-
-        // Messenger of Peace (1209) - 1500+ ATK cannot attack
-        if (GameManager.Instance.IsCardActiveOnField("1209") && attacker.currentAtk >= 1500)
-            return true;
-            
-        // 0947 - Insect Barrier
-        if (GameManager.Instance.IsCardActiveOnField("0947") && attacker.CurrentCardData.race == "Insect")
-        {
-            bool isBarrierOwnedByOpponent = false;
-            Transform[] mySpellZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
-            foreach (var zone in mySpellZones)
-                if (zone.childCount > 0 && zone.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "0947" && !zone.GetChild(0).GetComponent<CardDisplay>().isFlipped) isBarrierOwnedByOpponent = true;
-            if (isBarrierOwnedByOpponent) return true;
-        }
-
-        return false;
-    }
-
     public string GetEffectiveRace(CardDisplay card)
     {
         // DNA Surgery (0390)
@@ -4220,6 +4193,21 @@ partial void OnBattlePositionChangedImpl(CardDisplay card)
                 );
             }
         }
+
+        // 0542 - Dream Clown
+        if (card.CurrentCardData.id == "0542" && card.position == CardDisplay.BattlePosition.Defense && !card.isFlipped)
+        {
+            if (SpellTrapManager.Instance != null) {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                    (target) => {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                    }
+                );
+            }
+        }
     }
 void Effect_SecretBarrel(CardDisplay source)
 {
@@ -4299,24 +4287,6 @@ private void Effect_0206_BlindDestruction_Logic_Impl(CardDisplay source)
         else
         {
             onContinue?.Invoke();
-        }
-    }
-
-    partial void OnBattlePositionChangedImpl(CardDisplay card)
-    {
-        // 0542 - Dream Clown
-        if (card.CurrentCardData.id == "0542" && card.position == CardDisplay.BattlePosition.Defense && !card.isFlipped)
-        {
-            if (SpellTrapManager.Instance != null) {
-                SpellTrapManager.Instance.StartTargetSelection(
-                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
-                    (target) => {
-                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
-                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-                        Destroy(target.gameObject);
-                    }
-                );
-            }
         }
     }
 
