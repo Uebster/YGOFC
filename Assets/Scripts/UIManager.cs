@@ -61,6 +61,7 @@ public class UIManager : MonoBehaviour
     public FusionUI fusionUI; // Novo modal para Fusão
     public RitualUI ritualUI; // Novo modal para Ritual
     public GameObject destinyBoardWinPanel; // Arraste o Panel_DestinyBoardWin aqui
+    public GameObject exodiaWinPanel; // Arraste o Panel_ExodiaWin aqui
     
     [Header("End Duel Assets")]
     public Sprite endDuelWinSprite;
@@ -187,6 +188,7 @@ public class UIManager : MonoBehaviour
         if (fusionUI != null) fusionUI.gameObject.SetActive(false);
         if (ritualUI != null) ritualUI.gameObject.SetActive(false);
         if (destinyBoardWinPanel != null) destinyBoardWinPanel.SetActive(false);
+        if (exodiaWinPanel != null) exodiaWinPanel.SetActive(false);
 
         // 2. Ativa apenas a tela desejada
         if (screenToShow != null)

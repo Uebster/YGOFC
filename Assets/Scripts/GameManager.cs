@@ -1712,7 +1712,15 @@ public void ShuffleDeck(bool isPlayer)
             // TODO: Tocar animação especial do Exodia aqui
             // TROFÉU: Exodia
             if (TrophyManager.Instance != null) TrophyManager.Instance.Unlock(80);
-            EndDuel(true);
+            
+            if (ExodiaWinUI.Instance != null)
+            {
+                ExodiaWinUI.Instance.ShowWinSequence(true, () => EndDuel(true));
+            }
+            else
+            {
+                EndDuel(true);
+            }
         }
     }
 

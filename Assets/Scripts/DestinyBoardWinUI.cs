@@ -9,17 +9,12 @@ public class DestinyBoardWinUI : MonoBehaviour
     
     [Header("Referências UI")]
     public GameObject panel;
-    public Image imageEndDuel; // A imagem que vai exibir o Sprite (You Win / You Lose)
     [Tooltip("Arraste LetterF, LetterI, LetterN, LetterA, LetterL da sua Hierarchy")]
     public Transform[] letterSlots; 
     
     [Header("Configurações")]
-    public Sprite spriteWin;
-    public Sprite spriteLose;
     public float delayBetweenLetters = 1.0f; // Suspense entre o drop das letras
     public float delayBeforeEndDuel = 2.5f;  // Tempo olhando a palavra finalizada
-    public AudioClip winSound;
-    public AudioClip loseSound;
 
     void Awake()
     {
@@ -35,12 +30,6 @@ public class DestinyBoardWinUI : MonoBehaviour
     private IEnumerator PlayWinSequence(bool playerWon, System.Action onSequenceComplete)
     {
         if (panel) panel.SetActive(true);
-
-        if (imageEndDuel != null)
-        {
-            imageEndDuel.sprite = playerWon ? spriteWin : spriteLose;
-            imageEndDuel.gameObject.SetActive(false); // Esconde a mensagem de win/lose no começo do suspense
-        }
 
         // Limpa resquícios antigos nos slots
         foreach (Transform slot in letterSlots)
@@ -77,17 +66,6 @@ public class DestinyBoardWinUI : MonoBehaviour
                     DuelFXManager.Instance.audioSource.PlayOneShot(DuelFXManager.Instance.attackSound);
             }
             yield return new WaitForSeconds(delayBetweenLetters); // Aguarda o delay para cada letra (suspense)
-        }
-
-        // Revela o resultado (You Win / You Lose) com som triunfal ou fúnebre!
-        if (imageEndDuel != null)
-        {
-            imageEndDuel.gameObject.SetActive(true); 
-            if (DuelFXManager.Instance != null)
-            {
-                AudioClip clip = playerWon ? winSound : loseSound;
-                if (clip != null) DuelFXManager.Instance.audioSource.PlayOneShot(clip);
-            }
         }
 
         yield return new WaitForSeconds(delayBeforeEndDuel);
