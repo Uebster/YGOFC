@@ -146,7 +146,25 @@ public class BattleManager : MonoBehaviour
             maxAttacks = 2;
         }
 
-        if (attacker.attacksDeclaredThisTurn >= maxAttacks || attacker.hasAttackedThisTurn) // Mantendo hasAttackedThisTurn para compatibilidade
+        // 0114 - Asura Priest (Pode atacar todos os monstros)
+        if (attacker.CurrentCardData.id == "0114")
+        {
+            int oppMonsters = 0;
+            Transform[] oppZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+            foreach (var z in oppZones) if (z.childCount > 0) oppMonsters++;
+            maxAttacks = Mathf.Max(1, oppMonsters);
+        }
+
+        // 0168 - Berserk Dragon (Pode atacar todos os monstros)
+        if (attacker.CurrentCardData.id == "0168")
+        {
+            int oppMonsters = 0;
+            Transform[] oppZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+            foreach (var z in oppZones) if (z.childCount > 0) oppMonsters++;
+            maxAttacks = Mathf.Max(1, oppMonsters);
+        }
+
+        if (attacker.attacksDeclaredThisTurn >= maxAttacks && attacker.hasAttackedThisTurn) // Corrigido: Permite re-atacar se tiver ataques disponíveis
         {
             Debug.LogWarning("Este monstro já atacou neste turno.");
             return;
@@ -203,6 +221,16 @@ public class BattleManager : MonoBehaviour
         if (target.isPlayerCard == currentAttacker.isPlayerCard)
         {
             Debug.LogWarning("Não pode atacar seu próprio monstro.");
+            return;
+        }
+
+        // 0113 - Astral Barrier
+        if (GameManager.Instance.IsCardActiveOnField("0113") && target.isPlayerCard != currentAttacker.isPlayerCard)
+        {
+            // Simplificação para protótipo: Força a conversão do ataque (Na prática seria opcional)
+            Debug.Log("Astral Barrier: Ataque em monstro convertido em Ataque Direto.");
+            TryDirectAttack();
+            CancelAttack();
             return;
         }
 
@@ -411,8 +439,8 @@ public class BattleManager : MonoBehaviour
         if (DuelFXManager.Instance != null) 
             DuelFXManager.Instance.PlayAttack(attacker, null, null); // Null target = direct
         
-        attacker.hasAttackedThisTurn = true;
         attacker.attacksDeclaredThisTurn++;
+        if (attacker.attacksDeclaredThisTurn >= attacker.maxAttacksPerTurn) attacker.hasAttackedThisTurn = true;
         ClearBattleState();
         if (attacker != null) attacker.SetAttackSelectionVisual(false); // Garante limpeza visual
     }
@@ -680,7 +708,13 @@ public class BattleManager : MonoBehaviour
 
             // Piercing Damage (Dark Driceratops 0407, etc)
             // Adicionado Meteorain (globalPiercing)
-            if (atk > def && (attacker.CurrentCardData.id == "0407" || attacker.CurrentCardData.id == "0059" || attacker.CurrentCardData.id == "0031" || globalPiercing)) 
+            bool hasBigBangShot = false;
+            if (CardEffectManager.Instance != null)
+            {
+                hasBigBangShot = CardEffectManager.Instance.GetEquippedCards(attacker).Exists(c => c.CurrentCardData.id == "0172");
+            }
+            
+            if (atk > def && (attacker.CurrentCardData.id == "0407" || attacker.CurrentCardData.id == "0059" || attacker.CurrentCardData.id == "0031" || globalPiercing || hasBigBangShot)) 
             {
                 int piercing = atk - def;
                 Debug.Log($"Dano Perfurante! {piercing} de dano.");
@@ -704,8 +738,8 @@ public class BattleManager : MonoBehaviour
             CardEffectManager.Instance.OnBattleEnd(attacker, target);
         }
 
-        attacker.hasAttackedThisTurn = true;
         attacker.attacksDeclaredThisTurn++;
+        if (attacker.attacksDeclaredThisTurn >= attacker.maxAttacksPerTurn) attacker.hasAttackedThisTurn = true;
         ClearBattleState();
         if (attacker != null) attacker.SetAttackSelectionVisual(false); // Garante limpeza visual
     }

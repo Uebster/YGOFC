@@ -8,6 +8,8 @@ public partial class CardEffectManager
     public bool negateContinuousSpells = false;
     public bool redirectSpellTarget = false;
     public bool reverseStats = false; // Para Reverse Trap (1526)
+    public bool armoredGlassActive = false; // Para Armored Glass (0103)
+    public string arrayOfRevealingLightType = ""; // Para Array of Revealing Light (0108)
 
     public bool banishInsteadOfGraveyard = false; // Para Macro Cosmos / Dimensional Fissure / Spirit Elimination
 
@@ -145,6 +147,31 @@ public partial class CardEffectManager
             Debug.Log("Panther Warrior: Tributo necessário (Lógica de custo pendente).");
         }
 
+        // Array of Revealing Light (0108)
+        if (GameManager.Instance.IsCardActiveOnField("0108") && attacker.CurrentCardData.race == arrayOfRevealingLightType && attacker.summonedThisTurn)
+        {
+            Debug.Log("Ataque impedido por Array of Revealing Light (Mesmo Tipo e Invocado neste turno).");
+            return false;
+        }
+
+        // 0179 - Big-Tusked Mammoth
+        if (attacker.summonedThisTurn || attacker.wasSpecialSummoned)
+        {
+            bool oppHasMammoth = false;
+            Transform[] oppZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+            foreach (var z in oppZones) {
+                if (z.childCount > 0) {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && m.CurrentCardData.id == "0179" && !m.isFlipped) oppHasMammoth = true;
+                }
+            }
+            if (oppHasMammoth)
+            {
+                Debug.Log("Ataque impedido por Big-Tusked Mammoth.");
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -186,6 +213,26 @@ public partial class CardEffectManager
             }
             if (hasMonsters && onlyDefense) return true;
         }
+
+        // 0193 - Black Tyranno
+        if (attacker != null && attacker.CurrentCardData.id == "0193")
+        {
+            bool onlyDefense = true;
+            bool hasCards = false;
+            foreach (Transform zone in enemyZones) {
+                if (zone.childCount > 0) {
+                    hasCards = true;
+                    CardDisplay m = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && m.position != CardDisplay.BattlePosition.Defense) onlyDefense = false;
+                }
+            }
+            Transform[] enemySpellZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
+            foreach (Transform zone in enemySpellZones) {
+                if (zone.childCount > 0) onlyDefense = false;
+            }
+            if (hasCards && onlyDefense) return true;
+        }
+
         return true;
     }
 
@@ -278,6 +325,7 @@ public partial class CardEffectManager
         negateContinuousSpells = false;
         redirectSpellTarget = false;
         reverseStats = false;
+        armoredGlassActive = false;
         banishInsteadOfGraveyard = false;
 
         // Aplica efeitos contínuos de mudança de posição (ex: Level Limit - Area B)
@@ -376,6 +424,22 @@ public partial class CardEffectManager
                         }
                     }
                     card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, amazonessCount * 400, card));
+                }
+            });
+        }
+
+        if (phase == GamePhase.Battle)
+        {
+            // 0134 - Banner of Courage
+            CheckActiveCards("0134", (card) => {
+                if (GameManager.Instance.duelFieldUI != null) {
+                    Transform[] zones = card.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+                    foreach(var z in zones) {
+                        if (z.childCount > 0) {
+                            var m = z.GetChild(0).GetComponent<CardDisplay>();
+                            if (m != null && !m.isFlipped) m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 200, card));
+                        }
+                    }
                 }
             });
         }
@@ -854,6 +918,7 @@ public partial class CardEffectManager
             // Atualização de Buffs Dinâmicos (Dark Magician Girl, Dark Paladin)
             CheckActiveCards("0420", (card) => UpdateDMGBuff(card)); // DMG
             CheckActiveCards("0428", (card) => UpdateDarkPaladinBuff(card)); // Dark Paladin
+            CheckActiveCards("0195", (card) => UpdateBladeKnightBuff(card)); // Blade Knight
 
             // Manticore of Darkness (1162): Revive loop
             List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
@@ -1064,6 +1129,14 @@ public partial class CardEffectManager
         card.RemoveModifiersFromSource(card);
         if (count > 0)
             card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 500, card));
+    }
+
+    private void UpdateBladeKnightBuff(CardDisplay card)
+    {
+        int handCount = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData().Count : GameManager.Instance.GetOpponentHandData().Count;
+        card.RemoveModifiersFromSource(card);
+        if (handCount <= 1)
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 400, card));
     }
 
     public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, SendReason reason)
@@ -1421,6 +1494,23 @@ public partial class CardEffectManager
         {
             GameManager.Instance.PayLifePoints(isOwnerPlayer, 5000);
         }
+
+        // 0128 - Backfire
+        if (card.attribute == "Fire" && fromLocation == CardLocation.Field)
+        {
+            CheckActiveCards("0128", (source) =>
+            {
+                if (source.isPlayerCard == isOwnerPlayer) Effect_DirectDamage(source, 500);
+            });
+        }
+
+        // 0191 - Black Pendant
+        if (card.id == "0191" && fromLocation == CardLocation.Field)
+        {
+            Debug.Log("Black Pendant: Causando 500 de dano.");
+            if (isOwnerPlayer) GameManager.Instance.DamageOpponent(500);
+            else GameManager.Instance.DamagePlayer(500);
+        }
     }
 
     partial void OnSetImpl(CardDisplay card)
@@ -1511,6 +1601,20 @@ public partial class CardEffectManager
             // Encontra Andro e Teleia e destrói/bane
             // DestroyCards(FindSphinxes(), card.isPlayerCard);
         }
+
+        // 0172 - Big Bang Shot
+        if (card.CurrentCardData.id == "0172")
+        {
+            CardLink[] currentLinks = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+            foreach (var link in currentLinks)
+            {
+                if (link.source == card && link.type == CardLink.LinkType.Equipment && link.target != null)
+                {
+                    Debug.Log($"Big Bang Shot destruído. Banindo {link.target.CurrentCardData.name}.");
+                    GameManager.Instance.BanishCard(link.target);
+                }
+            }
+        }
     }
 
     // Novo Hook para dano de batalha causado (chamado pelo BattleManager)
@@ -1585,6 +1689,28 @@ public partial class CardEffectManager
             if (attacker.isPlayerCard) GameManager.Instance.DrawCard();
             else GameManager.Instance.DrawOpponentCard();
         }
+
+        // 0115 - Aswan Apparition
+        if (attacker.CurrentCardData.id == "0115" && amount > 0 && attacker.isPlayerCard)
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> traps = gy.FindAll(c => c.type.Contains("Trap"));
+            if (traps.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(traps, "Retornar Trap pro Topo", (selected) => {
+                    gy.Remove(selected);
+                    GameManager.Instance.GetPlayerMainDeck().Insert(0, selected);
+                });
+            }
+        }
+
+        // 0164 - Begone, Knave!
+        CheckActiveCards("0164", (source) => {
+            if (amount > 0 && attacker != null) {
+                Debug.Log("Begone, Knave!: Retornando atacante para a mão.");
+                GameManager.Instance.ReturnToHand(attacker);
+            }
+        });
     }
 
     public void UpdateAllMegamorphs()
@@ -1907,7 +2033,33 @@ public partial class CardEffectManager
 
         // Aqui poderíamos verificar Kuriboh na mão, etc.
         // Por enquanto, apenas continua o fluxo.
-        onContinue?.Invoke();
+
+        // 0198 - Blast Held by a Tribute
+        bool trapped = false;
+        if (attacker.isTributeSummoned)
+        {
+            CheckActiveCards("0198", (trap) => {
+                if (trap.isPlayerCard != attacker.isPlayerCard && !trapped)
+                {
+                    trapped = true;
+                    if (UIManager.Instance != null) {
+                        UIManager.Instance.ShowConfirmation($"Ativar {trap.CurrentCardData.name}?", () => {
+                            GameManager.Instance.SendToGraveyard(trap.CurrentCardData, trap.isPlayerCard);
+                            Destroy(trap.gameObject);
+                            
+                            List<CardDisplay> toDestroy = new List<CardDisplay>();
+                            Transform[] zones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+                            foreach(var z in zones) if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().position == CardDisplay.BattlePosition.Attack) toDestroy.Add(z.GetChild(0).GetComponent<CardDisplay>());
+                            
+                            DestroyCards(toDestroy, trap.isPlayerCard);
+                            Effect_DirectDamage(trap, 1000);
+                        }, () => { onContinue?.Invoke(); });
+                    }
+                }
+            });
+        }
+        
+        if (!trapped) onContinue?.Invoke();
     }
 
     public void OnDamageCalculation(CardDisplay attacker, CardDisplay target)
@@ -2133,6 +2285,28 @@ public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
     {
         // Executa o efeito da carta se ela for destruída atacando
         ExecuteCardEffect(attacker);
+    }
+
+    // 0177 - Big Shield Gardna
+    if (target != null && target.CurrentCardData.id == "0177" && target.position == CardDisplay.BattlePosition.Defense && target.isFlipped)
+    {
+        target.ChangePosition();
+        Debug.Log("Big Shield Gardna: Mudou para ataque após ser atacado.");
+    }
+
+    // 0116 - Atomic Firefly
+    if (target != null && target.CurrentCardData.id == "0116" && target.isFlipped && (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk <= attacker.currentAtk : target.currentDef < attacker.currentAtk))
+    {
+        Debug.Log("Atomic Firefly: Causando 1000 de dano ao oponente.");
+        if (target.isPlayerCard) GameManager.Instance.DamageOpponent(1000);
+        else GameManager.Instance.DamagePlayer(1000);
+    }
+
+    // 0189 - BLS - Envoy
+    if (attacker != null && attacker.CurrentCardData.id == "0189" && target != null)
+    {
+        if (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk <= attacker.currentAtk : target.currentDef < attacker.currentAtk)
+            attacker.maxAttacksPerTurn = 2; // Concede segundo ataque
     }
 
     // 1507 - Reflect Bounder (Auto-destruição após cálculo de dano)
@@ -3339,6 +3513,34 @@ partial void OnBattlePositionChangedImpl(CardDisplay card)
         // Lógica de retornar mão ao deck
     }
 }
+
+    partial void OnBattlePositionChangedImpl(CardDisplay card)
+    {
+        // 0169 - Berserk Gorilla
+        if (card.CurrentCardData.id == "0169" && card.position == CardDisplay.BattlePosition.Defense)
+        {
+            Debug.Log("Berserk Gorilla: Auto-destruição em defesa.");
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
+            GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+            Destroy(card.gameObject);
+        }
+
+        // 0196 - Blade Rabbit
+        if (card.CurrentCardData.id == "0196" && card.position == CardDisplay.BattlePosition.Defense && !card.isFlipped)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                    (target) => {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                    }
+                );
+            }
+        }
+    }
 void Effect_SecretBarrel(CardDisplay source)
 {
     Effect_DirectDamage(source, 1000); // Simplificado

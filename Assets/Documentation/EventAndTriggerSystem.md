@@ -355,3 +355,19 @@ Isso evita que o jogador ative a carta à toa (ex: ativar um Equip Spell sem mon
 
 *   **Implementação Futura:** Será necessário criar um método de pré-validação (`CanActivate(CardDisplay card)`) no `CardEffectManager` que será chamado pela UI (Menu de Ação) antes de habilitar o botão "Activate".
 *   **Condição Intermediária:** Enquanto a interface não for automatizada para bloquear o clique, todas as lógicas em `CardEffectManager_Impl` que abrem janelas de seleção **devem** começar checando se há alvos válidos. Se não houver, deve apenas dar um `Debug.Log` ou `ShowMessage` e abortar.
+
+## 19. Lógica Avançada de Batalha (Advanced Battle Logic)
+
+O `BattleManager` foi refatorado para suportar modificações profundas e interações de cálculo de dano diretamente em seu núcleo, diminuindo a complexidade nas cartas individuais.
+
+### 19.1. Interceptação e Reflexão de Dano (`DealBattleDamage`)
+Em vez de acessar o LP diretamente, todo o dano de batalha agora passa pelo helper interno `DealBattleDamage(CardDisplay damageTaker, int damage)`.
+*   Isso permite que cartas como **Amazoness Fighter** (Zera dano) e **Amazoness Swords Woman** (Reflete dano para o oponente) interceptem a transação de dano baseada apenas na sua presença na batalha, sem precisar espalhar IFs por todo o código.
+*   O dano **Perfurante (Piercing)** também é processado nativamente por este método.
+
+### 19.2. Ataques Múltiplos
+A antiga trava booleana `hasAttackedThisTurn` foi atualizada para trabalhar em conjunto com `attacksDeclaredThisTurn` e `maxAttacksPerTurn`.
+*   Por padrão, `maxAttacksPerTurn = 1`. Cartas que atacam múltiplas vezes (ex: **Asura Priest**, **Tyrant Dragon**) apenas aumentam esta variável no momento da declaração (`DeclareAttack`). O sistema de UI e cliques já entende que, se `attacksDeclaredThisTurn < maxAttacksPerTurn`, a carta ainda brilhará e permitirá novos alvos.
+
+### 19.3. Redirecionamento de Alvo e Bloqueio Visual
+Cartas como **Amazoness Tiger** (Taunt passivo) e **Astral Barrier** modificam a seleção de alvo (`SelectTarget`) no exato momento do clique, impedindo o avanço ou transformando o ataque em um "Ataque Direto" forçado sem cancelar a Phase.
