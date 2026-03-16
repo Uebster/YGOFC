@@ -133,6 +133,13 @@ public partial class CardEffectManager
             }
         }
 
+        // 0251 - Burst Stream of Destruction
+        if (BattleManager.Instance != null && BattleManager.Instance.bewdCannotAttackThisTurn && (attacker.CurrentCardData.name == "Blue-Eyes White Dragon" || attacker.CurrentCardData.id == "0213"))
+        {
+            Debug.Log("Blue-Eyes White Dragon não pode atacar porque Burst Stream of Destruction foi ativado.");
+            return false;
+        }
+
         // Para Alligator's Sword Dragon e Amphibious Bugroth MK-3:
         if (attacker.CurrentCardData.id == "0037" || attacker.CurrentCardData.id == "0053")
         {
@@ -919,6 +926,9 @@ public partial class CardEffectManager
             CheckActiveCards("0420", (card) => UpdateDMGBuff(card)); // DMG
             CheckActiveCards("0428", (card) => UpdateDarkPaladinBuff(card)); // Dark Paladin
             CheckActiveCards("0195", (card) => UpdateBladeKnightBuff(card)); // Blade Knight
+            CheckActiveCards("0252", (card) => UpdateBusterBladerBuff(card)); // Buster Blader
+            CheckActiveCards("0292", (card) => UpdateChaosNecromancerBuff(card)); // Chaos Necromancer
+            CheckActiveCards("0214", (card) => UpdateBlueEyesShiningBuff(card)); // Blue-Eyes Shining Dragon
 
             // Manticore of Darkness (1162): Revive loop
             List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
@@ -1137,6 +1147,35 @@ public partial class CardEffectManager
         card.RemoveModifiersFromSource(card);
         if (handCount <= 1)
             card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 400, card));
+    }
+
+    private void UpdateBusterBladerBuff(CardDisplay card)
+    {
+        int count = 0;
+        count += GameManager.Instance.GetOpponentGraveyard().FindAll(c => c.race == "Dragon").Count;
+        if (GameManager.Instance.duelFieldUI != null)
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.race == "Dragon" && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped) count++;
+
+        card.RemoveModifiersFromSource(card);
+        if (count > 0)
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 500, card));
+    }
+
+    private void UpdateChaosNecromancerBuff(CardDisplay card)
+    {
+        int count = card.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.type.Contains("Monster")).Count : GameManager.Instance.GetOpponentGraveyard().FindAll(c => c.type.Contains("Monster")).Count;
+        
+        card.RemoveModifiersFromSource(card);
+        card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, count * 300, card));
+    }
+
+    private void UpdateBlueEyesShiningBuff(CardDisplay card)
+    {
+        int count = card.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.race == "Dragon").Count : GameManager.Instance.GetOpponentGraveyard().FindAll(c => c.race == "Dragon").Count;
+        
+        card.RemoveModifiersFromSource(card);
+        if (count > 0)
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 300, card));
     }
 
     public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, SendReason reason)
@@ -1711,6 +1750,23 @@ public partial class CardEffectManager
                 GameManager.Instance.ReturnToHand(attacker);
             }
         });
+
+        // 0210 - Blood Sucker
+        if (attacker.CurrentCardData.id == "0210" && amount > 0)
+        {
+            Debug.Log("Blood Sucker: Oponente envia 1 carta do topo do Deck para o GY.");
+            GameManager.Instance.MillCards(!attacker.isPlayerCard, 1);
+        }
+
+        // 0280 - Cestus of Dagla
+        bool hasCestus = false;
+        if (CardEffectManager.Instance != null)
+            hasCestus = CardEffectManager.Instance.GetEquippedCards(attacker).Exists(c => c.CurrentCardData.id == "0280");
+        if (hasCestus && amount > 0)
+        {
+            Debug.Log("Cestus of Dagla: Ganha LP igual ao dano.");
+            Effect_GainLP(attacker, amount);
+        }
     }
 
     public void UpdateAllMegamorphs()

@@ -371,3 +371,9 @@ A antiga trava booleana `hasAttackedThisTurn` foi atualizada para trabalhar em c
 
 ### 19.3. Redirecionamento de Alvo e Bloqueio Visual
 Cartas como **Amazoness Tiger** (Taunt passivo) e **Astral Barrier** modificam a seleção de alvo (`SelectTarget`) no exato momento do clique, impedindo o avanço ou transformando o ataque em um "Ataque Direto" forçado sem cancelar a Phase.
+
+## 20. Sistema de Buffs Dinâmicos (Dynamic Stat Buffs)
+Cartas cujos Pontos de Ataque e Defesa flutuam conforme o estado do jogo (Ex: *Buster Blader*, *Chaos Necromancer*, *Muka Muka*) necessitam de manutenção constante, pois o número de cartas nos Cemitérios ou no Campo muda a cada jogada.
+*   **Implementação Global:** Em vez de usar a função `Update()` na carta (o que destruiria a performance), nós injetamos o cálculo desses buffs no hook `OnPhaseStart(GamePhase.End)` do `CardEffectManager_Impl`.
+*   **Lógica de Renovação:** Toda carta com Status Dinâmico possui um helper dedicado (Ex: `UpdateBusterBladerBuff(card)`). Este helper deve **sempre** chamar `card.RemoveModifiersFromSource(card)` antes de adicionar o novo `StatModifier`, prevenindo que os multiplicadores se acumulem infinitamente.
+*   **Resultado:** No final do turno de ambos os jogadores, todos os monstros dinâmicos no campo verificam as listas do jogo e atualizam silenciosamente seus painéis de ATK/DEF.

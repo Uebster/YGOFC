@@ -19,6 +19,9 @@ public class BattleManager : MonoBehaviour
     public bool patricianOfDarknessActive = false; // Patrician of Darkness (1406)
     public bool wabokuActive = false; // Waboku (2047)
     public bool noBattleDamageThisTurn = false; // Winged Kuriboh (2090)
+    public bool bewdCannotAttackThisTurn = false; // Burst Stream of Destruction (0251)
+    public bool terrorkingCanAttackDirectly = false; // Checkmate (0298)
+    public bool crossCounterActive = false; // Cross Counter (0344)
     private bool isBattleResolving = false; // Proteção contra reentrada
 
     // Verifica se a ativação de armadilhas está bloqueada (ex: Mirage Dragon)
@@ -68,6 +71,9 @@ public class BattleManager : MonoBehaviour
         patricianOfDarknessActive = false;
         wabokuActive = false;
         noBattleDamageThisTurn = false;
+        bewdCannotAttackThisTurn = false;
+        terrorkingCanAttackDirectly = false;
+        crossCounterActive = false;
         gravekeepersProtected = false;
         isBattleResolving = false;
     }
@@ -163,6 +169,9 @@ public class BattleManager : MonoBehaviour
             foreach (var z in oppZones) if (z.childCount > 0) oppMonsters++;
             maxAttacks = Mathf.Max(1, oppMonsters);
         }
+
+        // 0369 - Cyber Twin Dragon
+        if (attacker.CurrentCardData.id == "0369") maxAttacks = 2;
 
         if (attacker.attacksDeclaredThisTurn >= maxAttacks && attacker.hasAttackedThisTurn) // Corrigido: Permite re-atacar se tiver ataques disponíveis
         {
@@ -368,6 +377,12 @@ public class BattleManager : MonoBehaviour
                 }
                 return false;
             }
+        }
+
+        // 0298 - Checkmate
+        if (terrorkingCanAttackDirectly && currentAttacker != null && currentAttacker.CurrentCardData.name == "Terrorking Archfiend")
+        {
+            return true;
         }
 
         // 1553 - Rocket Jumper
@@ -674,6 +689,16 @@ public class BattleManager : MonoBehaviour
                 
                 Debug.Log($"Defesa Sólida! Atacante toma {damage} de dano.");
 
+                // 0344 - Cross Counter
+                if (crossCounterActive)
+                {
+                    damage *= 2;
+                    Debug.Log("Cross Counter: Dano de reflexão dobrado! Destruindo atacante.");
+                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard, CardLocation.Field, SendReason.Effect);
+                    Destroy(attacker.gameObject);
+                    crossCounterActive = false;
+                }
+
                 DealBattleDamage(attacker, damage);
 
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayAttackFail(attacker);
@@ -709,12 +734,14 @@ public class BattleManager : MonoBehaviour
             // Piercing Damage (Dark Driceratops 0407, etc)
             // Adicionado Meteorain (globalPiercing)
             bool hasBigBangShot = false;
+            bool hasCyclonLaser = false;
             if (CardEffectManager.Instance != null)
             {
                 hasBigBangShot = CardEffectManager.Instance.GetEquippedCards(attacker).Exists(c => c.CurrentCardData.id == "0172");
+                hasCyclonLaser = CardEffectManager.Instance.GetEquippedCards(attacker).Exists(c => c.CurrentCardData.id == "0374");
             }
             
-            if (atk > def && (attacker.CurrentCardData.id == "0407" || attacker.CurrentCardData.id == "0059" || attacker.CurrentCardData.id == "0031" || globalPiercing || hasBigBangShot)) 
+            if (atk > def && (attacker.CurrentCardData.id == "0407" || attacker.CurrentCardData.id == "0059" || attacker.CurrentCardData.id == "0031" || globalPiercing || hasBigBangShot || hasCyclonLaser)) 
             {
                 int piercing = atk - def;
                 Debug.Log($"Dano Perfurante! {piercing} de dano.");
