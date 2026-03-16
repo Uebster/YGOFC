@@ -16,6 +16,8 @@ public partial class CardEffectManager
 
     public string dnaSurgeryDeclaredType = ""; // Para DNA Surgery (0390)
 
+    public List<CardData> imT_BanishedCards = new List<CardData>(); // Para Interdimensional Matter Transporter
+
     // --- VALIDAÇÃO DE ATAQUE (Movido do BattleManager) ---
 
     public bool CanDeclareAttack(CardDisplay attacker)
@@ -70,6 +72,23 @@ public partial class CardEffectManager
                 }
             }
             if (!hasOtherDragon) return false;
+        }
+
+        // Invitation to a Dark Sleep (0960)
+        CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        foreach(var link in links)
+        {
+            if (link.target == attacker && link.source != null && link.source.CurrentCardData.id == "0960")
+            {
+                Debug.Log("Ataque impedido por Invitation to a Dark Sleep.");
+                return false;
+            }
+        }
+        
+        // Insect Queen (0951)
+        if (attacker.CurrentCardData.id == "0951")
+        {
+            Debug.Log("Insect Queen: Requer tributo para atacar.");
         }
 
         // 2146 - Zombyra the Dark
@@ -340,14 +359,37 @@ public partial class CardEffectManager
         // Aplica efeitos contínuos de mudança de posição (ex: Level Limit - Area B)
         ApplyContinuousPositionChecks();
 
-        if (phase == GamePhase.Standby)
-        {
-            // --- EFEITOS DE STANDBY PHASE ---
+        Debug.Log($"CardEffectManager: Processando efeitos da fase {phase}...");
 
-            // Wave-Motion Cannon (2065): Acumula contador
+        if (phase == GamePhase.Draw)
+        {
+            // Limpa flags de turno
+            List<CardDisplay> allField = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null) {
+                CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allField);
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allField);
+            }
+            foreach (var m in allField) { m.cannotAttackThisTurn = false; m.destroyedMonsterThisTurn = false; }
+            
+            // Cyber Archfiend (0357): Se mão vazia na Draw Phase, compra +1
+            CheckActiveCards("0357", (card) =>
+            {
+                List<CardData> hand = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+                if (hand.Count == 0)
+                {
+                    Debug.Log("Cyber Archfiend: Mão vazia. Compra extra.");
+                    if (card.isPlayerCard) GameManager.Instance.DrawCard(); else GameManager.Instance.DrawOpponentCard();
+                }
+            });
+        }
+        else if (phase == GamePhase.Standby)
+        {
+            // 1. Custos de Manutenção (Maintenance Costs)
+            CheckMaintenanceCosts();
+
+            // 2. Wave-Motion Cannon (2065): Acumula contador
             CheckActiveCards("2065", (card) =>
             {
-                // O contador aumenta na Standby Phase do controlador
                 if (card.isPlayerCard == GameManager.Instance.isPlayerTurn)
                 {
                     card.turnCounter++;
@@ -355,7 +397,7 @@ public partial class CardEffectManager
                 }
             });
 
-            // Processa contadores de destruição retardada
+            // 3. Processa contadores de destruição retardada
             List<CardDisplay> allMonsters = new List<CardDisplay>();
             if (GameManager.Instance.duelFieldUI != null)
             {
@@ -363,11 +405,10 @@ public partial class CardEffectManager
                 CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allMonsters);
             }
 
-            foreach (var monster in allMonsters.ToList()) // Usar ToList para poder modificar a coleção original
+            foreach (var monster in allMonsters.ToList())
             {
                 if (monster != null && monster.destructionTurnCountdown > 0)
                 {
-                    // O contador diminui no início do turno do jogador que ativou o efeito
                     if (monster.destructionCountdownOwnerIsPlayer == GameManager.Instance.isPlayerTurn)
                     {
                         monster.destructionTurnCountdown--;
@@ -383,13 +424,12 @@ public partial class CardEffectManager
                 }
             }
 
-            // Processa Reviver na Próxima Standby (Vampire Lord, Vampire's Curse)
+            // 4. Processa Reviver na Próxima Standby (Vampire Lord, Vampire's Curse, etc)
             if (reviveNextStandby.Count > 0)
             {
                 for (int i = reviveNextStandby.Count - 1; i >= 0; i--)
                 {
                     CardData cardData = reviveNextStandby[i];
-                    // Verifica se está no GY do jogador atual
                     bool inPlayerGY = GameManager.Instance.GetPlayerGraveyard().Contains(cardData);
                     bool inOppGY = GameManager.Instance.GetOpponentGraveyard().Contains(cardData);
 
@@ -408,23 +448,17 @@ public partial class CardEffectManager
                 }
             }
 
-            // 2076 - White Magician Pikeru
-            CheckActiveCards("2076", (card) =>
-            {
-                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && card.position == CardDisplay.BattlePosition.Defense)
-                {
-                    int monsterCount = GameManager.Instance.GetFieldCardCount(card.isPlayerCard); // Simplificado, conta tudo
-                    // Contagem correta de monstros
-                    // ...
+            // 5. Demais efeitos de Standby Phase
+            CheckActiveCards("2076", (card) => { // White Magician Pikeru
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && card.position == CardDisplay.BattlePosition.Defense) {
+                    int monsterCount = GameManager.Instance.GetFieldCardCount(card.isPlayerCard);
                     Effect_GainLP(card, monsterCount * 400);
                 }
             });
 
-            // 0049 - Amazoness Tiger (Buff Contínuo atualizado na Standby)
-            CheckActiveCards("0049", (card) => {
+            CheckActiveCards("0049", (card) => { // Amazoness Tiger
                 int amazonessCount = 0;
-                if (GameManager.Instance.duelFieldUI != null)
-                {
+                if (GameManager.Instance.duelFieldUI != null) {
                     Transform[] zones = card.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
                     foreach(var z in zones) {
                         if (z.childCount > 0) {
@@ -432,25 +466,260 @@ public partial class CardEffectManager
                             if (m != null && m.CurrentCardData.name.Contains("Amazoness")) amazonessCount++;
                         }
                     }
-                    card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, amazonessCount * 400, card));
+                    card.RemoveModifiersFromSource(card);
+                    card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, 1100 + (amazonessCount * 400), card));
                 }
             });
 
-            // 0814 - Graverobber's Retribution
-            CheckActiveCards("0814", (card) => {
-                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn)
-                {
+            CheckActiveCards("0814", (card) => { // Graverobber's Retribution
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
                     int banished = card.isPlayerCard ? GameManager.Instance.GetOpponentRemoved().Count : GameManager.Instance.GetPlayerRemoved().Count;
                     if (banished > 0) Effect_DirectDamage(card, banished * 100);
                 }
             });
-        }
 
-        if (phase == GamePhase.Battle)
+            CheckActiveCards("0393", (card) => { // Dancing Fairy
+                if (card.position == CardDisplay.BattlePosition.Defense && card.isPlayerCard == GameManager.Instance.isPlayerTurn) Effect_GainLP(card, 1000);
+            });
+            
+            // 0937 - Infernalqueen Archfiend
+            CheckActiveCards("0937", (card) => {
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && SpellTrapManager.Instance != null) {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name.Contains("Archfiend"),
+                        (target) => {
+                            target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 1000, card));
+                            Debug.Log($"Infernalqueen Archfiend: +1000 ATK para {target.CurrentCardData.name} até End Phase.");
+                        }
+                    );
+                }
+            });
+
+            // 0953 - Inspection
+            CheckActiveCards("0953", (card) => {
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    if (Effect_PayLP(card, 500)) {
+                        List<CardData> oppHand = card.isPlayerCard ? GameManager.Instance.GetOpponentHandData() : GameManager.Instance.GetPlayerHandData();
+                        if (oppHand.Count > 0) {
+                            CardData randomCard = oppHand[Random.Range(0, oppHand.Count)];
+                            Debug.Log($"Inspection: Carta revelada da mão: {randomCard.name}");
+                        }
+                    }
+                }
+            });
+
+            // 0965 - Jam Breeding Machine
+            CheckActiveCards("0965", (card) => {
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    GameManager.Instance.SpawnToken(card.isPlayerCard, 500, 500, "Slime Token");
+                }
+            });
+
+            // Darklord Marie (0453)
+            List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
+            foreach (var cardData in myGY) {
+                if (cardData.id == "0453" && GameManager.Instance.isPlayerTurn) {
+                    Debug.Log("Darklord Marie (GY): Ganha 200 LP.");
+                    GameManager.Instance.playerLP += 200;
+                }
+            }
+
+            CheckActiveCards("0132", (card) => { // Balloon Lizard
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) card.AddSpellCounter(1);
+            });
+
+            CheckActiveCards("0201", (card) => { // Blast Sphere
+                if (card.spellCounters > 0 && card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    Debug.Log("Blast Sphere: Detonando!");
+                    Effect_DirectDamage(card, card.currentAtk);
+                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                    Destroy(card.gameObject);
+                }
+            });
+
+            CheckActiveCards("0206", (card) => { // Blind Destruction
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) Effect_0206_BlindDestruction_Logic_Impl(card);
+            });
+
+            CheckActiveCards("0235", (card) => { // Bowganian
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) Effect_DirectDamage(card, 600);
+            });
+
+            CheckActiveCards("0238", (card) => { // Brain Jacker
+                if (!card.isPlayerCard && !GameManager.Instance.isPlayerTurn) Effect_GainLP(card, 500);
+            });
+
+            CheckActiveCards("0248", (card) => { // Burning Land
+                if (GameManager.Instance.isPlayerTurn) GameManager.Instance.DamagePlayer(500);
+                else GameManager.Instance.DamageOpponent(500);
+            });
+
+            CheckActiveCards("0232", (card) => { // Bottomless Shifting Sand
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    int handCount = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData().Count : GameManager.Instance.GetOpponentHandData().Count;
+                    if (handCount <= 4) {
+                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                        Destroy(card.gameObject);
+                    }
+                }
+            });
+
+            CheckActiveCards("0372", (card) => { // Cybernetic Cyclopean
+                List<CardData> hand = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+                card.RemoveModifiersFromSource(card);
+                if (hand.Count == 0) card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, 2400, card));
+            });
+
+            CheckActiveCards("0402", (card) => { // Dark Catapulter
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && card.position == CardDisplay.BattlePosition.Defense) card.AddSpellCounter(1);
+            });
+
+            CheckActiveCards("0394", (card) => { // Dangerous Machine Type-6
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    int roll = Random.Range(1, 7);
+                    Debug.Log($"Dangerous Machine Type-6: Rolou {roll}.");
+                    if (roll == 6) {
+                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                        Destroy(card.gameObject);
+                    } else if (roll == 1) {
+                        GameManager.Instance.DiscardRandomHand(card.isPlayerCard, 1);
+                    }
+                }
+            });
+
+            CheckActiveCards("1060", (card) => { // Lava Golem
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) GameManager.Instance.DamagePlayer(1000);
+                else if (!card.isPlayerCard && !GameManager.Instance.isPlayerTurn) GameManager.Instance.DamageOpponent(1000);
+            });
+
+            CheckActiveCards("1171", (card) => { // Mask of Dispel
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+                    foreach (var link in links) {
+                        if (link.source == card && link.target != null) {
+                            if (link.target.isPlayerCard) GameManager.Instance.DamagePlayer(500);
+                            else GameManager.Instance.DamageOpponent(500);
+                        }
+                    }
+                }
+            });
+
+            CheckActiveCards("1244", (card) => { // Minor Goblin Official
+                if (!card.isPlayerCard && !GameManager.Instance.isPlayerTurn && GameManager.Instance.opponentLP <= 3000) Effect_DirectDamage(card, 500);
+                else if (card.isPlayerCard && GameManager.Instance.isPlayerTurn && GameManager.Instance.playerLP <= 3000) Effect_DirectDamage(card, 500); 
+            });
+
+            CheckActiveCards("1250", (card) => { // Mirage of Nightmare
+                if (card.isPlayerCard != GameManager.Instance.isPlayerTurn) { // Standby do Oponente
+                    int handCount = (!card.isPlayerCard) ? GameManager.Instance.GetPlayerHandData().Count : GameManager.Instance.GetOpponentHandData().Count;
+                    if (handCount < 4) {
+                        int toDraw = 4 - handCount;
+                        for (int i = 0; i < toDraw; i++) {
+                            if (!card.isPlayerCard) GameManager.Instance.DrawCard();
+                            else GameManager.Instance.DrawOpponentCard();
+                        }
+                        card.spellCounters = toDraw; 
+                    }
+                } else { // Sua Standby
+                    if (card.spellCounters > 0) {
+                        GameManager.Instance.DiscardRandomHand(card.isPlayerCard, card.spellCounters);
+                        card.spellCounters = 0;
+                    }
+                }
+            });
+
+            CheckActiveCards("1755", (card) => { // Spirit's Invitation
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    if (!Effect_PayLP(card, 500)) {
+                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                        Destroy(card.gameObject);
+                    }
+                }
+            });
+
+            CheckActiveCards("1775", (card) => { // Stim-Pack
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+                    foreach (var link in links) {
+                        if (link.source == card && link.target != null) {
+                            link.target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -200, card));
+                        }
+                    }
+                }
+            });
+
+            CheckActiveCards("1859", (card) => { // The Eye of Truth
+                if (card.isPlayerCard != GameManager.Instance.isPlayerTurn) {
+                    List<CardData> oppHand = card.isPlayerCard ? GameManager.Instance.GetOpponentHandData() : GameManager.Instance.GetPlayerHandData();
+                    if (oppHand.Exists(c => c.type.Contains("Spell"))) {
+                        GameManager.Instance.GainLifePoints(!card.isPlayerCard, 1000); 
+                    }
+                }
+            });
+
+            CheckActiveCards("1902", (card) => { // The Unfriendly Amazon
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    if (!SummonManager.Instance.HasEnoughTributes(1, card.isPlayerCard)) {
+                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                        Destroy(card.gameObject);
+                    }
+                }
+            });
+            
+            CheckActiveCards("1283", (card) => { // Mucus Yolk
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && card.battledThisTurn) {
+                    card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 1000, card));
+                    card.battledThisTurn = false;
+                }
+            });
+
+            CheckActiveCards("1328", (card) => { // Needle Wall
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    int roll = Random.Range(1, 7);
+                    Debug.Log($"Needle Wall: Rolou {roll}.");
+                }
+            });
+
+            CheckActiveCards("1344", (card) => { // Nightmare Wheel
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+                    foreach (var link in links) {
+                        if (link.source == card && link.target != null) {
+                            Effect_DirectDamage(card, 500);
+                        }
+                    }
+                }
+            });
+
+            // 1578 - Sacred Phoenix of Nephthys
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            CardData phoenix = gy.Find(c => c.id == "1578");
+            if (phoenix != null && GameManager.Instance.isPlayerTurn) {
+                Debug.Log("Sacred Phoenix of Nephthys: Revivendo na Standby Phase.");
+                GameManager.Instance.SpecialSummonFromData(phoenix, true);
+                gy.Remove(phoenix);
+                Effect_HeavyStorm(null); 
+            }
+
+            // 1465 - Pumpking the King of Ghosts
+            CheckActiveCards("1465", (card) => {
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && (GameManager.Instance.IsCardActiveOnField("Castle of Dark Illusions") || GameManager.Instance.IsCardActiveOnField("1270"))) {
+                    if (card.spellCounters < 4) {
+                        card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 100, card));
+                        card.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 100, card));
+                        card.spellCounters++;
+                    }
+                }
+            });
+
+            CheckActiveCards("1810", (card) => { // Swords of Concealing Light
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) HandleTurnCounter(card);
+            });
+        }
+        else if (phase == GamePhase.Battle)
         {
-            // 0134 - Banner of Courage
-            CheckActiveCards("0134", (card) => {
-                if (GameManager.Instance.duelFieldUI != null) {
+            CheckActiveCards("0134", (card) => { // Banner of Courage
+                if (GameManager.Instance.duelFieldUI != null && card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
                     Transform[] zones = card.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
                     foreach(var z in zones) {
                         if (z.childCount > 0) {
@@ -461,12 +730,9 @@ public partial class CardEffectManager
                 }
             });
         }
-
-        if (phase == GamePhase.End)
+        else if (phase == GamePhase.End)
         {
-            // --- EFEITOS DE END PHASE ---
-
-            // Processa destruição agendada para a End Phase (Wild Nature's Release)
+            // 1. Destruição agendada
             List<CardDisplay> toDestroy = new List<CardDisplay>();
             if (GameManager.Instance.duelFieldUI != null)
             {
@@ -481,468 +747,98 @@ public partial class CardEffectManager
                 Destroy(monster.gameObject);
             }
 
-            // 1757 - Spiritual Energy Settle Machine (Manutenção)
-            bool machineActive = false;
-            CheckActiveCards("1757", (card) =>
-            {
-                machineActive = true;
-                if (card.isPlayerCard) // Apenas o controlador paga o custo
-                {
-                    if (GameManager.Instance.GetPlayerHandData().Count > 0)
-                    {
-                        UIManager.Instance.ShowConfirmation("Manter 'Spiritual Energy Settle Machine' (descartar 1 carta)?",
-                        () =>
-                        {
-                            // Jogador escolhe qual carta descartar
-                            GameManager.Instance.OpenCardSelection(GameManager.Instance.GetPlayerHandData(), "Descarte 1 para manter a Máquina", (toDiscardData) =>
-                            {
-                                if (toDiscardData != null)
-                                {
-                                    var cardToDiscard = GameManager.Instance.playerHand.Find(go => go.GetComponent<CardDisplay>().CurrentCardData == toDiscardData);
-                                    if (cardToDiscard != null) GameManager.Instance.DiscardCard(cardToDiscard.GetComponent<CardDisplay>());
-                                }
-                                else // Jogador cancelou a seleção de descarte
-                                {
-                                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
-                                    Destroy(card.gameObject);
-                                }
-                            });
-                        },
-                        () =>
-                        { // Jogador escolheu "Não" na confirmação
-                            GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
-                            Destroy(card.gameObject);
-                        });
-                    }
-                    else
-                    {
-                        Debug.Log("Spiritual Energy Settle Machine: Sem cartas para descartar. Destruída.");
-                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
-                        Destroy(card.gameObject);
-                    }
-                }
-            });
-
-            // Lógica de Retorno de Monstros Spirit
-            if (!machineActive)
-            {
-                List<CardDisplay> monstersToReturn = new List<CardDisplay>();
-                if (GameManager.Instance.duelFieldUI != null)
-                {
-                    CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, monstersToReturn);
-                    CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, monstersToReturn);
-                }
-
-                foreach (var monster in monstersToReturn.ToList()) // Itera sobre uma cópia para poder modificar a original
-                {
-                    string id = monster.CurrentCardData.id;
-                    if (id == "0114" || id == "2128" || id == "1141" || id == "0933" || id == "1798") // Asura, Yata, Maharaghi, Inaba, Susa
-                    {
-                        if (monster.summonedThisTurn) // Só retornam no turno que foram invocados/flipados
-                        {
-                            GameManager.Instance.ReturnToHand(monster);
-                        }
-                    }
-                }
-            }
-        }
-
-        Debug.Log($"CardEffectManager: Processando efeitos da fase {phase}...");
-
-        if (phase == GamePhase.Draw)
-        {
-            // Cyber Archfiend (0357): Se mão vazia na Draw Phase, compra +1
-            CheckActiveCards("0357", (card) =>
-            {
-                List<CardData> hand = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
-                if (hand.Count == 0)
-                {
-                    Debug.Log("Cyber Archfiend: Mão vazia. Compra extra.");
-                    if (card.isPlayerCard) GameManager.Instance.DrawCard(); else GameManager.Instance.DrawOpponentCard();
-                }
-            });
-        }
-        if (phase == GamePhase.Standby)
-        {
-            // 1. Custos de Manutenção (Maintenance Costs)
-            CheckMaintenanceCosts();
-
-            // 2. Efeitos de Fase (Phase Triggers)
-
-            // Dancing Fairy (0393): Ganha 1000 LP se em Defesa
-            CheckActiveCards("0393", (card) =>
-            {
-                if (card.position == CardDisplay.BattlePosition.Defense && card.isPlayerCard)
-                {
-                    Effect_GainLP(card, 1000);
-                }
-            });
-
-            // Darklord Marie (0453): Ganha 200 LP se no GY
-            List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
-            foreach (var cardData in myGY)
-            {
-                if (cardData.id == "0453")
-                {
-                    Debug.Log("Darklord Marie (GY): Ganha 200 LP.");
-                    GameManager.Instance.playerLP += 200;
-                    // TODO: Atualizar UI
-                }
-            }
-
-            // Balloon Lizard (0132): Add counter
-            CheckActiveCards("0132", (card) =>
-            {
-                if (card.isPlayerCard) card.AddSpellCounter(1);
-            });
-
-            // Blast Sphere (0201): Destroy equipped and burn
-            CheckActiveCards("0201", (card) =>
-            {
-                // Se tiver contador (marcado no BattleManager), é a standby phase seguinte
-                if (card.spellCounters > 0)
-                {
-                    // Encontra quem ele está equipando (via CardLink ou lógica simplificada)
-                    // Simplificação: Destrói o card e causa dano igual ao ATK dele (ou do alvo, regra diz ATK do alvo)
-                    // Como não temos referência fácil ao alvo aqui sem iterar links, vamos simular dano fixo ou do próprio card
-                    Debug.Log("Blast Sphere: Detonando!");
-                    Effect_DirectDamage(card, card.currentAtk); // Simplificado
-                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
-                    Destroy(card.gameObject);
-                }
-            });
-
-            // Blind Destruction (0206)
-            CheckActiveCards("0206", (card) =>
-            {
-                if (card.isPlayerCard)
-                {
-                    Effect_0206_BlindDestruction_Logic_Impl(card);
-                }
-            });
-
-            // Bowganian (0235): 600 dano na Standby
-            CheckActiveCards("0235", (card) =>
-            {
-                if (card.isPlayerCard) Effect_DirectDamage(card, 600);
-            });
-
-            // Brain Jacker (0238): Ganha 500 LP na Standby do oponente
-            CheckActiveCards("0238", (card) =>
-            {
-                // Se está no campo do oponente (foi equipado e trocou controle), o dono original ganha LP?
-                // Texto: "During your opponent's Standby Phase, gain 500 Life Points." (Referindo-se ao controlador do monstro equipado/efeito)
-                // Como Brain Jacker vira Equip, ele fica na S/T zone.
-                if (!card.isPlayerCard) // É a vez do oponente
-                {
-                    Effect_GainLP(card, 500);
-                }
-            });
-
-            // Burning Land (0248): 500 dano na Standby
-            CheckActiveCards("0248", (card) =>
-            {
-                // Dano para o jogador do turno
-                if (card.isPlayerCard) GameManager.Instance.DamagePlayer(500);
-                else GameManager.Instance.DamageOpponent(500);
-            });
-
-            // Bottomless Shifting Sand (0232): Destrói se mão <= 4
-            CheckActiveCards("0232", (card) =>
-            {
-                if (card.isPlayerCard)
-                {
-                    int handCount = GameManager.Instance.GetPlayerHandData().Count;
-                    if (handCount <= 4)
-                    {
-                        Debug.Log("Bottomless Shifting Sand: Mão <= 4. Auto-destruição.");
-                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
-                        Destroy(card.gameObject);
-                    }
-                }
-            });
-
-            // Cybernetic Cyclopean (0372): ATK vira 2400 se mão vazia
-            CheckActiveCards("0372", (card) =>
-            {
-                List<CardData> hand = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
-                if (hand.Count == 0)
-                {
-                    // Define ATK base para 2400 (Original 1400 + 1000)
-                    // Usamos um modificador temporário que dura até a próxima verificação ou permanente que removemos se a condição falhar
-                    card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, 2400, card));
-                }
-            });
-
-            // Dark Catapulter (0402): Add counter in Standby if Defense
-            CheckActiveCards("0402", (card) =>
-            {
-                if (card.isPlayerCard && card.position == CardDisplay.BattlePosition.Defense)
-                    card.AddSpellCounter(1);
-            });
-
-            // Dangerous Machine Type-6 (0394): Rola dado na Standby
-            CheckActiveCards("0394", (card) =>
-            {
-                if (card.isPlayerCard)
-                {
-                    int roll = Random.Range(1, 7);
-                    Debug.Log($"Dangerous Machine Type-6: Rolou {roll}.");
-                    if (roll == 6)
-                    {
-                        Debug.Log("Rolou 6: Destrói a si mesmo.");
-                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
-                        Destroy(card.gameObject);
-                    }
-                    else if (roll == 1)
-                    {
-                        Debug.Log("Rolou 1: Descarta 1 carta.");
-                        GameManager.Instance.DiscardRandomHand(true, 1);
-                    }
-                    // Outros efeitos (2-5) são aplicados em outras fases ou são passivos
-                }
-            });
-
-            // Lava Golem (1060): 1000 damage to controller
-            CheckActiveCards("1060", (card) =>
-            {
-                // The controller takes damage.
-                // If card.isPlayerCard is true, it means the player controls it.
-                if (card.isPlayerCard) GameManager.Instance.DamagePlayer(1000);
-                else GameManager.Instance.DamageOpponent(1000);
-                Debug.Log("Lava Golem: 1000 damage to controller.");
-            });
-
-            // Mask of Dispel (1171): 500 damage to controller of targeted spell
-            CheckActiveCards("1171", (card) =>
-            {
-                // Encontra o alvo via links
-                CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
-                foreach (var link in links)
-                {
-                    if (link.source == card && link.target != null)
-                    {
-                        int dmg = 500;
-                        if (link.target.isPlayerCard) GameManager.Instance.DamagePlayer(dmg);
-                        else GameManager.Instance.DamageOpponent(dmg);
-                        Debug.Log("Mask of Dispel: 500 de dano.");
-                    }
-                }
-            });
-
-            // 1244 - Minor Goblin Official
-            CheckActiveCards("1244", (card) =>
-            {
-                if (GameManager.Instance.opponentLP <= 3000 && !card.isPlayerCard) // Turno do oponente
-                {
-                    Effect_DirectDamage(card, 500);
-                }
-            });
-
-            // 1250 - Mirage of Nightmare
-            CheckActiveCards("1250", (card) =>
-            {
-                if (!card.isPlayerCard) // Standby do Oponente: Compra até 4
-                {
-                    int handCount = GameManager.Instance.GetPlayerHandData().Count;
-                    if (handCount < 4)
-                    {
-                        int toDraw = 4 - handCount;
-                        for (int i = 0; i < toDraw; i++) GameManager.Instance.DrawCard();
-                        card.spellCounters = toDraw; // Armazena quantos comprou
-                    }
-                }
-                else // Sua Standby: Descarta
-                {
-                    if (card.spellCounters > 0)
-                    {
-                        GameManager.Instance.DiscardRandomHand(true, card.spellCounters);
-                        card.spellCounters = 0;
-                    }
-                }
-            });
-
-            // 1755 - Spirit's Invitation
-            CheckActiveCards("1755", (card) =>
-            {
-                if (card.isPlayerCard)
-                {
-                    if (!Effect_PayLP(card, 500))
-                    {
-                        Debug.Log("Spirit's Invitation: Manutenção não paga. Destruída.");
-                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
-                        Destroy(card.gameObject);
-                    }
-                }
-            });
-
-            // 1757 - Spiritual Energy Settle Machine
-            CheckActiveCards("1757", (card) =>
-            {
-                if (card.isPlayerCard)
-                {
-                    // Discard 1 card or destroy
-                    if (GameManager.Instance.GetPlayerHandData().Count > 0)
-                    {
-                        GameManager.Instance.DiscardRandomHand(true, 1); // Simplificado
-                    }
-                    else
-                    {
-                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
-                        Destroy(card.gameObject);
-                    }
-                }
-            });
-
-            // 1775 - Stim-Pack
-            CheckActiveCards("1775", (card) =>
-            {
-                // Encontra o monstro equipado
-                CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
-                foreach (var link in links)
-                {
-                    if (link.source == card && link.target != null)
-                    {
-                        link.target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -200, card));
-                        Debug.Log($"Stim-Pack: {link.target.CurrentCardData.name} perdeu 200 ATK.");
-                    }
-                }
-            });
-
-            // 1859 - The Eye of Truth
-            CheckActiveCards("1859", (card) =>
-            {
-                if (!card.isPlayerCard) // Standby do oponente
-                {
-                    List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
-                    if (oppHand.Exists(c => c.type.Contains("Spell")))
-                    {
-                        GameManager.Instance.GainLifePoints(false, 1000); // Oponente ganha LP
-                    }
-                }
-            });
-
-            // 1902 - The Unfriendly Amazon
-            CheckActiveCards("1902", (card) =>
-            {
-                if (card.isPlayerCard)
-                {
-                    // Tribute or destroy
-                    // Simplified: Destroy if no tribute available or chosen
-                    if (!SummonManager.Instance.HasEnoughTributes(1, true))
-                    {
-                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
-                        Destroy(card.gameObject);
-                    }
-                    else
-                    {
-                        // Prompt tribute (Simulated: Just log)
-                        Debug.Log("The Unfriendly Amazon: Manutenção (Tributo pendente).");
-                    }
-                }
-            });
-
-            // 1046 - Labyrinth of Nightmare
-            CheckActiveCards("1046", (card) =>
-            {
-                if (GameManager.Instance.duelFieldUI != null)
-                {
-                    List<CardDisplay> all = new List<CardDisplay>();
-                    CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
-                    CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
-                    foreach (var m in all) m.ChangePosition();
-                    Debug.Log("Labyrinth of Nightmare: Posições alteradas na End Phase.");
-                }
-            });
-
-            // 1093 - Little-Winguard
-            CheckActiveCards("1093", (card) =>
-            {
-                if (card.isPlayerCard) card.ChangePosition(); // Simplificado: Muda automaticamente ou pede confirmação
-            });
-
-            // Solar Flare Dragon (1686): Dano na End Phase (mas vamos por aqui como exemplo de estrutura)
-            // (Na verdade é End Phase, movido para lá se fosse o caso)
-        }
-        else if (phase == GamePhase.End)
-        {
-            // Solar Flare Dragon (1686): 500 dano
-            CheckActiveCards("1686", (card) =>
-            {
-                if (card.isPlayerCard) Effect_DirectDamage(card, 500);
-            });
-
-            // Limpa buffs temporários de todas as cartas no campo
-            // (Isso deveria ser feito em todos os monstros, não só nos ativos)
+            // 2. Limpa buffs temporários de todas as cartas no campo
             if (GameManager.Instance.duelFieldUI != null)
             {
                 CleanAllExpiredModifiers();
             }
 
-            // Bottomless Shifting Sand (0232): Destrói maior ATK na End Phase do oponente
-            // (Se phase == End e é o turno do oponente)
-            // Nota: OnPhaseStart é chamado para o turno atual. Precisamos saber de quem é o turno.
-            // Assumindo que OnPhaseStart roda no cliente para o estado atual do jogo.
-            // Se for End Phase do oponente:
-            bool isOpponentTurn = !GameManager.Instance.canPlacePlayerCards; // Simplificação
-            if (isOpponentTurn)
-            {
-                CheckActiveCards("0232", (card) =>
-                {
-                    if (card.isPlayerCard)
-                    {
-                        Debug.Log("Bottomless Shifting Sand: Destruindo monstro(s) com maior ATK.");
-                        // Encontrar maior ATK
-                        int maxAtk = -1;
-                        List<CardDisplay> targets = new List<CardDisplay>();
-                        CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, targets);
-                        CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, targets);
-
-                        foreach (var m in targets) if (m.currentAtk > maxAtk) maxAtk = m.currentAtk;
-
-                        List<CardDisplay> toDestroy = targets.FindAll(m => m.currentAtk == maxAtk);
-                        DestroyCards(toDestroy, true);
+            // 3. Spiritual Energy Settle Machine e Spirits
+            bool machineActive = false;
+            CheckActiveCards("1757", (card) => {
+                machineActive = true;
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    if (GameManager.Instance.GetPlayerHandData().Count > 0) {
+                        GameManager.Instance.DiscardRandomHand(card.isPlayerCard, 1);
+                    } else {
+                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                        Destroy(card.gameObject);
                     }
-                });
+                }
+            });
+
+            if (!machineActive) {
+                List<CardDisplay> monstersToReturn = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null) {
+                    CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, monstersToReturn);
+                    CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, monstersToReturn);
+                }
+                foreach (var monster in monstersToReturn.ToList()) {
+                    string id = monster.CurrentCardData.id;
+                    if (id == "0114" || id == "2128" || id == "1141" || id == "0933" || id == "1798" || id == "0408") {
+                        if (monster.summonedThisTurn) GameManager.Instance.ReturnToHand(monster);
+                    }
+                }
             }
 
-            // Dark Dust Spirit (0408): Return to hand
-            CheckActiveCards("0408", (card) =>
+            // Interdimensional Matter Transporter (0954) Return
+            if (imT_BanishedCards.Count > 0)
             {
-                if (card.isPlayerCard && card.isFlipped == false) // Face-up
+                foreach(var c in imT_BanishedCards.ToList())
                 {
-                    Debug.Log("Dark Dust Spirit: Retornando para a mão.");
-                    GameManager.Instance.ReturnToHand(card);
+                    Debug.Log($"IMT: Retornando {c.name} ao campo.");
+                    bool isPlayerOwner = GameManager.Instance.GetPlayerRemoved().Contains(c);
+                    if (isPlayerOwner) GameManager.Instance.GetPlayerRemoved().Remove(c);
+                    else GameManager.Instance.GetOpponentRemoved().Remove(c);
+                    GameManager.Instance.SpecialSummonFromData(c, isPlayerOwner);
+                }
+                imT_BanishedCards.Clear();
+            }
+
+            // 4. Efeitos Específicos
+            CheckActiveCards("1686", (card) => { // Solar Flare Dragon
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) Effect_DirectDamage(card, 500);
+            });
+
+            CheckActiveCards("0232", (card) => { // Bottomless Shifting Sand
+                if (card.isPlayerCard != GameManager.Instance.isPlayerTurn) { // End Phase do oponente
+                    int maxAtk = -1;
+                    List<CardDisplay> targets = new List<CardDisplay>();
+                    CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, targets);
+                    CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, targets);
+                    foreach (var m in targets) if (m.currentAtk > maxAtk) maxAtk = m.currentAtk;
+                    List<CardDisplay> killList = targets.FindAll(m => m.currentAtk == maxAtk);
+                    DestroyCards(killList, card.isPlayerCard);
                 }
             });
 
-            // Dark Magician of Chaos (0422): Add Spell from GY
-            CheckActiveCards("0422", (card) =>
-            {
-                if (card.isPlayerCard && card.summonedThisTurn)
-                {
-                    // Simplificado: Pega a primeira spell
-                    List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            CheckActiveCards("0422", (card) => { // Dark Magician of Chaos
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && card.summonedThisTurn) {
+                    List<CardData> gy = card.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
                     CardData spell = gy.Find(c => c.type.Contains("Spell"));
-                    if (spell != null)
-                    {
-                        Debug.Log($"DMoC: Recuperando {spell.name}.");
+                    if (spell != null) {
                         gy.Remove(spell);
-                        GameManager.Instance.AddCardToHand(spell, true);
+                        GameManager.Instance.AddCardToHand(spell, card.isPlayerCard);
                     }
                 }
             });
 
-            // Atualização de Buffs Dinâmicos (Dark Magician Girl, Dark Paladin)
-            CheckActiveCards("0420", (card) => UpdateDMGBuff(card)); // DMG
-            CheckActiveCards("0428", (card) => UpdateDarkPaladinBuff(card)); // Dark Paladin
-            CheckActiveCards("0195", (card) => UpdateBladeKnightBuff(card)); // Blade Knight
-            CheckActiveCards("0252", (card) => UpdateBusterBladerBuff(card)); // Buster Blader
-            CheckActiveCards("0292", (card) => UpdateChaosNecromancerBuff(card)); // Chaos Necromancer
-            CheckActiveCards("0214", (card) => UpdateBlueEyesShiningBuff(card)); // Blue-Eyes Shining Dragon
+            CheckActiveCards("0883", (card) => { // Helpoemer
+            });
+            if (!GameManager.Instance.isPlayerTurn) { // End Phase do oponente
+                List<CardData> pGY = GameManager.Instance.GetPlayerGraveyard();
+                if (pGY.Exists(c => c.id == "0883")) GameManager.Instance.DiscardRandomHand(false, 1);
+            }
 
-            // 0832 - Gren Maju Da Eiza
-            CheckActiveCards("0832", (card) => {
+            // Buffs Dinâmicos (UpdateStats)
+            CheckActiveCards("0420", (card) => UpdateDMGBuff(card));
+            CheckActiveCards("0428", (card) => UpdateDarkPaladinBuff(card));
+            CheckActiveCards("0195", (card) => UpdateBladeKnightBuff(card));
+            CheckActiveCards("0252", (card) => UpdateBusterBladerBuff(card));
+            CheckActiveCards("0292", (card) => UpdateChaosNecromancerBuff(card));
+            CheckActiveCards("0214", (card) => UpdateBlueEyesShiningBuff(card));
+            
+            CheckActiveCards("0832", (card) => { // Gren Maju Da Eiza
                 int removedCount = card.isPlayerCard ? GameManager.Instance.GetPlayerRemovedCount() : GameManager.Instance.GetOpponentRemoved().Count;
                 int stats = removedCount * 400;
                 card.RemoveModifiersFromSource(card);
@@ -950,100 +846,79 @@ public partial class CardEffectManager
                 card.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, stats, card));
             });
 
-            // Manticore of Darkness (1162): Revive loop
-            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
-            if (gy.Exists(c => c.id == "1162"))
-            {
-                // Check if player has Beast/Beast-Warrior in hand/field to send
-                // Simplified: Just log availability
-                Debug.Log("Manticore of Darkness (GY): Pode reviver enviando Besta.");
-            }
+            CheckActiveCards("0853", (card) => { // Gyaku-Gire Panda
+                int oppCount = card.isPlayerCard ? GameManager.Instance.GetMonsterCount(false) : GameManager.Instance.GetMonsterCount(true);
+                card.RemoveModifiersFromSource(card);
+                card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, oppCount * 500, card));
+            });
 
-            // 1249 - Mirage Knight (Banish if battled)
-            CheckActiveCards("1249", (card) =>
-            {
-                if (card.battledThisTurn)
-                {
-                    Debug.Log("Mirage Knight: Banido após batalha.");
-                    GameManager.Instance.BanishCard(card);
+            CheckActiveCards("0873", (card) => { // Harpie's Pet Dragon
+                int count = 0;
+                List<CardDisplay> all = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null) {
+                    CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                    CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+                }
+                foreach(var m in all) if (m.CurrentCardData.name.Contains("Harpie Lady")) count++;
+                card.RemoveModifiersFromSource(card);
+                card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 300, card));
+                card.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 300, card));
+            });
+            
+            // 0951 - Insect Queen (Buff)
+            CheckActiveCards("0951", (card) => {
+                int insects = 0;
+                List<CardDisplay> all = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null) {
+                    CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                    CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+                }
+                foreach(var m in all) if (m.CurrentCardData.race == "Insect") insects++;
+                
+                card.RemoveModifiersFromSource(card);
+                card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, insects * 200, card));
+            });
+
+            CheckActiveCards("1046", (card) => { // Labyrinth of Nightmare
+                if (GameManager.Instance.duelFieldUI != null) {
+                    List<CardDisplay> all = new List<CardDisplay>();
+                    CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                    CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+                    foreach (var m in all) m.ChangePosition();
                 }
             });
 
-            // 1252 - Mirror Wall (Maintenance)
-            CheckActiveCards("1252", (card) =>
-            {
-                if (!Effect_PayLP(card, 2000))
-                {
-                    Debug.Log("Mirror Wall: Manutenção não paga. Destruída.");
-                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
-                    Destroy(card.gameObject);
-                }
+            CheckActiveCards("1093", (card) => { // Little-Winguard
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) card.ChangePosition();
             });
 
-            // 1283 - Mucus Yolk (Gain 1000 ATK if dealt damage)
-            CheckActiveCards("1283", (card) =>
-            {
-                if (card.isPlayerCard && card.battledThisTurn) // Simplificado: Se batalhou e sobreviveu
-                {
-                    card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 1000, card));
-                    Debug.Log("Mucus Yolk: +1000 ATK.");
-                }
-            });
-
-            // 1328 - Needle Wall
-            CheckActiveCards("1328", (card) =>
-            {
-                if (card.isPlayerCard)
-                {
-                    int roll = Random.Range(1, 7);
-                    Debug.Log($"Needle Wall: Rolou {roll}.");
-                    // Lógica de destruir monstro na zona correspondente (requer mapeamento de zonas)
-                }
-            });
-
-            // 1344 - Nightmare Wheel
-            CheckActiveCards("1344", (card) =>
-            {
-                // Dano ao controlador do monstro alvo
-                // Requer saber quem é o alvo (via CardLink)
-                CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
-                foreach (var link in links)
-                {
-                    if (link.source == card && link.target != null)
-                    {
-                        Effect_DirectDamage(card, 500);
+            CheckActiveCards("1345", (card) => { // Nightmare's Steelcage
+                if (card.isPlayerCard != GameManager.Instance.isPlayerTurn) { // Turno do oponente
+                    card.spellCounters--;
+                    if (card.spellCounters <= 0) {
+                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                        Destroy(card.gameObject);
                     }
                 }
             });
 
-            // 1345 - Nightmare's Steelcage
-            CheckActiveCards("1345", (card) =>
-            {
-                card.spellCounters--; // Usa contadores para turnos
-                if (card.spellCounters <= 0)
-                {
-                    Debug.Log("Nightmare's Steelcage: Expirou.");
-                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
-                    Destroy(card.gameObject);
-                }
+            CheckActiveCards("1811", (card) => { // Swords of Revealing Light
+                if (card.isPlayerCard != GameManager.Instance.isPlayerTurn) HandleTurnCounter(card);
             });
 
-            // Swords of Revealing Light (1811) / Swords of Concealing Light (1810)
-            // Decrementa contador na Standby Phase do oponente (para Swords of Revealing Light)
-            // A regra diz: "destroy this card during the End Phase of your opponent's 3rd turn".
-            // Vamos usar o contador para simplificar: Inicia com 3, decrementa na End Phase do oponente.
-            // Se for Swords of Concealing Light: "Destroy this card during your 2nd Standby Phase".
-        }
-        else if (phase == GamePhase.End)
-        {
-            // Swords of Revealing Light (1811)
-            // Se for o turno do oponente, decrementa.
-            if (!GameManager.Instance.isPlayerTurn) // Turno do oponente
-            {
-                CheckActiveCards("1811", (card) => HandleTurnCounter(card));
-            }
+            CheckActiveCards("1908", (card) => { // The Wicked Worm Beast
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && !card.isFlipped) GameManager.Instance.ReturnToHand(card);
+            });
 
-            // 0482 - Destiny Board
+            CheckActiveCards("1979", (card) => { // Tsukuyomi
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && !card.isFlipped) GameManager.Instance.ReturnToHand(card);
+            });
+
+            CheckActiveCards("1996", (card) => { // Two-Man Cell Battle
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) Debug.Log("Two-Man Cell Battle: Pode invocar Normal Lv4 da mão.");
+            });
+
+            // Destiny Board (0482)
             CheckActiveCards("0482", (card) => {
                 if (card.isPlayerCard != GameManager.Instance.isPlayerTurn) // End Phase do oponente
                 {
@@ -1114,99 +989,29 @@ public partial class CardEffectManager
                     }
                 }
             });
-
-            // Swords of Concealing Light (1810) - Destrói na 2ª Standby Phase do controlador.
-            // Lógica movida para Standby Phase do controlador.
         }
-        else if (phase == GamePhase.End)
-        {
-            // 1908 - The Wicked Worm Beast
-            CheckActiveCards("1908", (card) =>
-            {
-                if (card.isPlayerCard && !card.isFlipped)
-                {
-                    GameManager.Instance.ReturnToHand(card);
-                }
-            });
-
-            // 1979 - Tsukuyomi
-            CheckActiveCards("1979", (card) =>
-            {
-                if (card.isPlayerCard && !card.isFlipped) // Face-up
-                {
-                    GameManager.Instance.ReturnToHand(card);
-                }
-            });
-
-            // 1996 - Two-Man Cell Battle
-            CheckActiveCards("1996", (card) =>
-            {
+            // 0985 - Just Desserts
+            CheckActiveCards("0985", (card) => {
                 if (card.isPlayerCard)
                 {
-                    // SS Level 4 Normal from hand
-                    Debug.Log("Two-Man Cell Battle: Pode invocar Normal Lv4 da mão.");
+                    int banished = card.isPlayerCard ? GameManager.Instance.GetMonsterCount(false) : GameManager.Instance.GetMonsterCount(true);
+                    if (banished > 0) Effect_DirectDamage(card, banished * 500);
                 }
             });
-        }
-        else if (phase == GamePhase.Standby)
-        {
-            // Malice Doll of Demise (1152): Revive if sent by Continuous Spell
-            // Requires tracking flag "sentByContinuousSpell"
-            // CheckActiveCards not applicable as it's in GY.
-            // We check GY directly.
-            // ...
-        }
-        if (phase == GamePhase.Standby)
-        {
-            // 1578 - Sacred Phoenix of Nephthys
-            // Se foi destruído por efeito no turno anterior (marcado no OnCardSentToGraveyard)
-            // Revive e destrói S/T
-            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
-            CardData phoenix = gy.Find(c => c.id == "1578"); // ID Sacred Phoenix
-            if (phoenix != null)
-            {
-                // Simplificado: Assume que a condição foi atendida se estiver no GY
-                // Em um sistema completo, precisaríamos de uma flag "destroyedByEffectLastTurn"
-                Debug.Log("Sacred Phoenix of Nephthys: Revivendo na Standby Phase.");
-                GameManager.Instance.SpecialSummonFromData(phoenix, true);
-                gy.Remove(phoenix);
-                Effect_HeavyStorm(null); // Destrói todas as S/T (source null pois já saiu do GY)
-            }
-
-            // 1585 - Sand Moth
-            // Lógica similar ao Phoenix, mas apenas se destruído face-down por Spell
-        }
-        {
-            // 1162 - Manticore of Darkness
-            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
-            if (gy.Exists(c => c.id == "1162"))
-            {
-                // Lógica simplificada de reviver enviando besta
-                Debug.Log("Manticore of Darkness (GY): Pode reviver enviando Besta (Lógica pendente).");
-            }
-
-            // 1465 - Pumpking the King of Ghosts
-            CheckActiveCards("1465", (card) =>
-            {
-                if (GameManager.Instance.IsCardActiveOnField("Castle of Dark Illusions") || GameManager.Instance.IsCardActiveOnField("1270"))
-                {
-                    // Limite de 4 turnos requer contador
-                    if (card.spellCounters < 4)
-                    {
-                        card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 100, card));
-                        card.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 100, card));
-                        card.spellCounters++; // Usa spellCounters para rastrear turnos
-                        Debug.Log("Pumpking: +100 ATK/DEF (Standby).");
-                    }
+            
+            // 0951 - Insect Queen (Token Gen)
+            CheckActiveCards("0951", (card) => {
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && card.destroyedMonsterThisTurn) {
+                    GameManager.Instance.SpawnToken(card.isPlayerCard, 1200, 1200, "Insect Monster Token");
                 }
             });
 
-            // Swords of Concealing Light (1810)
-            if (GameManager.Instance.isPlayerTurn) // Minha Standby Phase
-            {
-                CheckActiveCards("1810", (card) => HandleTurnCounter(card));
-            }
-        }
+            // 0916 - Human-Wave Tactics
+            CheckActiveCards("0916", (card) => {
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    Debug.Log("Human-Wave Tactics: Invocando Normais (Falta tracker de destruídos).");
+                }
+            });
     }
 
     private void UpdateDMGBuff(CardDisplay card)
@@ -1332,6 +1137,26 @@ public partial class CardEffectManager
             }
         }
 
+        // 0594 - Emissary of the Afterlife
+        if (card.id == "0594" && fromLocation == CardLocation.Field)
+        {
+            Effect_SearchDeck(null, "Normal", "Monster", 9999, 3);
+        }
+
+        // 0634 - Fatal Abacus
+        if (card.type.Contains("Monster") && fromLocation == CardLocation.Field)
+        {
+            CheckActiveCards("0634", (abacus) => {
+                Effect_DirectDamage(abacus, 500);
+            });
+        }
+
+        // 0777 - Goblin Zombie
+        if (card.id == "0777" && isOwnerPlayer) Effect_SearchDeck(null, "Zombie", "Monster", 9999, 99); 
+
+        // 0848 - Guardian Tryce
+        if (card.id == "0848" && reason == SendReason.Destroyed) Debug.Log("Guardian Tryce: O monstro original tributado retornará.");
+
         // 2004 - UFO Turtle
         if (card.id == "2004" && isOwnerPlayer && reason == SendReason.Battle) // Destroyed by battle
         {
@@ -1366,6 +1191,25 @@ public partial class CardEffectManager
                     deck.Remove(selected);
                     GameManager.Instance.AddCardToHand(selected, true);
                     GameManager.Instance.ShuffleDeck(true);
+                });
+            }
+        }
+
+        // 0885 - Hero Signal
+        if (isOwnerPlayer && reason == SendReason.Battle && fromLocation == CardLocation.Field)
+        {
+            bool hasSignal = false;
+            CardDisplay signalTrap = null;
+            if (GameManager.Instance.duelFieldUI != null)
+                foreach(var z in GameManager.Instance.duelFieldUI.playerSpellZones)
+                    if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().isFlipped && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "0885") { hasSignal = true; signalTrap = z.GetChild(0).GetComponent<CardDisplay>(); break; }
+            
+            if (hasSignal && signalTrap != null && UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowConfirmation("Ativar Hero Signal?", () => {
+                    GameManager.Instance.ActivateFieldSpellTrap(signalTrap.gameObject);
+                    // Emulação de SS do deck com Filtro de Hero Lv4-
+                    Effect_SearchDeck(null, "Elemental HERO", "Monster", 9999, 4); 
                 });
             }
         }
@@ -1644,6 +1488,70 @@ public partial class CardEffectManager
         }
     }
 
+    partial void OnSummonImpl(CardDisplay card)
+    {
+        // 0888 - Hidden Soldiers
+        if (!card.isPlayerCard) // Invocação do Oponente
+        {
+            bool hasHidden = false;
+            CardDisplay hiddenTrap = null;
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                foreach(var z in GameManager.Instance.duelFieldUI.playerSpellZones)
+                {
+                    if (z.childCount > 0)
+                    {
+                        var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                        if (cd != null && cd.isFlipped && cd.CurrentCardData.id == "0888") { hasHidden = true; hiddenTrap = cd; break; }
+                    }
+                }
+            }
+            if (hasHidden && hiddenTrap != null)
+            {
+                List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+                List<CardData> targets = hand.FindAll(c => c.attribute == "Dark" && c.level <= 4 && c.type.Contains("Monster"));
+                if (targets.Count > 0 && UIManager.Instance != null)
+                {
+                    UIManager.Instance.ShowConfirmation("Ativar Hidden Soldiers?", () => {
+                        GameManager.Instance.ActivateFieldSpellTrap(hiddenTrap.gameObject);
+                        GameManager.Instance.OpenCardSelection(targets, "Invocar DARK Lv4-", (selected) => {
+                            GameManager.Instance.SpecialSummonFromData(selected, true);
+                            GameManager.Instance.RemoveCardFromHand(selected, true);
+                        });
+                    });
+                }
+            }
+        }
+
+        if (card.CurrentCardData.name.Contains("Harpie Lady") || card.CurrentCardData.name == "Harpie Lady Sisters")
+        {
+            CheckActiveCards("0874", (huntingGround) => {
+                Debug.Log("Harpies' Hunting Ground: Invocação de Harpia, destruindo S/T.");
+                List<CardDisplay> allST = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null) {
+                    CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, allST);
+                    CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, allST);
+                    CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.playerFieldSpell, GameManager.Instance.duelFieldUI.opponentFieldSpell }, allST);
+                }
+                if (allST.Count > 0) {
+                    if (allST.Count == 1) { // Se for a única, tem que ser destruída (Mesmo que seja o próprio campo)
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(allST[0]);
+                        GameManager.Instance.SendToGraveyard(allST[0].CurrentCardData, allST[0].isPlayerCard);
+                        Destroy(allST[0].gameObject);
+                    } else { // Se tiver mais de uma, escolhe
+                        if (SpellTrapManager.Instance != null) {
+                            SpellTrapManager.Instance.StartTargetSelection((t) => t.isOnField && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")), (target) => {
+                                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                                Destroy(target.gameObject);
+                            });
+                        }
+                    }
+                }
+            });
+        }
+    }
+
     partial void OnSetImpl(CardDisplay card)
     {
         // D.D. Trap Hole (0386): Quando oponente Seta monstro
@@ -1723,6 +1631,23 @@ public partial class CardEffectManager
                     Destroy(link.source.gameObject);
                 }
             }
+        }
+
+        // 0547 - Driving Snow
+        if (card.CurrentCardData.type.Contains("Trap"))
+        {
+            CheckActiveCards("0547", (snow) => {
+                if (snow.isPlayerCard == card.isPlayerCard) {
+                    Effect_MST(snow);
+                }
+            });
+        }
+
+        // 0795 - Granadora
+        if (card.CurrentCardData.id == "0795")
+        {
+            if (card.isPlayerCard) GameManager.Instance.DamagePlayer(2000);
+            else GameManager.Instance.DamageOpponent(2000);
         }
 
         // 0482 - Destiny Board (Corrente de Destruição / Vínculo Vital)
@@ -1901,6 +1826,18 @@ public partial class CardEffectManager
         {
             attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 1000, attacker));
             Debug.Log($"Guardian Baou: +1000 ATK.");
+        }
+
+        // 0869 - Harpie Lady 2
+        if (attacker != null && attacker.CurrentCardData.id == "0869" && target != null)
+        {
+            Debug.Log("Harpie Lady 2: Efeitos Flip do monstro destruído são negados.");
+        }
+
+        // 0870 - Harpie Lady 3
+        if (target != null && target.CurrentCardData.id == "0870" && attacker != null)
+        {
+            Debug.Log("Harpie Lady 3: Atacante não pode atacar por 2 turnos.");
         }
 
         // 0516 - Don Zaloog
@@ -2151,6 +2088,33 @@ public partial class CardEffectManager
         return false;
     }
 
+    public bool IsAttackPreventedByContinuousEffect(CardDisplay attacker)
+    {
+        // Gravity Bind (0817) - Level 4+ cannot attack
+        if (GameManager.Instance.IsCardActiveOnField("0817") && attacker.CurrentCardData.level >= 4)
+            return true;
+
+        // Level Limit - Area B (1077) - Level 4+ cannot attack
+        if (GameManager.Instance.IsCardActiveOnField("1077") && attacker.CurrentCardData.level >= 4)
+            return true;
+
+        // Messenger of Peace (1209) - 1500+ ATK cannot attack
+        if (GameManager.Instance.IsCardActiveOnField("1209") && attacker.currentAtk >= 1500)
+            return true;
+            
+        // 0947 - Insect Barrier
+        if (GameManager.Instance.IsCardActiveOnField("0947") && attacker.CurrentCardData.race == "Insect")
+        {
+            bool isBarrierOwnedByOpponent = false;
+            Transform[] mySpellZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
+            foreach (var zone in mySpellZones)
+                if (zone.childCount > 0 && zone.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "0947" && !zone.GetChild(0).GetComponent<CardDisplay>().isFlipped) isBarrierOwnedByOpponent = true;
+            if (isBarrierOwnedByOpponent) return true;
+        }
+
+        return false;
+    }
+
     public string GetEffectiveRace(CardDisplay card)
     {
         // DNA Surgery (0390)
@@ -2259,6 +2223,37 @@ public partial class CardEffectManager
     {
         bool isWaiting = false;
         bool attackCanceled = false;
+
+        // 0977 - Jirai Gumo
+        if (attacker.CurrentCardData.id == "0977" && !attacker.hasUsedEffectThisTurn)
+        {
+            if (attacker.isPlayerCard)
+            {
+                isWaiting = true;
+                if (UIManager.Instance != null) {
+                    UIManager.Instance.ShowConfirmation("Jirai Gumo: Lançar moeda e arriscar metade dos LP?",
+                        () => {
+                            GameManager.Instance.TossCoin(1, (result) => {
+                                if (result == 0) {
+                                    int damage = GameManager.Instance.playerLP / 2;
+                                    GameManager.Instance.DamagePlayer(damage);
+                                }
+                                attacker.hasUsedEffectThisTurn = true;
+                                isWaiting = false;
+                            });
+                        },
+                        () => { isWaiting = false; }
+                    );
+                } else { isWaiting = false; }
+                while (isWaiting) yield return null;
+            }
+            else
+            {
+                int damage = GameManager.Instance.opponentLP / 2;
+                GameManager.Instance.DamageOpponent(damage); // IA sempre arrisca/perde simplificado
+                attacker.hasUsedEffectThisTurn = true;
+            }
+        }
 
         // 1592 - Sasuke Samurai #4 (Moeda Assíncrona)
         if (attacker.CurrentCardData.id == "1592" && target != null)
@@ -2446,6 +2441,67 @@ public partial class CardEffectManager
             }
         }
         
+        // 0966 - Jam Defender
+        bool hasJamDefender = false;
+        CheckActiveCards("0966", (c) => { if (c.isPlayerCard != attacker.isPlayerCard) hasJamDefender = true; });
+        if (hasJamDefender && target != null)
+        {
+            Transform[] defZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+            CardDisplay revivalJam = null;
+            foreach (var z in defZones) {
+                if (z.childCount > 0) {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && m.CurrentCardData.name == "Revival Jam") revivalJam = m;
+                }
+            }
+            
+            if (revivalJam != null && target != revivalJam && BattleManager.Instance != null)
+            {
+                BattleManager.Instance.currentTarget = revivalJam;
+                Debug.Log("Jam Defender: Ataque redirecionado para Revival Jam!");
+            }
+        }
+        
+        // 0943 - Infinite Dismissal
+        bool infiniteDismissalFound = false;
+        CheckActiveCards("0943", (c) => { if (c.isPlayerCard != attacker.isPlayerCard) infiniteDismissalFound = true; });
+        if (infiniteDismissalFound && attacker.CurrentCardData.level <= 3)
+        {
+            Debug.Log("Infinite Dismissal: Destruindo atacante Lv3 ou menor.");
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(attacker);
+            GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+            Destroy(attacker.gameObject);
+            attackCanceled = true;
+        }
+
+        // 0951 - Insect Queen (Custo de ataque)
+        if (attacker.CurrentCardData.id == "0951")
+        {
+            isWaiting = true;
+            if (SpellTrapManager.Instance != null) {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard && t != attacker && t.CurrentCardData.type.Contains("Monster"),
+                    (tribute) => {
+                        GameManager.Instance.TributeCard(tribute);
+                        isWaiting = false;
+                    }
+                );
+            }
+            while(isWaiting) yield return null;
+        }
+        
+        // 0998 - Kaminote Blow
+        bool hasKaminote = false;
+        CheckActiveCards("0998", (c) => { if (c.isPlayerCard == attacker.isPlayerCard) hasKaminote = true; });
+        if (hasKaminote && (attacker.CurrentCardData.name == "Chu-Ske the Mouse Fighter" || attacker.CurrentCardData.name == "Monk Fighter" || attacker.CurrentCardData.name == "Master Monk") && target != null)
+        {
+            Debug.Log("Kaminote Blow: Destruindo oponente no início da Damage Step.");
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+            Destroy(target.gameObject);
+            attackCanceled = true;
+        }
+
         if (!attackCanceled && !trapped) onContinue?.Invoke();
     }
 
@@ -2663,6 +2719,13 @@ public partial class CardEffectManager
             Destroy(target.gameObject);
         }
 
+        // 0952 - Insect Soldiers of the Sky
+        if (attacker.CurrentCardData.id == "0952" && target != null && target.CurrentCardData.attribute == "Wind")
+        {
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 1000, attacker));
+            Debug.Log("Insect Soldiers of the Sky: +1000 ATK contra WIND.");
+        }
+
         // 1207 - Mermaid Knight (Double Attack)
         if (attacker.CurrentCardData.id == "1207" && (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013")))
         {
@@ -2705,10 +2768,160 @@ public partial class CardEffectManager
         
         onContinue?.Invoke();
     }
+    
 public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
 {
     // D.D. Warrior Lady (7572887) - Lógica de banir seria aqui
     // Mystic Tomato (83011278) - Lógica de busca seria aqui
+
+    // 0821 - Great Dezard (Rastreio de destruição)
+    if (attacker != null && attacker.CurrentCardData.id == "0821" && target != null && attacker.currentAtk > (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk : target.currentDef))
+    {
+        attacker.spellCounters++;
+    }
+
+    // 0840 - Guardian Angel Joan
+    if (attacker != null && attacker.CurrentCardData.id == "0840" && target != null && attacker.currentAtk > (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk : target.currentDef))
+    {
+        int heal = target.originalAtk;
+        Effect_GainLP(attacker, heal);
+        Debug.Log($"Guardian Angel Joan: Ganha {heal} LP.");
+    }
+
+    // 0841 - Guardian Baou
+    if (attacker != null && attacker.CurrentCardData.id == "0841" && target != null && attacker.currentAtk > (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk : target.currentDef))
+    {
+        attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 1000, attacker));
+        Debug.Log($"Guardian Baou: +1000 ATK.");
+    }
+
+    // 0869 - Harpie Lady 2
+    if (attacker != null && attacker.CurrentCardData.id == "0869" && target != null && attacker.currentAtk > (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk : target.currentDef))
+    {
+        Debug.Log("Harpie Lady 2: Efeitos Flip do monstro destruído são negados.");
+    }
+
+    // 0870 - Harpie Lady 3
+    if (target != null && target.CurrentCardData.id == "0870" && attacker != null)
+    {
+        Debug.Log("Harpie Lady 3: Atacante não pode atacar por 2 turnos.");
+    }
+    if (attacker != null && attacker.CurrentCardData.id == "0870" && target != null)
+    {
+        Debug.Log("Harpie Lady 3: Alvo não pode atacar por 2 turnos.");
+    }
+
+    // 0882 - Helping Robo for Combat
+    if (attacker != null && attacker.CurrentCardData.id == "0882" && target != null && attacker.currentAtk > (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk : target.currentDef))
+    {
+        GameManager.Instance.DrawCard();
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(hand, "Retornar ao fundo do Deck", (selected) => {
+                GameManager.Instance.RemoveCardFromHand(selected, true);
+                GameManager.Instance.GetPlayerMainDeck().Add(selected); // Bottom
+            });
+        }
+    }
+
+    // 0926 - Hyper Hammerhead
+    if (attacker != null && attacker.CurrentCardData.id == "0926" && target != null && target.isOnField && !GameManager.Instance.GetPlayerGraveyard().Contains(target.CurrentCardData) && !GameManager.Instance.GetOpponentGraveyard().Contains(target.CurrentCardData))
+    {
+        Debug.Log("Hyper Hammerhead: Retornando monstro oponente para a mão.");
+        GameManager.Instance.ReturnToHand(target);
+    }
+    if (target != null && target.CurrentCardData.id == "0926" && attacker != null && attacker.isOnField && !GameManager.Instance.GetPlayerGraveyard().Contains(attacker.CurrentCardData) && !GameManager.Instance.GetOpponentGraveyard().Contains(attacker.CurrentCardData))
+    {
+        Debug.Log("Hyper Hammerhead: Retornando atacante para a mão.");
+        GameManager.Instance.ReturnToHand(attacker);
+    }
+
+    // 0935 - Indomitable Fighter Lei Lei
+    if (attacker != null && attacker.CurrentCardData.id == "0935" && attacker.position == CardDisplay.BattlePosition.Attack)
+    {
+        attacker.ChangePosition();
+    }
+
+    // 0938 - Inferno
+    if (attacker != null && attacker.CurrentCardData.id == "0938" && target != null && attacker.currentAtk > (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk : target.currentDef))
+    {
+        Effect_DirectDamage(attacker, 1500);
+        Debug.Log("Inferno: Causando 1500 de dano.");
+    }
+
+    // 0940 - Inferno Hammer
+    if (attacker != null && attacker.CurrentCardData.id == "0940" && target != null && attacker.currentAtk > (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk : target.currentDef))
+    {
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && !t.isFlipped,
+                (t) => {
+                    t.ChangePosition();
+                    t.ShowBack();
+                }
+            );
+        }
+    }
+
+    // 0950 - Insect Princess
+    if (attacker != null && attacker.CurrentCardData.id == "0950" && target != null && target.CurrentCardData.race == "Insect" && attacker.currentAtk > (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk : target.currentDef))
+    {
+        attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, attacker));
+        Debug.Log("Insect Princess: +500 ATK.");
+    }
+
+        // 0593 - Emes the Infinity
+        if (attacker != null && attacker.CurrentCardData.id == "0593" && target != null && attacker.currentAtk > (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk : target.currentDef))
+        {
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 700, attacker));
+        }
+
+        // 0633 - Familiar Knight
+        if (target != null && target.CurrentCardData.id == "0633" && attacker != null)
+        {
+            List<CardData> myHand = GameManager.Instance.GetPlayerHandData();
+            List<CardData> myLv4 = myHand.FindAll(c => c.level == 4 && c.type.Contains("Monster"));
+            if (myLv4.Count > 0 && target.isPlayerCard) {
+                GameManager.Instance.OpenCardSelection(myLv4, "Invocar Lv4", (c) => {
+                    GameManager.Instance.SpecialSummonFromData(c, true);
+                    GameManager.Instance.RemoveCardFromHand(c, true);
+                });
+            }
+        }
+
+        // 0637 - Fenrir
+        if (attacker != null && attacker.CurrentCardData.id == "0637" && target != null && attacker.currentAtk > (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk : target.currentDef))
+        {
+            if (PhaseManager.Instance != null) PhaseManager.Instance.RegisterSkipNextPhase(!attacker.isPlayerCard, GamePhase.Draw);
+        }
+
+        // 0744 - Getsu Fuhma
+        if (attacker != null && attacker.CurrentCardData.id == "0744" && target != null && (target.CurrentCardData.race == "Fiend" || target.CurrentCardData.race == "Zombie"))
+        {
+            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+            Destroy(target.gameObject);
+        }
+
+        // 0745 - Ghost Knight of Jackal
+        if (attacker != null && attacker.CurrentCardData.id == "0745" && target != null && attacker.currentAtk > (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk : target.currentDef))
+        {
+            GameManager.Instance.SpecialSummonFromData(target.CurrentCardData, attacker.isPlayerCard, false, true); 
+        }
+
+        // 0752, 0771, 0773 - Orc / Goblins
+        if (attacker != null && (attacker.CurrentCardData.id == "0752" || attacker.CurrentCardData.id == "0771" || attacker.CurrentCardData.id == "0773"))
+        {
+            attacker.ChangePosition();
+        }
+
+        // 0986 - KA-2 Des Scissors
+        if (attacker != null && attacker.CurrentCardData.id == "0986" && target != null && attacker.currentAtk > (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk : target.currentDef))
+        {
+            int dmg = target.CurrentCardData.level * 500;
+            Effect_DirectDamage(attacker, dmg);
+        }
 
     // 0019 - Absorbing Kid from the Sky
     if (attacker != null && attacker.CurrentCardData.id == "0019" && target != null)
@@ -4089,8 +4302,54 @@ private void Effect_0206_BlindDestruction_Logic_Impl(CardDisplay source)
         }
     }
 
+    partial void OnBattlePositionChangedImpl(CardDisplay card)
+    {
+        // 0542 - Dream Clown
+        if (card.CurrentCardData.id == "0542" && card.position == CardDisplay.BattlePosition.Defense && !card.isFlipped)
+        {
+            if (SpellTrapManager.Instance != null) {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                    (target) => {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                    }
+                );
+            }
+        }
+    }
+
     partial void OnCardDrawnImpl(CardData card, bool isPlayer)
     {
+        // 0878 - Heart of the Underdog
+        if (isPlayer && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Draw)
+        {
+            if (card.type.Contains("Normal") && card.type.Contains("Monster"))
+            {
+                bool hasUnderdog = false;
+                if (GameManager.Instance.duelFieldUI != null)
+                {
+                    foreach (var z in GameManager.Instance.duelFieldUI.playerSpellZones)
+                    {
+                        if (z.childCount > 0)
+                        {
+                            var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                            if (cd != null && !cd.isFlipped && cd.CurrentCardData.id == "0878") { hasUnderdog = true; break; }
+                        }
+                    }
+                }
+
+                if (hasUnderdog && UIManager.Instance != null)
+                {
+                    UIManager.Instance.ShowConfirmation("Heart of the Underdog: Você comprou um Monstro Normal. Mostrar e comprar mais 1?", () => {
+                        Debug.Log($"Heart of the Underdog: Revelado {card.name}. Comprando 1 carta.");
+                        GameManager.Instance.DrawCard();
+                    });
+                }
+            }
+        }
+
         // 0550 - Drop Off
         if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Draw)
         {
@@ -4125,6 +4384,18 @@ private void Effect_0206_BlindDestruction_Logic_Impl(CardDisplay source)
 
     partial void OnCardDiscardedImpl(CardDisplay card, bool causedByOpponent)
     {
+        // 0686 - Forced Requisition
+        if (card.isPlayerCard)
+        {
+            bool hasReq = false;
+            if (GameManager.Instance.duelFieldUI != null) {
+                foreach (var z in GameManager.Instance.duelFieldUI.playerSpellZones) {
+                    if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "0686" && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped) hasReq = true;
+                }
+            }
+            if (hasReq) GameManager.Instance.DiscardRandomHand(false, 1);
+        }
+
         if (card.CurrentCardData.id == "0567" && causedByOpponent)
         {
             Debug.Log("Electric Snake: Descartada pelo oponente. Compre 2 cartas.");

@@ -224,6 +224,12 @@ public class BattleManager : MonoBehaviour
 
     public bool CanAttack(CardDisplay attacker)
     {
+        if (attacker.cannotAttackThisTurn)
+        {
+            Debug.LogWarning("Ataque impedido: Este monstro não pode atacar neste turno devido a um efeito.");
+            return false;
+        }
+
         if (CardEffectManager.Instance != null)
         {
             return CardEffectManager.Instance.CanDeclareAttack(attacker);
@@ -640,6 +646,7 @@ public class BattleManager : MonoBehaviour
             // Ataque vs Ataque
             if (atk > def)
             {
+                attacker.destroyedMonsterThisTurn = true;
                 int damage = atk - def;
                 Debug.Log($"Vitória do Atacante! Oponente toma {damage} de dano. Alvo destruído.");
                 
@@ -703,6 +710,7 @@ public class BattleManager : MonoBehaviour
         {
             if (atk > def)
             {
+                attacker.destroyedMonsterThisTurn = true;
                 Debug.Log("Vitória do Atacante! Alvo destruído (sem dano).");
                 if (!wabokuActive)
                 {

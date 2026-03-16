@@ -299,9 +299,22 @@ public partial class CardEffectManager
                 if (oppSpells.Count > 0)
                 {
                     GameManager.Instance.OpenCardSelection(oppSpells, "Selecione Magia do Oponente", (target) => {
-                        Debug.Log($"Double Spell: Copiando efeito de {target.name}.");
-                        // Simulação: Adiciona à mão e permite ativar imediatamente
-                        GameManager.Instance.AddCardToHand(target, source.isPlayerCard);
+                        GameManager.Instance.GetOpponentGraveyard().Remove(target);
+                        Transform freeZone = null;
+                        foreach(var z in GameManager.Instance.duelFieldUI.playerSpellZones) {
+                            if (z.childCount == 0) { freeZone = z; break; }
+                        }
+                        if (freeZone != null) {
+                            GameObject newSpell = Instantiate(GameManager.Instance.cardPrefab, freeZone);
+                            CardDisplay cd = newSpell.GetComponent<CardDisplay>();
+                            cd.SetCard(target, GameManager.Instance.GetCardBackTexture(), true);
+                            cd.isPlayerCard = source.isPlayerCard;
+                            cd.isOnField = true;
+                            GameManager.Instance.ActivateFieldSpellTrap(newSpell);
+                        } else {
+                            UIManager.Instance.ShowMessage("Sem zonas S/T livres. Magia enviada ao seu GY.");
+                            GameManager.Instance.SendToGraveyard(target, source.isPlayerCard);
+                        }
                     });
                 }
             });
@@ -3196,11 +3209,9 @@ public partial class CardEffectManager
         Debug.Log("Guardian Tryce: Efeito de flutuação (Requer rastreamento de tributo).");
     }
 
-        void Effect_0851_Gust(CardDisplay source)
+    void Effect_0851_Gust(CardDisplay source)
     {
-        // When your Spell Card is destroyed and sent to the Graveyard: Destroy 1 Spell or Trap Card on the field.
-        // Requer trigger OnCardSentToGraveyard com verificação de causa.
-        Debug.Log("Gust: Efeito de gatilho configurado.");
+        Debug.Log("Gust: Gatilho transferido para OnCardSentToGraveyard.");
     }
 
     void Effect_0852_GustFan(CardDisplay source)
@@ -3210,52 +3221,75 @@ public partial class CardEffectManager
 
     void Effect_0853_GyakuGirePanda(CardDisplay source)
     {
-        // Gains 500 ATK for each monster your opponent controls. Inflicts piercing battle damage.
-        int oppMonsters = 0;
-        if (GameManager.Instance.duelFieldUI != null)
-        {
-            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if (z.childCount > 0) oppMonsters++;
-        }
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, oppMonsters * 500, source));
-        // Piercing é passivo no BattleManager.
+        source.hasPiercing = true;
+        // ATK boost is dynamic, handled in OnPhaseStart
     }
 
     void Effect_0855_Gyroid(CardDisplay source)
     {
-        // Once per turn, this card is not destroyed by battle.
-        Debug.Log("Gyroid: Proteção de batalha (1x por turno).");
+        Debug.Log("Gyroid: Proteção de batalha transferida para OnDamageCalculationRoutine.");
     }
 
     void Effect_0856_HadeHane(CardDisplay source)
     {
-        // FLIP: Return up to 3 monsters on the field to the hand.
-        // Requer seleção múltipla de alvos.
-        Debug.Log("Hade-Hane: Retornando até 3 monstros (Simulado: 1).");
-        Effect_FlipReturn(source, TargetType.Monster);
+        if (source.isFlipped)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            }
+
+            if (all.Count > 0 && SpellTrapManager.Instance != null)
+            {
+                int max = Mathf.Min(3, all.Count);
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                    (t1) => {
+                        GameManager.Instance.ReturnToHand(t1);
+                        all.Remove(t1);
+                        if (all.Count > 0 && max > 1) {
+                            SpellTrapManager.Instance.StartTargetSelection(
+                                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                                (t2) => {
+                                    GameManager.Instance.ReturnToHand(t2);
+                                    all.Remove(t2);
+                                    if (all.Count > 0 && max > 2) {
+                                        SpellTrapManager.Instance.StartTargetSelection(
+                                            (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                                            (t3) => { GameManager.Instance.ReturnToHand(t3); }
+                                        );
+                                    }
+                                }
+                            );
+                        }
+                    }
+                );
+            }
+        }
     }
 
     void Effect_0857_HallowedLifeBarrier(CardDisplay source)
     {
-        // Discard 1 card; you take no damage this turn.
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         if (hand.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
                 GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
-                Debug.Log("Hallowed Life Barrier: Nenhum dano este turno.");
-                // GameManager.Instance.playerIsImmuneToDamage = true;
+                if (BattleManager.Instance != null) BattleManager.Instance.noBattleDamageThisTurn = true; 
+                Debug.Log("Hallowed Life Barrier: Dano prevenido este turno.");
             });
         }
     }
 
     void Effect_0858_HamburgerRecipe(CardDisplay source)
     {
-        Debug.Log("Hamburger Recipe: Ritual.");
+        GameManager.Instance.BeginRitualSummon(source);
     }
 
     void Effect_0859_HammerShot(CardDisplay source)
     {
-        // Destroy 1 face-up Attack Position monster with the highest ATK.
         List<CardDisplay> targets = new List<CardDisplay>();
         if (GameManager.Instance.duelFieldUI != null)
         {
@@ -3289,146 +3323,164 @@ public partial class CardEffectManager
 
     void Effect_0860_HandOfNephthys(CardDisplay source)
     {
-        // Tribute this card and 1 other monster; SS "Sacred Phoenix of Nephthys" from hand/Deck.
         if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
-        {
-            GameManager.Instance.TributeCard(source);
-            // Seleciona outro tributo
-            // ...
-            Debug.Log("Hand of Nephthys: Invocando Sacred Phoenix.");
-            // Effect_SearchDeck(source, "Sacred Phoenix of Nephthys"); // Deveria ser SS
-        }
-    }
-
-    // 0861 - Hane-Hane
-    void Effect_0861_HaneHane(CardDisplay source)
-    {
-        Effect_FlipReturn(source, TargetType.Monster);
-    }
-
-    void Effect_0863_HannibalNecromancer(CardDisplay source)
-    {
-        // Remove 1 Spell Counter from your side of the field to destroy 1 Trap Card.
-        if (SpellCounterManager.Instance.RemoveCountersFromField(1, source.isPlayerCard))
         {
             if (SpellTrapManager.Instance != null)
             {
                 SpellTrapManager.Instance.StartTargetSelection(
-                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Trap"),
-                    (t) => {
-                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
-                        GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
-                        Destroy(t.gameObject);
+                    (t) => t.isOnField && t.isPlayerCard && t != source && t.CurrentCardData.type.Contains("Monster"),
+                    (tribute) => {
+                        GameManager.Instance.TributeCard(source);
+                        GameManager.Instance.TributeCard(tribute);
+                        Effect_SearchDeck(source, "Sacred Phoenix of Nephthys", "Monster"); // Simulado: deve ser SS
                     }
                 );
             }
         }
     }
 
+    void Effect_0861_HaneHane(CardDisplay source)
+    {
+        if (source.isFlipped && SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                (target) => GameManager.Instance.ReturnToHand(target)
+            );
+        }
+    }
+
+    void Effect_0863_HannibalNecromancer(CardDisplay source)
+    {
+        if (SpellCounterManager.Instance.GetCount(source) >= 1)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Trap"),
+                    (target) => {
+                        SpellCounterManager.Instance.RemoveCounter(source, 1);
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                    }
+                );
+            }
+        }
+        else
+        {
+            UIManager.Instance.ShowMessage("Hannibal Necromancer precisa de 1 Spell Counter.");
+        }
+    }
+
     void Effect_0869_HarpieLady2(CardDisplay source)
     {
-        // Negates the effects of any Flip Effect Monsters it destroys by battle.
-        Debug.Log("Harpie Lady 2: Nega efeitos Flip (Passivo).");
+        Debug.Log("Harpie Lady 2: Nega efeitos Flip (Transferido para OnBattleEnd).");
     }
 
     void Effect_0870_HarpieLady3(CardDisplay source)
     {
-        // Any monster that battles with this card cannot declare an attack for 2 turns.
-        Debug.Log("Harpie Lady 3: Bloqueia atacante por 2 turnos (Passivo).");
+        Debug.Log("Harpie Lady 3: Bloqueia atacante por 2 turnos (Transferido para OnBattleEnd).");
     }
 
     void Effect_0871_HarpieLadySisters(CardDisplay source)
     {
-        // Cannot be Normal Summoned. Must be Special Summoned by "Elegant Egotist".
-        Debug.Log("Harpie Lady Sisters: Invocação especial.");
+        Debug.Log("Harpie Lady Sisters: Invocação especial por Elegant Egotist.");
     }
 
     void Effect_0873_HarpiesPetDragon(CardDisplay source)
     {
-        // Gains 300 ATK/DEF for each "Harpie Lady" on the field.
-        int harpieCount = 0;
-        // ... Lógica de contagem ...
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, harpieCount * 300, source));
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, harpieCount * 300, source));
+        Debug.Log("Harpie's Pet Dragon: Buff de ATK dinâmico (Transferido para OnPhaseStart).");
     }
 
     void Effect_0874_HarpiesHuntingGround(CardDisplay source)
     {
-        // Field: Winged Beast +200 ATK/DEF.
-        // When Harpie Lady/Sisters is Summoned: Destroy 1 S/T.
         Effect_Field(source, 200, 200, "Winged Beast");
-        // Trigger de invocação no OnSummonImpl.
+        Debug.Log("Harpies' Hunting Ground: Trigger de invocação movido para OnSummonImpl.");
     }
 
     void Effect_0875_HayabusaKnight(CardDisplay source)
     {
-        // Can make a second attack during each Battle Phase.
-        Debug.Log("Hayabusa Knight: Ataque duplo (Passivo).");
+        source.maxAttacksPerTurn = 2;
     }
 
     void Effect_0877_HeartOfClearWater(CardDisplay source)
     {
-        // Equip: If ATK <= 1300, not destroyed by battle or targeting effects.
-        Effect_Equip(source, 0, 0);
-        Debug.Log("Heart of Clear Water: Proteção ativa para monstro fraco.");
+        bool hasTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (!m.isFlipped && m.currentAtk <= 1300) hasTarget = true;
+        }
+
+        if (!hasTarget)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros com ATK 1300 ou menos para equipar.");
+            return;
+        }
+
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && t.currentAtk <= 1300 && !t.isFlipped,
+                (target) => {
+                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
+                    Debug.Log($"Heart of Clear Water: Equipado em {target.CurrentCardData.name}. Protegido de batalha e alvo.");
+                }
+            );
+        }
     }
 
     void Effect_0878_HeartOfTheUnderdog(CardDisplay source)
     {
-        // Draw Phase: If draw Normal Monster, show it to draw 1 more.
-        Debug.Log("Heart of the Underdog: Efeito de compra em cadeia (Passivo na Draw Phase).");
+        Debug.Log("Heart of the Underdog: Gatilho de compra transferido para OnCardDrawnImpl.");
     }
 
     void Effect_0879_HeavyMechSupportPlatform(CardDisplay source)
     {
-        // Union: Equip to Machine. +500 ATK/DEF. Protect from destruction.
-        Effect_Union(source, "Machine", 500, 500); // Simplificado para qualquer Machine
+        Effect_Union(source, "Machine", 500, 500); 
     }
 
     void Effect_0880_HeavySlump(CardDisplay source)
     {
-        // If opponent has 8+ cards in hand: They shuffle hand into Deck and draw 2.
         List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
         if (oppHand.Count >= 8)
         {
-            GameManager.Instance.DiscardHand(false); // Deveria ser Shuffle
+            GameManager.Instance.ReturnHandToDeck(false); 
             GameManager.Instance.DrawOpponentCard();
             GameManager.Instance.DrawOpponentCard();
-            Debug.Log("Heavy Slump: Mão do oponente resetada para 2.");
+            Debug.Log("Heavy Slump: Mão do oponente embaralhada e comprou 2 cartas.");
+        }
+        else
+        {
+            UIManager.Instance.ShowMessage("O oponente precisa ter 8 ou mais cartas na mão.");
         }
     }
 
     void Effect_0882_HelpingRoboForCombat(CardDisplay source)
     {
-        // If destroys monster by battle: Draw 1, then return 1 card from hand to bottom of Deck.
-        // Lógica no OnBattleEnd.
-        Debug.Log("Helping Robo: Efeito de compra e retorno configurado.");
+        Debug.Log("Helping Robo for Combat: Efeito transferido para OnBattleEnd.");
     }
 
     void Effect_0883_Helpoemer(CardDisplay source)
     {
-        // If in GY because destroyed by battle: Opponent discards 1 random card at end of their Battle Phase.
-        // Lógica no OnPhaseStart (End of Battle).
-        Debug.Log("Helpoemer: Efeito de descarte no GY.");
+        Debug.Log("Helpoemer: Efeito de descarte no GY transferido para OnPhaseStart.");
     }
 
     void Effect_0885_HeroSignal(CardDisplay source)
     {
-        // When monster destroyed by battle: SS 1 Lv4 or lower E-Hero from Deck.
-        // Trigger de destruição.
-        Effect_SearchDeck(source, "Elemental HERO", "Monster", 4); // Simplificado para busca
+        Debug.Log("Hero Signal: Gatilho de destruição transferido para OnCardSentToGraveyard.");
     }
 
     void Effect_0888_HiddenSoldiers(CardDisplay source)
     {
-        // When opponent Summons: SS 1 Level 4 or lower DARK monster from hand.
-        // Trigger de invocação do oponente.
-        Debug.Log("Hidden Soldiers: Gatilho de invocação.");
+        Debug.Log("Hidden Soldiers: Gatilho transferido para OnSummonImpl.");
     }
 
     void Effect_0889_HiddenSpellbook(CardDisplay source)
     {
-        // Target 2 Spells in GY; shuffle into Deck.
         List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
         List<CardData> spells = gy.FindAll(c => c.type.Contains("Spell"));
         
@@ -3444,28 +3496,36 @@ public partial class CardEffectManager
                 Debug.Log("Hidden Spellbook: 2 Magias retornadas ao Deck.");
             });
         }
+        else
+        {
+            UIManager.Instance.ShowMessage("Você precisa de pelo menos 2 Magias no Cemitério.");
+        }
     }
 
     void Effect_0890_Hieracosphinx(CardDisplay source)
     {
-        // Opponent cannot target face-down Defense monsters for attacks.
-        Debug.Log("Hieracosphinx: Protege monstros face-down.");
+        Debug.Log("Hieracosphinx: Protege monstros face-down (Passivo).");
         if (BattleManager.Instance != null) BattleManager.Instance.cannotAttackFaceDown = true;
     }
 
     void Effect_0891_HieroglyphLithograph(CardDisplay source)
     {
-        // Pay 1000 LP. Hand size limit becomes 7.
+        if (GameManager.Instance.playerLP <= 1000)
+        {
+            UIManager.Instance.ShowMessage("Pontos de Vida insuficientes (1000 necessários).");
+            return;
+        }
+
         if (Effect_PayLP(source, 1000))
         {
+            if (GameManager.Instance != null) GameManager.Instance.handLimit = 7;
             Debug.Log("Hieroglyph Lithograph: Limite de mão aumentado para 7.");
         }
     }
 
     void Effect_0893_HiitaTheFireCharmer(CardDisplay source)
     {
-        // FLIP: Take control of 1 FIRE monster.
-        if (SpellTrapManager.Instance != null)
+        if (source.isFlipped && SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.attribute == "Fire" && !t.isFlipped,
@@ -3476,8 +3536,7 @@ public partial class CardEffectManager
 
     void Effect_0894_HinoKaguTsuchi(CardDisplay source)
     {
-        // Spirit. If inflicts battle damage: Opponent discards hand before next Draw Phase.
-        Debug.Log("Hino-Kagu-Tsuchi: Efeito devastador de descarte (Spirit).");
+        Debug.Log("Hino-Kagu-Tsuchi: Efeito de descarte devastador transferido para OnDamageDealtImpl.");
     }
 
     void Effect_0895_Hinotama(CardDisplay source)
@@ -3487,16 +3546,16 @@ public partial class CardEffectManager
 
     void Effect_0897_HirosShadowScout(CardDisplay source)
     {
-        // FLIP: Opponent draws 3 cards. Discard any Spells drawn.
-        for(int i=0; i<3; i++)
+        if (source.isFlipped)
         {
-            // Simula compra e verificação
-            // Como não temos acesso fácil à carta exata comprada sem retorno do DrawOpponentCard,
-            // vamos apenas fazer o oponente comprar.
-            // Em um sistema completo, DrawOpponentCard retornaria a CardData.
-            GameManager.Instance.DrawOpponentCard();
+            for(int i=0; i<3; i++) GameManager.Instance.DrawOpponentCard();
+            Debug.Log("Hiro's Shadow Scout: Oponente comprou 3 cartas. Descarte pendente para o Oponente em OnCardDrawn.");
         }
-        Debug.Log("Hiro's Shadow Scout: Oponente comprou 3. (Lógica de descarte de Spell pendente).");
+        else if (!source.hasUsedEffectThisTurn)
+        {
+            Effect_TurnSet(source);
+            source.hasUsedEffectThisTurn = true;
+        }
     }
 
     // =========================================================================================
@@ -3505,46 +3564,56 @@ public partial class CardEffectManager
 
     void Effect_0901_HomunculusTheAlchemicBeing(CardDisplay source)
     {
-        // Once per turn, you can change the Attribute of this card.
-        Debug.Log("Homunculus: Atributo alterado (Simulado).");
-        // Requer UI para escolher atributo
+        if (source.hasUsedEffectThisTurn) return;
+        string[] attributes = { "Light", "Dark", "Water", "Fire", "Earth", "Wind" };
+        string chosen = attributes[Random.Range(0, attributes.Length)];
+        source.temporaryAttribute = chosen;
+        source.hasUsedEffectThisTurn = true;
+        Debug.Log($"Homunculus: Atributo alterado para {chosen}.");
     }
 
     void Effect_0903_HornOfHeaven(CardDisplay source)
     {
-        // Tribute 1 monster; negate the Summon of a monster and destroy it.
-        if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
+        var link = GetLinkToNegate(source);
+        if (link != null && link.trigger == ChainManager.TriggerType.Summon)
         {
-            // Seleção de tributo simplificada
-            GameManager.Instance.TributeCard(source); // Teria que selecionar outro monstro
-            Debug.Log("Horn of Heaven: Invocação negada.");
+            if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
+            {
+                if (SpellTrapManager.Instance != null) {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                        (tribute) => {
+                            GameManager.Instance.TributeCard(tribute);
+                            NegateAndDestroy(source, link);
+                        }
+                    );
+                }
+            }
         }
     }
 
     void Effect_0904_HornOfLight(CardDisplay source)
     {
-        // Equip: +800 DEF. If sent to GY, can pay 500 LP to return to top of Deck.
         Effect_Equip(source, 0, 800);
-        // Lógica de retorno ao deck no OnCardSentToGraveyard
     }
 
     void Effect_0905_HornOfTheUnicorn(CardDisplay source)
     {
-        // Equip: +700 ATK/DEF. If sent to GY, returns to top of Deck.
         Effect_Equip(source, 700, 700);
-        // Lógica de retorno ao deck no OnCardSentToGraveyard
     }
 
     void Effect_0908_HorusTheBlackFlameDragonLV8(CardDisplay source)
     {
-        // Cannot be Normal Summoned. Must be SS by LV6. Negate Spell activation.
-        Debug.Log("Horus LV8: Negação de Magias ativa.");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell"))
+        {
+            NegateAndDestroy(source, link);
+        }
     }
 
     void Effect_0909_HorusServant(CardDisplay source)
     {
-        // Your opponent cannot target "Horus the Black Flame Dragon" monsters with Spell/Trap or card effects.
-        Debug.Log("Horus' Servant: Proteção de Horus ativa.");
+        Debug.Log("Horus' Servant: Proteção de Horus ativa (Passivo).");
     }
 
     void Effect_0910_Hoshiningen(CardDisplay source)
@@ -3554,24 +3623,20 @@ public partial class CardEffectManager
 
     void Effect_0911_HourglassOfCourage(CardDisplay source)
     {
-        // Normal Summon: ATK halved. Standby Phase: ATK doubled.
-        if (source.summonedThisTurn)
+        if (source.summonedThisTurn && !source.wasSpecialSummoned)
         {
-            source.ModifyStats(-source.originalAtk / 2, 0);
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Multiply, 0.5f, source));
         }
-        // Lógica de dobrar na Standby (OnPhaseStart)
     }
 
     void Effect_0913_HouseOfAdhesiveTape(CardDisplay source)
     {
-        // If opponent Summons monster with DEF <= 500: Destroy it.
-        Debug.Log("House of Adhesive Tape: Armadilha ativa.");
+        Debug.Log("House of Adhesive Tape: Gatilho transferido para OnSummonImpl.");
     }
 
     void Effect_0914_HowlingInsect(CardDisplay source)
     {
-        // Destroyed by battle: SS 1 Insect with ATK <= 1500 from Deck.
-        Effect_SearchDeck(source, "Insect", "Monster", 1500); // Simplificado para busca
+        Effect_SpecialSummonFromDeck(source, "Insect", "", 1500);
     }
 
     void Effect_0915_HugeRevolution(CardDisplay source)
@@ -3621,25 +3686,22 @@ public partial class CardEffectManager
 
     void Effect_0926_HyperHammerhead(CardDisplay source)
     {
-        // If battles opponent monster and opponent monster is not destroyed: Return opponent monster to hand.
-        // Lógica no OnBattleEnd.
-        Debug.Log("Hyper Hammerhead: Efeito de bounce configurado.");
+        Debug.Log("Hyper Hammerhead: Efeito de bounce transferido para OnBattleEnd.");
     }
 
     void Effect_0927_HystericFairy(CardDisplay source)
     {
-        // Tribute 2 monsters; gain 1000 LP.
         if (SummonManager.Instance.HasEnoughTributes(2, source.isPlayerCard))
         {
-            // Seleção de tributos simplificada
-            Effect_TributeToBurn(source, 2, 0); // Reusa lógica de tributo, mas sem dano
-            Effect_GainLP(source, 1000);
+            SelectTributesForEffect(2, source.isPlayerCard, (tributes) => {
+                foreach (var t in tributes) GameManager.Instance.TributeCard(t);
+                Effect_GainLP(source, 1000);
+            });
         }
     }
 
     void Effect_0931_ImpenetrableFormation(CardDisplay source)
     {
-        // Target 1 face-up monster; it gains 700 DEF until end of turn.
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -3654,29 +3716,22 @@ public partial class CardEffectManager
 
     void Effect_0932_ImperialOrder(CardDisplay source)
     {
-        // Negate all Spell effects. Pay 700 LP standby.
         Debug.Log("Imperial Order: Ativado. Magias negadas.");
-        // Lógica de negação global deve ser verificada no SpellTrapManager/CardEffectManager
-        // Lógica de manutenção já está no CheckMaintenanceCosts
     }
 
     void Effect_0933_InabaWhiteRabbit(CardDisplay source)
     {
-        // Spirit. Cannot be Special Summoned. Can attack direct.
-        Debug.Log("Inaba White Rabbit: Ataque direto (Passivo).");
-        // source.canAttackDirectly = true;
+        source.canAttackDirectly = true;
     }
 
     void Effect_0935_IndomitableFighterLeiLei(CardDisplay source)
     {
-        // Changes to Defense Position at the end of the Battle Phase.
-        Debug.Log("Lei Lei: Vira defesa após atacar (Passivo).");
+        Debug.Log("Lei Lei: Vira defesa após atacar transferido para OnBattleEnd.");
     }
 
     void Effect_0936_InfernalFlameEmperor(CardDisplay source)
     {
-        // Cannot be Special Summoned. When Tribute Summoned: Banish up to 5 FIRE from GY; destroy S/T equal to banished.
-        if (source.isOnField)
+        if (source.summonedThisTurn && source.isTributeSummoned)
         {
             List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
             List<CardData> fires = gy.FindAll(c => c.attribute == "Fire");
@@ -3691,8 +3746,15 @@ public partial class CardEffectManager
                         gy.Remove(c);
                     }
                     int count = selected.Count;
-                    Debug.Log($"Infernal Flame Emperor: Baniu {count}. Destrua {count} S/T.");
-                    // Lógica de destruição múltipla de S/T pendente
+                    Debug.Log($"Infernal Flame Emperor: Baniu {count}. Destruindo até {count} S/T.");
+                    
+                    List<CardDisplay> stToDestroy = new List<CardDisplay>();
+                    if (GameManager.Instance.duelFieldUI != null)
+                    {
+                        CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, stToDestroy);
+                        CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.opponentFieldSpell }, stToDestroy);
+                    }
+                    DestroyCards(stToDestroy.Take(count).ToList(), source.isPlayerCard);
                 });
             }
         }
@@ -3700,28 +3762,36 @@ public partial class CardEffectManager
 
     void Effect_0937_InfernalqueenArchfiend(CardDisplay source)
     {
-        // Standby Phase: Target 1 Archfiend; it gains 1000 ATK until End Phase.
-        // Lógica no OnPhaseStart.
-        Debug.Log("Infernalqueen Archfiend: Buff na Standby.");
+        Debug.Log("Infernalqueen Archfiend: Buff na Standby transferido para OnPhaseStart.");
     }
 
     void Effect_0938_Inferno(CardDisplay source)
     {
-        // SS by banishing 1 FIRE. If destroys monster: 1500 damage.
-        // Lógica de SS na mão. Lógica de dano no OnBattleEnd.
-        Debug.Log("Inferno: Efeitos configurados.");
+        if (!source.isOnField)
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> fires = gy.FindAll(c => c.attribute == "Fire");
+            if (fires.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(fires, "Banir 1 FIRE", (selected) => {
+                    GameManager.Instance.RemoveFromPlay(selected, source.isPlayerCard);
+                    gy.Remove(selected);
+                    GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                    GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                });
+            }
+        }
     }
 
     void Effect_0939_InfernoFireBlast(CardDisplay source)
     {
-        // Target 1 Red-Eyes B. Dragon; inflict damage equal to original ATK. Red-Eyes cannot attack.
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "Red-Eyes B. Dragon",
                 (t) => {
                     Effect_DirectDamage(source, t.originalAtk);
-                    t.hasAttackedThisTurn = true; // Impede ataque
+                    t.cannotAttackThisTurn = true; // Impede ataque usando flag limpa
                     Debug.Log($"Inferno Fire Blast: {t.originalAtk} de dano.");
                 }
             );
@@ -3730,28 +3800,23 @@ public partial class CardEffectManager
 
     void Effect_0940_InfernoHammer(CardDisplay source)
     {
-        // If destroys monster: Flip 1 face-up monster opponent controls to face-down Defense.
-        // Lógica no OnBattleEnd.
-        Debug.Log("Inferno Hammer: Efeito de flip configurado.");
+        Debug.Log("Inferno Hammer: Efeito de flip transferido para OnBattleEnd.");
     }
 
     void Effect_0941_InfernoTempest(CardDisplay source)
     {
-        // Activate when you take 3000+ Battle Damage. Remove all monsters in both Decks and GYs.
-        // Trigger no OnDamageTaken.
-        Debug.Log("Inferno Tempest: Gatilho de dano massivo.");
+        Debug.Log("Inferno Tempest: Gatilho de dano massivo transferido para OnDamageTaken.");
     }
 
     void Effect_0942_InfiniteCards(CardDisplay source)
     {
-        // No hand limit.
-        Debug.Log("Infinite Cards: Limite de mão removido.");
+        if (GameManager.Instance != null) GameManager.Instance.handLimit = 99; // Effectively infinite
+        Debug.Log("Infinite Cards: Limite de mão removido (Efeito Contínuo).");
     }
 
     void Effect_0943_InfiniteDismissal(CardDisplay source)
     {
-        // Destroy Lv3 or lower monsters that attack.
-        Debug.Log("Infinite Dismissal: Destrói atacantes fracos.");
+        Debug.Log("Infinite Dismissal: Gatilho de ataque transferido para OnAttackDeclaredRoutine.");
     }
 
     void Effect_0944_InjectionFairyLily(CardDisplay source)
@@ -3766,25 +3831,26 @@ public partial class CardEffectManager
 
     void Effect_0947_InsectBarrier(CardDisplay source)
     {
-        // Opponent's Insect monsters cannot attack.
-        Debug.Log("Insect Barrier: Bloqueia ataque de Insetos.");
+        Debug.Log("Insect Barrier: Bloqueia ataque de Insetos (Verificado em IsAttackPreventedByContinuousEffect).");
     }
 
     void Effect_0948_InsectImitation(CardDisplay source)
     {
-        // Tribute 1 monster; SS 1 Insect Lv+1 from Deck.
-        if (source.isOnField) // Deveria ser da mão/campo como Spell
+        if (SpellTrapManager.Instance != null)
         {
-            // Seleção de tributo
-            // ...
-            Debug.Log("Insect Imitation: Evolução de Inseto.");
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (tribute) => {
+                    int targetLevel = tribute.CurrentCardData.level + 1;
+                    GameManager.Instance.TributeCard(tribute);
+                    Effect_SpecialSummonFromDeck(source, "Insect", "", -1, -1, targetLevel);
+                }
+            );
         }
     }
 
     void Effect_0950_InsectPrincess(CardDisplay source)
     {
-        // All opponent Insects changed to Attack Position.
-        // If destroys Insect: +500 ATK.
         if (GameManager.Instance.duelFieldUI != null)
         {
             foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
@@ -3812,7 +3878,6 @@ public partial class CardEffectManager
             foreach(var m in all) if (m.CurrentCardData.race == "Insect") insects++;
         }
         source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, insects * 200, source));
-        Debug.Log("Insect Queen: Buff aplicado. (Lógica de tributo para ataque e Token na End Phase pendentes).");
     }
 
     void Effect_0952_InsectSoldiersOfTheSky(CardDisplay source)

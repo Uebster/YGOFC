@@ -263,13 +263,16 @@ public partial class CardEffectManager
         // Effect: SS from hand by Tributing Petit Moth equipped with Cocoon for 2 turns.
         if (!source.isOnField)
         {
-            if (GameManager.Instance.IsCardActiveOnField("Petit Moth") || GameManager.Instance.IsCardActiveOnField("1420"))
-            {
-                // Assume que o jogador seleciona o Petit Moth correto
-                // Em produção: Verificar turnos
-                GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
-                GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
-            }
+            if (SpellTrapManager.Instance != null) {
+                 SpellTrapManager.Instance.StartTargetSelection(
+                     (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "Petit Moth" && CardEffectManager.Instance.GetEquippedCards(t).Exists(e => e.CurrentCardData.name == "Cocoon of Evolution" && e.turnCounter >= 2),
+                     (t) => {
+                         GameManager.Instance.TributeCard(t);
+                         GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                         GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                     }
+                 );
+             }
         }
     }
 
@@ -3271,9 +3274,8 @@ public partial class CardEffectManager
         {
              if (SpellTrapManager.Instance != null) {
                  SpellTrapManager.Instance.StartTargetSelection(
-                     (t) => t.isOnField && t.CurrentCardData.name == "Petit Moth", // Should check for Cocoon equip
+                     (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "Petit Moth" && CardEffectManager.Instance.GetEquippedCards(t).Exists(e => e.CurrentCardData.name == "Cocoon of Evolution" && e.turnCounter >= 6),
                      (t) => {
-                         // Simplified: Assume conditions met if player selects Petit Moth
                          GameManager.Instance.TributeCard(t);
                          GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
                          GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
