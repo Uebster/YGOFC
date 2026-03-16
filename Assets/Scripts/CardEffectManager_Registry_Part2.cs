@@ -279,6 +279,9 @@ public partial class CardEffectManager
         // 0617 - Exodia Necross (SS condition)
         AddEffect("0617", Effect_0617_ExodiaNecross);
 
+        // 0618 - Exodia the Forbidden One
+        AddEffect("0618", Effect_0618_ExodiaTheForbiddenOne);       
+
         // 0620 - Fairy Box (Coin toss 0 ATK)
         AddEffect("0620", Effect_0620_FairyBox);
 

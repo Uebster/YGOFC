@@ -137,8 +137,8 @@ public class SummonManager : MonoBehaviour
                     display.tributeCount = 0;
                     hasPerformedNormalSummon = true;
                     GameManager.Instance.FinalizeSummon(cardGO, card, false, isPlayer, false, false, null);
-                    display.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Multiply, 0.5f, display));
-                    display.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Permanent, StatModifier.Operation.Multiply, 0.5f, display));
+                    display.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, card.atk / 2, display));
+                    display.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, card.def / 2, display));
                 }, 
                 () => { ProcessStandardSummon(cardGO, card, isSet, isPlayer, ignoreLimit); });
                 return; // Espera a UI
@@ -170,7 +170,7 @@ public class SummonManager : MonoBehaviour
                         display.tributeCount = 1;
                         hasPerformedNormalSummon = true;
                         GameManager.Instance.FinalizeSummon(cardGO, card, isSet, isPlayer, isSet, true, null);
-                        display.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Set, 2000, display));
+                        display.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, 2000, display));
                     });
                 },
                 () => { ProcessStandardSummon(cardGO, card, isSet, isPlayer, ignoreLimit); });

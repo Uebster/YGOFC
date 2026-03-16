@@ -914,6 +914,21 @@ public void ShuffleDeck(bool isPlayer)
         }
     }
 
+    public void ReturnHandToDeck(bool isPlayer)
+    {
+        List<GameObject> hand = isPlayer ? playerHand : opponentHand;
+        List<CardData> deck = isPlayer ? GetPlayerMainDeck() : GetOpponentMainDeck();
+        
+        foreach (GameObject cardGO in new List<GameObject>(hand))
+        {
+            CardDisplay cd = cardGO.GetComponent<CardDisplay>();
+            if (cd != null) deck.Add(cd.CurrentCardData);
+            Destroy(cardGO);
+        }
+        hand.Clear();
+        ShuffleDeck(isPlayer);
+    }
+
     public void ReturnToHand(CardDisplay card)
     {
         if (card == null) return;

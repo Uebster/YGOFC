@@ -67,9 +67,7 @@ public partial class CardEffectManager
 
     void Effect_0503_DiscFighter(CardDisplay source)
     {
-        // Effect: If this card attacks a Defense Position monster with DEF >= 2000, destroy the monster with this card's effect without applying damage calculation.
-        // Lógica passiva de batalha. Requer hook no BattleManager ou OnDamageCalculation.
-        Debug.Log("Disc Fighter: Efeito passivo de batalha (Destrói defesa >= 2000).");
+        Debug.Log("Disc Fighter: Efeito passivo de batalha transferido para OnAttackDeclaredRoutine.");
     }
 
     void Effect_0506_DisturbanceStrategy(CardDisplay source)
@@ -85,17 +83,9 @@ public partial class CardEffectManager
         int count = oppHand.Count;
         if (count > 0)
         {
-            // Retorna mão ao deck
-            List<GameObject> handObjs = new List<GameObject>(GameManager.Instance.opponentHand); // Acesso direto necessário ou getter
-            // Como não temos acesso direto à lista de GOs do oponente aqui, usamos DiscardHand como fallback
-            // Mas vamos tentar simular o retorno
-            GameManager.Instance.DiscardHand(false); 
-            
-            for (int i = 0; i < count; i++)
-            {
-                GameManager.Instance.DrawOpponentCard();
-            }
-            Debug.Log($"Disturbance Strategy: Oponente trocou {count} cartas.");
+            GameManager.Instance.ReturnHandToDeck(false);
+            for (int i = 0; i < count; i++) GameManager.Instance.DrawOpponentCard();
+            Debug.Log($"Disturbance Strategy: Oponente trocou {count} cartas de forma verdadeira.");
         }
     }
 
@@ -168,9 +158,7 @@ public partial class CardEffectManager
 
     void Effect_0516_DonZaloog(CardDisplay source)
     {
-        // When this card inflicts Battle Damage: Discard 1 random card OR send top 2 from Deck to GY.
-        // Lógica implementada no OnDamageDealtImpl (CardEffectManager_Impl.cs).
-        Debug.Log("Don Zaloog: Efeito de dano configurado.");
+        Debug.Log("Don Zaloog: Efeito de dano totalmente integrado ao OnDamageDealtImpl.");
     }
 
     void Effect_0517_DoraOfFate(CardDisplay source)
@@ -322,19 +310,18 @@ public partial class CardEffectManager
 
     void Effect_0526_DraggedDownIntoTheGrave(CardDisplay source)
     {
-        // Both players reveal their hands, discard 1 card from the opponent's hand, then draw 1 card.
-        // Simplified: Discard 1 random from each, draw 1 each.
-        if (GameManager.Instance.GetPlayerHandData().Count == 0 || GameManager.Instance.GetOpponentHandData().Count == 0)
+        if (GameManager.Instance.GetPlayerHandData().Count > 0 && GameManager.Instance.GetOpponentHandData().Count > 0)
         {
-            UIManager.Instance.ShowMessage("Ambos os jogadores precisam ter cartas na mão.");
-            return;
+            GameManager.Instance.OpenCardSelection(GameManager.Instance.GetOpponentHandData(), "Descartar do Oponente", (oppTarget) => {
+                GameManager.Instance.DiscardCard(GameManager.Instance.opponentHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == oppTarget).GetComponent<CardDisplay>(), true);
+                
+                // IA simplificada ou seleção mútua (A IA descarta 1 aleatória sua)
+                GameManager.Instance.DiscardRandomHand(true, 1);
+                
+                GameManager.Instance.DrawCard();
+                GameManager.Instance.DrawOpponentCard();
+            });
         }
-
-        GameManager.Instance.DiscardRandomHand(true, 1);
-        GameManager.Instance.DiscardRandomHand(false, 1);
-        GameManager.Instance.DrawCard();
-        GameManager.Instance.DrawOpponentCard();
-        Debug.Log("Dragged Down: Descarte e compra mútuos.");
     }
 
     void Effect_0527_DragonCaptureJar(CardDisplay source)
@@ -502,8 +489,15 @@ public partial class CardEffectManager
 
     void Effect_0537_DragonsRage(CardDisplay source)
     {
-        // Continuous: Dragon-Type monsters inflict piercing Battle Damage.
-        Debug.Log("Dragon's Rage: Dragões causam dano perfurante (Passivo).");
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+                if (z.childCount > 0)
+                {
+                    var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (cd != null && CardEffectManager.Instance.GetEffectiveRace(cd) == "Dragon") cd.hasPiercing = true;
+                }
+        }
     }
 
     void Effect_0539_DragonicAttack(CardDisplay source)
@@ -546,20 +540,38 @@ public partial class CardEffectManager
 
     void Effect_0544_DrillBug(CardDisplay source)
     {
-        // FLIP: Shuffle Parasite Paracide into opp deck.
-        Debug.Log("Drill Bug: Parasite Paracide.");
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        CardData parasite = deck.Find(c => c.name == "Parasite Paracide");
+        if (parasite != null)
+        {
+            deck.Remove(parasite);
+            GameManager.Instance.GetOpponentMainDeck().Add(parasite);
+            GameManager.Instance.ShuffleDeck(false);
+        }
     }
 
     void Effect_0545_Drillago(CardDisplay source)
     {
-        // If the only cards your opponent controls are face-up monsters with 1600 or more ATK, this card can attack your opponent directly.
-        Debug.Log("Drillago: Condição de ataque direto (Passivo).");
+        bool oppOnlyStrong = true;
+        bool hasMonster = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+            {
+                if (z.childCount > 0)
+                {
+                    hasMonster = true;
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (m.currentAtk < 1600 || m.isFlipped) oppOnlyStrong = false;
+                }
+            }
+        }
+        if (hasMonster && oppOnlyStrong) source.canAttackDirectly = true;
     }
 
     void Effect_0546_Drillroid(CardDisplay source)
     {
-        // Before damage calculation, if this card attacks a Defense Position monster: Destroy that monster.
-        Debug.Log("Drillroid: Destrói defesa antes do cálculo (Passivo).");
+        Debug.Log("Drillroid: Destrói defesa antes do cálculo (Transferido para OnAttackDeclaredRoutine).");
     }
 
     void Effect_0547_DrivingSnow(CardDisplay source)
@@ -1123,8 +1135,15 @@ public partial class CardEffectManager
 
     void Effect_0605_EnragedBattleOx(CardDisplay source)
     {
-        // If a Beast, Beast-Warrior, or Winged Beast-Type monster you control attacks a Defense Position monster, inflict piercing battle damage.
-        Debug.Log("Enraged Battle Ox: Dano perfurante para Bestas/Guerreiros-Besta/Aladas (Passivo).");
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+                if (z.childCount > 0)
+                {
+                    var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (cd != null && (CardEffectManager.Instance.GetEffectiveRace(cd) == "Beast" || CardEffectManager.Instance.GetEffectiveRace(cd) == "Beast-Warrior" || CardEffectManager.Instance.GetEffectiveRace(cd) == "Winged Beast")) cd.hasPiercing = true;
+                }
+        }
     }
 
     void Effect_0606_EnragedMukaMuka(CardDisplay source)
@@ -1360,6 +1379,11 @@ public partial class CardEffectManager
         Debug.Log("Exodia Necross: Efeitos passivos e de manutenção configurados.");
     }
 
+    void Effect_0618_ExodiaTheForbiddenOne(CardDisplay source)
+    {
+        GameManager.Instance.CheckExodiaWin();
+    }
+
     void Effect_0620_FairyBox(CardDisplay source)
     {
         Debug.Log("Fairy Box: Efeito de moeda movido para o OnAttackDeclared (Sistema 2).");
@@ -1513,18 +1537,10 @@ public partial class CardEffectManager
 
     void Effect_0639_FiberJar(CardDisplay source)
     {
-        // FLIP: Shuffle all (hand, field, GY) to Deck. Draw 5.
-        Debug.Log("Fiber Jar: Resetando o jogo...");
+        GameManager.Instance.ReturnHandToDeck(true);
+        GameManager.Instance.ReturnHandToDeck(false);
+        DestroyAllMonsters(true, true);
         
-        // 1. Mover tudo para o Deck
-        // (Simplificado: Chama CleanupDuelState e reinicia decks com as cartas atuais)
-        // Em um sistema real, moveria cada carta individualmente.
-        
-        // 2. Embaralhar
-        GameManager.Instance.ShuffleDeck(true);
-        GameManager.Instance.ShuffleDeck(false);
-        
-        // 3. Comprar 5
         for(int i=0; i<5; i++) GameManager.Instance.DrawCard(true);
         for(int i=0; i<5; i++) GameManager.Instance.DrawOpponentCard();
     }
@@ -1708,22 +1724,29 @@ public partial class CardEffectManager
 
     void Effect_0666_Fissure(CardDisplay source)
     {
-        // Destroy the 1 face-up monster your opponent controls that has the lowest ATK.
-        // Lógica de seleção automática
-        bool hasTarget = false;
         if (GameManager.Instance.duelFieldUI != null)
         {
-            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
-                if (z.childCount > 0 && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped) hasTarget = true;
+            List<CardDisplay> oppMonsters = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, oppMonsters);
+            
+            CardDisplay target = null;
+            int minAtk = 9999;
+            
+            foreach(var m in oppMonsters)
+            {
+                if (!m.isFlipped)
+                {
+                    if (m.currentAtk < minAtk) { minAtk = m.currentAtk; target = m; }
+                }
+            }
+            
+            if (target != null)
+            {
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                Destroy(target.gameObject);
+            }
         }
-        if (!hasTarget)
-        {
-            UIManager.Instance.ShowMessage("O oponente não controla monstros face-up.");
-            return;
-        }
-
-        Debug.Log("Fissure: Destruindo menor ATK do oponente.");
-        // Implementação real requer varredura do campo oponente
     }
 
     void Effect_0667_FiveHeadedDragon(CardDisplay source)

@@ -54,6 +54,9 @@ public class BattleManager : MonoBehaviour
             string id = currentAttacker.CurrentCardData.id;
             if (id == "0058" || id == "0059" || id == "0060") return true;
         }
+        
+        // Permissão dinâmica por efeitos
+        if (currentAttacker != null && currentAttacker.canAttackDirectly) return true;
 
         return oppHasMirage;
     }
@@ -212,10 +215,10 @@ public class BattleManager : MonoBehaviour
              {
                 ChainManager.Instance.AddToChain(attacker, attacker.isPlayerCard, ChainManager.TriggerType.Attack, null, triggerAttackEffect);
              }
-        }
-        else
-        {
+             else
+             {
                  triggerAttackEffect();
+             }
         }
     }
 
@@ -778,7 +781,7 @@ public class BattleManager : MonoBehaviour
                 hasCyclonLaser = CardEffectManager.Instance.GetEquippedCards(attacker).Exists(c => c.CurrentCardData.id == "0374");
             }
             
-            if (atk > def && (attacker.CurrentCardData.id == "0407" || attacker.CurrentCardData.id == "0059" || attacker.CurrentCardData.id == "0031" || globalPiercing || hasBigBangShot || hasCyclonLaser)) 
+            if (atk > def && (attacker.hasPiercing || attacker.CurrentCardData.id == "0407" || attacker.CurrentCardData.id == "0059" || attacker.CurrentCardData.id == "0031" || globalPiercing || hasBigBangShot || hasCyclonLaser)) 
             {
                 int piercing = atk - def;
                 Debug.Log($"Dano Perfurante! {piercing} de dano.");

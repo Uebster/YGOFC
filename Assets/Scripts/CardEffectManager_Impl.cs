@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -1838,6 +1839,17 @@ public partial class CardEffectManager
             else GameManager.Instance.DrawOpponentCard();
         }
 
+        // 0516 - Don Zaloog
+        if (attacker.CurrentCardData.id == "0516" && amount > 0)
+        {
+            if (UIManager.Instance != null && attacker.isPlayerCard) {
+                UIManager.Instance.ShowConfirmation("Don Zaloog: Descartar 1 carta (Sim) ou Enviar 2 do topo do Deck (Não)?", 
+                    () => { GameManager.Instance.DiscardRandomHand(false, 1, true); },
+                    () => { GameManager.Instance.MillCards(false, 2); }
+                );
+            }
+        }
+
         // 0115 - Aswan Apparition
         if (attacker.CurrentCardData.id == "0115" && amount > 0 && attacker.isPlayerCard)
         {
@@ -2075,6 +2087,7 @@ public partial class CardEffectManager
         {
             return dnaSurgeryDeclaredType;
         }
+        if (!string.IsNullOrEmpty(card.temporaryRace)) return card.temporaryRace;
         return card.isTrapMonster ? card.trapMonsterRace : card.CurrentCardData.race;
     }
 
@@ -2085,6 +2098,7 @@ public partial class CardEffectManager
         {
             return dnaTransplantDeclaredType;
         }
+        if (!string.IsNullOrEmpty(card.temporaryAttribute)) return card.temporaryAttribute;
         return card.isTrapMonster ? card.trapMonsterAttribute : card.CurrentCardData.attribute;
     }
 
@@ -2243,6 +2257,26 @@ public partial class CardEffectManager
         });
         if (fairyBoxFound) {
             while (isWaiting) yield return null;
+        }
+
+        // 0546 - Drillroid
+        if (attacker.CurrentCardData.id == "0546" && target != null && target.position == CardDisplay.BattlePosition.Defense)
+        {
+            Debug.Log("Drillroid: Destruindo monstro em defesa antes do cálculo de dano.");
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+            Destroy(target.gameObject);
+            attackCanceled = true;
+        }
+
+        // 0503 - Disc Fighter
+        if (attacker.CurrentCardData.id == "0503" && target != null && target.position == CardDisplay.BattlePosition.Defense && target.currentDef >= 2000)
+        {
+            Debug.Log("Disc Fighter: Destruindo monstro com DEF >= 2000.");
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+            Destroy(target.gameObject);
+            attackCanceled = true;
         }
 
         // 1507 - Reflect Bounder
@@ -2549,6 +2583,17 @@ public partial class CardEffectManager
             {
                 Debug.Log("Steel Scorpion: Atacante não-máquina marcado para destruição (Simulado).");
                 // TODO: Agendar destruição na End Phase do 2º turno do oponente
+            }
+        }
+
+        // 0582 - Elemental HERO Flame Wingman
+        if (attacker != null && attacker.CurrentCardData.id == "0582" && target != null)
+        {
+            int atk = target.originalAtk;
+            int def = (target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : target.currentDef;
+            if (attacker.currentAtk >= def || attacker.currentAtk >= target.currentAtk) // Checagem simples de vitória
+            {
+                Effect_DirectDamage(attacker, atk);
             }
         }
         

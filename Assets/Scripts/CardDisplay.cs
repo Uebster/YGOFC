@@ -70,6 +70,12 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public string trapMonsterRace = "";
     [HideInInspector] public string trapMonsterAttribute = "";
 
+    // Status Dinâmicos e Passivos de Batalha
+    [HideInInspector] public bool canAttackDirectly = false;
+    [HideInInspector] public bool hasPiercing = false;
+    [HideInInspector] public string temporaryRace = "";
+    [HideInInspector] public string temporaryAttribute = "";
+
     // Stats em Tempo Real (Modificados por efeitos)
     [HideInInspector] public int originalAtk;
     [HideInInspector] public int originalDef;
@@ -262,6 +268,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         trapMonsterBaseDef = 0;
         trapMonsterRace = "";
         trapMonsterAttribute = "";
+
+        canAttackDirectly = false;
+        hasPiercing = false;
+        temporaryRace = "";
+        temporaryAttribute = "";
 
         originalScale = transform.localScale; // Salva a escala inicial definida pelo GameManager
 
