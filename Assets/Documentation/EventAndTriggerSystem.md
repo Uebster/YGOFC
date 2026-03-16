@@ -377,3 +377,14 @@ Cartas cujos Pontos de Ataque e Defesa flutuam conforme o estado do jogo (Ex: *B
 *   **Implementação Global:** Em vez de usar a função `Update()` na carta (o que destruiria a performance), nós injetamos o cálculo desses buffs no hook `OnPhaseStart(GamePhase.End)` do `CardEffectManager_Impl`.
 *   **Lógica de Renovação:** Toda carta com Status Dinâmico possui um helper dedicado (Ex: `UpdateBusterBladerBuff(card)`). Este helper deve **sempre** chamar `card.RemoveModifiersFromSource(card)` antes de adicionar o novo `StatModifier`, prevenindo que os multiplicadores se acumulem infinitamente.
 *   **Resultado:** No final do turno de ambos os jogadores, todos os monstros dinâmicos no campo verificam as listas do jogo e atualizam silenciosamente seus painéis de ATK/DEF.
+
+## 21. Sistema Global de Busca de Cartas (Global Card Search UI)
+Cartas que exigem que o jogador **"Declare o nome de uma carta"** (Ex: *Mind Crush*, *Prohibition*, *Dark Designator*) não funcionam com seleções na tela ou rolagem de dados. Elas precisam de um Input de Teclado.
+*   **Componente Central:** `GlobalCardSearchUI.cs`. Trata-se de um painel UI Singleton com um `TMP_InputField`.
+*   **Funcionamento Otimizado:** Ao digitar, o painel usa `LINQ` para filtrar o `CardDatabase` global instantaneamente. Para evitar *lag spikes* ou congelamentos no jogo, a lista exibe um `Take(50)` (apenas os 50 primeiros resultados), forçando o jogador a ser mais específico na digitação.
+*   **Chamada:** 
+    ```csharp
+    GlobalCardSearchUI.Instance.Show("Declare 1 carta", (declaredCard) => {
+        // Ação com a declaredCard (CardData)
+    });
+    ```

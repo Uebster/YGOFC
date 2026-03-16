@@ -1728,24 +1728,25 @@ public partial class CardEffectManager
     // 1237 - Mind Crush
     void Effect_1237_MindCrush(CardDisplay source)
     {
-        // Declare card name.
-        Debug.Log("Mind Crush: Declaração de nome necessária (Simulado: Kuriboh).");
-        // Lógica simplificada: Verifica se o oponente tem a carta (hardcoded para teste ou aleatório)
-        List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
-        string targetName = "Kuriboh"; // Em um jogo real, abriria input de texto
-        
-        List<CardData> hits = oppHand.FindAll(c => c.name == targetName);
-        if (hits.Count > 0)
+        if (GlobalCardSearchUI.Instance != null)
         {
-            Debug.Log($"Mind Crush: Sucesso! Oponente descarta {hits.Count} cópias.");
-            // Descarta todas as cópias
-            // Requer acesso aos GameObjects da mão do oponente para remover visualmente
-            GameManager.Instance.DiscardRandomHand(false, hits.Count); // Simplificado
-        }
-        else
-        {
-            Debug.Log("Mind Crush: Falha! Você descarta 1 carta aleatória.");
-            GameManager.Instance.DiscardRandomHand(true, 1);
+            GlobalCardSearchUI.Instance.Show("Declare o nome de 1 carta", (declaredCard) => {
+                if (declaredCard == null) return;
+                
+                List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+                List<CardData> hits = oppHand.FindAll(c => c.name == declaredCard.name);
+                
+                if (hits.Count > 0)
+                {
+                    Debug.Log($"Mind Crush: Acertou! Oponente descarta {hits.Count} cópias de {declaredCard.name}.");
+                    GameManager.Instance.DiscardCardsByName(false, declaredCard.name);
+                }
+                else
+                {
+                    Debug.Log("Mind Crush: Errou! Você descarta 1 carta aleatória.");
+                    GameManager.Instance.DiscardRandomHand(source.isPlayerCard, 1);
+                }
+            });
         }
     }
 
@@ -3582,15 +3583,14 @@ public partial class CardEffectManager
     // 1460 - Prohibition
     void Effect_1460_Prohibition(CardDisplay source)
     {
-        // Declare card name. Cannot be used.
-        // Simulating declaration by picking a random card from DB or just logging
-        // In a real game, this needs a search UI.
-        List<CardData> allCards = GameManager.Instance.cardDatabase.cardDatabase;
-        if (allCards.Count > 0)
+        if (GlobalCardSearchUI.Instance != null)
         {
-            CardData randomCard = allCards[Random.Range(0, allCards.Count)];
-            GameManager.Instance.prohibitedCards.Add(randomCard.name);
-            Debug.Log($"Prohibition: '{randomCard.name}' foi declarada e não pode ser usada.");
+            GlobalCardSearchUI.Instance.Show("Prohibition: Declare 1 carta", (declaredCard) => {
+                if (declaredCard == null) return;
+                
+                GameManager.Instance.prohibitedCards.Add(declaredCard.name);
+                Debug.Log($"Prohibition: '{declaredCard.name}' foi declarada e não pode ser usada.");
+            });
         }
     }
 

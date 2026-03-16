@@ -4746,21 +4746,27 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0406_DarkDesignator(CardDisplay source)
     {
-        // Efeito: Declare 1 monstro; se estiver no deck do oponente, adicione à mão dele.
-        // Simulação de declaração
-        Debug.Log("Dark Designator: Declarando 'Kuriboh' (Simulado).");
-        List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
-        CardData target = oppDeck.Find(c => c.name == "Kuriboh");
-        
-        if (target != null)
+        if (GlobalCardSearchUI.Instance != null)
         {
-            Debug.Log("Dark Designator: Encontrado! Adicionando à mão do oponente.");
-            oppDeck.Remove(target);
-            GameManager.Instance.AddCardToHand(target, false);
-        }
-        else
-        {
-            Debug.Log("Dark Designator: Não encontrado.");
+            GlobalCardSearchUI.Instance.Show("Declare o nome de 1 Monstro", (declaredCard) => {
+                if (declaredCard == null) return;
+                
+                Debug.Log($"Dark Designator: Declarou '{declaredCard.name}'.");
+                List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
+                CardData target = oppDeck.Find(c => c.name == declaredCard.name);
+                
+                if (target != null)
+                {
+                    Debug.Log("Dark Designator: Encontrado! Adicionando à mão do oponente.");
+                    oppDeck.Remove(target);
+                    GameManager.Instance.AddCardToHand(target, false);
+                    GameManager.Instance.ShuffleDeck(false);
+                }
+                else
+                {
+                    UIManager.Instance.ShowMessage("A carta não foi encontrada no deck do oponente.");
+                }
+            });
         }
     }
 
