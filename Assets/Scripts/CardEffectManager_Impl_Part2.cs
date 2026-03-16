@@ -28,6 +28,20 @@ public partial class CardEffectManager
     void Effect_0502_Disarmament(CardDisplay source)
     {
         // Destroy all Equip Cards on the field
+        bool hasEquip = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<Transform> allZones = new List<Transform>();
+            allZones.AddRange(GameManager.Instance.duelFieldUI.playerSpellZones);
+            allZones.AddRange(GameManager.Instance.duelFieldUI.opponentSpellZones);
+            foreach (var z in allZones) if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.property == "Equip") hasEquip = true;
+        }
+        if (!hasEquip)
+        {
+            UIManager.Instance.ShowMessage("Não há Cartas de Equipamento no campo.");
+            return;
+        }
+
         List<CardDisplay> toDestroy = new List<CardDisplay>();
         if (GameManager.Instance.duelFieldUI != null)
         {
@@ -62,6 +76,12 @@ public partial class CardEffectManager
     {
         // Your opponent shuffles their entire hand into the Deck, then draws the same number of cards.
         List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+        if (oppHand.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("A mão do oponente está vazia.");
+            return;
+        }
+
         int count = oppHand.Count;
         if (count > 0)
         {
@@ -82,7 +102,20 @@ public partial class CardEffectManager
     void Effect_0508_DivineWrath(CardDisplay source)
     {
         // Discard 1 card. Negate the activation of an Effect Monster's effect and destroy it.
+        var linkCheck = GetLinkToNegate(source);
+        if (linkCheck == null || !linkCheck.cardSource.CurrentCardData.type.Contains("Monster"))
+        {
+            UIManager.Instance.ShowMessage("Não há ativação de efeito de monstro para negar.");
+            return;
+        }
+
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Você precisa descartar 1 carta da mão.");
+            return;
+        }
+
         if (hand.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
@@ -115,6 +148,12 @@ public partial class CardEffectManager
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         List<CardData> turtles = hand.FindAll(c => c.name == "Don Turtle");
         
+        if (turtles.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Você não tem 'Don Turtle' na mão.");
+            return;
+        }
+
         if (turtles.Count > 0)
         {
             GameManager.Instance.OpenCardMultiSelection(turtles, "Invocar Don Turtle(s)", 1, turtles.Count, (selected) => {
@@ -161,6 +200,25 @@ public partial class CardEffectManager
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         List<CardData> monsters = hand.FindAll(c => c.type.Contains("Monster"));
 
+        if (monsters.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Você precisa descartar 1 monstro da mão.");
+            return;
+        }
+
+        bool hasValidTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+                if (z.childCount > 0 && monsters.Exists(c => c.level > z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.level)) hasValidTarget = true;
+        }
+
+        if (!hasValidTarget)
+        {
+            UIManager.Instance.ShowMessage("Você não possui um monstro no campo com nível menor que os monstros da sua mão.");
+            return;
+        }
+
         if (monsters.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(monsters, "Descarte 1 Monstro (Custo)", (cost) => {
@@ -189,6 +247,24 @@ public partial class CardEffectManager
     void Effect_0524_DoubleSnare(CardDisplay source)
     {
         // Destroy Jinzo or Royal Decree.
+        bool hasTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> allST = new List<CardDisplay>();
+            CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, allST);
+            CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, allST);
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allST);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allST);
+
+            foreach (var c in allST) if (!c.isFlipped && (c.CurrentCardData.name == "Jinzo" || c.CurrentCardData.name == "Royal Decree")) hasTarget = true;
+        }
+
+        if (!hasTarget)
+        {
+            UIManager.Instance.ShowMessage("Não há 'Jinzo' ou 'Royal Decree' face-up no campo.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -208,6 +284,21 @@ public partial class CardEffectManager
         // Discard 1 Spell. Select 1 Spell in opp GY and use it.
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         List<CardData> spells = hand.FindAll(c => c.type.Contains("Spell"));
+
+        if (spells.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Você precisa descartar 1 carta mágica.");
+            return;
+        }
+
+        List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
+        List<CardData> oppSpells = oppGY.FindAll(c => c.type.Contains("Spell"));
+
+        if (oppSpells.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("O oponente não tem cartas mágicas no cemitério.");
+            return;
+        }
 
         if (spells.Count > 0)
         {
@@ -233,6 +324,12 @@ public partial class CardEffectManager
     {
         // Both players reveal their hands, discard 1 card from the opponent's hand, then draw 1 card.
         // Simplified: Discard 1 random from each, draw 1 each.
+        if (GameManager.Instance.GetPlayerHandData().Count == 0 || GameManager.Instance.GetOpponentHandData().Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Ambos os jogadores precisam ter cartas na mão.");
+            return;
+        }
+
         GameManager.Instance.DiscardRandomHand(true, 1);
         GameManager.Instance.DiscardRandomHand(false, 1);
         GameManager.Instance.DrawCard();
@@ -243,6 +340,20 @@ public partial class CardEffectManager
     void Effect_0527_DragonCaptureJar(CardDisplay source)
     {
         // Change all face-up Dragon-Type monsters to Defense Position.
+        bool hasTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> allMonsters = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allMonsters);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allMonsters);
+            foreach (var m in allMonsters) if (m.CurrentCardData.race == "Dragon" && m.position == CardDisplay.BattlePosition.Attack) hasTarget = true;
+        }
+        if (!hasTarget)
+        {
+            UIManager.Instance.ShowMessage("Não há Dragões em Posição de Ataque no campo.");
+            return;
+        }
+
         if (GameManager.Instance.duelFieldUI != null)
         {
             List<CardDisplay> allMonsters = new List<CardDisplay>();
@@ -262,6 +373,19 @@ public partial class CardEffectManager
     void Effect_0528_DragonManipulator(CardDisplay source)
     {
         // FLIP: Take control of 1 face-up Dragon-Type monster your opponent controls.
+        bool hasTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+                if (z.childCount > 0 && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.race == "Dragon") hasTarget = true;
+        }
+        
+        if (!hasTarget)
+        {
+            UIManager.Instance.ShowMessage("O oponente não controla monstros do tipo Dragão face-up.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -317,6 +441,20 @@ public partial class CardEffectManager
     void Effect_0531_DragonSeeker(CardDisplay source)
     {
         // When Normal Summoned: Destroy 1 face-up Dragon.
+        bool hasTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> allMonsters = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allMonsters);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allMonsters);
+            foreach (var m in allMonsters) if (m.CurrentCardData.race == "Dragon" && !m.isFlipped) hasTarget = true;
+        }
+        if (!hasTarget)
+        {
+            Debug.Log("Dragon Seeker: Nenhum Dragão face-up para destruir.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -341,6 +479,18 @@ public partial class CardEffectManager
         // Simplified: If target available, destroy. Else burn.
         // Check for targets...
         // For prototype, just burn.
+        bool hasDragon = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+                if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.race == "Dragon" && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped) hasDragon = true;
+        }
+        if (!hasDragon)
+        {
+            UIManager.Instance.ShowMessage("Você precisa controlar um monstro do tipo Dragão face-up.");
+            return;
+        }
+        
         Effect_DirectDamage(source, 800);
     }
 
@@ -428,6 +578,17 @@ public partial class CardEffectManager
     void Effect_0551_DummyGolem(CardDisplay source)
     {
         // FLIP: Your opponent selects 1 monster they control. Switch control of the selected monster and this card.
+        bool oppHasMonster = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if (z.childCount > 0) oppHasMonster = true;
+        }
+        if (!oppHasMonster)
+        {
+            UIManager.Instance.ShowMessage("O oponente não controla monstros para trocar.");
+            return;
+        }
+
         if (GameManager.Instance.duelFieldUI != null)
         {
             List<CardDisplay> oppMonsters = new List<CardDisplay>();
@@ -453,6 +614,18 @@ public partial class CardEffectManager
     void Effect_0555_DustTornado(CardDisplay source)
     {
         // Target 1 Spell/Trap your opponent controls; destroy that target, then you can Set 1 Spell/Trap from your hand.
+        bool hasTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentSpellZones) if (z.childCount > 0) hasTarget = true;
+            if (GameManager.Instance.duelFieldUI.opponentFieldSpell.childCount > 0) hasTarget = true;
+        }
+        if (!hasTarget)
+        {
+            UIManager.Instance.ShowMessage("O oponente não controla Magias/Armadilhas.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -486,6 +659,20 @@ public partial class CardEffectManager
     void Effect_0559_Earthquake(CardDisplay source)
     {
         // Change all face-up monsters on the field to Defense Position.
+        bool hasTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> allMonsters = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allMonsters);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allMonsters);
+            foreach (var m in allMonsters) if (m.position == CardDisplay.BattlePosition.Attack) hasTarget = true;
+        }
+        if (!hasTarget)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros em Posição de Ataque no campo.");
+            return;
+        }
+
         if (GameManager.Instance.duelFieldUI != null)
         {
             List<CardDisplay> allMonsters = new List<CardDisplay>();
@@ -578,6 +765,12 @@ public partial class CardEffectManager
     void Effect_0570_ElegantEgotist(CardDisplay source)
     {
         // If Harpie Lady on field: SS 1 Harpie Lady or Sisters from Hand/Deck.
+        if (!GameManager.Instance.IsCardActiveOnField("Harpie Lady") && !GameManager.Instance.IsCardActiveOnField("0867"))
+        {
+            UIManager.Instance.ShowMessage("Requer 'Harpie Lady' face-up no campo.");
+            return;
+        }
+
         if (GameManager.Instance.IsCardActiveOnField("Harpie Lady") || GameManager.Instance.IsCardActiveOnField("0867"))
         {
             Effect_SearchDeck(source, "Harpie Lady", "Monster"); // Should be SS
@@ -624,6 +817,32 @@ public partial class CardEffectManager
     {
         // Tribute 1 WIND, 1 WATER, 1 FIRE and 1 EARTH monster; destroy all cards on your opponent's side of the field.
         Debug.Log("Elemental Burst: Requer 4 tributos específicos.");
+        bool hasWind = false, hasWater = false, hasFire = false, hasEarth = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+            {
+                if (z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null)
+                    {
+                        if (m.CurrentCardData.attribute == "Wind") hasWind = true;
+                        if (m.CurrentCardData.attribute == "Water") hasWater = true;
+                        if (m.CurrentCardData.attribute == "Fire") hasFire = true;
+                        if (m.CurrentCardData.attribute == "Earth") hasEarth = true;
+                    }
+                }
+            }
+        }
+        if (!(hasWind && hasWater && hasFire && hasEarth))
+        {
+            UIManager.Instance.ShowMessage("Você precisa tributar 1 monstro WIND, WATER, FIRE e EARTH.");
+            return;
+        }
+        Debug.Log("Elemental Burst: Requer 4 tributos específicos (Simulação de destruição).");
+        DestroyAllMonsters(true, false);
+        Effect_HarpiesFeatherDuster(source);
     }
 
     void Effect_0579_ElementalHEROBubbleman(CardDisplay source)
@@ -662,6 +881,24 @@ public partial class CardEffectManager
     {
         // Discard 1 card -> Destroy 1 monster with original ATK < Thunder Giant's ATK.
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Sua mão está vazia.");
+            return;
+        }
+
+        bool hasValidTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+                if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().originalAtk < source.currentAtk && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped) hasValidTarget = true;
+        }
+        if (!hasValidTarget)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros do oponente com ATK original menor que este card.");
+            return;
+        }
+
         if (hand.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
@@ -718,6 +955,12 @@ public partial class CardEffectManager
         
         List<CardData> targets = sources.FindAll(c => c.name == "Buster Blader");
         
+        if (targets.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Você não possui 'Buster Blader' no Deck ou Cemitério.");
+            return;
+        }
+
         if (targets.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(targets, "Selecionar Buster Blader", (selected) => {
@@ -749,6 +992,23 @@ public partial class CardEffectManager
     {
         // Send any number of S/T to GY; gain 1000 LP each.
         // Requer seleção múltipla de S/T no campo.
+        bool hasOtherST = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<Transform> myST = new List<Transform>();
+            myST.AddRange(GameManager.Instance.duelFieldUI.playerSpellZones);
+            myST.Add(GameManager.Instance.duelFieldUI.playerFieldSpell);
+            
+            foreach (var z in myST)
+            {
+                if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>() != source) hasOtherST = true;
+            }
+        }
+        if (!hasOtherST)
+        {
+            UIManager.Instance.ShowMessage("Você não controla outras Magias ou Armadilhas.");
+            return;
+        }
         Debug.Log("Emergency Provisions: Envie S/T para ganhar LP (Seleção múltipla pendente).");
     }
 
@@ -787,6 +1047,17 @@ public partial class CardEffectManager
     void Effect_0600_EnchantingFittingRoom(CardDisplay source)
     {
         // Pay 800 LP. Pick up 4 cards. SS Lv3 or lower Normal Monsters. Return rest to Deck.
+        if (GameManager.Instance.playerLP <= 800)
+        {
+            UIManager.Instance.ShowMessage("Pontos de Vida insuficientes (800 necessários).");
+            return;
+        }
+        if (GameManager.Instance.GetPlayerMainDeck().Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Seu Deck está vazio.");
+            return;
+        }
+
         if (Effect_PayLP(source, 800))
         {
             List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
@@ -818,6 +1089,15 @@ public partial class CardEffectManager
     void Effect_0603_EnergyDrain(CardDisplay source)
     {
         // Target 1 face-up monster you control; it gains 200 ATK/DEF for each card your opponent currently has in their hand.
+        bool hasMonster = false;
+        if (GameManager.Instance.duelFieldUI != null)
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if (z.childCount > 0 && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped) hasMonster = true;
+        if (!hasMonster)
+        {
+            UIManager.Instance.ShowMessage("Você não controla monstros face-up.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -855,6 +1135,19 @@ public partial class CardEffectManager
 
     void Effect_0607_EradicatingAerosol(CardDisplay source)
     {
+        bool hasInsect = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach (var m in all) if (!m.isFlipped && m.CurrentCardData.race == "Insect") hasInsect = true;
+        }
+        if (!hasInsect)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros Inseto face-up no campo.");
+            return;
+        }
         Effect_DestroyType(source, "Insect");
     }
 
@@ -872,6 +1165,19 @@ public partial class CardEffectManager
 
     void Effect_0609_EternalDrought(CardDisplay source)
     {
+        bool hasFish = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach (var m in all) if (!m.isFlipped && m.CurrentCardData.race == "Fish") hasFish = true;
+        }
+        if (!hasFish)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros Peixe face-up no campo.");
+            return;
+        }
         Effect_DestroyType(source, "Fish");
     }
 
@@ -910,6 +1216,12 @@ public partial class CardEffectManager
     {
         // Both players reveal their hands and add 1 card from each other's hand to their hand.
         // Simulação: Troca uma carta aleatória
+        if (GameManager.Instance.GetPlayerHandData().Count == 0 || GameManager.Instance.GetOpponentHandData().Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Ambos os jogadores precisam ter cartas na mão.");
+            return;
+        }
+
         List<CardData> myHand = GameManager.Instance.GetPlayerHandData();
         List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
         
@@ -933,6 +1245,12 @@ public partial class CardEffectManager
         // If both players have 15 or more cards in their Graveyards: Pay 1000 LP; swap Deck and GY.
         int myGYCount = GameManager.Instance.GetPlayerGraveyard().Count;
         int oppGYCount = GameManager.Instance.GetOpponentGraveyard().Count;
+
+        if (myGYCount < 15 || oppGYCount < 15)
+        {
+            UIManager.Instance.ShowMessage("Ambos os jogadores precisam ter 15 ou mais cartas no Cemitério.");
+            return;
+        }
 
         if (myGYCount >= 15 && oppGYCount >= 15)
         {
@@ -966,6 +1284,12 @@ public partial class CardEffectManager
     void Effect_0614_ExhaustingSpell(CardDisplay source)
     {
         // Remove all Spell Counters on the field.
+        if (GetTotalSpellCounters(true) == 0 && GetTotalSpellCounters(false) == 0)
+        {
+            UIManager.Instance.ShowMessage("Não há Spell Counters no campo.");
+            return;
+        }
+
         if (GameManager.Instance.duelFieldUI != null)
         {
             // Itera tudo e remove
@@ -976,12 +1300,39 @@ public partial class CardEffectManager
 
     void Effect_0615_ExileOfTheWicked(CardDisplay source)
     {
+        bool hasFiend = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach (var m in all) if (!m.isFlipped && m.CurrentCardData.race == "Fiend") hasFiend = true;
+        }
+        if (!hasFiend)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros Demônio face-up no campo.");
+            return;
+        }
         Effect_DestroyType(source, "Fiend");
     }
 
     void Effect_0616_ExiledForce(CardDisplay source)
     {
         // Tribute this card to target 1 monster; destroy it.
+        bool hasTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (m != source) hasTarget = true;
+        }
+        if (!hasTarget)
+        {
+            UIManager.Instance.ShowMessage("Não há outros monstros no campo para destruir.");
+            return;
+        }
+
         if (source.isOnField)
         {
             if (SpellTrapManager.Instance != null)
@@ -1017,6 +1368,13 @@ public partial class CardEffectManager
     void Effect_0622_FairyGuardian(CardDisplay source)
     {
         // Tribute to return Spell from GY to Deck.
+        List<CardData> gyCheck = GameManager.Instance.GetPlayerGraveyard();
+        if (!gyCheck.Exists(c => c.type.Contains("Spell")))
+        {
+            UIManager.Instance.ShowMessage("Você não possui Cartas Mágicas no Cemitério.");
+            return;
+        }
+
         if (source.isOnField)
         {
             GameManager.Instance.TributeCard(source);
@@ -1054,6 +1412,13 @@ public partial class CardEffectManager
     void Effect_0626_FairyOfTheSpring(CardDisplay source)
     {
         // Target 1 Equip Spell in GY; add to hand. Cannot activate this turn.
+        List<CardData> gyCheck = GameManager.Instance.GetPlayerGraveyard();
+        if (!gyCheck.Exists(c => c.type.Contains("Spell") && c.property == "Equip"))
+        {
+            UIManager.Instance.ShowMessage("Você não possui Magias de Equipamento no Cemitério.");
+            return;
+        }
+
         List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
         List<CardData> equips = gy.FindAll(c => c.type.Contains("Spell") && c.property == "Equip");
 
@@ -1118,6 +1483,12 @@ public partial class CardEffectManager
     void Effect_0636_FengshengMirror(CardDisplay source)
     {
         // Look at opponent's hand, discard 1 Spirit.
+        if (GameManager.Instance.GetOpponentHandData().Count == 0)
+        {
+            UIManager.Instance.ShowMessage("A mão do oponente está vazia.");
+            return;
+        }
+
         List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
         GameManager.Instance.OpenCardSelection(oppHand, "Mão do Oponente", (selected) => {
             if (selected.type.Contains("Spirit"))
@@ -1161,6 +1532,12 @@ public partial class CardEffectManager
     void Effect_0640_FiendComedian(CardDisplay source)
     {
         // Coin toss. Heads: Banish opp GY. Tails: Mill deck equal to opp GY.
+        if (GameManager.Instance.GetOpponentGraveyard().Count == 0)
+        {
+            UIManager.Instance.ShowMessage("O Cemitério do oponente está vazio.");
+            return;
+        }
+
         GameManager.Instance.TossCoin(1, (heads) => {
             int oppGYCount = GameManager.Instance.GetOpponentGraveyard().Count;
             if (heads == 1)
@@ -1197,6 +1574,12 @@ public partial class CardEffectManager
     void Effect_0650_FiendsSanctuary(CardDisplay source)
     {
         // SS Metal Fiend Token.
+        if (GameManager.Instance.GetFreeMonsterZone(source.isPlayerCard) == null)
+        {
+            UIManager.Instance.ShowMessage("Não há zonas de monstros disponíveis.");
+            return;
+        }
+
         GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Metal Fiend Token");
         // Token logic:
         // - Cannot attack
@@ -1229,6 +1612,12 @@ public partial class CardEffectManager
     void Effect_0652_FinalCountdown(CardDisplay source)
     {
         // Pay 2000 LP. After 20 turns, you win the Duel.
+        if (GameManager.Instance.playerLP <= 2000)
+        {
+            UIManager.Instance.ShowMessage("Pontos de Vida insuficientes (Requer mais de 2000).");
+            return;
+        }
+
         if (Effect_PayLP(source, 2000))
         {
             Debug.Log("Final Countdown: Contagem de 20 turnos iniciada.");
@@ -1242,6 +1631,12 @@ public partial class CardEffectManager
     {
         // Discard 5 cards from your hand; destroy all cards on the field.
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count < 5)
+        {
+            UIManager.Instance.ShowMessage("Requer 5 cartas na mão para descartar.");
+            return;
+        }
+
         if (hand.Count >= 5)
         {
             // Descarta 5 (Simplificado: Aleatório ou os primeiros 5)
@@ -1296,6 +1691,12 @@ public partial class CardEffectManager
     void Effect_0661_FireSorcerer(CardDisplay source)
     {
         // FLIP: Banish 2 cards from your hand to inflict 800 damage.
+        if (GameManager.Instance.GetPlayerHandData().Count < 2)
+        {
+            UIManager.Instance.ShowMessage("Requer 2 cartas na mão para banir.");
+            return;
+        }
+
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         if (hand.Count >= 2)
         {
@@ -1309,6 +1710,18 @@ public partial class CardEffectManager
     {
         // Destroy the 1 face-up monster your opponent controls that has the lowest ATK.
         // Lógica de seleção automática
+        bool hasTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+                if (z.childCount > 0 && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped) hasTarget = true;
+        }
+        if (!hasTarget)
+        {
+            UIManager.Instance.ShowMessage("O oponente não controla monstros face-up.");
+            return;
+        }
+
         Debug.Log("Fissure: Destruindo menor ATK do oponente.");
         // Implementação real requer varredura do campo oponente
     }
@@ -1371,6 +1784,13 @@ public partial class CardEffectManager
     {
         // Send 1 monster from Deck to GY.
         List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        
+        if (!deck.Exists(c => c.type.Contains("Monster")))
+        {
+            UIManager.Instance.ShowMessage("Você não possui monstros no Deck.");
+            return;
+        }
+
         List<CardData> monsters = deck.FindAll(c => c.type.Contains("Monster"));
         
         if (monsters.Count > 0)
@@ -1387,6 +1807,12 @@ public partial class CardEffectManager
     {
         // Discard 1 card. No Traps can be activated this turn.
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Sua mão está vazia.");
+            return;
+        }
+
         if (hand.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
@@ -1429,6 +1855,26 @@ public partial class CardEffectManager
         // Banish 2 LIGHT from GY; destroy 1 monster with higher ATK.
         List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
         List<CardData> lights = gy.FindAll(c => c.attribute == "Light");
+        
+        if (lights.Count < 2)
+        {
+            UIManager.Instance.ShowMessage("Requer 2 monstros LIGHT no Cemitério.");
+            return;
+        }
+        
+        bool hasTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach (var m in all) if (m.currentAtk > source.currentAtk && !m.isFlipped) hasTarget = true;
+        }
+        if (!hasTarget)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros face-up com ATK maior que este card.");
+            return;
+        }
         
         if (lights.Count >= 2)
         {
@@ -1479,18 +1925,53 @@ public partial class CardEffectManager
     void Effect_0698_FrozenSoul(CardDisplay source)
     {
         // If you control no monsters: Discard 1; Opponent skips next Battle Phase.
+        if (GameManager.Instance.opponentLP < GameManager.Instance.playerLP + 2000)
+        {
+            UIManager.Instance.ShowMessage("Seus LP devem estar no mínimo 2000 pontos abaixo dos do oponente.");
+            return;
+        }
+
         Debug.Log("Frozen Soul: Pula Battle Phase do oponente.");
     }
 
     void Effect_0699_FruitsOfKozakysStudies(CardDisplay source)
     {
         // Look at top 3 cards of Deck, return in any order.
+        if (GameManager.Instance.GetPlayerMainDeck().Count < 3)
+        {
+            UIManager.Instance.ShowMessage("Requer pelo menos 3 cartas no Deck.");
+            return;
+        }
         Debug.Log("Fruits of Kozaky: Reordenar topo do deck.");
     }
 
     void Effect_0700_FuhRinKaZan(CardDisplay source)
     {
         // If Wind, Water, Fire, Earth on field: Apply 1 effect.
+        bool wind = false, water = false, fire = false, earth = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all)
+            {
+                if (!m.isFlipped)
+                {
+                    if (m.CurrentCardData.attribute == "Wind") wind = true;
+                    if (m.CurrentCardData.attribute == "Water") water = true;
+                    if (m.CurrentCardData.attribute == "Fire") fire = true;
+                    if (m.CurrentCardData.attribute == "Earth") earth = true;
+                }
+            }
+        }
+        
+        if (!(wind && water && fire && earth))
+        {
+            UIManager.Instance.ShowMessage("Requer monstros WIND, WATER, FIRE e EARTH face-up no campo.");
+            return;
+        }
+
         Debug.Log("Fuh-Rin-Ka-Zan: Efeito poderoso (Raigeki/Harpie/Duo/Pot).");
     }
 
