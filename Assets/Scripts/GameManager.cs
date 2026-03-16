@@ -2284,6 +2284,36 @@ public void ShuffleDeck(bool isPlayer)
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySummonEffect(display);
     }
 
+    // Converte uma Trap ativada em um Monstro e a move para a Monster Zone
+    public bool ConvertTrapToMonster(CardDisplay trapCard, int atk, int def, int level, string race, string attribute)
+    {
+        Transform targetZone = GetFreeMonsterZone(trapCard.isPlayerCard);
+        if (targetZone == null) 
+        {
+            Debug.LogWarning("Sem zonas de monstro livres para Trap Monster.");
+            return false;
+        }
+
+        // Move para a zona de monstros
+        trapCard.transform.SetParent(targetZone);
+        trapCard.transform.localPosition = Vector3.zero;
+        trapCard.transform.localRotation = Quaternion.identity; // Face-up attack
+        trapCard.position = CardDisplay.BattlePosition.Attack;
+        
+        // Define as propriedades de Trap Monster
+        trapCard.isTrapMonster = true;
+        trapCard.trapMonsterBaseAtk = atk;
+        trapCard.trapMonsterBaseDef = def;
+        trapCard.trapMonsterRace = race;
+        trapCard.trapMonsterAttribute = attribute;
+        
+        trapCard.RecalculateStats(); // Atualiza e exibe stats
+
+        if (trapCard.cardInfoText != null) trapCard.cardInfoText.text = $"[Trap/Monster] / {race} / LV: {level}";
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySummonEffect(trapCard);
+        return true;
+    }
+
     // Troca de Controle (Change of Heart, Snatch Steal)
     public void SwitchControl(CardDisplay card)
     {

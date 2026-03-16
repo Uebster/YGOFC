@@ -91,6 +91,8 @@ public partial class CardEffectManager : MonoBehaviour
 
     public bool invertDecks = false; // Para Convulsion of Nature (0327)
 
+    public string dnaTransplantDeclaredType = ""; // Para DNA Transplant (0391)
+
     public bool CheckChainEnergy(bool isPlayer)
     {
         if (GameManager.Instance.IsCardActiveOnField("0284")) // Chain Energy

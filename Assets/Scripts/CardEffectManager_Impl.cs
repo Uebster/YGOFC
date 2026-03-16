@@ -2075,7 +2075,17 @@ public partial class CardEffectManager
         {
             return dnaSurgeryDeclaredType;
         }
-        return card.CurrentCardData.race;
+        return card.isTrapMonster ? card.trapMonsterRace : card.CurrentCardData.race;
+    }
+
+    public string GetEffectiveAttribute(CardDisplay card)
+    {
+        // DNA Transplant (0391)
+        if (GameManager.Instance.IsCardActiveOnField("0391") && !string.IsNullOrEmpty(dnaTransplantDeclaredType))
+        {
+            return dnaTransplantDeclaredType;
+        }
+        return card.isTrapMonster ? card.trapMonsterAttribute : card.CurrentCardData.attribute;
     }
 
     private void ApplyContinuousPositionChecks()
@@ -3548,6 +3558,18 @@ void Effect_MST(CardDisplay source)
     }
 }
 
+    void CollectTrapMonsters(Transform[] zones, List<CardDisplay> list)
+    {
+        foreach (var zone in zones)
+        {
+            if (zone != null && zone.childCount > 0)
+            {
+                var cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (cd != null && cd.isTrapMonster) list.Add(cd);
+            }
+        }
+    }
+
 void Effect_HeavyStorm(CardDisplay source)
 {
     Debug.Log("Heavy Storm: Destruir todas as S/T.");
@@ -3558,6 +3580,10 @@ void Effect_HeavyStorm(CardDisplay source)
         CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, toDestroy);
         CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, toDestroy);
         CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.playerFieldSpell, GameManager.Instance.duelFieldUI.opponentFieldSpell }, toDestroy);
+            
+            // Coleta Trap Monsters escondidos nas zonas de monstros
+            CollectTrapMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, toDestroy);
+            CollectTrapMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, toDestroy);
     }
     DestroyCards(toDestroy, source.isPlayerCard);
 }
@@ -3572,6 +3598,10 @@ void Effect_HarpiesFeatherDuster(CardDisplay source)
         CollectCards(zones, toDestroy);
         Transform fieldZone = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentFieldSpell : GameManager.Instance.duelFieldUI.playerFieldSpell;
         CollectCards(new Transform[] { fieldZone }, toDestroy);
+        
+        // Coleta Trap Monsters do oponente escondidos nas zonas de monstros
+        Transform[] monsterZones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+        CollectTrapMonsters(monsterZones, toDestroy);
     }
     DestroyCards(toDestroy, source.isPlayerCard);
 }

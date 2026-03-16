@@ -982,10 +982,16 @@ public partial class CardEffectManager
 
     void Effect_0590_EmbodimentOfApophis(CardDisplay source)
     {
-        // SS as Normal Monster (Reptile/Earth/Lv4/1600/1800). Still a Trap.
-        // Lógica de Trap Monster.
-        Debug.Log("Embodiment of Apophis: Invocado como monstro.");
-        // GameManager.Instance.SpawnTrapMonster(...)
+        if (GameManager.Instance.ConvertTrapToMonster(source, 1600, 1800, 4, "Reptile", "Earth"))
+        {
+            Debug.Log("Embodiment of Apophis: Invocado como Trap Monster.");
+        }
+        else
+        {
+            UIManager.Instance.ShowMessage("Não há zonas de monstros disponíveis.");
+            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
+            Destroy(source.gameObject);
+        }
     }
 
     void Effect_0592_EmergencyProvisions(CardDisplay source)

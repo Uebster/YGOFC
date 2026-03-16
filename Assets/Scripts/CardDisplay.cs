@@ -62,6 +62,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     [HideInInspector] public bool isTributeSummoned = false; // Novo: Rastreia Invocação por Tributo
 
+    // Sistema Trap Monster
+    [HideInInspector] public bool isTrapMonster = false;
+    [HideInInspector] public int trapMonsterBaseAtk = 0;
+    [HideInInspector] public int trapMonsterBaseDef = 0;
+    [HideInInspector] public string trapMonsterRace = "";
+    [HideInInspector] public string trapMonsterAttribute = "";
+
     // Stats em Tempo Real (Modificados por efeitos)
     [HideInInspector] public int originalAtk;
     [HideInInspector] public int originalDef;
@@ -247,6 +254,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         spellCounters = 0; // Reseta contadores
         turnCounter = 0; // Reseta contadores de turno
         maxTurnCounter = 0;
+        
+        // Reseta dados de Trap Monster
+        isTrapMonster = false;
+        trapMonsterBaseAtk = 0;
+        trapMonsterBaseDef = 0;
+        trapMonsterRace = "";
+        trapMonsterAttribute = "";
 
         originalScale = transform.localScale; // Salva a escala inicial definida pelo GameManager
 
@@ -507,8 +521,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (currentCardData == null) return;
 
         // 1. Começa com o valor base da carta
-        int finalAtk = currentCardData.atk >= 0 ? currentCardData.atk : 0;
-        int finalDef = currentCardData.def >= 0 ? currentCardData.def : 0;
+        int finalAtk = isTrapMonster ? trapMonsterBaseAtk : (currentCardData.atk >= 0 ? currentCardData.atk : 0);
+        int finalDef = isTrapMonster ? trapMonsterBaseDef : (currentCardData.def >= 0 ? currentCardData.def : 0);
 
         // 2. Aplica modificadores que definem um valor (Set) - ex: Megamorph, Beast King Barbaros
         foreach (var mod in activeModifiers)
