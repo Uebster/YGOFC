@@ -118,6 +118,8 @@ public class GameManager : MonoBehaviour
     [Tooltip("Se marcado, os decks não serão embaralhados no início (útil para testar ordem de saque).")]
     public bool disableDeckShuffle = false;
     [Tooltip("Se marcado, o jogador sempre começa o duelo.")]
+    public bool invertDecksDevMode = false;
+    [Tooltip("Se marcado, inverte a exibição da pilha de deck.")]
     public bool forcePlayerGoingFirst = false;
     [Tooltip("Se marcado, o jogador não perde LP (Modo Deus).")]
     public bool infiniteLP = false;

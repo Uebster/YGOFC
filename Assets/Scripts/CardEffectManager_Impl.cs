@@ -334,6 +334,7 @@ public partial class CardEffectManager
         reverseStats = false;
         armoredGlassActive = false;
         banishInsteadOfGraveyard = false;
+        invertDecks = GameManager.Instance.IsCardActiveOnField("0327");
 
         // Aplica efeitos contínuos de mudança de posição (ex: Level Limit - Area B)
         ApplyContinuousPositionChecks();
@@ -1023,6 +1024,78 @@ public partial class CardEffectManager
                 CheckActiveCards("1811", (card) => HandleTurnCounter(card));
             }
 
+            // 0482 - Destiny Board
+            CheckActiveCards("0482", (card) => {
+                if (card.isPlayerCard != GameManager.Instance.isPlayerTurn) // End Phase do oponente
+                {
+                    string[] messages = { "Spirit Message \"I\"", "Spirit Message \"N\"", "Spirit Message \"A\"", "Spirit Message \"L\"" };
+                    int nextIndex = card.spellCounters;
+
+                    if (nextIndex < 4)
+                    {
+                        string targetName = messages[nextIndex];
+                        bool found = false;
+                        CardData foundData = null;
+                        bool fromHand = false;
+
+                        List<CardData> hand = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+                        foundData = hand.Find(c => c.name == targetName);
+                        if (foundData != null) { found = true; fromHand = true; }
+
+                        if (!found) {
+                            List<CardData> deck = card.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+                            foundData = deck.Find(c => c.name == targetName);
+                            if (foundData != null) found = true;
+                        }
+
+                        if (found) {
+                            Transform[] stZones = card.isPlayerCard ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+                            Transform freeZone = null;
+                            foreach (var z in stZones) if (z.childCount == 0) { freeZone = z; break; }
+
+                            if (freeZone != null) {
+                                if (fromHand) GameManager.Instance.RemoveCardFromHand(foundData, card.isPlayerCard);
+                                else {
+                                    List<CardData> deck = card.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+                                    deck.Remove(foundData);
+                                    GameManager.Instance.ShuffleDeck(card.isPlayerCard);
+                                }
+
+                                GameObject prefab = card.isPlayerCard ? GameManager.Instance.playerDeckDisplay.cardPrefab : GameManager.Instance.opponentDeckDisplay.cardPrefab;
+                                GameObject newCardObj = Instantiate(prefab, freeZone);
+                                CardDisplay cd = newCardObj.GetComponent<CardDisplay>();
+                                cd.SetCard(foundData, GameManager.Instance.GetCardBackTexture(), true);
+                                cd.isPlayerCard = card.isPlayerCard;
+                                cd.position = CardDisplay.BattlePosition.Attack;
+                                cd.isOnField = true;
+                                
+                                card.spellCounters++;
+                                Debug.Log($"Destiny Board: '{targetName}' posicionado no campo.");
+
+                                if (card.spellCounters == 4) {
+                                    Debug.Log("Destiny Board: F-I-N-A-L! Vitória automática!");
+                                    if (DestinyBoardWinUI.Instance != null) {
+                                        DestinyBoardWinUI.Instance.ShowWinSequence(card.isPlayerCard, () => {
+                                            GameManager.Instance.EndDuel(card.isPlayerCard);
+                                        });
+                                    } else {
+                                        GameManager.Instance.EndDuel(card.isPlayerCard);
+                                    }
+                                }
+                            } else {
+                                UIManager.Instance.ShowMessage("Não há espaço para a Mensagem Espiritual! O Quadro do Destino falhou e será destruído.");
+                                GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                                Destroy(card.gameObject); 
+                            }
+                        } else {
+                            UIManager.Instance.ShowMessage($"Mensagem Espiritual '{targetName}' não encontrada na mão ou Deck! O Quadro falhou e será destruído.");
+                            GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                            Destroy(card.gameObject);
+                        }
+                    }
+                }
+            });
+
             // Swords of Concealing Light (1810) - Destrói na 2ª Standby Phase do controlador.
             // Lógica movida para Standby Phase do controlador.
         }
@@ -1629,6 +1702,42 @@ public partial class CardEffectManager
                     Debug.Log($"Regra de Equipamento: Destruindo {link.source.CurrentCardData.name} pois o monstro equipado saiu de campo.");
                     GameManager.Instance.SendToGraveyard(link.source.CurrentCardData, link.source.isPlayerCard);
                     Destroy(link.source.gameObject);
+                }
+            }
+        }
+
+        // 0482 - Destiny Board (Corrente de Destruição / Vínculo Vital)
+        if (card.CurrentCardData.name == "Destiny Board" || card.CurrentCardData.name.StartsWith("Spirit Message"))
+        {
+            bool foundOther = false;
+            List<CardDisplay> toDestroy = new List<CardDisplay>();
+            List<Transform> zones = new List<Transform>();
+            if (GameManager.Instance.duelFieldUI != null) {
+                zones.AddRange(GameManager.Instance.duelFieldUI.playerSpellZones);
+                zones.AddRange(GameManager.Instance.duelFieldUI.opponentSpellZones);
+            }
+            
+            foreach (var z in zones)
+            {
+                if (z.childCount > 0)
+                {
+                    CardDisplay cd = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (cd != null && cd != card && cd.isPlayerCard == card.isPlayerCard && (cd.CurrentCardData.name == "Destiny Board" || cd.CurrentCardData.name.StartsWith("Spirit Message"))) 
+                    {
+                        toDestroy.Add(cd);
+                        foundOther = true;
+                    }
+                }
+            }
+            
+            if (foundOther)
+            {
+                Debug.Log("Uma peça do Destiny Board saiu do campo. Destruindo as demais peças associadas...");
+                foreach (var c in toDestroy)
+                {
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(c);
+                    GameManager.Instance.SendToGraveyard(c.CurrentCardData, c.isPlayerCard);
+                    Destroy(c.gameObject);
                 }
             }
         }
@@ -3568,10 +3677,7 @@ partial void OnBattlePositionChangedImpl(CardDisplay card)
         Debug.Log("Yado Karu: Mão retornada ao fundo do Deck (Simulado).");
         // Lógica de retornar mão ao deck
     }
-}
 
-    partial void OnBattlePositionChangedImpl(CardDisplay card)
-    {
         // 0169 - Berserk Gorilla
         if (card.CurrentCardData.id == "0169" && card.position == CardDisplay.BattlePosition.Defense)
         {

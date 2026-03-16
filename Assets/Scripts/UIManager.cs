@@ -60,6 +60,11 @@ public class UIManager : MonoBehaviour
     public CardSelectionUI cardSelectionModal; // Novo modal de seleção múltipla
     public FusionUI fusionUI; // Novo modal para Fusão
     public RitualUI ritualUI; // Novo modal para Ritual
+    public GameObject destinyBoardWinPanel; // Arraste o Panel_DestinyBoardWin aqui
+    
+    [Header("End Duel Assets")]
+    public Sprite endDuelWinSprite;
+    public Sprite endDuelLoseSprite;
 
     // Adicione outras telas aqui conforme precisar (Library, Campaign, etc)
     // public GameObject libraryScreen; 
@@ -181,11 +186,29 @@ public class UIManager : MonoBehaviour
         if (cardSelectionModal != null) cardSelectionModal.gameObject.SetActive(false);
         if (fusionUI != null) fusionUI.gameObject.SetActive(false);
         if (ritualUI != null) ritualUI.gameObject.SetActive(false);
+        if (destinyBoardWinPanel != null) destinyBoardWinPanel.SetActive(false);
 
         // 2. Ativa apenas a tela desejada
         if (screenToShow != null)
         {
             screenToShow.SetActive(true);
+        }
+    }
+
+    public void ShowEndDuelPanel(bool playerWon)
+    {
+        ShowScreen(endDuelMessagePanel);
+        if (endDuelMessagePanel != null)
+        {
+            Transform imgTr = endDuelMessagePanel.transform.Find("ImageEndDuel");
+            if (imgTr != null)
+            {
+                Image img = imgTr.GetComponent<Image>();
+                if (img != null)
+                {
+                    img.sprite = playerWon ? endDuelWinSprite : endDuelLoseSprite;
+                }
+            }
         }
     }
 

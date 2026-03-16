@@ -1481,12 +1481,6 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
             source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, 1000, source));
     }
 
-    bool HasAnotherInsect(CardDisplay self)
-    {
-        // TODO: Implementar checagem no campo
-        return false; // SIMULADO
-    }
-
     void Effect_0110_ArsenalRobber(CardDisplay source)
     {
         // Regra: Oponente escolhe Equip do Deck e envia ao GY. Se não tiver, você toma 1000 de dano.
@@ -3228,9 +3222,32 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         {
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.currentAtk <= 2000,
-                (t) => {
-                    Debug.Log($"Chain Destruction: Destruindo cópias de {t.CurrentCardData.name} no deck/mão.");
-                    // Apenas log para o protótipo, pois requer acesso profundo às listas privadas do oponente
+                (target) => {
+                    string name = target.CurrentCardData.name;
+                    Debug.Log($"Chain Destruction: Destruindo todas as cópias de {name} na mão e deck do controlador.");
+
+                    List<CardData> hand = target.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+                    List<CardData> deck = target.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+
+                    foreach (var c in new List<CardData>(hand))
+                    {
+                        if (c.name == name)
+                        {
+                            GameManager.Instance.RemoveCardFromHand(c, target.isPlayerCard);
+                            GameManager.Instance.SendToGraveyard(c, target.isPlayerCard);
+                        }
+                    }
+
+                    foreach (var c in new List<CardData>(deck))
+                    {
+                        if (c.name == name)
+                        {
+                            deck.Remove(c);
+                            GameManager.Instance.SendToGraveyard(c, target.isPlayerCard);
+                        }
+                    }
+
+                    GameManager.Instance.ShuffleDeck(target.isPlayerCard);
                 }
             );
         }
@@ -3250,28 +3267,28 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                     // Bane o alvo
                     GameManager.Instance.BanishCard(t);
 
-                    // Bane cópias da mão e deck do controlador (Lógica simplificada para o Player)
-                    if (t.isPlayerCard)
+                    List<CardData> hand = t.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+                    List<CardData> deck = t.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+                    
+                    // Remove da mão
+                    foreach(var c in new List<CardData>(hand)) 
                     {
-                        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
-                        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
-                        
-                        // Remove da mão (cópia segura)
-                        foreach(var c in new List<CardData>(hand)) {
-                            if (c.name == name) {
-                                GameManager.Instance.RemoveCardFromHand(c, true);
-                                GameManager.Instance.RemoveFromPlay(c, true);
-                            }
+                        if (c.name == name) 
+                        {
+                            GameManager.Instance.RemoveCardFromHand(c, t.isPlayerCard);
+                            GameManager.Instance.RemoveFromPlay(c, t.isPlayerCard);
                         }
-                        // Remove do deck
-                        foreach(var c in new List<CardData>(deck)) {
-                            if (c.name == name) {
-                                deck.Remove(c);
-                                GameManager.Instance.RemoveFromPlay(c, true);
-                            }
-                        }
-                        GameManager.Instance.ShuffleDeck(true);
                     }
+                    // Remove do deck
+                    foreach(var c in new List<CardData>(deck)) 
+                    {
+                        if (c.name == name) 
+                        {
+                            deck.Remove(c);
+                            GameManager.Instance.RemoveFromPlay(c, t.isPlayerCard);
+                        }
+                    }
+                    GameManager.Instance.ShuffleDeck(t.isPlayerCard);
                 }
             );
         }
@@ -3874,14 +3891,11 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0327_ConvulsionOfNature(CardDisplay source)
     {
-        // Ambos os jogadores viram seus Decks de cabeça para baixo.
-        Debug.Log("Convulsion of Nature: Decks invertidos (Visual pendente).");
-        // Simulação visual: Vira o topo do deck
-        if (GameManager.Instance.playerDeckDisplay != null)
-        {
-            // Inverter visualmente seria complexo sem mudar a arquitetura do PileDisplay
-            // Mas podemos logar que o estado mudou
-        }
+        // Regra: Ambos os jogadores viram seus Decks de cabeça para baixo.
+        Debug.Log("Convulsion of Nature: Decks invertidos.");
+        CardEffectManager.Instance.invertDecks = true;
+        // Nota: GameManager ou PileDisplay devem verificar CardEffectManager.Instance.invertDecks
+        // para alterar o sprite da carta do topo do deck.
     }
 
     void Effect_0328_Copycat(CardDisplay source)
@@ -5518,9 +5532,9 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0482_DestinyBoard(CardDisplay source)
     {
-        // Efeito: Coloca Spirit Messages. Vitória em 5 turnos.
-        // Requer lógica complexa de turnos e zonas de S/T.
-        Debug.Log("Destiny Board: Contagem iniciada (Simulado).");
+        // Efeito Real: Coloca as Spirit Messages a cada End Phase do oponente.
+        Debug.Log("Destiny Board: Ativado. Iniciando a invocação das Spirit Messages.");
+        source.spellCounters = 0; // 0 = Letra I, 1 = Letra N, 2 = Letra A...
     }
 
     void Effect_0484_DestructionPunch(CardDisplay source)
@@ -5720,7 +5734,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         if (GameManager.Instance.PayLifePoints(source.isPlayerCard, 2000))
         {
             // Player
-            List<CardData> pBanished = GameManager.Instance.GetPlayerRemoved();
+            pBanished = GameManager.Instance.GetPlayerRemoved();
             // Opponent
             // ...
             Debug.Log("Dimension Fusion: Invocando monstros banidos (Lógica de massa pendente).");

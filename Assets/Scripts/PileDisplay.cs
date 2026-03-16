@@ -104,8 +104,13 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
 
                     if (pileType == PileType.Deck)
                     {
-                        // Deck: Mostra apenas o verso (otimizado)
-                        display.SetCardBackOnly(currentBackTexture);
+                        // Verifica Convulsion of Nature ou Modo Dev
+                        bool showFront = false;
+                        if (CardEffectManager.Instance != null && CardEffectManager.Instance.invertDecks) showFront = true;
+                        if (GameManager.Instance != null && GameManager.Instance.invertDecksDevMode) showFront = true;
+
+                        if (showFront) display.SetCard(data, currentBackTexture, true);
+                        else display.SetCardBackOnly(currentBackTexture);
                     }
                     else if (pileType == PileType.ExtraDeck)
                     {

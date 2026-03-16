@@ -89,6 +89,8 @@ public partial class CardEffectManager : MonoBehaviour
 
     // --- VALIDAÇÕES DE REGRAS DE EFEITO ---
 
+    public bool invertDecks = false; // Para Convulsion of Nature (0327)
+
     public bool CheckChainEnergy(bool isPlayer)
     {
         if (GameManager.Instance.IsCardActiveOnField("0284")) // Chain Energy

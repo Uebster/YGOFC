@@ -388,3 +388,8 @@ Cartas que exigem que o jogador **"Declare o nome de uma carta"** (Ex: *Mind Cru
         // Ação com a declaredCard (CardData)
     });
     ```
+
+## 22. Condições Especiais de Vitória e Alterações Visuais do Tabuleiro
+Algumas cartas alteram a forma como a vitória é alcançada ou como as cartas são renderizadas no tabuleiro.
+*   **Destiny Board (Vitória Alternativa TCG):** A cada End Phase do oponente, a engine utiliza o `CardEffectManager` para procurar a próxima "Spirit Message" (I, N, A, L) na mão ou no Deck do controlador e instanciá-la fisicamente na primeira Zona de Mágicas e Armadilhas vazia. Se o jogador não possuir zonas vazias ou se a carta correspondente não for encontrada, o efeito falha e o `Destiny Board` é destruído. Além disso, há um vínculo vital no `OnCardLeavesField`: se qualquer peça do quadro sair de campo (Destruída, Banida ou Bounced), todas as outras peças no controle do jogador são destruídas em cadeia. Quando a 5ª peça entra em campo, o Singleton `DestinyBoardWinUI` assume o controle gerando a tela cinemática de Game Over (F-I-N-A-L).
+*   **Convulsion of Nature (Inversão de Deck):** O `CardEffectManager` ativa a flag global `invertDecks = true`. O script `PileDisplay`, responsável por renderizar a pilha 3D do Deck no campo, verifica esta flag. Se estiver ativa, ele força o método `SetCard` a exibir a arte da carta (`showFront = true`) em vez da textura de fundo (`SetCardBackOnly`), revelando aos jogadores qual é a próxima carta a ser sacada. Há também uma flag `invertDecksDevMode` no `GameManager` para forçar este comportamento para testes.
