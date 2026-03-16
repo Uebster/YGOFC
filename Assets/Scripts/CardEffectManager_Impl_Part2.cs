@@ -1086,6 +1086,10 @@ public partial class CardEffectManager
         }
     }
 
+    // =========================================================================================
+    // IMPLEMENTAÇÃO ESPECÍFICA (ID 0601 - 0700)
+    // =========================================================================================
+
     void Effect_0603_EnergyDrain(CardDisplay source)
     {
         // Target 1 face-up monster you control; it gains 200 ATK/DEF for each card your opponent currently has in their hand.
@@ -1975,29 +1979,52 @@ public partial class CardEffectManager
         Debug.Log("Fuh-Rin-Ka-Zan: Efeito poderoso (Raigeki/Harpie/Duo/Pot).");
     }
 
+    // =========================================================================================
+    // IMPLEMENTAÇÃO ESPECÍFICA (ID 0701 - 0800)
+    // =========================================================================================
+
     void Effect_0701_FuhmaShuriken(CardDisplay source)
     {
-        // Equip: +700 ATK. If sent to GY, 700 damage.
+        bool hasNinja = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (!m.isFlipped && m.CurrentCardData.name.Contains("Ninja")) hasNinja = true;
+        }
+
+        if (!hasNinja)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros 'Ninja' face-up no campo para equipar.");
+            return;
+        }
         Effect_Equip(source, 700, 0);
-        // Lógica de dano ao ir pro GY deve ser no OnCardSentToGraveyard
     }
 
     void Effect_0702_FulfillmentOfTheContract(CardDisplay source)
     {
-        // Pay 800 LP; Select Ritual Monster in GY; SS it and equip this card.
+        if (GameManager.Instance.playerLP <= 800)
+        {
+            UIManager.Instance.ShowMessage("Pontos de Vida insuficientes (800 necessários).");
+            return;
+        }
+
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> rituals = gy.FindAll(c => c.type.Contains("Ritual") && c.type.Contains("Monster"));
+        
+        if (rituals.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Você não possui Monstros Ritual no Cemitério.");
+            return;
+        }
+
         if (Effect_PayLP(source, 800))
         {
-            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
-            List<CardData> rituals = gy.FindAll(c => c.type.Contains("Ritual") && c.type.Contains("Monster"));
-            
-            if (rituals.Count > 0)
-            {
-                GameManager.Instance.OpenCardSelection(rituals, "Reviver Ritual", (selected) => {
-                    GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
-                    // Equipar lógica (simulada)
-                    Debug.Log("Fulfillment: Equipado ao monstro revivido.");
-                });
-            }
+            GameManager.Instance.OpenCardSelection(rituals, "Reviver Ritual", (selected) => {
+                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                Debug.Log("Fulfillment: Equipado ao monstro revivido.");
+            });
         }
     }
 
@@ -2009,16 +2036,18 @@ public partial class CardEffectManager
 
     void Effect_0705_FushiohRichie(CardDisplay source)
     {
-        // Flip: SS 1 Zombie from GY.
         List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
         List<CardData> zombies = gy.FindAll(c => c.race == "Zombie");
         
-        if (zombies.Count > 0)
+        if (zombies.Count == 0)
         {
-            GameManager.Instance.OpenCardSelection(zombies, "Reviver Zumbi", (selected) => {
-                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
-            });
+            UIManager.Instance.ShowMessage("Não há monstros Zombie no Cemitério.");
+            return;
         }
+
+        GameManager.Instance.OpenCardSelection(zombies, "Reviver Zumbi", (selected) => {
+            GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+        });
     }
 
     void Effect_0706_FusilierDragon(CardDisplay source)
@@ -2035,43 +2064,80 @@ public partial class CardEffectManager
 
     void Effect_0708_FusionRecovery(CardDisplay source)
     {
-        // Target 1 Polymerization and 1 Fusion Material in GY; add to hand.
         List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
         CardData poly = gy.Find(c => c.name == "Polymerization");
         List<CardData> monsters = gy.FindAll(c => c.type.Contains("Monster"));
         
-        if (poly != null && monsters.Count > 0)
+        if (poly == null || monsters.Count == 0)
         {
-            GameManager.Instance.OpenCardSelection(monsters, "Recuperar Material", (material) => {
-                gy.Remove(poly);
-                gy.Remove(material);
-                GameManager.Instance.AddCardToHand(poly, source.isPlayerCard);
-                GameManager.Instance.AddCardToHand(material, source.isPlayerCard);
-                Debug.Log($"Fusion Recovery: Recuperou Polymerization e {material.name}.");
-            });
+            UIManager.Instance.ShowMessage("Requer 'Polymerization' e pelo menos 1 Monstro no Cemitério.");
+            return;
         }
+
+        GameManager.Instance.OpenCardSelection(monsters, "Recuperar Material", (material) => {
+            gy.Remove(poly);
+            gy.Remove(material);
+            GameManager.Instance.AddCardToHand(poly, source.isPlayerCard);
+            GameManager.Instance.AddCardToHand(material, source.isPlayerCard);
+            Debug.Log($"Fusion Recovery: Recuperou Polymerization e {material.name}.");
+        });
     }
 
     void Effect_0709_FusionSage(CardDisplay source)
     {
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        if (!deck.Exists(c => c.name == "Polymerization"))
+        {
+            UIManager.Instance.ShowMessage("Você não possui 'Polymerization' no Deck.");
+            return;
+        }
         Effect_SearchDeck(source, "Polymerization");
     }
 
     void Effect_0710_FusionSwordMurasameBlade(CardDisplay source)
     {
+        bool hasWarrior = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (!m.isFlipped && m.CurrentCardData.race == "Warrior") hasWarrior = true;
+        }
+
+        if (!hasWarrior)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros 'Warrior' face-up no campo.");
+            return;
+        }
         Effect_Equip(source, 800, 0, "Warrior");
     }
 
     void Effect_0711_FusionWeapon(CardDisplay source)
     {
-        // Equip: Fusion Monster Lv6 or lower. +1500 ATK/DEF.
+        bool hasTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (!m.isFlipped && m.CurrentCardData.type.Contains("Fusion") && m.CurrentCardData.level <= 6) hasTarget = true;
+        }
+
+        if (!hasTarget)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros de Fusão Nível 6 ou menor face-up.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && t.CurrentCardData.type.Contains("Fusion") && t.CurrentCardData.level <= 6,
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Fusion") && t.CurrentCardData.level <= 6 && !t.isFlipped,
                 (t) => {
                     t.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, 1500, source));
                     t.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, 1500, source));
+                    GameManager.Instance.CreateCardLink(source, t, CardLink.LinkType.Equipment);
                     Debug.Log("Fusion Weapon: Equipado.");
                 }
             );
@@ -2091,18 +2157,26 @@ public partial class CardEffectManager
 
     void Effect_0719_GaleDogra(CardDisplay source)
     {
-        // Pay 3000 LP; send 1 monster from Extra Deck to GY.
+        if (GameManager.Instance.playerLP <= 3000)
+        {
+            UIManager.Instance.ShowMessage("Pontos de Vida insuficientes (Requer mais de 3000).");
+            return;
+        }
+
+        List<CardData> extra = GameManager.Instance.GetPlayerExtraDeck();
+        if (extra.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Seu Extra Deck está vazio.");
+            return;
+        }
+
         if (Effect_PayLP(source, 3000))
         {
-            List<CardData> extra = GameManager.Instance.GetPlayerExtraDeck();
-            if (extra.Count > 0)
-            {
-                GameManager.Instance.OpenCardSelection(extra, "Enviar ao GY", (selected) => {
-                    extra.Remove(selected);
-                    GameManager.Instance.SendToGraveyard(selected, source.isPlayerCard);
-                    Debug.Log($"Gale Dogra: {selected.name} enviado ao GY.");
-                });
-            }
+            GameManager.Instance.OpenCardSelection(extra, "Enviar ao GY", (selected) => {
+                extra.Remove(selected);
+                GameManager.Instance.SendToGraveyard(selected, source.isPlayerCard);
+                Debug.Log($"Gale Dogra: {selected.name} enviado ao GY.");
+            });
         }
     }
 
@@ -2113,7 +2187,12 @@ public partial class CardEffectManager
 
     void Effect_0721_Gamble(CardDisplay source)
     {
-        // Coin toss. Heads: Draw 5. Tails: Skip next turn.
+        if (GameManager.Instance.GetOpponentHandData().Count < 6 || GameManager.Instance.GetPlayerHandData().Count > 2)
+        {
+            UIManager.Instance.ShowMessage("O oponente deve ter 6+ cartas e você 2 ou menos.");
+            return;
+        }
+
         GameManager.Instance.TossCoin(1, (heads) => {
             if (heads == 1)
             {
@@ -2123,6 +2202,7 @@ public partial class CardEffectManager
             else
             {
                 Debug.Log("Gamble: Coroa! Pula próximo turno.");
+                if (PhaseManager.Instance != null) PhaseManager.Instance.RegisterSkipNextPhase(true, GamePhase.Draw); // Pularia turno inteiro, simplificado
             }
         });
     }
@@ -2134,17 +2214,22 @@ public partial class CardEffectManager
 
     void Effect_0728_GarudaTheWindSpirit(CardDisplay source)
     {
-        // SS by banishing 1 WIND. Change battle position of opp monster.
         if (!source.isOnField)
         {
-            // Lógica de SS da mão
             List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
             List<CardData> winds = gy.FindAll(c => c.attribute == "Wind");
             
+            if (winds.Count == 0)
+            {
+                UIManager.Instance.ShowMessage("Você precisa de 1 monstro WIND no Cemitério.");
+                return;
+            }
+
             if (winds.Count > 0)
             {
                 GameManager.Instance.OpenCardSelection(winds, "Banir 1 WIND", (selected) => {
                     GameManager.Instance.RemoveFromPlay(selected, source.isPlayerCard);
+                    gy.Remove(selected);
                     GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
                     GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
                 });
@@ -2152,8 +2237,6 @@ public partial class CardEffectManager
         }
         else
         {
-            // Efeito em campo: Mudar posição (End Phase do oponente)
-            // Requer TurnObserver
             Debug.Log("Garuda: Efeito de mudança de posição (End Phase do oponente).");
         }
     }
@@ -2166,20 +2249,30 @@ public partial class CardEffectManager
 
     void Effect_0733_GatherYourMind(CardDisplay source)
     {
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        if (!deck.Exists(c => c.name == "Gather Your Mind"))
+        {
+            UIManager.Instance.ShowMessage("Você não possui outra cópia de 'Gather Your Mind' no Deck.");
+            return;
+        }
         Effect_SearchDeck(source, "Gather Your Mind");
     }
 
     void Effect_0734_GatlingDragon(CardDisplay source)
     {
-        // 3 Coins. Destroy monsters equal to Heads.
+        if (source.hasUsedEffectThisTurn)
+        {
+            UIManager.Instance.ShowMessage("Efeito já ativado neste turno.");
+            return;
+        }
+
         GameManager.Instance.TossCoin(3, (heads) => {
             if (heads > 0)
             {
                 Debug.Log($"Gatling Dragon: {heads} caras. Destruindo {heads} monstros.");
-                // Lógica de destruição múltipla (até 'heads' alvos)
-                // Requer UI de seleção múltipla no campo
             }
         });
+        source.hasUsedEffectThisTurn = true;
     }
 
     void Effect_0736_GearGolemTheMovingFortress(CardDisplay source)
@@ -2214,9 +2307,22 @@ public partial class CardEffectManager
 
     void Effect_0742_GermInfection(CardDisplay source)
     {
-        // Equip: Non-Machine loses 300 ATK each Standby.
+        bool hasTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (!m.isFlipped && m.CurrentCardData.race != "Machine") hasTarget = true;
+        }
+
+        if (!hasTarget)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros Não-Máquina face-up no campo para equipar.");
+            return;
+        }
+
         Effect_Equip(source, 0, 0);
-        // Lógica de debuff progressivo no OnPhaseStart.
     }
 
     void Effect_0743_Gernia(CardDisplay source)
@@ -2248,7 +2354,6 @@ public partial class CardEffectManager
 
     void Effect_0749_GiantGerm(CardDisplay source)
     {
-        // Destroyed by battle: 500 dmg, SS up to 2 Giant Germs from Deck.
         Effect_DirectDamage(source, 500);
         
         List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
@@ -2257,7 +2362,6 @@ public partial class CardEffectManager
         if (germs.Count > 0)
         {
             int max = Mathf.Min(2, germs.Count);
-            // Auto-summon para simplificar ou abrir seleção
             for(int i=0; i<max; i++)
             {
                 GameManager.Instance.SpecialSummonFromData(germs[i], source.isPlayerCard);
@@ -2269,14 +2373,12 @@ public partial class CardEffectManager
 
     void Effect_0750_GiantKozaky(CardDisplay source)
     {
-        // If no face-up Kozaky, destroy this. If destroyed, damage = orig ATK (2500).
-        if (!GameManager.Instance.IsCardActiveOnField("1030")) // Kozaky ID
+        if (!GameManager.Instance.IsCardActiveOnField("1030")) // Kozaky
         {
             Debug.Log("Giant Kozaky: Sem Kozaky. Auto-destruição.");
             GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
             Destroy(source.gameObject);
             
-            // Dano ao dono
             if (source.isPlayerCard) GameManager.Instance.DamagePlayer(2500);
             else GameManager.Instance.DamageOpponent(2500);
         }
@@ -2297,13 +2399,18 @@ public partial class CardEffectManager
 
     void Effect_0757_GiantTrunade(CardDisplay source)
     {
-        // Return all Spell/Trap Cards on the field to the hand.
         List<CardDisplay> toReturn = new List<CardDisplay>();
         if (GameManager.Instance.duelFieldUI != null)
         {
             CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, toReturn);
             CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, toReturn);
             CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.playerFieldSpell, GameManager.Instance.duelFieldUI.opponentFieldSpell }, toReturn);
+        }
+
+        if (toReturn.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Não há Magias/Armadilhas no campo.");
+            return;
         }
         
         foreach(var c in toReturn)
@@ -2326,7 +2433,16 @@ public partial class CardEffectManager
 
     void Effect_0760_GiftOfTheMartyr(CardDisplay source)
     {
-        // Tribute 1 monster; select 1 monster you control, it gains ATK equal to original ATK of tributed monster until End Phase.
+        int monsterCount = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if (z.childCount > 0) monsterCount++;
+
+        if (monsterCount < 2)
+        {
+            UIManager.Instance.ShowMessage("Você precisa de pelo menos 2 monstros no campo (1 para tributar, 1 para receber).");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -2349,16 +2465,22 @@ public partial class CardEffectManager
 
     void Effect_0763_Gigantes(CardDisplay source)
     {
-        // SS by banishing 1 Earth. If destroyed by battle, destroy all S/T.
         if (!source.isOnField)
         {
-            // SS Logic
             List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
             List<CardData> earths = gy.FindAll(c => c.attribute == "Earth");
+            
+            if (earths.Count == 0)
+            {
+                UIManager.Instance.ShowMessage("Você precisa de 1 monstro EARTH no Cemitério.");
+                return;
+            }
+
             if (earths.Count > 0)
             {
                 GameManager.Instance.OpenCardSelection(earths, "Banir 1 EARTH", (selected) => {
                     GameManager.Instance.RemoveFromPlay(selected, source.isPlayerCard);
+                    gy.Remove(selected);
                     GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
                     GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
                 });
@@ -2366,14 +2488,12 @@ public partial class CardEffectManager
         }
         else
         {
-            // Destroy S/T logic (OnBattleEnd)
             Debug.Log("Gigantes: Efeito de destruição S/T configurado.");
         }
     }
 
     void Effect_0767_Gilasaurus(CardDisplay source)
     {
-        // You can Special Summon this card from your hand. If you do, opponent can SS 1 monster from their GY.
         if (!source.isOnField)
         {
             GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
@@ -2384,9 +2504,11 @@ public partial class CardEffectManager
 
     void Effect_0768_GilfordTheLightning(CardDisplay source)
     {
-        // If Tribute Summoned by Tributing 3 monsters: Destroy all monsters opponent controls.
-        // Lógica no OnSummonImpl (verificar tributos).
-        Debug.Log("Gilford the Lightning: Raigeki se 3 tributos.");
+        if (source.summonedThisTurn && source.isTributeSummoned)
+        {
+            Debug.Log("Gilford the Lightning: Destruindo monstros do oponente.");
+            DestroyAllMonsters(true, false);
+        }
     }
 
     void Effect_0771_GoblinAttackForce(CardDisplay source)
@@ -2409,7 +2531,6 @@ public partial class CardEffectManager
 
     void Effect_0775_GoblinKing(CardDisplay source)
     {
-        // ATK/DEF = Fiends x 500. Cannot be attacked if another Fiend exists.
         int count = 0;
         if (GameManager.Instance.duelFieldUI != null)
         {
@@ -2449,13 +2570,19 @@ public partial class CardEffectManager
 
     void Effect_0780_GoddessOfWhim(CardDisplay source)
     {
-        // Once per turn: Toss coin. Heads: Double ATK. Tails: Halve ATK.
+        if (source.hasUsedEffectThisTurn)
+        {
+            UIManager.Instance.ShowMessage("Efeito já ativado neste turno.");
+            return;
+        }
+
         GameManager.Instance.TossCoin(1, (heads) => {
             if (heads == 1)
-                source.ModifyStats(source.currentAtk, 0); // Double (Add current)
+                source.ModifyStats(source.currentAtk, 0); 
             else
-                source.ModifyStats(-source.currentAtk / 2, 0); // Halve (Subtract half)
+                source.ModifyStats(-source.currentAtk / 2, 0); 
         });
+        source.hasUsedEffectThisTurn = true;
     }
 
     void Effect_0781_GoddessWithTheThirdEye(CardDisplay source)
@@ -2466,11 +2593,8 @@ public partial class CardEffectManager
 
     void Effect_0784_GolemSentry(CardDisplay source)
     {
-        // Ignition: Flip face-down.
-        // Trigger (Flip): Return opp monster to hand.
         if (source.isFlipped)
         {
-            // Flip Effect
             if (SpellTrapManager.Instance != null)
             {
                 SpellTrapManager.Instance.StartTargetSelection(
@@ -2481,27 +2605,26 @@ public partial class CardEffectManager
         }
         else
         {
-            // Ignition
-            Effect_TurnSet(source);
+            if (!source.hasUsedEffectThisTurn)
+            {
+                Effect_TurnSet(source);
+                source.hasUsedEffectThisTurn = true;
+            }
         }
     }
 
     void Effect_0786_GoodGoblinHousekeeping(CardDisplay source)
     {
-        // Draw cards = copies in GY + 1, then return 1 to bottom of deck.
         int copies = GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.name == "Good Goblin Housekeeping").Count;
         int drawCount = copies + 1;
         
-        for(int i=0; i<drawCount; i++) GameManager.Instance.DrawCard();
+        for(int i=0; i<drawCount; i++) GameManager.Instance.DrawCard(true); // Ignore limit temporarily
         
-        // Return 1 to bottom (Simulated: Select from hand to return)
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         if (hand.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(hand, "Retornar ao Fundo do Deck", (selected) => {
                 GameManager.Instance.RemoveCardFromHand(selected, source.isPlayerCard);
-                GameManager.Instance.ReturnToDeck(null, false); // false = bottom. Need CardDisplay dummy or refactor ReturnToDeck.
-                // Workaround for ReturnToDeck needing CardDisplay:
                 GameManager.Instance.GetPlayerMainDeck().Add(selected);
                 Debug.Log($"Good Goblin Housekeeping: {selected.name} retornado ao fundo.");
             });
@@ -2528,21 +2651,42 @@ public partial class CardEffectManager
 
     void Effect_0791_GracefulCharity(CardDisplay source)
     {
-        // Draw 3, Discard 2.
-        GameManager.Instance.DrawCard();
-        GameManager.Instance.DrawCard();
-        GameManager.Instance.DrawCard();
+        if (GameManager.Instance.GetPlayerMainDeck().Count < 3)
+        {
+            UIManager.Instance.ShowMessage("Você precisa de pelo menos 3 cartas no Deck.");
+            return;
+        }
+
+        GameManager.Instance.DrawCard(true);
+        GameManager.Instance.DrawCard(true);
+        GameManager.Instance.DrawCard(true);
         
-        // Discard 2 (Simulated: Random or First 2 if no UI)
-        // In real game, needs Multi-Select from Hand.
-        GameManager.Instance.DiscardRandomHand(source.isPlayerCard, 2); 
-        Debug.Log("Graceful Charity: Comprou 3, descartou 2.");
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count >= 2)
+        {
+            GameManager.Instance.OpenCardMultiSelection(hand, "Descarte 2 cartas", 2, 2, (selected) => {
+                foreach (var c in selected)
+                {
+                    GameObject go = GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c);
+                    if (go != null) GameManager.Instance.DiscardCard(go.GetComponent<CardDisplay>());
+                }
+            });
+        }
     }
 
     void Effect_0792_GracefulDice(CardDisplay source)
     {
-        // Roll die. All your monsters gain ATK/DEF = result * 100.
-        GameManager.Instance.TossCoin(1, (heads) => { // Simulating Die with Coin logic or Random
+        bool hasMonster = false;
+        if (GameManager.Instance.duelFieldUI != null)
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if (z.childCount > 0 && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped) hasMonster = true;
+
+        if (!hasMonster)
+        {
+            UIManager.Instance.ShowMessage("Você não controla monstros face-up.");
+            return;
+        }
+
+        GameManager.Instance.TossCoin(1, (heads) => { 
              int roll = Random.Range(1, 7);
              int buff = roll * 100;
              Debug.Log($"Graceful Dice: Rolou {roll}. Buff {buff}.");
@@ -2554,7 +2698,7 @@ public partial class CardEffectManager
                      if (zone.childCount > 0)
                      {
                          var m = zone.GetChild(0).GetComponent<CardDisplay>();
-                         if (m != null)
+                         if (m != null && !m.isFlipped)
                          {
                              m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, buff, source));
                              m.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, buff, source));
@@ -2567,16 +2711,17 @@ public partial class CardEffectManager
 
     void Effect_0794_GradiusOption(CardDisplay source)
     {
-        // Cannot be Normal Summoned. SS if Gradius exists. Stats = Gradius stats.
         if (!source.isOnField)
         {
-            // Check Gradius
-            bool hasGradius = GameManager.Instance.IsCardActiveOnField("Gradius") || GameManager.Instance.IsCardActiveOnField("1095"); // ID Gradius
+            bool hasGradius = GameManager.Instance.IsCardActiveOnField("Gradius") || GameManager.Instance.IsCardActiveOnField("1095");
             if (hasGradius)
             {
                 GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
                 GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
-                // Apply stats logic (needs reference to Gradius on field)
+            }
+            else
+            {
+                UIManager.Instance.ShowMessage("Requer 'Gradius' face-up no campo.");
             }
         }
     }
@@ -2593,32 +2738,57 @@ public partial class CardEffectManager
 
     void Effect_0797_GranmargTheRockMonarch(CardDisplay source)
     {
-        // Tribute Summon: Destroy 1 Set card.
-        if (SpellTrapManager.Instance != null)
+        if (source.summonedThisTurn && source.isTributeSummoned)
         {
-            SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && t.isFlipped == false,
-                (t) => {
-                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
-                    GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
-                    Destroy(t.gameObject);
-                }
-            );
+            bool hasTarget = false;
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                List<CardDisplay> all = new List<CardDisplay>();
+                CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, all);
+                CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, all);
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+                CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                foreach(var m in all) if (m.isFlipped) hasTarget = true;
+            }
+
+            if (!hasTarget)
+            {
+                Debug.Log("Granmarg: Não há cartas Setadas para destruir.");
+                return;
+            }
+
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isFlipped,
+                    (t) => {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                        GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                        Destroy(t.gameObject);
+                    }
+                );
+            }
         }
     }
 
     void Effect_0799_GraveLure(CardDisplay source)
     {
-        // Turn top card of opp deck face-up.
+        if (GameManager.Instance.GetOpponentMainDeck().Count == 0)
+        {
+            UIManager.Instance.ShowMessage("O Deck do oponente está vazio.");
+            return;
+        }
         Debug.Log("Grave Lure: Revelando topo do deck oponente.");
-        // Logic to peek/reveal top card
     }
 
     void Effect_0800_GraveOhja(CardDisplay source)
     {
-        // Flip Summon: 300 damage to opp.
         Effect_DirectDamage(source, 300);
     }
+
+    // =========================================================================================
+    // IMPLEMENTAÇÃO ESPECÍFICA (ID 0801 - 0900)
+    // =========================================================================================
 
     void Effect_0801_GraveProtector(CardDisplay source)
     {
@@ -3264,6 +3434,10 @@ public partial class CardEffectManager
         }
         Debug.Log("Hiro's Shadow Scout: Oponente comprou 3. (Lógica de descarte de Spell pendente).");
     }
+
+    // =========================================================================================
+    // IMPLEMENTAÇÃO ESPECÍFICA (ID 0901 - 1000)
+    // =========================================================================================
 
     void Effect_0901_HomunculusTheAlchemicBeing(CardDisplay source)
     {
