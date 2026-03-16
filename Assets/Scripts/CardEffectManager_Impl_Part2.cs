@@ -716,8 +716,26 @@ public partial class CardEffectManager
 
     void Effect_0560_Earthshaker(CardDisplay source)
     {
-        // Select 2 Attributes. Opponent selects 1. Destroy all face-up with that Attribute.
-        Debug.Log("Earthshaker: Destruição por atributo (Lógica de seleção pendente).");
+        List<string> attributes = new List<string> { "Earth", "Water", "Fire", "Wind", "Light", "Dark" };
+        if (MultipleChoiceUI.Instance != null)
+        {
+            MultipleChoiceUI.Instance.Show(attributes, "Earthshaker: Escolha 2 Atributos", 2, 2, (selected) => {
+                if (selected.Count == 2)
+                {
+                    // Oponente escolhe 1 dos 2 (Simulando IA rápida)
+                    string chosenToDestroy = selected[Random.Range(0, 2)];
+                    Debug.Log($"Earthshaker: Oponente escolheu o atributo {chosenToDestroy} para destruir.");
+                    
+                    List<CardDisplay> toDestroy = new List<CardDisplay>();
+                    if (GameManager.Instance.duelFieldUI != null) {
+                        CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, toDestroy);
+                        CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, toDestroy);
+                    }
+                    List<CardDisplay> finalTargets = toDestroy.FindAll(m => m.CurrentCardData.attribute == chosenToDestroy && !m.isFlipped);
+                    DestroyCards(finalTargets, source.isPlayerCard);
+                }
+            });
+        }
     }
 
     void Effect_0561_Eatgaboon(CardDisplay source)
@@ -2008,7 +2026,29 @@ public partial class CardEffectManager
             return;
         }
 
-        Debug.Log("Fuh-Rin-Ka-Zan: Efeito poderoso (Raigeki/Harpie/Duo/Pot).");
+        List<string> options = new List<string> { 
+            "Destruir todos os monstros do oponente", 
+            "Destruir todas as Magias/Armadilhas do oponente", 
+            "Oponente descarta 2 cartas", 
+            "Comprar 2 cartas" 
+        };
+
+        if (MultipleChoiceUI.Instance != null)
+        {
+            MultipleChoiceUI.Instance.Show(options, "Fuh-Rin-Ka-Zan: Escolha 1 Efeito", 1, 1, (selected) => {
+                if (selected.Count == 1)
+                {
+                    string opt = selected[0];
+                    if (opt.Contains("monstros")) DestroyAllMonsters(true, false);
+                    else if (opt.Contains("Magias")) Effect_HarpiesFeatherDuster(source);
+                    else if (opt.Contains("descarta")) GameManager.Instance.DiscardRandomHand(false, 2);
+                    else if (opt.Contains("Comprar")) {
+                        GameManager.Instance.DrawCard();
+                        GameManager.Instance.DrawCard();
+                    }
+                }
+            });
+        }
     }
 
     // =========================================================================================

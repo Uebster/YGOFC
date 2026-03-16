@@ -381,29 +381,34 @@ public partial class CardEffectManager
         // Regra: Pague 1000 LP; declare Tipo e Atributo. Oponente envia 1 monstro correspondente da mão/deck ao GY.
         if (Effect_PayLP(source, 1000))
         {
-            // Simulação de declaração (Em produção: UI de Input)
-            string[] attributes = { "Dark", "Light", "Earth", "Water", "Fire", "Wind" };
-            string[] races = { "Fiend", "Zombie", "Warrior", "Spellcaster", "Dragon", "Machine", "Beast" };
-            
-            string declaredAttribute = attributes[Random.Range(0, attributes.Length)];
-            string declaredRace = races[Random.Range(0, races.Length)];
+            List<string> types = new List<string> { "Fiend", "Zombie", "Warrior", "Spellcaster", "Dragon", "Machine", "Beast", "Beast-Warrior", "Dinosaur", "Fish", "Sea Serpent", "Aqua", "Pyro", "Thunder", "Rock", "Plant", "Insect", "Fairy", "Winged Beast", "Reptile" };
+            List<string> attributes = new List<string> { "Dark", "Light", "Earth", "Water", "Fire", "Wind" };
 
-            Debug.Log($"Abyssal Designator: Declarando {declaredAttribute}/{declaredRace}.");
-            
-            // Simulação: Oponente envia 1 Dark/Fiend
-            List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
-            
-            CardData target = oppDeck.Find(c => c.attribute == declaredAttribute && c.race == declaredRace);
-            
-            if (target != null)
+            if (MultipleChoiceUI.Instance != null)
             {
-                 Debug.Log($"Abyssal Designator: Oponente enviou {target.name} ao GY.");
-                 GameManager.Instance.SendToGraveyard(target, !source.isPlayerCard);
-                 oppDeck.Remove(target);
-            }
-            else
-            {
-                 Debug.Log("Abyssal Designator: Oponente não possui monstro correspondente no Deck.");
+                MultipleChoiceUI.Instance.Show(types, "Abyssal Designator: Escolha 1 Tipo", 1, 1, (selectedType) => {
+                    if (selectedType.Count == 1) {
+                        MultipleChoiceUI.Instance.Show(attributes, "Abyssal Designator: Escolha 1 Atributo", 1, 1, (selectedAttr) => {
+                            if (selectedAttr.Count == 1) {
+                                string declaredRace = selectedType[0];
+                                string declaredAttribute = selectedAttr[0];
+                                Debug.Log($"Abyssal Designator: Declarou {declaredAttribute} / {declaredRace}.");
+                                
+                                List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
+                                CardData target = oppDeck.Find(c => c.attribute == declaredAttribute && c.race == declaredRace);
+                                
+                                if (target != null) {
+                                    Debug.Log($"Abyssal Designator: Oponente enviou {target.name} ao GY.");
+                                    GameManager.Instance.SendToGraveyard(target, !source.isPlayerCard);
+                                    oppDeck.Remove(target);
+                                    GameManager.Instance.ShuffleDeck(!source.isPlayerCard);
+                                } else {
+                                    UIManager.Instance.ShowMessage("O oponente não possui monstro correspondente no Deck.");
+                                }
+                            }
+                        });
+                    }
+                });
             }
         }
     }
@@ -4603,15 +4608,32 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
             return;
         }
 
-        string declared = "Dragon"; // Em produção: UI de input
-        Debug.Log($"DNA Surgery: Tipo declarado: {declared}.");
-        CardEffectManager.Instance.dnaSurgeryDeclaredType = declared;
+        List<string> types = new List<string> { "Fiend", "Zombie", "Warrior", "Spellcaster", "Dragon", "Machine", "Beast", "Beast-Warrior", "Dinosaur", "Fish", "Sea Serpent", "Aqua", "Pyro", "Thunder", "Rock", "Plant", "Insect", "Fairy", "Winged Beast", "Reptile" };
+        if (MultipleChoiceUI.Instance != null)
+        {
+            MultipleChoiceUI.Instance.Show(types, "DNA Surgery: Declare 1 Tipo", 1, 1, (selected) => {
+                if (selected.Count > 0)
+                {
+                    Debug.Log($"DNA Surgery: Tipo declarado: {selected[0]}.");
+                    CardEffectManager.Instance.dnaSurgeryDeclaredType = selected[0];
+                }
+            });
+        }
     }
 
     void Effect_0391_DNATransplant(CardDisplay source)
     {
-        // Trap: Declare 1 Atributo; todos viram esse Atributo.
-        Debug.Log("DNA Transplant: Declare um Atributo (Simulado: LIGHT).");
+        List<string> attributes = new List<string> { "Dark", "Light", "Earth", "Water", "Fire", "Wind" };
+        if (MultipleChoiceUI.Instance != null)
+        {
+            MultipleChoiceUI.Instance.Show(attributes, "DNA Transplant: Declare 1 Atributo", 1, 1, (selected) => {
+                if (selected.Count > 0)
+                {
+                    Debug.Log($"DNA Transplant: Atributo declarado: {selected[0]}.");
+                    CardEffectManager.Instance.dnaTransplantDeclaredType = selected[0];
+                }
+            });
+        }
     }
 
     void Effect_0393_DancingFairy(CardDisplay source)
