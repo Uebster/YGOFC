@@ -43,6 +43,10 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
     public Transform opponentHand;
     public Transform opponentRemoved; // Nova zona
 
+    [Header("Prefabs Especiais")]
+    public GameObject zoneBlockPrefab;
+    private Dictionary<Transform, GameObject> activeBlocks = new Dictionary<Transform, GameObject>();
+
     // --- FERRAMENTA DE GERAÇÃO AUTOMÁTICA (EDITOR) ---
 #if UNITY_EDITOR
     [ContextMenu("Gerar Layout do Tabuleiro")]
@@ -146,6 +150,30 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
                 BattleManager.Instance.TryDirectAttack();
             }
         }
+    }
+
+    public void BlockZone(Transform zone)
+    {
+        if (activeBlocks.ContainsKey(zone)) return;
+        if (zoneBlockPrefab != null)
+        {
+            GameObject block = Instantiate(zoneBlockPrefab, zone);
+            activeBlocks.Add(zone, block);
+        }
+    }
+
+    public void UnblockZone(Transform zone)
+    {
+        if (activeBlocks.TryGetValue(zone, out GameObject block))
+        {
+            if (block != null) Destroy(block);
+            activeBlocks.Remove(zone);
+        }
+    }
+
+    public bool IsZoneBlocked(Transform zone)
+    {
+        return activeBlocks.ContainsKey(zone);
     }
 
     // --- FUNÇÕES AUXILIARES ---

@@ -3073,7 +3073,29 @@ public partial class CardEffectManager
 
     void Effect_0836_GroundCollapse(CardDisplay source)
     {
-        Debug.Log("Ground Collapse: Bloqueio de zonas (Visual pendente).");
+        if (GameManager.Instance.duelFieldUI == null) return;
+
+        List<Transform> availableZones = new List<Transform>();
+        foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones) 
+            if (z.childCount == 0 && !GameManager.Instance.duelFieldUI.IsZoneBlocked(z)) availableZones.Add(z);
+        foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) 
+            if (z.childCount == 0 && !GameManager.Instance.duelFieldUI.IsZoneBlocked(z)) availableZones.Add(z);
+
+        int zonesToBlock = Mathf.Min(2, availableZones.Count);
+        if (zonesToBlock > 0)
+        {
+            List<Transform> blocked = new List<Transform>();
+            for (int i = 0; i < zonesToBlock; i++)
+            {
+                int rnd = Random.Range(0, availableZones.Count);
+                Transform chosen = availableZones[rnd];
+                GameManager.Instance.duelFieldUI.BlockZone(chosen);
+                blocked.Add(chosen);
+                availableZones.RemoveAt(rnd);
+            }
+            CardEffectManager.Instance.blockedZonesByCard[source] = blocked;
+            Debug.Log($"Ground Collapse: {zonesToBlock} zonas bloqueadas.");
+        }
     }
 
     void Effect_0838_GryphonWing(CardDisplay source)

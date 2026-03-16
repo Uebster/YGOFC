@@ -3022,8 +3022,29 @@ public partial class CardEffectManager
     // 1373 - Ojama King
     void Effect_1373_OjamaKing(CardDisplay source)
     {
-        // Select up to 3 opp Monster Zones; they cannot be used.
-        Debug.Log("Ojama King: Bloqueando 3 zonas do oponente (Visual pendente).");
+        if (GameManager.Instance.duelFieldUI == null || !source.isOnField) return;
+
+        Transform[] oppZones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+        List<Transform> availableZones = new List<Transform>();
+        
+        foreach (var z in oppZones) 
+            if (z.childCount == 0 && !GameManager.Instance.duelFieldUI.IsZoneBlocked(z)) availableZones.Add(z);
+
+        int zonesToBlock = Mathf.Min(3, availableZones.Count);
+        if (zonesToBlock > 0)
+        {
+            List<Transform> blocked = new List<Transform>();
+            for (int i = 0; i < zonesToBlock; i++)
+            {
+                int rnd = Random.Range(0, availableZones.Count);
+                Transform chosen = availableZones[rnd];
+                GameManager.Instance.duelFieldUI.BlockZone(chosen);
+                blocked.Add(chosen);
+                availableZones.RemoveAt(rnd);
+            }
+            CardEffectManager.Instance.blockedZonesByCard[source] = blocked;
+            Debug.Log($"Ojama King: {zonesToBlock} zonas do oponente bloqueadas.");
+        }
     }
 
     // 1374 - Ojama Trio

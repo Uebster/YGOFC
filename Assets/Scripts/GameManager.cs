@@ -1946,7 +1946,7 @@ public void ShuffleDeck(bool isPlayer)
         {
             foreach (Transform zone in zones)
             {
-                if (zone.childCount == 0) return zone;
+            if (zone.childCount == 0 && !duelFieldUI.IsZoneBlocked(zone)) return zone;
             }
         }
         return null;

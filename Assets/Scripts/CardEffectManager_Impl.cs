@@ -18,6 +18,8 @@ public partial class CardEffectManager
 
     public List<CardData> imT_BanishedCards = new List<CardData>(); // Para Interdimensional Matter Transporter
 
+    public Dictionary<CardDisplay, List<Transform>> blockedZonesByCard = new Dictionary<CardDisplay, List<Transform>>(); // Memória de bloqueios
+
     // --- VALIDAÇÃO DE ATAQUE (Movido do BattleManager) ---
 
     public bool CanDeclareAttack(CardDisplay attacker)
@@ -1490,6 +1492,12 @@ public partial class CardEffectManager
 
     partial void OnSummonImpl(CardDisplay card)
     {
+        // 1373 - Ojama King
+        if (card.CurrentCardData.id == "1373")
+        {
+            ExecuteCardEffect(card);
+        }
+
         // 0888 - Hidden Soldiers
         if (!card.isPlayerCard) // Invocação do Oponente
         {
@@ -1706,6 +1714,19 @@ public partial class CardEffectManager
                     GameManager.Instance.BanishCard(link.target);
                 }
             }
+        }
+
+        // Libera zonas bloqueadas por esta carta (Ground Collapse, Ojama King)
+        if (blockedZonesByCard.ContainsKey(card))
+        {
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                foreach (var z in blockedZonesByCard[card])
+                {
+                    GameManager.Instance.duelFieldUI.UnblockZone(z);
+                }
+            }
+            blockedZonesByCard.Remove(card);
         }
     }
 
