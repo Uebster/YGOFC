@@ -9,30 +9,66 @@ public partial class CardEffectManager
 
     void Effect_0001_3HumpLacooda(CardDisplay source)
     {
-        // Tribute 2 monstros para comprar 3 cartas
-        if (SummonManager.Instance.HasEnoughTributes(2, source.isPlayerCard))
+        // Regra: Se houver 3 "3-Hump Lacooda" face-up do seu lado do campo, tribute 2 deles para comprar 3 cartas.
+        List<CardDisplay> lacoodas = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
         {
-            // Nota: Em um sistema completo, abriria menu de seleção de tributos.
-            // Aqui assumimos tributo automático ou cancelamento se falhar.
-            Debug.Log("3-Hump Lacooda: Tributando 2 monstros...");
-            
-            SummonManager.Instance.SelectTributes(2, source.isPlayerCard, (tributes) => {
-                if (tributes != null && tributes.Count == 2)
+            Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach (var zone in zones)
+            {
+                if (zone.childCount > 0)
                 {
-                    foreach (CardDisplay tribute in tributes)
+                    CardDisplay m = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && !m.isFlipped && m.CurrentCardData.name == "3-Hump Lacooda")
                     {
-                        GameManager.Instance.SendToGraveyard(tribute.CurrentCardData, tribute.isPlayerCard);
-                        Destroy(tribute.gameObject);
+                        lacoodas.Add(m);
                     }
-                    for (int i = 0; i < 3; i++) GameManager.Instance.DrawCard(source.isPlayerCard);
                 }
-            });
+            }
+        }
+
+        if (lacoodas.Count >= 3)
+        {
+            Debug.Log("3-Hump Lacooda: Condição atendida. Tributando 2 '3-Hump Lacooda' para comprar 3 cartas.");
+            
+            // Tributa os 2 primeiros encontrados
+            for (int i = 0; i < 2; i++)
+            {
+                CardDisplay tribute = lacoodas[i];
+                GameManager.Instance.SendToGraveyard(tribute.CurrentCardData, tribute.isPlayerCard);
+                Destroy(tribute.gameObject);
+            }
+            
+            // Compra 3 cartas
+            for (int i = 0; i < 3; i++) GameManager.Instance.DrawCard(false); // ignoreLimit = false, mas forçamos 3 compras
+        }
+        else
+        {
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Requer 3 '3-Hump Lacooda' face-up no campo.");
         }
     }
+
     void Effect_0003_4StarredLadybugOfDoom(CardDisplay source)
     {
-        // FLIP: Destrói todos os monstros Nível 4 do oponente
-        Effect_FlipDestroyLevel(source, 4);
+        // Regra: FLIP - Destrói todos os monstros de Nível 4 que o OPONENTE controla.
+        List<CardDisplay> toDestroy = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            Transform[] oppZones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+            foreach (var zone in oppZones)
+            {
+                if (zone.childCount > 0)
+                {
+                    CardDisplay m = zone.GetChild(0).GetComponent<CardDisplay>();
+                    // Só destrói se estiver face-up (regra oficial de nível) e Nível = 4
+                    if (m != null && !m.isFlipped && m.CurrentCardData.level == 4)
+                    {
+                        toDestroy.Add(m);
+                    }
+                }
+            }
+        }
+        DestroyCards(toDestroy, source.isPlayerCard);
     }
 
     void Effect_0004_7(CardDisplay source)
@@ -42,42 +78,47 @@ public partial class CardEffectManager
     }
 
     void Effect_0006_7Completed(CardDisplay source)
-    {
-        // Equip: Máquina ganha 700 ATK ou DEF
-        // Simplificação: Ganha 700 ATK e DEF por enquanto, ou abre menu de escolha
-        Effect_Equip(source, 700, 700, "Machine");
+    {        // Regra: Equip Machine. Ganha 700 ATK ou DEF.
+        UIManager.Instance.ShowConfirmation("Deseja aumentar o ATK (Sim) ou DEF (Não)?", 
+        () => {
+            // Sim = ATK
+            Effect_Equip(source, 700, 0, "Machine");
+        }, 
+        () => {
+            // Não = DEF
+            Effect_Equip(source, 0, 700, "Machine");
+        });
     }
 
     void Effect_0007_8ClawsScorpion(CardDisplay source)
     {
-        // Pode virar para defesa face-down uma vez por turno
+        // Efeito 1 de Ignição: Pode virar para defesa face-down uma vez por turno
         if (source.position == CardDisplay.BattlePosition.Attack)
         {
             source.ChangePosition(); // Vira defesa
             source.ShowBack(); // Face-down
+            source.hasUsedEffectThisTurn = true;
             Debug.Log("8-Claws Scorpion: Virou para defesa face-down.");
         }
+        // Efeito 2: ATK vira 2400 ao atacar face-down defense (Implementado no OnDamageCalculation)
     }
 
     void Effect_0008_ACatOfIllOmen(CardDisplay source)
     {
-        // FLIP: Seleciona 1 Trap do Deck e coloca no topo
-        // Se Necrovalley estiver em campo, adiciona à mão
+        // Regra: FLIP - Seleciona 1 Trap do Deck e coloca no topo. Se Necrovalley estiver em campo, adiciona à mão em vez disso.
         bool hasNecrovalley = GameManager.Instance.IsCardActiveOnField("1324"); // ID Necrovalley
         
         if (hasNecrovalley)
-            Effect_SearchDeck(source, "Trap"); // Adiciona à mão
+            Effect_SearchDeck(source, "Trap", "Trap"); // Adiciona à mão
         else
-            Effect_SearchDeckTop(source, "Trap"); // Coloca no topo
+            Effect_SearchDeckTop(source, "Trap", "Trap"); // Coloca no topo
     }
 
     void Effect_0009_ADealWithDarkRuler(CardDisplay source)
     {
-        // (Quick-Play) Se um monstro Lv8+ foi enviado ao GY este turno:
+        // Regra: (Quick-Play) Se um monstro Lv8+ que você controla foi enviado ao GY neste turno:
         // Pague metade dos LP; invoque "Berserk Dragon" da mão ou Deck.
-        
-        // TODO: Implementar flag wasLevel8DestroyedThisTurn no GameManager
-        // if (!GameManager.Instance.wasLevel8DestroyedThisTurn) return;
+        // Placeholder: Requer flag 'wasLevel8DestroyedThisTurn' no GameManager para validação estrita.
 
         int cost = source.isPlayerCard ? GameManager.Instance.playerLP / 2 : GameManager.Instance.opponentLP / 2;
         Effect_PayLP(source, cost);
@@ -164,40 +205,51 @@ public partial class CardEffectManager
             if (picked.type.Contains("Monster"))
             {
                 GameManager.Instance.SpecialSummonFromData(picked, source.isPlayerCard);
+                GameManager.Instance.RemoveCardFromHand(picked, source.isPlayerCard);
             }
             else
             {
                 GameManager.Instance.SendToGraveyard(picked, source.isPlayerCard);
+                GameManager.Instance.RemoveCardFromHand(picked, source.isPlayerCard);
             }
         }
     }
 
     void Effect_0013_ALegendaryOcean(CardDisplay source)
     {
-        // Campo: Water +200/+200. Nível de Water na mão/campo reduz em 1.
-        Effect_Field(source, 200, 200, "Aqua", "", -1); // Aqua/Water
-        // Nota: A redução de nível na mão requer lógica no SummonManager para permitir tributos menores
+        // Regra: Tratado como "Umi". Monstros WATER ganham +200 ATK/DEF. Reduz o nível de todos os WATER na mão/campo em 1.
+        Effect_Field(source, 200, 200, "", "Water", -1);
     }
 
     void Effect_0014_AManWithWdjat(CardDisplay source)
     {
-        // Durante sua MP: Selecione 1 Set card no campo; olhe-a e retorne.
-        if (SpellTrapManager.Instance != null)
+        // Regra: Quando Invocado por Invocação-Normal: Selecione 1 card Baixado no campo; olhe-o.
+        if (source.summonedThisTurn && !source.wasSpecialSummoned)
         {
-            SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && (t.isFlipped == false || t.position == CardDisplay.BattlePosition.Defense), // Set cards
-                (t) => {
-                    // Revela apenas para o dono do efeito (log no console por enquanto)
-                    Debug.Log($"A Man with Wdjat revela: {t.CurrentCardData.name}");
-                    // Visualmente poderia piscar a carta
-                }
-            );
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && (t.isFlipped == false || t.position == CardDisplay.BattlePosition.Defense), // Set cards
+                    (t) => {
+                        // Revela apenas para o dono do efeito (log no console por enquanto)
+                        Debug.Log($"A Man with Wdjat revela: {t.CurrentCardData.name}");
+                        // Visualmente poderia piscar a carta temporariamente
+                    }
+                );
+            }
         }
     }
 
     void Effect_0015_ARivalAppears(CardDisplay source)
     {
-        // Selecione 1 monstro do oponente; SS 1 monstro da mão com mesmo Nível.
+        // Regra: Selecione 1 monstro do oponente; SS 1 monstro da mão com mesmo Nível.
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.FindAll(c => c.type.Contains("Monster")).Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Você não possui monstros na mão para invocar.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -219,8 +271,27 @@ public partial class CardEffectManager
 
     void Effect_0016_AWingbeatOfGiantDragon(CardDisplay source)
     {
-        // Retorne 1 Dragão Lv5+ face-up que você controla para a mão; destrua todas S/T.
-        // Seleção de custo
+        // Regra: Retorne 1 Dragão Lv5+ face-up que você controla para a mão; destrua todas S/T.
+        bool hasDragon = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach (var z in zones)
+            {
+                if (z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && !m.isFlipped && m.CurrentCardData.race == "Dragon" && m.CurrentCardData.level >= 5) hasDragon = true;
+                }
+            }
+        }
+
+        if (!hasDragon)
+        {
+            UIManager.Instance.ShowMessage("Requer um monstro Dragon de Nível 5 ou maior face-up no seu campo.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -239,7 +310,7 @@ public partial class CardEffectManager
 
     void Effect_0017_ATeamTrapDisposalUnit(CardDisplay source)
     {
-        // (Quick) Quando oponente ativa Trap: Tributa este card; nega e destrói.
+        // Regra: (Quick) Quando oponente ativa Trap: Tributa este card; nega e destrói.
         var link = GetLinkToNegate(source);
         if (link != null && link.cardSource.CurrentCardData.type.Contains("Trap") && !link.isPlayerEffect)
         {
@@ -250,7 +321,13 @@ public partial class CardEffectManager
 
     void Effect_0018_AbsoluteEnd(CardDisplay source)
     {
-        // Neste turno, ataques do oponente tornam-se ataques diretos.
+        // Regra: Ative apenas durante o turno do oponente. Neste turno, ataques do oponente tornam-se ataques diretos.
+        if (GameManager.Instance.isPlayerTurn == source.isPlayerCard)
+        {
+            UIManager.Instance.ShowMessage("Só pode ser ativada no turno do oponente.");
+            return;
+        }
+
         Debug.Log("Absolute End: Seus monstros não podem ser atacados, oponente ataca direto.");
         if (BattleManager.Instance != null) BattleManager.Instance.forceDirectAttack = true;
     }
@@ -264,7 +341,13 @@ public partial class CardEffectManager
 
     void Effect_0021_AbyssSoldier(CardDisplay source)
     {
-        // Descarte 1 Water; devolva 1 carta do campo para a mão.
+        // Regra: Uma vez por turno: Descarte 1 WATER; devolva 1 carta do campo para a mão.
+        if (source.hasUsedEffectThisTurn)
+        {
+            UIManager.Instance.ShowMessage("Efeito já utilizado neste turno.");
+            return;
+        }
+
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         List<CardData> waterMonsters = hand.FindAll(c => c.attribute == "Water");
 
@@ -281,6 +364,7 @@ public partial class CardEffectManager
                         (t) => {
                             Debug.Log($"Abyss Soldier: {t.CurrentCardData.name} retornada para a mão.");
                             GameManager.Instance.ReturnToHand(t);
+                            source.hasUsedEffectThisTurn = true;
                         }
                     );
                 }
@@ -288,50 +372,81 @@ public partial class CardEffectManager
         }
         else
         {
-             Debug.Log("Abyss Soldier: Nenhum monstro WATER na mão para descartar.");
+             UIManager.Instance.ShowMessage("Requer 1 monstro WATER na mão para descartar.");
         }
     }
 
     void Effect_0022_AbyssalDesignator(CardDisplay source)
     {
-        // Pague 1000 LP; declare Tipo e Atributo. Oponente envia 1 monstro correspondente da mão/deck ao GY.
-        Effect_PayLP(source, 1000);
-        
-        // Simulação de declaração (Em produção: UI de Input)
-        string[] attributes = { "Dark", "Light", "Earth", "Water", "Fire", "Wind" };
-        string[] races = { "Fiend", "Zombie", "Warrior", "Spellcaster", "Dragon", "Machine", "Beast" };
-        
-        string declaredAttribute = attributes[Random.Range(0, attributes.Length)];
-        string declaredRace = races[Random.Range(0, races.Length)];
+        // Regra: Pague 1000 LP; declare Tipo e Atributo. Oponente envia 1 monstro correspondente da mão/deck ao GY.
+        if (Effect_PayLP(source, 1000))
+        {
+            // Simulação de declaração (Em produção: UI de Input)
+            string[] attributes = { "Dark", "Light", "Earth", "Water", "Fire", "Wind" };
+            string[] races = { "Fiend", "Zombie", "Warrior", "Spellcaster", "Dragon", "Machine", "Beast" };
+            
+            string declaredAttribute = attributes[Random.Range(0, attributes.Length)];
+            string declaredRace = races[Random.Range(0, races.Length)];
 
-        Debug.Log($"Abyssal Designator: Declarando {declaredAttribute}/{declaredRace}.");
-        
-        // Simulação: Oponente envia 1 Dark/Fiend
-        List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
-        
-        CardData target = oppDeck.Find(c => c.attribute == declaredAttribute && c.race == declaredRace);
-        
-        if (target != null)
-        {
-             Debug.Log($"Abyssal Designator: Oponente enviou {target.name} ao GY.");
-             GameManager.Instance.SendToGraveyard(target, !source.isPlayerCard);
-             oppDeck.Remove(target);
-        }
-        else
-        {
-             Debug.Log("Abyssal Designator: Oponente não possui monstro correspondente no Deck.");
+            Debug.Log($"Abyssal Designator: Declarando {declaredAttribute}/{declaredRace}.");
+            
+            // Simulação: Oponente envia 1 Dark/Fiend
+            List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
+            
+            CardData target = oppDeck.Find(c => c.attribute == declaredAttribute && c.race == declaredRace);
+            
+            if (target != null)
+            {
+                 Debug.Log($"Abyssal Designator: Oponente enviou {target.name} ao GY.");
+                 GameManager.Instance.SendToGraveyard(target, !source.isPlayerCard);
+                 oppDeck.Remove(target);
+            }
+            else
+            {
+                 Debug.Log("Abyssal Designator: Oponente não possui monstro correspondente no Deck.");
+            }
         }
     }
 
     void Effect_0024_AcidRain(CardDisplay source)
     {
-        // Destrói todas as Máquinas
+        // Regra: Destrói todas as Máquinas face-up no campo.
+        bool hasMachine = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (!m.isFlipped && m.CurrentCardData.race == "Machine") hasMachine = true;
+        }
+
+        if (!hasMachine)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros Máquina face-up no campo.");
+            return;
+        }
+
         Effect_DestroyType(source, "Machine");
     }
 
     void Effect_0025_AcidTrapHole(CardDisplay source)
     {
-        // Alvo: 1 monstro face-down defesa. Vira face-up. Se DEF <= 2000, destrói. Senão, volta face-down.
+        // Regra: Alvo: 1 monstro face-down defesa. Vira face-up. Se DEF <= 2000, destrói. Senão, volta face-down.
+        bool hasFaceDown = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (m.isFlipped && m.position == CardDisplay.BattlePosition.Defense) hasFaceDown = true;
+        }
+
+        if (!hasFaceDown)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros virados para baixo em Defesa no campo.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -355,8 +470,8 @@ public partial class CardEffectManager
 
      void Effect_0027_AdhesionTrapHole(CardDisplay source)
     {
-        // Quando oponente invoca: Corta ATK pela metade original.
-        // Procura o monstro invocado neste turno no campo do oponente
+        // Regra: Quando oponente invoca: Corta ATK pela metade original.
+        List<CardDisplay> targets = new List<CardDisplay>();
         if (GameManager.Instance.duelFieldUI != null)
         {
              foreach(var zone in GameManager.Instance.duelFieldUI.opponentMonsterZones)
@@ -364,22 +479,28 @@ public partial class CardEffectManager
                  if(zone.childCount > 0)
                  {
                      var monster = zone.GetChild(0).GetComponent<CardDisplay>();
-                     if(monster != null && monster.summonedThisTurn)
-                     {
-                         Debug.Log($"Adhesion Trap Hole: {monster.CurrentCardData.name} ATK reduzido pela metade.");
-                         int reduction = monster.currentAtk / 2;
-                         monster.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -reduction, source));
-                     }
+                     if(monster != null && monster.summonedThisTurn) targets.Add(monster);
                  }
              }
+        }
+
+        if (targets.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros recém-invocados pelo oponente.");
+            return;
+        }
+
+        foreach (var monster in targets)
+        {
+             Debug.Log($"Adhesion Trap Hole: {monster.CurrentCardData.name} ATK reduzido pela metade.");
+             int reduction = monster.currentAtk / 2;
+             monster.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -reduction, source));
         }
     }
 
     void Effect_0028_AfterTheStruggle(CardDisplay source)
     {
-        // Main Phase 1: Destrói todos monstros que batalharam no turno anterior? Não, texto:
-        // "Destroy all face-up monsters on the field that were involved in damage calculation..."
-        Debug.Log("After the Struggle: Destruindo monstros que batalharam.");
+        // Regra: Destrói todos os monstros face-up no campo que batalharam neste turno.
         List<CardDisplay> toDestroy = new List<CardDisplay>();
         
         void CheckZones(Transform[] zones)
@@ -400,6 +521,13 @@ public partial class CardEffectManager
             CheckZones(GameManager.Instance.duelFieldUI.opponentMonsterZones);
         }
         
+        if (toDestroy.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Nenhum monstro batalhou neste turno.");
+            return;
+        }
+
+        Debug.Log("After the Struggle: Destruindo monstros que batalharam.");
         foreach(var m in toDestroy)
         {
             GameManager.Instance.SendToGraveyard(m.CurrentCardData, m.isPlayerCard);
@@ -409,12 +537,17 @@ public partial class CardEffectManager
 
     void Effect_0029_Agido(CardDisplay source)
     {
-        // Quando destruído em batalha e enviado ao GY: Rola dado (1-6).
-        // SS 1 Fada do GY com Nível = Resultado. (Se 6, Lv 6 ou maior).
+        // Regra: Quando destruído em batalha e enviado ao GY: Rola dado (1-6). SS 1 Fada do GY com Nível = Resultado.
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        if (!gy.Exists(c => c.race == "Fairy" && c.type.Contains("Monster")))
+        {
+             UIManager.Instance.ShowMessage("Não há monstros Fairy no seu Cemitério para reviver.");
+             return;
+        }
+
         int roll = Random.Range(1, 7);
         Debug.Log($"Agido rolou: {roll}.");
         
-        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
         // Filtra Fadas com nível compatível
         List<CardData> targets = gy.FindAll(c => c.race == "Fairy" && (roll == 6 ? c.level >= 6 : c.level == roll));
         
@@ -479,7 +612,13 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0039_AltarForTribute(CardDisplay source)
     {
-        // Selecione 1 monstro, tribute, ganhe LP = ATK original.
+        // Regra: Selecione 1 monstro, tribute, ganhe LP = ATK original.
+        if (!SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
+        {
+            UIManager.Instance.ShowMessage("Você não controla monstros para tributar.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -496,17 +635,38 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0041_AmazonessArcher(CardDisplay source)
     {
-        // Tribute 2 monstros; cause 1200 dano.
-        if (SummonManager.Instance.HasEnoughTributes(2, source.isPlayerCard))
+        // Regra: Tribute 2 monstros; cause 1200 de dano.
+        if (!SummonManager.Instance.HasEnoughTributes(2, source.isPlayerCard))
         {
-            // Usa o helper genérico de tributo para dano (que seleciona automaticamente ou pede seleção simples)
-            Effect_TributeToBurn(source, 2, 1200);
+            UIManager.Instance.ShowMessage("Você precisa de pelo menos 2 monstros para tributar.");
+            return;
         }
+        Effect_TributeToBurn(source, 2, 1200);
     }
 
     void Effect_0042_AmazonessArchers(CardDisplay source)
     {
-        // Ative quando oponente ataca. Todos monstros oponente viram face-up Attack, -500 ATK. Devem atacar.
+        // Regra: Ative quando oponente ataca e você controla uma "Amazoness". Monstros oponente viram face-up Attack, -500 ATK.
+        bool hasAmazoness = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var zone in GameManager.Instance.duelFieldUI.playerMonsterZones)
+            {
+                if (zone.childCount > 0)
+                {
+                    var m = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && !m.isFlipped && (m.CurrentCardData.name.Contains("Amazoness") || m.CurrentCardData.name == "Amazon Archer"))
+                        hasAmazoness = true;
+                }
+            }
+        }
+
+        if (!hasAmazoness)
+        {
+            UIManager.Instance.ShowMessage("Você não controla um monstro 'Amazoness' face-up.");
+            return;
+        }
+
         Debug.Log("Amazoness Archers: Forçando ataque e aplicando debuff.");
         
         if (GameManager.Instance.duelFieldUI != null)
@@ -537,6 +697,21 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0043_AmazonessBlowpiper(CardDisplay source)
     {
         // Selecione 1 monstro face-up; -500 ATK até final do turno.
+        bool hasFaceUp = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (!m.isFlipped) hasFaceUp = true;
+        }
+
+        if (!hasFaceUp)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros face-up no campo.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -549,6 +724,12 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0044_AmazonessChainMaster(CardDisplay source)
     {
         // Quando destruído em batalha: Pague 1500 LP; olhe mão do oponente, pegue 1 monstro.
+        if (GameManager.Instance.GetOpponentHandData().Count == 0)
+        {
+            Debug.Log("Amazoness Chain Master: Oponente não tem cartas na mão.");
+            return;
+        }
+
         if (Effect_PayLP(source, 1500))
         {
             List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
@@ -599,6 +780,31 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0047_AmazonessSpellcaster(CardDisplay source)
     {
         // Troca ATK original com 1 monstro do oponente até End Phase.
+        bool hasAmazoness = false;
+        bool oppHasMonster = false;
+
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+            {
+                if (z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && m.CurrentCardData.name.Contains("Amazoness")) hasAmazoness = true;
+                }
+            }
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+            {
+                if (z.childCount > 0) oppHasMonster = true;
+            }
+        }
+
+        if (!hasAmazoness || !oppHasMonster)
+        {
+            UIManager.Instance.ShowMessage("Requer um monstro 'Amazoness' e um monstro no campo do oponente.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -654,8 +860,22 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0054_Amplifier(CardDisplay source)
     {
-        // Equip Jinzo. Jinzo do controlador não nega Traps do controlador.
-        // O que falta: Verificar se o alvo é Jinzo e lógica de imunidade.
+        // Regra: Equip Jinzo. Jinzo do controlador não nega Traps do controlador.
+        bool hasJinzo = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (m.CurrentCardData.name == "Jinzo" && !m.isFlipped) hasJinzo = true;
+        }
+
+        if (!hasJinzo)
+        {
+            UIManager.Instance.ShowMessage("Não há 'Jinzo' face-up no campo para equipar.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -696,35 +916,42 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0062_AncientLamp(CardDisplay source)
     {
-        // Main Phase: SS "La Jinn" da mão/Deck.
-        // Battle Phase: Redireciona ataque para monstro do oponente.
+        // Regra: Main Phase - SS "La Jinn" da mão/Deck.
         if (PhaseManager.Instance.currentPhase == GamePhase.Main1)
         {
-            // Busca La Jinn no Deck ou Mão
             List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
-            CardData laJinn = deck.Find(c => c.name.Contains("La Jinn"));
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            CardData laJinn = deck.Find(c => c.name.Contains("La Jinn")) ?? hand.Find(c => c.name.Contains("La Jinn"));
             
-            if (laJinn != null)
+            if (laJinn == null)
             {
-                GameManager.Instance.SpecialSummonFromData(laJinn, source.isPlayerCard);
+                UIManager.Instance.ShowMessage("Você não possui 'La Jinn' no Deck ou Mão.");
+                return;
+            }
+
+            if (deck.Contains(laJinn))
+            {
                 deck.Remove(laJinn);
-                Debug.Log("Ancient Lamp: La Jinn invocado do Deck.");
+                GameManager.Instance.SpecialSummonFromData(laJinn, source.isPlayerCard);
             }
             else
             {
-                // Tenta na mão
-                List<CardData> hand = GameManager.Instance.GetPlayerHandData();
-                // ... lógica similar para mão
-                Debug.Log("Ancient Lamp: La Jinn não encontrado no Deck.");
+                hand.Remove(laJinn);
+                GameManager.Instance.SpecialSummonFromData(laJinn, source.isPlayerCard);
             }
         }
     }
 
     void Effect_0066_AncientTelescope(CardDisplay source)
     {
-        // Veja as 5 cartas do topo do deck do oponente.
-        Debug.Log("Ancient Telescope: Visualizando deck do oponente (Simulado).");
+        // Regra: Olhe até as 5 cartas do topo do deck do oponente.
         List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
+        if (oppDeck.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("O Deck do oponente está vazio.");
+            return;
+        }
+
         if (oppDeck.Count > 0)
         {
             int count = Mathf.Min(5, oppDeck.Count);
@@ -754,13 +981,19 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0071_Ante(CardDisplay source)
     {
-        // Ambos revelam 1 carta da mão. Quem tiver menor Level toma 1000 dano e descarta.
+        // Regra: Ambos revelam 1 carta da mão. Quem tiver menor Level toma 1000 dano e descarta.
         List<CardData> myHand = GameManager.Instance.GetPlayerHandData();
+        List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+
+        if (myHand.Count == 0 || oppHand.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Ambos os jogadores precisam ter cartas na mão.");
+            return;
+        }
+
         if (myHand.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(myHand, "Selecione carta para Ante", (myCard) => {
-                // Simula escolha do oponente (aleatória)
-                List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
                 if (oppHand.Count > 0)
                 {
                     CardData oppCard = oppHand[Random.Range(0, oppHand.Count)];
@@ -787,24 +1020,40 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0074_AntiAircraftFlower(CardDisplay source)
     {
-        // Tribute 1 Inseto; cause 800 dano.
+        // Regra: Tribute 1 Inseto; cause 800 dano.
+        bool hasInsect = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+                if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.race == "Insect") hasInsect = true;
+        }
+
+        if (!hasInsect)
+        {
+            UIManager.Instance.ShowMessage("Você não controla monstros Inseto para tributar.");
+            return;
+        }
+
         Effect_TributeToBurn(source, 1, 800, "Insect");
     }
 
     void Effect_0075_AntiSpell(CardDisplay source)
     {
-        // Remova 2 Spell Counters; negue Magia.
+        // Regra: Remova 2 Spell Counters; negue Magia.
+        var link = GetLinkToNegate(source);
+        if (link == null || !link.cardSource.CurrentCardData.type.Contains("Spell"))
+        {
+            UIManager.Instance.ShowMessage("Não há uma Carta Mágica sendo ativada para negar.");
+            return;
+        }
+
         if (GetTotalSpellCounters(source.isPlayerCard) >= 2)
         {
-            if (RemoveSpellCounters(2, source.isPlayerCard))
-            {
-                Debug.Log("Anti-Spell: 2 Spell Counters removidos. Magia negada (Simulado).");
-                // Se houver sistema de Chain, aqui negaríamos o efeito anterior
-            }
+            if (RemoveSpellCounters(2, source.isPlayerCard)) NegateAndDestroy(source, link);
         }
         else
         {
-            Debug.Log("Anti-Spell: Spell Counters insuficientes (Precisa de 2).");
+            UIManager.Instance.ShowMessage("Requer 2 Spell Counters no seu campo.");
         }
     }
 
@@ -944,13 +1193,28 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0085_ArcaneArcherOfTheForest(CardDisplay source)
     {
-        // Tribute 1 Plant; destrua 1 S/T.
-        if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard)) // Check Plant
+        // Regra: Tribute 1 Plant; destrua 1 S/T.
+        bool hasPlant = false;
+        bool hasST = false;
+
+        if (GameManager.Instance.duelFieldUI != null)
         {
-            // Tribute
-            // Select S/T destroy
-            Effect_MST(source); // Reusa lógica de destruir S/T
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+                if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.race == "Plant") hasPlant = true;
+            
+            foreach (var z in GameManager.Instance.duelFieldUI.playerSpellZones) if (z.childCount > 0) hasST = true;
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentSpellZones) if (z.childCount > 0) hasST = true;
+            if (GameManager.Instance.duelFieldUI.playerFieldSpell.childCount > 0) hasST = true;
+            if (GameManager.Instance.duelFieldUI.opponentFieldSpell.childCount > 0) hasST = true;
         }
+
+        if (!hasPlant || !hasST)
+        {
+            UIManager.Instance.ShowMessage("Requer um monstro Planta e uma Magia/Armadilha no campo para destruir.");
+            return;
+        }
+
+        Effect_MST(source);
     }
 
     void Effect_0089_ArchfiendOfGilfer(CardDisplay source)
@@ -999,45 +1263,56 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0091_ArchfiendsRoar(CardDisplay source)
     {
-        // Pague 500; SS 1 Archfiend do GY. Destrua na End Phase.
-        Effect_PayLP(source, 500);
-        
+        // Regra: Pague 500; SS 1 Archfiend do GY. Destrua na End Phase.
         List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
         List<CardData> targets = gy.FindAll(c => c.name.Contains("Archfiend") && c.type.Contains("Monster"));
         
-        if (targets.Count > 0)
+        if (targets.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Você não possui monstros 'Archfiend' no Cemitério.");
+            return;
+        }
+
+        if (Effect_PayLP(source, 500))
         {
             GameManager.Instance.OpenCardSelection(targets, "Reviver Archfiend", (selected) => {
                 GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
-                Debug.Log($"{selected.name} revivido. Será destruído na End Phase.");
             });
         }
     }
 
     void Effect_0092_ArchlordZerato(CardDisplay source)
     {
-        // Descarte 1 Light; destrua todos monstros do oponente. (Requer Sanctuary).
-        if (GameManager.Instance.IsCardActiveOnField("1887")) // Sanctuary in the Sky
+        // Regra: Descarte 1 Light; destrua todos monstros do oponente. (Requer Sanctuary).
+        if (!GameManager.Instance.IsCardActiveOnField("1887"))
         {
-            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
-            List<CardData> lights = hand.FindAll(c => c.attribute == "LIGHT" && c.type.Contains("Monster"));
-            
-            if (lights.Count > 0)
-            {
-                GameManager.Instance.OpenCardSelection(lights, "Descarte 1 LIGHT", (selected) => {
-                    Debug.Log($"Archlord Zerato: Descartou {selected.name}.");
-                    DestroyAllMonsters(true, false); // Destrói monstros do oponente
-                });
-            }
-            else
-            {
-                Debug.Log("Archlord Zerato: Nenhum monstro LIGHT na mão para descartar.");
-            }
+            UIManager.Instance.ShowMessage("Requer 'The Sanctuary in the Sky' face-up no campo.");
+            return;
         }
-        else
+
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        List<CardData> lights = hand.FindAll(c => c.attribute == "Light" && c.type.Contains("Monster"));
+        
+        if (lights.Count == 0)
         {
-            Debug.Log("Archlord Zerato: Requer 'The Sanctuary in the Sky' no campo.");
+            UIManager.Instance.ShowMessage("Requer 1 monstro LIGHT na mão para descartar.");
+            return;
         }
+
+        bool oppHasMonsters = false;
+        if (GameManager.Instance.duelFieldUI != null)
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if (z.childCount > 0) oppHasMonsters = true;
+
+        if (!oppHasMonsters)
+        {
+            UIManager.Instance.ShowMessage("O oponente não controla monstros.");
+            return;
+        }
+
+        GameManager.Instance.OpenCardSelection(lights, "Descarte 1 LIGHT", (selected) => {
+            GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == selected).GetComponent<CardDisplay>());
+            DestroyAllMonsters(true, false);
+        });
     }
 
     void Effect_0096_ArmedDragonLV3(CardDisplay source)
@@ -1048,7 +1323,17 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0097_ArmedDragonLV5(CardDisplay source)
     {
-        // Descarte monstro; destrua monstro oponente com ATK <= ATK do descartado.
+        // Regra: Descarte monstro; destrua monstro oponente com ATK <= ATK do descartado.
+        bool oppHasMonsters = false;
+        if (GameManager.Instance.duelFieldUI != null)
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if (z.childCount > 0) oppHasMonsters = true;
+
+        if (!oppHasMonsters)
+        {
+            UIManager.Instance.ShowMessage("O oponente não controla monstros.");
+            return;
+        }
+
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         List<CardData> monsters = hand.FindAll(c => c.type.Contains("Monster"));
 
@@ -1080,7 +1365,17 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0098_ArmedDragonLV7(CardDisplay source)
     {
-        // Descarte monstro; destrua todos monstros oponente com ATK <= ATK do descartado.
+        // Regra: Descarte monstro; destrua todos monstros oponente com ATK <= ATK do descartado.
+        bool oppHasMonsters = false;
+        if (GameManager.Instance.duelFieldUI != null)
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if (z.childCount > 0) oppHasMonsters = true;
+
+        if (!oppHasMonsters)
+        {
+            UIManager.Instance.ShowMessage("O oponente não controla monstros.");
+            return;
+        }
+
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         List<CardData> monsters = hand.FindAll(c => c.type.Contains("Monster"));
 

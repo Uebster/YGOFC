@@ -45,6 +45,13 @@ public class BattleManager : MonoBehaviour
             return true;
         }
 
+        // Ancient Gear (0058, 0059, 0060)
+        if (currentAttacker != null)
+        {
+            string id = currentAttacker.CurrentCardData.id;
+            if (id == "0058" || id == "0059" || id == "0060") return true;
+        }
+
         return oppHasMirage;
     }
 
@@ -246,6 +253,24 @@ public class BattleManager : MonoBehaviour
             }
         }
 
+        // 0049 - Amazoness Tiger
+        if (target.CurrentCardData.name.Contains("Amazoness") && target.CurrentCardData.id != "0049")
+        {
+            Transform[] targetZones = target.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach(var z in targetZones)
+            {
+                if(z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if(m != null && m.CurrentCardData.id == "0049" && !m.isFlipped)
+                    {
+                        Debug.Log("Amazoness Tiger: Redirecionando ataque para si mesmo (Bloqueio).");
+                        return;
+                    }
+                }
+            }
+        }
+
         // 1577 - Sacred Defense Barrier
         if (GameManager.Instance.IsCardActiveOnField("1577"))
         {
@@ -338,6 +363,28 @@ public class BattleManager : MonoBehaviour
         return true;
     }
 
+    private void DealBattleDamage(CardDisplay damageTaker, int damage)
+    {
+        if (damage <= 0 || damageTaker == null) return;
+        bool isPlayer = damageTaker.isPlayerCard;
+
+        // 0045 - Amazoness Fighter
+        if (damageTaker.CurrentCardData.id == "0045")
+        {
+            Debug.Log("Amazoness Fighter: Dano de batalha zerado para o controlador.");
+            return;
+        }
+        // 0048 - Amazoness Swords Woman
+        if (damageTaker.CurrentCardData.id == "0048")
+        {
+            Debug.Log("Amazoness Swords Woman: Dano refletido para o oponente!");
+            isPlayer = !isPlayer;
+        }
+
+        if (isPlayer) GameManager.Instance.DamagePlayer(damage);
+        else GameManager.Instance.DamageOpponent(damage);
+    }
+
     private void CheckTrapsAndAttackDirectly(CardDisplay attacker)
     {
         // Obsoleto. O fluxo agora é controlado pelo ChainManager.
@@ -421,6 +468,32 @@ public class BattleManager : MonoBehaviour
             return; // Cancela batalha
         }
 
+        // 0062 - Ancient Lamp
+        if (target.CurrentCardData.id == "0062" && targetWasFaceDown)
+        {
+            Debug.Log("Ancient Lamp: Redirecionando ataque para monstro do oponente!");
+            Transform[] oppZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            List<CardDisplay> validTargets = new List<CardDisplay>();
+            foreach (var z in oppZones)
+            {
+                if (z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && m != attacker) validTargets.Add(m);
+                }
+            }
+            if (validTargets.Count > 0)
+            {
+                CardDisplay newTarget = validTargets[Random.Range(0, validTargets.Count)]; // Automático
+                Debug.Log($"Ancient Lamp forçou {attacker.CurrentCardData.name} a atacar {newTarget.CurrentCardData.name}!");
+                
+                // Retira seleção de ataque e muda o alvo
+                target = newTarget;
+                targetWasFaceDown = target.isFlipped;
+                if (target.isFlipped) target.RevealCard(true);
+            }
+        }
+
         attacker.battledThisTurn = true;
         target.battledThisTurn = true;
 
@@ -489,8 +562,7 @@ public class BattleManager : MonoBehaviour
                 
                 if (!noBattleDamage && !attacker.cannotInflictBattleDamage)
                 {
-                    if (target.isPlayerCard) GameManager.Instance.DamagePlayer(damage);
-                    else GameManager.Instance.DamageOpponent(damage);
+                    DealBattleDamage(target, damage);
                 }
                 else
                 {
@@ -517,8 +589,7 @@ public class BattleManager : MonoBehaviour
                 Debug.Log($"Vitória do Alvo! Atacante toma {damage} de dano. Atacante destruído.");
                 if (!noBattleDamage)
                 {
-                    if (attacker.isPlayerCard) GameManager.Instance.DamagePlayer(damage);
-                    else GameManager.Instance.DamageOpponent(damage);
+                    DealBattleDamage(attacker, damage);
                 }
                 else
                 {
@@ -575,8 +646,7 @@ public class BattleManager : MonoBehaviour
                 
                 Debug.Log($"Defesa Sólida! Atacante toma {damage} de dano.");
 
-                if (attacker.isPlayerCard) GameManager.Instance.DamagePlayer(damage);
-                else GameManager.Instance.DamageOpponent(damage);
+                DealBattleDamage(attacker, damage);
 
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayAttackFail(attacker);
 
@@ -610,12 +680,11 @@ public class BattleManager : MonoBehaviour
 
             // Piercing Damage (Dark Driceratops 0407, etc)
             // Adicionado Meteorain (globalPiercing)
-            if (atk > def && (attacker.CurrentCardData.id == "0407" || attacker.CurrentCardData.id == "0059" || globalPiercing)) 
+            if (atk > def && (attacker.CurrentCardData.id == "0407" || attacker.CurrentCardData.id == "0059" || attacker.CurrentCardData.id == "0031" || globalPiercing)) 
             {
                 int piercing = atk - def;
                 Debug.Log($"Dano Perfurante! {piercing} de dano.");
-                if (target.isPlayerCard) GameManager.Instance.DamagePlayer(piercing);
-                else GameManager.Instance.DamageOpponent(piercing);            
+                DealBattleDamage(target, piercing);
             }
 
             // Different Dimension Dragon (0492)

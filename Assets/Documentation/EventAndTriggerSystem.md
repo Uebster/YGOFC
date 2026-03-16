@@ -347,3 +347,11 @@ Fichas são monstros ilusórios criados por efeitos (ex: *Scapegoat*). Elas poss
 2.  **Use IDs:** Sempre verifique `card.CurrentCardData.id` para lógica específica de uma carta.
 3.  **Use Tags/Race/Attribute:** Para lógica genérica (ex: "Destruir todos os Dragões"), verifique as propriedades da carta.
 4.  **Evite `Update()`:** Não use `Update()` em `CardDisplay` para lógica de jogo. Use os eventos do `CardEffectManager`.
+
+## 18. Regras de Validação de Ativação (Activation Legality)
+
+Como regra global de design oficial de Yu-Gi-Oh!, **nenhuma carta mágica, armadilha ou efeito de ignição pode ser ativada se suas condições de resolução não puderem ser cumpridas no momento da ativação**.
+Isso evita que o jogador ative a carta à toa (ex: ativar um Equip Spell sem monstros válidos no campo, ou ativar *Dark Hole* com o campo vazio).
+
+*   **Implementação Futura:** Será necessário criar um método de pré-validação (`CanActivate(CardDisplay card)`) no `CardEffectManager` que será chamado pela UI (Menu de Ação) antes de habilitar o botão "Activate".
+*   **Condição Intermediária:** Enquanto a interface não for automatizada para bloquear o clique, todas as lógicas em `CardEffectManager_Impl` que abrem janelas de seleção **devem** começar checando se há alvos válidos. Se não houver, deve apenas dar um `Debug.Log` ou `ShowMessage` e abortar.

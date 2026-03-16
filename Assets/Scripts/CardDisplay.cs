@@ -827,9 +827,21 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 else if (GameManager.Instance.opponentRemovedDisplay != null && parent == GameManager.Instance.opponentRemovedDisplay.contentParent)
                     GameManager.Instance.ViewRemovedCards(false);
                 
-                // Deck: Compra carta (se permitido)
-                else if (GameManager.Instance.playerDeckDisplay != null && parent == GameManager.Instance.playerDeckDisplay.contentParent && GameManager.Instance.canPlayerDrawFromDeck)
-                    GameManager.Instance.DrawCard();
+                // Deck Principal: Comprar Carta (Esquerdo) ou Render-se (Direito)
+                else if (GameManager.Instance.playerDeckDisplay != null && parent == GameManager.Instance.playerDeckDisplay.contentParent)
+                {
+                    if (eventData.button == PointerEventData.InputButton.Right)
+                    {
+                        UIManager.Instance.ShowConfirmation("Deseja render-se e abandonar o duelo?", () =>
+                        {
+                            GameManager.Instance.EndDuel(false); // Fim de duelo, Vitória do Oponente
+                        });
+                    }
+                    else if (eventData.button == PointerEventData.InputButton.Left && GameManager.Instance.canPlayerDrawFromDeck)
+                    {
+                        GameManager.Instance.DrawCard();
+                    }
+                }
             }
             return;
         }

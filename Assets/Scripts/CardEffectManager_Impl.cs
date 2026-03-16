@@ -362,6 +362,22 @@ public partial class CardEffectManager
                     Effect_GainLP(card, monsterCount * 400);
                 }
             });
+
+            // 0049 - Amazoness Tiger (Buff Contínuo atualizado na Standby)
+            CheckActiveCards("0049", (card) => {
+                int amazonessCount = 0;
+                if (GameManager.Instance.duelFieldUI != null)
+                {
+                    Transform[] zones = card.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+                    foreach(var z in zones) {
+                        if (z.childCount > 0) {
+                            var m = z.GetChild(0).GetComponent<CardDisplay>();
+                            if (m != null && m.CurrentCardData.name.Contains("Amazoness")) amazonessCount++;
+                        }
+                    }
+                    card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, amazonessCount * 400, card));
+                }
+            });
         }
 
         if (phase == GamePhase.End)
@@ -1561,6 +1577,14 @@ public partial class CardEffectManager
             Debug.Log("Yata-Garasu: Oponente pula a próxima Draw Phase.");
             if (PhaseManager.Instance != null) PhaseManager.Instance.RegisterSkipNextPhase(!attacker.isPlayerCard, GamePhase.Draw);
         }
+
+        // 0031 - Airknight Parshath
+        if (attacker.CurrentCardData.id == "0031" && amount > 0)
+        {
+            Debug.Log("Airknight Parshath: Compra 1 carta.");
+            if (attacker.isPlayerCard) GameManager.Instance.DrawCard();
+            else GameManager.Instance.DrawOpponentCard();
+        }
     }
 
     public void UpdateAllMegamorphs()
@@ -1903,6 +1927,13 @@ public partial class CardEffectManager
             }
         }
 
+        // 0007 - 8-Claws Scorpion
+        if (attacker.CurrentCardData.id == "0007" && target != null && target.position == CardDisplay.BattlePosition.Defense && target.isFlipped)
+        {
+            Debug.Log("8-Claws Scorpion: Atacando face-down, ATK vira 2400.");
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 2400, attacker));
+        }
+
         // 1004 - Karakuri Spider
         if (attacker.CurrentCardData.id == "1004" && target != null && target.CurrentCardData.attribute == "Dark")
         {
@@ -2090,6 +2121,18 @@ public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
             Debug.Log($"Absorbing Kid: Destruiu monstro Lv{level}. Ganha {heal} LP.");
             Effect_GainLP(attacker, heal);
         }
+    }
+
+    // 0044 - Amazoness Chain Master
+    if (target != null && target.CurrentCardData.id == "0044" && (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk <= attacker.currentAtk : target.currentDef < attacker.currentAtk))
+    {
+        // Executa o efeito da carta na destruição (Roubar da mão)
+        ExecuteCardEffect(target);
+    }
+    if (attacker != null && attacker.CurrentCardData.id == "0044" && attacker.currentAtk <= (target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk : target.currentDef))
+    {
+        // Executa o efeito da carta se ela for destruída atacando
+        ExecuteCardEffect(attacker);
     }
 
     // 1507 - Reflect Bounder (Auto-destruição após cálculo de dano)
