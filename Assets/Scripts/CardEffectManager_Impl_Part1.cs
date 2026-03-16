@@ -4655,7 +4655,19 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0401_DarkCatWithWhiteTail(CardDisplay source)
     {
-        // FLIP: Retorna 2 monstros do oponente e 1 seu para a mão.
+        int oppCount = 0;
+        int myCount = 0;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if (z.childCount > 0) oppCount++;
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if (z.childCount > 0) myCount++;
+        }
+        if (oppCount < 2 || myCount < 1)
+        {
+            UIManager.Instance.ShowMessage("Requer 2 monstros do oponente e 1 seu para retornar.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             // Seleciona 2 do oponente (simplificado para 1 por limitações de UI sequencial rápida)
@@ -4694,25 +4706,42 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0405_DarkCore(CardDisplay source)
     {
-        // Efeito: Descarte 1; bana 1 monstro face-up.
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
-        if (hand.Count > 0)
+        if (hand.Count == 0)
         {
-            GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
-                Debug.Log($"Dark Core: Descartou {discarded.name}.");
-                if (SpellTrapManager.Instance != null)
-                {
-                    SpellTrapManager.Instance.StartTargetSelection(
-                        (t) => t.isOnField && !t.isFlipped, // Face-up
-                        (target) => {
-                            GameManager.Instance.RemoveFromPlay(target.CurrentCardData, target.isPlayerCard);
-                            Destroy(target.gameObject);
-                            Debug.Log($"Dark Core: Baniu {target.CurrentCardData.name}.");
-                        }
-                    );
-                }
-            });
+            UIManager.Instance.ShowMessage("Você precisa descartar 1 carta da mão.");
+            return;
         }
+
+        bool hasFaceUp = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach (var m in all) if (!m.isFlipped) hasFaceUp = true;
+        }
+
+        if (!hasFaceUp)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros face-up no campo.");
+            return;
+        }
+
+        GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+            Debug.Log($"Dark Core: Descartou {discarded.name}.");
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isFlipped, // Face-up
+                    (target) => {
+                        GameManager.Instance.RemoveFromPlay(target.CurrentCardData, target.isPlayerCard);
+                        Destroy(target.gameObject);
+                        Debug.Log($"Dark Core: Baniu {target.CurrentCardData.name}.");
+                    }
+                );
+            }
+        });
     }
 
     void Effect_0406_DarkDesignator(CardDisplay source)
@@ -4765,20 +4794,22 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0411_DarkFactoryOfMassProduction(CardDisplay source)
     {
-        // Efeito: Recupera 2 Monstros Normais do GY.
         List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
         List<CardData> normals = gy.FindAll(c => c.type.Contains("Normal") && c.type.Contains("Monster"));
         
-        if (normals.Count >= 2)
+        if (normals.Count < 2)
         {
-            GameManager.Instance.OpenCardMultiSelection(normals, "Recuperar 2 Normais", 2, 2, (selected) => {
-                foreach(var c in selected)
-                {
-                    gy.Remove(c);
-                    GameManager.Instance.AddCardToHand(c, source.isPlayerCard);
-                }
-            });
+            UIManager.Instance.ShowMessage("Requer pelo menos 2 Monstros Normais no Cemitério.");
+            return;
         }
+
+        GameManager.Instance.OpenCardMultiSelection(normals, "Recuperar 2 Normais", 2, 2, (selected) => {
+            foreach(var c in selected)
+            {
+                gy.Remove(c);
+                GameManager.Instance.AddCardToHand(c, source.isPlayerCard);
+            }
+        });
     }
 
     void Effect_0412_DarkFlareKnight(CardDisplay source)
@@ -4790,13 +4821,36 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0414_DarkHole(CardDisplay source)
     {
-        // Efeito: Destrói todos os monstros no campo.
+        bool hasMonster = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if (z.childCount > 0) hasMonster = true;
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if (z.childCount > 0) hasMonster = true;
+        }
+        if (!hasMonster)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros no campo.");
+            return;
+        }
         DestroyAllMonsters(true, true);
     }
 
     void Effect_0415_DarkJeroid(CardDisplay source)
     {
-        // Efeito: Seleciona 1 monstro; ele perde 800 ATK.
+        bool hasFaceUp = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach (var m in all) if (!m.isFlipped) hasFaceUp = true;
+        }
+        if (!hasFaceUp)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros face-up no campo.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -4808,15 +4862,25 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0417_DarkMagicAttack(CardDisplay source)
     {
-        // Efeito: Se controlar Dark Magician, destrói todas as S/T do oponente.
-        if (GameManager.Instance.IsCardActiveOnField("0419") || GameManager.Instance.IsCardActiveOnField("Dark Magician")) // ID ou Nome
+        if (!GameManager.Instance.IsCardActiveOnField("0419") && !GameManager.Instance.IsCardActiveOnField("Dark Magician"))
         {
-            Effect_HarpiesFeatherDuster(source); // Reusa lógica
+            UIManager.Instance.ShowMessage("Requer 'Dark Magician' face-up no campo.");
+            return;
         }
-        else
+
+        bool oppHasST = false;
+        if (GameManager.Instance.duelFieldUI != null)
         {
-            Debug.Log("Dark Magic Attack: Requer Dark Magician.");
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentSpellZones) if (z.childCount > 0) oppHasST = true;
+            if (GameManager.Instance.duelFieldUI.opponentFieldSpell.childCount > 0) oppHasST = true;
         }
+        if (!oppHasST)
+        {
+            UIManager.Instance.ShowMessage("O oponente não controla Magias/Armadilhas para destruir.");
+            return;
+        }
+
+        Effect_HarpiesFeatherDuster(source);
     }
 
     void Effect_0418_DarkMagicCurtain(CardDisplay source)
@@ -4836,7 +4900,20 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0421_DarkMagicianKnight(CardDisplay source)
     {
-        // Efeito: Destrói 1 carta no campo.
+        bool hasTarget = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if (z.childCount > 0) hasTarget = true;
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentSpellZones) if (z.childCount > 0) hasTarget = true;
+            if (GameManager.Instance.duelFieldUI.opponentFieldSpell.childCount > 0) hasTarget = true;
+        }
+        
+        if (!hasTarget)
+        {
+            UIManager.Instance.ShowMessage("Não há cartas no campo do oponente para destruir.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -5068,32 +5145,61 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0454_DarknessApproaches(CardDisplay source)
     {
-        // Efeito: Descarte 2; vire 1 monstro face-down (mesmo em ataque).
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
-        if (hand.Count >= 2)
+        if (hand.Count < 2)
         {
-            GameManager.Instance.OpenCardMultiSelection(hand, "Descarte 2 cartas", 2, 2, (selected) => {
-                foreach(var c in selected) GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c).GetComponent<CardDisplay>());
-                
-                if (SpellTrapManager.Instance != null)
-                {
-                    SpellTrapManager.Instance.StartTargetSelection(
-                        (t) => t.isOnField && !t.isFlipped,
-                        (t) => {
-                            t.ShowBack();
-                            // Regra moderna: Vira Defesa Face-Down
-                            if (t.position == CardDisplay.BattlePosition.Attack) t.ChangePosition();
-                            Debug.Log($"Darkness Approaches: {t.CurrentCardData.name} virado para baixo.");
-                        }
-                    );
-                }
-            });
+            UIManager.Instance.ShowMessage("Requer 2 cartas na mão para descartar.");
+            return;
         }
+
+        bool hasFaceUp = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (!m.isFlipped) hasFaceUp = true;
+        }
+
+        if (!hasFaceUp)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros face-up no campo.");
+            return;
+        }
+
+        GameManager.Instance.OpenCardMultiSelection(hand, "Descarte 2 cartas", 2, 2, (selected) => {
+            foreach(var c in selected) GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c).GetComponent<CardDisplay>());
+            
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isFlipped,
+                    (t) => {
+                        t.ShowBack();
+                        if (t.position == CardDisplay.BattlePosition.Attack) t.ChangePosition();
+                    }
+                );
+            }
+        });
     }
 
     void Effect_0456_DeFusion(CardDisplay source)
     {
-        // Efeito: Retorna Fusão ao Extra Deck, invoca materiais do GY.
+        bool hasFusion = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach (var m in all) if (m.CurrentCardData.type.Contains("Fusion")) hasFusion = true;
+        }
+        
+        if (!hasFusion)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros de Fusão no campo.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -5138,7 +5244,25 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0460_DeckDevastationVirus(CardDisplay source)
     {
-        // Efeito: Tribute Dark 2000+ ATK; destrói monstros 1500- ATK do oponente.
+        bool hasValidTribute = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+            {
+                if (z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && m.CurrentCardData.attribute == "Dark" && m.currentAtk >= 2000) hasValidTribute = true;
+                }
+            }
+        }
+
+        if (!hasValidTribute)
+        {
+            UIManager.Instance.ShowMessage("Requer 1 monstro DARK com 2000 ou mais de ATK para tributar.");
+            return;
+        }
+
         if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
         {
             Debug.Log("Deck Devastation Virus: Destruindo monstros fracos...");
@@ -5148,7 +5272,18 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0461_DedicationThroughLightAndDarkness(CardDisplay source)
     {
-        // Efeito: Tribute Dark Magician; SS Dark Magician of Chaos.
+        bool hasDM = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones) 
+                if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.name == "Dark Magician") hasDM = true;
+        }
+        if (!hasDM)
+        {
+            UIManager.Instance.ShowMessage("Você precisa controlar 'Dark Magician' para tributar.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -5182,9 +5317,16 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0465_DelinquentDuo(CardDisplay source)
     {
-        // Efeito: Pague 1000 LP; oponente descarta 1 aleatório e 1 à escolha dele.
-        Effect_PayLP(source, 1000);
-        Debug.Log("Delinquent Duo: Oponente descarta 2.");
+        if (GameManager.Instance.GetOpponentHandData().Count == 0)
+        {
+            UIManager.Instance.ShowMessage("A mão do oponente está vazia.");
+            return;
+        }
+
+        if (Effect_PayLP(source, 1000))
+        {
+            Debug.Log("Delinquent Duo: Oponente descarta 2.");
+        }
     }
 
     void Effect_0466_DeltaAttacker(CardDisplay source)
@@ -5209,7 +5351,6 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0469_DesCroaking(CardDisplay source)
     {
-        // Efeito: Se controlar 3 Des Frogs, destrói tudo do oponente.
         int count = 0;
         if (GameManager.Instance.duelFieldUI != null)
         {
@@ -5223,15 +5364,28 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
             }
         }
 
-        if (count >= 3)
+        if (count < 3)
         {
-            DestroyAllMonsters(true, false);
-            Effect_HarpiesFeatherDuster(source);
+            UIManager.Instance.ShowMessage("Requer 3 'Des Frog' no campo.");
+            return;
         }
-        else
+
+        bool oppHasCards = false;
+        if (GameManager.Instance.duelFieldUI != null)
         {
-            Debug.Log("Des Croaking: Requer 3 Des Frogs.");
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if(z.childCount > 0) oppHasCards = true;
+            foreach(var z in GameManager.Instance.duelFieldUI.opponentSpellZones) if(z.childCount > 0) oppHasCards = true;
+            if(GameManager.Instance.duelFieldUI.opponentFieldSpell.childCount > 0) oppHasCards = true;
         }
+
+        if (!oppHasCards)
+        {
+            UIManager.Instance.ShowMessage("O oponente não controla cartas para destruir.");
+            return;
+        }
+
+        DestroyAllMonsters(true, false);
+        Effect_HarpiesFeatherDuster(source);
     }
 
     void Effect_0470_DesDendle(CardDisplay source)
@@ -5372,7 +5526,16 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0485_DestructionRing(CardDisplay source)
     {
-        // Efeito: Destrói 1 monstro seu; 1000 dano a ambos.
+        bool hasMonster = false;
+        if (GameManager.Instance.duelFieldUI != null)
+            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if(z.childCount > 0) hasMonster = true;
+            
+        if (!hasMonster)
+        {
+            UIManager.Instance.ShowMessage("Você não controla monstros para destruir.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
@@ -5450,7 +5613,20 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0493_DifferentDimensionGate(CardDisplay source)
     {
-        // Efeito: Bane 1 monstro de cada lado. Retorna se destruído.
+        bool myHas = false;
+        bool oppHas = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if (z.childCount > 0) myHas = true;
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if (z.childCount > 0) oppHas = true;
+        }
+
+        if (!myHas || !oppHas)
+        {
+            UIManager.Instance.ShowMessage("Ambos os jogadores precisam controlar pelo menos 1 monstro.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
              SpellTrapManager.Instance.StartTargetSelection(
@@ -5471,7 +5647,23 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0494_DiffusionWaveMotion(CardDisplay source)
     {
-        // Efeito: Paga 1000 LP; Mago Lv7+ ataca todos os monstros do oponente.
+        bool hasMage = false;
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones) 
+                if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.race == "Spellcaster" && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.level >= 7) hasMage = true;
+        }
+
+        bool oppHasMonster = false;
+        if (GameManager.Instance.duelFieldUI != null)
+            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if (z.childCount > 0) oppHasMonster = true;
+
+        if (!hasMage || !oppHasMonster)
+        {
+            UIManager.Instance.ShowMessage("Requer Mago Nível 7+ e oponente deve controlar monstros.");
+            return;
+        }
+
         if (GameManager.Instance.PayLifePoints(source.isPlayerCard, 1000))
         {
              if (SpellTrapManager.Instance != null)
@@ -5490,22 +5682,35 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0496_DimensionDistortion(CardDisplay source)
     {
-        // Efeito: Se GY vazio, SS 1 monstro banido.
-        if (GameManager.Instance.GetPlayerGraveyard().Count == 0)
+        if (GameManager.Instance.GetPlayerGraveyard().Count > 0)
         {
-            List<CardData> banished = GameManager.Instance.GetPlayerRemoved();
-            if (banished.Count > 0)
-            {
-                GameManager.Instance.OpenCardSelection(banished, "Invocar Banido", (selected) => {
-                    GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
-                });
-            }
+            UIManager.Instance.ShowMessage("Seu Cemitério precisa estar vazio.");
+            return;
         }
+
+        List<CardData> banished = GameManager.Instance.GetPlayerRemoved();
+        if (banished.FindAll(c => c.type.Contains("Monster")).Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Você não possui monstros banidos.");
+            return;
+        }
+
+        GameManager.Instance.OpenCardSelection(banished.FindAll(c => c.type.Contains("Monster")), "Invocar Banido", (selected) => {
+            GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+        });
     }
 
     void Effect_0497_DimensionFusion(CardDisplay source)
     {
-        // Efeito: Paga 2000 LP; ambos SS o máximo de monstros banidos possível.
+        List<CardData> pBanished = GameManager.Instance.GetPlayerRemoved();
+        List<CardData> oBanished = GameManager.Instance.GetOpponentRemoved();
+
+        if (pBanished.FindAll(c => c.type.Contains("Monster")).Count == 0 && oBanished.FindAll(c => c.type.Contains("Monster")).Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Não há monstros banidos para invocar.");
+            return;
+        }
+
         if (GameManager.Instance.PayLifePoints(source.isPlayerCard, 2000))
         {
             // Player
@@ -5533,7 +5738,16 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0500_Dimensionhole(CardDisplay source)
     {
-        // Efeito: Bane 1 monstro seu até a próxima Standby Phase.
+        bool hasMonster = false;
+        if (GameManager.Instance.duelFieldUI != null)
+            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if(z.childCount > 0) hasMonster = true;
+            
+        if (!hasMonster)
+        {
+            UIManager.Instance.ShowMessage("Você não controla monstros para banir.");
+            return;
+        }
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
