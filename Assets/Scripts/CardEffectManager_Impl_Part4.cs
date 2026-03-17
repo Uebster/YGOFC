@@ -2782,11 +2782,10 @@ public partial class CardEffectManager
     // 1784 - Stronghold the Moving Fortress
     void Effect_1784_StrongholdTheMovingFortress(CardDisplay source)
     {
-        // Special Summon this card in Defense Position as an Effect Monster.
-        // Gains 3000 ATK if you control Green, Red, and Yellow Gadget.
-        GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 2000, "Stronghold"); // Simulado como Token
-        // Lógica de buff de Gadgets seria aplicada ao token/monstro armadilha.
-        Debug.Log("Stronghold: Invocado como monstro.");
+        if (GameManager.Instance.ConvertTrapToMonster(source, 0, 2000, 4, "Machine", "Earth"))
+        {
+            Debug.Log("Stronghold: Invocado como Trap Monster.");
+        }
     }
 
     // 1786 - Stumbling
@@ -3195,8 +3194,18 @@ public partial class CardEffectManager
                     SpellTrapManager.Instance.StartTargetSelection(
                         (newTarget) => newTarget.isOnField && newTarget.CurrentCardData.type.Contains("Monster"),
                         (target) => {
-                            Debug.Log($"Tailor of the Fickle: {equipCard.CurrentCardData.name} movido para {target.CurrentCardData.name}.");
-                            // TODO: Mover CardLink
+                            CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+                            CardLink link = links.FirstOrDefault(l => l.source == equipCard && l.type == CardLink.LinkType.Equipment);
+                            if (link != null && link.target != null) {
+                                var oldTarget = link.target;
+                                var mods = oldTarget.activeModifiers.Where(m => m.source == equipCard).ToList();
+                                oldTarget.RemoveModifiersFromSource(equipCard);
+                                foreach(var m in mods) {
+                                    target.AddStatModifier(new StatModifier(m.statType, m.type, m.operation, m.value, equipCard));
+                                }
+                                link.target = target;
+                                Debug.Log($"Tailor of the Fickle: {equipCard.CurrentCardData.name} movido para {target.CurrentCardData.name}.");
+                            }
                         }
                     );
                 }
@@ -4372,8 +4381,20 @@ public partial class CardEffectManager
     // 1942 - Toon Dark Magician Girl
     void Effect_1942_ToonDarkMagicianGirl(CardDisplay source)
     {
-        // Toon. Can attack directly.
-        Debug.Log("Toon Dark Magician Girl: Ataque direto (Lógica Toon no BattleManager).");
+        if (!source.isOnField && (GameManager.Instance.IsCardActiveOnField("1950") || GameManager.Instance.IsCardActiveOnField("Toon World")))
+        {
+            if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                    (tribute) => {
+                        GameManager.Instance.TributeCard(tribute);
+                        GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                        GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                    }
+                );
+            }
+        }
     }
 
     // 1943 - Toon Defense
@@ -4411,20 +4432,33 @@ public partial class CardEffectManager
     // 1947 - Toon Mermaid
     void Effect_1947_ToonMermaid(CardDisplay source)
     {
-        // Toon. Can be Special Summoned from hand if you control "Toon World".
         if (!source.isOnField && (GameManager.Instance.IsCardActiveOnField("1950") || GameManager.Instance.IsCardActiveOnField("Toon World")))
         {
-            GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
-            GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+            if (Effect_PayLP(source, 500))
+            {
+                GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+            }
         }
     }
 
     // 1948 - Toon Summoned Skull
     void Effect_1948_ToonSummonedSkull(CardDisplay source)
     {
-        // Toon. Cannot be Normal Summoned/Set. Must first be Special Summoned (from your hand) by Tributing 1 monster.
-        // Lógica de invocação na mão.
-        Debug.Log("Toon Summoned Skull: Invocação por tributo da mão.");
+        if (!source.isOnField && (GameManager.Instance.IsCardActiveOnField("1950") || GameManager.Instance.IsCardActiveOnField("Toon World")))
+        {
+            if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard) && Effect_PayLP(source, 500))
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                    (tribute) => {
+                        GameManager.Instance.TributeCard(tribute);
+                        GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                        GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                    }
+                );
+            }
+        }
     }
 
     // 1949 - Toon Table of Contents

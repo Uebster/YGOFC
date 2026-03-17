@@ -466,3 +466,18 @@ Permite que o jogador selecione repetidas cartas de uma lista até que a soma de
 *   **Implementação:** Em vez de recriar e inflar a interface do usuário, o sistema utiliza chamadas recursivas da função padrão `GameManager.Instance.OpenCardSelection`.
 *   **Funcionamento:** Uma função auxiliar (ex: `SelectMonstersByLevelSum`) pede ao jogador para escolher 1 carta. O nível dessa carta é subtraído do total. A janela abre novamente apenas com as cartas que cabem no "espaço" restante. Quando a soma bate exatamente com o alvo, o loop encerra e devolve a lista completa no callback original.
 *   **Uso:** `SelectMonstersByLevelSum(pool, targetSum, currentSelection, onCompleteCallback);`
+
+## 32. Sistema de Monstros Armadilha (Trap Monsters)
+Permite que Cartas Armadilha Contínuas se transformem fisicamente em monstros no campo, mantendo suas propriedades originais e ocupando uma Zona de Monstro (Ex: *Stronghold the Moving Fortress*, *Embodiment of Apophis*).
+*   **Implementação:** Utiliza a função `GameManager.Instance.ConvertTrapToMonster(card, atk, def, level, race, attribute)`.
+*   **Funcionamento:** A função move o `GameObject` da Zona de Magia/Armadilha para uma Zona de Monstro livre, altera seu estado interno (`isTrapMonster = true`) e atualiza visualmente os status sem destruir o GameObject original.
+
+## 33. Transferência Dinâmica de Equipamentos (Equip Transfer)
+Permite mover uma carta de Equipamento já ativa no campo de um monstro para outro válido sem que o equipamento seja destruído e reativado (Ex: *Tailor of the Fickle*).
+*   **Implementação:** Acessa e edita as propriedades do `CardLink` e da lista `activeModifiers` da carta alvo original.
+*   **Funcionamento:** A engine isola os modificadores aplicados pela carta de equipamento (`source == equipCard`), remove-os do monstro antigo, recalcula os status, adiciona os mesmos modificadores ao novo alvo selecionado e, por fim, atualiza o `link.target` do `CardLink`.
+
+## 34. Sistema de Vínculo Toon (Toon Link)
+Cartas que dependem de uma Magia de Campo/Contínua específica para sobreviverem ou serem invocadas (Ex: A Família *Toon*).
+*   **Implementação (Sobrevivência):** Injetado no evento global `OnCardLeavesField` no `CardEffectManager_Impl`. 
+*   **Funcionamento:** Quando o "Toon World" é destruído, retornado à mão ou banido, o script varre imediatamente todas as zonas de monstros de ambos os jogadores. Qualquer monstro cuja propriedade `race` seja "Toon" é forçado a ser destruído e enviado ao cemitério simultaneamente, imitando as regras de "Destroyed by their own effect".

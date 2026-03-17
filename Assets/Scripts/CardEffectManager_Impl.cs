@@ -1037,6 +1037,7 @@ public partial class CardEffectManager
             CheckActiveCards("0573", (card) => ExecuteCardEffect(card)); // Element Magician
             CheckActiveCards("0574", (card) => ExecuteCardEffect(card)); // Element Saurus
             CheckActiveCards("0576", (card) => ExecuteCardEffect(card)); // Element Valkyrie
+            CheckActiveCards("1784", (card) => UpdateStrongholdBuff(card)); // Stronghold
             
             CheckActiveCards("1140", (card) => { // Maha Vailo
                 int equipCount = GetEquippedCards(card).Count;
@@ -1302,6 +1303,18 @@ public partial class CardEffectManager
         card.RemoveModifiersFromSource(card);
         if (count > 0)
             card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 300, card));
+    }
+
+    private void UpdateStrongholdBuff(CardDisplay card)
+    {
+        bool hasGreen = GameManager.Instance.IsCardActiveOnField("Green Gadget") || GameManager.Instance.IsCardActiveOnField("0829");
+        bool hasRed = GameManager.Instance.IsCardActiveOnField("Red Gadget") || GameManager.Instance.IsCardActiveOnField("1502");
+        bool hasYellow = GameManager.Instance.IsCardActiveOnField("Yellow Gadget") || GameManager.Instance.IsCardActiveOnField("2129");
+        
+        card.RemoveModifiersFromSource(card);
+        if (hasGreen && hasRed && hasYellow) {
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 3000, card));
+        }
     }
 
     public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, SendReason reason)
@@ -2170,6 +2183,27 @@ public partial class CardEffectManager
         {
             Debug.Log("Smoke Grenade of the Thief: Destruído. Oponente descarta 1 carta.");
             GameManager.Instance.DiscardRandomHand(!card.isPlayerCard, 1);
+        }
+
+        // 1950 - Toon World
+        if (card.CurrentCardData.id == "1950" || card.CurrentCardData.name == "Toon World")
+        {
+            Debug.Log("Toon World removido: Destruindo monstros Toon.");
+            List<CardDisplay> toons = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, toons);
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, toons);
+            }
+            foreach(var m in toons)
+            {
+                if (m != null && (m.CurrentCardData.race == "Toon" || m.CurrentCardData.name.Contains("Toon")))
+                {
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(m);
+                    GameManager.Instance.SendToGraveyard(m.CurrentCardData, m.isPlayerCard);
+                    Destroy(m.gameObject);
+                }
+            }
         }
 
         // Libera zonas bloqueadas por esta carta (Ground Collapse, Ojama King)
