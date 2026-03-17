@@ -599,13 +599,13 @@ public class BattleManager : MonoBehaviour
                 Debug.Log("[BattleManager] Solicitando animação ao DuelFXManager...");
                 DuelFXManager.Instance.PlayAttack(attacker, target, () => {
                     Debug.Log("[BattleManager] Animação concluída. Resolvendo dano...");
-                    ResolveDamage(attacker, target, atkPoints, targetPoints);
+                    ResolveDamage(attacker, target, atkPoints, targetPoints, targetWasFaceDown);
                     isBattleResolving = false;
                 });
             }
             else
             {
-                ResolveDamage(attacker, target, atkPoints, targetPoints);
+                ResolveDamage(attacker, target, atkPoints, targetPoints, targetWasFaceDown);
                 isBattleResolving = false;
             }
         };
@@ -632,7 +632,7 @@ public class BattleManager : MonoBehaviour
         }
     }
 
-    private void ResolveDamage(CardDisplay attacker, CardDisplay target, int atk, int def)
+    private void ResolveDamage(CardDisplay attacker, CardDisplay target, int atk, int def, bool targetWasFaceDown = false)
     {
         // B.E.S. Immunity (0124, 0125)
         bool targetIsBES = target.CurrentCardData.id == "0124" || target.CurrentCardData.id == "0125";
@@ -665,6 +665,11 @@ public class BattleManager : MonoBehaviour
             // Sim, destruição ocorre, apenas o dano aos LP é prevenido.
             // Vamos aplicar isso nos blocos abaixo.
         }
+
+            // 1165 - Marshmallon
+            if (target.CurrentCardData.id == "1165") targetIsBES = true; 
+            // 1364 - Obnoxious Celtic Guard
+            if (target.CurrentCardData.id == "1364" && atk >= 1900) targetIsBES = true;
 
         if (target.position == CardDisplay.BattlePosition.Attack)
         {
@@ -741,6 +746,14 @@ public class BattleManager : MonoBehaviour
             else if (atk < def)
             {
                 int damage = def - atk;
+
+                // 1165 - Marshmallon (Dano por atacar face-down)
+                if (target.CurrentCardData.id == "1165" && targetWasFaceDown)
+                {
+                    Debug.Log("Marshmallon: 1000 de dano por atacar face-down.");
+                    if (attacker.isPlayerCard) GameManager.Instance.DamagePlayer(1000);
+                    else GameManager.Instance.DamageOpponent(1000);
+                }
                 
                 // Dimension Wall (0499)
                 // Se o atacante for o oponente e Dimension Wall estiver ativa, o dano volta para ele?

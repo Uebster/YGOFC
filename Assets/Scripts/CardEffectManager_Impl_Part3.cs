@@ -405,10 +405,17 @@ public partial class CardEffectManager
 
     void Effect_1064_LegacyOfYataGarasu(CardDisplay source)
     {
-        // Effect: Draw 1 card. If opponent has Spirit, draw 2.
-        GameManager.Instance.DrawCard();
         bool oppHasSpirit = false;
-        // Checar campo oponente
+        if (GameManager.Instance.duelFieldUI != null) {
+            Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+            foreach(var z in zones) {
+                if (z.childCount > 0) {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && m.CurrentCardData.type.Contains("Spirit") && !m.isFlipped) oppHasSpirit = true;
+                }
+            }
+        }
+        GameManager.Instance.DrawCard();
         if (oppHasSpirit) GameManager.Instance.DrawCard();
     }
 

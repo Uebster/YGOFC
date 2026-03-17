@@ -798,6 +798,9 @@ public partial class CardEffectManager
                 CleanAllExpiredModifiers();
             }
 
+            // Reset Mesmeric Control
+            if (BattleManager.Instance != null) BattleManager.Instance.battlePositionsLocked = false;
+
             // 3. Spiritual Energy Settle Machine e Spirits
             bool machineActive = false;
             CheckActiveCards("1757", (card) => {
@@ -863,6 +866,24 @@ public partial class CardEffectManager
                     GameManager.Instance.SpecialSummonFromData(c, isPlayerOwner);
                 }
                 imT_BanishedCards.Clear();
+            }
+
+            // 1162 - Manticore of Darkness
+            List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
+            var manticore = myGY.Find(c => c.id == "1162");
+            if (manticore != null && GameManager.Instance.isPlayerTurn) {
+                List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+                var tributes = hand.FindAll(c => c.race == "Beast" || c.race == "Beast-Warrior");
+                if (tributes.Count > 0) {
+                    GameManager.Instance.OpenCardSelection(tributes, "Manticore: Descartar para reviver?", (selected) => {
+                        var go = GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == selected);
+                        if (go != null) {
+                            GameManager.Instance.DiscardCard(go.GetComponent<CardDisplay>());
+                            myGY.Remove(manticore);
+                            GameManager.Instance.SpecialSummonFromData(manticore, true);
+                        }
+                    });
+                }
             }
 
             // 4. Efeitos Específicos
@@ -1164,6 +1185,21 @@ public partial class CardEffectManager
 
     public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, SendReason reason)
     {
+        // 1010 - Keldo
+        if (card.id == "1010" && reason == SendReason.Battle) {
+            List<CardData> oppGY = isOwnerPlayer ? GameManager.Instance.GetOpponentGraveyard() : GameManager.Instance.GetPlayerGraveyard();
+            if (oppGY.Count >= 2) {
+                GameManager.Instance.OpenCardMultiSelection(oppGY, "Keldo: Embaralhar 2 no Deck", 2, 2, (selected) => {
+                    foreach(var c in selected) {
+                        oppGY.Remove(c);
+                        if (isOwnerPlayer) GameManager.Instance.GetOpponentMainDeck().Add(c);
+                        else GameManager.Instance.GetPlayerMainDeck().Add(c);
+                    }
+                    GameManager.Instance.ShuffleDeck(!isOwnerPlayer);
+                });
+            }
+        }
+
         // Coffin Seller (0314): Dano quando monstro do oponente vai pro GY
         if (!isOwnerPlayer && card.type.Contains("Monster"))
         {
@@ -1583,11 +1619,49 @@ public partial class CardEffectManager
                 GameManager.Instance.DrawCard(true);
             }
         });
+
+        // 1262 - Molten Zombie
+        if (card.CurrentCardData.id == "1262") {
+            Debug.Log("Molten Zombie: Compra 1 carta (SS do GY).");
+            if (card.isPlayerCard) GameManager.Instance.DrawCard();
+            else GameManager.Instance.DrawOpponentCard();
+        }
     }
 
     partial void OnSummonImpl(CardDisplay card)
     {
         lastSummonedMonster = card;
+
+        // 1016 - King Tiger Wanghu
+        if (card.currentAtk <= 1400 && !card.isFlipped) {
+            CheckActiveCards("1016", (wanghu) => {
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
+                GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                Destroy(card.gameObject);
+                Debug.Log("King Tiger Wanghu destruiu " + card.CurrentCardData.name);
+            });
+        }
+
+        // 1028 - Kotodama
+        if (!card.isFlipped) {
+            CheckActiveCards("1028", (k) => {
+                int count = 0;
+                List<CardDisplay> all = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null) {
+                    CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                    CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+                }
+                foreach (var m in all) if (!m.isFlipped && m.CurrentCardData.name == card.CurrentCardData.name) count++;
+                if (count > 1) {
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
+                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                    Destroy(card.gameObject);
+                }
+            });
+        }
+
+        // 1117 - Mad Sword Beast
+        if (card.CurrentCardData.id == "1117") card.hasPiercing = true;
 
         // 0219 - Boar Soldier
         if (card.CurrentCardData.id == "0219" && !card.wasSpecialSummoned && !card.isFlipped) {
@@ -1886,6 +1960,21 @@ public partial class CardEffectManager
         if (attacker.CurrentCardData.id == "0438" && amount > 0) {
             Effect_SearchDeck(attacker, "Dark Scorpion");
         }
+
+            // 1040 - Kycoo the Ghost Destroyer
+            if (attacker.CurrentCardData.id == "1040" && amount > 0) {
+                List<CardData> oppGY = attacker.isPlayerCard ? GameManager.Instance.GetOpponentGraveyard() : GameManager.Instance.GetPlayerGraveyard();
+                List<CardData> targets = oppGY.FindAll(c => c.type.Contains("Monster"));
+                if (targets.Count > 0) {
+                    int max = Mathf.Min(2, targets.Count);
+                    GameManager.Instance.OpenCardMultiSelection(targets, "Kycoo: Banir do GY", 1, max, (selected) => {
+                        foreach(var c in selected) {
+                            GameManager.Instance.RemoveFromPlay(c, !attacker.isPlayerCard);
+                            oppGY.Remove(c);
+                        }
+                    });
+                }
+            }
 
         // Robbin' Goblin (1543): Se um monstro seu causa dano, oponente descarta 1
         CheckActiveCards("1543", (source) =>
@@ -4616,6 +4705,25 @@ private void Effect_0206_BlindDestruction_Logic_Impl(CardDisplay source)
                 }
             }
             if (hasReq) GameManager.Instance.DiscardRandomHand(false, 1);
+        }
+
+        // 1136 - Magical Thorn
+        CheckActiveCards("1136", (thorn) => {
+            if (thorn.isPlayerCard != card.isPlayerCard) {
+                Effect_DirectDamage(thorn, 500);
+            }
+        });
+
+        // 1339 - Night Assailant
+        if (card.CurrentCardData.id == "1339" && card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> flips = gy.FindAll(c => c.description.Contains("FLIP:") && c.id != "1339");
+            if (flips.Count > 0) {
+                GameManager.Instance.OpenCardSelection(flips, "Recuperar Flip do GY", (selected) => {
+                    gy.Remove(selected);
+                    GameManager.Instance.AddCardToHand(selected, true);
+                });
+            }
         }
 
         if (card.CurrentCardData.id == "0567" && causedByOpponent)

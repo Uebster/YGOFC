@@ -2232,6 +2232,12 @@ public void ShuffleDeck(bool isPlayer)
     public bool IsCardActiveOnField(string cardId)
     {
         if (duelFieldUI == null) return false;
+        
+        if (cardId == "2015" || cardId == "0013" || cardId == "Umi") {
+            if (IsCardActiveOnField("1142")) return true; // Maiden of the Aqua
+            if (IsCardActiveOnField("0013")) return true; // A Legendary Ocean
+            cardId = "2015"; // Força a busca pelo ID real do Umi Clássico abaixo
+        }
 
         bool CheckZone(Transform[] zones)
         {

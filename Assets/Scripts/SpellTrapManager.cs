@@ -96,6 +96,23 @@ public class SpellTrapManager : MonoBehaviour
                 }
             }
 
+            // 1192 - Mechanical Hound
+            if (card.type.Contains("Spell"))
+            {
+                bool oppHasHound = false;
+                Transform[] oppZones = isOwnerTurn ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+                foreach (var z in oppZones) {
+                    if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "1192" && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped) {
+                        int oppHand = isOwnerTurn ? GameManager.Instance.GetOpponentHandData().Count : GameManager.Instance.GetPlayerHandData().Count;
+                        if (oppHand == 0) oppHasHound = true;
+                    }
+                }
+                if (oppHasHound) {
+                    Debug.Log("Mechanical Hound: Oponente não pode ativar Spells.");
+                    return false;
+                }
+            }
+
             // Regras básicas de Spell
             if (isOwnerTurn) return true;
             if (card.property == "Quick-Play") return true; // Quick-Play pode no turno do oponente se setada (regra geral)
