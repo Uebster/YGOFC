@@ -20,6 +20,14 @@ public partial class CardEffectManager
 
     public Dictionary<CardDisplay, List<Transform>> blockedZonesByCard = new Dictionary<CardDisplay, List<Transform>>(); // Memória de bloqueios
 
+    // --- VARIÁVEIS DE TRACKING (SISTEMA 5) ---
+    public int finalCountdownTurnsLeft = 0;
+    public bool finalCountdownActive = false;
+    public bool finalCountdownPlayer = false;
+    public int playerDrawsThisTurn = 0;
+    public int opponentDrawsThisTurn = 0;
+    public CardDisplay lastSummonedMonster = null;
+
     // --- VALIDAÇÃO DE ATAQUE (Movido do BattleManager) ---
 
     public bool CanDeclareAttack(CardDisplay attacker)
@@ -373,6 +381,9 @@ public partial class CardEffectManager
             }
             foreach (var m in allField) { m.cannotAttackThisTurn = false; m.destroyedMonsterThisTurn = false; }
             
+            playerDrawsThisTurn = 0;
+            opponentDrawsThisTurn = 0;
+
             // Cyber Archfiend (0357): Se mão vazia na Draw Phase, compra +1
             CheckActiveCards("0357", (card) =>
             {
@@ -495,6 +506,24 @@ public partial class CardEffectManager
                         }
                     );
                 }
+            });
+
+            // Final Countdown (0652)
+            if (finalCountdownActive)
+            {
+                finalCountdownTurnsLeft--;
+                Debug.Log($"Final Countdown: {finalCountdownTurnsLeft} turnos restantes.");
+                if (finalCountdownTurnsLeft <= 0)
+                {
+                    Debug.Log("Final Countdown completo! Vitória declarada.");
+                    GameManager.Instance.EndDuel(finalCountdownPlayer);
+                }
+            }
+
+            // Greed (0828)
+            CheckActiveCards("0828", (card) => {
+                if (playerDrawsThisTurn > 0) GameManager.Instance.DamagePlayer(playerDrawsThisTurn * 500);
+                if (opponentDrawsThisTurn > 0) GameManager.Instance.DamageOpponent(opponentDrawsThisTurn * 500);
             });
 
             // 0953 - Inspection
@@ -1492,6 +1521,8 @@ public partial class CardEffectManager
 
     partial void OnSummonImpl(CardDisplay card)
     {
+        lastSummonedMonster = card;
+
         // 1373 - Ojama King
         if (card.CurrentCardData.id == "1373")
         {
@@ -4313,6 +4344,13 @@ private void Effect_0206_BlindDestruction_Logic_Impl(CardDisplay source)
 
     partial void OnCardDrawnImpl(CardData card, bool isPlayer)
     {
+        // Ignora compra normal (Draw Phase) para rastrear "compras por efeito" (Greed)
+        if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Draw)
+        {
+            if (isPlayer) playerDrawsThisTurn++;
+            else opponentDrawsThisTurn++;
+        }
+
         // 0878 - Heart of the Underdog
         if (isPlayer && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Draw)
         {

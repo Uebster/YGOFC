@@ -391,6 +391,53 @@ Cartas que exigem que o jogador **"Declare o nome de uma carta"** (Ex: *Mind Cru
     });
     ```
 
+## 26. Sistema de Redirecionamento de Corrente (Chain Target Swap)
+Cartas que não negam efeitos ou ataques, mas mudam o alvo deles para outra carta válida (Ex: *Fairy's Hand Mirror*, *Shift*).
+*   **Redirecionando Magias/Armadilhas:** O sistema utiliza `GetLinkToNegate(source)` para capturar o último elo da corrente (`ChainLink`). Como esse elo não foi resolvido ainda, a carta pode usar `StartTargetSelection` para permitir que o jogador escolha o novo alvo, e em seguida injeta o resultado atualizando a variável direta: `link.target = novoAlvo`.
+*   **Redirecionando Ataques:** Quando o gatilho da corrente for um ataque (`TriggerType.Attack`), o alvo do ataque não reside em `link.target`, mas sim no `BattleManager`. Portanto, a carta muda diretamente a variável global `BattleManager.Instance.currentTarget = novoAlvo`.
+*   **Considerações de Legality:** O sistema já confere usando condições `(t) => t != link.target` para evitar que o jogador faça um redirecionamento redundante para a própria carta original.
+
+## 23. Sistema de Múltipla Escolha Genérica (Multiple Choice UI)
+Cartas que exigem que o jogador faça uma escolha em texto (Ex: *Abyssal Designator* pede para escolher Tipo e Atributo, *Fuh-Rin-Ka-Zan* pede para escolher qual efeito ativar) utilizam este sistema.
+*   **Componente Central:** `MultipleChoiceUI.cs`. É um painel de UI instanciado dinamicamente que exibe botões com base em uma lista de strings.
+*   **Controle de Seleção:** Permite definir um número mínimo e máximo de seleções (ex: "Escolha exatamente 2 atributos").
+*   **Chamada:**
+    ```csharp
+    List<string> opcoes = new List<string> { "Destruir Monstros", "Destruir Magias" };
+    MultipleChoiceUI.Instance.Show(opcoes, "Escolha 1 Efeito:", 1, 1, (selecionados) => {
+        string escolha = selecionados;
+        // Aplica o efeito correspondente
+    });
+    ```
+
+## 24. Sistema de Bloqueio Físico de Zonas (Zone Blocking)
+Cartas como *Ground Collapse* e *Ojama King* proíbem o uso de certas zonas (Monstro ou Magia/Armadilha) enquanto estiverem no campo.
+*   **Integração Visual:** O `DuelFieldUI` possui o método `BlockZone(Transform zone)` que instancia um Prefab visual (`zoneBlockPrefab`) em cima da zona especificada (ex: imagem de cadeado ou corrente) para feedback ao jogador.
+*   **Regra de Invocação:** Métodos como `GetFreeMonsterZone` e `GetFreeSpellZone` verificam ativamente a condição `!duelFieldUI.IsZoneBlocked(zone)` antes de permitir que uma carta seja baixada ali.
+*   **Rastreamento e Limpeza:** O `CardEffectManager` possui um dicionário global `blockedZonesByCard`. Quando a carta que causou o bloqueio sai de campo (evento `OnCardLeavesField`), o sistema busca essa carta no dicionário e chama `UnblockZone` para liberar todas as zonas que ela estava prendendo, destruindo os cadeados visuais.
+
+## 25. Sistema de Reordenação de Cartas (Reorder Cards UI)
+Cartas que permitem ao jogador olhar o topo do deck e reordenar as cartas (Ex: *Big Eye*, *Fruits of Kozaky's Studies*) usam este sistema drag & drop.
+*   **Componente Central:** `ReorderCardsUI.cs`. Abre um painel modal exibindo as cartas horizontalmente.
+*   **Interação:** O jogador pode clicar e arrastar (Drag & Drop) as cartas para alterar a ordem. A inserção "empurra" o resto.
+*   **Chamada:**
+    ```csharp
+    ReorderCardsUI.Instance.Show(topCards, "Reordene o Topo", (orderedCards) => {
+        // Lógica de inserir as orderedCards de volta no deck
+    });
+    ```
+
+## 22. Condições Especiais de Vitória e Alterações Visuais do Tabuleiro
+Algumas cartas alteram a forma como a vitória é alcançada ou como as cartas são renderizadas no tabuleiro.
+*   **Destiny Board (Vitória Alternativa TCG):** A cada End Phase do oponente, a engine utiliza o `CardEffectManager` para procurar a próxima "Spirit Message" (I, N, A, L) na mão ou no Deck do controlador e instanciá-la fisicamente na primeira Zona de Mágicas e Armadilhas vazia. Se o jogador não possuir zonas vazias ou se a carta correspondente não for encontrada, o efeito falha e o `Destiny Board` é destruído. Além disso, há um vínculo vital no `OnCardLeavesField`: se qualquer peça do quadro sair de campo (Destruída, Banida ou Bounced), todas as outras peças no controle do jogador são destruídas em cadeia. Quando a 5ª peça entra em campo, o Singleton `DestinyBoardWinUI` assume o controle gerando a tela cinemática de Game Over (F-I-N-A-L).
+*   **Convulsion of Nature (Inversão de Deck):** O `CardEffectManager` ativa a flag global `invertDecks = true`. O script `PileDisplay`, responsável por renderizar a pilha 3D do Deck no campo, verifica esta flag. Se estiver ativa, ele força o método `SetCard` a exibir a arte da carta (`showFront = true`) em vez da textura de fundo (`SetCardBackOnly`), revelando aos jogadores qual é a próxima carta a ser sacada. Há também uma flag `invertDecksDevMode` no `GameManager` para forçar este comportamento para testes.
+*   **Chamada:**
+    ```csharp
+    ReorderCardsUI.Instance.Show(topCards, "Reordene o Topo", (orderedCards) => {
+        // Lógica de inserir as orderedCards de volta no deck
+    });
+    ```
+
 ## 22. Condições Especiais de Vitória e Alterações Visuais do Tabuleiro
 Algumas cartas alteram a forma como a vitória é alcançada ou como as cartas são renderizadas no tabuleiro.
 *   **Destiny Board (Vitória Alternativa TCG):** A cada End Phase do oponente, a engine utiliza o `CardEffectManager` para procurar a próxima "Spirit Message" (I, N, A, L) na mão ou no Deck do controlador e instanciá-la fisicamente na primeira Zona de Mágicas e Armadilhas vazia. Se o jogador não possuir zonas vazias ou se a carta correspondente não for encontrada, o efeito falha e o `Destiny Board` é destruído. Além disso, há um vínculo vital no `OnCardLeavesField`: se qualquer peça do quadro sair de campo (Destruída, Banida ou Bounced), todas as outras peças no controle do jogador são destruídas em cadeia. Quando a 5ª peça entra em campo, o Singleton `DestinyBoardWinUI` assume o controle gerando a tela cinemática de Game Over (F-I-N-A-L).

@@ -164,16 +164,37 @@ public partial class CardEffectManager
 
     void Effect_0517_DoraOfFate(CardDisplay source)
     {
-        // Trap: Activate only when you Summon a monster. Select 1 face-up monster on opp side.
-        // If Lv of summoned < Lv of selected, destroy selected and inflict damage (Diff x 500).
-        // Requer gatilho de invocação.
-        if (SpellTrapManager.Instance != null)
+        CardDisplay summoned = CardEffectManager.Instance.lastSummonedMonster;
+        if (summoned != null && summoned.isOnField && summoned.isPlayerCard == source.isPlayerCard)
         {
-            // Assume que foi ativado em resposta a uma invocação sua
-            // Precisamos saber qual monstro foi invocado.
-            // Simplificação: Pega o último invocado
-            // ...
-            Debug.Log("Dora of Fate: Selecione monstro do oponente (Lógica de nível pendente).");
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard != source.isPlayerCard && t.CurrentCardData.type.Contains("Monster") && !t.isFlipped,
+                    (target) => {
+                        int myLv = summoned.CurrentCardData.level;
+                        int oppLv = target.CurrentCardData.level;
+                        if (myLv < oppLv)
+                        {
+                            int diff = oppLv - myLv;
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                            Destroy(target.gameObject);
+                            Effect_DirectDamage(source, diff * 500);
+                        }
+                        else
+                        {
+                            int diff = myLv - oppLv;
+                            if (source.isPlayerCard) GameManager.Instance.DamagePlayer(diff * 500);
+                            else GameManager.Instance.DamageOpponent(diff * 500);
+                        }
+                    }
+                );
+            }
+        }
+        else
+        {
+            UIManager.Instance.ShowMessage("Deve ser ativada logo após você invocar um monstro.");
         }
     }
 
@@ -1491,8 +1512,19 @@ public partial class CardEffectManager
 
     void Effect_0628_FairysHandMirror(CardDisplay source)
     {
-        // Switch opponent's Spell effect that targets 1 monster to another correct target.
-        Debug.Log("Fairy's Hand Mirror: Redirecionamento de alvo de Magia (Requer sistema de Chain/Targeting avançado).");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell") && link.target != null && link.target.CurrentCardData.type.Contains("Monster"))
+        {
+            if (SpellTrapManager.Instance != null) {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && t != link.target,
+                    (newTarget) => {
+                        link.target = newTarget;
+                        Debug.Log($"Fairy's Hand Mirror: Alvo da magia redirecionado para {newTarget.CurrentCardData.name}.");
+                    }
+                );
+            }
+        }
     }
 
     void Effect_0631_FakeTrap(CardDisplay source)
@@ -1615,8 +1647,19 @@ public partial class CardEffectManager
 
     void Effect_0648_FiendsHandMirror(CardDisplay source)
     {
-        // Switch opponent's Spell effect that targets 1 S/T to another correct target.
-        Debug.Log("Fiend's Hand Mirror: Redirecionamento de alvo de Magia (S/T).");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell") && link.target != null && (link.target.CurrentCardData.type.Contains("Spell") || link.target.CurrentCardData.type.Contains("Trap")))
+        {
+            if (SpellTrapManager.Instance != null) {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")) && t != link.target,
+                    (newTarget) => {
+                        link.target = newTarget;
+                        Debug.Log($"Fiend's Hand Mirror: Alvo da magia redirecionado para {newTarget.CurrentCardData.name}.");
+                    }
+                );
+            }
+        }
     }
 
     void Effect_0650_FiendsSanctuary(CardDisplay source)
@@ -1659,7 +1702,6 @@ public partial class CardEffectManager
 
     void Effect_0652_FinalCountdown(CardDisplay source)
     {
-        // Pay 2000 LP. After 20 turns, you win the Duel.
         if (GameManager.Instance.playerLP <= 2000)
         {
             UIManager.Instance.ShowMessage("Pontos de Vida insuficientes (Requer mais de 2000).");
@@ -1668,10 +1710,10 @@ public partial class CardEffectManager
 
         if (Effect_PayLP(source, 2000))
         {
+            CardEffectManager.Instance.finalCountdownActive = true;
+            CardEffectManager.Instance.finalCountdownTurnsLeft = 20;
+            CardEffectManager.Instance.finalCountdownPlayer = source.isPlayerCard;
             Debug.Log("Final Countdown: Contagem de 20 turnos iniciada.");
-            // Adicionar contador global no GameManager ou na carta (se ela ficasse no campo, mas é Normal Spell)
-            // Como é Normal Spell, ela vai pro GY. Precisamos de um contador no GameManager.
-            // GameManager.Instance.StartFinalCountdown(source.isPlayerCard);
         }
     }
 
@@ -1990,13 +2032,30 @@ public partial class CardEffectManager
 
     void Effect_0699_FruitsOfKozakysStudies(CardDisplay source)
     {
-        // Look at top 3 cards of Deck, return in any order.
-        if (GameManager.Instance.GetPlayerMainDeck().Count < 3)
+        List<CardData> deck = source.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+        if (deck.Count < 3)
         {
             UIManager.Instance.ShowMessage("Requer pelo menos 3 cartas no Deck.");
             return;
         }
-        Debug.Log("Fruits of Kozaky: Reordenar topo do deck.");
+        
+        int count = Mathf.Min(3, deck.Count);
+        List<CardData> topCards = deck.GetRange(0, count);
+        
+        if (source.isPlayerCard && ReorderCardsUI.Instance != null)
+        {
+            ReorderCardsUI.Instance.Show(topCards, "Fruits of Kozaky: Reordene as cartas", (ordered) => {
+                deck.RemoveRange(0, count);
+                deck.InsertRange(0, ordered);
+                Debug.Log("Fruits of Kozaky's Studies: Deck reordenado.");
+            });
+        }
+        else if (!source.isPlayerCard)
+        {
+            deck.RemoveRange(0, count);
+            topCards.Sort((a,b) => Random.Range(-1, 2)); // Embaralha levemente as 3 do oponente
+            deck.InsertRange(0, topCards);
+        }
     }
 
     void Effect_0700_FuhRinKaZan(CardDisplay source)
@@ -3064,7 +3123,7 @@ public partial class CardEffectManager
 
     void Effect_0828_Greed(CardDisplay source)
     {
-        Debug.Log("Greed: Dano por compra de efeito (Lógica de rastreamento de draws pendente).");
+        Debug.Log("Greed: Dano por compra ativado (Monitorado pela End Phase).");
     }
 
     void Effect_0829_GreenGadget(CardDisplay source)

@@ -1320,8 +1320,32 @@ public partial class CardEffectManager
     // 1633 - Shift
     void Effect_1633_Shift(CardDisplay source)
     {
-        // When your opponent targets exactly 1 monster you control... Target another monster... change target.
-        Debug.Log("Shift: Redirecionamento de alvo (Requer sistema de Chain/Targeting avançado).");
+        var link = GetLinkToNegate(source);
+        if (link != null)
+        {
+            if (link.trigger == ChainManager.TriggerType.Attack)
+            {
+                if (SpellTrapManager.Instance != null) {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && t.isPlayerCard == source.isPlayerCard && t.CurrentCardData.type.Contains("Monster") && t != BattleManager.Instance.currentTarget,
+                        (newTarget) => {
+                            if (BattleManager.Instance != null) BattleManager.Instance.currentTarget = newTarget;
+                            Debug.Log($"Shift: Ataque redirecionado para {newTarget.CurrentCardData.name}.");
+                        });
+                }
+            }
+            else if (link.target != null && link.target.CurrentCardData.type.Contains("Monster") && link.target.isPlayerCard == source.isPlayerCard)
+            {
+                if (SpellTrapManager.Instance != null) {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && t.isPlayerCard == source.isPlayerCard && t.CurrentCardData.type.Contains("Monster") && t != link.target,
+                        (newTarget) => {
+                            link.target = newTarget;
+                            Debug.Log($"Shift: Efeito redirecionado para {newTarget.CurrentCardData.name}.");
+                        });
+                }
+            }
+        }
     }
 
     // 1634 - Shifting Shadows

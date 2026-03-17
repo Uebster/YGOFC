@@ -2083,11 +2083,21 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
             int count = Mathf.Min(5, deck.Count);
             List<CardData> topCards = deck.GetRange(0, count);
             
-            GameManager.Instance.OpenCardMultiSelection(topCards, "Selecione a ordem (1º = Topo)", count, count, (ordered) => {
-                deck.RemoveRange(0, count);
-                deck.InsertRange(0, ordered);
-                Debug.Log("Big Eye: Deck reordenado.");
-            });
+            if (ReorderCardsUI.Instance != null)
+            {
+                ReorderCardsUI.Instance.Show(topCards, "Big Eye: Reordene o Topo do Deck", (ordered) => {
+                    deck.RemoveRange(0, count);
+                    deck.InsertRange(0, ordered);
+                    Debug.Log("Big Eye: Deck reordenado.");
+                });
+            }
+            else
+            {
+                GameManager.Instance.OpenCardMultiSelection(topCards, "Selecione a ordem (1º = Topo)", count, count, (ordered) => {
+                    deck.RemoveRange(0, count);
+                    deck.InsertRange(0, ordered);
+                });
+            }
         }
     }
 
