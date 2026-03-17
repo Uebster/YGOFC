@@ -744,9 +744,8 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                     if (selected != null && selected.type.Contains("Monster"))
                     {
                         Debug.Log($"Amazoness Chain Master: Roubou {selected.name}.");
-                        // Lógica simplificada: Adiciona cópia à sua mão (remover da mão do oponente requereria referência ao GameObject específico)
+                        GameManager.Instance.RemoveCardFromHand(selected, !source.isPlayerCard);
                         GameManager.Instance.AddCardToHand(selected, true);
-                        // TODO: Remover carta real da mão do oponente
                     }
                 });
             }
@@ -972,9 +971,14 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         {
             if (GameManager.Instance.IsCardActiveOnField("1470")) // Pyramid of Light
             {
-                Effect_PayLP(source, 500);
-                GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
-                Debug.Log("Andro Sphinx: Invocado Especialmente.");
+                if (UIManager.Instance != null) {
+                    UIManager.Instance.ShowConfirmation("Pagar 500 LP para invocar Andro Sphinx?", () => {
+                        if (Effect_PayLP(source, 500)) {
+                            GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                            GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                        }
+                    });
+                }
             }
             else
             {
@@ -1180,18 +1184,10 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         if (hand.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(hand, "Descarte para negar", (selected) => {
-                // Verifica se o tipo da carta descartada corresponde ao tipo da carta alvo (Simulado)
-                // Em um sistema real, precisariamos saber qual carta está na chain
-                
                 GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == selected).GetComponent<CardDisplay>());
-                Debug.Log($"Arcana Knight Joker: Descartou {selected.name}. Efeito negado (Simulado).");
                 
-                // Se houver chain, nega o último link
-                if (ChainManager.Instance != null && ChainManager.Instance.currentChain.Count > 0)
-                {
-                    // Lógica de negação simplificada
-                    Debug.Log("Arcana Knight Joker: Último efeito na corrente negado.");
-                }
+                var link = GetLinkToNegate(source);
+                if (link != null) NegateAndDestroy(source, link);
             });
         }
     }
@@ -1982,8 +1978,10 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         
         if (poly != null)
         {
-            Debug.Log("Beastking: Buscando Polymerization...");
-            // Adicionar à mão (Lógica de AddToHand pendente no GameManager)
+            deck.Remove(poly);
+            GameManager.Instance.AddCardToHand(poly, source.isPlayerCard);
+            GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+            Debug.Log("Beastking: Polymerization adicionada à mão.");
         }
     }
 
@@ -2789,9 +2787,13 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0244_BubonicVermin(CardDisplay source)
     {
-        // Efeito: FLIP - SS 1 Bubonic Vermin do Deck face-down.
-        Effect_SearchDeck(source, "Bubonic Vermin"); // Simplificado (deveria invocar, não buscar para mão)
-        // TODO: Alterar Effect_SearchDeck para suportar SS direto ou criar Effect_SpecialSummonFromDeck
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        CardData vermin = deck.Find(c => c.name == "Bubonic Vermin");
+        if (vermin != null) {
+            deck.Remove(vermin);
+            GameManager.Instance.SpecialSummonFromData(vermin, source.isPlayerCard, false, true); // Face-down Defense
+            GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+        }
     }
 
     void Effect_0246_BurningAlgae(CardDisplay source)
@@ -2805,11 +2807,11 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0248_BurningLand(CardDisplay source)
     {
-        // Efeito: Destrói Field Spells. Na Standby, ambos tomam 500 dano.
-        // O que falta: TurnObserver para dano recorrente.
         Debug.Log("Burning Land: Destruindo campos...");
-        // Lógica de destruir campos
-        // Destroy(GameManager.Instance.duelFieldUI.playerFieldSpell.GetChild(0).gameObject);
+        List<CardDisplay> fields = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI.playerFieldSpell.childCount > 0) fields.Add(GameManager.Instance.duelFieldUI.playerFieldSpell.GetChild(0).GetComponent<CardDisplay>());
+        if (GameManager.Instance.duelFieldUI.opponentFieldSpell.childCount > 0) fields.Add(GameManager.Instance.duelFieldUI.opponentFieldSpell.GetChild(0).GetComponent<CardDisplay>());
+        if (fields.Count > 0) DestroyCards(fields, source.isPlayerCard);
     }
 
     void Effect_0249_BurningSpear(CardDisplay source)
@@ -3581,13 +3583,16 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         if (equips.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(equips, "Equipar do GY", (selected) => {
-                // Simula equipar: Move do GY para S/T e cria link
-                // Como não temos lógica de mover do GY para campo S/T diretamente, simulamos o efeito
-                Debug.Log($"Chopman: Equipando {selected.name} do GY.");
-                gy.Remove(selected);
-                // Cria visualmente na zona de S/T? Ou apenas aplica o efeito?
-                // Vamos aplicar o efeito genérico de equipar (assumindo +0 por enquanto, pois depende da carta)
-                // Em um sistema real, instanciaríamos a carta na zona S/T.
+                Transform freeZone = GameManager.Instance.GetFreeSpellZone(source.isPlayerCard);
+                if (freeZone != null) {
+                    gy.Remove(selected);
+                    GameObject equipGO = Instantiate(GameManager.Instance.cardPrefab, freeZone);
+                    CardDisplay equipCD = equipGO.GetComponent<CardDisplay>();
+                    equipCD.SetCard(selected, GameManager.Instance.GetCardBackTexture(), true);
+                    equipCD.isPlayerCard = source.isPlayerCard;
+                    equipCD.isOnField = true;
+                    GameManager.Instance.CreateCardLink(equipCD, source, CardLink.LinkType.Equipment);
+                }
             });
         }
     }
@@ -3743,8 +3748,13 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
                 (target) => {
-                    // Encontrar todos os equips no campo e mudar o alvo para 'target'
-                    Debug.Log($"Collected Power: Todos os equips movidos para {target.CurrentCardData.name}.");
+                    CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+                    foreach(var link in links) {
+                        if (link.type == CardLink.LinkType.Equipment && link.target != target) {
+                            if (link.target != null && link.source != null) link.target.RemoveModifiersFromSource(link.source);
+                            link.target = target;
+                        }
+                    }
                 }
             );
         }
@@ -3974,15 +3984,14 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0334_CrassClown(CardDisplay source)
     {
-        var link = GetLinkToNegate(source);
-        if (link != null && link.trigger == ChainManager.TriggerType.Attack)
+        if (SpellTrapManager.Instance != null)
         {
-            if (BattleManager.Instance != null) BattleManager.Instance.crossCounterActive = true;
-            Debug.Log("Cross Counter: Dano de reflexão será dobrado e atacante destruído.");
-        }
-        else
-        {
-            UIManager.Instance.ShowMessage("Só pode ser ativada em resposta a um ataque do oponente.");
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (target) => {
+                    GameManager.Instance.ReturnToHand(target);
+                }
+            );
         }
     }
 
@@ -4093,25 +4102,28 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
         if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
         {
-            Debug.Log("Crush Card Virus: Destruindo monstros fortes...");
-            // Destrói campo
-            if (GameManager.Instance.duelFieldUI != null)
-            {
-                foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
-                {
-                    if (z.childCount > 0)
-                    {
-                        var m = z.GetChild(0).GetComponent<CardDisplay>();
-                        if (m != null && m.currentAtk >= 1500)
-                        {
-                            GameManager.Instance.SendToGraveyard(m.CurrentCardData, false);
-                            Destroy(m.gameObject);
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.attribute == "Dark" && t.currentAtk <= 1000,
+                (tribute) => {
+                    GameManager.Instance.TributeCard(tribute);
+                    List<CardDisplay> toDestroy = new List<CardDisplay>();
+                    foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) {
+                        if (z.childCount > 0) {
+                            var m = z.GetChild(0).GetComponent<CardDisplay>();
+                            if (m != null && m.currentAtk >= 1500 && !m.isFlipped) toDestroy.Add(m);
+                        }
+                    }
+                    DestroyCards(toDestroy, source.isPlayerCard);
+                    
+                    List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+                    foreach (var c in new List<CardData>(oppHand)) {
+                        if (c.type.Contains("Monster") && c.atk >= 1500) {
+                            GameManager.Instance.RemoveCardFromHand(c, false);
+                            GameManager.Instance.SendToGraveyard(c, false);
                         }
                     }
                 }
-            }
-            // Destrói mão (Simulado: Descarta aleatório se tiver monstro forte? Não, vamos apenas logar)
-            Debug.Log("Crush Card Virus: Verificação de mão e turnos futuros pendente.");
+            );
         }
     }
 
@@ -4794,23 +4806,22 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     {
         if (GlobalCardSearchUI.Instance != null)
         {
-            GlobalCardSearchUI.Instance.Show("Declare o nome de 1 Monstro", (declaredCard) => {
+            GlobalCardSearchUI.Instance.Show("Declare 1 carta", (declaredCard) => {
                 if (declaredCard == null) return;
                 
-                Debug.Log($"Dark Designator: Declarou '{declaredCard.name}'.");
-                List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
-                CardData target = oppDeck.Find(c => c.name == declaredCard.name);
+                List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+                CardData hit = oppHand.Find(c => c.name == declaredCard.name);
                 
-                if (target != null)
-                {
-                    Debug.Log("Dark Designator: Encontrado! Adicionando à mão do oponente.");
-                    oppDeck.Remove(target);
-                    GameManager.Instance.AddCardToHand(target, false);
-                    GameManager.Instance.ShuffleDeck(false);
-                }
-                else
-                {
-                    UIManager.Instance.ShowMessage("A carta não foi encontrada no deck do oponente.");
+                if (hit != null) {
+                    GameManager.Instance.RemoveCardFromHand(hit, false);
+                    GameManager.Instance.RemoveFromPlay(hit, false);
+                } else {
+                    List<CardData> myHand = GameManager.Instance.GetPlayerHandData();
+                    if (myHand.Count > 0) {
+                        CardData rnd = myHand[Random.Range(0, myHand.Count)];
+                        GameManager.Instance.RemoveCardFromHand(rnd, true);
+                        GameManager.Instance.RemoveFromPlay(rnd, true);
+                    }
                 }
             });
         }
@@ -5120,12 +5131,14 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
         if (hasDon && hasCliff && hasChick && hasGorg && hasMeanae)
         {
-            Debug.Log("Dark Scorpion Combination: Todos atacam direto com 400 ATK.");
-            // Em um sistema real, aplicaria um modificador de "Direct Attack" e "Fixed Damage 400"
-        }
-        else
-        {
-            Debug.Log("Dark Scorpion Combination: Requer os 5 membros.");
+            List<CardDisplay> scorpions = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, scorpions);
+            foreach(var m in scorpions) {
+                if (m.CurrentCardData.name.Contains("Dark Scorpion") || m.CurrentCardData.name == "Don Zaloog") {
+                    m.canAttackDirectly = true;
+                    m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 400, source));
+                }
+            }
         }
     }
 
@@ -5138,9 +5151,21 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0443_DarkSpiritOfTheSilent(CardDisplay source)
     {
-        // Efeito: Oponente ataca -> Nega e obriga outro monstro a atacar.
-        // Requer hook no BattleManager.DeclareAttack
-        Debug.Log("Dark Spirit of the Silent: Gatilho de ataque.");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.trigger == ChainManager.TriggerType.Attack)
+        {
+            if (SpellTrapManager.Instance != null) {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard == link.cardSource.isPlayerCard && t.CurrentCardData.type.Contains("Monster") && t != link.cardSource,
+                    (newAttacker) => {
+                        if (BattleManager.Instance != null) {
+                            BattleManager.Instance.currentAttacker = newAttacker;
+                            Debug.Log($"Dark Spirit of the Silent: Forçando {newAttacker.CurrentCardData.name} a atacar no lugar.");
+                        }
+                    }
+                );
+            }
+        }
     }
 
     void Effect_0446_DarkZebra(CardDisplay source)
@@ -5317,8 +5342,28 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
         if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
         {
-            Debug.Log("Deck Devastation Virus: Destruindo monstros fracos...");
-            // DestroyAllMonsters(true, false); // Simplificado
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.attribute == "Dark" && t.currentAtk >= 2000,
+                (tribute) => {
+                    GameManager.Instance.TributeCard(tribute);
+                    List<CardDisplay> toDestroy = new List<CardDisplay>();
+                    foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) {
+                        if (z.childCount > 0) {
+                            var m = z.GetChild(0).GetComponent<CardDisplay>();
+                            if (m != null && m.currentAtk <= 1500 && !m.isFlipped) toDestroy.Add(m);
+                        }
+                    }
+                    DestroyCards(toDestroy, source.isPlayerCard);
+                    
+                    List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+                    foreach (var c in new List<CardData>(oppHand)) {
+                        if (c.type.Contains("Monster") && c.atk <= 1500) {
+                            GameManager.Instance.RemoveCardFromHand(c, false);
+                            GameManager.Instance.SendToGraveyard(c, false);
+                        }
+                    }
+                }
+            );
         }
     }
 
@@ -5650,8 +5695,8 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         GameManager.Instance.OpenCardSelection(deck, "Selecione carta para banir (Capsule)", (selected) => {
              deck.Remove(selected);
              GameManager.Instance.RemoveFromPlay(selected, true);
-             Debug.Log("Different Dimension Capsule: Carta banida face-down (Simulado).");
-             // Add counter or tracking for 2 turns later.
+             source.spellCounters = 2; // Track turns
+             source.fusionMaterialsUsed.Add(selected); // Store reference
         });
     }
 
@@ -5766,11 +5811,18 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         if (GameManager.Instance.PayLifePoints(source.isPlayerCard, 2000))
         {
             // Player
-            pBanished = GameManager.Instance.GetPlayerRemoved();
-            // Opponent
-            // ...
-            Debug.Log("Dimension Fusion: Invocando monstros banidos (Lógica de massa pendente).");
-            // Loop SS
+            foreach(var c in new List<CardData>(pBanished)) {
+                if (c.type.Contains("Monster")) {
+                    GameManager.Instance.GetPlayerRemoved().Remove(c);
+                    GameManager.Instance.SpecialSummonFromData(c, true);
+                }
+            }
+            foreach(var c in new List<CardData>(oBanished)) {
+                if (c.type.Contains("Monster")) {
+                    GameManager.Instance.GetOpponentRemoved().Remove(c);
+                    GameManager.Instance.SpecialSummonFromData(c, false);
+                }
+            }
         }
     }
 

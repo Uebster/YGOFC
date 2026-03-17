@@ -66,6 +66,13 @@ public class SpellTrapManager : MonoBehaviour
             return false;
         }
 
+        // 0076 - Anti-Spell Fragrance
+        if (card.type.Contains("Spell") && GameManager.Instance.IsCardActiveOnField("0076") && isOwnerTurn)
+        {
+            Debug.Log("Anti-Spell Fragrance: Magias precisam ser Setadas antes de ativar!");
+            return false; // Bloqueia ativação imediata da mão
+        }
+
         if (card.type.Contains("Spell"))
         {
             // Verifica se há alvo válido para Equip Spell
@@ -289,6 +296,11 @@ public class SpellTrapManager : MonoBehaviour
                         case ChainManager.TriggerType.Attack:
                             // Sakuretsu Armor (1581) vs Attack
                             if (cd.CurrentCardData.id == "1581")
+                            {
+                                validResponses.Add(cd);
+                            }
+                            // Dark Spirit of the Silent (0443) vs Attack
+                            if (cd.CurrentCardData.id == "0443")
                             {
                                 validResponses.Add(cd);
                             }

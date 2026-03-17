@@ -946,6 +946,13 @@ public void ShuffleDeck(bool isPlayer)
         // Adiciona à mão
         AddCardToHand(data, isPlayer);
         Debug.Log($"{data.name} retornada para a mão.");
+
+        // 0343 - Criosphinx
+        if (data.type.Contains("Monster") && IsCardActiveOnField("0343"))
+        {
+            Debug.Log("Criosphinx: Monstro retornou à mão, oponente descarta 1 carta.");
+            DiscardRandomHand(!isPlayer, 1);
+        }
     }
 
     public void ReturnToDeck(CardDisplay card, bool toTop)

@@ -823,6 +823,21 @@ public partial class CardEffectManager
                 }
             }
 
+        // 0168 - Berserk Dragon
+        CheckActiveCards("0168", (card) => {
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -500, card));
+            Debug.Log("Berserk Dragon: -500 ATK na End Phase.");
+        });
+
+        // 0383 / 0384 - D.D. Scout Plane / Survivor
+        List<CardData> pBanished = GameManager.Instance.isPlayerTurn ? GameManager.Instance.GetPlayerRemoved() : GameManager.Instance.GetOpponentRemoved();
+        List<CardData> toSummon = pBanished.FindAll(c => c.id == "0383" || c.id == "0384");
+        foreach(var c in toSummon) {
+            pBanished.Remove(c);
+            GameManager.Instance.SpecialSummonFromData(c, GameManager.Instance.isPlayerTurn);
+            Debug.Log($"{c.name}: Retornou da zona de banimento.");
+        }
+
             // Interdimensional Matter Transporter (0954) Return
             if (imT_BanishedCards.Count > 0)
             {
@@ -932,6 +947,20 @@ public partial class CardEffectManager
                     CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
                     CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
                     foreach (var m in all) m.ChangePosition();
+                }
+            });
+
+            // Different Dimension Capsule (0491)
+            CheckActiveCards("0491", (card) => {
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    card.spellCounters--;
+                    if (card.spellCounters <= 0 && card.fusionMaterialsUsed.Count > 0) {
+                        CardData target = card.fusionMaterialsUsed[0];
+                        GameManager.Instance.GetPlayerRemoved().Remove(target);
+                        GameManager.Instance.AddCardToHand(target, true);
+                        GameManager.Instance.SendToGraveyard(card.CurrentCardData, true);
+                        Destroy(card.gameObject);
+                    }
                 }
             });
 
@@ -1533,9 +1562,41 @@ public partial class CardEffectManager
         }
     }
 
+    partial void OnSpecialSummonImpl(CardDisplay card)
+    {
+        CheckActiveCards("0266", (safeReturn) => { // Card of Safe Return
+            if (safeReturn.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                Debug.Log("Card of Safe Return: Compra 1 carta extra pelo Special Summon.");
+                GameManager.Instance.DrawCard(true);
+            }
+        });
+    }
+
     partial void OnSummonImpl(CardDisplay card)
     {
         lastSummonedMonster = card;
+
+        // 0219 - Boar Soldier
+        if (card.CurrentCardData.id == "0219" && !card.wasSpecialSummoned && !card.isFlipped) {
+            Debug.Log("Boar Soldier: Destruído por ser Normal Summoned.");
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
+            GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+            Destroy(card.gameObject);
+        }
+
+        // 0166 - Behemoth the King of All Animals
+        if (card.CurrentCardData.id == "0166" && card.isTributeSummoned) {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> beasts = gy.FindAll(c => c.race == "Beast" && c.type.Contains("Monster"));
+            if (beasts.Count > 0) {
+                GameManager.Instance.OpenCardMultiSelection(beasts, "Behemoth: Recuperar Bestas", 1, beasts.Count, (selected) => {
+                    foreach(var c in selected) {
+                        gy.Remove(c);
+                        GameManager.Instance.AddCardToHand(c, card.isPlayerCard);
+                    }
+                });
+            }
+        }
 
         // 1373 - Ojama King
         if (card.CurrentCardData.id == "1373")
@@ -1796,6 +1857,23 @@ public partial class CardEffectManager
     // Novo Hook para dano de batalha causado (chamado pelo BattleManager)
     public void OnDamageDealtImpl(CardDisplay attacker, CardDisplay target, int amount)
     {
+        // 0435 - Chick the Yellow
+        if (attacker.CurrentCardData.id == "0435" && amount > 0) {
+            if (SpellTrapManager.Instance != null) SpellTrapManager.Instance.StartTargetSelection((t) => t.isOnField, (t) => GameManager.Instance.ReturnToHand(t));
+        }
+        // 0436 - Cliff the Trap Remover
+        if (attacker.CurrentCardData.id == "0436" && amount > 0) {
+            Effect_MST(attacker);
+        }
+        // 0437 - Gorg the Strong
+        if (attacker.CurrentCardData.id == "0437" && amount > 0) {
+            if (SpellTrapManager.Instance != null) SpellTrapManager.Instance.StartTargetSelection((t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"), (t) => GameManager.Instance.ReturnToDeck(t, true));
+        }
+        // 0438 - Meanae the Thorn
+        if (attacker.CurrentCardData.id == "0438" && amount > 0) {
+            Effect_SearchDeck(attacker, "Dark Scorpion");
+        }
+
         // Robbin' Goblin (1543): Se um monstro seu causa dano, oponente descarta 1
         CheckActiveCards("1543", (source) =>
         {
@@ -2064,6 +2142,16 @@ public partial class CardEffectManager
             {
                 Effect_GainLP(spell, 1000); // Cura o controlador da Spell
                 Debug.Log("Morale Boost: +1000 LP.");
+            });
+        }
+
+        // 0281 - Chain Burst
+        if (spell.CurrentCardData.type.Contains("Trap"))
+        {
+            CheckActiveCards("0281", (burst) => {
+                Debug.Log("Chain Burst: 1000 de dano por ativar Trap.");
+                if (spell.isPlayerCard) GameManager.Instance.DamagePlayer(1000);
+                else GameManager.Instance.DamageOpponent(1000);
             });
         }
 
@@ -2725,17 +2813,14 @@ public partial class CardEffectManager
         }
 
         // Buster Rancher (0253)
-        // Se equipado batalhar com monstro >= 2500 ATK, ganha ATK
-        // Precisamos achar quem tem Buster Rancher equipado.
-        // Simplificação: Verifica se o atacante tem o modificador de Buster Rancher ou checa links
-        // Como não temos acesso fácil aos links aqui, verificamos se o atacante tem o ID 0253 nos modificadores? Não.
-        // Vamos checar se existe Buster Rancher ativo e se está linkado ao atacante.
-        // (Lógica complexa para este escopo, simplificando para log)
-        if (attacker.currentAtk <= 1000) // || attacker.activeModifiers.Exists(m => m.source != null && m.source.CurrentCardData.id == "0253"))
+        List<CardDisplay> attackerEquips = GetEquippedCards(attacker);
+        if (attackerEquips.Exists(e => e.CurrentCardData.id == "0253") && attacker.currentAtk <= 1000)
         {
-            // Se o alvo for forte
             int targetAtk = (target != null && target.position == CardDisplay.BattlePosition.Attack) ? target.currentAtk : (target != null ? target.currentDef : 0);
-            if (targetAtk >= 2500) Debug.Log("Buster Rancher: Ativando buff massivo!");
+            if (targetAtk >= 2500) {
+                Debug.Log("Buster Rancher: Ativando buff massivo de 2500 ATK!");
+                attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, 2500, null));
+            }
         }
 
         // Dark Artist (0395): DEF / 2 se atacado por LIGHT
@@ -3704,6 +3789,18 @@ void Effect_DirectDamage(CardDisplay source, int amount)
         Debug.Log("Effect_DirectDamage: Alvo redirecionado por Mystical Refpanel.");
     }
 
+        // 0477 - Des Wombat
+        bool hasWombat = false;
+        if (GameManager.Instance.duelFieldUI != null) {
+            Transform[] zones = targetOpponent ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+            foreach (var z in zones) if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "0477" && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped) hasWombat = true;
+        }
+
+        if (hasWombat) {
+            Debug.Log("Des Wombat: Dano de efeito prevenido a 0.");
+            return;
+        }
+
     if (targetOpponent) GameManager.Instance.DamageOpponent(amount);
     else GameManager.Instance.DamagePlayer(amount);
 
@@ -4328,6 +4425,12 @@ partial void OnBattlePositionChangedImpl(CardDisplay card)
                 );
             }
         }
+
+        // 0334 - Crass Clown
+        if (card.CurrentCardData.id == "0334" && card.position == CardDisplay.BattlePosition.Attack && !card.isFlipped)
+        {
+            ExecuteCardEffect(card);
+        }
     }
 void Effect_SecretBarrel(CardDisplay source)
 {
@@ -4417,6 +4520,15 @@ private void Effect_0206_BlindDestruction_Logic_Impl(CardDisplay source)
         {
             if (isPlayer) playerDrawsThisTurn++;
             else opponentDrawsThisTurn++;
+
+            // 0078 - Appropriate
+            CheckActiveCards("0078", (app) => {
+                if (app.isPlayerCard != isPlayer) {
+                    Debug.Log("Appropriate: Oponente sacou fora da Draw Phase. Comprando 2.");
+                    if (app.isPlayerCard) { GameManager.Instance.DrawCard(); GameManager.Instance.DrawCard(); }
+                    else { GameManager.Instance.DrawOpponentCard(); GameManager.Instance.DrawOpponentCard(); }
+                }
+            });
         }
 
         // 0878 - Heart of the Underdog
