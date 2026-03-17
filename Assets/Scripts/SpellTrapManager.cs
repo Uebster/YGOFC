@@ -73,6 +73,20 @@ public class SpellTrapManager : MonoBehaviour
             return false; // Bloqueia ativação imediata da mão
         }
 
+        // 1823 - Talisman of Spell Sealing
+        if (card.type.Contains("Spell") && GameManager.Instance.IsCardActiveOnField("1823"))
+        {
+            Debug.Log("Ativação de Magia bloqueada por Talisman of Spell Sealing!");
+            return false;
+        }
+
+        // 1824 - Talisman of Trap Sealing
+        if (card.type.Contains("Trap") && GameManager.Instance.IsCardActiveOnField("1824"))
+        {
+            Debug.Log("Ativação de Armadilha bloqueada por Talisman of Trap Sealing!");
+            return false;
+        }
+
         if (card.type.Contains("Spell"))
         {
             // Verifica se há alvo válido para Equip Spell

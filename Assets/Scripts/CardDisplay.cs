@@ -66,6 +66,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public int tributeCount = 0; // Quantos monstros foram tributados para invocar esta carta
     [HideInInspector] public bool originalOwnerIsPlayer = false; // Para Remove Brainwashing
     [HideInInspector] public bool scheduledForBanishment = false; // Para Return from the Different Dimension
+    [HideInInspector] public bool canBeTributedByOpponent = false; // Para Soul Exchange
 
     // Sistema Trap Monster
     [HideInInspector] public bool isTrapMonster = false;

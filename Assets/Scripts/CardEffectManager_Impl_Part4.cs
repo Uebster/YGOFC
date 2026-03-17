@@ -1425,8 +1425,8 @@ public partial class CardEffectManager
         if (normals.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(normals, "Reviver Normal", (selected) => {
-                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard, true, true); // Face-up Defense
-                // TODO: Adicionar restrição 'Cannot Attack'
+                var summoned = GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard, true, true); // Face-up Defense
+                if (summoned != null) summoned.cannotAttackThisTurn = true;
             });
         }
     }
@@ -1920,9 +1920,9 @@ public partial class CardEffectManager
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
                 (target) => {
-                    Debug.Log($"Soul Exchange: {target.CurrentCardData.name} marcado para tributo.");
-                    // TODO: Marcar alvo como tributável
+                    target.canBeTributedByOpponent = true;
                     if (PhaseManager.Instance != null) PhaseManager.Instance.skipBattlePhase = true;
+                    Debug.Log($"Soul Exchange: {target.CurrentCardData.name} marcado para tributo.");
                 }
             );
         }
@@ -2415,9 +2415,8 @@ public partial class CardEffectManager
     // 1740 - Spirit Elimination
     void Effect_1740_SpiritElimination(CardDisplay source)
     {
-        // This turn, any monster sent from your side of the field to the Graveyard is banished instead.
+        CardEffectManager.Instance.banishInsteadOfGraveyard = true;
         Debug.Log("Spirit Elimination: Monstros serão banidos em vez de irem para o GY neste turno.");
-        // TODO: Adicionar flag no GameManager: `banishInsteadOfGraveyard = true`
     }
 
     // 1745 - Spirit Reaper
@@ -2678,8 +2677,8 @@ public partial class CardEffectManager
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.isPlayerCard,
                 (target) => {
+                    if (BattleManager.Instance != null) BattleManager.Instance.forcedAttackTarget = target;
                     Debug.Log($"Staunch Defender: {target.CurrentCardData.name} é o alvo obrigatório.");
-                    // TODO: Implementar forcedAttackTarget no BattleManager
                 }
             );
         }
@@ -3259,6 +3258,7 @@ public partial class CardEffectManager
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.isPlayerCard,
                 (target) => {
+                    if (BattleManager.Instance != null) BattleManager.Instance.forcedAttackTarget = target;
                     Debug.Log($"Taunt: {target.CurrentCardData.name} é o alvo obrigatório.");
                     // TODO: Implementar forcedAttackTarget no BattleManager
                 }
@@ -4178,10 +4178,9 @@ public partial class CardEffectManager
     // 1918 - Threatening Roar
     void Effect_1918_ThreateningRoar(CardDisplay source)
     {
-        // Opponent cannot attack this turn.
         if (BattleManager.Instance != null)
         {
-            // BattleManager.Instance.preventAttacks = true; // Hypothetical flag
+            BattleManager.Instance.threateningRoarActive = true;
             Debug.Log("Threatening Roar: Ataques bloqueados.");
         }
     }

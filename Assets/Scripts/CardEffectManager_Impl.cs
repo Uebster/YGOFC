@@ -253,8 +253,8 @@ public partial class CardEffectManager
             }
         }
 
-        // 1553 - Rocket Jumper
-        if (attacker != null && attacker.CurrentCardData.id == "1553")
+        // 1553 - Rocket Jumper & 1627 - Shadowslayer
+        if (attacker != null && (attacker.CurrentCardData.id == "1553" || attacker.CurrentCardData.id == "1627"))
         {
             bool onlyDefense = true;
             bool hasMonsters = false;

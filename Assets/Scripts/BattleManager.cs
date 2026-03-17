@@ -22,6 +22,8 @@ public class BattleManager : MonoBehaviour
     public bool bewdCannotAttackThisTurn = false; // Burst Stream of Destruction (0251)
     public bool terrorkingCanAttackDirectly = false; // Checkmate (0298)
     public bool crossCounterActive = false; // Cross Counter (0344)
+    public bool threateningRoarActive = false; // Threatening Roar (1918)
+    public CardDisplay forcedAttackTarget; // Staunch Defender (1767) / Taunt (1827)
     private bool isBattleResolving = false; // Proteção contra reentrada
 
     // Verifica se a ativação de armadilhas está bloqueada (ex: Mirage Dragon)
@@ -77,6 +79,8 @@ public class BattleManager : MonoBehaviour
         bewdCannotAttackThisTurn = false;
         terrorkingCanAttackDirectly = false;
         crossCounterActive = false;
+        threateningRoarActive = false;
+        forcedAttackTarget = null;
         gravekeepersProtected = false;
         isBattleResolving = false;
     }
@@ -224,6 +228,12 @@ public class BattleManager : MonoBehaviour
 
     public bool CanAttack(CardDisplay attacker)
     {
+        if (threateningRoarActive)
+        {
+            Debug.LogWarning("Ataque impedido: Threatening Roar está ativo.");
+            return false;
+        }
+
         if (attacker.cannotAttackThisTurn)
         {
             Debug.LogWarning("Ataque impedido: Este monstro não pode atacar neste turno devido a um efeito.");
@@ -261,6 +271,13 @@ public class BattleManager : MonoBehaviour
             Debug.Log("Astral Barrier: Ataque em monstro convertido em Ataque Direto.");
             TryDirectAttack();
             CancelAttack();
+            return;
+        }
+
+        // Forced Attack Target
+        if (forcedAttackTarget != null && target != forcedAttackTarget)
+        {
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Você deve atacar o alvo forçado (Taunt / Staunch Defender)!");
             return;
         }
 
@@ -435,8 +452,8 @@ public class BattleManager : MonoBehaviour
             return true;
         }
 
-        // 1553 - Rocket Jumper
-        if (currentAttacker != null && currentAttacker.CurrentCardData.id == "1553")
+        // 1553 - Rocket Jumper & 1627 - Shadowslayer
+        if (currentAttacker != null && (currentAttacker.CurrentCardData.id == "1553" || currentAttacker.CurrentCardData.id == "1627"))
         {
             // Pode atacar direto se o oponente só tiver monstros em Defesa
             bool onlyDefense = true;
