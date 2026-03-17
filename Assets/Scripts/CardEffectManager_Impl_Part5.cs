@@ -1240,9 +1240,7 @@ public partial class CardEffectManager
     // 2143 - Zoma the Spirit
     void Effect_2143_ZomaTheSpirit(CardDisplay source)
     {
-        // SS Trap Monster. Destroyed by battle -> Burn = ATK of killer.
         GameManager.Instance.SpawnToken(source.isPlayerCard, 1800, 500, "Zoma Token");
-        // Lógica de dano no OnBattleEnd do Token.
     }
 
     // 2144 - Zombie Tiger

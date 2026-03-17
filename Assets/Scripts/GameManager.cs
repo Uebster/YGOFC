@@ -1394,6 +1394,35 @@ public void ShuffleDeck(bool isPlayer)
             if (UIManager.Instance != null) UIManager.Instance.ShowMessage(isHeads ? "CARA!" : "COROA!");
             yield return new WaitForSeconds(0.5f);
         }
+
+        // --- SISTEMA 3: SECOND COIN TOSS ---
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.HasActiveSecondCoinToss(out bool isPlayerToss))
+        {
+            if (isPlayerToss && UIManager.Instance != null)
+            {
+                bool isWaiting = true;
+                bool doReroll = false;
+                UIManager.Instance.ShowConfirmation($"Você tirou {headsCount} cara(s). Usar Second Coin Toss para tentar de novo?",
+                    () => { doReroll = true; isWaiting = false; },
+                    () => { isWaiting = false; }
+                );
+                while(isWaiting) yield return null;
+
+                if (doReroll)
+                {
+                    CardEffectManager.Instance.ConsumeSecondCoinToss(true);
+                    StartCoroutine(CoinTossRoutine(numberOfCoins, onResult));
+                    yield break; // Cancela este fluxo e inicia o novo
+                }
+            }
+            else if (!isPlayerToss && headsCount == 0) // IA simples: Rerola se tirou 0 caras
+            {
+                CardEffectManager.Instance.ConsumeSecondCoinToss(false);
+                StartCoroutine(CoinTossRoutine(numberOfCoins, onResult));
+                yield break;
+            }
+        }
+        
         onResult?.Invoke(headsCount);
     }
 

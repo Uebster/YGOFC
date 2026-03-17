@@ -25,6 +25,8 @@ public partial class CardEffectManager
     public bool lastWillActive = false;
     public bool pikerusCircleActivePlayer = false;
     public bool pikerusCircleActiveOpponent = false;
+    public bool trapOfBoardEraserActive = false;
+    public bool spellOfPainActive = false;
 
     // --- VARIÁVEIS DE TRACKING (SISTEMA 5) ---
     public int finalCountdownTurnsLeft = 0;
@@ -33,6 +35,8 @@ public partial class CardEffectManager
     public int playerDrawsThisTurn = 0;
     public int opponentDrawsThisTurn = 0;
     public CardDisplay lastSummonedMonster = null;
+    public bool secondCoinTossUsedPlayer = false;
+    public bool secondCoinTossUsedOpponent = false;
     
     public bool trapsBlockedThisTurn = false; // Forced Ceasefire (0685)
 
@@ -368,6 +372,24 @@ public partial class CardEffectManager
             Debug.Log($"{source.CurrentCardData.name} negou {targetLink.cardSource.CurrentCardData.name}.");
         }
     }
+    public bool HasActiveSecondCoinToss(out bool isPlayerCard)
+    {
+        isPlayerCard = false;
+        if (GameManager.Instance.duelFieldUI == null) return false;
+        bool playerHas = false;
+        bool oppHas = false;
+        foreach(var z in GameManager.Instance.duelFieldUI.playerSpellZones) if(z.childCount > 0 && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "1604") playerHas = true;
+        foreach(var z in GameManager.Instance.duelFieldUI.opponentSpellZones) if(z.childCount > 0 && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "1604") oppHas = true;
+        if (playerHas && !secondCoinTossUsedPlayer) { isPlayerCard = true; return true; }
+        if (oppHas && !secondCoinTossUsedOpponent) { isPlayerCard = false; return true; }
+        return false;
+    }
+
+    public void ConsumeSecondCoinToss(bool isPlayer)
+    {
+        if (isPlayer) secondCoinTossUsedPlayer = true;
+        else secondCoinTossUsedOpponent = true;
+    }
 
     // --- SISTEMA DE EVENTOS E FASES (TURNOBSERVER) ---
 
@@ -389,6 +411,9 @@ public partial class CardEffectManager
         if (phase == GamePhase.Draw)
         {
             // Limpa flags de turno
+            secondCoinTossUsedPlayer = false;
+            secondCoinTossUsedOpponent = false;
+
             List<CardDisplay> allField = new List<CardDisplay>();
             if (GameManager.Instance.duelFieldUI != null) {
                 CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allField);
@@ -482,12 +507,14 @@ public partial class CardEffectManager
                         GameManager.Instance.SpecialSummonFromData(cardData, true);
                         reviveNextStandby.RemoveAt(i);
                         Debug.Log($"{cardData.name} revivido do GY.");
+                        if (cardData.id == "1578") Effect_HeavyStorm(null); // Sacred Phoenix of Nephthys
                     }
                     else if (inOppGY && !GameManager.Instance.isPlayerTurn)
                     {
                         GameManager.Instance.SpecialSummonFromData(cardData, false);
                         reviveNextStandby.RemoveAt(i);
                         Debug.Log($"{cardData.name} revivido do GY.");
+                        if (cardData.id == "1578") Effect_HeavyStorm(null); // Sacred Phoenix of Nephthys
                     }
                 }
             }
@@ -753,16 +780,6 @@ public partial class CardEffectManager
                 }
             });
 
-            // 1578 - Sacred Phoenix of Nephthys
-            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
-            CardData phoenix = gy.Find(c => c.id == "1578");
-            if (phoenix != null && GameManager.Instance.isPlayerTurn) {
-                Debug.Log("Sacred Phoenix of Nephthys: Revivendo na Standby Phase.");
-                GameManager.Instance.SpecialSummonFromData(phoenix, true);
-                gy.Remove(phoenix);
-                Effect_HeavyStorm(null); 
-            }
-
             // 1465 - Pumpking the King of Ghosts
             CheckActiveCards("1465", (card) => {
                 if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && (GameManager.Instance.IsCardActiveOnField("Castle of Dark Illusions") || GameManager.Instance.IsCardActiveOnField("1270"))) {
@@ -866,6 +883,8 @@ public partial class CardEffectManager
             lastWillActive = false;
             pikerusCircleActivePlayer = false;
             pikerusCircleActiveOpponent = false;
+            trapOfBoardEraserActive = false;
+            spellOfPainActive = false;
 
         // 0168 - Berserk Dragon
         CheckActiveCards("0168", (card) => {
@@ -913,6 +932,14 @@ public partial class CardEffectManager
                     });
                 }
             }
+
+            // 1593 - Satellite Cannon
+            CheckActiveCards("1593", (card) => {
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 1000, card));
+                    Debug.Log("Satellite Cannon: +1000 ATK na End Phase.");
+                }
+            });
 
             // 4. Efeitos Específicos
             CheckActiveCards("1686", (card) => { // Solar Flare Dragon
@@ -1300,15 +1327,20 @@ public partial class CardEffectManager
         // 1587 - Sangan
         if (card.id == "1587")
         {
-            // Busca monstro com 1500 ou menos de ATK
-            // Como Effect_SearchDeck precisa de um CardDisplay source e a carta já foi destruída,
-            // precisamos adaptar ou passar null se o método suportar.
-            // O método Effect_SearchDeck usa source.isPlayerCard.
-            // Vamos criar um CardDisplay temporário ou refatorar Effect_SearchDeck.
-            // Por enquanto, assumimos que o dono é o jogador atual se isOwnerPlayer for true.
-            if (isOwnerPlayer && fromLocation == CardLocation.Field)
+            if (isOwnerPlayer)
             {
-                Effect_SearchDeck(null, "Monster", "", 1500); // Precisa de refatoração para aceitar null source ou bool isPlayer
+                Debug.Log("Sangan: Buscando monstro com ATK <= 1500.");
+                List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+                List<CardData> targets = deck.FindAll(c => c.type.Contains("Monster") && c.atk <= 1500);
+                if (targets.Count > 0)
+                {
+                    GameManager.Instance.OpenCardSelection(targets, "Sangan", (selected) =>
+                    {
+                        deck.Remove(selected);
+                        GameManager.Instance.AddCardToHand(selected, true);
+                        GameManager.Instance.ShuffleDeck(true);
+                    });
+                }
             }
         }
 
@@ -1412,6 +1444,12 @@ public partial class CardEffectManager
                     if (revived != null) revived.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 800, ropeTrap));
                 });
             }
+        }
+
+        // 1578 - Sacred Phoenix of Nephthys
+        if (card.id == "1578" && reason == SendReason.Effect) {
+            Debug.Log("Sacred Phoenix of Nephthys: Agendado para reviver na Standby Phase.");
+            reviveNextStandby.Add(card);
         }
 
         // 0885 - Hero Signal
@@ -2133,6 +2171,19 @@ public partial class CardEffectManager
                     CardData c = extra[0];
                     extra.RemoveAt(0);
                     GameManager.Instance.SendToGraveyard(c, !attacker.isPlayerCard);
+                }
+            }
+
+            // 1591 - Sasuke Samurai #3
+            if (attacker.CurrentCardData.id == "1591" && amount > 0)
+            {
+                int handCount = attacker.isPlayerCard ? GameManager.Instance.GetOpponentHandData().Count : GameManager.Instance.GetPlayerHandData().Count;
+                if (handCount < 7)
+                {
+                    int toDraw = 7 - handCount;
+                    for (int i = 0; i < toDraw; i++)
+                        if (attacker.isPlayerCard) GameManager.Instance.DrawOpponentCard();
+                        else GameManager.Instance.DrawCard();
                 }
             }
 
@@ -3477,6 +3528,18 @@ public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
         // GameManager.Instance.ReturnToDeck(target, true);
     }
 
+    // 2143 - Zoma the Spirit (Token)
+    if (target != null && target.CurrentCardData.name == "Zoma Token")
+    {
+        if (attacker != null && attacker.currentAtk >= target.currentDef)
+        {
+            int dmg = attacker.currentAtk;
+            Debug.Log($"Zoma the Spirit: Causando {dmg} de dano ao atacante.");
+            if (target.isPlayerCard) GameManager.Instance.DamageOpponent(dmg);
+            else GameManager.Instance.DamagePlayer(dmg);
+        }
+    }
+
     // 1068 - Legendary Jujitsu Master
     if (target != null && target.CurrentCardData.id == "1068" && target.position == CardDisplay.BattlePosition.Defense)
     {
@@ -4069,6 +4132,23 @@ void Effect_DirectDamage(CardDisplay source, int amount)
         targetOpponent = !targetOpponent; // Inverte o alvo
         Debug.Log("Effect_DirectDamage: Alvo redirecionado por Mystical Refpanel.");
     }
+
+        // 1965 - Trap of Board Eraser
+        if (trapOfBoardEraserActive)
+        {
+            Debug.Log("Trap of Board Eraser: Dano negado. Oponente descarta.");
+            GameManager.Instance.DiscardRandomHand(!targetOpponent, 1);
+            trapOfBoardEraserActive = false;
+            return;
+        }
+
+        // 1728 - Spell of Pain
+        if (spellOfPainActive)
+        {
+            targetOpponent = !targetOpponent; // Inverte o alvo
+            Debug.Log("Spell of Pain: Dano redirecionado.");
+            spellOfPainActive = false;
+        }
 
         // 0477 - Des Wombat
         bool hasWombat = false;

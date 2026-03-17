@@ -688,7 +688,8 @@ public class BattleManager : MonoBehaviour
         // 1593 - Satellite Cannon
         if (target.CurrentCardData.id == "1593" && attacker.CurrentCardData.level <= 7)
         {
-            // Não é destruído, mas o dano ainda é calculado
+            targetIsBES = true;
+            Debug.Log("Satellite Cannon: Protegido contra monstro Lv 7-.");
         }
 
         // 2017 - Union Attack (Flag no atacante)

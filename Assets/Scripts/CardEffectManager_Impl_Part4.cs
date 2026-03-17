@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -909,9 +910,7 @@ public partial class CardEffectManager
     // 1587 - Sangan
     void Effect_1587_Sangan(CardDisplay source)
     {
-        // If this card is sent from the field to the Graveyard: Add 1 monster with 1500 or less ATK from your Deck to your hand.
-        // Lógica no OnCardSentToGraveyard.
-        Debug.Log("Sangan: Efeito de busca configurado.");
+        Debug.Log("Sangan: Resolvido no trigger OnCardSentToGraveyard.");
     }
 
     // 1589 - Sasuke Samurai
@@ -945,17 +944,13 @@ public partial class CardEffectManager
     // 1592 - Sasuke Samurai #4
     void Effect_1592_SasukeSamurai4(CardDisplay source)
     {
-        // When this card declares an attack: Toss a coin and call it. If you call it right, destroy 1 monster on the field.
-        // Lógica no OnAttackDeclared.
-        Debug.Log("Sasuke Samurai #4: Efeito de ataque configurado.");
+        Debug.Log("Sasuke Samurai #4: Resolvido no trigger OnAttackDeclared.");
     }
 
     // 1593 - Satellite Cannon
     void Effect_1593_SatelliteCannon(CardDisplay source)
     {
-        // Cannot be destroyed by battle with a Level 7 or lower monster. During each of your End Phases: This card gains 1000 ATK.
-        // Lógica de proteção no BattleManager. Lógica de buff no OnPhaseStart.
-        Debug.Log("Satellite Cannon: Efeitos passivos e de fase configurados.");
+        Debug.Log("Satellite Cannon: Resolvido em OnPhaseStart (End) e BattleManager.");
     }
 
     // 1594 - Scapegoat
@@ -1040,8 +1035,7 @@ public partial class CardEffectManager
     // 1604 - Second Coin Toss
     void Effect_1604_SecondCoinToss(CardDisplay source)
     {
-        // Continuous: Can redo coin toss once per turn.
-        Debug.Log("Second Coin Toss: Permite refazer moeda (Passivo).");
+        Debug.Log("Second Coin Toss: Permite refazer moeda (Monitorado no GameManager.CoinTossRoutine).");
     }
 
     // 1605 - Second Goblin
@@ -2329,9 +2323,8 @@ public partial class CardEffectManager
     // 1728 - Spell of Pain
     void Effect_1728_SpellOfPain(CardDisplay source)
     {
-        // When you take effect damage from an opponent's card effect: Inflict the same amount of damage to your opponent.
-        // Lógica de gatilho no OnDamageTaken.
-        Debug.Log("Spell of Pain: Efeito de redirecionamento de dano configurado.");
+        CardEffectManager.Instance.spellOfPainActive = true;
+        Debug.Log("Spell of Pain: Próximo dano de efeito será redirecionado.");
     }
 
     // 1729 - Spell-Stopping Statute
@@ -3764,8 +3757,44 @@ public partial class CardEffectManager
     // 1883 - The Puppet Magic of Dark Ruler
     void Effect_1883_ThePuppetMagicOfDarkRuler(CardDisplay source)
     {
-        // Banish monsters from GY whose Levels equal Level of Fiend in GY; SS that Fiend.
-        Debug.Log("The Puppet Magic of Dark Ruler: Requer seleção complexa de banimento.");
+        List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+        List<CardData> fiends = gy.FindAll(c => c.race == "Fiend" && c.type.Contains("Monster"));
+
+        if (fiends.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(fiends, "Selecione 1 Fiend para Invocar", (targetFiend) => {
+                int targetLevel = targetFiend.level;
+                List<CardData> pool = gy.FindAll(c => c != targetFiend && c.type.Contains("Monster"));
+
+                SelectMonstersByLevelSum(pool, targetLevel, new List<CardData>(), (selectedToBanish) => {
+                    if (selectedToBanish != null) {
+                        foreach(var c in selectedToBanish) {
+                            GameManager.Instance.RemoveFromPlay(c, source.isPlayerCard);
+                            gy.Remove(c);
+                        }
+                        gy.Remove(targetFiend);
+                        GameManager.Instance.SpecialSummonFromData(targetFiend, source.isPlayerCard);
+                    } else {
+                        if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Falha ao combinar níveis para o tributo.");
+                    }
+                });
+            });
+        }
+    }
+
+    void SelectMonstersByLevelSum(List<CardData> pool, int targetSum, List<CardData> currentSelection, System.Action<List<CardData>> onComplete)
+    {
+        int currentSum = currentSelection.Sum(c => c.level);
+        if (currentSum == targetSum) { onComplete(currentSelection); return; }
+        
+        var validTargets = pool.FindAll(c => c.level <= (targetSum - currentSum));
+        if (validTargets.Count == 0) { onComplete(null); return; }
+
+        GameManager.Instance.OpenCardSelection(validTargets, $"Banir (Faltam {targetSum - currentSum} Níveis)", (selected) => {
+            currentSelection.Add(selected);
+            pool.Remove(selected);
+            SelectMonstersByLevelSum(pool, targetSum, currentSelection, onComplete);
+        });
     }
 
     // 1884 - The Regulation of Tribe
@@ -3885,8 +3914,38 @@ public partial class CardEffectManager
     // 1896 - The Stern Mystic
     void Effect_1896_TheSternMystic(CardDisplay source)
     {
-        // FLIP: All face-down cards are turned face-up, then returned to original position. No effects activate.
-        Debug.Log("The Stern Mystic: Revelando cartas (Visualmente).");
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            List<CardDisplay> allCards = new List<CardDisplay>();
+            CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, allCards);
+            CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, allCards);
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allCards);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allCards);
+            
+            List<CardDisplay> flippedCards = new List<CardDisplay>();
+            foreach (var c in allCards)
+            {
+                if (c.isFlipped)
+                {
+                    c.RevealCard(false, false);
+                    flippedCards.Add(c);
+                }
+            }
+            
+            StartCoroutine(SternMysticRoutine(flippedCards));
+        }
+    }
+
+    private IEnumerator SternMysticRoutine(List<CardDisplay> cards)
+    {
+        yield return new WaitForSeconds(2.0f);
+        foreach(var c in cards)
+        {
+            if (c != null && !c.isFlipped)
+            {
+                c.ShowBack();
+            }
+        }
     }
 
     // 1898 - The Thing in the Crater
@@ -4559,9 +4618,8 @@ public partial class CardEffectManager
     // 1965 - Trap of Board Eraser
     void Effect_1965_TrapOfBoardEraser(CardDisplay source)
     {
-        // Negate effect damage. Opponent discards 1.
-        Debug.Log("Trap of Board Eraser: Dano negado. Oponente descarta.");
-        GameManager.Instance.DiscardRandomHand(false, 1);
+        CardEffectManager.Instance.trapOfBoardEraserActive = true;
+        Debug.Log("Trap of Board Eraser: Próximo dano de efeito será negado.");
     }
 
     // 1966 - Trap of Darkness

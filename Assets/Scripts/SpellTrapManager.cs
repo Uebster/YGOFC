@@ -321,6 +321,14 @@ public class SpellTrapManager : MonoBehaviour
                             {
                                 validResponses.Add(cd);
                             }
+                            
+                            // Trap of Board Eraser (1965) & Spell of Pain (1728) vs Burn effects
+                            string burnId = triggerLink.cardSource.CurrentCardData.id;
+                            if ((cd.CurrentCardData.id == "1965" || cd.CurrentCardData.id == "1728") && 
+                                (burnId == "0654" || burnId == "0895" || burnId == "1382" || burnId == "1482" || burnId == "1715" || burnId == "0203" || burnId == "1606" || burnId == "1967"))
+                            {
+                                validResponses.Add(cd);
+                            }
                             break;
                     }
                 }

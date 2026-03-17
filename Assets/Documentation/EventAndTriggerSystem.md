@@ -391,7 +391,7 @@ Cartas que exigem que o jogador **"Declare o nome de uma carta"** (Ex: *Mind Cru
     });
     ```
 
-## 26. Sistema de Redirecionamento de Corrente (Chain Target Swap)
+## 22. Sistema de Redirecionamento de Corrente (Chain Target Swap)
 Cartas que não negam efeitos ou ataques, mas mudam o alvo deles para outra carta válida (Ex: *Fairy's Hand Mirror*, *Shift*).
 *   **Redirecionando Magias/Armadilhas:** O sistema utiliza `GetLinkToNegate(source)` para capturar o último elo da corrente (`ChainLink`). Como esse elo não foi resolvido ainda, a carta pode usar `StartTargetSelection` para permitir que o jogador escolha o novo alvo, e em seguida injeta o resultado atualizando a variável direta: `link.target = novoAlvo`.
 *   **Redirecionando Ataques:** Quando o gatilho da corrente for um ataque (`TriggerType.Attack`), o alvo do ataque não reside em `link.target`, mas sim no `BattleManager`. Portanto, a carta muda diretamente a variável global `BattleManager.Instance.currentTarget = novoAlvo`.
@@ -427,7 +427,7 @@ Cartas que permitem ao jogador olhar o topo do deck e reordenar as cartas (Ex: *
     });
     ```
 
-## 22. Condições Especiais de Vitória e Alterações Visuais do Tabuleiro
+## 26. Condições Especiais de Vitória e Alterações Visuais do Tabuleiro
 Algumas cartas alteram a forma como a vitória é alcançada ou como as cartas são renderizadas no tabuleiro.
 *   **Destiny Board (Vitória Alternativa TCG):** A cada End Phase do oponente, a engine utiliza o `CardEffectManager` para procurar a próxima "Spirit Message" (I, N, A, L) na mão ou no Deck do controlador e instanciá-la fisicamente na primeira Zona de Mágicas e Armadilhas vazia. Se o jogador não possuir zonas vazias ou se a carta correspondente não for encontrada, o efeito falha e o `Destiny Board` é destruído. Além disso, há um vínculo vital no `OnCardLeavesField`: se qualquer peça do quadro sair de campo (Destruída, Banida ou Bounced), todas as outras peças no controle do jogador são destruídas em cadeia. Quando a 5ª peça entra em campo, o Singleton `DestinyBoardWinUI` assume o controle gerando a tela cinemática de Game Over (F-I-N-A-L).
 *   **Convulsion of Nature (Inversão de Deck):** O `CardEffectManager` ativa a flag global `invertDecks = true`. O script `PileDisplay`, responsável por renderizar a pilha 3D do Deck no campo, verifica esta flag. Se estiver ativa, ele força o método `SetCard` a exibir a arte da carta (`showFront = true`) em vez da textura de fundo (`SetCardBackOnly`), revelando aos jogadores qual é a próxima carta a ser sacada. Há também uma flag `invertDecksDevMode` no `GameManager` para forçar este comportamento para testes.
@@ -438,7 +438,31 @@ Algumas cartas alteram a forma como a vitória é alcançada ou como as cartas s
     });
     ```
 
-## 22. Condições Especiais de Vitória e Alterações Visuais do Tabuleiro
+## 27. Sistema de "Revelação Silenciosa" (Silent Reveal)
+Cartas que precisam "espiar" ou revelar temporariamente cartas viradas para baixo sem disparar seus efeitos FLIP (Ex: *The Stern Mystic*).
+*   **Modificação no Componente:** A função `RevealCard()` da `CardDisplay` recebeu o parâmetro opcional `bool triggerEffects = true`.
+*   **Funcionamento:** Ao passar `false`, a carta é virada visualmente (a textura muda para a frente), mas o bloco que aciona `CardEffectManager.Instance.ExecuteCardEffect(this)` é sumariamente ignorado.
+*   **Uso:** `minhaCarta.RevealCard(false, false);`
+
+## 28. Sistema de Interceptação de Dano de Efeito (Pre-Damage Hook)
+Permite que Cartas Armadilha de Resposta (Counter Traps) ou efeitos rápidos neguem ou redirecionem um dano de efeito (Burn) no exato momento da resolução da Corrente (Ex: *Spell of Pain*, *Trap of Board Eraser*).
+*   **Implementação:** Ao invés de anular a carta mágica original logo na ativação, essas cartas de reposta ativam uma flag global indicando uma "Armadilha Armada" no `CardEffectManager_Impl` (ex: `spellOfPainActive = true`).
+*   **Interceptação:** A função centralizadora de todo dano não-batalha, `Effect_DirectDamage()`, inspeciona essas flags **antes** de prosseguir com `GameManager.Instance.DamagePlayer`. Se uma flag estiver ativada, a função inverte o alvo ou zera o dano/aplica efeitos paralelos, e em seguida consome a flag (tornando-a `false`).
+*   **Manutenção Automática:** Todas as flags de interceptação voláteis são resetadas no método `OnPhaseStart(GamePhase.End)` para evitar a persistência de efeitos para os turnos futuros caso não tenham sido ativadas por um dano imediato.
+
+## 29. Condições Especiais de Vitória e Alterações Visuais do Tabuleiro
 Algumas cartas alteram a forma como a vitória é alcançada ou como as cartas são renderizadas no tabuleiro.
 *   **Destiny Board (Vitória Alternativa TCG):** A cada End Phase do oponente, a engine utiliza o `CardEffectManager` para procurar a próxima "Spirit Message" (I, N, A, L) na mão ou no Deck do controlador e instanciá-la fisicamente na primeira Zona de Mágicas e Armadilhas vazia. Se o jogador não possuir zonas vazias ou se a carta correspondente não for encontrada, o efeito falha e o `Destiny Board` é destruído. Além disso, há um vínculo vital no `OnCardLeavesField`: se qualquer peça do quadro sair de campo (Destruída, Banida ou Bounced), todas as outras peças no controle do jogador são destruídas em cadeia. Quando a 5ª peça entra em campo, o Singleton `DestinyBoardWinUI` assume o controle gerando a tela cinemática de Game Over (F-I-N-A-L).
 *   **Convulsion of Nature (Inversão de Deck):** O `CardEffectManager` ativa a flag global `invertDecks = true`. O script `PileDisplay`, responsável por renderizar a pilha 3D do Deck no campo, verifica esta flag. Se estiver ativa, ele força o método `SetCard` a exibir a arte da carta (`showFront = true`) em vez da textura de fundo (`SetCardBackOnly`), revelando aos jogadores qual é a próxima carta a ser sacada. Há também uma flag `invertDecksDevMode` no `GameManager` para forçar este comportamento para testes.
+
+## 30. Sistema de Re-Rolagem de Moeda (Coin Toss Re-Roll)
+Permite que efeitos de cartas interceptem o resultado de um lançamento de moedas e ofereçam a chance de tentar novamente (Ex: *Second Coin Toss*).
+*   **Implementação:** A corrotina `CoinTossRoutine` no `GameManager` foi modificada. Após calcular o resultado inicial, ela verifica a existência de cartas de re-rolagem ativas usando `CardEffectManager.Instance.HasActiveSecondCoinToss()`.
+*   **Interação:** Se a carta estiver ativa e a re-rolagem ainda não tiver sido usada no turno, o jogo pausa e exibe um popup de confirmação ao jogador. Se aceito, a corrotina original é abortada e reiniciada do zero.
+*   **Manutenção Automática:** As flags de memória `secondCoinTossUsedPlayer` e `secondCoinTossUsedOpponent` garantem que o efeito só seja usado uma vez por turno e são resetadas na `Draw Phase`.
+
+## 31. Sistema de Seleção por Soma Matemática (Sum Selection UI)
+Permite que o jogador selecione repetidas cartas de uma lista até que a soma de uma propriedade específica (como o Nível) alcance um valor alvo exato (Ex: *The Puppet Magic of Dark Ruler*).
+*   **Implementação:** Em vez de recriar e inflar a interface do usuário, o sistema utiliza chamadas recursivas da função padrão `GameManager.Instance.OpenCardSelection`.
+*   **Funcionamento:** Uma função auxiliar (ex: `SelectMonstersByLevelSum`) pede ao jogador para escolher 1 carta. O nível dessa carta é subtraído do total. A janela abre novamente apenas com as cartas que cabem no "espaço" restante. Quando a soma bate exatamente com o alvo, o loop encerra e devolve a lista completa no callback original.
+*   **Uso:** `SelectMonstersByLevelSum(pool, targetSum, currentSelection, onCompleteCallback);`

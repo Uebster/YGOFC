@@ -456,7 +456,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     }
 
     // Novo método para revelar carta (Flip) com verificação de exceções
-    public void RevealCard(bool isAttackTriggered = false)
+    public void RevealCard(bool isAttackTriggered = false, bool triggerEffects = true)
     {
         if (!isFlipped) return; // Já está revelada
 
@@ -470,7 +470,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
 
         // Verifica se é um monstro de efeito FLIP
-        if (currentCardData.description.StartsWith("FLIP:") || currentCardData.description.Contains("FLIP:"))
+        if (triggerEffects && (currentCardData.description.StartsWith("FLIP:") || currentCardData.description.Contains("FLIP:")))
         {
             if (CardEffectManager.Instance != null)
                 CardEffectManager.Instance.ExecuteCardEffect(this);
