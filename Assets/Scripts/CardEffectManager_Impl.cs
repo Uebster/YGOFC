@@ -157,6 +157,19 @@ public partial class CardEffectManager
             return false;
         }
 
+        // 1884 - The Regulation of Tribe
+        if (GameManager.Instance.IsCardActiveOnField("1884"))
+        {
+            bool match = false;
+            CheckActiveCards("1884", (card) => {
+                if (attacker.CurrentCardData.race == card.temporaryRace) match = true;
+            });
+            if (match) {
+                Debug.Log("Ataque impedido por The Regulation of Tribe.");
+                return false;
+            }
+        }
+
         // D.D. Borderline (0379)
         if (GameManager.Instance.IsCardActiveOnField("0379"))
         {

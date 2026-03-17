@@ -737,8 +737,10 @@ public partial class CardEffectManager
             // Opponent
             List<CardData> oHand = GameManager.Instance.GetOpponentHandData();
             List<CardData> oMonsters = oHand.FindAll(c => c.type.Contains("Monster"));
-            // Simula descarte do oponente (remove visualmente)
-            // Em produção: GameManager.DiscardOpponentCard(card)
+            foreach(var c in oMonsters) {
+                var go = GameManager.Instance.opponentHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c);
+                if (go != null) GameManager.Instance.DiscardCard(go.GetComponent<CardDisplay>(), true);
+            }
             Debug.Log($"Royal Tribute: Descartados {pMonsters.Count} (Player) e {oMonsters.Count} (Opp) monstros.");
         }
         else
@@ -960,10 +962,14 @@ public partial class CardEffectManager
     // 1595 - Scapeghost
     void Effect_1595_Scapeghost(CardDisplay source)
     {
-        // FLIP: You can Special Summon any number of "Black Sheep Tokens".
-        // Simulado: Invoca 2
-        GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Black Sheep Token");
-        GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Black Sheep Token");
+        int emptyZones = 0;
+        if (GameManager.Instance.duelFieldUI != null) {
+            Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach (var z in zones) if (z.childCount == 0 && !GameManager.Instance.duelFieldUI.IsZoneBlocked(z)) emptyZones++;
+        }
+        for (int i = 0; i < emptyZones; i++) {
+            GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Black Sheep Token", 1, "Zombie", "Dark");
+        }
     }
 
     // 1597 - Scroll of Bewitchment
@@ -2134,9 +2140,14 @@ public partial class CardEffectManager
             GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
                 GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
                 
-                Debug.Log("Special Hurricane: Destruindo monstros Special Summoned (Simulado).");
-                // TODO: Implementar filtro por wasSpecialSummoned
-                DestroyAllMonsters(true, true); 
+                List<CardDisplay> toDestroy = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null) {
+                    CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, toDestroy);
+                    CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, toDestroy);
+                }
+                var targets = toDestroy.FindAll(m => m.wasSpecialSummoned);
+                DestroyCards(targets, source.isPlayerCard);
+                Debug.Log($"Special Hurricane: {targets.Count} monstros Special Summoned destruídos.");
             });
         }
     }
@@ -3784,9 +3795,16 @@ public partial class CardEffectManager
     // 1884 - The Regulation of Tribe
     void Effect_1884_TheRegulationOfTribe(CardDisplay source)
     {
-        // Declare 1 Type. Monsters of that Type cannot attack. Tribute 1 monster each Standby.
-        Debug.Log("The Regulation of Tribe: Bloqueio de tipo (Simulado: Dragon) (Verificado no BattleManager).");
-        // Manutenção na Standby Phase pendente
+        List<string> types = new List<string> { "Fiend", "Zombie", "Warrior", "Spellcaster", "Dragon", "Machine", "Beast", "Beast-Warrior", "Dinosaur", "Fish", "Sea Serpent", "Aqua", "Pyro", "Thunder", "Rock", "Plant", "Insect", "Fairy", "Winged Beast", "Reptile" };
+        if (MultipleChoiceUI.Instance != null)
+        {
+            MultipleChoiceUI.Instance.Show(types, "Declare 1 Tipo", 1, 1, (selected) => {
+                if (selected.Count > 0) {
+                    source.temporaryRace = selected[0];
+                    Debug.Log($"The Regulation of Tribe: Tipo {selected[0]} bloqueado de atacar.");
+                }
+            });
+        }
     }
 
     // 1885 - The Reliable Guardian
@@ -4560,13 +4578,21 @@ public partial class CardEffectManager
         List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
         if (oppHand.Count >= 4)
         {
-            GameManager.Instance.OpenCardSelection(oppHand, "Retornar Monstro ao Deck", (selected) => {
-                if (selected.type.Contains("Monster"))
-                {
-                    // Return logic (Simulado)
+            List<CardData> monsters = oppHand.FindAll(c => c.type.Contains("Monster"));
+            if (monsters.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(monsters, "Retornar Monstro ao Deck", (selected) => {
+                    GameManager.Instance.RemoveCardFromHand(selected, !source.isPlayerCard);
+                    if (source.isPlayerCard) GameManager.Instance.GetOpponentMainDeck().Add(selected);
+                    else GameManager.Instance.GetPlayerMainDeck().Add(selected);
+                    GameManager.Instance.ShuffleDeck(!source.isPlayerCard);
                     Debug.Log($"Trap Dustshoot: {selected.name} retornado ao deck.");
-                }
-            });
+                });
+            }
+            else
+            {
+                GameManager.Instance.OpenCardSelection(oppHand, "Mão do Oponente (Sem Monstros)", (s) => {});
+            }
         }
     }
 
@@ -4645,8 +4671,15 @@ public partial class CardEffectManager
         {
             GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
                 GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
-                Debug.Log("Tribe-Infecting Virus: Tipo declarado (Simulado). Destruindo...");
-                // Effect_DestroyType(source, "Dragon"); // Exemplo
+                
+                List<string> types = new List<string> { "Fiend", "Zombie", "Warrior", "Spellcaster", "Dragon", "Machine", "Beast", "Beast-Warrior", "Dinosaur", "Fish", "Sea Serpent", "Aqua", "Pyro", "Thunder", "Rock", "Plant", "Insect", "Fairy", "Winged Beast", "Reptile" };
+                if (MultipleChoiceUI.Instance != null) {
+                    MultipleChoiceUI.Instance.Show(types, "Declare 1 Tipo para destruir", 1, 1, (selected) => {
+                        if (selected.Count > 0) {
+                            Effect_DestroyType(source, selected[0]);
+                        }
+                    });
+                }
             });
         }
     }
