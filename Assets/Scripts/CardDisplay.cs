@@ -67,6 +67,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool originalOwnerIsPlayer = false; // Para Remove Brainwashing
     [HideInInspector] public bool scheduledForBanishment = false; // Para Return from the Different Dimension
     [HideInInspector] public bool canBeTributedByOpponent = false; // Para Soul Exchange
+    [HideInInspector] public bool returnControlAtEndPhase = false; // Para Shien's Spy
 
     // Sistema Trap Monster
     [HideInInspector] public bool isTrapMonster = false;

@@ -557,11 +557,7 @@ public partial class CardEffectManager
     // 1548 - Roc from the Valley of Haze
     void Effect_1548_RocFromTheValleyOfHaze(CardDisplay source)
     {
-        // If sent from hand to GY: Shuffle into Deck.
-        // Lógica no OnCardDiscarded (se for descarte) ou OnCardSentToGraveyard (se for custo/efeito).
-        // Como não temos rastreamento preciso de "sent from hand" no OnCardSentToGraveyard genérico,
-        // vamos assumir que OnCardDiscarded cobre a maioria dos casos ou adicionar lógica lá.
-        Debug.Log("Roc: Efeito de reciclagem configurado.");
+        Debug.Log("Roc from the Valley of Haze: Resolvido no trigger OnCardSentToGraveyard.");
     }
 
     // 1549 - Rock Bombardment
@@ -894,9 +890,7 @@ public partial class CardEffectManager
     // 1585 - Sand Moth
     void Effect_1585_SandMoth(CardDisplay source)
     {
-        // If this face-down Defense Position card is destroyed by a Spell Card's effect, it is Special Summoned during the Standby Phase of the next turn.
-        // Lógica no OnCardLeavesField e OnPhaseStart.
-        Debug.Log("Sand Moth: Efeito de renascimento configurado.");
+        Debug.Log("Sand Moth: Resolvido no trigger OnCardSentToGraveyard / OnPhaseStart.");
     }
 
     // 1586 - Sanga of the Thunder
@@ -1313,8 +1307,8 @@ public partial class CardEffectManager
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.isPlayerCard && !t.isFlipped,
                 (target) => {
+                    target.returnControlAtEndPhase = true;
                     GameManager.Instance.SwitchControl(target);
-                    // TODO: Agendar retorno na End Phase (requer sistema de efeitos retardados)
                     Debug.Log($"Shien's Spy: Controle de {target.CurrentCardData.name} trocado temporariamente.");
                 }
             );
@@ -1486,15 +1480,7 @@ public partial class CardEffectManager
     // 1651 - Sinister Serpent
     void Effect_1651_SinisterSerpent(CardDisplay source)
     {
-        // During your Standby Phase, if this card is in your GY: You can add it to your hand.
-        // Also banish 1 "Sinister Serpent" from your GY during your opponent's next End Phase.
-        if (source.isInPile) // In GY
-        {
-            GameManager.Instance.AddCardToHand(source.CurrentCardData, source.isPlayerCard);
-            GameManager.Instance.GetPlayerGraveyard().Remove(source.CurrentCardData);
-            // TODO: Agendar banimento na próxima End Phase do oponente
-            Debug.Log("Sinister Serpent: Retornou para a mão.");
-        }
+        Debug.Log("Sinister Serpent: Resolvido no trigger OnPhaseStart.");
     }
 
     // 1652 - Sixth Sense
@@ -1750,9 +1736,8 @@ public partial class CardEffectManager
     // 1680 - Smoke Grenade of the Thief
     void Effect_1680_SmokeGrenadeOfTheThief(CardDisplay source)
     {
-        // Equip. When destroyed by card effect while equipped: Look at opp hand and discard 1.
         Effect_Equip(source, 0, 0);
-        // Lógica de destruição deve ser tratada no OnCardSentToGraveyard verificando se estava equipada.
+        Debug.Log("Smoke Grenade of the Thief: Destruição e Descarte resolvidos no OnCardLeavesField.");
     }
 
     // 1681 - Snake Fang
@@ -2713,8 +2698,7 @@ public partial class CardEffectManager
     // 1773 - Steel Scorpion
     void Effect_1773_SteelScorpion(CardDisplay source)
     {
-        // Logic in OnBattleEnd (delayed destruction).
-        Debug.Log("Steel Scorpion: Efeito de destruição retardada configurado.");
+        Debug.Log("Steel Scorpion: Resolvido no trigger OnBattleEnd / OnPhaseStart.");
     }
 
     // 1774 - Steel Shell

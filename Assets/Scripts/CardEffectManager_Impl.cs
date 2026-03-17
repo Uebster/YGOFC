@@ -519,6 +519,28 @@ public partial class CardEffectManager
                 }
             }
 
+            // 1651 - Sinister Serpent
+            List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
+            CardData serpent = myGY.Find(c => c.id == "1651");
+            if (serpent != null && GameManager.Instance.isPlayerTurn) {
+                if (UIManager.Instance != null) {
+                    UIManager.Instance.ShowConfirmation("Retornar Sinister Serpent para a mão?", () => {
+                        myGY.Remove(serpent);
+                        GameManager.Instance.AddCardToHand(serpent, true);
+                    }, null);
+                } else {
+                    myGY.Remove(serpent);
+                    GameManager.Instance.AddCardToHand(serpent, true);
+                }
+            }
+            
+            List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
+            CardData oppSerpent = oppGY.Find(c => c.id == "1651");
+            if (oppSerpent != null && !GameManager.Instance.isPlayerTurn) {
+                oppGY.Remove(oppSerpent);
+                GameManager.Instance.AddCardToHand(oppSerpent, false);
+            }
+
             // 5. Demais efeitos de Standby Phase
             CheckActiveCards("2076", (card) => { // White Magician Pikeru
                 if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && card.position == CardDisplay.BattlePosition.Defense) {
@@ -867,6 +889,20 @@ public partial class CardEffectManager
                     if (id == "0114" || id == "2128" || id == "1141" || id == "0933" || id == "1798" || id == "0408") {
                         if (monster.summonedThisTurn) GameManager.Instance.ReturnToHand(monster);
                     }
+                }
+            }
+
+            // 1632 - Shien's Spy (Retorno de Controle)
+            List<CardDisplay> allEndMonsters = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null) {
+                CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allEndMonsters);
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allEndMonsters);
+            }
+            foreach (var m in allEndMonsters) {
+                if (m.returnControlAtEndPhase) {
+                    m.returnControlAtEndPhase = false;
+                    GameManager.Instance.SwitchControl(m);
+                    Debug.Log($"Shien's Spy: Controle de {m.CurrentCardData.name} devolvido.");
                 }
             }
 
@@ -1733,9 +1769,18 @@ public partial class CardEffectManager
         // 1548 - Roc from the Valley of Haze
         if (card.id == "1548" && isOwnerPlayer && fromLocation == CardLocation.Hand)
         {
-            // Se enviado da mão para o GY, volta ao Deck
             Debug.Log("Roc from the Valley of Haze: Voltando ao Deck.");
-            // GameManager.Instance.ReturnToDeck(card, true); // Requer CardDisplay ou refatoração
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            gy.Remove(card);
+            GameManager.Instance.GetPlayerMainDeck().Add(card);
+            GameManager.Instance.ShuffleDeck(true);
+        }
+
+        // 1585 - Sand Moth
+        if (card.id == "1585" && reason == SendReason.Effect)
+        {
+            Debug.Log("Sand Moth: Agendado para reviver na Standby Phase.");
+            reviveNextStandby.Add(card);
         }
 
         // 1807 - Sword of Deep-Seated
@@ -2105,6 +2150,13 @@ public partial class CardEffectManager
                     GameManager.Instance.BanishCard(link.target);
                 }
             }
+        }
+
+        // 1680 - Smoke Grenade of the Thief
+        if (card.CurrentCardData.id == "1680" && card.isOnField)
+        {
+            Debug.Log("Smoke Grenade of the Thief: Destruído. Oponente descarta 1 carta.");
+            GameManager.Instance.DiscardRandomHand(!card.isPlayerCard, 1);
         }
 
         // Libera zonas bloqueadas por esta carta (Ground Collapse, Ojama King)
@@ -3844,6 +3896,17 @@ public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
             Debug.Log("Yomi Ship: Destruindo o atacante.");
             GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
             Destroy(attacker.gameObject);
+        }
+    }
+
+    // 1773 - Steel Scorpion
+    if (target != null && target.CurrentCardData.id == "1773" && !target.isPlayerCard)
+    {
+        if (attacker != null && !attacker.CurrentCardData.race.Contains("Machine"))
+        {
+            attacker.destructionTurnCountdown = 3;
+            attacker.destructionCountdownOwnerIsPlayer = attacker.isPlayerCard;
+            Debug.Log($"Steel Scorpion: {attacker.CurrentCardData.name} envenenado. Será destruído em 3 turnos.");
         }
     }
 
