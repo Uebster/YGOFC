@@ -255,64 +255,44 @@ public partial class CardEffectManager
         // Verifica zonas do oponente
         Transform[] enemyZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
 
+        bool hasMonsters = false;
+        bool hasToon = false;
+        bool onlyDefense = true;
+
         foreach (Transform zone in enemyZones)
         {
             if (zone.childCount > 0)
             {
-                // Toon Logic: Can attack direct if opponent has no Toons
-                if (attacker != null && (attacker.CurrentCardData.race == "Toon" || attacker.CurrentCardData.id == "0215"))
+                hasMonsters = true;
+                CardDisplay defender = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (defender != null)
                 {
-                    CardDisplay defender = zone.GetChild(0).GetComponent<CardDisplay>();
-                    if (defender != null && defender.CurrentCardData.race == "Toon") return false; // Has toon, must attack it
-                    continue; // Not a toon, ignore for direct attack condition
+                    if (!defender.isFlipped && defender.CurrentCardData.race == "Toon") hasToon = true;
+                    if (defender.position == CardDisplay.BattlePosition.Attack) onlyDefense = false;
                 }
-                return false;
             }
         }
 
-        // 1553 - Rocket Jumper & 1627 - Shadowslayer
+        if (!hasMonsters) return true;
+
+        if (attacker != null && (attacker.CurrentCardData.race == "Toon" || attacker.CurrentCardData.id == "0215"))
+            if (!hasToon) return true;
+
         if (attacker != null && (attacker.CurrentCardData.id == "1553" || attacker.CurrentCardData.id == "1627"))
-        {
-            bool onlyDefense = true;
-            bool hasMonsters = false;
-            foreach (Transform zone in enemyZones)
-            {
-                if (zone.childCount > 0)
-                {
-                    hasMonsters = true;
-                    CardDisplay m = zone.GetChild(0).GetComponent<CardDisplay>();
-                    if (m != null && m.position == CardDisplay.BattlePosition.Attack) onlyDefense = false;
-                }
-            }
-            if (hasMonsters && onlyDefense) return true;
-        }
+            if (onlyDefense) return true;
 
-        // 0053 - Amphibious Bugroth MK-3
-        if (currentAttacker != null && currentAttacker.CurrentCardData.id == "0053")
-        {
+        if (attacker != null && attacker.CurrentCardData.id == "0053")
             if (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013")) return true;
-        }       
 
-        // 0193 - Black Tyranno
         if (attacker != null && attacker.CurrentCardData.id == "0193")
         {
-            bool onlyDefense = true;
-            bool hasCards = false;
-            foreach (Transform zone in enemyZones) {
-                if (zone.childCount > 0) {
-                    hasCards = true;
-                    CardDisplay m = zone.GetChild(0).GetComponent<CardDisplay>();
-                    if (m != null && m.position != CardDisplay.BattlePosition.Defense) onlyDefense = false;
-                }
-            }
             Transform[] enemySpellZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
-            foreach (Transform zone in enemySpellZones) {
-                if (zone.childCount > 0) onlyDefense = false;
-            }
-            if (hasCards && onlyDefense) return true;
+            bool hasST = false;
+            foreach (Transform zone in enemySpellZones) if (zone.childCount > 0) hasST = true;
+            if (onlyDefense && !hasST) return true;
         }
 
-        return true;
+        return false;
     }
 
     private bool AreAllEnemyMonstersEarthWaterOrFire(CardDisplay attacker)
@@ -544,16 +524,16 @@ public partial class CardEffectManager
             }
 
             // 1651 - Sinister Serpent
-            List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
-            CardData serpent = myGY.Find(c => c.id == "1651");
+            List<CardData> serpentGY = GameManager.Instance.GetPlayerGraveyard();
+            CardData serpent = serpentGY.Find(c => c.id == "1651");
             if (serpent != null && GameManager.Instance.isPlayerTurn) {
                 if (UIManager.Instance != null) {
                     UIManager.Instance.ShowConfirmation("Retornar Sinister Serpent para a mão?", () => {
-                        myGY.Remove(serpent);
+                        serpentGY.Remove(serpent);
                         GameManager.Instance.AddCardToHand(serpent, true);
                     }, null);
                 } else {
-                    myGY.Remove(serpent);
+                    serpentGY.Remove(serpent);
                     GameManager.Instance.AddCardToHand(serpent, true);
                 }
             }
@@ -651,8 +631,8 @@ public partial class CardEffectManager
             });
 
             // Darklord Marie (0453)
-            List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
-            foreach (var cardData in myGY) {
+            List<CardData> marieGY = GameManager.Instance.GetPlayerGraveyard();
+            foreach (var cardData in marieGY) {
                 if (cardData.id == "0453" && GameManager.Instance.isPlayerTurn) {
                     Debug.Log("Darklord Marie (GY): Ganha 200 LP.");
                     GameManager.Instance.playerLP += 200;
@@ -990,8 +970,8 @@ public partial class CardEffectManager
             }
 
             // 1162 - Manticore of Darkness
-            List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
-            var manticore = myGY.Find(c => c.id == "1162");
+            List<CardData> manticoreGY = GameManager.Instance.GetPlayerGraveyard();
+            var manticore = manticoreGY.Find(c => c.id == "1162");
             if (manticore != null && GameManager.Instance.isPlayerTurn) {
                 List<CardData> hand = GameManager.Instance.GetPlayerHandData();
                 var tributes = hand.FindAll(c => c.race == "Beast" || c.race == "Beast-Warrior");
@@ -1000,7 +980,7 @@ public partial class CardEffectManager
                         var go = GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == selected);
                         if (go != null) {
                             GameManager.Instance.DiscardCard(go.GetComponent<CardDisplay>());
-                            myGY.Remove(manticore);
+                            manticoreGY.Remove(manticore);
                             GameManager.Instance.SpecialSummonFromData(manticore, true);
                         }
                     });
@@ -1043,8 +1023,6 @@ public partial class CardEffectManager
                 }
             });
 
-            CheckActiveCards("0883", (card) => { // Helpoemer
-            });
             if (!GameManager.Instance.isPlayerTurn) { // End Phase do oponente
                 List<CardData> pGY = GameManager.Instance.GetPlayerGraveyard();
                 if (pGY.Exists(c => c.id == "0883")) GameManager.Instance.DiscardRandomHand(false, 1);
@@ -3176,6 +3154,30 @@ public partial class CardEffectManager
             });
             while (isWaiting) yield return null;
         }
+
+        // 0426 - Dark Mirror Force
+        bool darkMirrorFound = false;
+        CheckActiveCards("0426", (trap) => {
+            if (trap.isPlayerCard != attacker.isPlayerCard && !darkMirrorFound)
+            {
+                darkMirrorFound = true;
+                isWaiting = true;
+                if (UIManager.Instance != null) {
+                    UIManager.Instance.ShowConfirmation($"Ativar {trap.CurrentCardData.name}?", () => {
+                        GameManager.Instance.SendToGraveyard(trap.CurrentCardData, trap.isPlayerCard);
+                        Destroy(trap.gameObject);
+                        
+                        List<CardDisplay> toBanish = new List<CardDisplay>();
+                        Transform[] zones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+                        foreach(var z in zones) if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().position == CardDisplay.BattlePosition.Defense) toBanish.Add(z.GetChild(0).GetComponent<CardDisplay>());
+                        
+                        foreach(var b in toBanish) GameManager.Instance.BanishCard(b);
+                        isWaiting = false;
+                    }, () => { darkMirrorFound = false; isWaiting = false; });
+                }
+            }
+        });
+        while (isWaiting) yield return null;
         
         // 0803 - Gravekeeper's Assailant
         if (attacker.CurrentCardData.id == "0803" && GameManager.Instance.IsCardActiveOnField("1324") && target != null)
@@ -4658,8 +4660,6 @@ void Effect_Equip(CardDisplay source, int atkBonus, int defBonus, string require
             {
                 Debug.Log($"{source.CurrentCardData.name} equipada em {target.CurrentCardData.name}");
                 GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
-                GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment); // <---- CRIA O LINK
-                                                                                                  // Usa o novo sistema de modificadores
                 if (atkBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, atkBonus, source));
                 if (defBonus != 0) target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, defBonus, source));
                 // TODO: Vincular visualmente

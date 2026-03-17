@@ -369,8 +369,20 @@ public partial class CardEffectManager
         // 0185 - Black Dragon's Chick (SS Red-Eyes)
         AddEffect("0185", Effect_0185_BlackDragonsChick);
 
+        // 0186 - Black Illusion Ritual (Ritual Spell)
+        AddEffect("0186", Effect_0186_BlackIllusionRitual);
+
+        // 0187 - Black Luster Ritual (Ritual Spell)
+        AddEffect("0187", Effect_0187_BlackLusterRitual);
+
+        // 0188 - Black Luster Soldier (Ritual Monster)
+        AddEffect("0188", Effect_0188_BlackLusterSoldier);
+
         // 0189 - BLS - Envoy (Banish / Double Attack)
         AddEffect("0189", Effect_0189_BLSEnvoy);
+
+        // 0190 - Black Magic Ritual (Ritual Spell)
+        AddEffect("0190", Effect_0190_BlackMagicRitual);
 
         // 0191 - Black Pendant (Equip +500, Burn 500)
         AddEffect("0191", Effect_0191_BlackPendant);
@@ -592,6 +604,9 @@ public partial class CardEffectManager
         // 0284 - Chain Energy (Cost to play)
         AddEffect("0284", Effect_0284_ChainEnergy);
 
+        // 0285 - Chakra (Ritual Monster)
+        AddEffect("0285", Effect_0285_Chakra);
+
         // 0287 - Change of Heart (Take control)
         AddEffect("0287", Effect_0287_ChangeOfHeart);
 
@@ -714,6 +729,8 @@ public partial class CardEffectManager
         AddEffect("0332", Effect_0332_CoveringFire);
 
         // 0333 - Crab Turtle (Ritual Monster)
+        AddEffect("0333", Effect_0333_CrabTurtle);
+
         // 0334 - Crass Clown (Effect: Return monster when changed to Attack)
         AddEffect("0334", Effect_0334_CrassClown);
 

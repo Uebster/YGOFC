@@ -57,9 +57,6 @@ public class BattleManager : MonoBehaviour
             string id = currentAttacker.CurrentCardData.id;
             if (id == "0058" || id == "0059" || id == "0060" || id == "1436") return true; // Ancient Gears & Pitch-Black Warwolf
         }
-        
-        // Permissão dinâmica por efeitos
-        if (currentAttacker != null && currentAttacker.canAttackDirectly) return true;
 
         return oppHasMirage;
     }
@@ -429,50 +426,54 @@ public class BattleManager : MonoBehaviour
 
     private bool HasDirectAttackCondition()
     {
-        // Verifica se o oponente não tem monstros
         if (forceDirectAttack) return true;
         if (GameManager.Instance.duelFieldUI == null) return false;
-        foreach (Transform zone in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+        
+        Transform[] enemyZones = currentAttacker != null && currentAttacker.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+
+        bool hasMonsters = false;
+        bool hasToon = false;
+        bool onlyDefense = true;
+
+        foreach (Transform zone in enemyZones)
         {
             if (zone.childCount > 0)
             {
-                // Toon Logic: Can attack direct if opponent has no Toons
-                if (currentAttacker != null && (currentAttacker.CurrentCardData.race == "Toon" || currentAttacker.CurrentCardData.id == "0215"))
+                hasMonsters = true;
+                CardDisplay defender = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (defender != null)
                 {
-                    CardDisplay defender = zone.GetChild(0).GetComponent<CardDisplay>();
-                    // Só considera monstros Toon Face-Up como bloqueadores
-                    if (defender != null && !defender.isFlipped && defender.CurrentCardData.race == "Toon") return false; // Has toon, must attack it
-                    continue; // Not a toon, ignore for direct attack condition
+                    if (!defender.isFlipped && defender.CurrentCardData.race == "Toon") hasToon = true;
+                    if (defender.position == CardDisplay.BattlePosition.Attack) onlyDefense = false;
                 }
-                return false;
             }
         }
 
-        // 0298 - Checkmate
+        if (!hasMonsters) return true;
+
+        if (currentAttacker != null && (currentAttacker.CurrentCardData.race == "Toon" || currentAttacker.CurrentCardData.id == "0215"))
+            if (!hasToon) return true;
+
         if (terrorkingCanAttackDirectly && currentAttacker != null && currentAttacker.CurrentCardData.name == "Terrorking Archfiend")
-        {
             return true;
+
+        if (currentAttacker != null && (currentAttacker.CurrentCardData.id == "1553" || currentAttacker.CurrentCardData.id == "1627"))
+            if (onlyDefense) return true;
+            
+        if (currentAttacker != null && currentAttacker.CurrentCardData.id == "0053")
+            if (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013")) return true;
+
+        if (currentAttacker != null && currentAttacker.CurrentCardData.id == "0193")
+        {
+            Transform[] enemySpellZones = currentAttacker.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
+            bool hasST = false;
+            foreach (Transform zone in enemySpellZones) if (zone.childCount > 0) hasST = true;
+            if (onlyDefense && !hasST) return true;
         }
 
-        // 1553 - Rocket Jumper & 1627 - Shadowslayer
-        if (currentAttacker != null && (currentAttacker.CurrentCardData.id == "1553" || currentAttacker.CurrentCardData.id == "1627"))
-        {
-            // Pode atacar direto se o oponente só tiver monstros em Defesa
-            bool onlyDefense = true;
-            bool hasMonsters = false;
-            foreach (Transform zone in GameManager.Instance.duelFieldUI.opponentMonsterZones)
-            {
-                if (zone.childCount > 0)
-                {
-                    hasMonsters = true;
-                    CardDisplay m = zone.GetChild(0).GetComponent<CardDisplay>();
-                    if (m != null && m.position == CardDisplay.BattlePosition.Attack) onlyDefense = false;
-                }
-            }
-            
-            if (hasMonsters && onlyDefense) return true;
-        }
-        return true;
+        if (currentAttacker != null && currentAttacker.canAttackDirectly) return true;
+
+        return false;
     }
 
     private void DealBattleDamage(CardDisplay damageTaker, int damage)

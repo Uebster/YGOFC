@@ -1066,14 +1066,8 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0083_AquaSpirit(CardDisplay source)
     {
-        // SS banindo 1 Water. Standby oponente: Muda posição de 1 monstro.
-        // Parte 1: Invocação Especial (Geralmente tratada no SummonManager, aqui simulamos o efeito de campo)
-        // Parte 2: Efeito de mudar posição na Standby do oponente (Trigger)
-        
-        // Se estiver na mão, tenta invocar
         if (!source.isOnField)
         {
-            // Lógica de banir 1 Water do GY para invocar
             List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
             List<CardData> waters = gy.FindAll(c => c.attribute == "Water");
             
@@ -1082,28 +1076,12 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                 GameManager.Instance.OpenCardSelection(waters, "Banir 1 WATER para invocar", (selected) => {
                     GameManager.Instance.RemoveFromPlay(selected, source.isPlayerCard);
                     GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
-                    // Remover da mão (já que SpecialSummonFromData cria uma cópia)
                     GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
                 });
             }
             else
             {
                 Debug.Log("Aqua Spirit: Requer 1 monstro WATER no GY.");
-            }
-        }
-        else
-        {
-            // Efeito em campo: Mudar posição de 1 monstro do oponente
-            // (Deveria ser na Standby do oponente, aqui ativamos manualmente para teste)
-            if (SpellTrapManager.Instance != null)
-            {
-                SpellTrapManager.Instance.StartTargetSelection(
-                    (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
-                    (t) => {
-                        t.ChangePosition();
-                        Debug.Log($"Aqua Spirit: Posição de {t.CurrentCardData.name} alterada.");
-                    }
-                );
             }
         }
     }
@@ -2103,6 +2081,21 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         }
     }
 
+    void Effect_0186_BlackIllusionRitual(CardDisplay source)
+    {
+        GameManager.Instance.BeginRitualSummon(source);
+    }
+
+    void Effect_0187_BlackLusterRitual(CardDisplay source)
+    {
+        GameManager.Instance.BeginRitualSummon(source);
+    }
+
+    void Effect_0188_BlackLusterSoldier(CardDisplay source)
+    {
+        Debug.Log("Black Luster Soldier: Monstro Ritual.");
+    }
+
     void Effect_0189_BLSEnvoy(CardDisplay source)
     {
         // Banish 1 monster OR Double Attack.
@@ -2136,6 +2129,11 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                 }
             );
         }
+    }
+
+    void Effect_0190_BlackMagicRitual(CardDisplay source)
+    {
+        GameManager.Instance.BeginRitualSummon(source);
     }
 
     void Effect_0191_BlackPendant(CardDisplay source)
@@ -2579,19 +2577,19 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0238_BrainJacker(CardDisplay source)
     {
-        // Efeito: FLIP - Equipa no oponente e toma controle. Oponente ganha 500 LP na Standby.
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
                 (t) => {
-                    Debug.Log($"Brain Jacker: Equipando em {t.CurrentCardData.name} e tomando controle.");
-                    // Simulação: Vira equip (move para S/T) e toma controle do monstro
-                    // Como não temos "Monstro virando Equip" nativo, vamos simular:
-                    // 1. Brain Jacker vai para S/T do jogador
-                    // 2. Toma controle do alvo
-                    GameManager.Instance.SwitchControl(t);
-                    // TODO: Mover Brain Jacker visualmente para S/T e criar link
+                    Transform freeZone = GameManager.Instance.GetFreeSpellZone(source.isPlayerCard);
+                    if (freeZone != null) {
+                        source.transform.SetParent(freeZone);
+                        source.position = CardDisplay.BattlePosition.Attack; 
+                        GameManager.Instance.SwitchControl(t);
+                        GameManager.Instance.CreateCardLink(source, t, CardLink.LinkType.Equipment);
+                        Debug.Log($"Brain Jacker: Equipou em {t.CurrentCardData.name}.");
+                    }
                 }
             );
         }
@@ -3213,6 +3211,11 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         Debug.Log("Chain Energy: Ativo (Custo de 500 LP por ação).");
     }
 
+    void Effect_0285_Chakra(CardDisplay source)
+    {
+        Debug.Log("Chakra: Monstro Ritual.");
+    }
+
     void Effect_0287_ChangeOfHeart(CardDisplay source)
     {
         bool oppHasMonster = false;
@@ -3672,12 +3675,26 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0317_CombinationAttack(CardDisplay source)
     {
-        // Battle Phase: Tribute monstro equipado com Union; Union ataca.
         if (PhaseManager.Instance.currentPhase == GamePhase.Battle)
         {
-            // Seleciona monstro equipado
-            // ...
-            Debug.Log("Combination Attack: Union ataca.");
+            if (SpellTrapManager.Instance != null) {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster") && CardEffectManager.Instance.GetEquippedCards(t).Exists(e => e.CurrentCardData.description.Contains("Union")),
+                    (target) => {
+                        var unionEquip = CardEffectManager.Instance.GetEquippedCards(target).Find(e => e.CurrentCardData.description.Contains("Union"));
+                        if (unionEquip != null) {
+                            target.RemoveModifiersFromSource(unionEquip);
+                            Transform freeZone = GameManager.Instance.GetFreeMonsterZone(source.isPlayerCard);
+                            if (freeZone != null) {
+                                unionEquip.transform.SetParent(freeZone);
+                                unionEquip.isTrapMonster = false; 
+                                unionEquip.hasAttackedThisTurn = false;
+                                unionEquip.attacksDeclaredThisTurn = 0;
+                            }
+                        }
+                    }
+                );
+            }
         }
     }
 
@@ -3886,6 +3903,11 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                 );
             }
         }
+    }
+
+    void Effect_0333_CrabTurtle(CardDisplay source)
+    {
+        Debug.Log("Crab Turtle: Monstro Ritual.");
     }
 
     void Effect_0334_CrassClown(CardDisplay source)
@@ -4228,16 +4250,27 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0363_CyberJar(CardDisplay source)
     {
-        // FLIP: Destrói todos os monstros. Ambos compram 5, invocam Lv4- encontrados.
-        Debug.Log("Cyber Jar: Destruindo tudo...");
         DestroyAllMonsters(true, true);
         
-        Debug.Log("Cyber Jar: Ambos compram 5 cartas (Simulado).");
-        for(int i=0; i<5; i++) GameManager.Instance.DrawCard(true);
-        for(int i=0; i<5; i++) GameManager.Instance.DrawOpponentCard();
-        
-        // A lógica de revelar e invocar automaticamente é muito complexa para este escopo.
-        // O jogador deve invocar manualmente da mão o que comprou.
+        List<CardData> pDeck = GameManager.Instance.GetPlayerMainDeck();
+        int pCount = Mathf.Min(5, pDeck.Count);
+        for(int i = 0; i < pCount; i++) {
+            CardData c = pDeck[0];
+            pDeck.RemoveAt(0);
+            if (c.type.Contains("Monster") && c.level <= 4 && !c.type.Contains("Ritual") && !c.type.Contains("Fusion"))
+                GameManager.Instance.SpecialSummonFromData(c, true, false, true); 
+            else GameManager.Instance.AddCardToHand(c, true);
+        }
+
+        List<CardData> oDeck = GameManager.Instance.GetOpponentMainDeck();
+        int oCount = Mathf.Min(5, oDeck.Count);
+        for(int i = 0; i < oCount; i++) {
+            CardData c = oDeck[0];
+            oDeck.RemoveAt(0);
+            if (c.type.Contains("Monster") && c.level <= 4 && !c.type.Contains("Ritual") && !c.type.Contains("Fusion"))
+                GameManager.Instance.SpecialSummonFromData(c, false, false, true);
+            else GameManager.Instance.AddCardToHand(c, false);
+        }
     }
 
     void Effect_0364_CyberRaider(CardDisplay source)
@@ -4913,25 +4946,26 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0423_DarkMasterZorc(CardDisplay source)
     {
-        // Efeito: Rola dado. 1-2: Destrói monstros oponente. 3-5: Destrói 1 monstro. 6: Destrói a si mesmo.
-        int roll = Random.Range(1, 7);
-        Debug.Log($"Zorc rolou: {roll}");
-        
-        if (roll <= 2)
-        {
-            DestroyAllMonsters(true, false);
-        }
-        else if (roll <= 5)
-        {
-            // Destrói 1 monstro (simplificado: aleatório ou primeiro)
-            // ...
-        }
-        else
-        {
-            // Destrói a si mesmo
-            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
-            Destroy(source.gameObject);
-        }
+        GameManager.Instance.TossCoin(1, (heads) => { 
+            int roll = Random.Range(1, 7);
+            Debug.Log($"Zorc rolou: {roll}");
+            if (roll <= 2) {
+                DestroyAllMonsters(true, false);
+            } else if (roll <= 5) {
+                if (SpellTrapManager.Instance != null) {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                        (target) => {
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                            Destroy(target.gameObject);
+                        });
+                }
+            } else {
+                GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
+                Destroy(source.gameObject);
+            }
+        });
     }
 
     void Effect_0424_DarkMimicLV1(CardDisplay source)
@@ -4950,23 +4984,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0426_DarkMirrorForce(CardDisplay source)
     {
-        // Efeito: Quando oponente ataca: Bane todos os monstros em Defesa do oponente.
-        // Requer hook no SpellTrapManager.CheckForTraps(Attack)
-        // Simulação:
-        if (GameManager.Instance.duelFieldUI != null)
-        {
-            foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones)
-            {
-                if(z.childCount > 0)
-                {
-                    var m = z.GetChild(0).GetComponent<CardDisplay>();
-                    if(m != null && m.position == CardDisplay.BattlePosition.Defense)
-                    {
-                        GameManager.Instance.BanishCard(m);
-                    }
-                }
-            }
-        }
+        Debug.Log("Dark Mirror Force: Resolvido no trigger de ataque (OnAttackDeclared).");
     }
 
     void Effect_0427_DarkNecrofear(CardDisplay source)
