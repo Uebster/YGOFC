@@ -116,38 +116,16 @@ public partial class CardEffectManager
 
     void Effect_0009_ADealWithDarkRuler(CardDisplay source)
     {
-        // Regra: (Quick-Play) Se um monstro Lv8+ que você controla foi enviado ao GY neste turno:
-        // Pague metade dos LP; invoque "Berserk Dragon" da mão ou Deck.
-        // Placeholder: Requer flag 'wasLevel8DestroyedThisTurn' no GameManager para validação estrita.
+        if (!CardEffectManager.Instance.level8OrHigherDestroyedThisTurn)
+        {
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Nenhum monstro de Nível 8 ou maior foi enviado ao GY neste turno.");
+            return;
+        }
 
         int cost = source.isPlayerCard ? GameManager.Instance.playerLP / 2 : GameManager.Instance.opponentLP / 2;
-        Effect_PayLP(source, cost);
-
-        //GameManager.Instance.SpecialSummonById("0168", source.isPlayerCard);
-
-        List<CardData> deck = source.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
-        CardData berserkDragon = deck.Find(c => c.id == "0168"); // ID Berserk Dragon
-            
-        if (berserkDragon != null)
+        if (Effect_PayLP(source, cost))
         {
-            Debug.Log("A Deal with Dark Ruler: Invocando Berserk Dragon!");
-            GameManager.Instance.SpecialSummonFromData(berserkDragon, source.isPlayerCard);
-            deck.Remove(berserkDragon);
-        }
-        else
-        {
-            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
-            berserkDragon = hand.Find(c => c.id == "0168");
-            if (berserkDragon != null)
-            {
-                Debug.Log("A Deal with Dark Ruler: Invocando Berserk Dragon!");
-                GameManager.Instance.SpecialSummonFromData(berserkDragon, source.isPlayerCard);
-                hand.Remove(berserkDragon);
-            }
-            else
-            {
-                Debug.Log("A Deal with Dark Ruler: Berserk Dragon não encontrado na mão ou deck.");
-            }
+            Effect_SpecialSummonFromDeck(source, nameContains: "Berserk Dragon");
         }
     }
 
@@ -223,21 +201,25 @@ public partial class CardEffectManager
 
     void Effect_0014_AManWithWdjat(CardDisplay source)
     {
-        // Regra: Quando Invocado por Invocação-Normal: Selecione 1 card Baixado no campo; olhe-o.
         if (source.summonedThisTurn && !source.wasSpecialSummoned)
         {
             if (SpellTrapManager.Instance != null)
             {
                 SpellTrapManager.Instance.StartTargetSelection(
-                    (t) => t.isOnField && (t.isFlipped == false || t.position == CardDisplay.BattlePosition.Defense), // Set cards
+                    (t) => t.isOnField && t.isFlipped,
                     (t) => {
-                        // Revela apenas para o dono do efeito (log no console por enquanto)
-                        Debug.Log($"A Man with Wdjat revela: {t.CurrentCardData.name}");
-                        // Visualmente poderia piscar a carta temporariamente
+                        t.RevealCard(false, false);
+                        StartCoroutine(WdjatRoutine(t));
                     }
                 );
             }
         }
+    }
+
+    private System.Collections.IEnumerator WdjatRoutine(CardDisplay card)
+    {
+        yield return new WaitForSeconds(2.0f);
+        if (card != null && !card.isFlipped) card.ShowBack();
     }
 
     void Effect_0015_ARivalAppears(CardDisplay source)
@@ -688,7 +670,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                         {
                             monster.position = CardDisplay.BattlePosition.Attack;
                             monster.ShowFront();
-                            monster.isFlipped = false; // Define como revelado manualmente para não disparar trigger de Flip
+                            monster.isFlipped = false;
                         }
                         // Reduz 500 ATK
                         monster.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -500, source));
@@ -697,6 +679,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
             }
         }
         // Nota: A obrigatoriedade de ataque deve ser tratada no BattleManager (flag forceAllAttack)
+        if (BattleManager.Instance != null) BattleManager.Instance.forceAllAttack = true;
     }
 
     void Effect_0043_AmazonessBlowpiper(CardDisplay source)
@@ -760,25 +743,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0046_AmazonessPaladin(CardDisplay source)
     {
-       if (GameManager.Instance.duelFieldUI == null) return;
-        
-        int amazonessCount = 0;
-
-        List<Transform> allZones = new List<Transform>();
-        allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
-        allZones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
-
-        foreach (var zone in allZones)
-        {
-            if (zone.childCount == 0) continue;
-            CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
-            if (cd != null && cd.isOnField && !cd.isFlipped && cd.CurrentCardData.name.Contains("Amazoness"))
-            {
-                amazonessCount++;
-            }
-        }
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, amazonessCount*100, source));
-        Debug.Log($"Campo ativado: Amazoness Paladin. Buff aplicado.");
+        Debug.Log("Amazoness Paladin: Buff dinâmico resolvido no OnPhaseStart.");
     }
 
     void Effect_0047_AmazonessSpellcaster(CardDisplay source)
@@ -847,9 +812,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0050_Ameba(CardDisplay source)
     {
-        // Quando controle muda para oponente: Cause 2000 dano a ele.
-        // Trigger no ChangeControl.
-        GameManager.Instance.DamageOpponent(2000);
+        Debug.Log("Ameba: Resolvido no trigger OnControlSwitched.");
     }
 
     void Effect_0053_AmphibiousBugrothMK3(CardDisplay source)
@@ -1098,39 +1061,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0079_AquaChorus(CardDisplay source)
     {
-        // Se houver monstros com mesmo nome: +500 ATK/DEF para eles.
-        // Lógica simplificada: Verifica se há monstros com o mesmo nome no campo e aplica o buff.
-        // Em um sistema completo, isso seria um efeito contínuo que monitora o campo.
-        // Aqui, aplicamos como um efeito de ativação manual ou trigger de fase para demonstração.
-        
-        if (GameManager.Instance.duelFieldUI == null) return;
-
-        List<CardDisplay> allMonsters = new List<CardDisplay>();
-        CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allMonsters);
-        CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allMonsters);
-
-        Dictionary<string, List<CardDisplay>> nameGroups = new Dictionary<string, List<CardDisplay>>();
-
-        foreach (var m in allMonsters)
-        {
-            string name = m.CurrentCardData.name;
-            if (!nameGroups.ContainsKey(name))
-                nameGroups[name] = new List<CardDisplay>();
-            nameGroups[name].Add(m);
-        }
-
-        foreach (var group in nameGroups.Values)
-        {
-            if (group.Count > 1)
-            {
-                foreach (var m in group)
-                {
-                    m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, source));
-                    m.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, source));
-                }
-                Debug.Log($"Aqua Chorus: Buff aplicado em {group.Count} cópias de {group[0].CurrentCardData.name}.");
-            }
-        }
+        Debug.Log("Aqua Chorus: Buff dinâmico resolvido no OnPhaseStart.");
     }
 
     void Effect_0083_AquaSpirit(CardDisplay source)
@@ -1220,8 +1151,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0089_ArchfiendOfGilfer(CardDisplay source)
     {
-        // Quando enviado ao GY: Equipa em monstro, -500 ATK.
-        Effect_Equip(source, -500, 0);
+        Debug.Log("Archfiend of Gilfer: Resolvido no trigger OnCardSentToGraveyard.");
     }
 
     void Effect_0090_ArchfiendsOath(CardDisplay source)
@@ -1229,35 +1159,26 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         // Pague 500; declare nome. Escave topo. Se acertar, mão. Senão, GY.
         if (Effect_PayLP(source, 500))
         {
-            // Simulação de "Declarar Nome": Abre o Card Library/Trunk para escolher uma carta alvo
-            // Como não temos UI de input de texto livre, usamos o seletor de cartas do jogo
-            List<CardData> allCards = GameManager.Instance.cardDatabase.cardDatabase;
-            
-            // Otimização: Mostrar apenas uma sub-lista ou permitir busca seria ideal, 
-            // mas aqui vamos simular a declaração pegando uma carta aleatória do deck para teste de sucesso
-            // ou falha.
-            
-            List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
-            if (deck.Count > 0)
+            if (GlobalCardSearchUI.Instance != null)
             {
-                CardData topCard = deck[0];
-                deck.RemoveAt(0); // Escava
-                
-                Debug.Log($"Archfiend's Oath: Carta escavada: {topCard.name}");
-                
-                // Lógica simplificada: 50% de chance de acertar em modo automático/teste
-                bool success = Random.value > 0.5f; 
-                
-                if (success)
-                {
-                    Debug.Log("Archfiend's Oath: Acertou! Adicionada à mão.");
-                    GameManager.Instance.AddCardToHand(topCard, true);
-                }
-                else
-                {
-                    Debug.Log("Archfiend's Oath: Errou! Enviada ao Cemitério.");
-                    GameManager.Instance.SendToGraveyard(topCard, true);
-                }
+                GlobalCardSearchUI.Instance.Show("Declare 1 carta", (declaredCard) => {
+                    if (declaredCard == null) return;
+                    
+                    List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+                    if (deck.Count > 0)
+                    {
+                        CardData topCard = deck[0];
+                        deck.RemoveAt(0);
+                        
+                        if (topCard.name == declaredCard.name) {
+                            Debug.Log("Archfiend's Oath: Acertou! Adicionada à mão.");
+                            GameManager.Instance.AddCardToHand(topCard, true);
+                        } else {
+                            Debug.Log($"Archfiend's Oath: Errou (Escavou {topCard.name})! Enviada ao Cemitério.");
+                            GameManager.Instance.SendToGraveyard(topCard, true);
+                        }
+                    }
+                });
             }
         }
     }
@@ -1277,7 +1198,9 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         if (Effect_PayLP(source, 500))
         {
             GameManager.Instance.OpenCardSelection(targets, "Reviver Archfiend", (selected) => {
-                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                var summoned = GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                if (summoned != null) summoned.scheduledForDestruction = true;
+                gy.Remove(selected);
             });
         }
     }
@@ -1449,37 +1372,22 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0108_ArrayOfRevealingLight(CardDisplay source)
     {
-        // Regra: Declare 1 Type. Monsters of that type cannot attack the turn they are Summoned.
         string[] types = { "Warrior", "Dragon", "Spellcaster", "Fiend", "Zombie", "Machine", "Aqua", "Pyro", "Rock", "Winged Beast", "Fairy", "Beast", "Beast-Warrior", "Dinosaur", "Thunder", "Fish", "Sea Serpent", "Reptile", "Plant", "Insect" };
-        string declaredType = types[Random.Range(0, types.Length)]; // Simulado
-        
-        Debug.Log($"Array of Revealing Light: Tipo declarado (Simulado): {declaredType}");
-        CardEffectManager.Instance.arrayOfRevealingLightType = declaredType;
-    }
-
-    bool HasAnotherInsect(CardDisplay self)
-    {
-        if (GameManager.Instance.duelFieldUI != null)
+        if (MultipleChoiceUI.Instance != null)
         {
-            Transform[] zones = self.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
-            foreach (var z in zones)
-            {
-                if (z.childCount > 0)
+            MultipleChoiceUI.Instance.Show(new List<string>(types), "Declare 1 Tipo", 1, 1, (selected) => {
+                if (selected.Count > 0)
                 {
-                    var m = z.GetChild(0).GetComponent<CardDisplay>();
-                    if (m != null && m != self && m.CurrentCardData.race == "Insect" && !m.isFlipped) return true;
+                    Debug.Log($"Array of Revealing Light: Tipo declarado: {selected[0]}");
+                    CardEffectManager.Instance.arrayOfRevealingLightType = selected[0];
                 }
-            }
+            });
         }
-        return false;
     }
 
     void Effect_0109_ArsenalBug(CardDisplay source)
     {
-        if (HasAnotherInsect(source))
-            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, 2000, source));
-        else
-            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, 1000, source));
+        Debug.Log("Arsenal Bug: Buff dinâmico resolvido no OnPhaseStart.");
     }
 
     void Effect_0110_ArsenalRobber(CardDisplay source)
@@ -1864,29 +1772,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0145_BatterymanAA(CardDisplay source)
     {
-        // ATK = 1000 * number of AA in Attack. DEF = 1000 * number of AA in Defense.
-        int atkCount = 0;
-        int defCount = 0;
-        if (GameManager.Instance.duelFieldUI != null)
-        {
-            List<CardDisplay> all = new List<CardDisplay>();
-            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
-            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
-            foreach(var m in all)
-            {
-                if (m.CurrentCardData.name == "Batteryman AA")
-                {
-                    if (m.position == CardDisplay.BattlePosition.Attack) atkCount++;
-                    else defCount++;
-                }
-            }
-        }
-        
-        source.RemoveModifiersFromSource(source);
-        if (source.position == CardDisplay.BattlePosition.Attack)
-            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, atkCount * 1000, source));
-        else
-            source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, defCount * 1000, source));
+        Debug.Log("Batteryman AA: Buff dinâmico resolvido no OnPhaseStart.");
     }
 
     void Effect_0146_BatterymanC(CardDisplay source)
@@ -2063,7 +1949,18 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
             UIManager.Instance.ShowMessage("Não há cartas nos Cemitérios para banir.");
             return;
         }
-        Debug.Log("Big Burn: Bane monstros dos cemitérios (Simulado).");
+        
+        List<CardData> pGY = new List<CardData>(GameManager.Instance.GetPlayerGraveyard());
+        List<CardData> oGY = new List<CardData>(GameManager.Instance.GetOpponentGraveyard());
+        foreach(var c in pGY) {
+            GameManager.Instance.RemoveFromPlay(c, true);
+            GameManager.Instance.GetPlayerGraveyard().Remove(c);
+        }
+        foreach(var c in oGY) {
+            GameManager.Instance.RemoveFromPlay(c, false);
+            GameManager.Instance.GetOpponentGraveyard().Remove(c);
+        }
+        Debug.Log("Big Burn: Todos as cartas dos cemitérios foram banidas.");
     }
 
     void Effect_0174_BigEye(CardDisplay source)
@@ -3226,9 +3123,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0281_ChainBurst(CardDisplay source)
     {
-        // Efeito: Quem ativar Trap toma 1000 de dano.
-        // Requer hook no ActivateFieldSpellTrap ou ChainManager
-        Debug.Log("Chain Burst: Ativo.");
+        Debug.Log("Chain Burst: Resolvido no trigger OnSpellActivated.");
     }
 
     void Effect_0282_ChainDestruction(CardDisplay source)
@@ -3674,16 +3569,31 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0311_CobramanSakuzy(CardDisplay source)
     {
-        // Pode virar face-down 1x por turno. Quando Flip Summon: Olhe todas as S/T setadas do oponente.
         Effect_TurnSet(source);
         
-        // Revelar S/T (Simulado com Log)
         if (GameManager.Instance.duelFieldUI != null)
         {
-            // Itera zonas de S/T do oponente e loga os nomes
-            // Em um jogo real, mostraria as cartas visualmente por alguns segundos
-            Debug.Log("Cobraman Sakuzy: Revelando S/T do oponente...");
+            List<CardDisplay> flippedCards = new List<CardDisplay>();
+            foreach (var zone in GameManager.Instance.duelFieldUI.opponentSpellZones)
+            {
+                if (zone.childCount > 0)
+                {
+                    var cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (cd != null && cd.isFlipped)
+                    {
+                        cd.RevealCard(false, false);
+                        flippedCards.Add(cd);
+                    }
+                }
+            }
+            if (flippedCards.Count > 0) StartCoroutine(CobramanSakuzyRoutine(flippedCards));
         }
+    }
+
+    private System.Collections.IEnumerator CobramanSakuzyRoutine(List<CardDisplay> cards)
+    {
+        yield return new WaitForSeconds(2.0f);
+        foreach(var c in cards) if (c != null && !c.isFlipped) c.ShowBack();
     }
 
     void Effect_0312_CockroachKnight(CardDisplay source)
@@ -3835,8 +3745,8 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         {
             List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
             GameManager.Instance.OpenCardSelection(oppHand, "Descartar da Mão do Oponente", (selected) => {
-                // Encontra e descarta
-                // (Requer referência ao objeto da mão do oponente para destruir visualmente)
+                var go = GameManager.Instance.opponentHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == selected);
+                if (go != null) GameManager.Instance.DiscardCard(go.GetComponent<CardDisplay>(), true);
                 Debug.Log($"Confiscation: Descartou {selected.name}.");
             });
         }
@@ -3902,16 +3812,12 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0325_ContractWithTheAbyss(CardDisplay source)
     {
-        // Ritual Genérico para DARK.
-        // Lógica de Ritual Genérico
-        Debug.Log("Contract with the Abyss: Selecione Ritual DARK.");
+        GameManager.Instance.BeginRitualSummon(source);
     }
 
     void Effect_0326_ContractWithTheDarkMaster(CardDisplay source)
     {
-        // Ritual para Dark Master - Zorc.
-        // Requer sistema de Ritual
-        Debug.Log("Contract with the Dark Master: Selecione Ritual Zorc.");
+        GameManager.Instance.BeginRitualSummon(source);
     }
 
     void Effect_0327_ConvulsionOfNature(CardDisplay source)
@@ -4514,27 +4420,36 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0381_DDDesignator(CardDisplay source)
     {
-        // Spell: Declare 1 carta; verifique mão do oponente. Se tiver, bane. Se não, bane 1 da sua.
-        // Simulação de declaração: Escolhe do banco de dados
-        // Como não temos input de texto, usamos o seletor de cartas
-        List<CardData> allCards = GameManager.Instance.cardDatabase.cardDatabase;
-        // Otimização: Pegar uma amostra ou usar lógica de "Adivinhar"
-        Debug.Log("D.D. Designator: Declare um nome (Simulado: Escolha da lista).");
-        
-        // Para teste, vamos pegar uma carta aleatória do deck do oponente para "adivinhar" corretamente às vezes
-        List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
-        
-        // Simula declaração
-        string declaredName = "Kuriboh"; // Placeholder
-        
-        bool found = false;
-        foreach(var c in oppHand) if(c.name == declaredName) found = true;
-
-        if (found) {
-            Debug.Log($"D.D. Designator: Acertou '{declaredName}'! Banindo da mão do oponente.");
-            // Banir lógica...
-        } else {
-            Debug.Log($"D.D. Designator: Errou! Banindo carta da sua mão.");
+        if (GlobalCardSearchUI.Instance != null)
+        {
+            GlobalCardSearchUI.Instance.Show("Declare 1 carta", (declaredCard) => {
+                if (declaredCard == null) return;
+                
+                List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+                CardData hit = oppHand.Find(c => c.name == declaredCard.name);
+                
+                if (hit != null) {
+                    var go = GameManager.Instance.opponentHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == hit);
+                    if (go != null) {
+                        GameManager.Instance.RemoveCardFromHand(hit, false);
+                        GameManager.Instance.RemoveFromPlay(hit, false);
+                        Destroy(go);
+                        Debug.Log($"D.D. Designator: Acertou! Baniu {hit.name} da mão do oponente.");
+                    }
+                } else {
+                    List<CardData> myHand = GameManager.Instance.GetPlayerHandData();
+                    if (myHand.Count > 0) {
+                        CardData rnd = myHand[Random.Range(0, myHand.Count)];
+                        var go = GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == rnd);
+                        if (go != null) {
+                            GameManager.Instance.RemoveCardFromHand(rnd, true);
+                            GameManager.Instance.RemoveFromPlay(rnd, true);
+                            Destroy(go);
+                            Debug.Log($"D.D. Designator: Errou! Baniu {rnd.name} aleatoriamente da sua mão.");
+                        }
+                    }
+                }
+            });
         }
     }
 
@@ -5828,9 +5743,20 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0498_DimensionJar(CardDisplay source)
     {
-        // FLIP: Bane até 3 monstros do GY do oponente.
-        Debug.Log("Dimension Jar: Banindo do GY (Simulado).");
-        // UI to select from GY.
+        List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
+        List<CardData> monsters = oppGY.FindAll(c => c.type.Contains("Monster"));
+        if (monsters.Count > 0)
+        {
+            int max = Mathf.Min(3, monsters.Count);
+            GameManager.Instance.OpenCardMultiSelection(monsters, "Banir do GY do Oponente", 1, max, (selected) => {
+                foreach (var c in selected)
+                {
+                    GameManager.Instance.RemoveFromPlay(c, false);
+                    oppGY.Remove(c);
+                }
+                Debug.Log($"Dimension Jar: baniu {selected.Count} monstros do oponente.");
+            });
+        }
     }
 
     void Effect_0499_DimensionWall(CardDisplay source)

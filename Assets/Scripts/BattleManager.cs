@@ -22,6 +22,7 @@ public class BattleManager : MonoBehaviour
     public bool bewdCannotAttackThisTurn = false; // Burst Stream of Destruction (0251)
     public bool terrorkingCanAttackDirectly = false; // Checkmate (0298)
     public bool crossCounterActive = false; // Cross Counter (0344)
+    public bool forceAllAttack = false; // Amazoness Archers (0042)
     public bool threateningRoarActive = false; // Threatening Roar (1918)
     public CardDisplay forcedAttackTarget; // Staunch Defender (1767) / Taunt (1827)
     private bool isBattleResolving = false; // Proteção contra reentrada
@@ -79,6 +80,7 @@ public class BattleManager : MonoBehaviour
         bewdCannotAttackThisTurn = false;
         terrorkingCanAttackDirectly = false;
         crossCounterActive = false;
+        forceAllAttack = false;
         threateningRoarActive = false;
         forcedAttackTarget = null;
         gravekeepersProtected = false;
@@ -755,6 +757,10 @@ public class BattleManager : MonoBehaviour
                     {
                         Debug.Log("Monstro protegido (Charm of Shabti ou Waboku).");
                     }
+                    else if (target.CurrentCardData.id == "0492" && atk <= 1900)
+                    {
+                        Debug.Log("Different Dimension Dragon: Protegido contra monstro com ATK <= 1900.");
+                    }
                     else
                     {
                         DestroyMonsterInBattle(target);
@@ -776,7 +782,10 @@ public class BattleManager : MonoBehaviour
 
                 if (!attackerIsRocketWarrior)
                 {
-                    DestroyMonsterInBattle(attacker);
+                    if (attacker.CurrentCardData.id == "0492" && def <= 1900)
+                        Debug.Log("Different Dimension Dragon: Protegido contra monstro com DEF <= 1900.");
+                    else
+                        DestroyMonsterInBattle(attacker);
                 }
             }
             else // Empate
@@ -785,10 +794,12 @@ public class BattleManager : MonoBehaviour
                 bool kishido = GameManager.Instance.IsCardActiveOnField("1023");
                 if (!wabokuActive && !kishido)
                 {
-                    DestroyMonsterInBattle(target);
+                    if (target.CurrentCardData.id == "0492" && atk <= 1900) Debug.Log("DDD alvo protegido no empate.");
+                    else DestroyMonsterInBattle(target);
                 }
                 if (!attackerIsRocketWarrior && !wabokuActive && !kishido) {
-                    DestroyMonsterInBattle(attacker);
+                    if (attacker.CurrentCardData.id == "0492" && def <= 1900) Debug.Log("DDD atacante protegido no empate.");
+                    else DestroyMonsterInBattle(attacker);
                 }
             }
         }
@@ -800,7 +811,10 @@ public class BattleManager : MonoBehaviour
                 Debug.Log("Vitória do Atacante! Alvo destruído (sem dano).");
                 if (!wabokuActive)
                 {
-                    DestroyMonsterInBattle(target);
+                    if (target.CurrentCardData.id == "0492" && atk <= 1900)
+                        Debug.Log("Different Dimension Dragon: Protegido contra monstro com ATK <= 1900.");
+                    else
+                        DestroyMonsterInBattle(target);
                 }
             }
             else if (atk < def)
@@ -891,16 +905,6 @@ public class BattleManager : MonoBehaviour
                 Debug.Log($"Dano Perfurante! {piercing} de dano.");
                 DealBattleDamage(target, piercing);
             }
-
-            // Different Dimension Dragon (0492)
-            // Não pode ser destruído por batalha com monstro de ATK <= 1900.
-            // A lógica de destruição acima (Destroy(target.gameObject)) precisa ser condicional.
-            // Como o código acima já executou, isso é um problema de arquitetura do método ResolveDamage.
-            // Idealmente, deveríamos calcular "willDestroy" antes de aplicar.
-            // Para este protótipo, vamos assumir que DDD tem um efeito que previne a destruição no OnCardLeavesField ou similar,
-            // ou injetar a lógica antes do Destroy.
-            // (Devido à complexidade de reescrever o ResolveDamage inteiro, deixaremos como nota:
-            //  DDD requer verificação de ATK do atacante antes de aplicar Destroy).
         }
 
         // Hook OnBattleEnd (D.D. Warrior Lady, Mystic Tomato)

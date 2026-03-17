@@ -965,7 +965,7 @@ public partial class CardEffectManager
                             // Spawn tokens representing the hats (Simulated)
                             foreach(var c in selected)
                             {
-                                GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Magical Hat");
+                                GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Magical Hat", 1, "Spellcaster", "Light");
                                 deck.Remove(c);
                             }
                             GameManager.Instance.ShuffleDeck(source.isPlayerCard);
@@ -2505,9 +2505,18 @@ public partial class CardEffectManager
     // 1294 - My Body as a Shield
     void Effect_1294_MyBodyAsAShield(CardDisplay source)
     {
-        // Pay 1500 LP; negate activation of card that destroys monster(s) and destroy it.
-        // Requer Chain.
-        Debug.Log("My Body as a Shield: Nega destruição (Requer Chain).");
+        var link = GetLinkToNegate(source);
+        if (link != null)
+        {
+            if (Effect_PayLP(source, 1500))
+            {
+                NegateAndDestroy(source, link);
+            }
+        }
+        else
+        {
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Só pode ser ativada em resposta a um efeito.");
+        }
     }
 
     // 1295 - Mysterious Guard
@@ -3234,12 +3243,17 @@ public partial class CardEffectManager
     // 1374 - Ojama Trio
     void Effect_1374_OjamaTrio(CardDisplay source)
     {
-        // SS 3 Ojama Tokens to opp field.
-        for(int i=0; i<3; i++)
-        {
-            GameManager.Instance.SpawnToken(!source.isPlayerCard, 0, 1000, "Ojama Token");
+        int emptyZones = 0;
+        if (GameManager.Instance.duelFieldUI != null) {
+            Transform[] oppZones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+            foreach (var z in oppZones) if (z.childCount == 0 && !GameManager.Instance.duelFieldUI.IsZoneBlocked(z)) emptyZones++;
         }
-        Debug.Log("Ojama Trio: 3 Tokens invocados no campo do oponente.");
+        
+        if (emptyZones >= 3) {
+            for(int i=0; i<3; i++) GameManager.Instance.SpawnToken(!source.isPlayerCard, 0, 1000, "Ojama Token", 2, "Beast", "Light");
+        } else {
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("O oponente não tem 3 zonas vazias.");
+        }
     }
 
     // 1375 - Ojama Yellow
@@ -3305,30 +3319,23 @@ public partial class CardEffectManager
     // 1397 - Painful Choice
     void Effect_1397_PainfulChoice(CardDisplay source)
     {
-        // Reveal 5 cards, Opponent selects 1 for hand.
         List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
         if (deck.Count >= 5)
         {
-            List<CardData> selection = new List<CardData>();
-            for (int i = 0; i < 5; i++)
-            {
-                selection.Add(deck[i]);
-            }
-
-            GameManager.Instance.OpenCardSelection(selection, "Oponente Escolhe", (selected) => {
-                Debug.Log($"Painful Choice: Oponente escolheu {selected.name}.");
-                GameManager.Instance.AddCardToHand(selected, false); // Oponente recebe
-                selection.Remove(selected);
-
-                foreach(CardData card in new List<CardData>(selection)) {
-                    GameManager.Instance.SendToGraveyard(card, source.isPlayerCard);
+            GameManager.Instance.OpenCardMultiSelection(deck, "Selecione 5 cartas para revelar", 5, 5, (selection) => {
+                if (selection.Count == 5)
+                {
+                    GameManager.Instance.OpenCardSelection(selection, "Oponente Escolhe para SUA Mão", (selected) => {
+                        GameManager.Instance.AddCardToHand(selected, source.isPlayerCard);
+                        selection.Remove(selected);
+                        deck.Remove(selected);
+                        foreach(CardData card in selection) {
+                            deck.Remove(card);
+                            GameManager.Instance.SendToGraveyard(card, source.isPlayerCard);
+                        }
+                        GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+                    });
                 }
-
-                // Remove do deck
-                deck.Remove(selected);
-                foreach(var c in selection) deck.Remove(c);
-                
-                GameManager.Instance.ShuffleDeck(source.isPlayerCard); //Shuffle
             });
         }
     }
@@ -4139,43 +4146,37 @@ public partial class CardEffectManager
     // 1498 - Reasoning
     void Effect_1498_Reasoning(CardDisplay source)
     {
-        // Opponent declares Level. Excavate until Normal Summonable. If Level matches, send to GY. Else SS.
-        int declaredLevel = Random.Range(1, 13); // Simulated opponent declaration
-        Debug.Log($"Reasoning: Oponente declarou Nível {declaredLevel}.");
-        
-        List<CardData> deck = source.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
-        List<CardData> excavated = new List<CardData>();
-        CardData foundMonster = null;
-        
-        while(deck.Count > 0)
+        List<string> levels = new List<string> { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" };
+        if (MultipleChoiceUI.Instance != null)
         {
-            CardData c = deck[0];
-            deck.RemoveAt(0);
-            excavated.Add(c);
-            
-            if (c.type.Contains("Monster") && !c.type.Contains("Ritual") && !c.type.Contains("Fusion"))
-            {
-                foundMonster = c;
-                break;
-            }
-        }
-        
-        if (foundMonster != null)
-        {
-            if (foundMonster.level == declaredLevel)
-            {
-                foreach(var c in excavated) GameManager.Instance.SendToGraveyard(c, source.isPlayerCard);
-            }
-            else
-            {
-                GameManager.Instance.SpecialSummonFromData(foundMonster, source.isPlayerCard);
-                excavated.Remove(foundMonster);
-                foreach(var c in excavated) GameManager.Instance.SendToGraveyard(c, source.isPlayerCard);
-            }
-        }
-        else
-        {
-             foreach(var c in excavated) GameManager.Instance.SendToGraveyard(c, source.isPlayerCard);
+            MultipleChoiceUI.Instance.Show(levels, "Oponente: Declare um Nível", 1, 1, (selectedList) => {
+                if (selectedList.Count > 0)
+                {
+                    int declaredLevel = int.Parse(selectedList[0]);
+                    Debug.Log($"Reasoning: Oponente declarou Nível {declaredLevel}.");
+                    
+                    List<CardData> deck = source.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+                    List<CardData> excavated = new List<CardData>();
+                    CardData foundMonster = null;
+                    
+                    while(deck.Count > 0)
+                    {
+                        CardData c = deck[0];
+                        deck.RemoveAt(0);
+                        excavated.Add(c);
+                        
+                        if (c.type.Contains("Monster") && !c.type.Contains("Ritual") && !c.type.Contains("Fusion")) {
+                            foundMonster = c; break;
+                        }
+                    }
+                    
+                    if (foundMonster != null) {
+                        if (foundMonster.level == declaredLevel) { foreach(var c in excavated) GameManager.Instance.SendToGraveyard(c, source.isPlayerCard); }
+                        else { GameManager.Instance.SpecialSummonFromData(foundMonster, source.isPlayerCard); excavated.Remove(foundMonster); foreach(var c in excavated) GameManager.Instance.SendToGraveyard(c, source.isPlayerCard); }
+                    }
+                    else { foreach(var c in excavated) GameManager.Instance.SendToGraveyard(c, source.isPlayerCard); }
+                }
+            });
         }
     }
 

@@ -88,6 +88,7 @@ public partial class CardEffectManager : MonoBehaviour
     public void OnCardDrawn(CardData card, bool isPlayer) { OnCardDrawnImpl(card, isPlayer); }
     public void OnSpecialSummon(CardDisplay card) { OnSpecialSummonImpl(card); }
     public void OnPreDrawPhase(bool isPlayerTurn, System.Action onContinue) { OnPreDrawPhaseImpl(isPlayerTurn, onContinue); }
+    public void OnControlSwitched(CardDisplay card) { OnControlSwitchedImpl(card); }
 
     // --- VALIDAÇÕES DE REGRAS DE EFEITO ---
 
@@ -218,6 +219,7 @@ public partial class CardEffectManager : MonoBehaviour
     partial void OnSpecialSummonImpl(CardDisplay card);
     partial void OnCardDrawnImpl(CardData card, bool isPlayer);
     partial void OnPreDrawPhaseImpl(bool isPlayerTurn, System.Action onContinue);
+    partial void OnControlSwitchedImpl(CardDisplay card);
 
     void DestroyAllMonsters(bool targetOpponent, bool targetPlayer)
     {
