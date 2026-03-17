@@ -59,9 +59,7 @@ public partial class CardEffectManager
     // 1508 - Regenerating Mummy
     void Effect_1508_RegeneratingMummy(CardDisplay source)
     {
-        // If this card is sent from your hand to your Graveyard by an opponent's card effect: Return this card to your hand.
-        // Lógica no OnCardDiscarded.
-        Debug.Log("Regenerating Mummy: Efeito de retorno à mão configurado (OnCardDiscarded).");
+        Debug.Log("Regenerating Mummy: Resolvido no trigger OnCardDiscarded.");
     }
 
     // 1509 - Reinforcement of the Army
@@ -202,7 +200,10 @@ public partial class CardEffectManager
         }
         foreach(var monster in allMonsters)
         {
-            // Uma lógica de "dono original" seria necessária aqui.
+            if (monster.isPlayerCard != monster.originalOwnerIsPlayer)
+            {
+                GameManager.Instance.SwitchControl(monster);
+            }
         }
     }
 
@@ -240,13 +241,9 @@ public partial class CardEffectManager
                 GameManager.Instance.OpenCardMultiSelection(targets, "Invocar 2 Bestas", 2, 2, (selected) => {
                     foreach(var c in selected)
                     {
-                        GameManager.Instance.SpecialSummonFromData(c, source.isPlayerCard);
-                        // TODO: Agendar destruição na End Phase
-                        // Uma forma simples é adicionar a uma lista no GameManager ou CardEffectManager
-                        // e processar essa lista na End Phase.
-                        // Ex: GameManager.Instance.ScheduleForDestruction(cardDisplay);
-                        deck.Remove(c); 
-                        // TODO: Agendar destruição na End Phase
+                        var summoned = GameManager.Instance.SpecialSummonFromData(c, source.isPlayerCard);
+                        if (summoned != null) summoned.scheduledForDestruction = true;
+                        deck.Remove(c);
                     }
                     GameManager.Instance.ShuffleDeck(source.isPlayerCard);
                 });
@@ -273,10 +270,8 @@ public partial class CardEffectManager
     // 1519 - Respect Play
     void Effect_1519_RespectPlay(CardDisplay source)
     {
-        // Both players must keep their hands revealed.
-        Debug.Log("Respect Play: Mãos reveladas.");
         GameManager.Instance.showOpponentHand = true;
-        // Precisa de lógica para revelar a mão do jogador também.
+        Debug.Log("Respect Play: Mãos reveladas.");
     }
 
     // 1520 - Restructer Revolution
@@ -325,8 +320,8 @@ public partial class CardEffectManager
             banished.Clear();
             foreach(var c in toSummon)
             {
-                // TODO: Agendar banimento na End Phase
-                GameManager.Instance.SpecialSummonFromData(c, source.isPlayerCard);
+                var summoned = GameManager.Instance.SpecialSummonFromData(c, source.isPlayerCard);
+                if (summoned != null) summoned.scheduledForBanishment = true;
             }
         }
     }
@@ -397,9 +392,7 @@ public partial class CardEffectManager
     // 1527 - Revival Jam
     void Effect_1527_RevivalJam(CardDisplay source)
     {
-        // When destroyed by battle and sent to GY: Pay 1000 LP; SS in Defense next Standby.
-        // Lógica implementada no OnCardSentToGraveyard (CardEffectManager_Impl.cs).
-        Debug.Log("Revival Jam: Efeito de renascimento configurado.");
+        Debug.Log("Revival Jam: Resolvido no trigger OnCardSentToGraveyard.");
     }
 
     // 1528 - Revival of Dokurorider
@@ -412,14 +405,11 @@ public partial class CardEffectManager
     // 1532 - Rigorous Reaver
     void Effect_1532_RigorousReaver(CardDisplay source)
     {
-        // FLIP: Both players discard 1 card.
-        // If destroyed by battle: Opponent discards 1 card.
         if (source.isFlipped)
         {
             GameManager.Instance.DiscardRandomHand(true, 1);
             GameManager.Instance.DiscardRandomHand(false, 1);
         }
-        // Lógica de batalha no OnBattleEnd.
     }
 
     // 1533 - Ring of Destruction
@@ -446,9 +436,7 @@ public partial class CardEffectManager
     // 1534 - Ring of Magnetism
     void Effect_1534_RingOfMagnetism(CardDisplay source)
     {
-        // Equip: -500 ATK/DEF. Opponent must attack this monster.
         Effect_Equip(source, -500, -500);
-        // Lógica de "Must Attack" no BattleManager.
     }
 
     // 1535 - Riryoku
@@ -613,31 +601,37 @@ public partial class CardEffectManager
     // 1555 - Rod of Silence - Kay'est
     void Effect_1555_RodOfSilenceKayest(CardDisplay source)
     {
-        // Equip: +500 DEF. Negate Spell effects targeting equipped monster. Destroy other Equips.
-        Effect_Equip(source, 0, 500);
-        // Lógica de destruir outros equips:
-        if (SpellTrapManager.Instance != null && SpellTrapManager.Instance.isSelectingTarget == false) // Evita loop na seleção
+        if (SpellTrapManager.Instance != null)
         {
-            // Encontra o monstro equipado (via CardLink)
-            // ... (Simplificado: Assume que o link foi criado no Effect_Equip)
-            Debug.Log("Rod of Silence: Outros equipamentos destruídos (Lógica pendente).");
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                (target) => {
+                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
+                    target.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, 500, source));
+                    
+                    CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+                    List<CardDisplay> toDestroy = new List<CardDisplay>();
+                    foreach(var link in links) if (link.target == target && link.type == CardLink.LinkType.Equipment && link.source != source) if (link.source != null) toDestroy.Add(link.source);
+                    
+                    foreach(var c in toDestroy) {
+                        GameManager.Instance.SendToGraveyard(c.CurrentCardData, c.isPlayerCard);
+                        Destroy(c.gameObject);
+                    }
+                }
+            );
         }
     }
 
     // 1556 - Rod of the Mind's Eye
     void Effect_1556_RodOfTheMindsEye(CardDisplay source)
     {
-        // Equip: If deals battle damage, it becomes 1000.
         Effect_Equip(source, 0, 0);
-        // Lógica de dano fixo no BattleManager/OnDamageCalculation.
     }
 
     // 1559 - Rope of Life
     void Effect_1559_RopeOfLife(CardDisplay source)
     {
-        // Trigger: When monster destroyed by battle -> Discard hand -> SS +800 ATK.
-        // Lógica no OnCardSentToGraveyard.
-        Debug.Log("Rope of Life: Armadilha de renascimento configurada.");
+        Debug.Log("Rope of Life: Resolvido no trigger OnCardSentToGraveyard.");
     }
 
     // 1561 - Roulette Barrel
@@ -675,8 +669,7 @@ public partial class CardEffectManager
     // 1562 - Royal Command
     void Effect_1562_RoyalCommand(CardDisplay source)
     {
-        // Negate activation and effects of Flip Effect Monsters.
-        Debug.Log("Royal Command: Efeitos Flip negados (Passivo).");
+        Debug.Log("Royal Command: Efeitos Flip negados (Verificado no ExecuteCardEffect).");
     }
 
     // 1563 - Royal Decree
@@ -806,8 +799,7 @@ public partial class CardEffectManager
     // 1576 - Sacred Crane
     void Effect_1576_SacredCrane(CardDisplay source)
     {
-        // If this card is Special Summoned: You can draw 1 card.
-        // Lógica implementada no OnSpecialSummon.
+        Debug.Log("Sacred Crane: Resolvido no trigger OnSpecialSummon.");
     }
 
     // 1577 - Sacred Defense Barrier
@@ -845,9 +837,13 @@ public partial class CardEffectManager
     // 1581 - Sakuretsu Armor
     void Effect_1581_SakuretsuArmor(CardDisplay source)
     {
-        // When an opponent's monster declares an attack: Target the attacking monster; destroy that target.
-        // Lógica no OnAttackDeclared.
-        Debug.Log("Sakuretsu Armor: Armadilha de ataque configurada.");
+        if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+        {
+            CardDisplay attacker = BattleManager.Instance.currentAttacker;
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(attacker);
+            GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+            Destroy(attacker.gameObject);
+        }
     }
 
     // 1582 - Salamandra
@@ -984,9 +980,23 @@ public partial class CardEffectManager
     // 1597 - Scroll of Bewitchment
     void Effect_1597_ScrollOfBewitchment(CardDisplay source)
     {
-        // Equip: Declare 1 Attribute. The equipped monster's Attribute becomes the declared Attribute.
-        Effect_Equip(source, 0, 0);
-        Debug.Log("Scroll of Bewitchment: Atributo alterado para LIGHT (Simulado).");
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"),
+                (target) => {
+                    List<string> attributes = new List<string> { "Light", "Dark", "Water", "Fire", "Earth", "Wind" };
+                    if (MultipleChoiceUI.Instance != null) {
+                        MultipleChoiceUI.Instance.Show(attributes, "Escolha 1 Atributo", 1, 1, (selected) => {
+                            if (selected.Count > 0) {
+                                target.temporaryAttribute = selected[0];
+                                GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
+                            }
+                        });
+                    }
+                }
+            );
+        }
     }
 
     // 1601 - Seal of the Ancients

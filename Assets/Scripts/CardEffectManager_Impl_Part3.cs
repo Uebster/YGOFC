@@ -804,8 +804,36 @@ public partial class CardEffectManager
 
     void Effect_1121_MagicDrain(CardDisplay source)
     {
-        // Effect: Counter Trap. Opponent can discard 1 Spell to negate this.
-        Debug.Log("Magic Drain: Negação condicional (Requer interação do oponente).");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell"))
+        {
+            bool oppIsPlayer = link.cardSource.isPlayerCard;
+            List<CardData> oppHand = oppIsPlayer ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+            List<CardData> spells = oppHand.FindAll(c => c.type.Contains("Spell"));
+
+            if (spells.Count > 0)
+            {
+                if (oppIsPlayer && UIManager.Instance != null) {
+                    UIManager.Instance.ShowConfirmation("Magic Drain ativada! Descartar 1 Magia para negar?", () => {
+                        GameManager.Instance.OpenCardSelection(spells, "Descarte 1 Magia", (discarded) => {
+                            GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                            Debug.Log("Magic Drain: Oponente descartou magia. Efeito de Magic Drain negado!");
+                        });
+                    }, () => { NegateAndDestroy(source, link); });
+                }
+                else {
+                    if (Random.value > 0.5f) { // IA: 50% de chance de descartar
+                        CardData discarded = spells[Random.Range(0, spells.Count)];
+                        GameManager.Instance.DiscardCard(GameManager.Instance.opponentHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>(), false);
+                        Debug.Log("Magic Drain: IA descartou magia. Efeito negado!");
+                    } else { NegateAndDestroy(source, link); }
+                }
+            }
+            else
+            {
+                NegateAndDestroy(source, link);
+            }
+        }
     }
 
     void Effect_1122_MagicFormula(CardDisplay source)
@@ -1166,9 +1194,40 @@ public partial class CardEffectManager
 
     void Effect_1145_MajorRiot(CardDisplay source)
     {
-        // Effect: Return all monsters to hand, then SS same number.
-        Debug.Log("Major Riot: Resetando campo (Lógica complexa de retorno e SS pendente).");
-        // Requereria coletar todos, retornar, contar e pedir SS.
+        List<CardDisplay> pMonsters = new List<CardDisplay>();
+        List<CardDisplay> oMonsters = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null) {
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, pMonsters);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, oMonsters);
+        }
+
+        int pCount = pMonsters.Count;
+        int oCount = oMonsters.Count;
+        foreach(var m in pMonsters) GameManager.Instance.ReturnToHand(m);
+        foreach(var m in oMonsters) GameManager.Instance.ReturnToHand(m);
+
+        if (pCount > 0) {
+            List<CardData> pHand = GameManager.Instance.GetPlayerHandData();
+            List<CardData> pSummons = pHand.FindAll(c => c.type.Contains("Monster"));
+            if (pSummons.Count > 0) {
+                int max = Mathf.Min(pCount, pSummons.Count);
+                GameManager.Instance.OpenCardMultiSelection(pSummons, $"Major Riot: SS até {max}", 1, max, (selected) => {
+                    foreach(var c in selected) {
+                        GameManager.Instance.SpecialSummonFromData(c, true, false, true); // Face-down defense
+                        GameManager.Instance.RemoveCardFromHand(c, true);
+                    }
+                });
+            }
+        }
+        if (oCount > 0) {
+            List<CardData> oHand = GameManager.Instance.GetOpponentHandData();
+            List<CardData> oSummons = oHand.FindAll(c => c.type.Contains("Monster"));
+            int max = Mathf.Min(oCount, oSummons.Count);
+            for(int i=0; i<max; i++) {
+                GameManager.Instance.SpecialSummonFromData(oSummons[i], false, false, true);
+                GameManager.Instance.RemoveCardFromHand(oSummons[i], false);
+            }
+        }
     }
 
     void Effect_1146_MajuGarzett(CardDisplay source)
@@ -2884,8 +2943,8 @@ public partial class CardEffectManager
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name.Contains("Ninja"),
                 (t) => {
+                    GameManager.Instance.CreateCardLink(source, t, CardLink.LinkType.Equipment);
                     Debug.Log($"Ninjitsu Art of Decoy: {t.CurrentCardData.name} protegido de batalha.");
-                    // Add protection modifier/flag
                 }
             );
         }
@@ -2988,10 +3047,30 @@ public partial class CardEffectManager
     // 1355 - Nobleman-Eater Bug
     void Effect_1355_NoblemanEaterBug(CardDisplay source)
     {
-        // FLIP: Destroy 2 monsters.
-        // Requer seleção múltipla.
-        Debug.Log("Nobleman-Eater Bug: Destruindo 2 monstros (Simulado).");
-        // DestroyAllMonsters(true, false); // Simplificado
+        if (SpellTrapManager.Instance != null) {
+            List<CardDisplay> all = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null) {
+                CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            }
+            if (all.Count > 0) {
+                SpellTrapManager.Instance.StartTargetSelection((t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"), (t1) => {
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t1);
+                    GameManager.Instance.SendToGraveyard(t1.CurrentCardData, t1.isPlayerCard);
+                    Destroy(t1.gameObject);
+                    all.Remove(t1);
+                    if (all.Count > 0 && UIManager.Instance != null) {
+                        UIManager.Instance.ShowConfirmation("Nobleman-Eater Bug: Destruir mais um monstro?", () => {
+                            SpellTrapManager.Instance.StartTargetSelection((t2) => t2.isOnField && t2.CurrentCardData.type.Contains("Monster"), (t3) => {
+                                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t3);
+                                GameManager.Instance.SendToGraveyard(t3.CurrentCardData, t3.isPlayerCard);
+                                Destroy(t3.gameObject);
+                            });
+                        }, null);
+                    }
+                });
+            }
+        }
     }
 
     // 1356 - Non Aggression Area
@@ -3201,15 +3280,28 @@ public partial class CardEffectManager
     // 1387 - Ordeal of a Traveler
     void Effect_1387_OrdealOfATraveler(CardDisplay source)
     {
-        // Requer sistema de revelar
-        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
-        if (hand.Count > 0)
-        {
-            GameManager.Instance.OpenCardSelection(hand, "Adivinhe a carta", (picked) => {
-                // Lógica simulada: Sempre adivinha certo
-                Debug.Log("Ordeal of a Traveler: Adivinhou corretamente!");
-                // Efeito contínuo: Implementar no BattleManager (Requer hooks e lógica para impedir ataques no turno que adivinhar)
+        if (BattleManager.Instance == null || BattleManager.Instance.currentAttacker == null) return;
+        CardDisplay attacker = BattleManager.Instance.currentAttacker;
+        if (attacker.isPlayerCard == source.isPlayerCard) return; // Só ativa quando oponente ataca
+
+        List<CardData> myHand = source.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+        if (myHand.Count == 0) return;
+
+        CardData picked = myHand[Random.Range(0, myHand.Count)];
+        List<string> options = new List<string> { "Monster", "Spell", "Trap" };
+
+        if (attacker.isPlayerCard && MultipleChoiceUI.Instance != null) { // Oponente (Jogador) adivinha
+            MultipleChoiceUI.Instance.Show(options, "Ordeal of a Traveler: Adivinhe o Tipo!", 1, 1, (selected) => {
+                if (selected.Count > 0) {
+                    bool correct = picked.type.Contains(selected[0]);
+                    if (!correct) GameManager.Instance.ReturnToHand(attacker);
+                }
             });
+        }
+        else { // Oponente (IA) adivinha
+            string guess = options[Random.Range(0, options.Count)];
+            bool correct = picked.type.Contains(guess);
+            if (!correct) GameManager.Instance.ReturnToHand(attacker);
         }
     }
 
@@ -3322,9 +3414,21 @@ public partial class CardEffectManager
     // 1407 - Patroid
     void Effect_1407_Patroid(CardDisplay source)
     {
-        // Pay 1000 LP; reveal 1 face-down card.
-        Effect_PayLP(source, 1000);
-        Debug.Log("Patroid: Revelando carta (Simulado).");
+        if (Effect_PayLP(source, 1000))
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isFlipped,
+                    (t) => {
+                        t.RevealCard();
+                        if (UIManager.Instance != null) {
+                            UIManager.Instance.ShowConfirmation($"A carta setada é: {t.CurrentCardData.name}. Escondê-la novamente?", () => { t.ShowBack(); });
+                        } else { t.ShowBack(); }
+                    }
+                );
+            }
+        }
     }
 
     // 1408 - Patrol Robo
@@ -3381,15 +3485,25 @@ public partial class CardEffectManager
 
     void Effect_1413_PenguinSoldier(CardDisplay source)
     {
-        // FLIP: Return up to 2 monsters on the field to the hand.
-        if (SpellTrapManager.Instance != null)
-        {
-            SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField,
-                (t) => {
-                    Debug.Log("Penguin Soldier: Retornando até 2 monstros para a mão (Efeito em progresso).");
-                }
-            );
+        if (SpellTrapManager.Instance != null) {
+            List<CardDisplay> all = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null) {
+                CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            }
+            if (all.Count > 0) {
+                SpellTrapManager.Instance.StartTargetSelection((t) => t.isOnField && t.CurrentCardData.type.Contains("Monster"), (t1) => {
+                    GameManager.Instance.ReturnToHand(t1);
+                    all.Remove(t1);
+                    if (all.Count > 0 && UIManager.Instance != null) {
+                        UIManager.Instance.ShowConfirmation("Penguin Soldier: Retornar mais um monstro?", () => {
+                            SpellTrapManager.Instance.StartTargetSelection((t2) => t2.isOnField && t2.CurrentCardData.type.Contains("Monster"), (t3) => {
+                                GameManager.Instance.ReturnToHand(t3);
+                            });
+                        }, null);
+                    }
+                });
+            }
         }
     }
 
@@ -3471,7 +3585,10 @@ public partial class CardEffectManager
 
     void Effect_1429_PhysicalDouble(CardDisplay source)
     {
-       Debug.Log("Physical Double: Efeito para criar um token com os atributos do monstro do oponente."); 
+        if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null) {
+            CardDisplay attacker = BattleManager.Instance.currentAttacker;
+            GameManager.Instance.SpawnToken(source.isPlayerCard, attacker.currentAtk, attacker.currentDef, "Mirage Token", attacker.CurrentCardData.level, attacker.CurrentCardData.race, attacker.CurrentCardData.attribute);
+        }
     }
 
         // 1430 - Pikeru's Circle of Enchantment
@@ -3498,9 +3615,22 @@ public partial class CardEffectManager
     // 1433 - Pineapple Blast
     void Effect_1433_PineappleBlast(CardDisplay source)
     {
-        // When you Normal Summon, if opp has more monsters: Destroy opp monsters until equal.
-        // Lógica implementada no OnSummonImpl.
-        Debug.Log("Pineapple Blast: Armadilha de invocação configurada.");
+        int myCount = GameManager.Instance.GetMonsterCount(source.isPlayerCard);
+        int oppCount = GameManager.Instance.GetMonsterCount(!source.isPlayerCard);
+        if (oppCount > myCount)
+        {
+            int toDestroy = oppCount - myCount;
+            List<CardDisplay> oppMonsters = new List<CardDisplay>();
+            Transform[] oppZones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+            CollectMonsters(oppZones, oppMonsters);
+            for (int i = 0; i < toDestroy; i++) {
+                if (i < oppMonsters.Count) {
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(oppMonsters[i]);
+                    GameManager.Instance.SendToGraveyard(oppMonsters[i].CurrentCardData, !source.isPlayerCard);
+                    Destroy(oppMonsters[i].gameObject);
+                }
+            }
+        }
     }
 
     void Effect_1434_PiranhaArmy(CardDisplay source)

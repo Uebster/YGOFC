@@ -52,7 +52,7 @@ public class BattleManager : MonoBehaviour
         if (currentAttacker != null)
         {
             string id = currentAttacker.CurrentCardData.id;
-            if (id == "0058" || id == "0059" || id == "0060") return true;
+            if (id == "0058" || id == "0059" || id == "0060" || id == "1436") return true; // Ancient Gears & Pitch-Black Warwolf
         }
         
         // Permissão dinâmica por efeitos
@@ -329,6 +329,22 @@ public class BattleManager : MonoBehaviour
             }
         }
 
+        // 1534 - Ring of Magnetism
+        CardDisplay forcedTarget = null;
+        Transform[] targetZonesCheck = currentAttacker.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+        foreach(var z in targetZonesCheck) {
+            if (z.childCount > 0) {
+                var m = z.GetChild(0).GetComponent<CardDisplay>();
+                if (m != null && !m.isFlipped && CardEffectManager.Instance != null && CardEffectManager.Instance.GetEquippedCards(m).Exists(c => c.CurrentCardData.id == "1534")) {
+                    forcedTarget = m; break;
+                }
+            }
+        }
+        if (forcedTarget != null && target != forcedTarget) {
+            UIManager.Instance.ShowMessage("Você deve atacar o monstro equipado com Ring of Magnetism!");
+            return;
+        }
+
         // 1577 - Sacred Defense Barrier
         if (GameManager.Instance.IsCardActiveOnField("1577"))
         {
@@ -472,6 +488,16 @@ public class BattleManager : MonoBehaviour
             isPlayer = !isPlayer;
         }
 
+        // 1556 - Rod of the Mind's Eye
+        if (currentAttacker != null)
+        {
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.GetEquippedCards(currentAttacker).Exists(c => c.CurrentCardData.id == "1556"))
+            {
+                Debug.Log("Rod of the Mind's Eye: Dano de batalha fixado em 1000.");
+                damage = 1000;
+            }
+        }
+
         if (isPlayer) GameManager.Instance.DamagePlayer(damage);
         else GameManager.Instance.DamageOpponent(damage);
     }
@@ -556,6 +582,15 @@ public class BattleManager : MonoBehaviour
                 // Em um sistema completo, moveria para a zona de S/T.
                 GameManager.Instance.CreateCardLink(target, attacker, CardLink.LinkType.Equipment);
                 target.AddSpellCounter(1); // Marca para destruir na Standby
+                isBattleResolving = false;
+                return; // Cancela batalha
+            }
+            
+            // 1022 - Kiseitai
+            if (target.CurrentCardData.id == "1022" && targetWasFaceDown)
+            {
+                Debug.Log("Kiseitai: Atacado face-down. Equipando ao atacante...");
+                GameManager.Instance.CreateCardLink(target, attacker, CardLink.LinkType.Equipment);
                 isBattleResolving = false;
                 return; // Cancela batalha
             }
@@ -670,6 +705,12 @@ public class BattleManager : MonoBehaviour
             if (target.CurrentCardData.id == "1165") targetIsBES = true; 
             // 1364 - Obnoxious Celtic Guard
             if (target.CurrentCardData.id == "1364" && atk >= 1900) targetIsBES = true;
+            // 1349 - Ninjitsu Art of Decoy
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.GetEquippedCards(target).Exists(c => c.CurrentCardData.id == "1349")) targetIsBES = true;
+            // 1096 - Lone Wolf
+            if (target.CurrentCardData.id == "1264" || target.CurrentCardData.id == "1182") {
+                if (GameManager.Instance.IsCardActiveOnField("1096")) targetIsBES = true;
+            }
 
         if (target.position == CardDisplay.BattlePosition.Attack)
         {
@@ -723,11 +764,12 @@ public class BattleManager : MonoBehaviour
             else // Empate
             {
                 Debug.Log("Empate! Ambos destruídos.");
-                if (!wabokuActive)
+                bool kishido = GameManager.Instance.IsCardActiveOnField("1023");
+                if (!wabokuActive && !kishido)
                 {
                     DestroyMonsterInBattle(target);
                 }
-                if (!attackerIsRocketWarrior && !wabokuActive) {
+                if (!attackerIsRocketWarrior && !wabokuActive && !kishido) {
                     DestroyMonsterInBattle(attacker);
                 }
             }
@@ -746,6 +788,12 @@ public class BattleManager : MonoBehaviour
             else if (atk < def)
             {
                 int damage = def - atk;
+
+                // 1068 - Legendary Jujitsu Master
+                if (target.CurrentCardData.id == "1068") {
+                    Debug.Log("Legendary Jujitsu Master: Atacante retornado ao topo do deck.");
+                    GameManager.Instance.ReturnToDeck(attacker, true);
+                }
 
                 // 1165 - Marshmallon (Dano por atacar face-down)
                 if (target.CurrentCardData.id == "1165" && targetWasFaceDown)

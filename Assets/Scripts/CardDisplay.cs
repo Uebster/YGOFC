@@ -64,6 +64,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     [HideInInspector] public bool isTributeSummoned = false; // Novo: Rastreia Invocação por Tributo
     [HideInInspector] public int tributeCount = 0; // Quantos monstros foram tributados para invocar esta carta
+    [HideInInspector] public bool originalOwnerIsPlayer = false; // Para Remove Brainwashing
+    [HideInInspector] public bool scheduledForBanishment = false; // Para Return from the Different Dimension
 
     // Sistema Trap Monster
     [HideInInspector] public bool isTrapMonster = false;
@@ -252,6 +254,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         currentCardData = card;
         backTexture = cardBackTexture;
         isFlipped = !startFaceUp; // Se startFaceUp for false, isFlipped será true (verso)
+        originalOwnerIsPlayer = isPlayerCard; // Grava o dono original ao criar
 
         // Inicializa stats
         originalAtk = card.atk;

@@ -267,6 +267,11 @@ public class GameManager : MonoBehaviour
     public bool revealOpponentDraw = false; // Pikeru's Second Sight (1431)
     private UnityWebRequest backTextureRequest; // Para evitar memory leak
 
+    [HideInInspector] public int lpPaidThisTurnPlayer = 0;
+    [HideInInspector] public int lpPaidLastTurnPlayer = 0;
+    [HideInInspector] public int lpPaidThisTurnOpponent = 0;
+    [HideInInspector] public int lpPaidLastTurnOpponent = 0;
+
     // --- ESTADO DE SELEÇÃO DE MÃO ---
     [HideInInspector] public bool isSelectingFromHand = false;
     private List<CardData> handSelectionCandidates;
@@ -984,8 +989,14 @@ public void ShuffleDeck(bool isPlayer)
         int currentLP = isPlayer ? playerLP : opponentLP;
         if (currentLP < amount) return false; // Não pode pagar
 
-        if (isPlayer) playerLP -= amount;
-        else opponentLP -= amount;
+        if (isPlayer) {
+            playerLP -= amount;
+            lpPaidThisTurnPlayer += amount;
+        }
+        else {
+            opponentLP -= amount;
+            lpPaidThisTurnOpponent += amount;
+        }
 
         UpdateLPUI();
         Debug.Log($"{(isPlayer ? "Player" : "Oponente")} pagou {amount} LP.");
@@ -1213,6 +1224,15 @@ public void ShuffleDeck(bool isPlayer)
     public void SwitchTurn()
     {
         isPlayerTurn = !isPlayerTurn;
+
+        if (isPlayerTurn) {
+            lpPaidLastTurnPlayer = lpPaidThisTurnPlayer;
+            lpPaidThisTurnPlayer = 0;
+        } else {
+            lpPaidLastTurnOpponent = lpPaidThisTurnOpponent;
+            lpPaidThisTurnOpponent = 0;
+        }
+
         if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
 
         // Atualiza as cores de hover dos botões de fase para o turno atual
