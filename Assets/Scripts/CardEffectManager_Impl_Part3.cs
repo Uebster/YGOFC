@@ -1494,14 +1494,12 @@ public partial class CardEffectManager
 
     void Effect_1182_MasterMonk(CardDisplay source)
     {
-        // Effect: Cannot be Normal Summoned. SS by tributing Monk Fighter. Can attack twice.
-        Debug.Log("Master Monk: Ataque duplo (Lógica no OnBattleEnd).");
+        Debug.Log("Master Monk: Ataque duplo configurado em OnSummonImpl.");
     }
 
     void Effect_1184_MatazaTheZapper(CardDisplay source)
     {
-        // Effect: Can attack twice. Control cannot switch.
-        Debug.Log("Mataza: Ataque duplo e controle fixo (Lógica no OnBattleEnd).");
+        Debug.Log("Mataza: Ataque duplo configurado em OnSummonImpl.");
     }
 
     void Effect_1186_MaximumSix(CardDisplay source)
@@ -2163,8 +2161,7 @@ public partial class CardEffectManager
     // 1259 - Mokey Mokey Smackdown
     void Effect_1259_MokeyMokeySmackdown(CardDisplay source)
     {
-        // Continuous: While face-up Mokey Mokey exists, if Fairy destroyed, Mokey Mokeys gain 3000 ATK.
-        // Lógica implementada no OnCardSentToGraveyard.
+        Debug.Log("Mokey Mokey Smackdown: Resolvido no trigger OnCardSentToGraveyard.");
     }
 
     // 1261 - Molten Destruction
@@ -3346,8 +3343,7 @@ public partial class CardEffectManager
     // 1400 - Pandemonium
     void Effect_1400_Pandemonium(CardDisplay source)
     {
-        // If Archfiend destroyed -> Search
-        // Lógica implementada no OnCardSentToGraveyard.
+        Debug.Log("Pandemonium: Busca resolvida no trigger OnCardSentToGraveyard.");
     }
 
     // 1401 - Pandemonium Watchbear
@@ -3362,9 +3358,7 @@ public partial class CardEffectManager
     // 1402 - Panther Warrior
     void Effect_1402_PantherWarrior(CardDisplay source)
     {
-        // This card cannot declare an attack unless you Tribute 1 monster.
-        // Lógica implementada no BattleManager.
-        Debug.Log("Panther Warrior: Requer tributo para atacar (Verificado no BattleManager).");
+        Debug.Log("Panther Warrior: Requer tributo para atacar (Resolvido no OnAttackDeclaredRoutine).");
     }
 
     // 1403 - Paralyzing Potion
@@ -3923,9 +3917,7 @@ public partial class CardEffectManager
     // 1470 - Pyramid of Light
     void Effect_1470_PyramidOfLight(CardDisplay source)
     {
-        // If removed from field: Destroy Andro Sphinx and Sphinx Teleia.
-        // Lógica implementada no OnCardLeavesField.
-        Debug.Log("Pyramid of Light: Vínculo com Esfinges ativo.");
+        Debug.Log("Pyramid of Light: Vínculo com Esfinges ativo (Resolvido no OnCardLeavesField).");
     }
 
     // 1471 - Pyro Clock of Destiny

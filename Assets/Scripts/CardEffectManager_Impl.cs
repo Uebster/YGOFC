@@ -204,9 +204,11 @@ public partial class CardEffectManager
         // 1402 - Panther Warrior
         if (attacker.CurrentCardData.id == "1402")
         {
-            // Requer tributo para atacar (Lógica simplificada: permite se tiver outro monstro, mas não consome aqui)
-            // Em um sistema ideal, abriria popup.
-            Debug.Log("Panther Warrior: Tributo necessário (Lógica de custo pendente).");
+            int myMonsterCount = GameManager.Instance.GetMonsterCount(attacker.isPlayerCard);
+            if (myMonsterCount < 2) { // Ele mesmo + 1 tributo
+                Debug.Log("Panther Warrior: Não há monstros suficientes para tributar.");
+                return false;
+            }
         }
 
         // Array of Revealing Light (0108)
@@ -1540,14 +1542,6 @@ public partial class CardEffectManager
             Effect_SpecialSummonFromDeck(null, maxAtk: 1500, isPlayerOverride: isOwnerPlayer);
         }
 
-        // 1010 - Keldo
-        if (card.id == "1010" && !isOwnerPlayer && reason == SendReason.Battle) // Destruído por batalha
-        {
-            // Shuffle 2 cards from opp GY to Deck
-            Debug.Log("Keldo: Embaralhando 2 cartas do GY do oponente no Deck.");
-            // Lógica de seleção e shuffle
-        }
-
         // Despair from the Dark (0480): SS se enviado do Hand/Deck pelo oponente
         if (card.id == "0480" && isOwnerPlayer) // Se foi para o MEU cemitério
         {
@@ -1609,18 +1603,26 @@ public partial class CardEffectManager
         }
 
         // 1438 - Pixie Knight
-        if (card.id == "1438" && !isOwnerPlayer && reason == SendReason.Battle) // Enviado pelo oponente (batalha)
+        if (card.id == "1438" && reason == SendReason.Battle)
         {
-            // Oponente escolhe Spell no GY e põe no topo do Deck
-            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard(); // GY do dono do Pixie
+            List<CardData> gy = isOwnerPlayer ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
             List<CardData> spells = gy.FindAll(c => c.type.Contains("Spell"));
             if (spells.Count > 0)
             {
-                // Simula escolha do oponente
-                CardData selected = spells[Random.Range(0, spells.Count)];
-                gy.Remove(selected);
-                GameManager.Instance.GetPlayerMainDeck().Insert(0, selected);
-                Debug.Log($"Pixie Knight: Oponente colocou {selected.name} no topo do seu deck.");
+                if (isOwnerPlayer) {
+                    // Oponente (IA) escolhe carta
+                    CardData selected = spells[Random.Range(0, spells.Count)];
+                    gy.Remove(selected);
+                    GameManager.Instance.GetPlayerMainDeck().Insert(0, selected);
+                    Debug.Log($"Pixie Knight: Oponente colocou {selected.name} no topo do seu deck.");
+                } else {
+                    // Jogador escolhe do GY do Oponente
+                    GameManager.Instance.OpenCardSelection(spells, "Pixie Knight: Topo do Deck", (selected) => {
+                        gy.Remove(selected);
+                        GameManager.Instance.GetOpponentMainDeck().Insert(0, selected);
+                        Debug.Log($"Pixie Knight: Você colocou {selected.name} no topo do deck do oponente.");
+                    });
+                }
             }
         }
 
@@ -1690,12 +1692,16 @@ public partial class CardEffectManager
         {
             CheckActiveCards("1259", (smackdown) =>
             {
-                // Verifica se tem Mokey Mokey
                 if (GameManager.Instance.IsCardActiveOnField("1258") || GameManager.Instance.IsCardActiveOnField("Mokey Mokey"))
                 {
-                    // Aplica buff temporário em todos os Mokey Mokeys (Lógica complexa de busca, simplificado para log)
                     Debug.Log("Mokey Mokey Smackdown: Mokey Mokeys ganham 3000 ATK!");
-                    // ApplyBuffToAll("Mokey Mokey", 3000);
+                List<CardDisplay> mokeys = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null) CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, mokeys);
+                foreach(var m in mokeys) {
+                    if (m.CurrentCardData.name == "Mokey Mokey" || m.CurrentCardData.id == "1258") {
+                        m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 3000, smackdown));
+                    }
+                }
                 }
             });
         }
@@ -1754,11 +1760,15 @@ public partial class CardEffectManager
         }
 
         // 1412 - Penguin Knight
-        if (card.id == "1412" && isOwnerPlayer && fromLocation == CardLocation.Deck && reason == SendReason.Mill) // Enviado do Deck ao GY por efeito oponente
+        if (card.id == "1412" && isOwnerPlayer && fromLocation == CardLocation.Deck && (reason == SendReason.Mill || reason == SendReason.Effect))
         {
-            // Shuffle GY into Deck
             Debug.Log("Penguin Knight: GY embaralhado no Deck.");
-            // Lógica de mover GY para Deck e Shuffle
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+            deck.AddRange(gy);
+            gy.Clear();
+            GameManager.Instance.ShuffleDeck(true);
+            if (GameManager.Instance.playerGraveyardDisplay != null) GameManager.Instance.playerGraveyardDisplay.UpdatePile(gy, GameManager.Instance.GetCardBackTexture());
         }
 
         // 1351 - Nitro Unit
@@ -1882,6 +1892,12 @@ public partial class CardEffectManager
     partial void OnSummonImpl(CardDisplay card)
     {
         lastSummonedMonster = card;
+
+        // 1182 - Master Monk / 1184 - Mataza the Zapper
+        if (card.CurrentCardData.id == "1182" || card.CurrentCardData.id == "1184")
+        {
+            card.maxAttacksPerTurn = 2;
+        }
 
         // 1016 - King Tiger Wanghu
         if (card.currentAtk <= 1400 && !card.isFlipped) {
@@ -2160,8 +2176,17 @@ public partial class CardEffectManager
         if (card.CurrentCardData.id == "1470")
         {
             Debug.Log("Pyramid of Light removida: Destruindo Esfinges.");
-            // Encontra Andro e Teleia e destrói/bane
-            // DestroyCards(FindSphinxes(), card.isPlayerCard);
+            List<CardDisplay> toDestroy = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null) {
+                CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, toDestroy);
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, toDestroy);
+            }
+            var sphinxes = toDestroy.FindAll(m => m.CurrentCardData.name == "Andro Sphinx" || m.CurrentCardData.name == "Sphinx Teleia");
+            foreach (var s in sphinxes) {
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(s);
+                GameManager.Instance.RemoveFromPlay(s.CurrentCardData, s.isPlayerCard);
+                Destroy(s.gameObject);
+            }
         }
 
         // 0172 - Big Bang Shot
@@ -2805,6 +2830,22 @@ public partial class CardEffectManager
     {
         bool isWaiting = false;
         bool attackCanceled = false;
+
+        // 1402 - Panther Warrior (Custo de Ataque)
+        if (attacker.CurrentCardData.id == "1402")
+        {
+            isWaiting = true;
+            if (SpellTrapManager.Instance != null) {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard == attacker.isPlayerCard && t != attacker && t.CurrentCardData.type.Contains("Monster"),
+                    (tribute) => {
+                        GameManager.Instance.TributeCard(tribute);
+                        isWaiting = false;
+                    }
+                );
+            }
+            while(isWaiting) yield return null;
+        }
 
         // 0977 - Jirai Gumo
         if (attacker.CurrentCardData.id == "0977" && !attacker.hasUsedEffectThisTurn)
@@ -3584,10 +3625,30 @@ public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
     }
 
     // 1063 - Legacy Hunter
-    if (attacker != null && attacker.CurrentCardData.id == "1063" && target != null) // Se destruiu (verificar se target foi pro GY)
+        if (attacker != null && attacker.CurrentCardData.id == "1063" && target != null)
     {
-        Debug.Log("Legacy Hunter: Oponente embaralha 1 carta da mão no deck.");
-        GameManager.Instance.DiscardRandomHand(!attacker.isPlayerCard, 1); // Deveria ser shuffle
+            bool targetInGY = GameManager.Instance.GetPlayerGraveyard().Contains(target.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(target.CurrentCardData);
+            if (targetInGY)
+            {
+                List<CardData> oppHand = attacker.isPlayerCard ? GameManager.Instance.GetOpponentHandData() : GameManager.Instance.GetPlayerHandData();
+                if (oppHand.Count > 0)
+                {
+                    if (attacker.isPlayerCard) {
+                        CardData toReturn = oppHand[Random.Range(0, oppHand.Count)];
+                        GameManager.Instance.RemoveCardFromHand(toReturn, false);
+                        GameManager.Instance.GetOpponentMainDeck().Add(toReturn);
+                        GameManager.Instance.ShuffleDeck(false);
+                        Debug.Log("Legacy Hunter: Oponente embaralhou 1 carta da mão no deck.");
+                    } else {
+                        GameManager.Instance.OpenCardSelection(oppHand, "Embaralhar 1 no Deck", (selected) => {
+                            GameManager.Instance.RemoveCardFromHand(selected, true);
+                            GameManager.Instance.GetPlayerMainDeck().Add(selected);
+                            GameManager.Instance.ShuffleDeck(true);
+                            Debug.Log("Legacy Hunter: Você embaralhou 1 carta da mão no deck.");
+                        });
+                    }
+                }
+            }
     }
 
     // 1232 - Millennium Scorpion
@@ -3621,10 +3682,20 @@ public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
     // 1311 - Mystical Knight of Jackal
     if (attacker != null && attacker.CurrentCardData.id == "1311" && target != null)
     {
-        // Retorna monstro destruído ao topo do deck
-        // Requer lógica de mover do GY para o Deck (Topo)
-        Debug.Log("Mystical Knight of Jackal: Monstro retornado ao topo do deck.");
-        // GameManager.Instance.ReturnToDeck(target, true);
+            List<CardData> targetGY = target.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
+            if (targetGY.Contains(target.CurrentCardData))
+            {
+                if (UIManager.Instance != null && attacker.isPlayerCard) {
+                    UIManager.Instance.ShowConfirmation("Mystical Knight of Jackal: Colocar oponente destruído no topo do Deck?", () => {
+                        targetGY.Remove(target.CurrentCardData);
+                        GameManager.Instance.GetOpponentMainDeck().Insert(0, target.CurrentCardData);
+                        Debug.Log("Mystical Knight of Jackal: Monstro retornado ao topo do deck.");
+                    });
+                } else if (!attacker.isPlayerCard) {
+                    targetGY.Remove(target.CurrentCardData);
+                    GameManager.Instance.GetPlayerMainDeck().Insert(0, target.CurrentCardData);
+                }
+            }
     }
 
     // 2143 - Zoma the Spirit (Token)
@@ -3956,13 +4027,6 @@ public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
             Debug.Log($"Steel Scorpion: {attacker.CurrentCardData.name} envenenado. Será destruído em 3 turnos.");
         }
     }
-
-    // Master Monk (1182) & Mataza (1184): Reset attack flag for double attack
-    // (Lógica simplificada: Se atacou uma vez, permite atacar de novo resetando a flag)
-    // Isso requer um contador de ataques no CardDisplay, que não temos.
-    // Workaround: Se for um desses monstros, reseta hasAttackedThisTurn se for o primeiro ataque.
-    // Como não sabemos se é o primeiro, isso permitiria ataques infinitos.
-    // Solução correta requer adicionar 'attackCount' no CardDisplay.
 
     // 1762 - Spring of Rebirth & 1755 - Spirit's Invitation (Lógica de retorno à mão)
     // Como não temos um hook explícito OnReturnToHand aqui, verificamos se podemos inferir ou adicionar.
