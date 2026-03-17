@@ -79,6 +79,13 @@ public class SummonManager : MonoBehaviour
         if (requiredTributes <= 0) return true;
         if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return false;
 
+        // 1172 - Mask of Restrict
+        if (GameManager.Instance.IsCardActiveOnField("1172"))
+        {
+            Debug.Log("Tributos bloqueados por Mask of Restrict.");
+            return false;
+        }
+
         int tributeValue = 0;
         Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
 

@@ -1884,6 +1884,13 @@ public void ShuffleDeck(bool isPlayer)
             display.isInteractable = false; // Desativa o hover de mão (subir)
             display.isOnField = true;
 
+            // 1081 - Light of Intervention
+            if (isFaceDown && IsCardActiveOnField("1081"))
+            {
+                isFaceDown = false;
+                Debug.Log("Light of Intervention: Monstro Setado forçado a Face-up Defense.");
+            }
+
             if (isDefensePos)
             {
                 display.position = CardDisplay.BattlePosition.Defense;

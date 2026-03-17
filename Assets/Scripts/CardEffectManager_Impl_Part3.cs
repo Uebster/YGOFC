@@ -337,10 +337,8 @@ public partial class CardEffectManager
 
     void Effect_1056_LastWill(CardDisplay source)
     {
-        // Effect: If monster sent to GY: SS 1 monster with ATK <= 1500 from Deck.
-        // Lógica implementada no OnCardSentToGraveyard.
-        Debug.Log("Last Will: Efeito ativo. Se um monstro for para o GY, poderá invocar do Deck.");
-        // GameManager.Instance.canSpecialSummonLastWill = true;
+        CardEffectManager.Instance.lastWillActive = true;
+        Debug.Log("Last Will: Efeito ativo.");
     }
 
     void Effect_1059_LavaBattleguard(CardDisplay source)
@@ -461,9 +459,7 @@ public partial class CardEffectManager
 
     void Effect_1070_Leghul(CardDisplay source)
     {
-        // Effect: Can attack directly.
-        Debug.Log("Leghul: Ataque direto habilitado.");
-        // Flag no BattleManager ou CardDisplay: source.canAttackDirectly = true;
+        source.canAttackDirectly = true;
     }
 
     void Effect_1071_Lekunga(CardDisplay source)
@@ -580,8 +576,7 @@ public partial class CardEffectManager
 
     void Effect_1081_LightOfIntervention(CardDisplay source)
     {
-        // Effect: Monsters cannot be Set face-down. Monsters Set in Defense are summoned in Face-up Defense.
-        Debug.Log("Light of Intervention: Monstros devem ser invocados face-up (Regra global).");
+        Debug.Log("Light of Intervention: Monstros devem ser invocados face-up (Tratado no GameManager).");
     }
 
     void Effect_1082_LightOfJudgment(CardDisplay source)
@@ -1392,9 +1387,7 @@ public partial class CardEffectManager
 
     void Effect_1172_MaskOfRestrict(CardDisplay source)
     {
-        // Neither player can Tribute cards.
-        Debug.Log("Mask of Restrict: Tributos bloqueados.");
-        // Requer verificação no SummonManager.HasEnoughTributes e GameManager.TributeCard.
+        Debug.Log("Mask of Restrict: Tributos bloqueados (Tratado no SummonManager).");
     }
 
     void Effect_1173_MaskOfWeakness(CardDisplay source)
@@ -1555,14 +1548,13 @@ public partial class CardEffectManager
                         GameManager.Instance.RemoveFromPlay(c, source.isPlayerCard);
                         gy.Remove(c);
                     }
-                    GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                    var summoned = GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
                     GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
                     
-                    // Aplica stats (precisa encontrar a instância invocada, aqui simulamos no source assumindo que ele vira o do campo)
-                    // Em um sistema real, SpecialSummon retorna a instância.
-                    // Workaround: O próximo UpdateStats pegará o valor correto se usarmos uma variável global ou se o CardDisplay tiver lógica interna.
-                    // Aqui aplicamos um modificador "cego" que pode não funcionar se a referência 'source' for a da mão destruída.
-                    Debug.Log($"Megarock Dragon: +{selected.Count * 700} ATK/DEF.");
+                    if (summoned != null) {
+                        summoned.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, selected.Count * 700, summoned));
+                        summoned.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, selected.Count * 700, summoned));
+                    }
                 });
             }
         }
@@ -1955,11 +1947,18 @@ public partial class CardEffectManager
         if (heroes.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(heroes, "Miracle Fusion", (fusionTarget) => {
-                // Lógica simplificada: Assume que tem materiais e bane 2 do GY aleatoriamente ou pede seleção
-                // Em produção: Verificar materiais específicos do fusionTarget
-                Debug.Log($"Miracle Fusion: Invocando {fusionTarget.name} (Banimento de materiais pendente).");
-                GameManager.Instance.SpecialSummonFromData(fusionTarget, source.isPlayerCard);
-                extra.Remove(fusionTarget);
+                List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+                if (gy.Count > 0) {
+                    int max = Mathf.Min(5, gy.Count);
+                    GameManager.Instance.OpenCardMultiSelection(gy, "Banir materiais", 1, max, (materials) => {
+                        foreach(var m in materials) {
+                            GameManager.Instance.RemoveFromPlay(m, source.isPlayerCard);
+                            gy.Remove(m);
+                        }
+                        GameManager.Instance.SpecialSummonFromData(fusionTarget, source.isPlayerCard);
+                        extra.Remove(fusionTarget);
+                    });
+                }
             });
         }
     }
@@ -2060,14 +2059,30 @@ public partial class CardEffectManager
         {
             if (SpellTrapManager.Instance != null)
             {
-                // Seleciona até 2 alvos (S/T)
-                // Como o sistema de seleção múltipla atual é genérico, usamos ele filtrando por S/T
-                List<CardDisplay> validTargets = new List<CardDisplay>();
-                // Coleta S/T do campo
-                // ... (Lógica de coleta simplificada)
-                
-                Debug.Log("Mobius: Selecione até 2 S/T para destruir (Simulado: Destrói 1 S/T aleatória do oponente).");
-                Effect_MST(source); // Fallback para 1 alvo
+                List<CardDisplay> st = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null) {
+                    CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, st);
+                    CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, st);
+                }
+                if (st.Count > 0) {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t) => t.isOnField && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")),
+                        (t1) => {
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t1);
+                            GameManager.Instance.SendToGraveyard(t1.CurrentCardData, t1.isPlayerCard);
+                            Destroy(t1.gameObject);
+                            st.Remove(t1);
+                            if (st.Count > 0 && UIManager.Instance != null) {
+                                UIManager.Instance.ShowConfirmation("Destruir mais uma S/T?", () => {
+                                    SpellTrapManager.Instance.StartTargetSelection((t2) => t2.isOnField && (t2.CurrentCardData.type.Contains("Spell") || t2.CurrentCardData.type.Contains("Trap")), (t3) => {
+                                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t3);
+                                        GameManager.Instance.SendToGraveyard(t3.CurrentCardData, t3.isPlayerCard);
+                                        Destroy(t3.gameObject);
+                                    });
+                                }, null);
+                            }
+                        });
+                }
             }
         }
     }
@@ -3171,8 +3186,16 @@ public partial class CardEffectManager
     // 1384 - Opti-Camouflage Armor
     void Effect_1384_OptiCamouflageArmor(CardDisplay source)
     {
-        // Equip a Lv1, Direct Attack.
-        Debug.Log("Opti-Camouflage Armor: Equipa em Lv1, pode atacar direto.");
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && t.CurrentCardData.level == 1 && !t.isFlipped,
+                (target) => {
+                    target.canAttackDirectly = true;
+                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
+                }
+            );
+        }
     }
 
     // 1387 - Ordeal of a Traveler
@@ -3259,10 +3282,11 @@ public partial class CardEffectManager
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && t.isPlayerCard && !t.CurrentCardData.type.Contains("Machine"),
+                (t) => t.isOnField && !t.CurrentCardData.type.Contains("Machine"),
                 (t) => {
+                    t.cannotAttackThisTurn = true;
+                    GameManager.Instance.CreateCardLink(source, t, CardLink.LinkType.Continuous);
                     Debug.Log($"Paralyzing Potion: {t.CurrentCardData.name} não pode atacar.");
-                    // Lógica de impedir ataque
                 }
             );
         }
@@ -3433,16 +3457,14 @@ public partial class CardEffectManager
             if (selectedDiscard != null)
             {
                 GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == selectedDiscard).GetComponent<CardDisplay>());
-                Debug.Log("Phoenix Wing Wind Blast: Descarte 1 carta (pendente).");
         
-                // UI de seleção do GY
-                List<CardData> oppField = GameManager.Instance.GetOpponentHandData();
-                SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField,
-                (t) => {
-                    Debug.Log($"Phoenix Wing Wind Blast: Carta retornada ao topo do deck.");
+                if (SpellTrapManager.Instance != null) {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isPlayerCard,
+                    (target) => {
+                        GameManager.Instance.ReturnToDeck(target, true);
+                    });
                 }
-            );
             }
         });
     }
@@ -3455,9 +3477,9 @@ public partial class CardEffectManager
         // 1430 - Pikeru's Circle of Enchantment
     void Effect_1430_PikerusCircleOfEnchantment(CardDisplay source)
     {
-        // Damage to you from card effects becomes 0 until the end of this turn.
-        Debug.Log("Pikeru's Circle: Dano de efeito 0 neste turno.");
-        // GameManager.Instance.immuneToEffectDamage = true; // Necessário adicionar flag no GM
+        if (source.isPlayerCard) CardEffectManager.Instance.pikerusCircleActivePlayer = true;
+        else CardEffectManager.Instance.pikerusCircleActiveOpponent = true;
+        Debug.Log("Pikeru's Circle of Enchantment: Imunidade a dano de efeito ativada neste turno.");
     }
 
             void Effect_1431_PikerusSecondSight(CardDisplay source)
@@ -3558,8 +3580,12 @@ public partial class CardEffectManager
 
     void Effect_1442_PoisonOfTheOldMan(CardDisplay source)
     {
-        // Target 1 player; either gain 1200 LP or inflict 800 damage to that player.
-        Debug.Log("Poison Of The Old Man: cura ou dano");
+        if (UIManager.Instance != null) {
+            UIManager.Instance.ShowConfirmation("Poison of the Old Man: Ganhar 1200 LP (Sim) ou Causar 800 de Dano (Não)?",
+                () => { Effect_GainLP(source, 1200); },
+                () => { Effect_DirectDamage(source, 800); }
+            );
+        }
     }
 
     void Effect_1443_PolePosition(CardDisplay source)
@@ -3582,7 +3608,16 @@ public partial class CardEffectManager
 
     void Effect_1446_PotOfGenerosity(CardDisplay source)
     {
-        Debug.Log("Pot of Generosity: Devolve 2 ao deck");
+        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        if (hand.Count >= 2) {
+            GameManager.Instance.OpenCardMultiSelection(hand, "Retornar 2 cartas ao Deck", 2, 2, (selected) => {
+                foreach (var c in selected) {
+                    GameManager.Instance.RemoveCardFromHand(c, source.isPlayerCard);
+                    GameManager.Instance.GetPlayerMainDeck().Add(c);
+                }
+                GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+            });
+        }
     }
 
     void Effect_1447_PotOfGreed(CardDisplay source)
@@ -3869,8 +3904,9 @@ public partial class CardEffectManager
     // 1484 - Rainbow Flower
     void Effect_1484_RainbowFlower(CardDisplay source)
     {
-        // Can attack directly. -400 ATK/DEF.
-        Debug.Log("Rainbow Flower: Ataque direto.");
+        source.canAttackDirectly = true;
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -400, source));
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -400, source));
     }
 
     // 1486 - Raise Body Heat
@@ -3975,8 +4011,7 @@ public partial class CardEffectManager
     // 1497 - Reaper on the Nightmare
     void Effect_1497_ReaperOnTheNightmare(CardDisplay source)
     {
-        // Direct attack. Discard 1 random from opp hand.
-        Debug.Log("Reaper on the Nightmare: Ataque direto e descarte.");
+        source.canAttackDirectly = true;
     }
 
     // 1498 - Reasoning

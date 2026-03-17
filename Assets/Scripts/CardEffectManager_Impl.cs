@@ -22,6 +22,9 @@ public partial class CardEffectManager
 
     public int powerBondDamageToPlayer = 0;
     public int powerBondDamageToOpponent = 0;
+    public bool lastWillActive = false;
+    public bool pikerusCircleActivePlayer = false;
+    public bool pikerusCircleActiveOpponent = false;
 
     // --- VARIÁVEIS DE TRACKING (SISTEMA 5) ---
     public int finalCountdownTurnsLeft = 0;
@@ -839,6 +842,10 @@ public partial class CardEffectManager
                 powerBondDamageToOpponent = 0;
             }
 
+            lastWillActive = false;
+            pikerusCircleActivePlayer = false;
+            pikerusCircleActiveOpponent = false;
+
         // 0168 - Berserk Dragon
         CheckActiveCards("0168", (card) => {
             card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -500, card));
@@ -1335,6 +1342,13 @@ public partial class CardEffectManager
                     Effect_SearchDeck(null, "Elemental HERO", "Monster", 9999, 4); 
                 });
             }
+        }
+
+        // 1056 - Last Will
+        if (lastWillActive && isOwnerPlayer && card.type.Contains("Monster") && fromLocation == CardLocation.Field)
+        {
+            lastWillActive = false;
+            Effect_SpecialSummonFromDeck(null, maxAtk: 1500, isPlayerOverride: isOwnerPlayer);
         }
 
         // 1010 - Keldo
@@ -1995,6 +2009,12 @@ public partial class CardEffectManager
                 GameManager.Instance.MillCards(false, 1);
             }
         });
+
+        // 1497 - Reaper on the Nightmare
+        if (attacker.CurrentCardData.id == "1497" && amount > 0)
+        {
+            GameManager.Instance.DiscardRandomHand(!attacker.isPlayerCard, 1);
+        }
 
         // 2030 - Vampire Lady
         if (attacker.CurrentCardData.id == "2030" && attacker.isPlayerCard && amount > 0)
@@ -3900,6 +3920,16 @@ void Effect_DirectDamage(CardDisplay source, int amount)
 
         if (hasWombat) {
             Debug.Log("Des Wombat: Dano de efeito prevenido a 0.");
+            return;
+        }
+
+        // 1430 - Pikeru's Circle of Enchantment
+        if (!targetOpponent && pikerusCircleActivePlayer) {
+            Debug.Log("Pikeru's Circle: Dano de efeito ao Player prevenido.");
+            return;
+        }
+        if (targetOpponent && pikerusCircleActiveOpponent) {
+            Debug.Log("Pikeru's Circle: Dano de efeito ao Oponente prevenido.");
             return;
         }
 
