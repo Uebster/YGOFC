@@ -2707,6 +2707,11 @@ public void ShuffleDeck(bool isPlayer)
         GameObject linkObj = new GameObject($"Link_{source.name}_{target.name}");
         CardLink link = linkObj.AddComponent<CardLink>();
         link.Initialize(source, target, type);
+
+        if (type == CardLink.LinkType.Equipment && CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.OnCardEquipped(source, target);
+        }
     }
 
     public void BeginFusionSummon(CardDisplay sourceCard)

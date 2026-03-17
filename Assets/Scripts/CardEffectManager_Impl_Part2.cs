@@ -438,24 +438,30 @@ public partial class CardEffectManager
 
     void Effect_0530_DragonPiper(CardDisplay source)
     {
-        // FLIP: Destroy all "Dragon Capture Jar". Change all face-up Dragons to Attack Position.
-        // Destroy Jars
-        List<CardDisplay> jars = new List<CardDisplay>();
-        // ... (Logic to find jars in S/T zones) ...
-        // Simplified: Check active cards
-        // Change Dragons
-        if (GameManager.Instance.duelFieldUI != null)
+        if (source.isFlipped)
         {
+            List<CardDisplay> jars = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, jars);
+                CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, jars);
+            }
+            foreach(var jar in jars) {
+                if (jar.CurrentCardData.name == "Dragon Capture Jar" || jar.CurrentCardData.id == "0527") {
+                    GameManager.Instance.SendToGraveyard(jar.CurrentCardData, jar.isPlayerCard);
+                    Destroy(jar.gameObject);
+                }
+            }
+            
             List<CardDisplay> allMonsters = new List<CardDisplay>();
-            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allMonsters);
-            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allMonsters);
-
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, allMonsters);
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, allMonsters);
+            }
             foreach (var m in allMonsters)
             {
-                if (m.CurrentCardData.race == "Dragon" && m.position == CardDisplay.BattlePosition.Defense)
-                {
-                    m.ChangePosition();
-                }
+                if (m.CurrentCardData.race == "Dragon" && m.position == CardDisplay.BattlePosition.Defense) m.ChangePosition();
             }
         }
     }
@@ -556,8 +562,23 @@ public partial class CardEffectManager
 
     void Effect_0541_DramaticRescue(CardDisplay source)
     {
-        // Activate when Amazoness targeted. Return to hand, SS another monster.
-        Debug.Log("Dramatic Rescue: Resgate de Amazoness.");
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name.Contains("Amazoness"),
+                (target) => {
+                    GameManager.Instance.ReturnToHand(target);
+                    List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+                    List<CardData> monsters = hand.FindAll(c => c.type.Contains("Monster"));
+                    if (monsters.Count > 0) {
+                        GameManager.Instance.OpenCardSelection(monsters, "Invocar Monstro", (selected) => {
+                            GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                            GameManager.Instance.RemoveCardFromHand(selected, source.isPlayerCard);
+                        });
+                    }
+                }
+            );
+        }
     }
 
     void Effect_0542_DreamClown(CardDisplay source)
@@ -784,9 +805,20 @@ public partial class CardEffectManager
 
     void Effect_0564_EkibyoDrakmord(CardDisplay source)
     {
-        // Equip opp monster. Cannot attack. Destroy at end of opp 2nd turn.
-        Effect_Equip(source, 0, 0);
-        Debug.Log("Ekibyo Drakmord: Equipado. (Lógica de destruição retardada pendente).");
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                (target) => {
+                    Effect_Equip(source, 0, 0); 
+                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Equipment);
+                    target.cannotAttackThisTurn = true;
+                    target.destructionTurnCountdown = 2;
+                    target.destructionCountdownOwnerIsPlayer = !source.isPlayerCard;
+                    Debug.Log($"Ekibyo Drakmord: Equipado em {target.CurrentCardData.name}. Destruição em 2 turnos.");
+                }
+            );
+        }
     }
 
     void Effect_0566_ElectricLizard(CardDisplay source)
@@ -1053,26 +1085,23 @@ public partial class CardEffectManager
 
     void Effect_0592_EmergencyProvisions(CardDisplay source)
     {
-        // Send any number of S/T to GY; gain 1000 LP each.
-        // Requer seleção múltipla de S/T no campo.
-        bool hasOtherST = false;
+        List<CardDisplay> myST = new List<CardDisplay>();
         if (GameManager.Instance.duelFieldUI != null)
         {
-            List<Transform> myST = new List<Transform>();
-            myST.AddRange(GameManager.Instance.duelFieldUI.playerSpellZones);
-            myST.Add(GameManager.Instance.duelFieldUI.playerFieldSpell);
-            
-            foreach (var z in myST)
-            {
-                if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>() != source) hasOtherST = true;
-            }
+            CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, myST);
+            CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.playerFieldSpell }, myST);
+            myST.Remove(source);
         }
-        if (!hasOtherST)
+        
+        if (myST.Count > 0)
         {
-            UIManager.Instance.ShowMessage("Você não controla outras Magias ou Armadilhas.");
-            return;
+            int count = myST.Count;
+            foreach(var st in myST) {
+                GameManager.Instance.SendToGraveyard(st.CurrentCardData, st.isPlayerCard);
+                Destroy(st.gameObject);
+            }
+            Effect_GainLP(source, count * 1000);
         }
-        Debug.Log("Emergency Provisions: Envie S/T para ganhar LP (Seleção múltipla pendente).");
     }
 
     void Effect_0593_EmesTheInfinity(CardDisplay source)
@@ -1267,17 +1296,13 @@ public partial class CardEffectManager
 
             foreach (var m in allMonsters)
             {
-                // Verifica se tem modificadores do tipo Equipment
-                // (Simplificação: assume que se tem modificador de equip, está equipado)
-                // Idealmente, verificaríamos os links de cartas.
-                // Como não temos acesso fácil aos links aqui, vamos checar se há alguma carta de Equipamento no campo linkada a ele?
-                // Por enquanto, vamos destruir se tiver qualquer modificador de equipamento.
-                // (Necessário expor activeModifiers ou similar no CardDisplay)
-                // Assumindo que não temos acesso fácil, logamos.
-                Debug.Log($"Eternal Rest: Verificando {m.CurrentCardData.name} (Lógica de detecção de equipamento pendente).");
+                if (CardEffectManager.Instance.GetEquippedCards(m).Count > 0)
+                {
+                    toDestroy.Add(m);
+                }
             }
         }
-        // DestroyCards(toDestroy, source.isPlayerCard);
+        DestroyCards(toDestroy, source.isPlayerCard);
     }
 
     void Effect_0611_ExarionUniverse(CardDisplay source)
@@ -2014,20 +2039,28 @@ public partial class CardEffectManager
 
     void Effect_0697_FrontlineBase(CardDisplay source)
     {
-        // Once per turn: SS 1 Union from hand.
-        Debug.Log("Frontline Base: Pode invocar Union da mão.");
+        List<CardData> hand = source.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+        List<CardData> unions = hand.FindAll(c => c.description.Contains("Union") && c.level <= 4);
+        
+        if (unions.Count > 0)
+        {
+            GameManager.Instance.OpenCardSelection(unions, "Invocar Union", (selected) => {
+                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                GameManager.Instance.RemoveCardFromHand(selected, source.isPlayerCard);
+            });
+        }
     }
 
     void Effect_0698_FrozenSoul(CardDisplay source)
     {
-        // If you control no monsters: Discard 1; Opponent skips next Battle Phase.
-        if (GameManager.Instance.opponentLP < GameManager.Instance.playerLP + 2000)
-        {
+        int myLp = source.isPlayerCard ? GameManager.Instance.playerLP : GameManager.Instance.opponentLP;
+        int oppLp = source.isPlayerCard ? GameManager.Instance.opponentLP : GameManager.Instance.playerLP;
+        
+        if (myLp <= oppLp - 2000) {
+            if (PhaseManager.Instance != null) PhaseManager.Instance.RegisterSkipNextPhase(!source.isPlayerCard, GamePhase.Battle);
+        } else {
             UIManager.Instance.ShowMessage("Seus LP devem estar no mínimo 2000 pontos abaixo dos do oponente.");
-            return;
         }
-
-        Debug.Log("Frozen Soul: Pula Battle Phase do oponente.");
     }
 
     void Effect_0699_FruitsOfKozakysStudies(CardDisplay source)
@@ -2189,8 +2222,7 @@ public partial class CardEffectManager
 
     void Effect_0707_FusionGate(CardDisplay source)
     {
-        // Field Spell: Fusion Summon without Polymerization (banish materials).
-        Debug.Log("Fusion Gate: Fusão por banimento.");
+        GameManager.Instance.BeginFusionSummon(source); 
     }
 
     void Effect_0708_FusionRecovery(CardDisplay source)
@@ -2282,8 +2314,17 @@ public partial class CardEffectManager
 
     void Effect_0716_GaiaSoul(CardDisplay source)
     {
-        // Tribute up to 2 Pyro monsters; this card gains 1000 ATK for each.
-        Debug.Log("Gaia Soul: Tributo para ATK.");
+        if (SpellTrapManager.Instance != null && source.isOnField)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.race == "Pyro" && t != source,
+                (tribute) => {
+                    GameManager.Instance.TributeCard(tribute);
+                    source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 1000, source));
+                    Debug.Log("Gaia Soul: Ganhou 1000 ATK.");
+                }
+            );
+        }
     }
 
     void Effect_0719_GaleDogra(CardDisplay source)
@@ -2340,7 +2381,7 @@ public partial class CardEffectManager
 
     void Effect_0725_GarmaSwordOath(CardDisplay source)
     {
-        Debug.Log("Garma Sword Oath: Ritual.");
+        GameManager.Instance.BeginRitualSummon(source);
     }
 
     void Effect_0728_GarudaTheWindSpirit(CardDisplay source)
@@ -2374,8 +2415,27 @@ public partial class CardEffectManager
 
     void Effect_0731_GateGuardian(CardDisplay source)
     {
-        // SS by Tributing Sanga, Kazejin, Suijin.
-        Debug.Log("Gate Guardian: Invocação complexa (Requer 3 tributos específicos).");
+        if (!source.isOnField)
+        {
+            bool hasSanga = GameManager.Instance.IsCardActiveOnField("1586") || GameManager.Instance.IsCardActiveOnField("Sanga of the Thunder");
+            bool hasKazejin = GameManager.Instance.IsCardActiveOnField("1008") || GameManager.Instance.IsCardActiveOnField("Kazejin");
+            bool hasSuijin = GameManager.Instance.IsCardActiveOnField("1788") || GameManager.Instance.IsCardActiveOnField("Suijin");
+            
+            if (hasSanga && hasKazejin && hasSuijin)
+            {
+                List<CardDisplay> toTribute = new List<CardDisplay>();
+                if (GameManager.Instance.duelFieldUI != null) CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, toTribute);
+                
+                foreach(var m in toTribute.ToList()) {
+                    string id = m.CurrentCardData.id;
+                    if (id == "1586" || id == "1008" || id == "1788") GameManager.Instance.TributeCard(m);
+                }
+
+                GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
+                GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+            }
+            else { UIManager.Instance.ShowMessage("Requer Sanga, Kazejin e Suijin no campo."); }
+        }
     }
 
     void Effect_0733_GatherYourMind(CardDisplay source)
@@ -2408,11 +2468,9 @@ public partial class CardEffectManager
 
     void Effect_0736_GearGolemTheMovingFortress(CardDisplay source)
     {
-        // Pay 800 LP; attack directly.
         if (Effect_PayLP(source, 800))
         {
-            Debug.Log("Gear Golem: Pode atacar diretamente este turno.");
-            // source.canAttackDirectly = true;
+            source.canAttackDirectly = true;
         }
     }
 
@@ -4143,10 +4201,23 @@ public partial class CardEffectManager
 
     void Effect_0974_JigenBakudan(CardDisplay source)
     {
-        // FLIP: Destroy all monsters. Both take damage = Total ATK / 2.
-        // Simplificado: Destrói e causa dano fixo ou calculado se possível
-        Debug.Log("Jigen Bakudan: Destruição total e dano.");
-        DestroyAllMonsters(true, true);
+        if (source.isFlipped)
+        {
+            List<CardDisplay> myMonsters = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null) CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, myMonsters);
+            
+            int totalAtk = myMonsters.Sum(m => m.currentAtk);
+            DestroyAllMonsters(true, true);
+            
+            int dmg = totalAtk / 2;
+            if (source.isPlayerCard) GameManager.Instance.DamagePlayer(dmg); else GameManager.Instance.DamageOpponent(dmg);
+            Effect_DirectDamage(source, dmg);
+        }
+        else if (!source.hasUsedEffectThisTurn)
+        {
+            Effect_TurnSet(source);
+            source.hasUsedEffectThisTurn = true;
+        }
     }
 
     void Effect_0975_Jinzo(CardDisplay source)
@@ -4157,38 +4228,88 @@ public partial class CardEffectManager
 
     void Effect_0976_Jinzo7(CardDisplay source)
     {
-        // Can attack directly.
-        Debug.Log("Jinzo #7: Ataque direto (Passivo).");
+        source.canAttackDirectly = true;
     }
 
     void Effect_0977_JiraiGumo(CardDisplay source)
     {
-        // When attacking: Toss coin. Tails: Lose half LP.
-        Debug.Log("Jirai Gumo: Custo de ataque (Moeda).");
+        Debug.Log("Jirai Gumo: Efeito de moeda transferido para OnAttackDeclaredRoutine.");
     }
 
     void Effect_0979_JowgenTheSpiritualist(CardDisplay source)
     {
-        // Discard 1 random card; destroy all SS monsters. Neither player can SS.
-        Debug.Log("Jowgen: Bloqueio de SS e destruição.");
+        List<CardData> hand = source.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+        if (hand.Count > 0)
+        {
+            GameManager.Instance.DiscardRandomHand(source.isPlayerCard, 1);
+            
+            Debug.Log("Jowgen: Descartou 1 carta. Destruindo monstros Special Summoned.");
+            List<CardDisplay> toDestroy = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, toDestroy);
+                CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, toDestroy);
+            }
+            foreach(var m in toDestroy) if (m.wasSpecialSummoned) {
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(m);
+                GameManager.Instance.SendToGraveyard(m.CurrentCardData, m.isPlayerCard);
+                Destroy(m.gameObject);
+            }
+        }
     }
 
     void Effect_0980_JowlsOfDarkDemise(CardDisplay source)
     {
-        // FLIP: Take control of 1 monster until End Phase.
-        Effect_ChangeControl(source, true);
+        if (source.isFlipped)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                    (target) => GameManager.Instance.SwitchControl(target)
+                );
+            }
+        }
+        else if (!source.hasUsedEffectThisTurn)
+        {
+            Effect_TurnSet(source);
+            source.hasUsedEffectThisTurn = true;
+        }
     }
 
     void Effect_0982_JudgmentOfAnubis(CardDisplay source)
     {
-        // Counter Trap: Discard 1. Negate S/T destruction effect. Destroy monster & burn.
-        Debug.Log("Judgment of Anubis: Counter complexo.");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell"))
+        {
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            if (hand.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
+                    GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                    NegateAndDestroy(source, link);
+                    
+                    if (SpellTrapManager.Instance != null) {
+                        SpellTrapManager.Instance.StartTargetSelection(
+                            (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                            (target) => {
+                                int atk = target.currentAtk;
+                                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                                Destroy(target.gameObject);
+                                Effect_DirectDamage(source, atk);
+                            }
+                        );
+                    }
+                });
+            }
+        }
     }
 
     void Effect_0983_JudgmentOfTheDesert(CardDisplay source)
     {
-        // Face-up monsters cannot change battle position.
-        Debug.Log("Judgment of the Desert: Posições travadas.");
+        if (BattleManager.Instance != null) BattleManager.Instance.battlePositionsLocked = true;
+        Debug.Log("Judgment of the Desert: Posições travadas (integrado ao BattleManager).");
     }
 
     void Effect_0984_JudgmentOfThePharaoh(CardDisplay source)
@@ -4254,8 +4375,6 @@ public partial class CardEffectManager
 
     void Effect_0998_KaminoteBlow(CardDisplay source)
     {
-        // If "Chu-Ske the Mouse Fighter", "Monk Fighter", or "Master Monk" battles, destroy opponent's monster at start of Damage Step.
-        // Lógica no OnDamageCalculation.
-        Debug.Log("Kaminote Blow: Destruição automática para Monks.");
+        Debug.Log("Kaminote Blow: Efeito transferido para OnAttackDeclaredRoutine.");
     }
 }

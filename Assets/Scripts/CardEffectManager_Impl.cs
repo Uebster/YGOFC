@@ -27,6 +27,8 @@ public partial class CardEffectManager
     public int playerDrawsThisTurn = 0;
     public int opponentDrawsThisTurn = 0;
     public CardDisplay lastSummonedMonster = null;
+    
+    public bool trapsBlockedThisTurn = false; // Forced Ceasefire (0685)
 
     // --- VALIDAÇÃO DE ATAQUE (Movido do BattleManager) ---
 
@@ -209,6 +211,13 @@ public partial class CardEffectManager
             }
         }
 
+        // 0787 - Gora Turtle
+        if (attacker.currentAtk >= 1900 && GameManager.Instance.IsCardActiveOnField("0787"))
+        {
+            Debug.Log("Ataque impedido por Gora Turtle.");
+            return false;
+        }
+
         return true;
     }
 
@@ -383,6 +392,8 @@ public partial class CardEffectManager
             
             playerDrawsThisTurn = 0;
             opponentDrawsThisTurn = 0;
+            
+            trapsBlockedThisTurn = false;
 
             // Cyber Archfiend (0357): Se mão vazia na Draw Phase, compra +1
             CheckActiveCards("0357", (card) =>
@@ -1529,6 +1540,24 @@ public partial class CardEffectManager
             ExecuteCardEffect(card);
         }
 
+        // 0774 - Goblin Fan
+        if (card.CurrentCardData.level <= 2 && card.isFlipped)
+        {
+            CheckActiveCards("0774", (fan) => {
+                Debug.Log("Goblin Fan: Destruindo Flip Lv2- Invocado.");
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
+                GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                Destroy(card.gameObject);
+            });
+        }
+
+        // 0958 - Invasion of Flames
+        if (card.CurrentCardData.id == "0958" && !card.wasSpecialSummoned)
+        {
+            trapsBlockedThisTurn = true;
+            Debug.Log("Invasion of Flames: Traps bloqueadas neste turno.");
+        }
+
         // 0888 - Hidden Soldiers
         if (!card.isPlayerCard) // Invocação do Oponente
         {
@@ -1947,6 +1976,25 @@ public partial class CardEffectManager
         {
             Debug.Log("Great Long Nose: Oponente pulará a próxima Battle Phase.");
             if (PhaseManager.Instance != null) PhaseManager.Instance.RegisterSkipNextPhase(!attacker.isPlayerCard, GamePhase.Battle);
+        }
+    }
+
+    public void OnCardEquipped(CardDisplay equip, CardDisplay target)
+    {
+        // 0737 - Gearfried the Iron Knight
+        if (target.CurrentCardData.id == "0737") {
+            Debug.Log("Gearfried the Iron Knight: Destruindo carta de equipamento recém-equipada.");
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(equip);
+            GameManager.Instance.SendToGraveyard(equip.CurrentCardData, equip.isPlayerCard);
+            Destroy(equip.gameObject);
+        }
+        // 0738 - Gearfried the Swordmaster
+        if (target.CurrentCardData.id == "0738" && SpellTrapManager.Instance != null) {
+            SpellTrapManager.Instance.StartTargetSelection((t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && t.isPlayerCard != target.isPlayerCard, (targetToDestroy) => {
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(targetToDestroy);
+                GameManager.Instance.SendToGraveyard(targetToDestroy.CurrentCardData, targetToDestroy.isPlayerCard);
+                Destroy(targetToDestroy.gameObject);
+            });
         }
     }
 
@@ -3543,6 +3591,23 @@ public void CheckMaintenanceCosts()
             });
         }
     });
+
+        // 0650 - Fiend's Sanctuary (Metal Fiend Token)
+        List<CardDisplay> tokens = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null) {
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, tokens);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, tokens);
+        }
+        foreach (var t in tokens) {
+            if (t.CurrentCardData.name == "Metal Fiend Token" && t.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                maintenanceQueue.Enqueue(new MaintenanceRequest {
+                    card = t,
+                    description = "1000 LP (Metal Fiend Token)",
+                    canPay = () => (t.isPlayerCard ? GameManager.Instance.playerLP : GameManager.Instance.opponentLP) > 1000,
+                    payAction = () => GameManager.Instance.PayLifePoints(t.isPlayerCard, 1000)
+                });
+            }
+        }
 
     ProcessNextMaintenance();
 }

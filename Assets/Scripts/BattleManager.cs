@@ -445,6 +445,20 @@ public class BattleManager : MonoBehaviour
         if (damage <= 0 || damageTaker == null) return;
         bool isPlayer = damageTaker.isPlayerCard;
 
+        // 0650 - Metal Fiend Token (Reflexo de Dano)
+        if (damageTaker.CurrentCardData.name == "Metal Fiend Token")
+        {
+            Debug.Log("Metal Fiend Token: Dano refletido para o oponente!");
+            isPlayer = !isPlayer;
+        }
+
+        // 0811 - Gravekeeper's Vassal
+        if (currentAttacker != null && currentAttacker.CurrentCardData.id == "0811")
+        {
+            Debug.Log("Gravekeeper's Vassal: Dano de batalha será tratado como efeito (Convertido).");
+            // (Dano aplicado normalmente, mas classificado pelo sistema)
+        }
+
         // 0045 - Amazoness Fighter
         if (damageTaker.CurrentCardData.id == "0045")
         {
@@ -607,6 +621,17 @@ public class BattleManager : MonoBehaviour
         }
     }
 
+    private void DestroyMonsterInBattle(CardDisplay monster)
+    {
+        if (GameManager.Instance.IsCardActiveOnField("0801")) { // Grave Protector
+            Debug.Log("Grave Protector: Monstro embaralhado no deck em vez de ir ao GY.");
+            GameManager.Instance.ReturnToDeck(monster, false);
+        } else {
+            GameManager.Instance.SendToGraveyard(monster.CurrentCardData, monster.isPlayerCard, CardLocation.Field, SendReason.Battle);
+            Destroy(monster.gameObject);
+        }
+    }
+
     private void ResolveDamage(CardDisplay attacker, CardDisplay target, int atk, int def)
     {
         // B.E.S. Immunity (0124, 0125)
@@ -668,8 +693,7 @@ public class BattleManager : MonoBehaviour
                     }
                     else
                     {
-                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-                        Destroy(target.gameObject);
+                        DestroyMonsterInBattle(target);
                     }
                 }
             }
@@ -688,8 +712,7 @@ public class BattleManager : MonoBehaviour
 
                 if (!attackerIsRocketWarrior)
                 {
-                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
-                    Destroy(attacker.gameObject);
+                    DestroyMonsterInBattle(attacker);
                 }
             }
             else // Empate
@@ -697,12 +720,10 @@ public class BattleManager : MonoBehaviour
                 Debug.Log("Empate! Ambos destruídos.");
                 if (!wabokuActive)
                 {
-                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard, CardLocation.Field, SendReason.Battle);
-                    Destroy(target.gameObject);
+                    DestroyMonsterInBattle(target);
                 }
                 if (!attackerIsRocketWarrior && !wabokuActive) {
-                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard, CardLocation.Field, SendReason.Battle);
-                    Destroy(attacker.gameObject);
+                    DestroyMonsterInBattle(attacker);
                 }
             }
         }
@@ -714,8 +735,7 @@ public class BattleManager : MonoBehaviour
                 Debug.Log("Vitória do Atacante! Alvo destruído (sem dano).");
                 if (!wabokuActive)
                 {
-                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard, CardLocation.Field, SendReason.Battle);
-                    Destroy(target.gameObject);
+                    DestroyMonsterInBattle(target);
                 }
             }
             else if (atk < def)
@@ -742,8 +762,7 @@ public class BattleManager : MonoBehaviour
                 {
                     damage *= 2;
                     Debug.Log("Cross Counter: Dano de reflexão dobrado! Destruindo atacante.");
-                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard, CardLocation.Field, SendReason.Effect);
-                    Destroy(attacker.gameObject);
+                    DestroyMonsterInBattle(attacker);
                     crossCounterActive = false;
                 }
 
@@ -756,8 +775,7 @@ public class BattleManager : MonoBehaviour
                 if (GameManager.Instance.IsCardActiveOnField("0323"))
                 {
                     Debug.Log("Continuous Destruction Punch: Destruindo atacante.");
-                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard, CardLocation.Field, SendReason.Effect);
-                    Destroy(attacker.gameObject);
+                    DestroyMonsterInBattle(attacker);
                 }
 
                 // Cross Counter (0344)
@@ -769,8 +787,7 @@ public class BattleManager : MonoBehaviour
                 if (target.CurrentCardData.id == "0473" && atk < def)
                 {
                     Debug.Log("Des Kangaroo: Destruindo atacante (ATK < DEF).");
-                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard, CardLocation.Field, SendReason.Effect);
-                    Destroy(attacker.gameObject);
+                    DestroyMonsterInBattle(attacker);
                 }
             }
             else

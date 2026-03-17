@@ -59,12 +59,34 @@ public class SpellTrapManager : MonoBehaviour
             return false;
         }
 
+        // Bloqueio Global de Traps (Forced Ceasefire / Invasion of Flames)
+        if (card.type.Contains("Trap") && CardEffectManager.Instance != null && CardEffectManager.Instance.trapsBlockedThisTurn)
+        {
+            Debug.Log("Ativação de Trap bloqueada neste turno por efeito de carta!");
+            return false;
+        }
+
         if (card.type.Contains("Spell"))
         {
             // Verifica se há alvo válido para Equip Spell
             if (card.property == "Equip")
             {
                 if (!HasValidTargetForEquip(card)) return false;
+            }
+            
+            // 0956 - Invader of Darkness
+            if (card.property == "Quick-Play" && GameManager.Instance != null && !isOwnerTurn)
+            {
+                bool oppHasInvader = false;
+                Transform[] oppZones = isOwnerTurn ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+                foreach (var z in oppZones) {
+                    if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "0956" && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped)
+                        oppHasInvader = true;
+                }
+                if (oppHasInvader) {
+                    Debug.Log("Invader of Darkness: Oponente não pode ativar Quick-Play Spells.");
+                    return false;
+                }
             }
 
             // Regras básicas de Spell
@@ -232,6 +254,17 @@ public class SpellTrapManager : MonoBehaviour
                     switch (triggerLink.trigger)
                     {
                         case ChainManager.TriggerType.CardActivation:
+                            // Jar Robber (0967) vs Pot of Greed (1447)
+                            if (cd.CurrentCardData.id == "0967" && triggerLink.cardSource.CurrentCardData.id == "1447") {
+                                validResponses.Add(cd);
+                            }
+                            // Gemini Imps (0740) & Gravekeeper's Watcher (0812) vs Discard Effects
+                            string triggerId = triggerLink.cardSource.CurrentCardData.id;
+                            if ((cd.CurrentCardData.id == "0740" || cd.CurrentCardData.id == "0812") && 
+                                (triggerId == "0465" || triggerId == "0321" || triggerId == "0791" || triggerId == "0264" || triggerId == "0894")) {
+                                validResponses.Add(cd);
+                            }
+
                             // Magic Jammer (1123) vs Spell
                             if (cd.CurrentCardData.id == "1123" && triggerLink.cardSource.CurrentCardData.type.Contains("Spell"))
                             {
