@@ -20,6 +20,9 @@ public partial class CardEffectManager
 
     public Dictionary<CardDisplay, List<Transform>> blockedZonesByCard = new Dictionary<CardDisplay, List<Transform>>(); // Memória de bloqueios
 
+    public int powerBondDamageToPlayer = 0;
+    public int powerBondDamageToOpponent = 0;
+
     // --- VARIÁVEIS DE TRACKING (SISTEMA 5) ---
     public int finalCountdownTurnsLeft = 0;
     public bool finalCountdownActive = false;
@@ -821,6 +824,16 @@ public partial class CardEffectManager
                         if (monster.summonedThisTurn) GameManager.Instance.ReturnToHand(monster);
                     }
                 }
+            }
+
+            if (powerBondDamageToPlayer > 0) {
+                GameManager.Instance.DamagePlayer(powerBondDamageToPlayer);
+                powerBondDamageToPlayer = 0;
+            }
+            
+            if (powerBondDamageToOpponent > 0) {
+                GameManager.Instance.DamageOpponent(powerBondDamageToOpponent);
+                powerBondDamageToOpponent = 0;
             }
 
         // 0168 - Berserk Dragon

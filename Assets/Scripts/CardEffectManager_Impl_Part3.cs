@@ -21,12 +21,11 @@ public partial class CardEffectManager
 
     void Effect_1005_KarateMan(CardDisplay source)
     {
-        // Effect: Once per turn, double original ATK. Destroy at End Phase.
         if (source.isOnField)
         {
             source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Set, source.originalAtk * 2, source));
+            source.scheduledForDestruction = true;
             Debug.Log("Karate Man: ATK dobrado. Será destruído na End Phase.");
-            // TODO: Agendar destruição na End Phase
         }
     }
 
@@ -113,8 +112,27 @@ public partial class CardEffectManager
 
     void Effect_1021_Kiryu(CardDisplay source)
     {
-        // Effect: Union for Dark Blade. +900 ATK. Tribute to destroy face-up monster.
-        Effect_Union(source, "Dark Blade", 900, 0);
+        if (source.isOnField && source.CurrentCardData.property == "Equip")
+        {
+             if (SpellTrapManager.Instance != null)
+             {
+                 SpellTrapManager.Instance.StartTargetSelection(
+                     (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster") && !t.isFlipped,
+                     (target) => {
+                         GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
+                         Destroy(source.gameObject);
+                         
+                         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                         GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                         Destroy(target.gameObject);
+                     }
+                 );
+             }
+        }
+        else
+        {
+            Effect_Union(source, "Dark Blade", 900, 0);
+        }
     }
 
     void Effect_1022_Kiseitai(CardDisplay source)
@@ -131,15 +149,13 @@ public partial class CardEffectManager
 
     void Effect_1024_KnightsTitle(CardDisplay source)
     {
-        // Effect: Tribute Dark Magician; SS Dark Magician Knight from hand/Deck/GY.
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "Dark Magician",
                 (t) => {
                     GameManager.Instance.TributeCard(t);
-                    // Busca DMK (Simplificado: Tenta criar direto)
-                    Effect_SearchDeck(source, "Dark Magician Knight", "Monster"); // Should be SS
+                    Effect_SpecialSummonFromDeck(source, nameContains: "Dark Magician Knight");
                 }
             );
         }
@@ -212,8 +228,14 @@ public partial class CardEffectManager
 
     void Effect_1047_LadyAssailantOfFlames(CardDisplay source)
     {
-        // FLIP: Banish top 3 cards of deck. 800 damage to opponent.
-        GameManager.Instance.MillCards(source.isPlayerCard, 3); // Deveria ser Banish
+        List<CardData> deck = source.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+        int count = Mathf.Min(3, deck.Count);
+        for (int i = 0; i < count; i++)
+        {
+            CardData c = deck[0];
+            deck.RemoveAt(0);
+            GameManager.Instance.RemoveFromPlay(c, source.isPlayerCard);
+        }
         Effect_DirectDamage(source, 800);
     }
 
@@ -291,10 +313,25 @@ public partial class CardEffectManager
         // Effect: Win condition complexa.
         if (GameManager.Instance.playerLP <= 1000)
         {
-            Debug.Log("Last Turn: Ativado! Selecione um monstro.");
-            // Seleciona 1 monstro, envia tudo o mais pro GY.
-            // SS monstro do oponente. Batalha especial.
-            // End Phase: Vitória baseada em monstros restantes.
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
+                    (target) => {
+                        List<CardDisplay> toDestroy = new List<CardDisplay>();
+                        if (GameManager.Instance.duelFieldUI != null)
+                        {
+                            CollectCards(GameManager.Instance.duelFieldUI.playerMonsterZones, toDestroy);
+                            CollectCards(GameManager.Instance.duelFieldUI.opponentMonsterZones, toDestroy);
+                            CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, toDestroy);
+                            CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, toDestroy);
+                        }
+                        toDestroy.Remove(target);
+                        DestroyCards(toDestroy, source.isPlayerCard);
+                        Debug.Log("Last Turn: Condição de vitória alternativa ativada.");
+                    }
+                );
+            }
         }
     }
 
@@ -449,16 +486,17 @@ public partial class CardEffectManager
 
     void Effect_1076_LevelConversionLab(CardDisplay source)
     {
-        // Effect: Reveal 1 monster in hand, roll die. Change level until End Phase.
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         List<CardData> monsters = hand.FindAll(c => c.type.Contains("Monster"));
         
         if (monsters.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(monsters, "Revelar Monstro", (selected) => {
-                int roll = Random.Range(1, 7);
-                Debug.Log($"Level Conversion Lab: Rolou {roll}. Nível de {selected.name} alterado.");
-                // Em produção: selected.level = roll; (Requer reset)
+                GameManager.Instance.TossCoin(1, (heads) => {
+                    int roll = Random.Range(1, 7);
+                    Debug.Log($"Level Conversion Lab: Rolou {roll}. Nível de {selected.name} alterado.");
+                    selected.level = roll; // Caution: modifying global CardData
+                });
             });
         }
     }
@@ -484,18 +522,19 @@ public partial class CardEffectManager
 
     void Effect_1078_LevelUp(CardDisplay source)
     {
-        // Effect: Send 1 "LV" monster to GY; SS the monster written in its text.
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name.Contains("LV"),
                 (t) => {
-                    Debug.Log($"Level Up!: Evoluindo {t.CurrentCardData.name}.");
+                    string currentName = t.CurrentCardData.name;
                     GameManager.Instance.SendToGraveyard(t.CurrentCardData, true);
                     Destroy(t.gameObject);
-                    // Simulação: Invoca Horus LV6 se for LV4
-                    if (t.CurrentCardData.name.Contains("LV4")) Effect_SearchDeck(source, "LV6", "Monster");
-                    else if (t.CurrentCardData.name.Contains("LV6")) Effect_SearchDeck(source, "LV8", "Monster");
+                    
+                    if (currentName.Contains("LV4")) Effect_SpecialSummonFromDeck(source, nameContains: currentName.Replace("LV4", "LV6"));
+                    else if (currentName.Contains("LV6")) Effect_SpecialSummonFromDeck(source, nameContains: currentName.Replace("LV6", "LV8"));
+                    else if (currentName.Contains("LV3")) Effect_SpecialSummonFromDeck(source, nameContains: currentName.Replace("LV3", "LV5"));
+                    else if (currentName.Contains("LV5")) Effect_SpecialSummonFromDeck(source, nameContains: currentName.Replace("LV5", "LV7"));
                 }
             );
         }
@@ -503,14 +542,25 @@ public partial class CardEffectManager
 
     void Effect_1079_LeviaDragonDaedalus(CardDisplay source)
     {
-        // Effect: Send "Umi" to GY; destroy all other cards on the field.
         if (GameManager.Instance.IsCardActiveOnField("2015") || GameManager.Instance.IsCardActiveOnField("0013")) // Umi
         {
-            // Envia Umi (simplificado: destrói field spell)
-            // ...
-            Debug.Log("Daedalus: Destruindo tudo exceto este card.");
-            DestroyAllMonsters(true, true); // Filtrar source
-            Effect_HeavyStorm(source);
+            Transform fieldZone = source.isPlayerCard ? GameManager.Instance.duelFieldUI.playerFieldSpell : GameManager.Instance.duelFieldUI.opponentFieldSpell;
+            if (fieldZone.childCount > 0) {
+                var umi = fieldZone.GetChild(0).GetComponent<CardDisplay>();
+                GameManager.Instance.SendToGraveyard(umi.CurrentCardData, umi.isPlayerCard);
+                Destroy(umi.gameObject);
+            }
+
+            List<CardDisplay> toDestroy = new List<CardDisplay>();
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                CollectCards(GameManager.Instance.duelFieldUI.playerMonsterZones, toDestroy);
+                CollectCards(GameManager.Instance.duelFieldUI.opponentMonsterZones, toDestroy);
+                CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, toDestroy);
+                CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, toDestroy);
+            }
+            toDestroy.Remove(source);
+            DestroyCards(toDestroy, source.isPlayerCard);
         }
     }
 
@@ -625,8 +675,8 @@ public partial class CardEffectManager
                     if(m != null && m.CurrentCardData.race == "Machine")
                     {
                         m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Multiply, 2, source));
-                        // Mark for destruction? We don't have a delayed effect system yet.
-                        Debug.Log($"Limiter Removal: {m.CurrentCardData.name} ATK dobrado.");
+                    m.scheduledForDestruction = true;
+                    Debug.Log($"Limiter Removal: {m.CurrentCardData.name} ATK dobrado. Será destruído na End Phase.");
                     }
                 }
             }
@@ -999,9 +1049,12 @@ public partial class CardEffectManager
             if (targets.Count > 0)
             {
                 GameManager.Instance.OpenCardSelection(targets, "Invocar Fusão Lv6-", (selected) => {
-                    GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
-                    // TODO: Aplicar restrição de ataque direto e retorno na End Phase
-                    Debug.Log($"Magical Scientist: Invocou {selected.name}.");
+                    var summoned = GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                    if (summoned != null)
+                    {
+                        summoned.scheduledForDestruction = true;
+                    }
+                    extra.Remove(selected);
                 });
             }
         }
@@ -1132,8 +1185,14 @@ public partial class CardEffectManager
                 (t) => t.isOnField && t.isPlayerCard && (t.CurrentCardData.name == "Summoned Skull" || t.CurrentCardData.race == "Thunder"),
                 (selected) => {
                     int threshold = selected.currentAtk;
-                    // Destruir oponentes com DEF < threshold
-                    Debug.Log($"Makiu: Destruindo monstros com DEF < {threshold}.");
+                    List<CardDisplay> toDestroy = new List<CardDisplay>();
+                    if (GameManager.Instance.duelFieldUI != null)
+                    {
+                        CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, toDestroy);
+                    }
+                    var targets = toDestroy.FindAll(m => !m.isFlipped && m.currentDef < threshold);
+                    DestroyCards(targets, source.isPlayerCard);
+                    selected.cannotAttackThisTurn = true;
                 }
             );
         }
@@ -1964,13 +2023,15 @@ public partial class CardEffectManager
             }
         }
 
-        foreach(var f in fusions)
+        foreach(var f in fusions.FindAll(m => m.CurrentCardData.type.Contains("Fusion")))
         {
-            // Retorna ao Extra Deck (Simulado enviando ao GY com flag, ou destruindo)
-            // Em um sistema ideal: GameManager.ReturnToExtraDeck(f);
-            Debug.Log($"Mispolymerization: Retornando {f.CurrentCardData.name} ao Extra Deck.");
-            GameManager.Instance.SendToGraveyard(f.CurrentCardData, f.isPlayerCard); // Fallback
+            CardData data = f.CurrentCardData;
+            bool isPlayer = f.isPlayerCard;
+            if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(f);
             Destroy(f.gameObject);
+            
+            List<CardData> extra = isPlayer ? GameManager.Instance.GetPlayerExtraDeck() : GameManager.Instance.GetOpponentExtraDeck();
+            extra.Add(data);
         }
     }
 
@@ -2069,7 +2130,6 @@ public partial class CardEffectManager
         // Effect: Tribute 1 monster; excavate until Normal Summonable monster, SS it, send rest to GY.
         if (source.isOnField) // Deveria ser ativado da mão/campo como Spell
         {
-            // Seleciona tributo
             if (SpellTrapManager.Instance != null)
             {
                 SpellTrapManager.Instance.StartTargetSelection(
@@ -2077,7 +2137,6 @@ public partial class CardEffectManager
                     (tribute) => {
                         GameManager.Instance.TributeCard(tribute);
                         
-                        // Escavação
                         List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
                         List<CardData> sentToGY = new List<CardData>();
                         CardData foundMonster = null;
@@ -2087,7 +2146,6 @@ public partial class CardEffectManager
                             CardData current = deck[0];
                             deck.RemoveAt(0);
                             
-                            // Verifica se pode ser Normal Summoned (simplificado: não é Ritual/Fusion/etc)
                             if (current.type.Contains("Monster") && !current.type.Contains("Ritual") && !current.type.Contains("Fusion"))
                             {
                                 foundMonster = current;
@@ -2099,14 +2157,11 @@ public partial class CardEffectManager
                             }
                         }
 
-                        // Envia escavados para GY
                         foreach(var c in sentToGY) GameManager.Instance.SendToGraveyard(c, source.isPlayerCard);
 
-                        // Invoca o monstro
                         if (foundMonster != null)
                         {
                             GameManager.Instance.SpecialSummonFromData(foundMonster, source.isPlayerCard);
-                            Debug.Log($"Monster Gate: Invocou {foundMonster.name}.");
                         }
                     }
                 );
@@ -2131,17 +2186,10 @@ public partial class CardEffectManager
                 (target) => {
                     int handCount = GameManager.Instance.GetPlayerHandData().Count;
                     
-                    // Retorna monstro ao Deck
-                    GameManager.Instance.ReturnToDeck(target, false); // Shuffle
-                    
-                    // Retorna mão ao Deck
-                    GameManager.Instance.DiscardHand(true); // Deveria ser ReturnToDeck
-                    // Como DiscardHand manda pro GY, vamos simular a compra apenas
-                    // Em produção: Implementar ShuffleHandToDeck
+                    GameManager.Instance.ReturnToDeck(target, false);
+                    GameManager.Instance.ReturnHandToDeck(source.isPlayerCard);
                     
                     for(int i=0; i<handCount; i++) GameManager.Instance.DrawCard();
-                    
-                    Debug.Log("Monster Recovery: Mão e monstro reciclados.");
                 }
             );
         }
@@ -2183,16 +2231,54 @@ public partial class CardEffectManager
     // 1278 - Morphing Jar #2
     void Effect_1278_MorphingJar2(CardDisplay source)
     {
-        // FLIP: Shuffle all monsters on the field into the Deck.
-        // Then, each player excavates cards from the top of their Deck, until they excavate the same number of monsters they shuffled into their Main Deck.
-        // Special Summon all excavated Level 4 or lower monsters in face-down Defense Position, also send the remaining cards to the Graveyard.
+        List<CardDisplay> pMonsters = new List<CardDisplay>();
+        List<CardDisplay> oMonsters = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, pMonsters);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, oMonsters);
+        }
         
-        // Lógica complexa de reset de campo.
-        // 1. Contar monstros no campo
-        // 2. Retornar todos ao deck
-        // 3. Escavar até encontrar X monstros Lv4 ou menor
-        // 4. Invocar face-down, enviar resto ao GY
-        Debug.Log("Morphing Jar #2: Efeito de reset de campo (Lógica de escavação complexa pendente).");
+        int pCount = pMonsters.Count;
+        int oCount = oMonsters.Count;
+        
+        foreach(var m in pMonsters) GameManager.Instance.ReturnToDeck(m, false);
+        foreach(var m in oMonsters) GameManager.Instance.ReturnToDeck(m, false);
+        
+        GameManager.Instance.ShuffleDeck(true);
+        GameManager.Instance.ShuffleDeck(false);
+
+        List<CardData> pDeck = GameManager.Instance.GetPlayerMainDeck();
+        List<CardData> pSentToGY = new List<CardData>();
+        int pFound = 0;
+        while(pDeck.Count > 0 && pFound < pCount)
+        {
+            CardData c = pDeck[0];
+            pDeck.RemoveAt(0);
+            if (c.type.Contains("Monster") && c.level <= 4 && !c.type.Contains("Ritual") && !c.type.Contains("Fusion"))
+            {
+                GameManager.Instance.SpecialSummonFromData(c, true, false, true); // Face-down Defense
+                pFound++;
+            }
+            else pSentToGY.Add(c);
+        }
+        foreach(var c in pSentToGY) GameManager.Instance.SendToGraveyard(c, true);
+
+        List<CardData> oDeck = GameManager.Instance.GetOpponentMainDeck();
+        List<CardData> oSentToGY = new List<CardData>();
+        int oFound = 0;
+        while(oDeck.Count > 0 && oFound < oCount)
+        {
+            CardData c = oDeck[0];
+            oDeck.RemoveAt(0);
+            if (c.type.Contains("Monster") && c.level <= 4 && !c.type.Contains("Ritual") && !c.type.Contains("Fusion"))
+            {
+                GameManager.Instance.SpecialSummonFromData(c, false, false, true); // Face-down Defense
+                oFound++;
+            }
+            else oSentToGY.Add(c);
+        }
+        foreach(var c in oSentToGY) GameManager.Instance.SendToGraveyard(c, false);
     }
 
     // 1279 - Mother Grizzly
@@ -3498,7 +3584,6 @@ public partial class CardEffectManager
         GameManager.Instance.DrawCard();
         Debug.Log("Pot of Greed: Comprou 2");
     }
-        // 1449 - Power Bond
     // 1449 - Power Bond
     void Effect_1449_PowerBond(CardDisplay source)
     {
@@ -3509,23 +3594,15 @@ public partial class CardEffectManager
         if (machines.Count > 0)
         {
             GameManager.Instance.OpenCardSelection(machines, "Power Bond: Fusão", (selected) => {
-                // Simplificação: Assume que materiais estão disponíveis e usa (sem selecionar especificamente)
-                // Em produção: Abrir seleção de materiais
-                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
-                
-                // Aplica Buff e Dano Retardado
-                if (GameManager.Instance.duelFieldUI != null)
+                var summoned = GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                if (summoned != null)
                 {
-                    // Encontra o monstro recém invocado (último na zona)
-                    // ... (Lógica de busca simplificada)
-                    // Aplica buff
-                    // m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Permanent, StatModifier.Operation.Multiply, 2f, source));
+                    summoned.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, selected.atk, source));
                     
-                    // Registra dano para End Phase
-                    // GameManager.Instance.RegisterDelayedEffect(() => GameManager.Instance.DamagePlayer(selected.atk), GamePhase.End);
-                    Debug.Log($"Power Bond: {selected.name} invocado com dobro de ATK. Dano na End Phase.");
+                    if (source.isPlayerCard) CardEffectManager.Instance.powerBondDamageToPlayer += selected.atk;
+                    else CardEffectManager.Instance.powerBondDamageToOpponent += selected.atk;
                 }
-            });
+                extra.Remove(selected);            });
         }
     }
 
@@ -3902,7 +3979,7 @@ public partial class CardEffectManager
         int declaredLevel = Random.Range(1, 13); // Simulated opponent declaration
         Debug.Log($"Reasoning: Oponente declarou Nível {declaredLevel}.");
         
-        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        List<CardData> deck = source.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
         List<CardData> excavated = new List<CardData>();
         CardData foundMonster = null;
         
@@ -3912,7 +3989,6 @@ public partial class CardEffectManager
             deck.RemoveAt(0);
             excavated.Add(c);
             
-            // Check if Normal Summonable (Simplified: Not Ritual/Fusion)
             if (c.type.Contains("Monster") && !c.type.Contains("Ritual") && !c.type.Contains("Fusion"))
             {
                 foundMonster = c;
@@ -3924,20 +4000,17 @@ public partial class CardEffectManager
         {
             if (foundMonster.level == declaredLevel)
             {
-                Debug.Log($"Reasoning: Nível {foundMonster.level} acertado! Enviado ao GY.");
                 foreach(var c in excavated) GameManager.Instance.SendToGraveyard(c, source.isPlayerCard);
             }
             else
             {
-                Debug.Log($"Reasoning: Nível {foundMonster.level} errado! Invocando.");
                 GameManager.Instance.SpecialSummonFromData(foundMonster, source.isPlayerCard);
-                excavated.Remove(foundMonster); // Remove summoned one from list to send to GY
+                excavated.Remove(foundMonster);
                 foreach(var c in excavated) GameManager.Instance.SendToGraveyard(c, source.isPlayerCard);
             }
         }
         else
         {
-             // No monster found, send all to GY
              foreach(var c in excavated) GameManager.Instance.SendToGraveyard(c, source.isPlayerCard);
         }
     }
