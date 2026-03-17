@@ -879,6 +879,11 @@ public partial class CardEffectManager
             CheckActiveCards("0252", (card) => UpdateBusterBladerBuff(card));
             CheckActiveCards("0292", (card) => UpdateChaosNecromancerBuff(card));
             CheckActiveCards("0214", (card) => UpdateBlueEyesShiningBuff(card));
+            CheckActiveCards("0571", (card) => ExecuteCardEffect(card)); // Element Doom
+            CheckActiveCards("0572", (card) => ExecuteCardEffect(card)); // Element Dragon
+            CheckActiveCards("0573", (card) => ExecuteCardEffect(card)); // Element Magician
+            CheckActiveCards("0574", (card) => ExecuteCardEffect(card)); // Element Saurus
+            CheckActiveCards("0576", (card) => ExecuteCardEffect(card)); // Element Valkyrie
             
             CheckActiveCards("0832", (card) => { // Gren Maju Da Eiza
                 int removedCount = card.isPlayerCard ? GameManager.Instance.GetPlayerRemovedCount() : GameManager.Instance.GetOpponentRemoved().Count;
@@ -1050,9 +1055,7 @@ public partial class CardEffectManager
 
             // 0916 - Human-Wave Tactics
             CheckActiveCards("0916", (card) => {
-                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
-                    Debug.Log("Human-Wave Tactics: Invocando Normais (Falta tracker de destruídos).");
-                }
+                ExecuteCardEffect(card);
             });
     }
 

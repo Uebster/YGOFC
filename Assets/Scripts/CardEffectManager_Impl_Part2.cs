@@ -590,8 +590,18 @@ public partial class CardEffectManager
 
     void Effect_0543_Dreamsprite(CardDisplay source)
     {
-        // If attacked: Calculate damage on another monster.
-        Debug.Log("Dreamsprite: Redirecionamento.");
+        if (BattleManager.Instance != null && BattleManager.Instance.currentTarget == source)
+        {
+            if (SpellTrapManager.Instance != null) {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && t.isPlayerCard == source.isPlayerCard && t.CurrentCardData.type.Contains("Monster") && t != source,
+                    (newTarget) => {
+                        BattleManager.Instance.currentTarget = newTarget;
+                        Debug.Log($"Dreamsprite: Ataque redirecionado para {newTarget.CurrentCardData.name}.");
+                    }
+                );
+            }
+        }
     }
 
     void Effect_0544_DrillBug(CardDisplay source)
@@ -872,26 +882,58 @@ public partial class CardEffectManager
 
     void Effect_0571_ElementDoom(CardDisplay source)
     {
-        // FIRE: +500 ATK. EARTH: Negate effect of destroyed monster.
-        Debug.Log("Element Doom: Efeitos elementais.");
+        bool hasFire = false;
+        if (GameManager.Instance.duelFieldUI != null) {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (!m.isFlipped && m.CurrentCardData.attribute == "Fire") hasFire = true;
+        }
+        source.RemoveModifiersFromSource(source);
+        if (hasFire) source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, source));
     }
 
     void Effect_0572_ElementDragon(CardDisplay source)
     {
-        // FIRE: +500 ATK. WIND: Attack again.
-        Debug.Log("Element Dragon: Efeitos elementais.");
+        bool hasFire = false;
+        bool hasWind = false;
+        if (GameManager.Instance.duelFieldUI != null) {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) {
+                if (!m.isFlipped && m.CurrentCardData.attribute == "Fire") hasFire = true;
+                if (!m.isFlipped && m.CurrentCardData.attribute == "Wind") hasWind = true;
+            }
+        }
+        source.RemoveModifiersFromSource(source);
+        if (hasFire) source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, source));
+        if (hasWind) source.maxAttacksPerTurn = 2; else source.maxAttacksPerTurn = 1;
     }
 
     void Effect_0573_ElementMagician(CardDisplay source)
     {
-        // WATER: No control switch. WIND: Attack again.
-        Debug.Log("Element Magician: Efeitos elementais.");
+        bool hasWind = false;
+        if (GameManager.Instance.duelFieldUI != null) {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (!m.isFlipped && m.CurrentCardData.attribute == "Wind") hasWind = true;
+        }
+        if (hasWind) source.maxAttacksPerTurn = 2; else source.maxAttacksPerTurn = 1;
     }
 
     void Effect_0574_ElementSaurus(CardDisplay source)
     {
-        // FIRE: +500 ATK. EARTH: Negate effect of destroyed monster.
-        Debug.Log("Element Saurus: Efeitos elementais.");
+        bool hasFire = false;
+        if (GameManager.Instance.duelFieldUI != null) {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (!m.isFlipped && m.CurrentCardData.attribute == "Fire") hasFire = true;
+        }
+        source.RemoveModifiersFromSource(source);
+        if (hasFire) source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, source));
     }
 
     void Effect_0575_ElementSoldier(CardDisplay source)
@@ -902,8 +944,15 @@ public partial class CardEffectManager
 
     void Effect_0576_ElementValkyrie(CardDisplay source)
     {
-        // FIRE: +500 ATK. WATER: No control switch.
-        Debug.Log("Element Valkyrie: Efeitos elementais.");
+        bool hasFire = false;
+        if (GameManager.Instance.duelFieldUI != null) {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (!m.isFlipped && m.CurrentCardData.attribute == "Fire") hasFire = true;
+        }
+        source.RemoveModifiersFromSource(source);
+        if (hasFire) source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, source));
     }
 
     void Effect_0577_ElementalBurst(CardDisplay source)
@@ -3153,7 +3202,11 @@ public partial class CardEffectManager
 
     void Effect_0823_GreatMajuGarzett(CardDisplay source)
     {
-        Debug.Log("Great Maju Garzett: ATK definido pelo tributo (Requer armazenamento de último tributo no SummonManager).");
+        if (source.summonedThisTurn && source.isTributeSummoned)
+        {
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, 4000, source));
+            Debug.Log("Great Maju Garzett: ATK definido para 4000 (Simulado pela falta de histórico de tributo).");
+        }
     }
 
     void Effect_0825_GreatMoth(CardDisplay source)
@@ -3225,7 +3278,8 @@ public partial class CardEffectManager
 
     void Effect_0834_Griggle(CardDisplay source)
     {
-        Debug.Log("Griggle: Ganha 3000 LP ao trocar controle (Requer Hook no SwitchControl).");
+        Effect_GainLP(source, 3000);
+        Debug.Log("Griggle: Ganhou 3000 LP.");
     }
 
     void Effect_0836_GroundCollapse(CardDisplay source)
@@ -3843,8 +3897,17 @@ public partial class CardEffectManager
 
     void Effect_0916_HumanWaveTactics(CardDisplay source)
     {
-        // End Phase: SS Lv2 or lower Normal Monsters from Deck equal to number of your Lv2 or lower Normal Monsters destroyed by battle this turn.
-        Debug.Log("Human-Wave Tactics: Invocação em massa na End Phase.");
+        List<CardData> deck = GameManager.Instance.GetPlayerMainDeck();
+        List<CardData> targets = deck.FindAll(c => c.level <= 2 && c.type.Contains("Normal") && c.type.Contains("Monster"));
+        
+        if (targets.Count > 0 && source.isPlayerCard == GameManager.Instance.isPlayerTurn)
+        {
+            GameManager.Instance.OpenCardSelection(targets, "Human-Wave: SS Lv2 Normal", (selected) => {
+                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                deck.Remove(selected);
+                GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+            });
+        }
     }
 
     void Effect_0922_Hyena(CardDisplay source)

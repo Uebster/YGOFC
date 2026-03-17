@@ -2359,6 +2359,12 @@ public void ShuffleDeck(bool isPlayer)
 
         card.transform.localRotation = Quaternion.Euler(0, 0, zRot);
         Debug.Log($"Controle de {card.CurrentCardData.name} alterado.");
+
+        // Efeito do Griggle (0834) e Ameba (0050)
+        if (CardEffectManager.Instance != null && (card.CurrentCardData.id == "0834" || card.CurrentCardData.id == "0050"))
+        {
+            CardEffectManager.Instance.ExecuteCardEffect(card);
+        }
     }
 
     // Método para Seleção Única (Mantido para compatibilidade, redireciona para Multi)
