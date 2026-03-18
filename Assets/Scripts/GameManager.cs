@@ -1429,15 +1429,48 @@ public void ShuffleDeck(bool isPlayer)
     // --- SISTEMA DE DADOS ---
     public void RollDice(int count, bool requireChoice, Action<List<int>> callback)
     {
+        Action<List<int>> interceptCallback = (results) => {
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.HasActiveDiceReRoll(out bool isPlayerToss))
+            {
+                if (isPlayerToss && UIManager.Instance != null)
+                {
+                    string resStr = string.Join(", ", results);
+                    UIManager.Instance.ShowConfirmation($"Você tirou {resStr} nos dados. Usar Dice Re-Roll para tentar de novo?",
+                        () => {
+                            CardEffectManager.Instance.ConsumeDiceReRoll(true);
+                            RollDice(count, requireChoice, callback);
+                        },
+                        () => {
+                            callback?.Invoke(results);
+                        }
+                    );
+                }
+                else if (!isPlayerToss) // IA simples: Rerola se a soma for muito baixa
+                {
+                    int sum = results.Sum();
+                    if (sum <= count * 3) {
+                        CardEffectManager.Instance.ConsumeDiceReRoll(false);
+                        RollDice(count, requireChoice, callback);
+                    } else {
+                        callback?.Invoke(results);
+                    }
+                }
+            }
+            else
+            {
+                callback?.Invoke(results);
+            }
+        };
+
         if (diceRollUI != null)
         {
-            diceRollUI.ShowRoll(count, requireChoice, diceRollManualSpin, callback, alwaysDiceSix);
+            diceRollUI.ShowRoll(count, requireChoice, diceRollManualSpin, interceptCallback, alwaysDiceSix);
         }
         else
         {
             List<int> results = new List<int>();
             for (int i = 0; i < count; i++) results.Add(alwaysDiceSix ? 6 : UnityEngine.Random.Range(1, 7));
-            callback?.Invoke(results);
+            interceptCallback(results);
         }
     }
 
@@ -2838,6 +2871,336 @@ public void ShuffleDeck(bool isPlayer)
     {
         List<CardData> data = new List<CardData>();
         foreach (var go in playerHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public List<CardData> GetOpponentHandData()
+    {
+        List<CardData> data = new List<CardData>();
+        foreach (var go in opponentHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
+    {
+        playerMainDeck = new List<CardData>(main);
+        playerSideDeck = new List<CardData>(side);
+        playerExtraDeck = new List<CardData>(extra);
+    }
+}       foreach (var go in playerHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public List<CardData> GetOpponentHandData()
+    {
+        List<CardData> data = new List<CardData>();
+        foreach (var go in opponentHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
+    {
+        playerMainDeck = new List<CardData>(main);
+        playerSideDeck = new List<CardData>(side);
+        playerExtraDeck = new List<CardData>(extra);
+    }
+}       foreach (var go in playerHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public List<CardData> GetOpponentHandData()
+    {
+        List<CardData> data = new List<CardData>();
+        foreach (var go in opponentHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
+    {
+        playerMainDeck = new List<CardData>(main);
+        playerSideDeck = new List<CardData>(side);
+        playerExtraDeck = new List<CardData>(extra);
+    }
+}       foreach (var go in playerHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public List<CardData> GetOpponentHandData()
+    {
+        List<CardData> data = new List<CardData>();
+        foreach (var go in opponentHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
+    {
+        playerMainDeck = new List<CardData>(main);
+        playerSideDeck = new List<CardData>(side);
+        playerExtraDeck = new List<CardData>(extra);
+    }
+}       foreach (var go in playerHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public List<CardData> GetOpponentHandData()
+    {
+        List<CardData> data = new List<CardData>();
+        foreach (var go in opponentHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
+    {
+        playerMainDeck = new List<CardData>(main);
+        playerSideDeck = new List<CardData>(side);
+        playerExtraDeck = new List<CardData>(extra);
+    }
+}       foreach (var go in playerHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public List<CardData> GetOpponentHandData()
+    {
+        List<CardData> data = new List<CardData>();
+        foreach (var go in opponentHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
+    {
+        playerMainDeck = new List<CardData>(main);
+        playerSideDeck = new List<CardData>(side);
+        playerExtraDeck = new List<CardData>(extra);
+    }
+}       foreach (var go in playerHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public List<CardData> GetOpponentHandData()
+    {
+        List<CardData> data = new List<CardData>();
+        foreach (var go in opponentHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
+    {
+        playerMainDeck = new List<CardData>(main);
+        playerSideDeck = new List<CardData>(side);
+        playerExtraDeck = new List<CardData>(extra);
+    }
+}       foreach (var go in playerHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public List<CardData> GetOpponentHandData()
+    {
+        List<CardData> data = new List<CardData>();
+        foreach (var go in opponentHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
+    {
+        playerMainDeck = new List<CardData>(main);
+        playerSideDeck = new List<CardData>(side);
+        playerExtraDeck = new List<CardData>(extra);
+    }
+}       foreach (var go in playerHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public List<CardData> GetOpponentHandData()
+    {
+        List<CardData> data = new List<CardData>();
+        foreach (var go in opponentHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
+    {
+        playerMainDeck = new List<CardData>(main);
+        playerSideDeck = new List<CardData>(side);
+        playerExtraDeck = new List<CardData>(extra);
+    }
+}       foreach (var go in playerHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public List<CardData> GetOpponentHandData()
+    {
+        List<CardData> data = new List<CardData>();
+        foreach (var go in opponentHand)
+        {
+            if (go != null)
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null && display.CurrentCardData != null)
+                    data.Add(display.CurrentCardData);
+            }
+        }
+        return data;
+    }
+
+    public void SetPlayerDeck(List<CardData> main, List<CardData> side, List<CardData> extra)
+    {
+        playerMainDeck = new List<CardData>(main);
+        playerSideDeck = new List<CardData>(side);
+        playerExtraDeck = new List<CardData>(extra);
+    }
+}       foreach (var go in playerHand)
         {
             if (go != null)
             {

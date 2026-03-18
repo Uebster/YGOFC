@@ -37,6 +37,8 @@ public partial class CardEffectManager
     public CardDisplay lastSummonedMonster = null;
     public bool secondCoinTossUsedPlayer = false;
     public bool secondCoinTossUsedOpponent = false;
+    public bool diceReRollUsedPlayer = false;
+    public bool diceReRollUsedOpponent = false;
     
     public bool trapsBlockedThisTurn = false; // Forced Ceasefire (0685)
 
@@ -401,6 +403,25 @@ public partial class CardEffectManager
         else secondCoinTossUsedOpponent = true;
     }
 
+    public bool HasActiveDiceReRoll(out bool isPlayerCard)
+    {
+        isPlayerCard = false;
+        if (GameManager.Instance.duelFieldUI == null) return false;
+        bool playerHas = false;
+        bool oppHas = false;
+        foreach(var z in GameManager.Instance.duelFieldUI.playerSpellZones) if(z.childCount > 0 && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "0490") playerHas = true;
+        foreach(var z in GameManager.Instance.duelFieldUI.opponentSpellZones) if(z.childCount > 0 && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "0490") oppHas = true;
+        if (playerHas && !diceReRollUsedPlayer) { isPlayerCard = true; return true; }
+        if (oppHas && !diceReRollUsedOpponent) { isPlayerCard = false; return true; }
+        return false;
+    }
+
+    public void ConsumeDiceReRoll(bool isPlayer)
+    {
+        if (isPlayer) diceReRollUsedPlayer = true;
+        else diceReRollUsedOpponent = true;
+    }
+
     // --- SISTEMA DE EVENTOS E FASES (TURNOBSERVER) ---
 
     public void OnPhaseStart(GamePhase phase)
@@ -423,6 +444,8 @@ public partial class CardEffectManager
             // Limpa flags de turno
             secondCoinTossUsedPlayer = false;
             secondCoinTossUsedOpponent = false;
+            diceReRollUsedPlayer = false;
+            diceReRollUsedOpponent = false;
 
             List<CardDisplay> allField = new List<CardDisplay>();
             if (GameManager.Instance.duelFieldUI != null) {

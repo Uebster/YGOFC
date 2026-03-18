@@ -5617,8 +5617,8 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0490_DiceReRoll(CardDisplay source)
     {
-        // Efeito: Permite rolar dado novamente 1x por turno.
-        Debug.Log("Dice Re-Roll: Ativo (Lógica de interceptar dado pendente).");
+        // Efeito Contínuo: Permite rolar dado novamente 1x por turno.
+        Debug.Log("Dice Re-Roll: Efeito passivo ativado (Monitorado no GameManager.RollDice).");
     }
 
     void Effect_0491_DifferentDimensionCapsule(CardDisplay source)
