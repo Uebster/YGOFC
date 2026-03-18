@@ -4031,7 +4031,8 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         bool hasValidTribute = false;
         if (GameManager.Instance.duelFieldUI != null)
         {
-            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+            Transform[] myZones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach(var z in myZones)
             {
                 if (z.childCount > 0)
                 {
@@ -4050,11 +4051,16 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
         {
             SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.attribute == "Dark" && t.currentAtk <= 1000,
+                (t) => t.isOnField && t.isPlayerCard == source.isPlayerCard && t.CurrentCardData.attribute == "Dark" && t.currentAtk <= 1000,
                 (tribute) => {
                     GameManager.Instance.TributeCard(tribute);
+                    
+                    if (source.isPlayerCard) CardEffectManager.Instance.crushCardVirusTurnsOpponent = 3;
+                    else CardEffectManager.Instance.crushCardVirusTurnsPlayer = 3;
+
                     List<CardDisplay> toDestroy = new List<CardDisplay>();
-                    foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) {
+                    Transform[] oppZones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+                    foreach(var z in oppZones) {
                         if (z.childCount > 0) {
                             var m = z.GetChild(0).GetComponent<CardDisplay>();
                             if (m != null && m.currentAtk >= 1500 && !m.isFlipped) toDestroy.Add(m);
@@ -4062,11 +4068,11 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                     }
                     DestroyCards(toDestroy, source.isPlayerCard);
                     
-                    List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+                    List<CardData> oppHand = source.isPlayerCard ? GameManager.Instance.GetOpponentHandData() : GameManager.Instance.GetPlayerHandData();
                     foreach (var c in new List<CardData>(oppHand)) {
                         if (c.type.Contains("Monster") && c.atk >= 1500) {
-                            GameManager.Instance.RemoveCardFromHand(c, false);
-                            GameManager.Instance.SendToGraveyard(c, false);
+                            GameManager.Instance.RemoveCardFromHand(c, !source.isPlayerCard);
+                            GameManager.Instance.SendToGraveyard(c, !source.isPlayerCard);
                         }
                     }
                 }
@@ -5384,7 +5390,8 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         bool hasValidTribute = false;
         if (GameManager.Instance.duelFieldUI != null)
         {
-            foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+            Transform[] myZones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach(var z in myZones)
             {
                 if (z.childCount > 0)
                 {
@@ -5403,11 +5410,16 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         if (SummonManager.Instance.HasEnoughTributes(1, source.isPlayerCard))
         {
             SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.attribute == "Dark" && t.currentAtk >= 2000,
+                (t) => t.isOnField && t.isPlayerCard == source.isPlayerCard && t.CurrentCardData.attribute == "Dark" && t.currentAtk >= 2000,
                 (tribute) => {
                     GameManager.Instance.TributeCard(tribute);
+                    
+                    if (source.isPlayerCard) CardEffectManager.Instance.deckDevastationVirusTurnsOpponent = 3;
+                    else CardEffectManager.Instance.deckDevastationVirusTurnsPlayer = 3;
+
                     List<CardDisplay> toDestroy = new List<CardDisplay>();
-                    foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) {
+                    Transform[] oppZones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+                    foreach(var z in oppZones) {
                         if (z.childCount > 0) {
                             var m = z.GetChild(0).GetComponent<CardDisplay>();
                             if (m != null && m.currentAtk <= 1500 && !m.isFlipped) toDestroy.Add(m);
@@ -5415,11 +5427,11 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                     }
                     DestroyCards(toDestroy, source.isPlayerCard);
                     
-                    List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+                    List<CardData> oppHand = source.isPlayerCard ? GameManager.Instance.GetOpponentHandData() : GameManager.Instance.GetPlayerHandData();
                     foreach (var c in new List<CardData>(oppHand)) {
                         if (c.type.Contains("Monster") && c.atk <= 1500) {
-                            GameManager.Instance.RemoveCardFromHand(c, false);
-                            GameManager.Instance.SendToGraveyard(c, false);
+                            GameManager.Instance.RemoveCardFromHand(c, !source.isPlayerCard);
+                            GameManager.Instance.SendToGraveyard(c, !source.isPlayerCard);
                         }
                     }
                 }

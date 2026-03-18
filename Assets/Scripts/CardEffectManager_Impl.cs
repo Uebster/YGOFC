@@ -28,6 +28,11 @@ public partial class CardEffectManager
     public bool trapOfBoardEraserActive = false;
     public bool spellOfPainActive = false;
 
+    public int crushCardVirusTurnsPlayer = 0;
+    public int crushCardVirusTurnsOpponent = 0;
+    public int deckDevastationVirusTurnsPlayer = 0;
+    public int deckDevastationVirusTurnsOpponent = 0;
+
     // --- VARIÁVEIS DE TRACKING (SISTEMA 5) ---
     public int finalCountdownTurnsLeft = 0;
     public bool finalCountdownActive = false;
@@ -1019,6 +1024,14 @@ public partial class CardEffectManager
             if (powerBondDamageToOpponent > 0) {
                 GameManager.Instance.DamageOpponent(powerBondDamageToOpponent);
                 powerBondDamageToOpponent = 0;
+            }
+
+            if (GameManager.Instance.isPlayerTurn) {
+                if (crushCardVirusTurnsPlayer > 0) { crushCardVirusTurnsPlayer--; Debug.Log($"Crush Card Virus (Player): {crushCardVirusTurnsPlayer} turnos restantes."); }
+                if (deckDevastationVirusTurnsPlayer > 0) { deckDevastationVirusTurnsPlayer--; Debug.Log($"Deck Devastation Virus (Player): {deckDevastationVirusTurnsPlayer} turnos restantes."); }
+            } else {
+                if (crushCardVirusTurnsOpponent > 0) { crushCardVirusTurnsOpponent--; Debug.Log($"Crush Card Virus (Opponent): {crushCardVirusTurnsOpponent} turnos restantes."); }
+                if (deckDevastationVirusTurnsOpponent > 0) { deckDevastationVirusTurnsOpponent--; Debug.Log($"Deck Devastation Virus (Opponent): {deckDevastationVirusTurnsOpponent} turnos restantes."); }
             }
 
             lastWillActive = false;
@@ -5512,6 +5525,35 @@ private void Effect_0206_BlindDestruction_Logic_Impl(CardDisplay source)
 
     partial void OnCardDrawnImpl(CardData card, bool isPlayer)
     {
+        // Efeitos de Vírus (Crush Card / Deck Devastation)
+        if (isPlayer && crushCardVirusTurnsPlayer > 0) {
+            if (card.type.Contains("Monster") && card.atk >= 1500) {
+                Debug.Log($"Crush Card Virus: {card.name} destruído ao ser comprado.");
+                GameManager.Instance.RemoveCardFromHand(card, true);
+                GameManager.Instance.SendToGraveyard(card, true);
+            }
+        } else if (!isPlayer && crushCardVirusTurnsOpponent > 0) {
+            if (card.type.Contains("Monster") && card.atk >= 1500) {
+                Debug.Log($"Crush Card Virus: {card.name} destruído ao ser comprado.");
+                GameManager.Instance.RemoveCardFromHand(card, false);
+                GameManager.Instance.SendToGraveyard(card, false);
+            }
+        }
+
+        if (isPlayer && deckDevastationVirusTurnsPlayer > 0) {
+            if (card.type.Contains("Monster") && card.atk <= 1500) {
+                Debug.Log($"Deck Devastation Virus: {card.name} destruído ao ser comprado.");
+                GameManager.Instance.RemoveCardFromHand(card, true);
+                GameManager.Instance.SendToGraveyard(card, true);
+            }
+        } else if (!isPlayer && deckDevastationVirusTurnsOpponent > 0) {
+            if (card.type.Contains("Monster") && card.atk <= 1500) {
+                Debug.Log($"Deck Devastation Virus: {card.name} destruído ao ser comprado.");
+                GameManager.Instance.RemoveCardFromHand(card, false);
+                GameManager.Instance.SendToGraveyard(card, false);
+            }
+        }
+
         // 1404 - Parasite Paracide
         if (card.id == "1404")
         {
