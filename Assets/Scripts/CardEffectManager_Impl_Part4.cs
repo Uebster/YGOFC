@@ -625,27 +625,33 @@ public partial class CardEffectManager
         // Roll die twice. Destroy monster with Level = Result.
         if (source.hasUsedEffectThisTurn) return;
         
-        GameManager.Instance.TossCoin(2, (heads) => { // Simulando dados
-            int d1 = Random.Range(1, 7);
-            int d2 = Random.Range(1, 7);
-            int result = 0;
-            // Regra: Seleciona 1 resultado
-            // Simplificado: Usa o maior ou soma? Texto diz "Select 1 result".
-            // Vamos usar o primeiro para simplificar.
-            result = d1;
+        GameManager.Instance.RollDice(2, false, (results) => { 
+            int d1 = results[0];
+            int d2 = results[1];
             
-            Debug.Log($"Roulette Barrel: Rolou {d1} e {d2}. Alvo Nível {result}.");
+            List<string> options = new List<string> { d1.ToString(), d2.ToString() };
             
-            if (SpellTrapManager.Instance != null)
+            if (MultipleChoiceUI.Instance != null)
             {
-                SpellTrapManager.Instance.StartTargetSelection(
-                    (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && t.CurrentCardData.level == result,
-                    (target) => {
-                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
-                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-                        Destroy(target.gameObject);
+                MultipleChoiceUI.Instance.Show(options, "Escolha 1 resultado", 1, 1, (selected) => {
+                    if (selected.Count > 0)
+                    {
+                        int result = int.Parse(selected[0]);
+                        Debug.Log($"Roulette Barrel: Rolou {d1} e {d2}. Escolheu Nível {result}.");
+                        
+                        if (SpellTrapManager.Instance != null)
+                        {
+                            SpellTrapManager.Instance.StartTargetSelection(
+                                (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && t.CurrentCardData.level == result,
+                                (target) => {
+                                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                                    GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                                    Destroy(target.gameObject);
+                                }
+                            );
+                        }
                     }
-                );
+                });
             }
         });
         source.hasUsedEffectThisTurn = true;
@@ -1455,24 +1461,34 @@ public partial class CardEffectManager
         // Declare 2 numbers from 1 to 6. Opponent rolls die.
         // If result is declared: Draw that many cards.
         // Else: Send top X cards to GY (X = result).
-        int declared1 = 5;
-        int declared2 = 6;
+        List<string> options = new List<string> { "1", "2", "3", "4", "5", "6" };
         
-        GameManager.Instance.TossCoin(1, (heads) => { // Usando TossCoin como proxy para dado por enquanto ou Random
-            int roll = Random.Range(1, 7);
-            Debug.Log($"Sixth Sense: Rolou {roll}.");
-            
-            if (roll == declared1 || roll == declared2)
-            {
-                Debug.Log($"Sixth Sense: Acertou! Comprando {roll} cartas.");
-                for(int i=0; i<roll; i++) GameManager.Instance.DrawCard();
-            }
-            else
-            {
-                Debug.Log($"Sixth Sense: Errou! Enviando {roll} cartas ao GY.");
-                GameManager.Instance.MillCards(source.isPlayerCard, roll);
-            }
-        });
+        if (MultipleChoiceUI.Instance != null)
+        {
+            MultipleChoiceUI.Instance.Show(options, "Sixth Sense: Escolha 2 números", 2, 2, (selected) => {
+                if (selected.Count == 2)
+                {
+                    int declared1 = int.Parse(selected[0]);
+                    int declared2 = int.Parse(selected[1]);
+                    
+                    GameManager.Instance.RollDice(1, false, (results) => { 
+                        int roll = results[0];
+                        Debug.Log($"Sixth Sense: Rolou {roll}. Oponente escolheu {declared1} e {declared2}.");
+                        
+                        if (roll == declared1 || roll == declared2)
+                        {
+                            Debug.Log($"Sixth Sense: Acertou! Comprando {roll} cartas.");
+                            for(int i=0; i<roll; i++) GameManager.Instance.DrawCard(true); // ignoreLimit
+                        }
+                        else
+                        {
+                            Debug.Log($"Sixth Sense: Errou! Enviando {roll} cartas ao GY.");
+                            GameManager.Instance.MillCards(source.isPlayerCard, roll);
+                        }
+                    });
+                }
+            });
+        }
     }
 
     // 1653 - Skelengel
