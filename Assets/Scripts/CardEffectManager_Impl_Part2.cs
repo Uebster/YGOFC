@@ -518,14 +518,31 @@ public partial class CardEffectManager
             UIManager.Instance.ShowMessage("Você precisa controlar um monstro do tipo Dragão face-up.");
             return;
         }
-        
-        Effect_DirectDamage(source, 800);
+
+        List<string> options = new List<string> { "Causar 800 de Dano", "Destruir monstro com DEF <= 800" };
+        if (MultipleChoiceUI.Instance != null) {
+            MultipleChoiceUI.Instance.Show(options, "Dragon's Gunfire: Escolha", 1, 1, (selected) => {
+                if (selected[0].Contains("Dano")) {
+                    Effect_DirectDamage(source, 800);
+                } else {
+                    if (SpellTrapManager.Instance != null) {
+                        SpellTrapManager.Instance.StartTargetSelection(
+                            (t) => t.isOnField && !t.isFlipped && t.currentDef <= 800,
+                            (target) => {
+                                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                                Destroy(target.gameObject);
+                            }
+                        );
+                    }
+                }
+            });
+        }
     }
 
     void Effect_0536_DragonsMirror(CardDisplay source)
     {
-        // Fusion Summon Dragon from Extra Deck by banishing materials from Field/GY.
-        Debug.Log("Dragon's Mirror: Fusão de Dragão (Lógica de seleção de materiais pendente).");
+        GameManager.Instance.BeginFusionSummon(source);
     }
 
     void Effect_0537_DragonsRage(CardDisplay source)
@@ -711,10 +728,17 @@ public partial class CardEffectManager
                     GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
                     Destroy(target.gameObject);
                     Debug.Log($"Dust Tornado: Destruiu {target.CurrentCardData.name}.");
-                    
-                    // Parte opcional: Setar da mão
-                    // Simplificado: Apenas log, pois requer UI complexa de seleção da mão durante resolução
-                    Debug.Log("Dust Tornado: Pode setar 1 S/T da mão (Pendente).");
+
+                    List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+                    List<CardData> st = hand.FindAll(c => c.type.Contains("Spell") || c.type.Contains("Trap"));
+                    if (st.Count > 0 && UIManager.Instance != null) {
+                        UIManager.Instance.ShowConfirmation("Dust Tornado: Baixar (Set) 1 Magia/Armadilha da mão?", () => {
+                            GameManager.Instance.OpenCardSelection(st, "Selecione para Setar", (selectedST) => {
+                                GameObject handCard = GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == selectedST);
+                                if (handCard != null) GameManager.Instance.PlaySpellTrap(handCard, selectedST, true);
+                            });
+                        }, null);
+                    }
                 }
             );
         }
@@ -957,9 +981,7 @@ public partial class CardEffectManager
 
     void Effect_0577_ElementalBurst(CardDisplay source)
     {
-        // Tribute 1 WIND, 1 WATER, 1 FIRE and 1 EARTH monster; destroy all cards on your opponent's side of the field.
-        Debug.Log("Elemental Burst: Requer 4 tributos específicos.");
-        bool hasWind = false, hasWater = false, hasFire = false, hasEarth = false;
+        CardDisplay wind = null, water = null, fire = null, earth = null;
         if (GameManager.Instance.duelFieldUI != null)
         {
             foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
@@ -969,20 +991,23 @@ public partial class CardEffectManager
                     var m = z.GetChild(0).GetComponent<CardDisplay>();
                     if (m != null)
                     {
-                        if (CardEffectManager.Instance.HasAttribute(m, "Wind")) hasWind = true;
-                        if (CardEffectManager.Instance.HasAttribute(m, "Water")) hasWater = true;
-                        if (CardEffectManager.Instance.HasAttribute(m, "Fire")) hasFire = true;
-                        if (CardEffectManager.Instance.HasAttribute(m, "Earth")) hasEarth = true;
+                        if (wind == null && CardEffectManager.Instance.HasAttribute(m, "Wind")) wind = m;
+                        else if (water == null && CardEffectManager.Instance.HasAttribute(m, "Water")) water = m;
+                        else if (fire == null && CardEffectManager.Instance.HasAttribute(m, "Fire")) fire = m;
+                        else if (earth == null && CardEffectManager.Instance.HasAttribute(m, "Earth")) earth = m;
                     }
                 }
             }
         }
-        if (!(hasWind && hasWater && hasFire && hasEarth))
+        if (wind == null || water == null || fire == null || earth == null)
         {
             UIManager.Instance.ShowMessage("Você precisa tributar 1 monstro WIND, WATER, FIRE e EARTH.");
             return;
         }
-        Debug.Log("Elemental Burst: Requer 4 tributos específicos (Simulação de destruição).");
+        GameManager.Instance.TributeCard(wind);
+        GameManager.Instance.TributeCard(water);
+        GameManager.Instance.TributeCard(fire);
+        GameManager.Instance.TributeCard(earth);
         DestroyAllMonsters(true, false);
         Effect_HarpiesFeatherDuster(source);
     }
@@ -1279,10 +1304,7 @@ public partial class CardEffectManager
 
     void Effect_0606_EnragedMukaMuka(CardDisplay source)
     {
-        // This card gains 400 ATK and DEF for each card in your hand.
-        int handCount = GameManager.Instance.GetPlayerHandData().Count;
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, handCount * 400, source));
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, handCount * 400, source));
+        Debug.Log("Enraged Muka Muka: Buff dinâmico movido para OnPhaseStart.");
     }
 
     void Effect_0607_EradicatingAerosol(CardDisplay source)
@@ -1361,8 +1383,6 @@ public partial class CardEffectManager
 
     void Effect_0612_Exchange(CardDisplay source)
     {
-        // Both players reveal their hands and add 1 card from each other's hand to their hand.
-        // Simulação: Troca uma carta aleatória
         if (GameManager.Instance.GetPlayerHandData().Count == 0 || GameManager.Instance.GetOpponentHandData().Count == 0)
         {
             UIManager.Instance.ShowMessage("Ambos os jogadores precisam ter cartas na mão.");
@@ -1372,19 +1392,14 @@ public partial class CardEffectManager
         List<CardData> myHand = GameManager.Instance.GetPlayerHandData();
         List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
         
-        if (myHand.Count > 0 && oppHand.Count > 0)
-        {
-            CardData myCard = myHand[Random.Range(0, myHand.Count)];
-            CardData oppCard = oppHand[Random.Range(0, oppHand.Count)];
-            
+        GameManager.Instance.OpenCardSelection(oppHand, "Escolha 1 carta do oponente", (oppCard) => {
+            CardData myCard = myHand[Random.Range(0, myHand.Count)]; // IA escolhe uma sua aleatória
             GameManager.Instance.RemoveCardFromHand(myCard, true);
             GameManager.Instance.RemoveCardFromHand(oppCard, false);
-            
             GameManager.Instance.AddCardToHand(oppCard, true);
-            GameManager.Instance.AddCardToHand(myCard, false); // Adiciona à mão do oponente (visualmente pode ser estranho se não for network)
-            
-            Debug.Log($"Exchange: Trocou {myCard.name} por {oppCard.name}.");
-        }
+            GameManager.Instance.AddCardToHand(myCard, false);
+            Debug.Log($"Exchange: Você pegou {oppCard.name} e a IA pegou {myCard.name}.");
+        });
     }
 
     void Effect_0613_ExchangeOfTheSpirit(CardDisplay source)
@@ -1578,8 +1593,8 @@ public partial class CardEffectManager
             GameManager.Instance.OpenCardSelection(equips, "Recuperar Equip Spell", (selected) => {
                 gy.Remove(selected);
                 GameManager.Instance.AddCardToHand(selected, source.isPlayerCard);
-                Debug.Log($"Fairy of the Spring: {selected.name} recuperada.");
-                // TODO: Bloquear ativação desta carta neste turno
+                GameManager.Instance.forbiddenSpells.Add(selected.name);
+                Debug.Log($"Fairy of the Spring: {selected.name} recuperada. Não pode ser ativada neste turno.");
             });
         }
     }
@@ -1655,12 +1670,9 @@ public partial class CardEffectManager
         GameManager.Instance.OpenCardSelection(oppHand, "Mão do Oponente", (selected) => {
             if (selected.type.Contains("Spirit"))
             {
-                // Discard logic (precisa achar o GO)
-                Debug.Log($"Fengsheng Mirror: Descartando Spirit {selected.name}.");
-            }
-            else
-            {
-                Debug.Log("Fengsheng Mirror: Carta não é Spirit.");
+                var go = GameManager.Instance.opponentHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == selected);
+                if (go != null) GameManager.Instance.DiscardCard(go.GetComponent<CardDisplay>(), true);
+                Debug.Log($"Fengsheng Mirror: Descartou {selected.name}.");
             }
         });
     }
@@ -1675,10 +1687,29 @@ public partial class CardEffectManager
 
     void Effect_0639_FiberJar(CardDisplay source)
     {
+        List<CardDisplay> allCards = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null) {
+            CollectCards(GameManager.Instance.duelFieldUI.playerMonsterZones, allCards);
+            CollectCards(GameManager.Instance.duelFieldUI.opponentMonsterZones, allCards);
+            CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, allCards);
+            CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, allCards);
+        }
+        foreach(var c in allCards) GameManager.Instance.ReturnToDeck(c, false);
+        
         GameManager.Instance.ReturnHandToDeck(true);
         GameManager.Instance.ReturnHandToDeck(false);
-        DestroyAllMonsters(true, true);
         
+        List<CardData> pGY = GameManager.Instance.GetPlayerGraveyard();
+        GameManager.Instance.GetPlayerMainDeck().AddRange(pGY);
+        pGY.Clear();
+        
+        List<CardData> oGY = GameManager.Instance.GetOpponentGraveyard();
+        GameManager.Instance.GetOpponentMainDeck().AddRange(oGY);
+        oGY.Clear();
+
+        GameManager.Instance.ShuffleDeck(true);
+        GameManager.Instance.ShuffleDeck(false);
+
         for(int i=0; i<5; i++) GameManager.Instance.DrawCard(true);
         for(int i=0; i<5; i++) GameManager.Instance.DrawOpponentCard();
     }
@@ -1803,13 +1834,14 @@ public partial class CardEffectManager
 
         if (hand.Count >= 5)
         {
-            // Descarta 5 (Simplificado: Aleatório ou os primeiros 5)
-            // Em produção: UI de seleção múltipla obrigatória
-            GameManager.Instance.DiscardRandomHand(source.isPlayerCard, 5);
-            
-            Debug.Log("Final Destiny: Destruindo tudo!");
-            DestroyAllMonsters(true, true);
-            Effect_HeavyStorm(source); // Destrói S/T
+            GameManager.Instance.OpenCardMultiSelection(hand, "Descarte 5 cartas", 5, 5, (selected) => {
+                foreach (var c in selected) {
+                    GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c).GetComponent<CardDisplay>());
+                }
+                Debug.Log("Final Destiny: Destruindo tudo!");
+                DestroyAllMonsters(true, true);
+                Effect_HeavyStorm(source); // Destrói S/T
+            });
         }
         else
         {
@@ -1830,17 +1862,10 @@ public partial class CardEffectManager
 
     void Effect_0656_FireDarts(CardDisplay source)
     {
-        // Roll 3 dice. Inflict damage = sum * 100.
-        GameManager.Instance.TossCoin(3, (heads) => { 
-            // Nota: TossCoin retorna caras, precisamos de dados (1-6).
-            // Simulando dados aqui já que TossCoin é para moedas
-            int d1 = Random.Range(1, 7);
-            int d2 = Random.Range(1, 7);
-            int d3 = Random.Range(1, 7);
-            int total = d1 + d2 + d3;
+        GameManager.Instance.RollDice(3, false, (results) => {
+            int total = results.Sum();
             int damage = total * 100;
-            
-            Debug.Log($"Fire Darts: Dados {d1}, {d2}, {d3}. Total {total}. Dano {damage}.");
+            Debug.Log($"Fire Darts: Rolou {results[0]}, {results[1]}, {results[2]}. Total {total}. Dano {damage}.");
             Effect_DirectDamage(source, damage);
         });
     }
@@ -1864,9 +1889,18 @@ public partial class CardEffectManager
         List<CardData> hand = GameManager.Instance.GetPlayerHandData();
         if (hand.Count >= 2)
         {
-            GameManager.Instance.DiscardRandomHand(source.isPlayerCard, 2); // Deveria ser Banir
-            Effect_DirectDamage(source, 800);
-            Debug.Log("Fire Sorcerer: Baniu 2 da mão, causou 800 dano.");
+            GameManager.Instance.OpenCardMultiSelection(hand, "Banir 2 da mão", 2, 2, (selected) => {
+                foreach(var c in selected) {
+                    var go = GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c);
+                    if (go != null) {
+                        GameManager.Instance.RemoveCardFromHand(c, source.isPlayerCard);
+                        GameManager.Instance.RemoveFromPlay(c, source.isPlayerCard);
+                        Destroy(go);
+                    }
+                }
+                Effect_DirectDamage(source, 800);
+                Debug.Log("Fire Sorcerer: Baniu 2 da mão, causou 800 dano.");
+            });
         }
     }
 
@@ -1913,11 +1947,7 @@ public partial class CardEffectManager
 
     void Effect_0676_FlashAssailant(CardDisplay source)
     {
-        // Decrease ATK and DEF by 400 for each card in your hand.
-        int handCount = GameManager.Instance.GetPlayerHandData().Count;
-        int debuff = handCount * -400;
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, debuff, source));
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, debuff, source));
+        Debug.Log("Flash Assailant: Debuff dinâmico movido para OnPhaseStart.");
     }
 
     void Effect_0677_Flint(CardDisplay source)
@@ -1989,7 +2019,7 @@ public partial class CardEffectManager
             GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta", (discarded) => {
                 GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
                 Debug.Log("Forced Ceasefire: Traps bloqueadas neste turno.");
-                // SpellTrapManager.Instance.trapsBlocked = true;
+                CardEffectManager.Instance.trapsBlockedThisTurn = true;
             });
         }
     }
@@ -2213,6 +2243,7 @@ public partial class CardEffectManager
             return;
         }
         Effect_Equip(source, 700, 0);
+        Debug.Log("Germ Infection: O decaimento de ATK ocorre na Standby Phase (OnPhaseStart).");
     }
 
     void Effect_0702_FulfillmentOfTheContract(CardDisplay source)
@@ -2363,16 +2394,20 @@ public partial class CardEffectManager
 
     void Effect_0716_GaiaSoul(CardDisplay source)
     {
-        if (SpellTrapManager.Instance != null && source.isOnField)
-        {
-            SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.race == "Pyro" && t != source,
-                (tribute) => {
-                    GameManager.Instance.TributeCard(tribute);
-                    source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 1000, source));
-                    Debug.Log("Gaia Soul: Ganhou 1000 ATK.");
+        List<CardDisplay> pyros = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null) CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, pyros);
+        
+        var validTributes = pyros.FindAll(m => m != source && m.CurrentCardData.race == "Pyro");
+        if (validTributes.Count > 0 && UIManager.Instance != null) {
+            List<CardData> pData = validTributes.Select(m => m.CurrentCardData).ToList();
+            int max = Mathf.Min(2, pData.Count);
+            GameManager.Instance.OpenCardMultiSelection(pData, "Tributar até 2 Pyros", 1, max, (selected) => {
+                foreach(var s in selected) {
+                    var m = validTributes.Find(x => x.CurrentCardData == s);
+                    if (m != null) GameManager.Instance.TributeCard(m);
                 }
-            );
+                source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, selected.Count * 1000, source));
+            });
         }
     }
 
@@ -2539,8 +2574,14 @@ public partial class CardEffectManager
 
     void Effect_0740_GeminiImps(CardDisplay source)
     {
-        // Discard to negate effect that makes you discard.
-        Debug.Log("Gemini Imps: Nega efeito de descarte.");
+        var link = GetLinkToNegate(source);
+        if (link != null)
+        {
+            GameManager.Instance.DiscardCard(source);
+            NegateAndDestroy(source, link);
+            GameManager.Instance.DrawCard();
+            Debug.Log("Gemini Imps: Negou descarte e comprou 1 carta.");
+        }
     }
 
     void Effect_0742_GermInfection(CardDisplay source)
@@ -2769,17 +2810,7 @@ public partial class CardEffectManager
 
     void Effect_0775_GoblinKing(CardDisplay source)
     {
-        int count = 0;
-        if (GameManager.Instance.duelFieldUI != null)
-        {
-            List<CardDisplay> all = new List<CardDisplay>();
-            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
-            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
-            foreach(var m in all) if (m.CurrentCardData.race == "Fiend") count++;
-        }
-        
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, count * 500, source));
-        source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, count * 500, source));
+        Debug.Log("Goblin King: Buff dinâmico movido para OnPhaseStart.");
     }
 
     void Effect_0776_GoblinThief(CardDisplay source)
@@ -2956,6 +2987,7 @@ public partial class CardEffectManager
             {
                 GameManager.Instance.SpecialSummonFromData(source.CurrentCardData, source.isPlayerCard);
                 GameManager.Instance.RemoveCardFromHand(source.CurrentCardData, source.isPlayerCard);
+                Debug.Log("Gradius' Option: Stats dinâmicos integrados ao OnPhaseStart.");
             }
             else
             {
@@ -3139,7 +3171,12 @@ public partial class CardEffectManager
 
     void Effect_0812_GravekeepersWatcher(CardDisplay source)
     {
-        Debug.Log("Gravekeeper's Watcher: Hand Trap Counter (Requer checagem de texto na Chain).");
+        var link = GetLinkToNegate(source);
+        if (link != null)
+        {
+            GameManager.Instance.DiscardCard(source);
+            NegateAndDestroy(source, link);
+        }
     }
 
     void Effect_0813_Graverobber(CardDisplay source)
@@ -3566,7 +3603,7 @@ public partial class CardEffectManager
                     (tribute) => {
                         GameManager.Instance.TributeCard(source);
                         GameManager.Instance.TributeCard(tribute);
-                        Effect_SearchDeck(source, "Sacred Phoenix of Nephthys", "Monster"); // Simulado: deve ser SS
+                        Effect_SpecialSummonFromDeck(source, nameContains: "Sacred Phoenix of Nephthys"); 
                     }
                 );
             }
@@ -4155,9 +4192,10 @@ public partial class CardEffectManager
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"),
                 (t) => {
+                    CardData targetData = t.CurrentCardData;
                     GameManager.Instance.BanishCard(t);
-                    Debug.Log($"Interdimensional Matter Transporter: {t.CurrentCardData.name} banido temporariamente.");
-                    // TODO: Agendar retorno na End Phase
+                    CardEffectManager.Instance.imT_BanishedCards.Add(targetData);
+                    Debug.Log($"Interdimensional Matter Transporter: {targetData.name} banido temporariamente.");
                 }
             );
         }
@@ -4377,9 +4415,19 @@ public partial class CardEffectManager
 
     void Effect_0984_JudgmentOfThePharaoh(CardDisplay source)
     {
-        // Pay half LP. Select effect to lock.
-        Effect_PayLP(source, GameManager.Instance.playerLP / 2);
-        Debug.Log("Judgment of the Pharaoh: Bloqueio ativado.");
+        if (Effect_PayLP(source, GameManager.Instance.playerLP / 2))
+        {
+            if (MultipleChoiceUI.Instance != null) {
+                List<string> opts = new List<string> { "Bloquear Invocações do Oponente", "Bloquear Magias/Armadilhas" };
+                MultipleChoiceUI.Instance.Show(opts, "Judgment of the Pharaoh:", 1, 1, (selected) => {
+                    if (selected[0].Contains("Invocações")) {
+                        Debug.Log("Judgment of the Pharaoh: Oponente não pode invocar (Simulado).");
+                    } else {
+                        Debug.Log("Judgment of the Pharaoh: Oponente não pode ativar S/T (Simulado).");
+                    }
+                });
+            }
+        }
     }
 
     void Effect_0985_JustDesserts(CardDisplay source)

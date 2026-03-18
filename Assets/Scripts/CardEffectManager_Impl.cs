@@ -98,6 +98,13 @@ public partial class CardEffectManager
             if (!hasOtherDragon) return false;
         }
 
+        // Metal Fiend Token (0650 - Fiend's Sanctuary)
+        if (attacker.CurrentCardData.name == "Metal Fiend Token")
+        {
+            Debug.Log("Ataque impedido: Metal Fiend Token não pode atacar.");
+            return false;
+        }
+
         // Invitation to a Dark Sleep (0960)
         CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
         foreach(var link in links)
@@ -703,6 +710,16 @@ public partial class CardEffectManager
                 if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && card.position == CardDisplay.BattlePosition.Defense) card.AddSpellCounter(1);
             });
 
+            CheckActiveCards("0742", (card) => { // Germ Infection
+                CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+                foreach (var link in links) {
+                    if (link.source == card && link.target != null) {
+                        link.target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -300, card));
+                        Debug.Log($"Germ Infection: {link.target.CurrentCardData.name} perdeu 300 ATK na Standby.");
+                    }
+                }
+            });
+
             CheckActiveCards("0394", (card) => { // Dangerous Machine Type-6
                 if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
                     int roll = Random.Range(1, 7);
@@ -1045,6 +1062,10 @@ public partial class CardEffectManager
             CheckActiveCards("0079", (card) => UpdateAquaChorusBuff(card));
             CheckActiveCards("0109", (card) => UpdateArsenalBugBuff(card));
             CheckActiveCards("0145", (card) => UpdateBatterymanAABuff(card));
+            CheckActiveCards("0606", (card) => UpdateEnragedMukaMukaBuff(card));
+            CheckActiveCards("0676", (card) => UpdateFlashAssailantBuff(card));
+            CheckActiveCards("0775", (card) => UpdateGoblinKingBuff(card));
+            CheckActiveCards("0794", (card) => UpdateGradiusOptionBuff(card));
             
             CheckActiveCards("1140", (card) => { // Maha Vailo
                 int equipCount = GetEquippedCards(card).Count;
@@ -1408,6 +1429,59 @@ public partial class CardEffectManager
             card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, atkCount * 1000, card));
         else
             card.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, defCount * 1000, card));
+    }
+
+    private void UpdateEnragedMukaMukaBuff(CardDisplay card)
+    {
+        int handCount = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData().Count : GameManager.Instance.GetOpponentHandData().Count;
+        card.RemoveModifiersFromSource(card);
+        if (handCount > 0) {
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, handCount * 400, card));
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, handCount * 400, card));
+        }
+    }
+
+    private void UpdateFlashAssailantBuff(CardDisplay card)
+    {
+        int handCount = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData().Count : GameManager.Instance.GetOpponentHandData().Count;
+        card.RemoveModifiersFromSource(card);
+        if (handCount > 0) {
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, handCount * -400, card));
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, handCount * -400, card));
+        }
+    }
+
+    private void UpdateGoblinKingBuff(CardDisplay card)
+    {
+        int count = 0;
+        if (GameManager.Instance.duelFieldUI != null) {
+            List<CardDisplay> all = new List<CardDisplay>();
+            CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+            CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+            foreach(var m in all) if (m.CurrentCardData.race == "Fiend" && m != card && !m.isFlipped) count++;
+        }
+        card.RemoveModifiersFromSource(card);
+        if (count > 0) {
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, count * 500, card));
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, count * 500, card));
+        }
+    }
+
+    private void UpdateGradiusOptionBuff(CardDisplay card)
+    {
+        CardDisplay gradius = null;
+        if (GameManager.Instance.duelFieldUI != null) {
+            Transform[] zones = card.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach(var z in zones) if (z.childCount > 0 && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped && (z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.name == "Gradius" || z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "1095")) gradius = z.GetChild(0).GetComponent<CardDisplay>();
+        }
+        card.RemoveModifiersFromSource(card);
+        if (gradius != null) {
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, gradius.currentAtk, card));
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, gradius.currentDef, card));
+        } else {
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, 0, card));
+            card.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, 0, card));
+        }
     }
 
     public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, SendReason reason)
@@ -2391,6 +2465,13 @@ public partial class CardEffectManager
             Effect_SearchDeck(attacker, "Dark Scorpion");
         }
 
+        // 0894 - Hino-Kagu-Tsuchi
+        if (attacker.CurrentCardData.id == "0894" && amount > 0)
+        {
+            Debug.Log("Hino-Kagu-Tsuchi: Oponente descartará a mão na próxima Draw Phase (Simulado: Descarte imediato).");
+            GameManager.Instance.DiscardHand(!attacker.isPlayerCard);
+        }
+
             // 1040 - Kycoo the Ghost Destroyer
             if (attacker.CurrentCardData.id == "1040" && amount > 0) {
                 List<CardData> oppGY = attacker.isPlayerCard ? GameManager.Instance.GetOpponentGraveyard() : GameManager.Instance.GetPlayerGraveyard();
@@ -2827,6 +2908,9 @@ public partial class CardEffectManager
 
         // The Last Warrior from Another Planet (1874) - No Summons at all
         if (GameManager.Instance.IsCardActiveOnField("1874")) return true;
+
+        // Jam Breeding Machine (0965) - Cannot summon monsters
+        if (GameManager.Instance.IsCardActiveOnField("0965")) return true;
 
         return false;
     }
