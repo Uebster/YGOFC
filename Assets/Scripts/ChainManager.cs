@@ -131,10 +131,30 @@ public class ChainManager : MonoBehaviour
                     }
                     else
                     {
-                        // Lógica da IA
-                        // Debug.Log("IA está pensando se responde...");
-                        yield return new WaitForSeconds(0.5f); // Simula pensamento
-                        opponentPassed = true; // IA decide não responder por enquanto
+                        // --- INTELIGÊNCIA ARTIFICIAL: AVALIANDO RESPOSTA ---
+                        yield return new WaitForSeconds(1.2f); // Simula o tempo de pensar da IA
+                        
+                        CardDisplay aiChoice = null;
+                        if (OpponentAI.Instance != null)
+                        {
+                            aiChoice = OpponentAI.Instance.ChooseBestResponse(responses, GetLastChainLink());
+                        }
+
+                        if (aiChoice != null)
+                        {
+                            Debug.Log($"[ChainManager] IA decidiu responder com a armadilha/efeito rápido: {aiChoice.CurrentCardData.name}");
+                            if (aiChoice.CurrentCardData.type.Contains("Monster")) {
+                                // Se no futuro a IA tiver Quick Effects de Monstros
+                                ChainManager.Instance.AddToChain(aiChoice, aiChoice.isPlayerCard, ChainManager.TriggerType.Effect);
+                            } else {
+                                GameManager.Instance.ActivateFieldSpellTrap(aiChoice.gameObject);
+                            }
+                        }
+                        else
+                        {
+                            Debug.Log("[ChainManager] IA avaliou a situação e decidiu não gastar recursos (Passou).");
+                            opponentPassed = true;
+                        }
                     }
                 }
                 else

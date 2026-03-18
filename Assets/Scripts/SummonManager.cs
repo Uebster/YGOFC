@@ -367,9 +367,21 @@ public class SummonManager : MonoBehaviour
             }
         }
 
-        // Ordena por ATK (menor para maior) para sacrificar os mais fracos primeiro
-        // Isso é uma lógica básica para validar o sistema. No futuro, abriremos um menu de seleção.
-        availableMonsters.Sort((a, b) => a.CurrentCardData.atk.CompareTo(b.CurrentCardData.atk));
+        // A Arte da Abdicação de Roubo
+        availableMonsters.Sort((a, b) => {
+            // 1. Prioriza absolutamente monstros que seriam devolvidos ao oponente na End Phase (Change of Heart / Shien's Spy)
+            if (a.returnControlAtEndPhase && !b.returnControlAtEndPhase) return -1;
+            if (!a.returnControlAtEndPhase && b.returnControlAtEndPhase) return 1;
+
+            // 2. Prioriza monstros cujo dono original NÃO é o jogador atual (Snatch Steal, Brain Control)
+            bool aIsStolen = (a.originalOwnerIsPlayer != a.isPlayerCard);
+            bool bIsStolen = (b.originalOwnerIsPlayer != b.isPlayerCard);
+            if (aIsStolen && !bIsStolen) return -1;
+            if (!aIsStolen && bIsStolen) return 1;
+
+            // 3. Fallback: Ordena por ATK (sacrifica o próprio monstro mais fraco)
+            return a.CurrentCardData.atk.CompareTo(b.CurrentCardData.atk);
+        });
 
         int tributed = 0;
         foreach (CardDisplay monster in availableMonsters)

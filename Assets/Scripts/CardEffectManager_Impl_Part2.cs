@@ -2924,26 +2924,48 @@ public partial class CardEffectManager
 
     void Effect_0791_GracefulCharity(CardDisplay source)
     {
-        if (GameManager.Instance.GetPlayerMainDeck().Count < 3)
+        List<CardData> deck = source.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+        if (deck.Count < 3)
         {
-            UIManager.Instance.ShowMessage("Você precisa de pelo menos 3 cartas no Deck.");
+            if (source.isPlayerCard && UIManager.Instance != null) UIManager.Instance.ShowMessage("Você precisa de pelo menos 3 cartas no Deck.");
             return;
         }
-
+        if (source.isPlayerCard) {
         GameManager.Instance.DrawCard(true);
         GameManager.Instance.DrawCard(true);
         GameManager.Instance.DrawCard(true);
+        } else {
+            GameManager.Instance.DrawOpponentCard();
+            GameManager.Instance.DrawOpponentCard();
+            GameManager.Instance.DrawOpponentCard();
+        }
         
-        List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+        List<CardData> hand = source.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
         if (hand.Count >= 2)
         {
-            GameManager.Instance.OpenCardMultiSelection(hand, "Descarte 2 cartas", 2, 2, (selected) => {
-                foreach (var c in selected)
+            if (source.isPlayerCard)
+            {
+                GameManager.Instance.OpenCardMultiSelection(hand, "Descarte 2 cartas", 2, 2, (selected) => {
+                    foreach (var c in selected)
+                    {
+                        GameObject go = GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c);
+                        if (go != null) GameManager.Instance.DiscardCard(go.GetComponent<CardDisplay>());
+                    }
+                });
+            }
+            else
+            {
+                if (OpponentAI.Instance != null)
                 {
-                    GameObject go = GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c);
-                    if (go != null) GameManager.Instance.DiscardCard(go.GetComponent<CardDisplay>());
+                    var smartTargets = OpponentAI.Instance.GetSmartDiscardTargets(2);
+                    foreach (var target in smartTargets)
+                    {
+                        Debug.Log($"Graceful Charity: IA descartou {target.CurrentCardData.name}.");
+                        GameManager.Instance.DiscardCard(target);
+                    }
                 }
-            });
+                else GameManager.Instance.DiscardRandomHand(false, 2);
+            }
         }
     }
 

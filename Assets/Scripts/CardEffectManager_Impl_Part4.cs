@@ -3551,15 +3551,33 @@ public partial class CardEffectManager
     void Effect_1863_TheForcefulSentry(CardDisplay source)
     {
         // Look at opponent's hand, select 1 card and return to Deck.
-        List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+        List<CardData> oppHand = source.isPlayerCard ? GameManager.Instance.GetOpponentHandData() : GameManager.Instance.GetPlayerHandData();
         if (oppHand.Count > 0)
         {
-            GameManager.Instance.OpenCardSelection(oppHand, "Retornar ao Deck", (selected) => {
-                // Simula retorno
-                GameManager.Instance.GetOpponentMainDeck().Add(selected);
-                GameManager.Instance.ShuffleDeck(false);
-                Debug.Log($"The Forceful Sentry: {selected.name} retornado ao deck do oponente.");
-            });
+            if (source.isPlayerCard)
+            {
+                GameManager.Instance.OpenCardSelection(oppHand, "Retornar ao Deck", (selected) => {
+                    GameManager.Instance.RemoveCardFromHand(selected, false);
+                    GameManager.Instance.GetOpponentMainDeck().Add(selected);
+                    GameManager.Instance.ShuffleDeck(false);
+                    Debug.Log($"The Forceful Sentry: {selected.name} retornado ao deck do oponente.");
+                });
+            }
+            else
+            {
+                if (OpponentAI.Instance != null)
+                {
+                    CardDisplay bestTarget = OpponentAI.Instance.GetBestCardToDiscardFromOpponent();
+                    if (bestTarget != null)
+                    {
+                        CardData selected = bestTarget.CurrentCardData;
+                        GameManager.Instance.RemoveCardFromHand(selected, true);
+                        GameManager.Instance.GetPlayerMainDeck().Add(selected);
+                        GameManager.Instance.ShuffleDeck(true);
+                        Debug.Log($"The Forceful Sentry: IA retornou {selected.name} ao seu deck.");
+                    }
+                }
+            }
         }
     }
 

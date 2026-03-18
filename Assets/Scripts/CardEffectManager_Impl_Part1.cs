@@ -3775,20 +3775,37 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0321_Confiscation(CardDisplay source)
     {
-        if (GameManager.Instance.GetOpponentHandData().Count == 0)
+        List<CardData> targetHand = source.isPlayerCard ? GameManager.Instance.GetOpponentHandData() : GameManager.Instance.GetPlayerHandData();
+        if (targetHand.Count == 0)
         {
-            UIManager.Instance.ShowMessage("A mão do oponente está vazia.");
+            if (source.isPlayerCard && UIManager.Instance != null) UIManager.Instance.ShowMessage("A mão do oponente está vazia.");
             return;
         }
 
         if (Effect_PayLP(source, 1000))
         {
-            List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
-            GameManager.Instance.OpenCardSelection(oppHand, "Descartar da Mão do Oponente", (selected) => {
-                var go = GameManager.Instance.opponentHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == selected);
-                if (go != null) GameManager.Instance.DiscardCard(go.GetComponent<CardDisplay>(), true);
-                Debug.Log($"Confiscation: Descartou {selected.name}.");
-            });
+            if (source.isPlayerCard)
+            {
+                GameManager.Instance.OpenCardSelection(targetHand, "Descartar da Mão do Oponente", (selected) => {
+                    var go = GameManager.Instance.opponentHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == selected);
+                    if (go != null) GameManager.Instance.DiscardCard(go.GetComponent<CardDisplay>(), true);
+                    Debug.Log($"Confiscation: Você descartou {selected.name}.");
+                });
+            }
+            else
+            {
+                if (OpponentAI.Instance != null)
+                {
+                    CardDisplay bestTarget = OpponentAI.Instance.GetBestCardToDiscardFromOpponent();
+                    if (bestTarget != null)
+                    {
+                        Debug.Log($"Confiscation: IA descartou {bestTarget.CurrentCardData.name} da sua mão.");
+                        GameManager.Instance.DiscardCard(bestTarget, true);
+                    }
+                    else GameManager.Instance.DiscardRandomHand(true, 1, true);
+                }
+                else GameManager.Instance.DiscardRandomHand(true, 1, true);
+            }
         }
     }
 
@@ -5514,15 +5531,45 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0465_DelinquentDuo(CardDisplay source)
     {
-        if (GameManager.Instance.GetOpponentHandData().Count == 0)
+        bool targetIsOpponent = source.isPlayerCard;
+        List<CardData> targetHand = targetIsOpponent ? GameManager.Instance.GetOpponentHandData() : GameManager.Instance.GetPlayerHandData();
+
+        if (targetHand.Count == 0)
         {
-            UIManager.Instance.ShowMessage("A mão do oponente está vazia.");
+            if (source.isPlayerCard && UIManager.Instance != null) UIManager.Instance.ShowMessage("A mão do oponente está vazia.");
             return;
         }
 
         if (Effect_PayLP(source, 1000))
         {
-            Debug.Log("Delinquent Duo: Oponente descarta 2.");
+            Debug.Log("Delinquent Duo ativado.");
+            
+            GameManager.Instance.DiscardRandomHand(!targetIsOpponent, 1, source.isPlayerCard);
+
+            targetHand = targetIsOpponent ? GameManager.Instance.GetOpponentHandData() : GameManager.Instance.GetPlayerHandData();
+            if (targetHand.Count > 0)
+            {
+                if (targetIsOpponent)
+                {
+                    if (OpponentAI.Instance != null)
+                    {
+                        var smartTargets = OpponentAI.Instance.GetSmartDiscardTargets(1);
+                        if (smartTargets.Count > 0)
+                        {
+                            Debug.Log($"Delinquent Duo: IA escolheu descartar {smartTargets[0].CurrentCardData.name}.");
+                            GameManager.Instance.DiscardCard(smartTargets[0], source.isPlayerCard);
+                        }
+                    }
+                    else GameManager.Instance.DiscardRandomHand(false, 1, source.isPlayerCard);
+                }
+                else
+                {
+                    GameManager.Instance.OpenCardSelection(targetHand, "Delinquent Duo: Escolha 1 para descartar", (selected) => {
+                        var go = GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == selected);
+                        if (go != null) GameManager.Instance.DiscardCard(go.GetComponent<CardDisplay>(), source.isPlayerCard);
+                    });
+                }
+            }
         }
     }
 
