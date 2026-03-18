@@ -302,6 +302,23 @@ public class BattleManager : MonoBehaviour
             Debug.Log("Patrician of Darkness: Alvo redirecionado.");
         }
 
+        // 1686 - Solar Flare Dragon
+        if (target.CurrentCardData.id == "1686")
+        {
+            int pyroCount = 0;
+            Transform[] targetZones = target.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach(var z in targetZones) {
+                if (z.childCount > 0) {
+                    var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (cd != null && !cd.isFlipped && cd.CurrentCardData.race == "Pyro") pyroCount++;
+                }
+            }
+            if (pyroCount > 1) {
+                Debug.LogWarning("Solar Flare Dragon não pode ser atacado enquanto outro Pyro estiver no campo.");
+                return;
+            }
+        }
+
         // Command Knight (0318)
         if (target.CurrentCardData.id == "0318")
         {
@@ -1000,6 +1017,17 @@ public class BattleManager : MonoBehaviour
         {
             Debug.LogWarning("Mudança de posição bloqueada por efeito (ex: Mesmeric Control).");
             return;
+        }
+
+        // 1623 - Shadow Spell
+        if (CardEffectManager.Instance != null)
+        {
+            var equips = CardEffectManager.Instance.GetEquippedCards(card);
+            if (equips.Exists(e => e.CurrentCardData.id == "1623"))
+            {
+                Debug.LogWarning("Mudança de posição bloqueada por Shadow Spell.");
+                return;
+            }
         }
 
         string newPos = card.position == CardDisplay.BattlePosition.Attack ? "Defesa" : "Ataque";

@@ -1435,19 +1435,17 @@ public partial class CardEffectManager
     // 1645 - Silent Swordsman LV3
     void Effect_1645_SilentSwordsmanLV3(CardDisplay source)
     {
-        // Negate Spell targeting this card. Standby: Send to GY -> SS LV5.
-        // Negação é passiva/trigger.
-        // Level Up: Lógica no OnPhaseStart.
-        Debug.Log("Silent Swordsman LV3: Efeitos de nível configurados.");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell") && link.target == source)
+        {
+            NegateAndDestroy(source, link);
+        }
     }
 
     // 1646 - Silent Swordsman LV5
     void Effect_1646_SilentSwordsmanLV5(CardDisplay source)
     {
-        // Unaffected by Spells. Direct attack damage -> Standby -> SS LV7.
-        // Imunidade é passiva.
-        // Level Up: Lógica no OnPhaseStart/OnDamageDealt.
-        Debug.Log("Silent Swordsman LV5: Efeitos de nível configurados.");
+        Debug.Log("Silent Swordsman LV5: Efeitos de nível configurados no sistema global.");
     }
 
     // 1647 - Silent Swordsman LV7
@@ -2127,8 +2125,7 @@ public partial class CardEffectManager
     // 1718 - Spear Dragon
     void Effect_1718_SpearDragon(CardDisplay source)
     {
-        // Piercing. Changes to Defense after attack.
-        Debug.Log("Spear Dragon: Perfurante e mudança de posição.");
+        source.hasPiercing = true;
     }
 
     // 1719 - Special Hurricane
@@ -2792,8 +2789,6 @@ public partial class CardEffectManager
     // 1786 - Stumbling
     void Effect_1786_Stumbling(CardDisplay source)
     {
-        // Any monster that is Normal Summoned, Flip Summoned or Special Summoned is changed to Defense Position.
-        // Lógica implementada no OnSummonImpl (CardEffectManager_Impl.cs).
         Debug.Log("Stumbling: Ativo.");
     }
 

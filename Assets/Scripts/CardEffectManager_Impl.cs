@@ -107,14 +107,19 @@ public partial class CardEffectManager
             return false;
         }
 
-        // Invitation to a Dark Sleep (0960)
         CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
         foreach(var link in links)
         {
-            if (link.target == attacker && link.source != null && link.source.CurrentCardData.id == "0960")
+            if (link.target == attacker && link.source != null)
             {
-                Debug.Log("Ataque impedido por Invitation to a Dark Sleep.");
-                return false;
+                if (link.source.CurrentCardData.id == "0960") {
+                    Debug.Log("Ataque impedido por Invitation to a Dark Sleep.");
+                    return false;
+                }
+                if (link.source.CurrentCardData.id == "1623") {
+                    Debug.Log("Ataque impedido por Shadow Spell.");
+                    return false;
+                }
             }
         }
         
@@ -195,6 +200,16 @@ public partial class CardEffectManager
             if (!GameManager.Instance.PayLifePoints(attacker.isPlayerCard, 1000))
             {
                 Debug.Log("Dark Elf: LP insuficientes para atacar (1000).");
+                return false;
+            }
+        }
+
+        // 1937 - Toll
+        if (GameManager.Instance.IsCardActiveOnField("1937"))
+        {
+            if (!GameManager.Instance.PayLifePoints(attacker.isPlayerCard, 500))
+            {
+                Debug.LogWarning("Toll: LP insuficientes para declarar ataque (500).");
                 return false;
             }
         }
@@ -574,6 +589,17 @@ public partial class CardEffectManager
                 oppGY.Remove(oppSerpent);
                 GameManager.Instance.AddCardToHand(oppSerpent, false);
             }
+
+        // 1645 & 1646 - Silent Swordsman
+        CheckActiveCards("1645", (card) => {
+            if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) Effect_LevelUp(card, "1646");
+        });
+        CheckActiveCards("1646", (card) => {
+            if (card.isPlayerCard == GameManager.Instance.isPlayerTurn && card.scheduledForLevelUp) {
+                Effect_LevelUp(card, "1647");
+                card.scheduledForLevelUp = false;
+            }
+        });
 
             // 5. Demais efeitos de Standby Phase
             CheckActiveCards("2076", (card) => { // White Magician Pikeru
@@ -2199,6 +2225,15 @@ public partial class CardEffectManager
             Debug.Log("Invasion of Flames: Traps bloqueadas neste turno.");
         }
 
+        // 1786 - Stumbling
+        if (GameManager.Instance.IsCardActiveOnField("1786") && card.position == CardDisplay.BattlePosition.Attack) {
+            card.ChangePosition();
+            Debug.Log("Stumbling: Monstro forçado para defesa.");
+        }
+        
+        // 1718 - Spear Dragon
+        if (card.CurrentCardData.id == "1718") card.hasPiercing = true;
+
         // 0888 - Hidden Soldiers
         if (!card.isPlayerCard) // Invocação do Oponente
         {
@@ -2487,6 +2522,13 @@ public partial class CardEffectManager
         if (attacker.CurrentCardData.id == "0438" && amount > 0) {
             Effect_SearchDeck(attacker, "Dark Scorpion");
         }
+
+    // 1646 - Silent Swordsman LV5
+    if (attacker.CurrentCardData.id == "1646" && target == null && amount > 0)
+    {
+        attacker.scheduledForLevelUp = true;
+        Debug.Log("Silent Swordsman LV5: Causou dano direto, agendado para evoluir na Standby.");
+    }
 
         // 1889 - The Secret of the Bandit
         bool hasSecret = false;
@@ -2828,6 +2870,12 @@ public partial class CardEffectManager
                 Debug.Log("Morale Boost: +1000 LP.");
             });
         }
+
+    // 1720 - Spell Absorption
+    CheckActiveCards("1720", (card) => {
+        Effect_GainLP(card, 500);
+        Debug.Log("Spell Absorption: +500 LP.");
+    });
 
         // 0281 - Chain Burst
         if (spell.CurrentCardData.type.Contains("Trap"))
@@ -3733,6 +3781,13 @@ public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
     if (attacker != null && attacker.CurrentCardData.id == "0870" && target != null)
     {
         Debug.Log("Harpie Lady 3: Alvo não pode atacar por 2 turnos.");
+    }
+
+    // 1718 - Spear Dragon
+    if (attacker != null && attacker.CurrentCardData.id == "1718" && attacker.position == CardDisplay.BattlePosition.Attack)
+    {
+        Debug.Log("Spear Dragon: Muda para defesa após atacar.");
+        attacker.ChangePosition();
     }
 
     // 0882 - Helping Robo for Combat
@@ -4678,6 +4733,13 @@ private void CheckNecklaceOfCommand(CardDisplay destroyedMonster)
             }
         }
     }
+    
+    // 1689 - Solemn Wishes
+    CheckActiveCards("1689", (wishes) => {
+        if (wishes.isPlayerCard == isPlayer) {
+            Effect_GainLP(wishes, 500);
+        }
+    });
 }
 
 void Effect_GainLP(CardDisplay source, int amount)
