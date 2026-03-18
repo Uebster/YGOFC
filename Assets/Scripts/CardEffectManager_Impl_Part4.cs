@@ -783,30 +783,22 @@ public partial class CardEffectManager
         }
     }
 
-    // 1576 - Sacred Crane
-    void Effect_1576_SacredCrane(CardDisplay source)
+    // 1578 - Sacred Crane
+    void Effect_1578_SacredCrane(CardDisplay source)
     {
         Debug.Log("Sacred Crane: Resolvido no trigger OnSpecialSummon.");
     }
 
-    // 1577 - Sacred Defense Barrier
-    void Effect_1577_SacredDefenseBarrier(CardDisplay source)
-    {
-        // Your opponent cannot select Fairy-Type monsters as an attack target.
-        // Lógica passiva no BattleManager.
-        Debug.Log("Sacred Defense Barrier: Fadas protegidas de ataques.");
-    }
-
-    // 1578 - Sacred Phoenix of Nephthys
-    void Effect_1578_SacredPhoenixOfNephthys(CardDisplay source)
+    // 1579 - Sacred Phoenix of Nephthys
+    void Effect_1579_SacredPhoenixOfNephthys(CardDisplay source)
     {
         // If destroyed by card effect: SS during next Standby Phase. When you do: Destroy all S/T.
         // Lógica de gatilho no OnCardSentToGraveyard e OnPhaseStart.
         Debug.Log("Sacred Phoenix: Efeitos de renascimento e destruição configurados.");
     }
 
-    // 1579 - Sage's Stone
-    void Effect_1579_SagesStone(CardDisplay source)
+    // 1580 - Sage's Stone
+    void Effect_1580_SagesStone(CardDisplay source)
     {
         // If you control a face-up "Dark Magician Girl": Special Summon 1 "Dark Magician" from your hand or Deck.
         if (GameManager.Instance.IsCardActiveOnField("0420")) // Dark Magician Girl
@@ -821,8 +813,8 @@ public partial class CardEffectManager
         }
     }
 
-    // 1581 - Sakuretsu Armor
-    void Effect_1581_SakuretsuArmor(CardDisplay source)
+    // 1582 - Sakuretsu Armor
+    void Effect_1582_SakuretsuArmor(CardDisplay source)
     {
         if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
         {
@@ -833,15 +825,15 @@ public partial class CardEffectManager
         }
     }
 
-    // 1582 - Salamandra
-    void Effect_1582_Salamandra(CardDisplay source)
+    // 1583 - Salamandra
+    void Effect_1583_Salamandra(CardDisplay source)
     {
         // Equip: FIRE monster gains 700 ATK.
         Effect_Equip(source, 700, 0, "", "Fire");
     }
 
-    // 1583 - Salvage
-    void Effect_1583_Salvage(CardDisplay source)
+    // 1584 - Salvage
+    void Effect_1584_Salvage(CardDisplay source)
     {
         // Target 2 WATER monsters with 1500 or less ATK in your Graveyard; add them to your hand.
         List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
@@ -859,8 +851,8 @@ public partial class CardEffectManager
         }
     }
 
-    // 1584 - Sand Gambler
-    void Effect_1584_SandGambler(CardDisplay source)
+    // 1585 - Sand Gambler
+    void Effect_1585_SandGambler(CardDisplay source)
     {
         // FLIP: Toss a coin 3 times. 3 Heads: Destroy all opp monsters. 3 Tails: Destroy all your monsters.
         GameManager.Instance.TossCoin(3, (heads) => {
@@ -877,44 +869,38 @@ public partial class CardEffectManager
         });
     }
 
-    // 1585 - Sand Moth
-    void Effect_1585_SandMoth(CardDisplay source)
-    {
-        Debug.Log("Sand Moth: Resolvido no trigger OnCardSentToGraveyard / OnPhaseStart.");
-    }
-
-    // 1586 - Sanga of the Thunder
-    void Effect_1586_SangaOfTheThunder(CardDisplay source)
+    // 1587 - Sanga of the Thunder
+    void Effect_1587_SangaOfTheThunder(CardDisplay source)
     {
         // During damage calculation in your opponent's turn, if this card is being attacked: You can target the attacking monster; make that target's ATK 0.
         // Lógica no OnDamageCalculation.
         Debug.Log("Sanga of the Thunder: Efeito de batalha configurado.");
     }
 
-    // 1587 - Sangan
-    void Effect_1587_Sangan(CardDisplay source)
+    // 1588 - Sangan
+    void Effect_1588_Sangan(CardDisplay source)
     {
         Debug.Log("Sangan: Resolvido no trigger OnCardSentToGraveyard.");
     }
 
-    // 1589 - Sasuke Samurai
-    void Effect_1589_SasukeSamurai(CardDisplay source)
+    // 1590 - Sasuke Samurai
+    void Effect_1590_SasukeSamurai(CardDisplay source)
     {
         // If this card attacks a face-down Defense Position monster, destroy the monster immediately with this card's effect without flipping it face-up or applying damage calculation.
         // Lógica no OnDamageCalculation.
         Debug.Log("Sasuke Samurai: Efeito de batalha configurado.");
     }
 
-    // 1590 - Sasuke Samurai #2
-    void Effect_1590_SasukeSamurai2(CardDisplay source)
+    // 1591 - Sasuke Samurai #2
+    void Effect_1591_SasukeSamurai2(CardDisplay source)
     {
         // Your opponent cannot activate Spell/Trap Cards during the Battle Phase.
         // Lógica passiva no BattleManager.
         Debug.Log("Sasuke Samurai #2: Bloqueio de S/T na batalha.");
     }
 
-    // 1591 - Sasuke Samurai #3
-    void Effect_1591_SasukeSamurai3(CardDisplay source)
+    // 1592 - Sasuke Samurai #3
+    void Effect_1592_SasukeSamurai3(CardDisplay source)
     {
         // Your opponent draws cards until they have 7 cards in their hand.
         int oppHandCount = GameManager.Instance.GetOpponentHandData().Count;
@@ -925,38 +911,25 @@ public partial class CardEffectManager
         }
     }
 
-    // 1592 - Sasuke Samurai #4
-    void Effect_1592_SasukeSamurai4(CardDisplay source)
+    // 1593 - Sasuke Samurai #4
+    void Effect_1593_SasukeSamurai4(CardDisplay source)
     {
         Debug.Log("Sasuke Samurai #4: Resolvido no trigger OnAttackDeclared.");
     }
 
-    // 1593 - Satellite Cannon
-    void Effect_1593_SatelliteCannon(CardDisplay source)
+    // 1594 - Satellite Cannon
+    void Effect_1594_SatelliteCannon(CardDisplay source)
     {
         Debug.Log("Satellite Cannon: Resolvido em OnPhaseStart (End) e BattleManager.");
     }
 
-    // 1594 - Scapegoat
-    void Effect_1594_Scapegoat(CardDisplay source)
+    // 1595 - Scapegoat
+    void Effect_1595_Scapegoat(CardDisplay source)
     {
         // Special Summon 4 "Sheep Tokens" (Beast-Type/EARTH/Level 1/ATK 0/DEF 0) in Defense Position.
         for(int i=0; i<4; i++)
         {
             GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Sheep Token");
-        }
-    }
-
-    // 1595 - Scapeghost
-    void Effect_1595_Scapeghost(CardDisplay source)
-    {
-        int emptyZones = 0;
-        if (GameManager.Instance.duelFieldUI != null) {
-            Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
-            foreach (var z in zones) if (z.childCount == 0 && !GameManager.Instance.duelFieldUI.IsZoneBlocked(z)) emptyZones++;
-        }
-        for (int i = 0; i < emptyZones; i++) {
-            GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 0, "Black Sheep Token", 1, "Zombie", "Dark");
         }
     }
 
@@ -4463,37 +4436,6 @@ public partial class CardEffectManager
     {
         // Activate by paying 1000 LP.
         Effect_PayLP(source, 1000);
-    }
-
-        // 1951 - Tornado
-    void Effect_1951_Tornado(CardDisplay source)
-    {
-        // Activate only if opponent controls 3 or more S/T. Target 1 S/T; destroy it.
-        int oppSTCount = 0;
-        if (GameManager.Instance.duelFieldUI != null)
-        {
-            foreach(var z in GameManager.Instance.duelFieldUI.opponentSpellZones) if(z.childCount > 0) oppSTCount++;
-            if(GameManager.Instance.duelFieldUI.opponentFieldSpell.childCount > 0) oppSTCount++;
-        }
-
-        if (oppSTCount >= 3)
-        {
-            if (SpellTrapManager.Instance != null)
-            {
-                SpellTrapManager.Instance.StartTargetSelection(
-                    (t) => t.isOnField && (t.CurrentCardData.type.Contains("Spell") || t.CurrentCardData.type.Contains("Trap")),
-                    (target) => {
-                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
-                        GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
-                        Destroy(target.gameObject);
-                    }
-                );
-            }
-        }
-        else
-        {
-            Debug.Log("Tornado: Oponente precisa ter 3 ou mais S/T.");
-        }
     }
 
     // 1952 - Tornado Bird

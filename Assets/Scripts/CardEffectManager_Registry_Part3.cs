@@ -749,9 +749,6 @@ public partial class CardEffectManager
         // 1374 - Ojama Trio (Tokens)
         AddEffect("1374", Effect_1374_OjamaTrio);
 
-        // 1375 - Ojama Yellow
-        AddEffect("1375", Effect_1375_OjamaYellow);
-
         // 1376 - Old Vindictive Magician (Flip Destroy)
         AddEffect("1376", Effect_1376_OldVindictiveMagician);
 
@@ -815,9 +812,6 @@ public partial class CardEffectManager
 
         // 1404 - Parasite Paracide (Flip Shuffle into Opp Deck)
         AddEffect("1404", Effect_1404_ParasiteParacide);
-
-        // 1405 - Parasitic Ticky
-        AddEffect("1405", Effect_1405_ParasiticTicky);
 
         // 1406 - Patrician of Darkness (Choose attack targets)
         AddEffect("1406", Effect_1406_PatricianOfDarkness);

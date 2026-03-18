@@ -179,56 +179,50 @@ public partial class CardEffectManager
         // 1575 - Ryu-Kishin Clown (Change Pos)
         AddEffect("1575", Effect_1575_RyuKishinClown);
 
-        // 1576 - Sacred Crane (Draw on SS)
-        AddEffect("1576", Effect_1576_SacredCrane);
+        // 1578 - Sacred Crane (Draw on SS)
+        AddEffect("1578", Effect_1578_SacredCrane);
 
-        // 1577 - Sacred Defense Barrier
-        AddEffect("1577", Effect_1577_SacredDefenseBarrier);
+        // 1579 - Sacred Phoenix of Nephthys (Revive/Nuke S/T)
+        AddEffect("1579", Effect_1579_SacredPhoenixOfNephthys);
 
-        // 1578 - Sacred Phoenix of Nephthys (Revive/Nuke S/T)
-        AddEffect("1578", Effect_1578_SacredPhoenixOfNephthys);
+        // 1580 - Sage's Stone (SS DM)
+        AddEffect("1580", Effect_1580_SagesStone);
 
-        // 1579 - Sage's Stone (SS DM)
-        AddEffect("1579", Effect_1579_SagesStone);
+        // 1582 - Sakuretsu Armor (Destroy Attacker)
+        AddEffect("1582", Effect_1582_SakuretsuArmor);
 
-        // 1581 - Sakuretsu Armor (Destroy Attacker)
-        AddEffect("1581", Effect_1581_SakuretsuArmor);
+        // 1583 - Salamandra (Equip Fire +700)
+        AddEffect("1583", Effect_1583_Salamandra);
 
-        // 1582 - Salamandra (Equip Fire +700)
-        AddEffect("1582", Effect_1582_Salamandra);
+        // 1584 - Salvage (Add 2 Water)
+        AddEffect("1584", Effect_1584_Salvage);
 
-        // 1583 - Salvage (Add 2 Water)
-        AddEffect("1583", Effect_1583_Salvage);
+        // 1585 - Sand Gambler (Coin Destroy)
+        AddEffect("1585", Effect_1585_SandGambler);
 
-        // 1584 - Sand Gambler (Coin Destroy)
-        AddEffect("1584", Effect_1584_SandGambler);
+        // 1587 - Sanga of the Thunder (Zero ATK)
+        AddEffect("1587", Effect_1587_SangaOfTheThunder);
 
-        // 1586 - Sanga of the Thunder (Zero ATK)
-        AddEffect("1586", Effect_1586_SangaOfTheThunder);
+        // 1588 - Sangan (Search 1500-)
+        AddEffect("1588", Effect_1588_Sangan);
 
-        // 1587 - Sangan (Search 1500-)
-        AddEffect("1587", Effect_1587_Sangan);
+        // 1590 - Sasuke Samurai (Destroy Face-down)
+        AddEffect("1590", Effect_1590_SasukeSamurai);
 
-        // 1589 - Sasuke Samurai (Destroy Face-down)
-        AddEffect("1589", Effect_1589_SasukeSamurai);
+        // 1591 - Sasuke Samurai #2 (Pay 800 No S/T)
+        AddEffect("1591", Effect_1591_SasukeSamurai2);
 
-        // 1590 - Sasuke Samurai #2 (Pay 800 No S/T)
-        AddEffect("1590", Effect_1590_SasukeSamurai2);
+        // 1592 - Sasuke Samurai #3 (Hand Fill)
+        AddEffect("1592", Effect_1592_SasukeSamurai3);
 
-        // 1591 - Sasuke Samurai #3 (Hand Fill)
-        AddEffect("1591", Effect_1591_SasukeSamurai3);
+        // 1593 - Sasuke Samurai #4 (Coin Destroy)
+        AddEffect("1593", Effect_1593_SasukeSamurai4);
 
-        // 1592 - Sasuke Samurai #4 (Coin Destroy)
-        AddEffect("1592", Effect_1592_SasukeSamurai4);
+        // 1594 - Satellite Cannon (Gain ATK)
+        AddEffect("1594", Effect_1594_SatelliteCannon);
 
-        // 1593 - Satellite Cannon (Gain ATK)
-        AddEffect("1593", Effect_1593_SatelliteCannon);
-
-        // 1594 - Scapegoat (SS 4 Tokens)
-        AddEffect("1594", Effect_1594_Scapegoat);
-
-        // 1595 - Scapeghost
-        AddEffect("1595", Effect_1595_Scapeghost);
+        // 1595 - Scapegoat (SS 4 Tokens)
+        AddEffect("1595", Effect_1595_Scapegoat);
 
         // 1597 - Scroll of Bewitchment (Equip Change Attribute)
         AddEffect("1597", Effect_1597_ScrollOfBewitchment);
