@@ -553,17 +553,19 @@ public partial class CardEffectManager
 
                     if (inPlayerGY && GameManager.Instance.isPlayerTurn)
                     {
-                        GameManager.Instance.SpecialSummonFromData(cardData, true);
+                        var summoned = GameManager.Instance.SpecialSummonFromData(cardData, true);
                         reviveNextStandby.RemoveAt(i);
                         Debug.Log($"{cardData.name} revivido do GY.");
                         if (cardData.id == "1578") Effect_HeavyStorm(null); // Sacred Phoenix of Nephthys
+                        if (cardData.id == "2032" && summoned != null) summoned.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, summoned));
                     }
                     else if (inOppGY && !GameManager.Instance.isPlayerTurn)
                     {
-                        GameManager.Instance.SpecialSummonFromData(cardData, false);
+                        var summoned = GameManager.Instance.SpecialSummonFromData(cardData, false);
                         reviveNextStandby.RemoveAt(i);
                         Debug.Log($"{cardData.name} revivido do GY.");
                         if (cardData.id == "1578") Effect_HeavyStorm(null); // Sacred Phoenix of Nephthys
+                        if (cardData.id == "2032" && summoned != null) summoned.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, summoned));
                     }
                 }
             }
@@ -2620,10 +2622,10 @@ public partial class CardEffectManager
             GameManager.Instance.DiscardRandomHand(!attacker.isPlayerCard, 1);
         }
 
-        // 2030 - Vampire Lady
-        if (attacker.CurrentCardData.id == "2030" && attacker.isPlayerCard && amount > 0)
+        // 2030 - Vampire Lady / 2031 - Vampire Lord
+        if ((attacker.CurrentCardData.id == "2030" || attacker.CurrentCardData.id == "2031") && attacker.isPlayerCard && amount > 0)
         {
-            Debug.Log("Vampire Lady: Declare um tipo (Card, Spell, Trap) e oponente envia 1 do deck ao GY (Simulado: Monster).");
+            Debug.Log($"{attacker.CurrentCardData.name}: Declare um tipo (Card, Spell, Trap) e oponente envia 1 do deck ao GY (Simulado: Monster).");
             GameManager.Instance.MillCards(!attacker.isPlayerCard, 1);
         }
 
@@ -4380,14 +4382,54 @@ partial void OnCounterTrapResolvedImpl(CardDisplay trap)
     if (vandalgyon != null)
     {
         Debug.Log("Van'Dalgyon: Counter Trap resolvida. Invocando da mão.");
+        CardDisplay summoned = null;
         if (trap.isPlayerCard)
         {
             GameManager.Instance.RemoveCardFromHand(vandalgyon, true);
-            GameManager.Instance.SpecialSummonFromData(vandalgyon, true);
+            summoned = GameManager.Instance.SpecialSummonFromData(vandalgyon, true);
         }
         else
         {
-            // Lógica para oponente (se necessário)
+            GameManager.Instance.RemoveCardFromHand(vandalgyon, false);
+            summoned = GameManager.Instance.SpecialSummonFromData(vandalgyon, false);
+        }
+
+        if (summoned != null && ChainManager.Instance != null && ChainManager.Instance.currentChain.Count > 0)
+        {
+            var negatedLink = ChainManager.Instance.currentChain.Find(l => l.isNegated);
+            if (negatedLink != null && negatedLink.cardSource != null)
+            {
+                string negatedType = negatedLink.cardSource.CurrentCardData.type;
+                if (negatedType.Contains("Spell"))
+                {
+                    Debug.Log("Van'Dalgyon: Magia negada. 1500 de dano!");
+                    if (summoned.isPlayerCard) GameManager.Instance.DamageOpponent(1500);
+                    else GameManager.Instance.DamagePlayer(1500);
+                }
+                else if (negatedType.Contains("Trap"))
+                {
+                    Debug.Log("Van'Dalgyon: Armadilha negada. Destruindo 1 carta (Simulado)!");
+                    if (SpellTrapManager.Instance != null) {
+                        SpellTrapManager.Instance.StartTargetSelection((t) => t.isOnField, (t) => {
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(t);
+                            GameManager.Instance.SendToGraveyard(t.CurrentCardData, t.isPlayerCard);
+                            Destroy(t.gameObject);
+                        });
+                    }
+                }
+                else if (negatedType.Contains("Monster"))
+                {
+                    Debug.Log("Van'Dalgyon: Monstro negado. Revivendo monstro (Simulado)!");
+                    List<CardData> gy = summoned.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
+                    List<CardData> targets = gy.FindAll(c => c.type.Contains("Monster"));
+                    if (targets.Count > 0) {
+                        GameManager.Instance.OpenCardSelection(targets, "Van'Dalgyon: Reviver", (selected) => {
+                            gy.Remove(selected);
+                            GameManager.Instance.SpecialSummonFromData(selected, summoned.isPlayerCard);
+                        });
+                    }
+                }
+            }
         }
     }
 }
@@ -5276,9 +5318,17 @@ partial void OnBattlePositionChangedImpl(CardDisplay card)
     // 2120 - Yado Karu
     if (card.CurrentCardData.id == "2120" && card.position == CardDisplay.BattlePosition.Defense && !card.isFlipped)
     {
-        // Changed from Attack to Defense
-        Debug.Log("Yado Karu: Mão retornada ao fundo do Deck (Simulado).");
-        // Lógica de retornar mão ao deck
+        Debug.Log("Yado Karu: Mão retornada ao fundo do Deck.");
+        List<CardData> hand = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+        if (hand.Count > 0)
+        {
+            List<CardData> deck = card.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+            foreach(var c in new List<CardData>(hand))
+            {
+                GameManager.Instance.RemoveCardFromHand(c, card.isPlayerCard);
+                deck.Add(c); // Adiciona ao final da lista (fundo do deck)
+            }
+        }
     }
 
         // 0169 - Berserk Gorilla

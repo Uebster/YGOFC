@@ -299,16 +299,13 @@ public partial class CardEffectManager
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
-                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.description.Contains("Union") && t.position == CardDisplay.BattlePosition.Attack, // Face-up Union
+                (t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.description.Contains("Union") && !t.isFlipped, // Face-up Union
                 (target) => {
-
+                    target.isPlayerCard = source.isPlayerCard; // Toma o controle lógico primeiro para definir a zona correta
+                    GameManager.Instance.EquipMonsterToMonster(target, source);
                     
-                    // Ganha ATK/DEF do equipado
-                    source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, target.originalAtk, source));
-                    source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, target.originalDef, source));
-                    
-                    // Muda o dono para o player (para que vá para o GY do player se destruído? Não, regras de controle. Mas visualmente está na S/T do player)
-                    target.isPlayerCard = source.isPlayerCard;
+                    source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, target.originalAtk, target));
+                    source.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Equipment, StatModifier.Operation.Add, target.originalDef, target));
                 }
             );
         }
@@ -673,8 +670,22 @@ public partial class CardEffectManager
     // 2068 - Weather Report
     void Effect_2068_WeatherReport(CardDisplay source)
     {
-        // FLIP: Destroy all opp Swords of Revealing Light.
-        Debug.Log("Weather Report: Destruindo Swords of Revealing Light (Lógica de busca pendente).");
+        List<CardDisplay> toDestroy = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            Transform[] oppZones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentSpellZones : GameManager.Instance.duelFieldUI.playerSpellZones;
+            foreach(var z in oppZones)
+            {
+                if(z.childCount > 0)
+                {
+                    var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                    if(cd != null && !cd.isFlipped && (cd.CurrentCardData.name == "Swords of Revealing Light" || cd.CurrentCardData.id == "1811"))
+                        toDestroy.Add(cd);
+                }
+            }
+        }
+        DestroyCards(toDestroy, source.isPlayerCard);
+        Debug.Log($"Weather Report: Destruiu {toDestroy.Count} Swords of Revealing Light.");
     }
 
     // 2071 - Whirlwind Prodigy
@@ -1078,8 +1089,33 @@ public partial class CardEffectManager
     // 2117 - Xing Zhen Hu
     void Effect_2117_XingZhenHu(CardDisplay source)
     {
-        // Select 2 Set S/T; they cannot be activated.
-        Debug.Log("Xing Zhen Hu: Trava 2 S/T setadas (Lógica de seleção múltipla e bloqueio pendente).");
+        List<CardDisplay> validTargets = new List<CardDisplay>();
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, validTargets);
+            CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, validTargets);
+        }
+        var setST = validTargets.FindAll(c => c.isFlipped);
+        if (setST.Count >= 2 && SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t1) => t1.isOnField && t1.isFlipped && (t1.CurrentCardData.type.Contains("Spell") || t1.CurrentCardData.type.Contains("Trap")),
+                (target1) => {
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t2) => t2.isOnField && t2.isFlipped && t2 != target1 && (t2.CurrentCardData.type.Contains("Spell") || t2.CurrentCardData.type.Contains("Trap")),
+                        (target2) => {
+                            GameManager.Instance.CreateCardLink(source, target1, CardLink.LinkType.Continuous);
+                            GameManager.Instance.CreateCardLink(source, target2, CardLink.LinkType.Continuous);
+                            Debug.Log($"Xing Zhen Hu: {target1.CurrentCardData.name} e {target2.CurrentCardData.name} travados.");
+                        }
+                    );
+                }
+            );
+        }
+        else
+        {
+            Debug.LogWarning("Xing Zhen Hu: Não há 2 cartas Setadas no campo.");
+        }
     }
 
     // 2118 - Y-Dragon Head

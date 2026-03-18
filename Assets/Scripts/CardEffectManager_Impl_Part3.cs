@@ -3337,6 +3337,94 @@ public partial class CardEffectManager
         }
     }
 
+    // 1388 - Order to Charge
+    void Effect_1388_OrderToCharge(CardDisplay source)
+    {
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Normal") && !t.CurrentCardData.race.Contains("Token"),
+                (tribute) => {
+                    GameManager.Instance.TributeCard(tribute);
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (target) => target.isOnField && !target.isPlayerCard && target.CurrentCardData.type.Contains("Monster"),
+                        (target) => {
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                            GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                            Destroy(target.gameObject);
+                        }
+                    );
+                }
+            );
+        }
+    }
+
+    // 1389 - Order to Smash
+    void Effect_1389_OrderToSmash(CardDisplay source)
+    {
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.type.Contains("Normal") && t.CurrentCardData.level <= 2 && !t.CurrentCardData.race.Contains("Token"),
+                (tribute) => {
+                    GameManager.Instance.TributeCard(tribute);
+                    List<CardDisplay> oppST = new List<CardDisplay>();
+                    if (GameManager.Instance.duelFieldUI != null) {
+                        CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, oppST);
+                        CollectCards(new Transform[] { GameManager.Instance.duelFieldUI.opponentFieldSpell }, oppST);
+                    }
+                    if (oppST.Count > 0) {
+                        int max = Mathf.Min(2, oppST.Count);
+                        for(int i=0; i<max; i++) {
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(oppST[i]);
+                            GameManager.Instance.SendToGraveyard(oppST[i].CurrentCardData, oppST[i].isPlayerCard);
+                            Destroy(oppST[i].gameObject);
+                        }
+                    }
+                }
+            );
+        }
+    }
+
+    // 1392 - Otohime
+    void Effect_1392_Otohime(CardDisplay source)
+    {
+        if (source.summonedThisTurn || source.isFlipped)
+        {
+            if (SpellTrapManager.Instance != null)
+            {
+                SpellTrapManager.Instance.StartTargetSelection(
+                    (t) => t.isOnField && !t.isPlayerCard && !t.isFlipped,
+                    (target) => { target.ChangePosition(); }
+                );
+            }
+        }
+    }
+
+    // 1393 - Outstanding Dog Marron
+    void Effect_1393_OutstandingDogMarron(CardDisplay source)
+    {
+        Debug.Log("Outstanding Dog Marron: Retorno ao Deck configurado no OnCardSentToGraveyard.");
+    }
+
+    // 1395 - Overpowering Eye
+    void Effect_1395_OverpoweringEye(CardDisplay source)
+    {
+        if (SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.race == "Zombie" && t.currentAtk <= 2000,
+                (target) => { target.canAttackDirectly = true; }
+            );
+        }
+    }
+
+    // 1396 - Owner's Seal
+    void Effect_1396_OwnersSeal(CardDisplay source)
+    {
+        Effect_1515_RemoveBrainwashing(source); 
+    }
+
     // 1397 - Painful Choice
     void Effect_1397_PainfulChoice(CardDisplay source)
     {
@@ -3982,6 +4070,12 @@ public partial class CardEffectManager
         Debug.Log("Pyro Clock of Destiny: Turno avançado em 1.");
     }
 
+    // 1474 - Queen's Double
+    void Effect_1474_QueensDouble(CardDisplay source)
+    {
+        source.canAttackDirectly = true;
+    }
+
     // 1476 - Question
     void Effect_1476_Question(CardDisplay source)
     {
@@ -4089,6 +4183,12 @@ public partial class CardEffectManager
     void Effect_1486_RaiseBodyHeat(CardDisplay source)
     {
         Effect_Equip(source, 300, 300, "Dinosaur");
+    }
+
+    // 1488 - Rare Metal Dragon
+    void Effect_1488_RareMetalDragon(CardDisplay source)
+    {
+        Debug.Log("Rare Metal Dragon: Invocação restrita (Tratado no SummonManager).");
     }
 
     // 1489 - Rare Metalmorph

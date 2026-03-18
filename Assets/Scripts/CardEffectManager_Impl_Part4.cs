@@ -23,30 +23,18 @@ public partial class CardEffectManager
         Effect_GainLP(source, 500);
     }
 
-    // 1504 - Red-Eyes B. Chick
-    void Effect_1504_RedEyesBChick(CardDisplay source)
-    {
-        // You can send this face-up card to the Graveyard; Special Summon 1 "Red-Eyes B. Dragon" from your hand.
-        if (source.isOnField)
-        {
-            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
-            CardData redEyes = hand.Find(c => c.name == "Red-Eyes B. Dragon");
-            if (redEyes != null)
-            {
-                UIManager.Instance.ShowConfirmation("Tribute Red-Eyes B. Chick to summon Red-Eyes B. Dragon?", () => {
-                    GameManager.Instance.TributeCard(source);
-                    GameManager.Instance.SpecialSummonFromData(redEyes, source.isPlayerCard);
-                    GameManager.Instance.RemoveCardFromHand(redEyes, source.isPlayerCard);
-                });
-            }
-        }
-    }
-
-    // 1506 - Red-Eyes Black Metal Dragon
-    void Effect_1506_RedEyesBlackMetalDragon(CardDisplay source)
+    // 1505 - Red-Eyes Black Metal Dragon
+    void Effect_1505_RedEyesBlackMetalDragon(CardDisplay source)
     {
         // Cannot be Normal Summoned/Set. Must be Special Summoned with "Metalmorph" from your Deck, and cannot be Special Summoned by other ways.
         Debug.Log("Red-Eyes Black Metal Dragon: Invocação especial via Metalmorph (Lógica no efeito do Metalmorph).");
+    }
+
+    // 1506 - Red-Eyes Darkness Dragon
+    void Effect_1506_RedEyesDarknessDragon(CardDisplay source)
+    {
+        int count = GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.race == "Dragon").Count;
+        source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, count * 300, source));
     }
 
     // 1507 - Reflect Bounder

@@ -809,6 +809,24 @@ public partial class CardEffectManager
         // 1387 - Ordeal of a Traveler (Hand Game)
         AddEffect("1387", Effect_1387_OrdealOfATraveler);
 
+        // 1388 - Order to Charge (Tribute Normal -> Destroy)
+        AddEffect("1388", Effect_1388_OrderToCharge);
+
+        // 1389 - Order to Smash (Tribute Normal Lv2- -> Destroy 2 S/T)
+        AddEffect("1389", Effect_1389_OrderToSmash);
+
+        // 1392 - Otohime (Change Position)
+        AddEffect("1392", Effect_1392_Otohime);
+
+        // 1393 - Outstanding Dog Marron (Recycle)
+        AddEffect("1393", Effect_1393_OutstandingDogMarron);
+
+        // 1395 - Overpowering Eye (Direct Attack Zombie)
+        AddEffect("1395", Effect_1395_OverpoweringEye);
+
+        // 1396 - Owner's Seal (Return Control)
+        AddEffect("1396", Effect_1396_OwnersSeal);
+
         // 1397 - Painful Choice (Search 5)
         AddEffect("1397", Effect_1397_PainfulChoice);
 
@@ -981,6 +999,9 @@ public partial class CardEffectManager
         // 1471 - Pyro Clock of Destiny (Turn Count)
         AddEffect("1471", Effect_1471_PyroClockOfDestiny);
 
+        // 1474 - Queen's Double (Direct Attack)
+        AddEffect("1474", Effect_1474_QueensDouble);
+
         // 1476 - Question (Guess GY)
         AddEffect("1476", Effect_1476_Question);
 
@@ -1007,6 +1028,9 @@ public partial class CardEffectManager
 
         // 1486 - Raise Body Heat (Equip Dinosaur +300)
         AddEffect("1486", Effect_1486_RaiseBodyHeat);
+
+        // 1488 - Rare Metal Dragon (Cannot NS/Set)
+        AddEffect("1488", Effect_1488_RareMetalDragon);
 
         // 1489 - Rare Metalmorph (Buff Machine)
         AddEffect("1489", Effect_1489_RareMetalmorph);

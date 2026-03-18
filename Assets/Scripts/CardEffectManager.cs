@@ -119,6 +119,18 @@ public partial class CardEffectManager : MonoBehaviour
             }
         }
 
+        // 2117 - Xing Zhen Hu
+        if (card.CurrentCardData.type.Contains("Spell") || card.CurrentCardData.type.Contains("Trap"))
+        {
+            CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+            foreach (var cl in links) {
+                if (cl.target == card && cl.source != null && cl.source.CurrentCardData.id == "2117") {
+                    Debug.Log("Ativação de S/T bloqueada por Xing Zhen Hu.");
+                    return false;
+                }
+            }
+        }
+
         if (effectDatabase.ContainsKey(id))
         {
             Debug.Log($"Executando efeito da carta: {card.CurrentCardData.name} (ID: {id})");

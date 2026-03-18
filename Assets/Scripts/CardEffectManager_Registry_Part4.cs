@@ -14,11 +14,11 @@ public partial class CardEffectManager
         // 1503 - Red Medicine (Gain 500 LP)
         AddEffect("1503", Effect_1503_RedMedicine);
 
-        // 1504 - Red-Eyes B. Chick
-        AddEffect("1504", Effect_1504_RedEyesBChick);
+        // 1505 - Red-Eyes Black Metal Dragon
+        AddEffect("1505", Effect_1505_RedEyesBlackMetalDragon);
 
-        // 1506 - Red-Eyes Black Metal Dragon
-        AddEffect("1506", Effect_1506_RedEyesBlackMetalDragon);
+        // 1506 - Red-Eyes Darkness Dragon
+        AddEffect("1506", Effect_1506_RedEyesDarknessDragon);
 
         // 1507 - Reflect Bounder (Damage on attack)
         AddEffect("1507", Effect_1507_ReflectBounder);
