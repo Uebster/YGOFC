@@ -1349,7 +1349,7 @@ public partial class CardEffectManager
     void Effect_1639_ShiningAngel(CardDisplay source)
     {
         // Destroyed by battle: SS LIGHT <= 1500.
-        Effect_SearchDeck(source, "Light", "Monster", 1500); // Deveria ser SS direto
+        Effect_SpecialSummonFromDeck(source, attribute: "Light", maxAtk: 1500);
     }
 
     // 1641 - Shooting Star Bow - Ceal
@@ -4717,7 +4717,7 @@ public partial class CardEffectManager
     void Effect_1978_TroopDragon(CardDisplay source)
     {
         // Destroyed by battle -> SS Troop Dragon from Deck.
-        Effect_SearchDeck(source, "Troop Dragon", "Monster"); // Should be SS directly
+        Effect_SpecialSummonFromDeck(source, nameContains: "Troop Dragon");
     }
 
     // 1979 - Tsukuyomi

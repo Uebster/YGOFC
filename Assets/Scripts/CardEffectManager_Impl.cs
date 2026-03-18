@@ -1675,6 +1675,20 @@ public partial class CardEffectManager
             Effect_SpecialSummonFromDeck(null, race: "Machine", maxAtk: 1500, isPlayerOverride: isOwnerPlayer);
         }
 
+        // 1469 - Pyramid Turtle
+        if (card.id == "1469" && isOwnerPlayer && reason == SendReason.Battle) // Destroyed by battle
+        {
+            Debug.Log("Pyramid Turtle: Invocando Zombie do Deck.");
+            Effect_SpecialSummonFromDeck(null, race: "Zombie", maxDef: 2000, isPlayerOverride: isOwnerPlayer);
+        }
+
+        // 1639 - Shining Angel
+        if (card.id == "1639" && isOwnerPlayer && reason == SendReason.Battle) // Destroyed by battle
+        {
+            Debug.Log("Shining Angel: Invocando LIGHT do Deck.");
+            Effect_SpecialSummonFromDeck(null, attribute: "Light", maxAtk: 1500, isPlayerOverride: isOwnerPlayer);
+        }
+
         // 2090 - Winged Kuriboh
         if (card.id == "2090")
         {

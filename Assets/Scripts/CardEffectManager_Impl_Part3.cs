@@ -1692,7 +1692,7 @@ public partial class CardEffectManager
                 (t) => {
                     GameManager.Instance.TributeCard(t);
                     // SS Metalzoa do Deck
-                    Effect_SearchDeck(source, "Metalzoa", "Monster"); // Simplificado para busca
+                    Effect_SpecialSummonFromDeck(source, nameContains: "Metalzoa");
                 }
             );
         }
@@ -4074,7 +4074,7 @@ public partial class CardEffectManager
     void Effect_1469_PyramidTurtle(CardDisplay source)
     {
         // Destroyed by battle: SS Zombie DEF <= 2000 from Deck.
-        Effect_SearchDeck(source, "Zombie", "Monster", 2000); // Deveria ser SS
+        Effect_SpecialSummonFromDeck(source, race: "Zombie", maxDef: 2000);
     }
 
     // 1470 - Pyramid of Light

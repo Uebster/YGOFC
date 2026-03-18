@@ -900,7 +900,7 @@ public partial class CardEffectManager
 
         if (GameManager.Instance.IsCardActiveOnField("Harpie Lady") || GameManager.Instance.IsCardActiveOnField("0867"))
         {
-            Effect_SearchDeck(source, "Harpie Lady", "Monster"); // Should be SS
+            Effect_SpecialSummonFromDeck(source, nameContains: "Harpie Lady");
         }
     }
 
