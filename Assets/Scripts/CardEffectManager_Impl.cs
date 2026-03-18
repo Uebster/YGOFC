@@ -4769,7 +4769,7 @@ private void HandleBESCounter(CardDisplay card)
 }
 
 // --- FIM DO SISTEMA DE EVENTOS ---
-void Effect_DirectDamage(CardDisplay source, int amount)
+    public void Effect_DirectDamage(CardDisplay source, int amount)
 {
     bool targetOpponent = source.isPlayerCard;
 
@@ -4858,12 +4858,12 @@ private void CheckNecklaceOfCommand(CardDisplay destroyedMonster)
     });
 }
 
-void Effect_GainLP(CardDisplay source, int amount)
+    public void Effect_GainLP(CardDisplay source, int amount)
 {
     GameManager.Instance.GainLifePoints(source.isPlayerCard, amount);
 }
 
-bool Effect_PayLP(CardDisplay source, int amount)
+    public bool Effect_PayLP(CardDisplay source, int amount)
 {
     return GameManager.Instance.PayLifePoints(source.isPlayerCard, amount);
 }

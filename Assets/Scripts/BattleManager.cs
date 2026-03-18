@@ -543,8 +543,12 @@ public class BattleManager : MonoBehaviour
         // 0811 - Gravekeeper's Vassal
         if (currentAttacker != null && currentAttacker.CurrentCardData.id == "0811")
         {
-            Debug.Log("Gravekeeper's Vassal: Dano de batalha será tratado como efeito (Convertido).");
-            // (Dano aplicado normalmente, mas classificado pelo sistema)
+            if (damageTaker != currentAttacker && CardEffectManager.Instance != null) // Só se o dano for para o oponente
+            {
+                Debug.Log("Gravekeeper's Vassal: Dano de batalha convertido em efeito.");
+                CardEffectManager.Instance.Effect_DirectDamage(currentAttacker, damage);
+                return;
+            }
         }
 
         // 0045 - Amazoness Fighter
@@ -584,6 +588,19 @@ public class BattleManager : MonoBehaviour
 
         if (isPlayer) GameManager.Instance.DamagePlayer(damage);
         else GameManager.Instance.DamageOpponent(damage);
+
+        // Hook OnDamageDealt (Importante para Don Zaloog, Dark Scorpions, etc)
+        if (CardEffectManager.Instance != null)
+        {
+            CardDisplay inflicter = (damageTaker == currentAttacker) ? currentTarget : currentAttacker;
+            
+            // Se foi refletido, quem tomou o ataque inicial é quem causou o dano no oponente
+            if (damageTaker.CurrentCardData.id == "0048" || damageTaker.CurrentCardData.name == "Metal Fiend Token") 
+                inflicter = damageTaker;
+
+            if (inflicter != null)
+                CardEffectManager.Instance.OnDamageDealt(inflicter, damageTaker, damage);
+        }
     }
 
     private void CheckTrapsAndAttackDirectly(CardDisplay attacker)
@@ -597,12 +614,28 @@ public class BattleManager : MonoBehaviour
             int damage = attacker.currentAtk; // Usa currentAtk (pode ter mudado no hook acima)
             Debug.Log($"Ataque Direto! Dano: {damage}");
             
-            // Aplica dano ao oponente
-            // FIX: Verifica quem está atacando para causar dano no alvo correto
-            if (attacker.isPlayerCard)
-                GameManager.Instance.DamageOpponent(damage);
-            else
-                GameManager.Instance.DamagePlayer(damage);
+            if (wabokuActive || noBattleDamageThisTurn)
+            {
+                damage = 0;
+                Debug.Log("Dano de ataque direto prevenido (Waboku/Winged Kuriboh).");
+            }
+            
+            if (damage > 0)
+            {
+                if (attacker.CurrentCardData.id == "0811" && CardEffectManager.Instance != null)
+                {
+                    Debug.Log("Gravekeeper's Vassal: Dano de ataque direto convertido para efeito.");
+                    CardEffectManager.Instance.Effect_DirectDamage(attacker, damage);
+                }
+                else
+                {
+                    if (attacker.isPlayerCard) GameManager.Instance.DamageOpponent(damage);
+                    else GameManager.Instance.DamagePlayer(damage);
+                }
+                
+                if (CardEffectManager.Instance != null)
+                    CardEffectManager.Instance.OnDamageDealt(attacker, null, damage);
+            }
             
             if (DuelFXManager.Instance != null) 
                 DuelFXManager.Instance.PlayAttack(attacker, null, null); // Null target = direct
@@ -745,6 +778,7 @@ public class BattleManager : MonoBehaviour
         if (GameManager.Instance.IsCardActiveOnField("0801")) { // Grave Protector
             Debug.Log("Grave Protector: Monstro embaralhado no deck em vez de ir ao GY.");
             GameManager.Instance.ReturnToDeck(monster, false);
+            GameManager.Instance.ShuffleDeck(monster.isPlayerCard);
         } else {
             GameManager.Instance.SendToGraveyard(monster.CurrentCardData, monster.isPlayerCard, CardLocation.Field, SendReason.Battle);
             Destroy(monster.gameObject);
