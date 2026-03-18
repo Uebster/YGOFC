@@ -16,6 +16,8 @@ public partial class CardEffectManager : MonoBehaviour
     // Lista para reviver monstros na próxima Standby Phase (Vampire Lord, etc)
     public List<CardData> reviveNextStandby = new List<CardData>();
 
+    public List<CardData> pharaohsTreasureCards = new List<CardData>();
+
     void Awake()
     {
         Instance = this;
@@ -63,6 +65,13 @@ public partial class CardEffectManager : MonoBehaviour
             }
         }
 
+        // 1460 - Prohibition
+        if (GameManager.Instance.prohibitedCards.Contains(card.CurrentCardData.name))
+        {
+            Debug.Log($"Efeito de {card.CurrentCardData.name} negado por Prohibition.");
+            return false;
+        }
+
         // 1489 - Rare Metalmorph: Nega magia que dê alvo
         if (card.CurrentCardData.type.Contains("Spell") && ChainManager.Instance != null)
         {
@@ -83,6 +92,29 @@ public partial class CardEffectManager : MonoBehaviour
                     Debug.Log("Rare Metalmorph: Anulando efeito de magia que deu alvo!");
                     metalmorphCard.spellCounters = 1; // Registra o uso único
                     return false;
+                }
+            }
+        }
+
+        // 1443 - Pole Position
+        if (card.CurrentCardData.type.Contains("Spell") && ChainManager.Instance != null)
+        {
+            var link = ChainManager.Instance.GetLastChainLink();
+            if (link != null && link.target != null && link.target.CurrentCardData.type.Contains("Monster"))
+            {
+                if (GameManager.Instance.IsCardActiveOnField("1443") || GameManager.Instance.IsCardActiveOnField("Pole Position"))
+                {
+                    int maxAtk = -1;
+                    List<CardDisplay> all = new List<CardDisplay>();
+                    if (GameManager.Instance.duelFieldUI != null) {
+                        CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
+                        CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
+                    }
+                    foreach(var m in all) if (!m.isFlipped && m.currentAtk > maxAtk) maxAtk = m.currentAtk;
+                    if (link.target.currentAtk == maxAtk) {
+                        Debug.Log("Pole Position: Magia negada pois o alvo é o monstro com maior ATK.");
+                        return false;
+                    }
                 }
             }
         }
@@ -275,6 +307,9 @@ public partial class CardEffectManager : MonoBehaviour
 
     void DestroyCards(List<CardDisplay> cards, bool isPlayerSource)
     {
+        // 1401 - Pandemonium Watchbear (Proteção)
+        cards.RemoveAll(c => c.CurrentCardData.name == "Pandemonium" && GameManager.Instance.IsCardActiveOnField("1401"));
+
         foreach (var card in cards)
         {
             if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);

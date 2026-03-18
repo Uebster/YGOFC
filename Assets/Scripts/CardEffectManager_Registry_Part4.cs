@@ -9,13 +9,16 @@ public partial class CardEffectManager
         // =========================================================================================
 
         // 1502 - Red Gadget (Search Yellow Gadget)
-        AddEffect("1502", c => Effect_SearchDeck(c, "Yellow Gadget"));
+        AddEffect("1502", Effect_1502_RedGadget);
 
         // 1503 - Red Medicine (Gain 500 LP)
         AddEffect("1503", Effect_1503_RedMedicine);
 
         // 1504 - Red-Eyes B. Chick
         AddEffect("1504", Effect_1504_RedEyesBChick);
+
+        // 1506 - Red-Eyes Black Metal Dragon
+        AddEffect("1506", Effect_1506_RedEyesBlackMetalDragon);
 
         // 1507 - Reflect Bounder (Damage on attack)
         AddEffect("1507", Effect_1507_ReflectBounder);
@@ -53,6 +56,9 @@ public partial class CardEffectManager
         // 1518 - Reshef the Dark Being (Discard Spell -> Control)
         AddEffect("1518", Effect_1518_ReshefTheDarkBeing);
 
+        // 1519 - Respect Play
+        AddEffect("1519", Effect_1519_RespectPlay);
+
         // 1520 - Restructer Revolution (Burn per hand card)
         AddEffect("1520", Effect_1520_RestructerRevolution);
 
@@ -75,13 +81,13 @@ public partial class CardEffectManager
         AddEffect("1526", Effect_1526_ReverseTrap);
 
         // 1527 - Revival Jam (Pay 1000 Revive)
-        AddEffect("1527", c => Debug.Log("Revival Jam: Efeito de renascimento configurado."));
+        AddEffect("1527", Effect_1527_RevivalJam);
 
         // 1528 - Revival of Dokurorider (Ritual)
         AddEffect("1528", Effect_1528_RevivalOfDokurorider);
 
         // 1532 - Rigorous Reaver (Flip Discard)
-        AddEffect("1532", c => Debug.Log("Rigorous Reaver: Efeitos de FLIP e batalha configurados."));
+        AddEffect("1532", Effect_1532_RigorousReaver);
 
         // 1533 - Ring of Destruction (Destroy & Burn)
         AddEffect("1533", Effect_1533_RingOfDestruction);
@@ -93,7 +99,7 @@ public partial class CardEffectManager
         AddEffect("1535", Effect_1535_Riryoku);
 
         // 1536 - Riryoku Field (Negate Spell)
-        AddEffect("1536", c => Debug.Log("Riryoku Field: Negação de alvo (Requer Chain)."));
+        AddEffect("1536", Effect_1536_RiryokuField);
 
         // 1537 - Rising Air Current (Field Wind +500/-400)
         AddEffect("1537", Effect_1537_RisingAirCurrent);
@@ -108,43 +114,43 @@ public partial class CardEffectManager
         AddEffect("1540", Effect_1540_RitualWeapon);
 
         // 1541 - Rivalry of Warlords (Type Lock)
-        AddEffect("1541", c => Debug.Log("Rivalry of Warlords: Restrição de Tipo ativa (Lógica no SummonManager)."));
+        AddEffect("1541", Effect_1541_RivalryOfWarlords);
 
         // 1543 - Robbin' Goblin (Damage -> Discard)
-        AddEffect("1543", c => Debug.Log("Robbin' Goblin: Ativo."));
+        AddEffect("1543", Effect_1543_RobbinGoblin);
 
         // 1544 - Robbin' Zombie (Damage -> Mill)
-        AddEffect("1544", c => Debug.Log("Robbin' Zombie: Ativo."));
+        AddEffect("1544", Effect_1544_RobbinZombie);
 
         // 1548 - Roc from the Valley of Haze (Recycle)
-        AddEffect("1548", c => Debug.Log("Roc: Efeito de reciclagem configurado."));
+        AddEffect("1548", Effect_1548_RocFromTheValleyOfHaze);
 
         // 1549 - Rock Bombardment (Mill Rock -> 500 dmg)
         AddEffect("1549", Effect_1549_RockBombardment);
 
         // 1553 - Rocket Jumper (Direct Attack)
-        AddEffect("1553", c => Debug.Log("Rocket Jumper: Pode atacar diretamente se oponente só tiver defesa."));
+        AddEffect("1553", Effect_1553_RocketJumper);
 
         // 1554 - Rocket Warrior (Battle protection)
-        AddEffect("1554", c => Debug.Log("Rocket Warrior: Efeitos de batalha configurados."));
+        AddEffect("1554", Effect_1554_RocketWarrior);
 
         // 1555 - Rod of Silence - Kay'est (Equip +500 DEF)
         AddEffect("1555", Effect_1555_RodOfSilenceKayest);
 
         // 1556 - Rod of the Mind's Eye (Equip 1000 dmg)
-        AddEffect("1556", c => Effect_Equip(c, 0, 0));
+        AddEffect("1556", Effect_1556_RodOfTheMindsEye);
 
         // 1559 - Rope of Life (Discard -> Revive +800)
-        AddEffect("1559", c => Debug.Log("Rope of Life: Armadilha de renascimento configurada."));
+        AddEffect("1559", Effect_1559_RopeOfLife);
 
         // 1561 - Roulette Barrel (Dice Destroy)
         AddEffect("1561", Effect_1561_RouletteBarrel);
 
         // 1562 - Royal Command (Negate Flip)
-        AddEffect("1562", c => Debug.Log("Royal Command: Efeitos Flip negados (Passivo)."));
+        AddEffect("1562", Effect_1562_RoyalCommand);
 
         // 1563 - Royal Decree (Negate Traps)
-        AddEffect("1563", c => Debug.Log("Royal Decree: Outras Traps negadas (Passivo)."));
+        AddEffect("1563", Effect_1563_RoyalDecree);
 
         // 1565 - Royal Keeper (Flip +300)
         AddEffect("1565", Effect_1565_RoyalKeeper);
@@ -153,10 +159,10 @@ public partial class CardEffectManager
         AddEffect("1566", Effect_1566_RoyalMagicalLibrary);
 
         // 1567 - Royal Oppression (Pay 800 Negate SS)
-        AddEffect("1567", c => Debug.Log("Royal Oppression: Negação de SS (Requer Chain)."));
+        AddEffect("1567", Effect_1567_RoyalOppression);
 
         // 1568 - Royal Surrender (Negate Continuous Trap)
-        AddEffect("1568", c => Debug.Log("Royal Surrender: Nega Trap Contínua (Requer Chain)."));
+        AddEffect("1568", Effect_1568_RoyalSurrender);
 
         // 1569 - Royal Tribute (Necrovalley Discard)
         AddEffect("1569", Effect_1569_RoyalTribute);
@@ -165,25 +171,28 @@ public partial class CardEffectManager
         AddEffect("1571", Effect_1571_RushRecklessly);
 
         // 1572 - Ryu Kokki (Destroy Warrior/Spellcaster)
-        AddEffect("1572", c => Debug.Log("Ryu Kokki: Efeito de batalha configurado."));
+        AddEffect("1572", Effect_1572_RyuKokki);
 
         // 1573 - Ryu Senshi (Pay 1000 Negate Trap)
-        AddEffect("1573", c => Debug.Log("Ryu Senshi: Efeitos de negação ativos."));
+        AddEffect("1573", Effect_1573_RyuSenshi);
 
         // 1575 - Ryu-Kishin Clown (Change Pos)
         AddEffect("1575", Effect_1575_RyuKishinClown);
 
         // 1576 - Sacred Crane (Draw on SS)
-        AddEffect("1576", c => Debug.Log("Sacred Crane: Efeito de compra no OnSpecialSummon."));
+        AddEffect("1576", Effect_1576_SacredCrane);
+
+        // 1577 - Sacred Defense Barrier
+        AddEffect("1577", Effect_1577_SacredDefenseBarrier);
 
         // 1578 - Sacred Phoenix of Nephthys (Revive/Nuke S/T)
-        AddEffect("1578", c => Debug.Log("Sacred Phoenix: Renasce e destrói S/T."));
+        AddEffect("1578", Effect_1578_SacredPhoenixOfNephthys);
 
         // 1579 - Sage's Stone (SS DM)
         AddEffect("1579", Effect_1579_SagesStone);
 
         // 1581 - Sakuretsu Armor (Destroy Attacker)
-        AddEffect("1581", c => Debug.Log("Sakuretsu Armor: Destrói monstro atacante."));
+        AddEffect("1581", Effect_1581_SakuretsuArmor);
 
         // 1582 - Salamandra (Equip Fire +700)
         AddEffect("1582", Effect_1582_Salamandra);
@@ -195,25 +204,25 @@ public partial class CardEffectManager
         AddEffect("1584", Effect_1584_SandGambler);
 
         // 1586 - Sanga of the Thunder (Zero ATK)
-        AddEffect("1586", c => Debug.Log("Sanga: Zera ATK do atacante."));
+        AddEffect("1586", Effect_1586_SangaOfTheThunder);
 
         // 1587 - Sangan (Search 1500-)
-        AddEffect("1587", c => Debug.Log("Sangan: Busca monstro 1500- ATK."));
+        AddEffect("1587", Effect_1587_Sangan);
 
         // 1589 - Sasuke Samurai (Destroy Face-down)
-        AddEffect("1589", c => Debug.Log("Sasuke Samurai: Destrói face-down antes do cálculo."));
+        AddEffect("1589", Effect_1589_SasukeSamurai);
 
         // 1590 - Sasuke Samurai #2 (Pay 800 No S/T)
-        AddEffect("1590", c => Debug.Log("Sasuke Samurai #2: Bloqueio de S/T na batalha."));
+        AddEffect("1590", Effect_1590_SasukeSamurai2);
 
         // 1591 - Sasuke Samurai #3 (Hand Fill)
         AddEffect("1591", Effect_1591_SasukeSamurai3);
 
         // 1592 - Sasuke Samurai #4 (Coin Destroy)
-        AddEffect("1592", c => Debug.Log("Sasuke Samurai #4: Moeda para destruir monstro."));
+        AddEffect("1592", Effect_1592_SasukeSamurai4);
 
         // 1593 - Satellite Cannon (Gain ATK)
-        AddEffect("1593", c => Debug.Log("Satellite Cannon: Ganha 1000 ATK por turno."));
+        AddEffect("1593", Effect_1593_SatelliteCannon);
 
         // 1594 - Scapegoat (SS 4 Tokens)
         AddEffect("1594", Effect_1594_Scapegoat);

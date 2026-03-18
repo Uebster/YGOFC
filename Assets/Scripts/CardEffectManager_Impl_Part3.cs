@@ -2880,8 +2880,7 @@ public partial class CardEffectManager
     // 1341 - Nightmare Horse
     void Effect_1341_NightmareHorse(CardDisplay source)
     {
-        // Direct attack.
-        Debug.Log("Nightmare Horse: Ataque direto habilitado.");
+        source.canAttackDirectly = true;
     }
 
     // 1342 - Nightmare Penguin
@@ -3134,9 +3133,8 @@ public partial class CardEffectManager
     // 1360 - Numinous Healer
     void Effect_1360_NuminousHealer(CardDisplay source)
     {
-        // Activate when taking damage. Gain 1000 LP + 500 per copy in GY.
-        int copies = GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.name == "Numinous Healer").Count;
-        // Lógica implementada no OnDamageTaken.
+        int copies = source.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard().FindAll(c => c.name == "Numinous Healer").Count : GameManager.Instance.GetOpponentGraveyard().FindAll(c => c.name == "Numinous Healer").Count;
+        Effect_GainLP(source, 1000 + (copies * 500));
     }
 
     // 1361 - Nutrient Z
@@ -3576,13 +3574,10 @@ public partial class CardEffectManager
 
     void Effect_1426_PharaohsTreasure(CardDisplay source)
     {
-        // Shuffle all cards in your hand into your Deck, then draw 1 card. If that card is a Spell Card, you can add 1 Spell Card from your Graveyard to your hand.
-        // Note: The actual effect is "Shuffle this card face-up into your Deck...".
-        // Implementing the actual effect:
-        GameManager.Instance.ReturnToDeck(source, false); // Shuffle
+        GameManager.Instance.ReturnToDeck(source, false);
         GameManager.Instance.ShuffleDeck(source.isPlayerCard);
-        // Logic to detect when drawn face-up is complex. Simplified to just shuffle.
-        Debug.Log("Pharaoh's Treasure: Embaralhado no deck (Efeito de compra pendente).");
+        CardEffectManager.Instance.pharaohsTreasureCards.Add(source.CurrentCardData);
+        Debug.Log("Pharaoh's Treasure: Embaralhado no deck (Armadilhado!).");
     }
 
     void Effect_1428_PhoenixWingWindBlast(CardDisplay source)

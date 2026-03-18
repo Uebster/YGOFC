@@ -2488,6 +2488,17 @@ public partial class CardEffectManager
             Effect_SearchDeck(attacker, "Dark Scorpion");
         }
 
+        // 1889 - The Secret of the Bandit
+        bool hasSecret = false;
+        if (GameManager.Instance.duelFieldUI != null) {
+            Transform[] mySpells = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+            foreach(var z in mySpells) if(z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "1889" && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped) hasSecret = true;
+        }
+        if (hasSecret && amount > 0) {
+            Debug.Log("The Secret of the Bandit: Dano infligido, oponente descarta 1 carta.");
+            GameManager.Instance.DiscardRandomHand(!attacker.isPlayerCard, 1);
+        }
+
         // 0894 - Hino-Kagu-Tsuchi
         if (attacker.CurrentCardData.id == "0894" && amount > 0)
         {
@@ -5357,6 +5368,24 @@ private void Effect_0206_BlindDestruction_Logic_Impl(CardDisplay source)
             GameManager.Instance.SpecialSummonFromData(card, isPlayer);
             if (isPlayer) GameManager.Instance.DamagePlayer(1000);
             else GameManager.Instance.DamageOpponent(1000);
+        }
+
+        // 1426 - Pharaoh's Treasure
+        if (CardEffectManager.Instance.pharaohsTreasureCards.Contains(card))
+        {
+            CardEffectManager.Instance.pharaohsTreasureCards.Remove(card);
+            GameManager.Instance.RemoveCardFromHand(card, isPlayer);
+            GameManager.Instance.SendToGraveyard(card, isPlayer);
+            
+            List<CardData> gy = isPlayer ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
+            List<CardData> spells = gy.FindAll(c => c.type.Contains("Spell"));
+            if (spells.Count > 0) {
+                GameManager.Instance.OpenCardSelection(spells, "Pharaoh's Treasure: Recuperar Magia", (selected) => {
+                    gy.Remove(selected);
+                    GameManager.Instance.AddCardToHand(selected, isPlayer);
+                    Debug.Log("Pharaoh's Treasure: Magia recuperada do GY.");
+                });
+            }
         }
 
         // Ignora compra normal (Draw Phase) para rastrear "compras por efeito" (Greed)

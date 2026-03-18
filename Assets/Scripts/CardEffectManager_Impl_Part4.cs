@@ -1074,8 +1074,9 @@ public partial class CardEffectManager
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.isPlayerCard && t.currentAtk <= 1000 && !t.isFlipped,
                 (target) => {
-                    Debug.Log($"Secret Pass: {target.CurrentCardData.name} pode atacar diretamente.");
-                    // Adicionar flag no CardDisplay ou BattleManager
+                    target.canAttackDirectly = true;
+                    GameManager.Instance.CreateCardLink(source, target, CardLink.LinkType.Continuous);
+                    Debug.Log($"Secret Pass: {target.CurrentCardData.name} ganhou a habilidade de atacar direto.");
                 }
             );
         }
@@ -1836,8 +1837,8 @@ public partial class CardEffectManager
     // 1691 - Solomon's Lawbook
     void Effect_1691_SolomonsLawbook(CardDisplay source)
     {
-        // Skip next Standby Phase.
-        Debug.Log("Solomon's Lawbook: Próxima Standby Phase pulada (Simulado).");
+        if (PhaseManager.Instance != null) PhaseManager.Instance.RegisterSkipNextPhase(source.isPlayerCard, GamePhase.Standby);
+        Debug.Log("Solomon's Lawbook: Sua próxima Standby Phase será pulada.");
     }
 
     // 1692 - Sonic Bird
@@ -3449,6 +3450,12 @@ public partial class CardEffectManager
         // Fusion Substitute.
         // Tribute materials + this card -> SS DARK Fusion.
         Debug.Log("The Dark - Hex-Sealed Fusion: Efeito de fusão por tributo.");
+    }
+
+    // 1851 - The Dark Door
+    void Effect_1851_TheDarkDoor(CardDisplay source)
+    {
+        Debug.Log("The Dark Door: Apenas 1 monstro pode atacar por Battle Phase (Passivo ativado).");
     }
 
         // 1853 - The Dragon's Bead

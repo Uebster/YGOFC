@@ -185,6 +185,21 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
+        // 1851 - The Dark Door
+        if (GameManager.Instance.IsCardActiveOnField("1851"))
+        {
+            Transform[] myZones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach(var z in myZones) {
+                if (z.childCount > 0) {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && m != attacker && m.attacksDeclaredThisTurn > 0) {
+                        Debug.LogWarning("The Dark Door: Apenas 1 monstro pode atacar por Battle Phase.");
+                        return;
+                    }
+                }
+            }
+        }
+
         // Verifica restrições de ataque (Gravity Bind, Level Limit, etc)
         if (!CanAttack(attacker)) return;
 
@@ -480,6 +495,21 @@ public class BattleManager : MonoBehaviour
     {
         if (damage <= 0 || damageTaker == null) return;
         bool isPlayer = damageTaker.isPlayerCard;
+
+        // 1738 - Spirit Barrier
+        if (GameManager.Instance.IsCardActiveOnField("1738"))
+        {
+            Transform[] mySpells = isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+            Transform[] myMonsters = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            bool barrierActive = false;
+            foreach(var z in mySpells) if(z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "1738" && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped) barrierActive = true;
+            bool hasMon = false;
+            foreach(var z in myMonsters) if(z.childCount > 0) hasMon = true;
+            if (barrierActive && hasMon) {
+                Debug.Log("Spirit Barrier: Dano de batalha aos LP é 0.");
+                return;
+            }
+        }
 
         // 0650 - Metal Fiend Token (Reflexo de Dano)
         if (damageTaker.CurrentCardData.name == "Metal Fiend Token")
@@ -821,6 +851,12 @@ public class BattleManager : MonoBehaviour
             else if (atk < def)
             {
                 int damage = def - atk;
+
+                // 1780 - Stone Statue of the Aztecs
+                if (target.CurrentCardData.id == "1780") {
+                    damage *= 2;
+                    Debug.Log("Stone Statue of the Aztecs: Dano de batalha refletido dobrado!");
+                }
 
                 // 1068 - Legendary Jujitsu Master
                 if (target.CurrentCardData.id == "1068") {
