@@ -324,6 +324,9 @@ public partial class CardEffectManager
         // 0158 - Beastking of the Swamps (Fusion Sub / Search Poly)
         AddEffect("0158", Effect_0158_BeastkingOfTheSwamps);
 
+        // 0159 - Beastly Mirror Ritual (Ritual Spell)
+        AddEffect("0159", Effect_0159_BeastlyMirrorRitual);
+
         // 0163 - Beckoning Light (Discard hand -> Retrieve Light)
         AddEffect("0163", Effect_0163_BeckoningLight);
 
@@ -498,6 +501,9 @@ public partial class CardEffectManager
 
         // 0246 - Burning Algae (Opp gain LP)
         AddEffect("0246", Effect_0246_BurningAlgae);
+
+        // 0247 - Burning Beast (Union)
+        AddEffect("0247", Effect_0247_BurningBeast);
 
         // 0248 - Burning Land (Destroy Field, Burn)
         AddEffect("0248", Effect_0248_BurningLand);
@@ -784,6 +790,9 @@ public partial class CardEffectManager
 
         // 0359 - Cyber Dragon (Effect: SS if opp controls monster)
         AddEffect("0359", Effect_0359_CyberDragon);
+
+        // 0360 - Cyber End Dragon (Monster Fusion)
+        AddEffect("0360", Effect_0360_CyberEndDragon);
 
         // 0362 - Cyber Harpie Lady (Effect: Name treated as Harpie Lady)
         AddEffect("0362", Effect_0362_CyberHarpieLady);

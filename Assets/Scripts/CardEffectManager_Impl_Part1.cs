@@ -1849,6 +1849,11 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         }
     }
 
+    void Effect_0159_BeastlyMirrorRitual(CardDisplay source)
+    {
+        GameManager.Instance.BeginRitualSummon(source);
+    }
+
     void Effect_0163_BeckoningLight(CardDisplay source)
     {
         // Discard entire hand; add Light monsters from GY equal to discarded amount.
@@ -2698,6 +2703,11 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         if (source.isPlayerCard) GameManager.Instance.opponentLP += 1000;
         else GameManager.Instance.playerLP += 1000;
         Debug.Log("Burning Algae: Oponente ganhou 1000 LP.");
+    }
+
+    void Effect_0247_BurningBeast(CardDisplay source)
+    {
+        Effect_Union(source, "Freezing Beast", 0, 0);
     }
 
     void Effect_0248_BurningLand(CardDisplay source)
@@ -4239,6 +4249,11 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                 Debug.Log("Cyber Dragon: Condição de SS não atendida.");
             }
         }
+    }
+
+    void Effect_0360_CyberEndDragon(CardDisplay source)
+    {
+        source.hasPiercing = true;
     }
 
     void Effect_0362_CyberHarpieLady(CardDisplay source)
