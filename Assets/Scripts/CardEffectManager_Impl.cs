@@ -4290,28 +4290,21 @@ public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
         List<CardData> oppGY = GameManager.Instance.GetOpponentGraveyard();
         List<CardData> myGY = GameManager.Instance.GetPlayerGraveyard();
 
-        // if (oppGY.Contains(target.CurrentCardData) || myGY.Contains(target.CurrentCardData))
-        // {
-        //     Debug.Log("Vampire Baby: Invocando monstro destruído (Simulado no fim da batalha).");
-        //     // Remove do GY
-        //     if (oppGY.Contains(target.CurrentCardData)) oppGY.Remove(target.CurrentCardData);
-        //     else myGY.Remove(target.CurrentCardData);
-        //     
-        //     // SS no campo do controlador do Vampire Baby
-        //     GameManager.Instance.SpecialSummonFromData(target.CurrentCardData, attacker.isPlayerCard);
-        // }
+        if (oppGY.Contains(target.CurrentCardData) || myGY.Contains(target.CurrentCardData))
+        {
+            Debug.Log("Vampire Baby: Invocando monstro destruído.");
+            if (oppGY.Contains(target.CurrentCardData)) oppGY.Remove(target.CurrentCardData);
+            else myGY.Remove(target.CurrentCardData);
+            GameManager.Instance.SpecialSummonFromData(target.CurrentCardData, attacker.isPlayerCard);
+        }
     }
 
     // 2049 - Wall of Illusion
     if (target != null && target.CurrentCardData.id == "2049" && attacker != null)
     {
-        // Se o atacante sobreviveu (não foi destruído na batalha), retorna para a mão
-        // Verifica se o atacante ainda está no campo (não foi destruído por regra de batalha)
-        // Nota: ResolveDamage chama Destroy(), mas o objeto Unity persiste até o fim do frame.
-        // Uma verificação robusta seria checar se ele NÃO está no GY.
-        // bool attackerInGY = GameManager.Instance.GetPlayerGraveyard().Contains(attacker.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(attacker.CurrentCardData);
+        bool attackerInGY = GameManager.Instance.GetPlayerGraveyard().Contains(attacker.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(attacker.CurrentCardData);
 
-        // if (!attackerInGY)
+        if (!attackerInGY)
         {
             Debug.Log("Wall of Illusion: Retornando atacante para a mão.");
             GameManager.Instance.ReturnToHand(attacker);
@@ -4321,29 +4314,24 @@ public void OnBattleEnd(CardDisplay attacker, CardDisplay target)
     // 2093 - Winged Sage Falcos
     if (attacker != null && attacker.CurrentCardData.id == "2093" && target != null)
     {
-        // Se destruiu monstro em Posição de Ataque
-        // Precisamos saber a posição anterior (target.position), mas target pode ter sido destruído.
-        // Assumimos que target.position ainda guarda o estado do momento da batalha.
-        // if (target.position == CardDisplay.BattlePosition.Attack)
-        // {
-        //     // Verifica se foi enviado ao GY
-        //     List<CardData> gy = target.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
-        //     if (gy.Contains(target.CurrentCardData))
-        //     {
-        //         Debug.Log("Winged Sage Falcos: Retornando monstro destruído ao topo do Deck.");
-        //         gy.Remove(target.CurrentCardData);
-        //         List<CardData> deck = target.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
-        //         deck.Insert(0, target.CurrentCardData);
-        //     }
-        // }
+        if (target.position == CardDisplay.BattlePosition.Attack)
+        {
+            List<CardData> gy = target.isPlayerCard ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
+            if (gy.Contains(target.CurrentCardData))
+            {
+                Debug.Log("Winged Sage Falcos: Retornando monstro destruído ao topo do Deck.");
+                gy.Remove(target.CurrentCardData);
+                List<CardData> deck = target.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+                deck.Insert(0, target.CurrentCardData);
+            }
+        }
     }
 
     // 2146 - Zombyra the Dark
     if (attacker != null && attacker.CurrentCardData.id == "2146" && target != null)
     {
-        // Se destruiu monstro (está no GY)
-        // bool targetInGY = GameManager.Instance.GetPlayerGraveyard().Contains(target.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(target.CurrentCardData);
-        // if (targetInGY)
+        bool targetInGY = GameManager.Instance.GetPlayerGraveyard().Contains(target.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(target.CurrentCardData);
+        if (targetInGY)
         {
             Debug.Log("Zombyra the Dark: -200 ATK.");
             attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -200, attacker));
