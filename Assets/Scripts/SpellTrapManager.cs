@@ -322,11 +322,21 @@ public class SpellTrapManager : MonoBehaviour
                                 // Assumimos que o trigger de Summon é para Normal/Flip
                                 validResponses.Add(cd);
                             }
+                            // Metal Detector (1211) vs Continuous Trap
+                            if (cd.CurrentCardData.id == "1211" && triggerLink.cardSource.CurrentCardData.type.Contains("Trap") && triggerLink.cardSource.CurrentCardData.property == "Continuous")
+                            {
+                                validResponses.Add(cd);
+                            }
                             break;
 
                         case ChainManager.TriggerType.Attack:
                             // Sakuretsu Armor (1581) vs Attack
                             if (cd.CurrentCardData.id == "1581")
+                            {
+                                validResponses.Add(cd);
+                            }
+                            // Prepare to Strike Back (1454) vs Attack
+                            if (cd.CurrentCardData.id == "1454")
                             {
                                 validResponses.Add(cd);
                             }

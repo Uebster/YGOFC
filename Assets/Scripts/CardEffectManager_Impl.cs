@@ -2962,6 +2962,18 @@ public partial class CardEffectManager
         {
             return dnaSurgeryDeclaredType;
         }
+
+        // 1404 - Parasite Paracide
+        if (GameManager.Instance.duelFieldUI != null) {
+            Transform[] zones = card.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach (var z in zones) {
+                if (z.childCount > 0) {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && !m.isFlipped && m.CurrentCardData.id == "1404") return "Insect";
+                }
+            }
+        }
+        
         if (!string.IsNullOrEmpty(card.temporaryRace)) return card.temporaryRace;
         return card.isTrapMonster ? card.trapMonsterRace : card.CurrentCardData.race;
     }
@@ -5337,6 +5349,16 @@ private void Effect_0206_BlindDestruction_Logic_Impl(CardDisplay source)
 
     partial void OnCardDrawnImpl(CardData card, bool isPlayer)
     {
+        // 1404 - Parasite Paracide
+        if (card.id == "1404")
+        {
+            Debug.Log("Parasite Paracide: Sacado do Deck!");
+            GameManager.Instance.RemoveCardFromHand(card, isPlayer);
+            GameManager.Instance.SpecialSummonFromData(card, isPlayer);
+            if (isPlayer) GameManager.Instance.DamagePlayer(1000);
+            else GameManager.Instance.DamageOpponent(1000);
+        }
+
         // Ignora compra normal (Draw Phase) para rastrear "compras por efeito" (Greed)
         if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Draw)
         {

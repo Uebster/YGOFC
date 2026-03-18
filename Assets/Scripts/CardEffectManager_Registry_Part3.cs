@@ -592,6 +592,12 @@ public partial class CardEffectManager
         // 1288 - Multiply (Kuriboh Tokens)
         AddEffect("1288", Effect_1288_Multiply);
 
+        // 1289 - Muse-A
+        AddEffect("1289", Effect_1289_MuseA);
+
+        // 1290 - Mushroom Man
+        AddEffect("1290", Effect_1290_MushroomMan);
+
         // 1291 - Mushroom Man #2 (Burn Control)
         AddEffect("1291", Effect_1291_MushroomMan2);
 
@@ -719,6 +725,9 @@ public partial class CardEffectManager
         // 1350 - Ninjitsu Art of Transformation (SS Beast/Winged Beast/Insect)
         AddEffect("1350", Effect_1350_NinjitsuArtOfTransformation);
 
+        // 1352 - Niwatori
+        AddEffect("1352", Effect_1352_Niwatori);
+
         // 1353 - Nobleman of Crossout (Banish Face-down)
         AddEffect("1353", Effect_1353_NoblemanOfCrossout);
 
@@ -749,11 +758,20 @@ public partial class CardEffectManager
         // 1362 - Nuvia the Wicked
         AddEffect("1362", Effect_1362_NuviaTheWicked);
 
+        // 1363 - Obese Marmot of Nefariousness
+        AddEffect("1363", Effect_1363_ObeseMarmotOfNefariousness);
+
         // 1364 - Obnoxious Celtic Guard (Battle Protection)
         AddEffect("1364", Effect_1364_ObnoxiousCelticGuard);
 
         // 1365 - Ocean Dragon Lord - Neo-Daedalus
         AddEffect("1365", Effect_1365_OceanDragonLordNeoDaedalus);
+
+        // 1366 - Octoberser
+        AddEffect("1366", Effect_1366_Octoberser);
+
+        // 1367 - Ocubeam
+        AddEffect("1367", Effect_1367_Ocubeam);
 
         // 1368 - Offerings to the Doomed (Destroy & Skip Draw)
         AddEffect("1368", Effect_1368_OfferingsToTheDoomed);
@@ -761,11 +779,23 @@ public partial class CardEffectManager
         // 1371 - Ojama Delta Hurricane!! (Nuke)
         AddEffect("1371", Effect_1371_OjamaDeltaHurricane);
 
+        // 1369 - Ogre of the Black Shadow
+        AddEffect("1369", Effect_1369_OgreOfTheBlackShadow);
+
+        // 1370 - Ojama Black
+        AddEffect("1370", Effect_1370_OjamaBlack);
+
+        // 1372 - Ojama Green
+        AddEffect("1372", Effect_1372_OjamaGreen);
+
         // 1373 - Ojama King
         AddEffect("1373", Effect_1373_OjamaKing);
 
         // 1374 - Ojama Trio (Tokens)
         AddEffect("1374", Effect_1374_OjamaTrio);
+
+        // 1375 - Ojama Yellow
+        AddEffect("1375", Effect_1375_OjamaYellow);
 
         // 1376 - Old Vindictive Magician (Flip Destroy)
         AddEffect("1376", Effect_1376_OldVindictiveMagician);
@@ -803,6 +833,9 @@ public partial class CardEffectManager
 
         // 1404 - Parasite Paracide (Flip Shuffle into Opp Deck)
         AddEffect("1404", Effect_1404_ParasiteParacide);
+
+        // 1405 - Parasitic Ticky
+        AddEffect("1405", Effect_1405_ParasiticTicky);
 
         // 1406 - Patrician of Darkness (Choose attack targets)
         AddEffect("1406", Effect_1406_PatricianOfDarkness);
@@ -958,7 +991,7 @@ public partial class CardEffectManager
         AddEffect("1479", Effect_1479_RagingFlameSprite);
 
         // 1480 - Raigeki (Destroy All Opp Monsters)
-        AddEffect("1480", Effect_Raigeki);
+        AddEffect("1480", Effect_1480_Raigeki);
 
         // 1481 - Raigeki Break (Discard 1 Destroy 1)
         AddEffect("1481", Effect_1481_RaigekiBreak);

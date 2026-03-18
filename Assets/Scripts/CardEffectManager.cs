@@ -63,6 +63,30 @@ public partial class CardEffectManager : MonoBehaviour
             }
         }
 
+        // 1489 - Rare Metalmorph: Nega magia que dê alvo
+        if (card.CurrentCardData.type.Contains("Spell") && ChainManager.Instance != null)
+        {
+            var link = ChainManager.Instance.GetLastChainLink();
+            if (link != null && link.target != null)
+            {
+                bool protectedByMetalmorph = false;
+                CardDisplay metalmorphCard = null;
+                CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+                foreach (var cl in links) {
+                    if (cl.target == link.target && cl.source != null && cl.source.CurrentCardData.id == "1489" && cl.source.spellCounters == 0) {
+                        protectedByMetalmorph = true;
+                        metalmorphCard = cl.source;
+                        break;
+                    }
+                }
+                if (protectedByMetalmorph) {
+                    Debug.Log("Rare Metalmorph: Anulando efeito de magia que deu alvo!");
+                    metalmorphCard.spellCounters = 1; // Registra o uso único
+                    return false;
+                }
+            }
+        }
+
         if (effectDatabase.ContainsKey(id))
         {
             Debug.Log($"Executando efeito da carta: {card.CurrentCardData.name} (ID: {id})");

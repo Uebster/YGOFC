@@ -1662,9 +1662,11 @@ public partial class CardEffectManager
 
     void Effect_1211_MetalDetector(CardDisplay source)
     {
-        // Effect: Negate activation of Continuous Trap.
-        // Requer sistema de Chain para interceptar.
-        Debug.Log("Metal Detector: Negação de Trap Contínua (Simulado).");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Trap") && link.cardSource.CurrentCardData.property == "Continuous")
+        {
+            NegateAndDestroy(source, link);
+        }
     }
 
     void Effect_1215_MetalReflectSlime(CardDisplay source)
@@ -3018,8 +3020,18 @@ public partial class CardEffectManager
 
                     if (isFlip)
                     {
-                        Debug.Log("Nobleman of Crossout: Era monstro Flip. Banindo cópias dos Decks (Simulado).");
-                        // Lógica de banir cópias dos decks
+                        Debug.Log("Nobleman of Crossout: Era monstro Flip. Banindo cópias dos Decks.");
+                        string targetName = target.CurrentCardData.name;
+                        List<CardData> pDeck = GameManager.Instance.GetPlayerMainDeck();
+                        List<CardData> oDeck = GameManager.Instance.GetOpponentMainDeck();
+                        foreach (var c in new List<CardData>(pDeck)) {
+                            if (c.name == targetName) { GameManager.Instance.RemoveFromPlay(c, true); pDeck.Remove(c); }
+                        }
+                        foreach (var c in new List<CardData>(oDeck)) {
+                            if (c.name == targetName) { GameManager.Instance.RemoveFromPlay(c, false); oDeck.Remove(c); }
+                        }
+                        GameManager.Instance.ShuffleDeck(true);
+                        GameManager.Instance.ShuffleDeck(false);
                     }
                 }
             );
@@ -3043,7 +3055,18 @@ public partial class CardEffectManager
 
                     if (isTrap)
                     {
-                        Debug.Log("Nobleman of Extermination: Era Armadilha. Banindo cópias dos Decks (Simulado).");
+                        Debug.Log("Nobleman of Extermination: Era Armadilha. Banindo cópias dos Decks.");
+                        string targetName = target.CurrentCardData.name;
+                        List<CardData> pDeck = GameManager.Instance.GetPlayerMainDeck();
+                        List<CardData> oDeck = GameManager.Instance.GetOpponentMainDeck();
+                        foreach (var c in new List<CardData>(pDeck)) {
+                            if (c.name == targetName) { GameManager.Instance.RemoveFromPlay(c, true); pDeck.Remove(c); }
+                        }
+                        foreach (var c in new List<CardData>(oDeck)) {
+                            if (c.name == targetName) { GameManager.Instance.RemoveFromPlay(c, false); oDeck.Remove(c); }
+                        }
+                        GameManager.Instance.ShuffleDeck(true);
+                        GameManager.Instance.ShuffleDeck(false);
                     }
                 }
             );
@@ -3389,8 +3412,6 @@ public partial class CardEffectManager
     void Effect_1404_ParasiteParacide(CardDisplay source)
     {
         // FLIP: Shuffle this card into your opponent's Deck.
-        // Note: The draw trigger logic needs to be handled in GameManager.DrawCard or similar.
-        // For now, we move it to the opponent's deck.
         List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
         oppDeck.Add(source.CurrentCardData);
         GameManager.Instance.ShuffleDeck(false);
@@ -3734,7 +3755,25 @@ public partial class CardEffectManager
 
     void Effect_1445_PossessedDarkSoul(CardDisplay source)
     {
-       Debug.Log("Possessed Dark Soul: Rouba Lv3-"); 
+        if (source.isOnField)
+        {
+            GameManager.Instance.TributeCard(source);
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                List<CardDisplay> toSteal = new List<CardDisplay>();
+                Transform[] oppZones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+                foreach(var z in oppZones)
+                {
+                    if (z.childCount > 0)
+                    {
+                        var m = z.GetChild(0).GetComponent<CardDisplay>();
+                        if (m != null && m.CurrentCardData.level <= 3) toSteal.Add(m);
+                    }
+                }
+                foreach(var m in toSteal) GameManager.Instance.SwitchControl(m);
+                Debug.Log($"Possessed Dark Soul: Roubou {toSteal.Count} monstro(s) de Nível 3 ou menor.");
+            }
+        }
     }
 
     void Effect_1446_PotOfGenerosity(CardDisplay source)
@@ -3807,8 +3846,21 @@ public partial class CardEffectManager
     // 1454 - Prepare to Strike Back
     void Effect_1454_PrepareToStrikeBack(CardDisplay source)
     {
-        // Trigger on attack. Coin toss to change position or destroy.
-        // Lógica implementada no OnAttackDeclared.
+        if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+        {
+            CardDisplay attacker = BattleManager.Instance.currentAttacker;
+            GameManager.Instance.TossCoin(1, (heads) => {
+                if (heads == 1) {
+                    Debug.Log("Prepare to Strike Back: Cara! Atacante muda para defesa.");
+                    attacker.ChangePosition();
+                } else {
+                    Debug.Log("Prepare to Strike Back: Coroa! Atacante destruído.");
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(attacker);
+                    GameManager.Instance.SendToGraveyard(attacker.CurrentCardData, attacker.isPlayerCard);
+                    Destroy(attacker.gameObject);
+                }
+            });
+        }
     }
 
     // 1456 - Prickle Fairy
@@ -4055,7 +4107,7 @@ public partial class CardEffectManager
                 (t) => {
                     t.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, 500, source));
                     GameManager.Instance.CreateCardLink(source, t, CardLink.LinkType.Equipment);
-                    Debug.Log("Rare Metalmorph: Equipado. (Negação de alvo pendente no SpellTrapManager).");
+                    Debug.Log("Rare Metalmorph: Equipado. Protege contra 1 alvo.");
                 }
             );
         }
@@ -4100,8 +4152,10 @@ public partial class CardEffectManager
             if (fusions.Count > 0)
             {
                 GameManager.Instance.OpenCardSelection(fusions, "Reviver Fusão", (selected) => {
-                    GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
-                    // Equip logic
+                    var summoned = GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                    gy.Remove(selected);
+                    GameManager.Instance.CreateCardLink(source, summoned, CardLink.LinkType.Equipment);
+                    Debug.Log($"Re-Fusion: Equipado em {selected.name}.");
                 });
             }
         }
