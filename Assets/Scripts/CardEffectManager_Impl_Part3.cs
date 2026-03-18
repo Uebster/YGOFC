@@ -1617,20 +1617,6 @@ public partial class CardEffectManager
         }
     }
 
-    void Effect_1204_MeltielSageOfTheSky(CardDisplay source)
-    {
-        // Effect: When Counter Trap resolves: Gain 1000 LP, destroy 1 card opp controls (if Sanctuary).
-        // A lógica é passiva e será tratada no hook OnCounterTrapResolved (CardEffectManager_Impl.cs).
-        Debug.Log("Meltiel: Efeito de gatilho em Counter Trap configurado.");
-    }
-
-    void Effect_1205_MemoryCrusher(CardDisplay source)
-    {
-        // Effect: If inflicts battle damage: Opponent sends cards from Extra Deck to GY equal to damage / 100.
-        // Lógica implementada no OnDamageDealtImpl (CardEffectManager_Impl.cs).
-        Debug.Log("Memory Crusher: Efeito de mill do Extra Deck configurado.");
-    }
-
     void Effect_1207_MermaidKnight(CardDisplay source)
     {
         // Effect: If "Umi" is active, can attack twice.
@@ -2289,12 +2275,6 @@ public partial class CardEffectManager
         Debug.Log("Morale Boost: Ativo.");
     }
 
-    // 1276 - Morinphen
-    void Effect_1276_Morinphen(CardDisplay source)
-    {
-        // Normal Monster. No effect.
-    }
-
     // 1277 - Morphing Jar
     void Effect_1277_MorphingJar(CardDisplay source)
     {
@@ -2377,18 +2357,6 @@ public partial class CardEffectManager
         Effect_Field(source, 200, 200, "Thunder");
     }
 
-    // 1281 - Mountain Warrior
-    void Effect_1281_MountainWarrior(CardDisplay source)
-    {
-        // Normal Monster.
-    }
-
-    // 1282 - Mr. Volcano
-    void Effect_1282_MrVolcano(CardDisplay source)
-    {
-        // Normal Monster.
-    }
-
     // 1283 - Mucus Yolk
     void Effect_1283_MucusYolk(CardDisplay source)
     {
@@ -2455,18 +2423,6 @@ public partial class CardEffectManager
         }
     }
 
-    // 1289 - Muse-A
-    void Effect_1289_MuseA(CardDisplay source)
-    {
-        // Normal Monster.
-    }
-
-    // 1290 - Mushroom Man
-    void Effect_1290_MushroomMan(CardDisplay source)
-    {
-        // Normal Monster.
-    }
-
     // 1291 - Mushroom Man #2
     void Effect_1291_MushroomMan2(CardDisplay source)
     {
@@ -2474,12 +2430,6 @@ public partial class CardEffectManager
         // Lógica implementada no OnPhaseStart.
         // Vamos tratar como efeito de ignição disponível na End Phase.
         Debug.Log("Mushroom Man #2: Efeitos de fase configurados.");
-    }
-
-    // 1292 - Musician King
-    void Effect_1292_MusicianKing(CardDisplay source)
-    {
-        // Fusion Monster.
     }
 
     // 1293 - Mustering of the Dark Scorpions
@@ -2999,9 +2949,6 @@ public partial class CardEffectManager
         }
     }
 
-    // 1352 - Niwatori
-    void Effect_1352_Niwatori(CardDisplay source) { } // Normal Monster
-
     // 1353 - Nobleman of Crossout
     void Effect_1353_NoblemanOfCrossout(CardDisplay source)
     {
@@ -3157,9 +3104,6 @@ public partial class CardEffectManager
         source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, oppCount * -200, source));
     }
 
-    // 1363 - Obese Marmot of Nefariousness
-    void Effect_1363_ObeseMarmotOfNefariousness(CardDisplay source) { } // Normal Monster
-
     // 1364 - Obnoxious Celtic Guard
     void Effect_1364_ObnoxiousCelticGuard(CardDisplay source)
     {
@@ -3182,12 +3126,6 @@ public partial class CardEffectManager
         }
     }
 
-    // 1366 - Octoberser
-    void Effect_1366_Octoberser(CardDisplay source) { } // Normal Monster
-
-    // 1367 - Ocubeam
-    void Effect_1367_Ocubeam(CardDisplay source) { } // Normal Monster
-
     // 1368 - Offerings to the Doomed
     void Effect_1368_OfferingsToTheDoomed(CardDisplay source)
     {
@@ -3208,12 +3146,6 @@ public partial class CardEffectManager
         }
     }
 
-    // 1369 - Ogre of the Black Shadow
-    void Effect_1369_OgreOfTheBlackShadow(CardDisplay source) { } // Normal Monster
-
-    // 1370 - Ojama Black
-    void Effect_1370_OjamaBlack(CardDisplay source) { } // Normal Monster
-
     // 1371 - Ojama Delta Hurricane
     void Effect_1371_OjamaDeltaHurricane(CardDisplay source)
     {
@@ -3229,9 +3161,6 @@ public partial class CardEffectManager
             Effect_HarpiesFeatherDuster(source);
         }
     }
-
-    // 1372 - Ojama Green
-    void Effect_1372_OjamaGreen(CardDisplay source) { } // Normal Monster
 
     // 1373 - Ojama King
     void Effect_1373_OjamaKing(CardDisplay source)
@@ -3277,14 +3206,25 @@ public partial class CardEffectManager
         }
     }
 
-    // 1375 - Ojama Yellow
-    void Effect_1375_OjamaYellow(CardDisplay source) { } // Normal Monster
-
-        // 1376 - Old Vindictive Magician
+    // 1376 - Old Vindictive Magician
     void Effect_1376_OldVindictiveMagician(CardDisplay source)
     {
         // FLIP: Destroy 1 monster.
         Effect_FlipDestroy(source, TargetType.Monster);
+    }
+
+    // 1377 - Ominous Fortunetelling
+    void Effect_1377_OminousFortunetelling(CardDisplay source)
+    {
+        // During your Standby Phase, select 1 random card from your opponent's hand. Call the type...
+        // Logic handled in OnPhaseStart (CardEffectManager_Impl.cs)
+        Debug.Log("Ominous Fortunetelling: Efeito de adivinhação na Standby Phase configurado.");
+    }
+
+    // 1381 - Ooguchi
+    void Effect_1381_Ooguchi(CardDisplay source)
+    {
+        source.canAttackDirectly = true;
     }
 
     // 1382 - Ookazi
@@ -3334,6 +3274,69 @@ public partial class CardEffectManager
             string guess = options[Random.Range(0, options.Count)];
             bool correct = picked.type.Contains(guess);
             if (!correct) GameManager.Instance.ReturnToHand(attacker);
+        }
+    }
+
+    // 1386 - Orca Mega-Fortress of Darkness
+    void Effect_1386_OrcaMegaFortressOfDarkness(CardDisplay source)
+    {
+        List<string> options = new List<string>();
+        bool hasTorpedo = false;
+        bool hasCannonball = false;
+
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones)
+            {
+                if (z.childCount > 0)
+                {
+                    var m = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (m != null && m.CurrentCardData.name == "Torpedo Fish") hasTorpedo = true;
+                    if (m != null && m.CurrentCardData.name == "Cannonball Spear Shellfish") hasCannonball = true;
+                }
+            }
+        }
+
+        if (hasTorpedo) options.Add("Tributar Torpedo Fish para destruir 1 monstro");
+        if (hasCannonball) options.Add("Tributar Cannonball Spear Shellfish para destruir 1 S/T");
+
+        if (options.Count == 0)
+        {
+            UIManager.Instance.ShowMessage("Você não tem os monstros corretos para tributar.");
+            return;
+        }
+
+        if (MultipleChoiceUI.Instance != null)
+        {
+            MultipleChoiceUI.Instance.Show(options, "Orca Mega-Fortress of Darkness", 1, 1, (selected) => {
+                string opt = selected[0];
+                if (opt.Contains("Torpedo"))
+                {
+                    if (SpellTrapManager.Instance != null) {
+                        SpellTrapManager.Instance.StartTargetSelection((t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "Torpedo Fish", (tribute) => {
+                            GameManager.Instance.TributeCard(tribute);
+                            SpellTrapManager.Instance.StartTargetSelection((target) => target.isOnField && target.CurrentCardData.type.Contains("Monster"), (target) => {
+                                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                                Destroy(target.gameObject);
+                            });
+                        });
+                    }
+                }
+                else if (opt.Contains("Cannonball"))
+                {
+                    if (SpellTrapManager.Instance != null) {
+                        SpellTrapManager.Instance.StartTargetSelection((t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.name == "Cannonball Spear Shellfish", (tribute) => {
+                            GameManager.Instance.TributeCard(tribute);
+                            SpellTrapManager.Instance.StartTargetSelection((target) => target.isOnField && (target.CurrentCardData.type.Contains("Spell") || target.CurrentCardData.type.Contains("Trap")), (target) => {
+                                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(target);
+                                GameManager.Instance.SendToGraveyard(target.CurrentCardData, target.isPlayerCard);
+                                Destroy(target.gameObject);
+                            });
+                        });
+                    }
+                }
+            });
         }
     }
 
@@ -3506,9 +3509,6 @@ public partial class CardEffectManager
         Destroy(source.gameObject);
         Debug.Log("Parasite Paracide: Embaralhado no deck do oponente.");
     }
-
-    // 1405 - Parasitic Ticky
-    void Effect_1405_ParasiticTicky(CardDisplay source) { } // Normal Monster
 
     // 1406 - Patrician of Darkness
     void Effect_1406_PatricianOfDarkness(CardDisplay source)
@@ -4030,6 +4030,27 @@ public partial class CardEffectManager
                 SpellCounterManager.Instance.AddCounter(source, 1);
             
             Debug.Log($"Pumpking: Buff aplicado. Turno {SpellCounterManager.Instance.GetCount(source)}/4.");
+        }
+    }
+
+    // 1467 - Puppet Master
+    void Effect_1467_PuppetMaster(CardDisplay source)
+    {
+        if (source.summonedThisTurn && source.isTributeSummoned)
+        {
+            List<CardData> gy = GameManager.Instance.GetPlayerGraveyard();
+            List<CardData> fiends = gy.FindAll(c => c.race == "Fiend" && c.type.Contains("Monster"));
+            
+            if (fiends.Count >= 2 && Effect_PayLP(source, 2000))
+            {
+                GameManager.Instance.OpenCardMultiSelection(fiends, "Reviver 2 Fiends", 2, 2, (selected) => {
+                    foreach(var c in selected) {
+                        gy.Remove(c);
+                        var summoned = GameManager.Instance.SpecialSummonFromData(c, source.isPlayerCard);
+                        if (summoned != null) summoned.cannotAttackThisTurn = true;
+                    }
+                });
+            }
         }
     }
 

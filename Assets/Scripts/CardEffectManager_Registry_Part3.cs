@@ -403,12 +403,6 @@ public partial class CardEffectManager
         // 1201 - Megarock Dragon (SS Banish Rocks)
         AddEffect("1201", Effect_1201_MegarockDragon);
 
-        // 1204 - Meltiel, Sage of the Sky (Gain LP / Destroy)
-        AddEffect("1204", Effect_1204_MeltielSageOfTheSky);
-
-        // 1205 - Memory Crusher (Mill Extra Deck)
-        AddEffect("1205", Effect_1205_MemoryCrusher);
-
         // 1207 - Mermaid Knight (Double Attack with Umi)
         AddEffect("1207", Effect_1207_MermaidKnight);
 
@@ -553,9 +547,6 @@ public partial class CardEffectManager
         // 1275 - Morale Boost (Gain/Lose LP on Equip)
         AddEffect("1275", Effect_1275_MoraleBoost);
 
-        // 1276 - Morinphen (Normal)
-        AddEffect("1276", Effect_1276_Morinphen);
-
         // 1277 - Morphing Jar (Hand Reset)
         AddEffect("1277", Effect_1277_MorphingJar);
 
@@ -567,12 +558,6 @@ public partial class CardEffectManager
 
         // 1280 - Mountain (Field Dragon/WingedBeast/Thunder +200)
         AddEffect("1280", Effect_1280_Mountain);
-
-        // 1281 - Mountain Warrior (Normal)
-        AddEffect("1281", Effect_1281_MountainWarrior);
-
-        // 1282 - Mr. Volcano (Normal)
-        AddEffect("1282", Effect_1282_MrVolcano);
 
         // 1283 - Mucus Yolk (Direct Attack / Gain ATK)
         AddEffect("1283", Effect_1283_MucusYolk);
@@ -592,17 +577,8 @@ public partial class CardEffectManager
         // 1288 - Multiply (Kuriboh Tokens)
         AddEffect("1288", Effect_1288_Multiply);
 
-        // 1289 - Muse-A
-        AddEffect("1289", Effect_1289_MuseA);
-
-        // 1290 - Mushroom Man
-        AddEffect("1290", Effect_1290_MushroomMan);
-
         // 1291 - Mushroom Man #2 (Burn Control)
         AddEffect("1291", Effect_1291_MushroomMan2);
-
-        // 1292 - Musician King (Fusion)
-        AddEffect("1292", Effect_1292_MusicianKing);
 
         // 1293 - Mustering of the Dark Scorpions (Swarm)
         AddEffect("1293", Effect_1293_MusteringOfTheDarkScorpions);
@@ -725,9 +701,6 @@ public partial class CardEffectManager
         // 1350 - Ninjitsu Art of Transformation (SS Beast/Winged Beast/Insect)
         AddEffect("1350", Effect_1350_NinjitsuArtOfTransformation);
 
-        // 1352 - Niwatori
-        AddEffect("1352", Effect_1352_Niwatori);
-
         // 1353 - Nobleman of Crossout (Banish Face-down)
         AddEffect("1353", Effect_1353_NoblemanOfCrossout);
 
@@ -758,35 +731,17 @@ public partial class CardEffectManager
         // 1362 - Nuvia the Wicked
         AddEffect("1362", Effect_1362_NuviaTheWicked);
 
-        // 1363 - Obese Marmot of Nefariousness
-        AddEffect("1363", Effect_1363_ObeseMarmotOfNefariousness);
-
         // 1364 - Obnoxious Celtic Guard (Battle Protection)
         AddEffect("1364", Effect_1364_ObnoxiousCelticGuard);
 
         // 1365 - Ocean Dragon Lord - Neo-Daedalus
         AddEffect("1365", Effect_1365_OceanDragonLordNeoDaedalus);
 
-        // 1366 - Octoberser
-        AddEffect("1366", Effect_1366_Octoberser);
-
-        // 1367 - Ocubeam
-        AddEffect("1367", Effect_1367_Ocubeam);
-
         // 1368 - Offerings to the Doomed (Destroy & Skip Draw)
         AddEffect("1368", Effect_1368_OfferingsToTheDoomed);
 
         // 1371 - Ojama Delta Hurricane!! (Nuke)
         AddEffect("1371", Effect_1371_OjamaDeltaHurricane);
-
-        // 1369 - Ogre of the Black Shadow
-        AddEffect("1369", Effect_1369_OgreOfTheBlackShadow);
-
-        // 1370 - Ojama Black
-        AddEffect("1370", Effect_1370_OjamaBlack);
-
-        // 1372 - Ojama Green
-        AddEffect("1372", Effect_1372_OjamaGreen);
 
         // 1373 - Ojama King
         AddEffect("1373", Effect_1373_OjamaKing);
@@ -800,11 +755,20 @@ public partial class CardEffectManager
         // 1376 - Old Vindictive Magician (Flip Destroy)
         AddEffect("1376", Effect_1376_OldVindictiveMagician);
 
+        // 1377 - Ominous Fortunetelling (Call Card Type)
+        AddEffect("1377", Effect_1377_OminousFortunetelling);
+
+        // 1381 - Ooguchi (Direct Attack)
+        AddEffect("1381", Effect_1381_Ooguchi);
+
         // 1382 - Ookazi (Burn 800)
         AddEffect("1382", Effect_1382_Ookazi);
 
         // 1384 - Opti-Camouflage Armor (Direct Attack Lv1)
         AddEffect("1384", Effect_1384_OptiCamouflageArmor);
+
+        // 1386 - Orca Mega-Fortress of Darkness (Tribute effects)
+        AddEffect("1386", Effect_1386_OrcaMegaFortressOfDarkness);
 
         // 1387 - Ordeal of a Traveler (Hand Game)
         AddEffect("1387", Effect_1387_OrdealOfATraveler);
@@ -986,6 +950,9 @@ public partial class CardEffectManager
 
         // 1465 - Pumpking the King of Ghosts
         AddEffect("1465", Effect_1465_PumpkingTheKingOfGhosts);
+
+        // 1467 - Puppet Master (Tribute -> SS 2 Fiends)
+        AddEffect("1467", Effect_1467_PuppetMaster);
 
         // 1468 - Pyramid Energy (Buff ATK or DEF)
         AddEffect("1468", Effect_1468_PyramidEnergy);

@@ -718,6 +718,25 @@ public partial class CardEffectManager
                 if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) Effect_DirectDamage(card, 600);
             });
 
+            CheckActiveCards("1377", (card) => { // Ominous Fortunetelling
+                if (card.isPlayerCard == GameManager.Instance.isPlayerTurn) {
+                    List<CardData> oppHand = card.isPlayerCard ? GameManager.Instance.GetOpponentHandData() : GameManager.Instance.GetPlayerHandData();
+                    if (oppHand.Count > 0) {
+                        CardData randomCard = oppHand[Random.Range(0, oppHand.Count)];
+                        List<string> options = new List<string> { "Monster", "Spell", "Trap" };
+                        if (card.isPlayerCard && MultipleChoiceUI.Instance != null) {
+                            MultipleChoiceUI.Instance.Show(options, "Ominous Fortunetelling: Adivinhe o Tipo!", 1, 1, (selected) => {
+                                if (selected.Count > 0) {
+                                    bool correct = randomCard.type.Contains(selected[0]);
+                                    Debug.Log($"Adivinhou {selected[0]} para {randomCard.name}. {(correct ? "Acertou!" : "Errou!")}");
+                                    if (correct) Effect_DirectDamage(card, 700);
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+
             CheckActiveCards("0238", (card) => { // Brain Jacker
                 if (card.isPlayerCard != GameManager.Instance.isPlayerTurn) GameManager.Instance.GainLifePoints(!card.isPlayerCard, 500);
             });
@@ -1540,13 +1559,6 @@ public partial class CardEffectManager
         if (card.type.Contains("Monster") && card.level >= 8 && fromLocation == CardLocation.Field)
         {
             level8OrHigherDestroyedThisTurn = true;
-        }
-
-        // 1031 - Kozaky's Self-Destruct Button
-        if (card.name == "Kozaky" && fromLocation == CardLocation.Field) {
-            CheckActiveCards("1031", (btn) => {
-                if (btn.isPlayerCard == isOwnerPlayer) Effect_DirectDamage(btn, 1000);
-            });
         }
 
         // 1010 - Keldo
@@ -2379,6 +2391,14 @@ public partial class CardEffectManager
             }
         }
 
+        // 1031 - Kozaky's Self-Destruct Button
+        if (card.CurrentCardData.id == "1031" && card.isFlipped)
+        {
+            Debug.Log("Kozaky's Self-Destruct Button: Destruída enquanto setada face-down. Dano ao oponente.");
+            if (card.isPlayerCard) GameManager.Instance.DamageOpponent(1000);
+            else GameManager.Instance.DamagePlayer(1000);
+        }
+
         // 0547 - Driving Snow
         if (card.CurrentCardData.type.Contains("Trap"))
         {
@@ -2569,18 +2589,6 @@ public partial class CardEffectManager
             if (attacker.CurrentCardData.id == "1178" && amount > 0) {
                 if (attacker.isPlayerCard) GameManager.Instance.DrawCard();
                 else GameManager.Instance.DrawOpponentCard();
-            }
-            
-            // 1205 - Memory Crusher
-            if (attacker.CurrentCardData.id == "1205" && amount > 0) {
-                int toMill = amount / 100;
-                List<CardData> extra = attacker.isPlayerCard ? GameManager.Instance.GetOpponentExtraDeck() : GameManager.Instance.GetPlayerExtraDeck();
-                int count = Mathf.Min(toMill, extra.Count);
-                for(int i=0; i<count; i++) {
-                    CardData c = extra[0];
-                    extra.RemoveAt(0);
-                    GameManager.Instance.SendToGraveyard(c, !attacker.isPlayerCard);
-                }
             }
 
             // 1591 - Sasuke Samurai #3
@@ -3612,6 +3620,13 @@ public partial class CardEffectManager
             }
         }
 
+        // 1434 - Piranha Army (Dano de Batalha Direto Dobrado)
+        if (attacker.CurrentCardData.id == "1434" && target == null)
+        {
+            Debug.Log("Piranha Army: Dobrando poder de ataque direto.");
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Multiply, 2f, attacker));
+        }
+
         // 1440 - Poison Fangs
         if (attacker.CurrentCardData.id == "1440" && target != null) {
             attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, 500, attacker));
@@ -4429,6 +4444,29 @@ partial void OnCounterTrapResolvedImpl(CardDisplay trap)
                         });
                     }
                 }
+            }
+        }
+
+        // 1286 - Muko
+        if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Draw)
+        {
+            bool hasMuko = false;
+            CardDisplay mukoTrap = null;
+            if (GameManager.Instance.duelFieldUI != null)
+            {
+                Transform[] myZones = !isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+                foreach (var z in myZones) {
+                    if (z.childCount > 0) {
+                        var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                        if (cd != null && cd.isFlipped && cd.CurrentCardData.id == "1286") { hasMuko = true; mukoTrap = cd; break; }
+                    }
+                }
+            }
+            if (hasMuko && mukoTrap != null && mukoTrap.isPlayerCard && UIManager.Instance != null) {
+                UIManager.Instance.ShowConfirmation("Ativar Muko? As cartas recém-compradas do oponente serão descartadas.", () => {
+                    GameManager.Instance.ActivateFieldSpellTrap(mukoTrap.gameObject);
+                    GameManager.Instance.DiscardCardsByName(isPlayer, card.name, true);
+                });
             }
         }
     }

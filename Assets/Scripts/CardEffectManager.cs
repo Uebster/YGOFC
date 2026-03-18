@@ -116,6 +116,16 @@ public partial class CardEffectManager : MonoBehaviour
                         return false;
                     }
                 }
+
+                // 1357 - Non-Spellcasting Area
+                if (GameManager.Instance.IsCardActiveOnField("1357") || GameManager.Instance.IsCardActiveOnField("Non-Spellcasting Area"))
+                {
+                    if (link.target.CurrentCardData.type.Contains("Normal") && !link.target.CurrentCardData.type.Contains("Effect"))
+                    {
+                        Debug.Log("Non-Spellcasting Area: Magia direcionada a um Monstro Normal negada.");
+                        return false;
+                    }
+                }
             }
         }
 
@@ -221,7 +231,7 @@ public partial class CardEffectManager : MonoBehaviour
     /// </summary>
     public bool IsFusionSubstitute(string cardIdOrName)
     {
-        string[] subs = { "0781", "1315", "2037", "1850", "1856", "1877", "Goddess with the Third Eye", "Mystical Sheep #1", "Versago the Destroyer", "The Dark - Hex-Sealed Fusion", "The Earth - Hex-Sealed Fusion", "The Light - Hex-Sealed Fusion" };
+        string[] subs = { "0781", "1019", "1315", "2037", "1850", "1856", "1877", "King of the Swamp", "Goddess with the Third Eye", "Mystical Sheep #1", "Versago the Destroyer", "The Dark - Hex-Sealed Fusion", "The Earth - Hex-Sealed Fusion", "The Light - Hex-Sealed Fusion" };
         return System.Array.Exists(subs, element => element == cardIdOrName);
     }
 
