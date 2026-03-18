@@ -3672,7 +3672,7 @@ public partial class CardEffectManager
         if (attacker.CurrentCardData.id == "1434" && target == null)
         {
             Debug.Log("Piranha Army: Dobrando poder de ataque direto.");
-            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Multiply, 2f, attacker));
+            attacker.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, 2f, attacker));
         }
 
         // 1440 - Poison Fangs
@@ -4502,7 +4502,7 @@ partial void OnCounterTrapResolvedImpl(CardDisplay trap)
             CardDisplay mukoTrap = null;
             if (GameManager.Instance.duelFieldUI != null)
             {
-                Transform[] myZones = !isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+                Transform[] myZones = trap.isPlayerCard ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
                 foreach (var z in myZones) {
                     if (z.childCount > 0) {
                         var cd = z.GetChild(0).GetComponent<CardDisplay>();
@@ -4510,10 +4510,10 @@ partial void OnCounterTrapResolvedImpl(CardDisplay trap)
                     }
                 }
             }
-            if (hasMuko && mukoTrap != null && mukoTrap.isPlayerCard && UIManager.Instance != null) {
+            if (hasMuko && mukoTrap != null && UIManager.Instance != null) {
                 UIManager.Instance.ShowConfirmation("Ativar Muko? As cartas recém-compradas do oponente serão descartadas.", () => {
                     GameManager.Instance.ActivateFieldSpellTrap(mukoTrap.gameObject);
-                    GameManager.Instance.DiscardCardsByName(isPlayer, card.name, true);
+                    GameManager.Instance.DiscardRandomHand(!trap.isPlayerCard, 1);
                 });
             }
         }
@@ -4849,15 +4849,7 @@ private void CheckNecklaceOfCommand(CardDisplay destroyedMonster)
             }
         }
     }
-    
-    // 1689 - Solemn Wishes
-    CheckActiveCards("1689", (wishes) => {
-        if (wishes.isPlayerCard == isPlayer) {
-            Effect_GainLP(wishes, 500);
-        }
-    });
 }
-
     public void Effect_GainLP(CardDisplay source, int amount)
 {
     GameManager.Instance.GainLifePoints(source.isPlayerCard, amount);
@@ -5618,6 +5610,13 @@ private void Effect_0206_BlindDestruction_Logic_Impl(CardDisplay source)
                 }
             });
         }
+
+        // 1689 - Solemn Wishes
+        CheckActiveCards("1689", (wishes) => {
+            if (wishes.isPlayerCard == isPlayer) {
+                Effect_GainLP(wishes, 500);
+            }
+        });
 
         // 0878 - Heart of the Underdog
         if (isPlayer && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Draw)

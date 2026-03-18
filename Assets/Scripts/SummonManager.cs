@@ -328,9 +328,6 @@ public class SummonManager : MonoBehaviour
         // Marca que a invocação normal foi realizada (pois o PerformSummon retornou false para esperar esta seleção)
         hasPerformedNormalSummon = true;
         if (narrowPassActive) narrowPassSummonCount++;
-        
-        CardDisplay cd = pendingCardGO.GetComponent<CardDisplay>();
-        if (cd != null) cd.tributeCount = currentTributesRequired;
 
         if (GameManager.Instance != null)
             GameManager.Instance.FinalizeSummon(pendingCardGO, pendingCardData, pendingIsSet, true, pendingIsSet, true, targetZone);

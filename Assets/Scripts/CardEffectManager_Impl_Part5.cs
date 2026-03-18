@@ -575,20 +575,18 @@ public partial class CardEffectManager
     void Effect_2050_WallOfRevealingLight(CardDisplay source)
     {
         // Pay multiple of 1000. Monsters with ATK <= paid cannot attack.
-        iNumericSelectionUI.Instance.Show(
-         
-                max: GameManager.Instance.playerLP - 1, // Não pode se matar
-                multipleOf: 1000,
-                allowed: null,
-                onConfirm: (val) => {
-                    if (Effect_PayLP(source, val))
-                    {
-                        source.paidLifePoints = val;
-                        Debug.Log($"Wall of Revealing Light: Bloqueio de ataque para ATK <= {val}.");
-                    }
+        int currentLP = source.isPlayerCard ? GameManager.Instance.playerLP : GameManager.Instance.opponentLP;
+        if (NumericSelectionUI.Instance != null)
+        {
+            NumericSelectionUI.Instance.Show("Wall of Revealing Light", "Pague LP (múltiplos de 1000):", 1000, currentLP - 1, 1000, null, (val) => {
+                if (Effect_PayLP(source, val))
+                {
+                    source.paidLifePoints = val;
+                    Debug.Log($"Wall of Revealing Light: Bloqueio de ataque para ATK <= {val}.");
                 }
-            );
+            });
         }
+    }
 
         // 2051 - Wandering Mummy
     void Effect_2051_WanderingMummy(CardDisplay source)

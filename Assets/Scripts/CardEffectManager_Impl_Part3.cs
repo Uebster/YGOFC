@@ -676,7 +676,7 @@ public partial class CardEffectManager
                     var m = z.GetChild(0).GetComponent<CardDisplay>();
                     if(m != null && m.CurrentCardData.race == "Machine")
                     {
-                        m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Multiply, 2, source));
+                        m.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, 2f, source));
                     m.scheduledForDestruction = true;
                     Debug.Log($"Limiter Removal: {m.CurrentCardData.name} ATK dobrado. Será destruído na End Phase.");
                     }
