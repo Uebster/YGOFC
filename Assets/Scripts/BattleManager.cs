@@ -213,6 +213,11 @@ public class BattleManager : MonoBehaviour
         if (currentAttacker == null) return;
         // Adiciona verificação para impedir ataque no turno 1 ou por outros efeitos
         if (!CanAttack(currentAttacker)) return;
+        
+        if (currentAttacker.cannotAttackDirectly) {
+            Debug.LogWarning("Este monstro não pode atacar diretamente devido ao seu efeito.");
+            return;
+        }
 
         if (HasDirectAttackCondition())
         {
@@ -548,6 +553,18 @@ public class BattleManager : MonoBehaviour
             Debug.Log("Amazoness Fighter: Dano de batalha zerado para o controlador.");
             return;
         }
+
+        // 1513 - Relinquished (Reflexo de Dano)
+        if (damageTaker.CurrentCardData.id == "1513")
+        {
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.GetEquippedCards(damageTaker).Count > 0)
+            {
+                Debug.Log("Relinquished: Oponente toma o mesmo dano de batalha.");
+                if (isPlayer) GameManager.Instance.DamageOpponent(damage);
+                else GameManager.Instance.DamagePlayer(damage);
+            }
+        }
+
         // 0048 - Amazoness Swords Woman
         if (damageTaker.CurrentCardData.id == "0048")
         {

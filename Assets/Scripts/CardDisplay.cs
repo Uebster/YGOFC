@@ -57,6 +57,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool hasUsedEffectThisTurn = false;
     [HideInInspector] public int attacksDeclaredThisTurn = 0; // Substitui/Complementa hasAttackedThisTurn
     [HideInInspector] public int maxAttacksPerTurn = 1; // Padrão 1
+    [HideInInspector] public bool cannotAttackDirectly = false; // Controle restrito de ataque direto por efeito
     [HideInInspector] public bool cannotAttackThisTurn = false; // Controle restrito de ataque por efeito
     [HideInInspector] public bool destroyedMonsterThisTurn = false; // Rastreia se foi o vitorioso num combate
     [HideInInspector] public bool cannotInflictBattleDamage = false; // Para Union Attack
@@ -109,6 +110,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     // Sistema de Efeitos Retardados
     [HideInInspector] public bool scheduledForDestruction = false;
+    [HideInInspector] public bool scheduledForReturnToExtraDeck = false; // Para Magical Scientist
     [HideInInspector] public int destructionTurnCountdown = -1;
     [HideInInspector] public bool destructionCountdownOwnerIsPlayer;
 
@@ -280,6 +282,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         trapMonsterAttribute = "";
 
         canAttackDirectly = false;
+        cannotAttackDirectly = false;
         cannotAttackThisTurn = false;
         destroyedMonsterThisTurn = false;
         hasPiercing = false;

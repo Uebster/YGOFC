@@ -44,7 +44,8 @@ public partial class CardEffectManager
     public bool secondCoinTossUsedOpponent = false;
     public bool diceReRollUsedPlayer = false;
     public bool diceReRollUsedOpponent = false;
-    
+    public bool cannotSummonMonstersThisTurn = false;
+
     public bool trapsBlockedThisTurn = false; // Forced Ceasefire (0685)
 
     public bool level8OrHigherDestroyedThisTurn = false; // Para A Deal with Dark Ruler
@@ -479,6 +480,7 @@ public partial class CardEffectManager
             
             level8OrHigherDestroyedThisTurn = false;
             trapsBlockedThisTurn = false;
+            cannotSummonMonstersThisTurn = false;
 
             // Cyber Archfiend (0357): Se mão vazia na Draw Phase, compra +1
             CheckActiveCards("0357", (card) =>
@@ -963,6 +965,22 @@ public partial class CardEffectManager
                 Debug.Log($"{monster.CurrentCardData.name} banido por efeito na End Phase.");
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayBanishEffect(monster);
                 GameManager.Instance.BanishCard(monster);
+            }
+
+            // Retorno para Extra Deck (Magical Scientist)
+            foreach (var monster in toDestroy.Where(m => m != null && m.scheduledForReturnToExtraDeck).ToList())
+            {
+                Debug.Log($"{monster.CurrentCardData.name} retornando ao Extra Deck.");
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayBanishEffect(monster);
+                CardData data = monster.CurrentCardData;
+                bool isPlayer = monster.isPlayerCard;
+                GameManager.Instance.SendToGraveyard(data, isPlayer); // Remove do campo fisicamente
+                Destroy(monster.gameObject);
+                
+                List<CardData> gy = isPlayer ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
+                if (gy.Contains(data)) { gy.Remove(data); }
+                List<CardData> extra = isPlayer ? GameManager.Instance.GetPlayerExtraDeck() : GameManager.Instance.GetOpponentExtraDeck();
+                extra.Add(data);
             }
 
             // 2. Limpa buffs temporários de todas as cartas no campo
@@ -3022,6 +3040,9 @@ public partial class CardEffectManager
 
     public bool IsSummonRestricted(bool isSpecialSummon)
     {
+        // Restrição Global (Dark Magic Curtain)
+        if (cannotSummonMonstersThisTurn) return true;
+
         // Jowgen the Spiritualist (0979) - No Special Summons
         if (isSpecialSummon && GameManager.Instance.IsCardActiveOnField("0979")) return true;
 

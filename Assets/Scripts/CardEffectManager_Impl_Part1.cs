@@ -2668,7 +2668,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
         {
             // Seleciona Bubbleman
             SpellTrapManager.Instance.StartTargetSelection(
-                (tribute) => tribute.isOnField && tribute.isPlayerCard && tribute.CurrentCardData.name.Contains("Bubbleman"),
+                (tribute) => tribute.isOnField && tribute.isPlayerCard && tribute.CurrentCardData.name.Contains("Bubbleman") && tribute.position == CardDisplay.BattlePosition.Attack,
                 (bubbleman) => {
                     // Seleciona Oponente
                     SpellTrapManager.Instance.StartTargetSelection(
@@ -2676,18 +2676,22 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                         (oppMonster) => {
                             bubbleman.ChangePosition();
                             oppMonster.ChangePosition();
-                            GameManager.Instance.TributeCard(bubbleman);
                             
-                            // SS da mão
-                            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
-                            List<CardData> heroes = hand.FindAll(c => c.name.Contains("Elemental HERO") && c.type.Contains("Monster"));
-                            
-                            if (heroes.Count > 0)
+                            // Checa estritamente se foram para defesa com sucesso
+                            if (bubbleman.position == CardDisplay.BattlePosition.Defense && oppMonster.position == CardDisplay.BattlePosition.Defense)
                             {
-                                GameManager.Instance.OpenCardSelection(heroes, "Invocar E-Hero", (selected) => {
-                                    GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
-                                    GameManager.Instance.RemoveCardFromHand(selected, source.isPlayerCard);
-                                });
+                                GameManager.Instance.TributeCard(bubbleman);
+                                
+                                List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+                                List<CardData> heroes = hand.FindAll(c => c.name.Contains("Elemental HERO") && c.type.Contains("Monster") && c.name != "Elemental HERO Bubbleman");
+                                
+                                if (heroes.Count > 0)
+                                {
+                                    GameManager.Instance.OpenCardSelection(heroes, "Invocar E-Hero", (selected) => {
+                                        GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                                        GameManager.Instance.RemoveCardFromHand(selected, source.isPlayerCard);
+                                    });
+                                }
                             }
                         });
                 });
@@ -5029,10 +5033,18 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0418_DarkMagicCurtain(CardDisplay source)
     {
-        // Efeito: Paga metade do LP; SS Dark Magician do Deck.
+        if (CardEffectManager.Instance.cannotSummonMonstersThisTurn || SummonManager.Instance.hasPerformedNormalSummon)
+        {
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Você não pode ativar Dark Magic Curtain pois já realizou invocações neste turno.");
+            return;
+        }
+
         int cost = GameManager.Instance.playerLP / 2;
-        Effect_PayLP(source, cost);
-        Effect_SearchDeck(source, "Dark Magician"); // Simplificado (deveria invocar)
+        if (Effect_PayLP(source, cost))
+        {
+            Effect_SpecialSummonFromDeck(source, nameContains: "Dark Magician");
+            CardEffectManager.Instance.cannotSummonMonstersThisTurn = true; // Bloqueia tudo
+        }
     }
 
     void Effect_0420_DarkMagicianGirl(CardDisplay source)
@@ -5095,8 +5107,12 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                         });
                 }
             } else {
-                GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
-                Destroy(source.gameObject);
+                DestroyAllMonsters(false, true); // O 6 destrói todo o seu campo
+                // Garante que o Zorc também morra mesmo que haja erro na varredura
+                if (source != null && source.isOnField) {
+                    GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard);
+                    Destroy(source.gameObject);
+                }
             }
         });
     }

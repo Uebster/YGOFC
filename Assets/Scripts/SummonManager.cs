@@ -60,6 +60,7 @@ public class SummonManager : MonoBehaviour
     public bool CanNormalSummon()
     {
         if (GameManager.Instance != null && (GameManager.Instance.devMode || GameManager.Instance.infiniteNormalSummons)) return true;
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.cannotSummonMonstersThisTurn) return false;
         return !hasPerformedNormalSummon;
     }
 
@@ -119,6 +120,12 @@ public class SummonManager : MonoBehaviour
     // Executa todo o fluxo de invocação e gerencia exceções antes de finalizar no GameManager
     public void ExecuteSummonFlow(GameObject cardGO, CardData card, bool isSet, bool isSpecial, bool isPlayer, bool ignoreLimit = false)
     {
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.cannotSummonMonstersThisTurn)
+        {
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Você não pode invocar monstros neste turno devido a um efeito de carta (ex: Dark Magic Curtain).");
+            return;
+        }
+        
         if (isSpecial)
         {
             // Lógica de contagem de Special Summon

@@ -1082,7 +1082,8 @@ public partial class CardEffectManager
                     var summoned = GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
                     if (summoned != null)
                     {
-                        summoned.scheduledForDestruction = true;
+                        summoned.cannotAttackDirectly = true;
+                        summoned.scheduledForReturnToExtraDeck = true;
                     }
                     extra.Remove(selected);
                 });
@@ -1657,9 +1658,10 @@ public partial class CardEffectManager
 
     void Effect_1215_MetalReflectSlime(CardDisplay source)
     {
-        // Effect: SS as Monster (Aqua/Water/Lv10/0/3000).
-        GameManager.Instance.SpawnToken(source.isPlayerCard, 0, 3000, "Metal Reflect Slime Token");
-        Debug.Log("Metal Reflect Slime: Invocado como monstro.");
+        if (GameManager.Instance.ConvertTrapToMonster(source, 0, 3000, 10, "Aqua", "Water"))
+        {
+            Debug.Log("Metal Reflect Slime: Invocado perfeitamente como Trap Monster.");
+        }
     }
 
     void Effect_1216_MetallizingParasiteLunatite(CardDisplay source)
