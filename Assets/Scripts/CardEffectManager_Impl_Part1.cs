@@ -1371,18 +1371,27 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
     void Effect_0110_ArsenalRobber(CardDisplay source)
     {
         // Regra: Oponente escolhe Equip do Deck e envia ao GY. Se não tiver, você toma 1000 de dano.
-        List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
-        if (oppDeck.Count == 0) return;
-
+        bool isOpponentPlayer = !source.isPlayerCard; 
+        List<CardData> oppDeck = isOpponentPlayer ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
         List<CardData> equips = oppDeck.FindAll(c => c.type.Contains("Spell") && c.property == "Equip");
 
         if (equips.Count > 0)
         {
-            CardData selected = equips[Random.Range(0, equips.Count)];
-            Debug.Log($"Arsenal Robber: Oponente selecionou e enviou {selected.name} ao GY.");
-            
-            oppDeck.Remove(selected);
-            GameManager.Instance.SendToGraveyard(selected, !source.isPlayerCard);
+            if (isOpponentPlayer)
+            {
+                GameManager.Instance.OpenCardSelection(equips, "Arsenal Robber: Escolha Equip", (selected) => {
+                    oppDeck.Remove(selected);
+                    GameManager.Instance.SendToGraveyard(selected, true);
+                    Debug.Log($"Arsenal Robber: Você enviou {selected.name} ao GY.");
+                });
+            }
+            else
+            {
+                CardData selected = equips[Random.Range(0, equips.Count)];
+                oppDeck.Remove(selected);
+                GameManager.Instance.SendToGraveyard(selected, false);
+                Debug.Log($"Arsenal Robber: IA enviou {selected.name} ao GY.");
+            }
         }
         else
         {
@@ -4487,17 +4496,120 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                 } else {
                     List<CardData> myHand = GameManager.Instance.GetPlayerHandData();
                     if (myHand.Count > 0) {
+                        // Oponente escolhe carta aleatória da sua mão.
                         CardData rnd = myHand[Random.Range(0, myHand.Count)];
                         var go = GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == rnd);
                         if (go != null) {
                             GameManager.Instance.RemoveCardFromHand(rnd, true);
                             GameManager.Instance.RemoveFromPlay(rnd, true);
                             Destroy(go);
-                            Debug.Log($"D.D. Designator: Errou! Baniu {rnd.name} aleatoriamente da sua mão.");
+                            Debug.Log($"D.D. Designator: Errou! IA baniu {rnd.name} da sua mão.");
                         }
                     }
                 }
             });
+        }
+        else if (!source.isPlayerCard)
+        {
+            // Lógica da IA: Declara carta aleatória (Simulada escolhendo uma do deck do player)
+            List<CardData> playerDeck = GameManager.Instance.GetPlayerMainDeck();
+            if (playerDeck.Count > 0)
+            {
+                CardData guessedCard = playerDeck[Random.Range(0, playerDeck.Count)];
+                List<CardData> playerHand = GameManager.Instance.GetPlayerHandData();
+                CardData hit = playerHand.Find(c => c.name == guessedCard.name);
+
+                if (hit != null) {
+                    var go = GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == hit);
+                    if (go != null) {
+                        GameManager.Instance.RemoveCardFromHand(hit, true);
+                        GameManager.Instance.RemoveFromPlay(hit, true);
+                        Destroy(go);
+                        Debug.Log($"D.D. Designator: Oponente (IA) acertou! Baniu {hit.name} da sua mão.");
+                    }
+                } else {
+                    List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+                    if (oppHand.Count > 0) {
+                        // Como o jogador teria que escolher uma carta escondida da IA, e D.D. Designator original faz ser random
+                        CardData rnd = oppHand[Random.Range(0, oppHand.Count)];
+                        var go = GameManager.Instance.opponentHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == rnd);
+                        if (go != null) {
+                            GameManager.Instance.RemoveCardFromHand(rnd, false);
+                            GameManager.Instance.RemoveFromPlay(rnd, false);
+                            Destroy(go);
+                            Debug.Log($"D.D. Designator: IA errou! Baniu {rnd.name} da mão dela.");
+                        }
+                    }
+                }
+            }
+        }
+        else if (!source.isPlayerCard)
+        {
+            // Lógica da IA: Declara carta aleatória (Simulada escolhendo uma do deck do player)
+            List<CardData> playerDeck = GameManager.Instance.GetPlayerMainDeck();
+            if (playerDeck.Count > 0)
+            {
+                CardData guessedCard = playerDeck[Random.Range(0, playerDeck.Count)];
+                List<CardData> playerHand = GameManager.Instance.GetPlayerHandData();
+                CardData hit = playerHand.Find(c => c.name == guessedCard.name);
+
+                if (hit != null) {
+                    var go = GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == hit);
+                    if (go != null) {
+                        GameManager.Instance.RemoveCardFromHand(hit, true);
+                        GameManager.Instance.RemoveFromPlay(hit, true);
+                        Destroy(go);
+                        Debug.Log($"D.D. Designator: Oponente (IA) acertou! Baniu {hit.name} da sua mão.");
+                    }
+                } else {
+                    List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+                    if (oppHand.Count > 0) {
+                        // Como o jogador teria que escolher uma carta escondida da IA, e D.D. Designator original faz ser random
+                        CardData rnd = oppHand[Random.Range(0, oppHand.Count)];
+                        var go = GameManager.Instance.opponentHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == rnd);
+                        if (go != null) {
+                            GameManager.Instance.RemoveCardFromHand(rnd, false);
+                            GameManager.Instance.RemoveFromPlay(rnd, false);
+                            Destroy(go);
+                            Debug.Log($"D.D. Designator: IA errou! Baniu {rnd.name} da mão dela.");
+                        }
+                    }
+                }
+            }
+        }
+        else if (!source.isPlayerCard)
+        {
+            // Lógica da IA: Declara carta aleatória (Simulada escolhendo uma do deck do player)
+            List<CardData> playerDeck = GameManager.Instance.GetPlayerMainDeck();
+            if (playerDeck.Count > 0)
+            {
+                CardData guessedCard = playerDeck[Random.Range(0, playerDeck.Count)];
+                List<CardData> playerHand = GameManager.Instance.GetPlayerHandData();
+                CardData hit = playerHand.Find(c => c.name == guessedCard.name);
+
+                if (hit != null) {
+                    var go = GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == hit);
+                    if (go != null) {
+                        GameManager.Instance.RemoveCardFromHand(hit, true);
+                        GameManager.Instance.RemoveFromPlay(hit, true);
+                        Destroy(go);
+                        Debug.Log($"D.D. Designator: Oponente (IA) acertou! Baniu {hit.name} da sua mão.");
+                    }
+                } else {
+                    List<CardData> oppHand = GameManager.Instance.GetOpponentHandData();
+                    if (oppHand.Count > 0) {
+                        // Como o jogador teria que escolher uma carta escondida da IA, e D.D. Designator original faz ser random
+                        CardData rnd = oppHand[Random.Range(0, oppHand.Count)];
+                        var go = GameManager.Instance.opponentHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == rnd);
+                        if (go != null) {
+                            GameManager.Instance.RemoveCardFromHand(rnd, false);
+                            GameManager.Instance.RemoveFromPlay(rnd, false);
+                            Destroy(go);
+                            Debug.Log($"D.D. Designator: IA errou! Baniu {rnd.name} da mão dela.");
+                        }
+                    }
+                }
+            }
         }
     }
 

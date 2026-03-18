@@ -216,14 +216,16 @@ public class SummonManager : MonoBehaviour
         {
             if (enableAutoTribute || !isPlayer || GameManager.Instance.isSimulating)
             {
-                ProcessAutoTribute(tributesNeeded, isPlayer);
+                List<CardData> tributedCards = ProcessAutoTribute(tributesNeeded, isPlayer);
                 
                 hasPerformedNormalSummon = true;
                 if (isPlayer && narrowPassActive) narrowPassSummonCount++;
 
                 CardDisplay cd = cardGO.GetComponent<CardDisplay>();
-                if (cd != null) cd.tributeCount = tributesNeeded;
-
+                if (cd != null) {
+                    cd.tributeCount = tributesNeeded;
+                    cd.tributedMonsters = new List<CardData>(tributedCards);
+                }
                 Transform specificZone = null;
                 if (lastAutoTributeZone != null && GameManager.Instance.placeTributeSummonInTributeZone) specificZone = lastAutoTributeZone;
 
@@ -299,6 +301,15 @@ public class SummonManager : MonoBehaviour
                 targetZone = currentSelectedTributes[0].transform.parent;
             }
         }
+        
+        CardDisplay cd = pendingCardGO.GetComponent<CardDisplay>();
+        if (cd != null) {
+            cd.tributeCount = currentTributesRequired;
+            cd.tributedMonsters.Clear();
+            foreach (var monster in currentSelectedTributes) {
+                if (monster != null) cd.tributedMonsters.Add(monster.CurrentCardData);
+            }
+        }
 
         foreach (var monster in currentSelectedTributes)
         {
@@ -330,9 +341,10 @@ public class SummonManager : MonoBehaviour
     }
 
     // Lógica temporária: Sacrifica automaticamente os monstros com menor ATK
-    private void ProcessAutoTribute(int count, bool isPlayer)
+    private List<CardData> ProcessAutoTribute(int count, bool isPlayer)
     {
-        if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return;
+        List<CardData> tributedData = new List<CardData>();
+        if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return tributedData;
         lastAutoTributeZone = null; // Reseta antes de processar
 
         Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
@@ -363,9 +375,11 @@ public class SummonManager : MonoBehaviour
                 lastAutoTributeZone = monster.transform.parent;
             }
 
+            tributedData.Add(monster.CurrentCardData);
             GameManager.Instance.TributeCard(monster);
             tributed++;
         }
+        return tributedData;
     }
 
     public void SelectTributes(int count, bool isPlayer, System.Action<List<CardDisplay>> onComplete, List<CardDisplay> current = null)

@@ -69,6 +69,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool canBeTributedByOpponent = false; // Para Soul Exchange
     [HideInInspector] public bool returnControlAtEndPhase = false; // Para Shien's Spy
     [HideInInspector] public bool scheduledForLevelUp = false; // Para monstros LV
+    [HideInInspector] public List<CardData> tributedMonsters = new List<CardData>(); // Monstros usados para Tribute Summon
 
     // Sistema Trap Monster
     [HideInInspector] public bool isTrapMonster = false;
@@ -266,6 +267,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         currentDef = card.def;
 
         activeModifiers.Clear(); // Limpa modificadores antigos ao resetar a carta
+        tributedMonsters.Clear(); // Limpa a lista de tributos passados
         spellCounters = 0; // Reseta contadores
         turnCounter = 0; // Reseta contadores de turno
         maxTurnCounter = 0;

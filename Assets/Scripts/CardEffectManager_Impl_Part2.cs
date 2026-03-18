@@ -3245,8 +3245,14 @@ public partial class CardEffectManager
     {
         if (source.summonedThisTurn && source.isTributeSummoned)
         {
-            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, 4000, source));
-            Debug.Log("Great Maju Garzett: ATK definido para 4000 (Simulado pela falta de histórico de tributo).");
+            int totalOriginalAtk = 0;
+            foreach (var tData in source.tributedMonsters)
+            {
+                totalOriginalAtk += tData.atk;
+            }
+            int newAtk = totalOriginalAtk * 2;
+            source.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, newAtk, source));
+            Debug.Log($"Great Maju Garzett: ATK definido para {newAtk} (Tributos: {source.tributedMonsters.Count}).");
         }
     }
 
@@ -4272,15 +4278,32 @@ public partial class CardEffectManager
     void Effect_0964_JadeInsectWhistle(CardDisplay source)
     {
         // Opponent selects 1 Insect from their Deck and places it on top.
-        Debug.Log("Jade Insect Whistle: Oponente deve colocar Inseto no topo (Simulado).");
-        // Simulação:
-        List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
-        CardData insect = oppDeck.Find(c => c.race == "Insect");
-        if (insect != null)
+        bool isOpponentPlayer = !source.isPlayerCard; // Se foi ativado pelo oponente, o jogador humano escolhe do seu deck
+        List<CardData> targetDeck = isOpponentPlayer ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+        List<CardData> insects = targetDeck.FindAll(c => c.race == "Insect");
+
+        if (insects.Count > 0)
         {
-            oppDeck.Remove(insect);
-            oppDeck.Insert(0, insect);
-            Debug.Log($"Jade Insect Whistle: {insect.name} movido para o topo.");
+            if (isOpponentPlayer)
+            {
+                GameManager.Instance.OpenCardSelection(insects, "Jade Insect Whistle: Escolha 1 Inseto", (selected) => {
+                    targetDeck.Remove(selected);
+                    targetDeck.Insert(0, selected);
+                    Debug.Log($"Jade Insect Whistle: Você moveu {selected.name} para o topo do deck.");
+                });
+            }
+            else
+            {
+                CardData selected = insects[Random.Range(0, insects.Count)];
+                targetDeck.Remove(selected);
+                targetDeck.Insert(0, selected);
+                Debug.Log($"Jade Insect Whistle: IA moveu {selected.name} para o topo.");
+            }
+        }
+        else
+        {
+            Debug.Log("Jade Insect Whistle: Oponente não possui Insetos no Deck.");
+
         }
     }
 

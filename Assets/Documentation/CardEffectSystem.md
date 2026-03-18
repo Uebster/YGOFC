@@ -89,3 +89,28 @@ Para integrar as cartas com a Interface Visual (UI) do jogo sem acoplar código,
 3.  O Manager busca o ID da carta no `effectDatabase`.
 4.  Se encontrado, o `Action<CardDisplay>` correspondente é invocado.
 5.  A lógica (seja genérica ou específica) é executada, interagindo com `GameManager`, `DuelFieldUI`, etc.
+
+## 16. Interações Numéricas (Number Selector) e Múltipla Escolha
+Algumas cartas exigem que o jogador declare um número (ex: Nível do Monstro, Quantidade de LP para pagar).
+*   **NumericSelectionUI:** Permite que o jogador insira valores numéricos usando botões na tela ou o teclado físico (incluindo Numpad). Ele valida valores mínimos, máximos e múltiplos (ex: pagar múltiplos de 1000).
+*   **Uso:** 
+    ```csharp
+    NumericSelectionUI.Instance.Show("Wall of Revealing Light", "Pague LP (múltiplos de 1000):", 1000, 7000, 1000, null, (valor) => { ... });
+    ```
+*   **MultipleChoiceUI:** Exibe botões com strings variadas para o jogador selecionar X opções. (Ex: declarar 2 números para o *Sixth Sense*).
+
+## 17. O Sistema de Escolhas e Delegação para a IA
+Sempre que uma carta obriga o **Oponente** a fazer uma escolha de uma carta do deck, mão ou aplicar um efeito, a responsabilidade de executar a escolha deve ser espelhada na lógica do efeito verificando o dono da carta.
+*   **Espelhamento:** Se `!source.isPlayerCard`, significa que a IA ativou a carta, logo a escolha deve ser delegada ao Jogador Humano (via `UIManager.OpenCardSelection`).
+*   **Delegação Inteligente:** Se `source.isPlayerCard`, é o Jogador quem ativou. A escolha cabe à IA. O script do efeito deve conter um fallback lógico para simular a escolha da IA (ex: escolher aleatoriamente ou selecionar o monstro com maior ATK). No futuro, estas funções serão interceptadas diretamente pelo `OpponentAI.cs` em métodos como `EvaluateEffectChoice()`.
+*   **Exemplo Prático (Jade Insect Whistle):**
+    ```csharp
+    bool isOpponentPlayer = !source.isPlayerCard;
+    if (isOpponentPlayer) {
+        // IA ativou, o JOGADOR humano escolhe de seu próprio deck.
+        GameManager.Instance.OpenCardSelection(...);
+    } else {
+        // Jogador ativou, a IA escolhe do deck dela silenciosamente.
+        CardData aiChoice = insects[Random.Range(0, insects.Count)];
+    }
+    ```
