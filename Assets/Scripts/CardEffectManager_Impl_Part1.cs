@@ -4766,10 +4766,14 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0397_DarkBalterTheTerrible(CardDisplay source)
     {
-        // Fusão: Pague 1000 para negar Normal Spell. Nega efeitos de monstros destruídos.
-        // Negação de efeitos destruídos implementada no OnBattleEnd.
-        // Negação de Spell requer Chain (similar a Cursed Seal).
-        Debug.Log("Dark Balter: Ativo.");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.property == "Normal" && link.cardSource.CurrentCardData.type.Contains("Spell"))
+        {
+            if (Effect_PayLP(source, 1000))
+            {
+                NegateAndDestroy(source, link);
+            }
+        }
     }
 
     void Effect_0400_DarkBladeTheDragonKnight(CardDisplay source)
@@ -5145,10 +5149,18 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0428_DarkPaladin(CardDisplay source)
     {
-        // Efeito: Nega Spell descartando 1. +500 ATK por Dragão.
-        // Buff implementado no CardEffectManager_Impl.cs (UpdateDarkPaladinBuff)
-        // Negação requer Chain
-        Debug.Log("Dark Paladin: Ativo.");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell"))
+        {
+            List<CardData> hand = GameManager.Instance.GetPlayerHandData();
+            if (hand.Count > 0)
+            {
+                GameManager.Instance.OpenCardSelection(hand, "Descarte 1 carta para Negar", (discarded) => {
+                    GameManager.Instance.DiscardCard(GameManager.Instance.playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == discarded).GetComponent<CardDisplay>());
+                    NegateAndDestroy(source, link);
+                });
+            }
+        }
     }
 
     void Effect_0432_DarkRoomOfNightmare(CardDisplay source)
@@ -5839,11 +5851,9 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                 if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.race == "Spellcaster" && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.level >= 7) hasMage = true;
         }
 
-        bool oppHasMonster = false;
-        if (GameManager.Instance.duelFieldUI != null)
-            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if (z.childCount > 0) oppHasMonster = true;
+        int oppHasMonsterCount = GameManager.Instance.GetMonsterCount(!source.isPlayerCard);
 
-        if (!hasMage || !oppHasMonster)
+        if (!hasMage || oppHasMonsterCount == 0)
         {
             UIManager.Instance.ShowMessage("Requer Mago Nível 7+ e oponente deve controlar monstros.");
             return;
@@ -5857,8 +5867,7 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                      (t) => t.isOnField && t.isPlayerCard && t.CurrentCardData.race == "Spellcaster" && t.CurrentCardData.level >= 7,
                      (target) => {
                          Debug.Log($"Diffusion Wave-Motion: {target.CurrentCardData.name} atacará todos os monstros.");
-                         // Set flag on monster for multi-attack
-                         // target.canAttackAll = true;
+                         target.maxAttacksPerTurn = oppHasMonsterCount; // Libera ataque múltiplo
                      }
                  );
              }

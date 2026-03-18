@@ -275,9 +275,9 @@ public class SpellTrapManager : MonoBehaviour
 
         if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null)
         {
-            Transform[] zones = forPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+            Transform[] stZones = forPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
 
-            foreach (Transform zone in zones)
+            foreach (Transform zone in stZones)
             {
                 if (zone.childCount > 0)
                 {
@@ -354,6 +354,36 @@ public class SpellTrapManager : MonoBehaviour
                                 validResponses.Add(cd);
                             }
                             break;
+                    }
+                }
+            }
+
+            // Verifica monstros no campo para Quick Effects
+            Transform[] mZones = forPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach (Transform zone in mZones)
+            {
+                if (zone.childCount > 0)
+                {
+                    CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (cd == null || cd.isFlipped) continue; // Monstros precisam estar face-up
+
+                    // Quick Effects são Spell Speed 2. Não podem encadear em Counter Traps (Speed 3).
+                    if (triggerLink.spellSpeed == 3) continue;
+
+                    string id = cd.CurrentCardData.id;
+
+                    if (triggerLink.trigger == ChainManager.TriggerType.CardActivation)
+                    {
+                        if (triggerLink.cardSource.CurrentCardData.type.Contains("Spell"))
+                        {
+                            if (id == "0428") validResponses.Add(cd); // Dark Paladin
+                            if (id == "0397" && triggerLink.cardSource.CurrentCardData.property == "Normal") validResponses.Add(cd); // Dark Balter
+                            if (id == "1167") validResponses.Add(cd); // Maryokutai
+                        }
+                        else if (triggerLink.cardSource.CurrentCardData.type.Contains("Trap"))
+                        {
+                            if (id == "1573" && triggerLink.cardSource.CurrentCardData.property == "Normal") validResponses.Add(cd); // Ryu Senshi
+                        }
                     }
                 }
             }

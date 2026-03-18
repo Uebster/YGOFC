@@ -1392,18 +1392,11 @@ public partial class CardEffectManager
     void Effect_1167_Maryokutai(CardDisplay source)
     {
         // Effect: Quick Effect: Tribute this card to negate Spell activation and destroy it.
-        if (ChainManager.Instance != null && ChainManager.Instance.currentChain.Count > 0)
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Spell"))
         {
-            var lastLink = ChainManager.Instance.currentChain[ChainManager.Instance.currentChain.Count - 1];
-            if (lastLink.cardSource != null && lastLink.cardSource.CurrentCardData.type.Contains("Spell"))
-            {
-                GameManager.Instance.TributeCard(source);
-                Debug.Log($"Maryokutai: Negando {lastLink.cardSource.CurrentCardData.name}.");
-                
-                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(lastLink.cardSource);
-                GameManager.Instance.SendToGraveyard(lastLink.cardSource.CurrentCardData, lastLink.isPlayerEffect);
-                Destroy(lastLink.cardSource.gameObject);
-            }
+            GameManager.Instance.TributeCard(source);
+            NegateAndDestroy(source, link);
         }
     }
 
@@ -2476,22 +2469,44 @@ public partial class CardEffectManager
     // 1295 - Mysterious Guard
     void Effect_1295_MysteriousGuard(CardDisplay source)
     {
-        // FLIP: Target 1 face-up monster; return to top of Deck. If Warrior controlled, return another to hand.
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection(
                 (t) => t.isOnField && t.CurrentCardData.type.Contains("Monster") && !t.isFlipped,
                 (target) => {
-                    // Retorna ao topo (Simulado: Destrói, mas deveria usar ReturnToDeck)
-                    Debug.Log($"Mysterious Guard: {target.CurrentCardData.name} retornado ao topo.");
-                    // GameManager.Instance.ReturnToDeck(target, true);
+                    GameManager.Instance.ReturnToDeck(target, true);
+                    Debug.Log($"Mysterious Guard: {target.CurrentCardData.name} retornado ao topo do deck.");
                     
-                    // Lógica do segundo alvo (Warrior check) pendente
+                    bool hasWarrior = false;
+                    if (GameManager.Instance.duelFieldUI != null) {
+                        foreach(var z in GameManager.Instance.duelFieldUI.playerMonsterZones) {
+                            if (z.childCount > 0) {
+                                var m = z.GetChild(0).GetComponent<CardDisplay>();
+                                if (m != null && m.CurrentCardData.race == "Warrior" && !m.isFlipped) hasWarrior = true;
+                            }
+                        }
+                    }
+                    
+                    if (hasWarrior) {
+                        SpellTrapManager.Instance.StartTargetSelection(
+                            (t2) => t2.isOnField && t2.CurrentCardData.type.Contains("Monster"),
+                            (target2) => { GameManager.Instance.ReturnToHand(target2); }
+                        );
+                    }
                 }
             );
         }
     }
-        // 1298 - Mystic Box
+
+    // 1296 - Mysterious Puppeteer
+    void Effect_1296_MysteriousPuppeteer(CardDisplay source)
+    {
+        // Effect: Each time a monster is Summoned, gain 500 LP.
+        // Lógica implementada no OnSummonImpl.
+        Debug.Log("Mysterious Puppeteer: Efeito de ganho de LP em invocação ativo.");
+    }
+
+    // 1298 - Mystic Box
     void Effect_1298_MysticBox(CardDisplay source)
     {
         // Target opp monster, target own monster. Destroy opp, give control of own.
@@ -2521,14 +2536,6 @@ public partial class CardEffectManager
                 }
             );
         }
-    }
-
-    // 1296 - Mysterious Puppeteer
-    void Effect_1296_MysteriousPuppeteer(CardDisplay source)
-    {
-        // Effect: Each time a monster is Summoned, gain 500 LP.
-        // Lógica implementada no OnSummonImpl.
-        Debug.Log("Mysterious Puppeteer: Efeito de ganho de LP em invocação ativo.");
     }
 
     // 1301 - Mystic Lamp

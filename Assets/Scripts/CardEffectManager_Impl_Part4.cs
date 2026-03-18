@@ -964,28 +964,30 @@ public partial class CardEffectManager
     // 1601 - Seal of the Ancients
     void Effect_1601_SealOfTheAncients(CardDisplay source)
     {
-        // Pay 1000 LP. Look at all cards your opponent has set on the field.
         if (Effect_PayLP(source, 1000))
         {
             Debug.Log("Seal of the Ancients: Revelando cartas setadas do oponente.");
             if (GameManager.Instance.duelFieldUI != null)
             {
-                // Revela visualmente (simulado)
-                foreach(var zone in GameManager.Instance.duelFieldUI.opponentSpellZones)
-                {
-                    if(zone.childCount > 0) 
-                    {
-                        var cd = zone.GetChild(0).GetComponent<CardDisplay>();
-                        if(cd.isFlipped) Debug.Log($"Revelado: {cd.CurrentCardData.name}");
+                List<CardDisplay> flippedCards = new List<CardDisplay>();
+                
+                void RevealZones(Transform[] zones) {
+                    foreach(var z in zones) {
+                        if(z.childCount > 0) {
+                            var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                            if(cd != null && cd.isFlipped) {
+                                cd.RevealCard(false, false); // Revela sem ativar Flip
+                                flippedCards.Add(cd);
+                            }
+                        }
                     }
                 }
-                foreach(var zone in GameManager.Instance.duelFieldUI.opponentMonsterZones)
-                {
-                    if(zone.childCount > 0) 
-                    {
-                        var cd = zone.GetChild(0).GetComponent<CardDisplay>();
-                        if(cd.isFlipped) Debug.Log($"Revelado: {cd.CurrentCardData.name}");
-                    }
+
+                RevealZones(GameManager.Instance.duelFieldUI.opponentSpellZones);
+                RevealZones(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+
+                if (flippedCards.Count > 0) {
+                    StartCoroutine(SternMysticRoutine(flippedCards)); // Reutiliza a corrotina do 1896 que esconde dps de 2 segs
                 }
             }
         }
@@ -994,9 +996,16 @@ public partial class CardEffectManager
     // 1603 - Sebek's Blessing
     void Effect_1603_SebeksBlessing(CardDisplay source)
     {
-        // Quick-Play: If your monster inflicts battle damage by direct attack: Gain same amount LP.
-        // Requer contexto de batalha.
-        Debug.Log("Sebek's Blessing: Ganha LP igual ao dano direto causado (Requer Chain/Trigger).");
+        if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null) 
+        {
+            int heal = BattleManager.Instance.currentAttacker.currentAtk;
+            Effect_GainLP(source, heal);
+            Debug.Log($"Sebek's Blessing: Curou {heal} LP após ataque direto.");
+        }
+        else
+        {
+            UIManager.Instance.ShowMessage("Só pode ser ativada imediatamente após um ataque direto bem-sucedido.");
+        }
     }
 
     // 1604 - Second Coin Toss
@@ -1833,8 +1842,12 @@ public partial class CardEffectManager
     // 1696 - Sorcerer of Dark Magic
     void Effect_1696_SorcererOfDarkMagic(CardDisplay source)
     {
-        // Negate Traps.
-        Debug.Log("Sorcerer of Dark Magic: Traps negadas.");
+        var link = GetLinkToNegate(source);
+        if (link != null && link.cardSource.CurrentCardData.type.Contains("Trap"))
+        {
+            NegateAndDestroy(source, link);
+            Debug.Log("Sorcerer of Dark Magic: Armadilha negada!");
+        }
     }
 
     // 1698 - Soul Absorption
@@ -4457,9 +4470,20 @@ public partial class CardEffectManager
     // 1952 - Tornado Bird
     void Effect_1952_TornadoBird(CardDisplay source)
     {
-        // FLIP: Return 2 Spell/Trap Cards on the field to the hand.
-        // Simplificado: Retorna 2 aleatórios ou pede seleção sequencial
-        Debug.Log("Tornado Bird: Retornando 2 S/T para a mão (Lógica de seleção pendente).");
+        if (source.isFlipped && SpellTrapManager.Instance != null)
+        {
+            SpellTrapManager.Instance.StartTargetSelection(
+                (t1) => t1.isOnField && (t1.CurrentCardData.type.Contains("Spell") || t1.CurrentCardData.type.Contains("Trap")),
+                (target1) => {
+                    GameManager.Instance.ReturnToHand(target1);
+                    
+                    SpellTrapManager.Instance.StartTargetSelection(
+                        (t2) => t2.isOnField && (t2.CurrentCardData.type.Contains("Spell") || t2.CurrentCardData.type.Contains("Trap")),
+                        (target2) => { GameManager.Instance.ReturnToHand(target2); }
+                    );
+                }
+            );
+        }
     }
 
     // 1953 - Tornado Wall
