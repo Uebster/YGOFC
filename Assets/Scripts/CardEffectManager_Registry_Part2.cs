@@ -396,6 +396,9 @@ public partial class CardEffectManager
         // 0688 - Formation Union (Union)
         AddEffect("0688", Effect_0688_FormationUnion);
 
+        // 0690 - Fortress Whale's Oath (Ritual)
+        AddEffect("0690", Effect_0690_FortressWhalesOath);
+
         // 0691 - Fox Fire (Revive)
         AddEffect("0691", Effect_0691_FoxFire);
 
@@ -759,13 +762,13 @@ public partial class CardEffectManager
         AddEffect("0860", Effect_0860_HandOfNephthys);
 
         // 0861 - Hane-Hane (Flip Bounce 1)
-        AddEffect("0861", Effect_0861_HaneHane); // Nota: Se Effect_0861_HaneHane não existir, mantenha a lambda, mas o log indicava duplicata com ID. Assumindo que você tem o método ou quer usar a lambda como única fonte. Se o erro era duplicata, é porque existiam dois. Vou remover o primeiro.
+        AddEffect("0861", Effect_0861_HaneHane);
 
         // 0863 - Hannibal Necromancer (Counter -> Destroy Trap)
         AddEffect("0863", Effect_0863_HannibalNecromancer);
 
         // 0868 - Harpie Lady 1 (Buff Wind)
-        // Se houver duplicata aqui, remova. O log não mencionou 0868, mas por precaução verifique se há Effect_0868.
+        AddEffect("0868", Effect_0868_HarpieLady1);
 
         // 0869 - Harpie Lady 2 (Negate Flip)
         AddEffect("0869", Effect_0869_HarpieLady2);
@@ -900,6 +903,9 @@ public partial class CardEffectManager
         // 0933 - Inaba White Rabbit (Direct Attack)
         AddEffect("0933", Effect_0933_InabaWhiteRabbit);
 
+        // 0934 - Incandescent Ordeal (Ritual Spell)
+        AddEffect("0934", Effect_0934_IncandescentOrdeal);
+
         // 0935 - Indomitable Fighter Lei Lei (Attack -> Defense)
         AddEffect("0935", Effect_0935_IndomitableFighterLeiLei);
 
@@ -986,6 +992,9 @@ public partial class CardEffectManager
 
         // 0968 - Jar of Greed (Draw 1)
         AddEffect("0968", Effect_0968_JarOfGreed);
+
+        // 0970 - Javelin Beetle Pact (Ritual Spell)
+        AddEffect("0970", Effect_0970_JavelinBeetlePact);
 
         // 0973 - Jetroid (Trap from Hand)
         AddEffect("0973", Effect_0973_Jetroid);

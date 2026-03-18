@@ -1856,8 +1856,7 @@ public partial class CardEffectManager
 
     void Effect_0655_FinalRitualOfTheAncients(CardDisplay source)
     {
-        // Ritual Spell for "Reshef the Dark Being".
-        Debug.Log("Final Ritual of the Ancients: Ritual para Reshef.");
+        GameManager.Instance.BeginRitualSummon(source);
     }
 
     void Effect_0656_FireDarts(CardDisplay source)
@@ -2043,6 +2042,11 @@ public partial class CardEffectManager
     {
         // Union monsters can equip/unequip.
         Debug.Log("Formation Union: Ativo (Permite equipar/desequipar Unions).");
+    }
+
+    void Effect_0690_FortressWhalesOath(CardDisplay source)
+    {
+        GameManager.Instance.BeginRitualSummon(source);
     }
 
     void Effect_0691_FoxFire(CardDisplay source)
@@ -3644,6 +3648,11 @@ public partial class CardEffectManager
         }
     }
 
+    void Effect_0868_HarpieLady1(CardDisplay source)
+    {
+        Effect_Field(source, 300, 0, "", "Wind");
+    }
+
     void Effect_0869_HarpieLady2(CardDisplay source)
     {
         Debug.Log("Harpie Lady 2: Nega efeitos Flip (Transferido para OnBattleEnd).");
@@ -4006,6 +4015,11 @@ public partial class CardEffectManager
         source.canAttackDirectly = true;
     }
 
+    void Effect_0934_IncandescentOrdeal(CardDisplay source)
+    {
+        GameManager.Instance.BeginRitualSummon(source);
+    }
+
     void Effect_0935_IndomitableFighterLeiLei(CardDisplay source)
     {
         Debug.Log("Lei Lei: Vira defesa após atacar transferido para OnBattleEnd.");
@@ -4292,6 +4306,11 @@ public partial class CardEffectManager
     void Effect_0968_JarOfGreed(CardDisplay source)
     {
         GameManager.Instance.DrawCard();
+    }
+
+    void Effect_0970_JavelinBeetlePact(CardDisplay source)
+    {
+        GameManager.Instance.BeginRitualSummon(source);
     }
 
     void Effect_0973_Jetroid(CardDisplay source)
