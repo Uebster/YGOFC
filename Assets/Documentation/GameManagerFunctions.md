@@ -107,6 +107,7 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 *   `confirmAttackTarget`: Se desmarcado, o ataque ocorre imediatamente ao clicar no alvo, sem janela de confirmação.
 *   `useDirectHandSelection`: Se marcado, permite selecionar cartas da mão (para descarte/efeitos) clicando diretamente nelas, em vez de abrir uma janela de lista.
 *   `confirmHandSelection`: Se marcado, pede confirmação após selecionar a carta na mão durante a seleção direta.
+*   `useMouseTooltipUI`: Se marcado, ativa o prefab dinâmico de mouse e executa as ações baseado no clique esquerdo/direito da carta, ignorando a interface clássica do `DuelActionMenu`.
 *   `quickSummonFromHand`: Se marcado, permite invocar monstros da mão com um único clique (Esquerdo = Ataque, Direito = Defesa/Set), pulando o menu de ação.
 *   `quickSpellTrapFromHand`: Se marcado, permite jogar Spells/Traps da mão com um único clique (Esquerdo = Ativar, Direito = Setar), pulando o menu de ação.
 *   `quickAttackDirectly`: Se marcado, clicar no seu monstro durante a Battle Phase realiza um ataque direto imediatamente se o oponente não tiver monstros (evita ter que clicar no campo do oponente).

@@ -16,8 +16,7 @@ public class DuelActionMenu : MonoBehaviour
     public Button activateBtn; // Botão para Ativar Magia/Armadilha
     public Button cancelBtn;   // Botão Cancelar
 
-    private GameObject currentCardGO;
-    private CardData currentCardData;
+    private CardDisplay targetCard;
 
     void Awake()
     {
@@ -56,64 +55,59 @@ public class DuelActionMenu : MonoBehaviour
         }
     }
 
-    public void ShowMenu(GameObject cardGO, CardData data)
+    public void ShowMenu(CardDisplay card)
     {
-        currentCardGO = cardGO;
-        currentCardData = data;
+        targetCard = card;
 
-        // Configura quais botões aparecem baseado no tipo da carta
-        bool isMonster = data.type.Contains("Monster");
         
-        if (summonBtn) 
-        {
-            bool canSummon = isMonster;
-            // Verifica se pode invocar (Normal Summon)
-            if (isMonster && SummonManager.Instance != null)
-            {
-                // Verifica limite de turno
-                if (!SummonManager.Instance.CanNormalSummon()) canSummon = false;
-                
-                // Verifica tributos (apenas visualmente, a lógica real está no SummonManager)
-                int tributes = SummonManager.Instance.GetRequiredTributes(data.level);
-                if (!SummonManager.Instance.HasEnoughTributes(tributes, true)) canSummon = false;
-            }
-            summonBtn.gameObject.SetActive(canSummon);
-        }
+        summonBtn.gameObject.SetActive(false);
+        setBtn.gameObject.SetActive(false);
+        activateBtn.gameObject.SetActive(false);
         
-        if (setBtn) 
+        if (!card.isOnField) // Na Mão
         {
-            bool canSet = true;
-            if (isMonster && SummonManager.Instance != null)
+            if (card.CurrentCardData.type.Contains("Monster"))
             {
-                // Set também respeita limite de turno e tributos
-                if (!SummonManager.Instance.CanNormalSummon()) canSet = false;
+                bool canSummon = true;
+                bool canSet = true;
                 
-                int tributes = SummonManager.Instance.GetRequiredTributes(data.level);
-                if (!SummonManager.Instance.HasEnoughTributes(tributes, true)) canSet = false;
-            }
-            setBtn.gameObject.SetActive(canSet); 
-        }
-
-        if (activateBtn) 
-        {
-            bool canActivate = !isMonster;
-            // Traps não podem ser ativadas da mão (exceto em casos raros ou DevMode)
-            if (data.type.Contains("Trap"))
-            {
-                if (GameManager.Instance != null && !GameManager.Instance.devMode) canActivate = false;
-            }
-            
-            // Verifica regras do SpellTrapManager (ex: Equip sem alvo)
-            if (canActivate && SpellTrapManager.Instance != null)
-            {
-                bool isMyTurn = GameManager.Instance != null && GameManager.Instance.isPlayerTurn;
-                if (!SpellTrapManager.Instance.CanActivateCard(data, isMyTurn))
+                if (SummonManager.Instance != null)
                 {
-                    canActivate = false;
+                    if (!SummonManager.Instance.CanNormalSummon()) { canSummon = false; canSet = false; }
+                    int tributes = SummonManager.Instance.GetRequiredTributes(card.CurrentCardData.level);
+                    if (!SummonManager.Instance.HasEnoughTributes(tributes, true)) { canSummon = false; canSet = false; }
                 }
+                
+                summonBtn.gameObject.SetActive(canSummon);
+                setBtn.gameObject.SetActive(canSet);
             }
+            else
+            {
+                bool canActivate = true;
+                if (card.CurrentCardData.type.Contains("Trap") && !GameManager.Instance.devMode) canActivate = false;
+                
+                if (canActivate && SpellTrapManager.Instance != null)
+                {
+                    if (!SpellTrapManager.Instance.CanActivateCard(card.CurrentCardData, GameManager.Instance.isPlayerTurn))
+                        canActivate = false;
+                }
 
-            activateBtn.gameObject.SetActive(canActivate);
+                activateBtn.gameObject.SetActive(canActivate);
+                setBtn.gameObject.SetActive(true);
+            }
+        }
+        else // No Campo
+        {
+            if (card.CurrentCardData.type.Contains("Monster") && card.CurrentCardData.type.Contains("Effect") && !card.isFlipped)
+            {
+                activateBtn.gameObject.SetActive(true);
+            }
+            else if ((card.CurrentCardData.type.Contains("Spell") || card.CurrentCardData.type.Contains("Trap")) && card.isFlipped)
+            {
+                bool canActivate = (GameManager.Instance.devMode) || (!card.summonedThisTurn);
+                if (card.CurrentCardData.type.Contains("Spell") && card.CurrentCardData.property != "Quick-Play") canActivate = true;
+                activateBtn.gameObject.SetActive(canActivate);
+            }
         }
 
         // Se nenhuma ação for possível, não abre o menu
@@ -123,59 +117,64 @@ public class DuelActionMenu : MonoBehaviour
             return;
         }
 
-        // Posiciona o menu perto da carta clicada
         if (menuPanel != null)
         {
-            RectTransform cardRect = cardGO.GetComponent<RectTransform>();
-            CardDisplay cardDisplay = cardGO.GetComponent<CardDisplay>();
-            if (cardRect != null)
+            RectTransform panelRect = menuPanel.GetComponent<RectTransform>();
+            
+            Vector3 mousePos;
+#if ENABLE_INPUT_SYSTEM
+            mousePos = Mouse.current != null ? (Vector3)Mouse.current.position.ReadValue() : Vector3.zero;
+#else
+            mousePos = Input.mousePosition;
+#endif
+            
+            if (panelRect != null)
             {
-                // Posiciona o menu acima da carta.
-                bool isOpponentCard = (cardDisplay != null && !cardDisplay.isPlayerCard);
-                // Se for carta do oponente (rotacionada), o offset Y precisa ser negativo para "subir" na tela.
-                float yDirection = isOpponentCard ? -1f : 1f;
-
-                // A altura exata do offset depende do tamanho da carta e do menu.
-                float cardHeight = cardRect.rect.height * cardRect.lossyScale.y;
-                Vector3 offset = new Vector3(0, cardHeight * 0.6f * yDirection, 0); // Ajuste este valor (0.6f) conforme necessário
-                menuPanel.transform.position = cardGO.transform.position + offset;
+                // UI Inteligente: Inverte o ponto pivot se estiver perto das bordas da tela
+                float pivotX = mousePos.x > Screen.width / 2f ? 1f : 0f;
+                float pivotY = mousePos.y > Screen.height / 2f ? 1f : 0f;
+                panelRect.pivot = new Vector2(pivotX, pivotY);
             }
-            else
-            {
-                menuPanel.transform.position = cardGO.transform.position;
-            }
+            
+            menuPanel.transform.position = mousePos;
             menuPanel.SetActive(true);
         }
     }
 
     void OnSummon()
     {
-        if (GameManager.Instance != null)
-            GameManager.Instance.TrySummonMonster(currentCardGO, currentCardData, false); // false = Ataque
+        if (GameManager.Instance != null && targetCard != null)
+            GameManager.Instance.TrySummonMonster(targetCard.gameObject, targetCard.CurrentCardData, false);
         CloseMenu();
     }
 
     void OnSet()
     {
-        if (GameManager.Instance == null) return;
-
-        if (currentCardData.type.Contains("Monster")) GameManager.Instance.TrySummonMonster(currentCardGO, currentCardData, true);
-        else GameManager.Instance.PlaySpellTrap(currentCardGO, currentCardData, true);
-        
+        if (GameManager.Instance != null && targetCard != null)
+        {
+            if (targetCard.CurrentCardData.type.Contains("Monster")) GameManager.Instance.TrySummonMonster(targetCard.gameObject, targetCard.CurrentCardData, true);
+            else GameManager.Instance.PlaySpellTrap(targetCard.gameObject, targetCard.CurrentCardData, true);
+        }
         CloseMenu();
     }
 
     void OnActivate()
     {
-        if (GameManager.Instance != null)
-            GameManager.Instance.PlaySpellTrap(currentCardGO, currentCardData, false);
+        if (GameManager.Instance != null && targetCard != null)
+        {
+            if (!targetCard.isOnField)
+                GameManager.Instance.PlaySpellTrap(targetCard.gameObject, targetCard.CurrentCardData, false);
+            else if (targetCard.CurrentCardData.type.Contains("Monster"))
+                CardEffectManager.Instance.ExecuteCardEffect(targetCard);
+            else
+                GameManager.Instance.ActivateFieldSpellTrap(targetCard.gameObject);
+        }
         CloseMenu();
     }
 
     public void CloseMenu()
     {
         if (menuPanel != null) menuPanel.SetActive(false);
-        currentCardGO = null;
-        currentCardData = null;
+        targetCard = null;
     }
 }

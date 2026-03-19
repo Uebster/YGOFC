@@ -95,6 +95,11 @@ Abaixo está a estrutura exata dos GameObjects na cena, com seus principais comp
         *   **Btn_SummonPosition** `[Image, Button]` -> **SummonPosition** `[Image]`
         *   **Btn_SetPosition** `[Image, Button]` -> **SetPosition** `[Image]`
     *   **Panel_CardSelection** `[Image, CardSelectionUI]`
+    *   **MouseTooltipPrefab** `[Image, MouseTooltipUI]` (Segue o cursor dinamicamente)
+        *   **Container/Background** `[Image]`
+            *   **Icon_Mouse** `[Image]`
+            *   **Text_LeftClick** `[TextMeshProUGUI]` (Ex: L: Summon)
+            *   **Text_RightClick** `[TextMeshProUGUI]` (Ex: R: Set)
         *   **Scroll View** `[Image, ScrollRect]`
             *   **Viewport** `[Image, Mask]` -> **Content** `[HorizontalLayoutGroup]`
             *   **Scrollbar Horizontal** `[Image, Scrollbar]`
@@ -146,6 +151,7 @@ Um painel lateral esquerdo que mostra a carta sob o mouse em detalhes.
 *   Abre ao clicar em uma carta na mão.
 *   **Opções:** Summon (Ataque), Set (Defesa), Activate (Magia), Cancel.
 *   **Inteligência:** Só mostra opções válidas (ex: esconde "Summon" se já invocou no turno).
+*   **Ativação de Monstro:** Monstros de efeito no campo agora exibem a opção "Activate" neste menu.
 
 ### 3. Seleção de Posição (`Panel_PositionSelection`)
 *   Abre ao realizar uma Invocação Especial (ex: *Monster Reborn*).
@@ -154,6 +160,14 @@ Um painel lateral esquerdo que mostra a carta sob o mouse em detalhes.
 ### 4. Confirmação (`Panel_Confirmation`)
 *   Janela genérica para perguntas de "Sim/Não".
 *   Usada para: Declarar ataque, Tributar monstros, Ativar efeitos opcionais, Render-se.
+
+### 5. Tooltip Dinâmico do Mouse (`MouseTooltipUI`)
+*   **Nova Mecânica:** Um prefab com formato de mouse que segue o cursor e informa atalhos rápidos ao passar sobre uma carta.
+*   **Comandos Mapeados:**
+    *   **Monstro na Mão:** Esquerdo = Summon, Direito = Set.
+    *   **Magia/Armadilha na Mão:** Esquerdo = Set, Direito = Activate.
+    *   **Monstro no Campo (Main Phase):** Esquerdo = Efeito, Direito = Mudar Posição.
+    *   **Monstro no Campo (Battle Phase):** Esquerdo = Atacar, Direito = Cancelar Ataque.
 
 ## Interações e Feedback
 

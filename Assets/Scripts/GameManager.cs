@@ -170,6 +170,10 @@ public class GameManager : MonoBehaviour
     public bool quickSpellTrapFromHand = false;
     [Tooltip("Se marcado, clicar no próprio monstro atacante quando o oponente não tem monstros realiza o ataque direto imediatamente.")]
     public bool quickAttackDirectly = false;
+    [Tooltip("Se ativado, usa atalhos de Esquerdo/Direito do mouse com Tooltip. Se desativado, usa o Menu de Ação clássico.")]
+    public bool useMouseTooltipUI = true;
+    [Tooltip("Habilita o painel visual pop-up de Dano/Cura saltando no campo.")]
+    public bool enableDamagePopups = true;
 
     [Header("Minigames Settings")]
     [Tooltip("Ativa a escolha manual de Cara/Coroa para os lançamentos de moeda.")]
@@ -1009,6 +1013,12 @@ public void ShuffleDeck(bool isPlayer)
         else opponentLP += amount;
 
         UpdateLPUI();
+        
+        if (enableDamagePopups && DamagePopupManager.Instance != null && amount > 0)
+        {
+            DamagePopupManager.Instance.ShowPopup(amount, true, isPlayer);
+        }
+        
         Debug.Log($"{(isPlayer ? "Player" : "Oponente")} ganhou {amount} LP.");
 
         // Notifica sistema de efeitos (Ex: Fire Princess)
@@ -1746,6 +1756,11 @@ public void ShuffleDeck(bool isPlayer)
         if (playerLP < 0) playerLP = 0;
         UpdateLPUI();
 
+        if (enableDamagePopups && DamagePopupManager.Instance != null && amount > 0)
+        {
+            DamagePopupManager.Instance.ShowPopup(amount, false, true);
+        }
+
         if (DuelScoreManager.Instance != null) DuelScoreManager.Instance.RecordDamageTaken(amount);
         Debug.Log($"Player tomou {amount} de dano. LP Restante: {playerLP}");
 
@@ -1770,6 +1785,11 @@ public void ShuffleDeck(bool isPlayer)
         opponentLP -= amount;
         if (opponentLP < 0) opponentLP = 0;
         UpdateLPUI();
+
+        if (enableDamagePopups && DamagePopupManager.Instance != null && amount > 0)
+        {
+            DamagePopupManager.Instance.ShowPopup(amount, false, false);
+        }
 
         if (DuelScoreManager.Instance != null) DuelScoreManager.Instance.RecordDamageDealt(amount);
         Debug.Log($"Oponente tomou {amount} de dano. LP Restante: {opponentLP}");
@@ -1918,9 +1938,11 @@ public void ShuffleDeck(bool isPlayer)
         if (SummonManager.Instance != null)
         {
             SummonManager.Instance.ExecuteSummonFlow(cardGO, cardData, isSet, false, isPlayer, ignoreLimit);
+            return; // FIX CRÍTICO: Impede que a engine ignore as travas do SummonManager!
         }
-            // Fallback caso não tenha o Manager
-            FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, cardData.level >= 5, null);
+        
+        // Fallback caso não tenha o Manager
+        FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, cardData.level >= 5, null);
     }
 
     // Novo método para Special Summon que pede a posição

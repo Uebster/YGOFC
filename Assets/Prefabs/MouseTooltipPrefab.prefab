@@ -123,8 +123,8 @@ MonoBehaviour:
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
-  m_horizontalMapping: 0
-  m_verticalMapping: 1
+  m_horizontalMapping: 1
+  m_verticalMapping: 0
   m_uvLineOffset: 0
   m_geometrySortingOrder: 0
   m_IsTextObjectScaleStatic: 0
@@ -285,6 +285,7 @@ GameObject:
   - component: {fileID: 6237486616882804328}
   - component: {fileID: 1163493294711772676}
   - component: {fileID: 7428301662244681149}
+  - component: {fileID: 613062662999147295}
   m_Layer: 5
   m_Name: MouseTooltipPrefab
   m_TagString: Untagged
@@ -352,6 +353,22 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &613062662999147295
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4606236660188382890}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de04e117c053af24cba34c86fdb8b041, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MouseTooltipUI
+  tooltipContainer: {fileID: 4606236660188382890}
+  leftClickText: {fileID: 341778436695018202}
+  rightClickText: {fileID: 7518277976269010897}
+  mouseOffset: {x: 20, y: -20, z: 0}
 --- !u!1 &8820161325490421888
 GameObject:
   m_ObjectHideFlags: 0

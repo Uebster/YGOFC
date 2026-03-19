@@ -750,6 +750,33 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             bool showFaceUp = !isFlipped || forceShowFaceUp || isPlayerCard;
             GameManager.Instance.UpdateCardViewer(currentCardData, showFaceUp);
         }
+
+        // --- LÓGICA DO MOUSE TOOLTIP ---
+        if (GameManager.Instance != null && GameManager.Instance.useMouseTooltipUI && isPlayerCard && MouseTooltipUI.Instance != null && currentCardData != null)
+        {
+            string left = "", right = "";
+            if (!isOnField) // NA MÃO
+            {
+                if (currentCardData.type.Contains("Monster")) { left = "Summon"; right = "Set"; }
+                else { left = "Set"; right = "Activate"; }
+            }
+            else // NO CAMPO
+            {
+                if (PhaseManager.Instance.currentPhase == GamePhase.Main1 || PhaseManager.Instance.currentPhase == GamePhase.Main2)
+                {
+                    if (currentCardData.type.Contains("Monster")) { left = "Activate"; right = "Change Pos"; }
+                    else { left = "Activate"; right = ""; }
+                }
+                else if (PhaseManager.Instance.currentPhase == GamePhase.Battle)
+                {
+                    if (currentCardData.type.Contains("Monster") && position == BattlePosition.Attack) 
+                    { 
+                        left = "Attack"; right = "Cancel"; 
+                    }
+                }
+            }
+            MouseTooltipUI.Instance.Show(left, right);
+        }
     }
 
     public void OnPointerExit(PointerEventData eventData)
@@ -777,6 +804,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
 
         // FIX 4: NÃO limpamos o Card Viewer aqui para ele ficar "travado".
+        
+        if (MouseTooltipUI.Instance != null) MouseTooltipUI.Instance.Hide();
     }
 
     // Método para ativar o brilho de tributo (Luz Azul)
@@ -931,6 +960,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             {
                 if (BattleManager.Instance != null)
                 {
+                    // Atalho Cancelar Ataque (Direito)
+                    if (GameManager.Instance != null && GameManager.Instance.useMouseTooltipUI && eventData.button == PointerEventData.InputButton.Right)
+                    {
+                        BattleManager.Instance.CancelAttack();
+                        return;
+                    }
+                    
                     if (BattleManager.Instance.currentAttacker == this)
                         BattleManager.Instance.CancelAttack(); // Clicar de novo cancela
                     else
@@ -963,12 +999,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Lógica para cartas na MÃO (isInteractable é o flag para isso)
         if (isInteractable)
         {
-            if (DuelActionMenu.Instance == null)
-            {
-                Debug.LogError("CardDisplay: DuelActionMenu.Instance não encontrado na cena!");
-                return;
-            }
-
             bool canInteract = false;
             if (isPlayerCard && GameManager.Instance.canPlacePlayerCards)
             {
@@ -979,65 +1009,81 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 canInteract = true;
             }
 
-            // --- LÓGICA DE AÇÃO RÁPIDA (QUICK ACTION) ---
             if (canInteract && GameManager.Instance != null)
             {
+                bool isLeftClick = eventData.button == PointerEventData.InputButton.Left;
+                bool isRightClick = eventData.button == PointerEventData.InputButton.Right;
                 bool isMonster = currentCardData.type.Contains("Monster");
                 bool isSpellTrap = currentCardData.type.Contains("Spell") || currentCardData.type.Contains("Trap");
 
-                if (isMonster && GameManager.Instance.quickSummonFromHand)
+                // --- LÓGICA DE AÇÃO RÁPIDA (QUICK ACTION / MOUSE TOOLTIP) ---
+                if (GameManager.Instance.useMouseTooltipUI || GameManager.Instance.quickSummonFromHand || GameManager.Instance.quickSpellTrapFromHand)
                 {
-                    if (eventData.button == PointerEventData.InputButton.Left)
+                    if (isMonster)
                     {
-                        GameManager.Instance.TrySummonMonster(gameObject, currentCardData, false); // Ataque
-                        return;
+                        if (isLeftClick) GameManager.Instance.TrySummonMonster(gameObject, currentCardData, false); // Ataque
+                        else if (isRightClick) GameManager.Instance.TrySummonMonster(gameObject, currentCardData, true); // Defesa (Set)
                     }
-                    else if (eventData.button == PointerEventData.InputButton.Right)
+                    else if (isSpellTrap)
                     {
-                        GameManager.Instance.TrySummonMonster(gameObject, currentCardData, true); // Defesa (Set)
-                        return;
+                        if (isLeftClick) GameManager.Instance.PlaySpellTrap(gameObject, currentCardData, true); // Setar
+                        else if (isRightClick) GameManager.Instance.PlaySpellTrap(gameObject, currentCardData, false); // Ativar
                     }
+                    return; // Termina a ação aqui se usou atalho
                 }
-                else if (isSpellTrap && GameManager.Instance.quickSpellTrapFromHand)
-                {
-                    if (eventData.button == PointerEventData.InputButton.Left)
-                    {
-                        GameManager.Instance.PlaySpellTrap(gameObject, currentCardData, false); // Ativar
-                        return;
-                    }
-                    else if (eventData.button == PointerEventData.InputButton.Right)
-                    {
-                        GameManager.Instance.PlaySpellTrap(gameObject, currentCardData, true); // Setar
-                        return;
-                    }
-                }
-            }
 
-            if (canInteract)
-            {
-                DuelActionMenu.Instance.ShowMenu(gameObject, currentCardData);
+                // --- MENU CLÁSSICO ---
+                if (isLeftClick)
+                {
+                    if (DuelActionMenu.Instance != null)
+                    {
+                        DuelActionMenu.Instance.ShowMenu(this);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("DuelActionMenu.Instance está nulo! Certifique-se de que o objeto na cena está ativo e possui o script.");
+                    }
+                }
             }
             return; // Ação para carta na mão termina aqui
         }
 
-        // Lógica para cartas no CAMPO (Spells/Traps Setadas)
-        if (isOnField && isFlipped && (currentCardData.type.Contains("Spell") || currentCardData.type.Contains("Trap")))
+        // Lógica para cartas no CAMPO (Spells/Traps Setadas ou Monstros Ativando Efeito)
+        if (isOnField && isPlayerCard)
         {
-            bool canActivate = (GameManager.Instance.devMode) || (!summonedThisTurn);
-            
-            // Regra: Magias Normais, Campo, Equipamento e Ritual podem ser ativadas no turno que foram setadas.
-            // Apenas Armadilhas e Quick-Play Spells precisam esperar.
-            if (currentCardData.type.Contains("Spell") && currentCardData.property != "Quick-Play")
-            {
-                canActivate = true;
-            }
+            bool isLeftClick = eventData.button == PointerEventData.InputButton.Left;
 
-            if (canActivate)
+            if (GameManager.Instance.useMouseTooltipUI)
             {
-                UIManager.Instance.ShowConfirmation($"Ativar {currentCardData.name}?", () =>
+                if (PhaseManager.Instance.currentPhase == GamePhase.Main1 || PhaseManager.Instance.currentPhase == GamePhase.Main2)
                 {
-                    GameManager.Instance.ActivateFieldSpellTrap(gameObject);
-                });
+                    if (currentCardData.type.Contains("Monster")) {
+                        if (isLeftClick) CardEffectManager.Instance.ExecuteCardEffect(this);
+                    } else {
+                        if (isLeftClick && isFlipped) GameManager.Instance.ActivateFieldSpellTrap(gameObject);
+                    }
+                }
+                return;
+            }
+            else
+            {
+                if (isLeftClick)
+                {
+                    if (DuelActionMenu.Instance != null)
+                    {
+                        DuelActionMenu.Instance.ShowMenu(this);
+                    }
+                    else
+                    {
+                        // Fallback antigo
+                        if (isFlipped && (currentCardData.type.Contains("Spell") || currentCardData.type.Contains("Trap")))
+                        {
+                            bool canActivate = (GameManager.Instance.devMode) || (!summonedThisTurn);
+                            if (currentCardData.type.Contains("Spell") && currentCardData.property != "Quick-Play") canActivate = true;
+                            if (canActivate) UIManager.Instance.ShowConfirmation($"Ativar {currentCardData.name}?", () => GameManager.Instance.ActivateFieldSpellTrap(gameObject));
+                        }
+                    }
+                }
             }
         }
     }
