@@ -29,11 +29,7 @@ public class FusionManager : MonoBehaviour
         else
         {
             // 2. Fallback: Tentar ler da descrição (Formato "Mat1 + Mat2")
-            string requiredMaterialsText = GetMaterialsFromDescription(fusionMonster.description);
-            if (!string.IsNullOrEmpty(requiredMaterialsText))
-            {
-                requiredMaterialNames = requiredMaterialsText.Split('+').Select(s => s.Trim()).ToList();
-            }
+            requiredMaterialNames = GetMaterialsFromDescription(fusionMonster.description);
         }
 
         if (requiredMaterialNames.Count == 0)
@@ -141,14 +137,30 @@ public class FusionManager : MonoBehaviour
     }
 
     // Este é um placeholder para um sistema de parsing mais robusto.
-    private string GetMaterialsFromDescription(string description)
+    private List<string> GetMaterialsFromDescription(string description)
     {
+        List<string> materials = new List<string>();
+        if (string.IsNullOrEmpty(description) || !description.Contains("+")) return materials;
+
         // Exemplo: "Dark Magician" + "Buster Blader"
-        // Isto é muito frágil. Uma maneira melhor seria ter um campo dedicado em CardData.
-        if (description.Contains("+"))
+        // Pega apenas a linha que contém os materiais para ignorar o resto do texto
+        string[] lines = description.Split(new[] { '\n', '\r' }, System.StringSplitOptions.RemoveEmptyEntries);
+        string matLine = lines.FirstOrDefault(l => l.Contains("+"));
+        
+        if (matLine != null)
         {
-            return description;
+            // Remove qualquer texto que venha depois de um ponto final
+            int periodIndex = matLine.IndexOf('.');
+            if (periodIndex > 0) matLine = matLine.Substring(0, periodIndex);
+
+            string[] parts = matLine.Split('+');
+            foreach (string p in parts)
+            {
+                // Limpa as aspas e espaços em branco deixando apenas o nome puro
+                string cleanName = p.Replace("\"", "").Replace("'", "").Trim();
+                materials.Add(cleanName);
+            }
         }
-        return null;
+        return materials;
     }
 }

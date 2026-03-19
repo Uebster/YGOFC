@@ -30,6 +30,11 @@ public class DamagePopup : MonoBehaviour
             layoutGroup.childControlHeight = false;
         }
 
+        // Previne que o popup empurre cartas ou desorganize painéis se spawnar dentro de um Layout
+        LayoutElement layoutElement = GetComponent<LayoutElement>();
+        if (layoutElement == null) layoutElement = gameObject.AddComponent<LayoutElement>();
+        layoutElement.ignoreLayout = true;
+
         // Pega o RectTransform por último, pois adicionar os componentes de UI acima força a Unity
         // a converter um Transform comum em RectTransform caso o prefab tenha sido criado vazio.
         rectTransform = GetComponent<RectTransform>();
@@ -75,6 +80,10 @@ public class DamagePopup : MonoBehaviour
             txt.alignment = TextAlignmentOptions.Center;
             txt.fontStyle = FontStyles.Bold;
             if (manager.customFont != null) txt.font = manager.customFont;
+
+            // Previne que a fonte quebre de linha caso não caiba na largura e fique com aspecto estranho
+            txt.enableWordWrapping = false;
+            txt.overflowMode = TextOverflowModes.Overflow;
             
             // Adiciona Outline pra ficar bonito
             txt.outlineWidth = 0.2f;

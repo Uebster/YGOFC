@@ -108,7 +108,7 @@ Este documento lista os 100 troféus/conquistas disponíveis no jogo. O sistema 
 ## 📊 Categoria 6: Ranks e Resultados (10 Troféus)
 *Conquistas baseadas na avaliação pós-duelo.*
 
-71. **Rank D:** Obtenha um Rank D (Vitória pobre ou Derrota).
+71. **Rank D:** Obtenha um Rank D ou D+ (Vitória pobre).
 72. **Rank C:** Obtenha um Rank C.
 73. **Rank B:** Obtenha um Rank B.
 74. **Rank A:** Obtenha um Rank A.

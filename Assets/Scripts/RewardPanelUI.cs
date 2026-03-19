@@ -11,7 +11,7 @@ public class RewardPanelUI : MonoBehaviour
     [System.Serializable]
     public struct RankArtwork
     {
-        public string rankName; // Ex: "S", "APlus", "A", "BPlus", "B", "C", "D", "F", "SPlus"
+        public string rankName; // Ex: "S", "APlus", "A", "BPlus", "B", "CPlus", "C", "DPlus", "D", "F", "SPlus"
         public Sprite artwork;
     }
 
@@ -62,12 +62,15 @@ public class RewardPanelUI : MonoBehaviour
     {
         gameObject.SetActive(true);
 
+        bool isLoss = rank.Equals("LOSE", System.StringComparison.OrdinalIgnoreCase);
+        if (isLoss) rank = "F"; // Força o Rank F na UI e na busca de imagens
+
         if (titleText)
         {
-            if (rank.Equals("LOSE", System.StringComparison.OrdinalIgnoreCase))
-                titleText.text = "DERROTA";
+            if (isLoss)
+                titleText.text = "DEFEATED...";
             else
-                titleText.text = "VITÓRIA";
+                titleText.text = "YOU'VE WON!";
         }
         
         if (rankText) rankText.text = $"RANK: {rank}";

@@ -35,7 +35,9 @@ A pontuação final determina o Rank:
 *   **B:** 5000 - 5999 pts.
 *   **C+:** 4000 - 4999 pts.
 *   **C:** 3000 - 3999 pts.
-*   **D:** < 3000 pts (Vitória pobre ou Derrota).
+*   **D+:** 2000 - 2999 pts.
+*   **D:** < 2000 pts (Vitória pobre).
+*   **F:** Derrota. Recompensas não são concedidas.
 
 ## Sistema de Drop (Implementado)
 Cada oponente na `CampaignDatabase` possui um objeto `rewards` estruturado por Tiers.
@@ -49,7 +51,8 @@ Ao vencer:
 | **S / A+ / A** | 0% | **40%** | 30% | 20% | 10% |
 | **B+ / B** | 0% | 10% | **40%** | 30% | 20% |
 | **C+ / C** | 0% | 3% | 17% | **40%** | 40% |
-| **D** | 0% | 1% | 4% | 25% | **70%** |
+| **D+ / D** | 0% | 1% | 4% | 25% | **70%** |
+| **F** | 0% | 0% | 0% | 0% | 0% |
 
 ### Estrutura do JSON
 O campo `rewards` no `characters.json` contém:

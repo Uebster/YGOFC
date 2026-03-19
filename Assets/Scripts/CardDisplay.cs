@@ -751,7 +751,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
             // Se a carta estiver virada para baixo (isFlipped), mostra o verso, a menos que seja do jogador ou extra deck
             bool showFaceUp = !isFlipped || forceShowFaceUp || isPlayerCard;
-            GameManager.Instance.UpdateCardViewer(currentCardData, showFaceUp);
+            GameManager.Instance.UpdateCardViewer(this, showFaceUp);
         }
 
         // --- LÓGICA DO MOUSE TOOLTIP ---

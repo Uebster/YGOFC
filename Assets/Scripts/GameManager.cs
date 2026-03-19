@@ -1201,13 +1201,25 @@ public void ShuffleDeck(bool isPlayer)
         }
     }
 
-    public void UpdateCardViewer(CardData card, bool isFaceUp)
+    public void UpdateCardViewer(CardDisplay hoveredCard, bool isFaceUp)
     {
         if (cardViewerDisplay == null) return;
 
-        if (isFaceUp && card != null)
+        if (isFaceUp && hoveredCard != null && hoveredCard.CurrentCardData != null)
         {
-            cardViewerDisplay.SetCard(card, cardBackTexture, true);
+            cardViewerDisplay.SetCard(hoveredCard.CurrentCardData, cardBackTexture, true);
+            
+            // ATUALIZAÇÃO: Se for monstro, injeta os valores dinâmicos com cores (Verde = Buff, Vermelho = Debuff)
+            if (hoveredCard.CurrentCardData.type.Contains("Monster") && cardViewerDisplay.cardStatsText != null)
+            {
+                cardViewerDisplay.currentAtk = hoveredCard.currentAtk;
+                cardViewerDisplay.currentDef = hoveredCard.currentDef;
+
+                string atkColor = hoveredCard.currentAtk > hoveredCard.originalAtk ? "<color=#00FF00>" : (hoveredCard.currentAtk < hoveredCard.originalAtk ? "<color=#FF4444>" : "");
+                string defColor = hoveredCard.currentDef > hoveredCard.originalDef ? "<color=#00FF00>" : (hoveredCard.currentDef < hoveredCard.originalDef ? "<color=#FF4444>" : "");
+                
+                cardViewerDisplay.cardStatsText.text = $"ATK/ {atkColor}{hoveredCard.currentAtk}{(atkColor != "" ? "</color>" : "")}  DEF/ {defColor}{hoveredCard.currentDef}{(defColor != "" ? "</color>" : "")}";
+            }
         }
         else
         {
