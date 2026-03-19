@@ -1,24 +1,36 @@
 import json
 import os
 import csv
-
-# Configuração de Caminhos
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-STREAMING_ASSETS_DIR = os.path.join(BASE_DIR, "Assets", "StreamingAssets")
-CARDS_JSON_PATH = os.path.join(STREAMING_ASSETS_DIR, "cards.json")
-CSV_PATH = os.path.join(BASE_DIR, "Assets", "Tools", "card_pool_template.csv")
+import tkinter as tk
+from tkinter import filedialog
 
 def main():
-    if not os.path.exists(CSV_PATH):
-        print(f"ERRO: Arquivo CSV não encontrado em {CSV_PATH}")
-        print("Rode o script 'generate_pool_template.py' primeiro.")
+    root = tk.Tk()
+    root.withdraw()
+
+    print("-> Selecione o arquivo CSV de pools...")
+    csv_path = filedialog.askopenfilename(
+        title="Selecione o arquivo CSV de pools",
+        filetypes=[("Arquivos CSV", "*.csv"), ("Todos os Arquivos", "*.*")]
+    )
+    if not csv_path:
+        print("Seleção cancelada.")
+        return
+
+    print("-> Selecione o arquivo JSON de cartas para ATUALIZAR...")
+    cards_json_path = filedialog.askopenfilename(
+        title="Selecione o arquivo JSON de cartas",
+        filetypes=[("Arquivos JSON", "*.json"), ("Todos os Arquivos", "*.*")]
+    )
+    if not cards_json_path:
+        print("Seleção cancelada.")
         return
 
     print("-> Lendo planilha de pools...")
     pool_map = {}
     
     try:
-        with open(CSV_PATH, 'r', encoding='utf-8') as f:
+        with open(csv_path, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
                 card_id = row["ID"]
@@ -46,8 +58,8 @@ def main():
     print(f"-> Carregados {len(pool_map)} definições de pool.")
 
     # Atualizar o JSON
-    print("-> Atualizando cards.json...")
-    with open(CARDS_JSON_PATH, 'r', encoding='utf-8') as f:
+    print(f"-> Atualizando {os.path.basename(cards_json_path)}...")
+    with open(cards_json_path, 'r', encoding='utf-8') as f:
         cards = json.load(f)
 
     updated_count = 0
@@ -61,11 +73,11 @@ def main():
             print(f"AVISO: Carta {card['name']} ({card['id']}) não encontrada no CSV. Definida como 1.1")
 
     # Salvar de volta
-    with open(CARDS_JSON_PATH, 'w', encoding='utf-8') as f:
+    with open(cards_json_path, 'w', encoding='utf-8') as f:
         json.dump(cards, f, indent=2)
 
     print(f"=== SUCESSO ===")
-    print(f"{updated_count} cartas atualizadas com a propriedade 'pool'.")
+    print(f"{updated_count} cartas atualizadas com a propriedade 'pool' em {os.path.basename(cards_json_path)}.")
 
 if __name__ == "__main__":
     main()

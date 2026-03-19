@@ -681,7 +681,13 @@ public class OpponentAI : MonoBehaviour
                 if (defender.isFlipped) // Monstro Setado (Face-down)
                 {
                     if (isBossAttacking) {
-                        score -= 5000; // NUNCA ataque um face-down com seu Boss Monster (Evita Man-Eater Bug)
+                        // REGRA DE OURO (Scouting): Não bater com o Boss se houver iscas.
+                        // PORÉM, forçamos o ataque se: 1) É o único monstro da IA; 2) Vantagem de campo clara; 3) Oponente sem Traps (Fear = 0); 4) Personalidade Agressiva
+                        if (myMonsters.Count == 1 || boardValue >= 1500 || fearScore == 0 || currentPersonality == AIPersonality.Aggressive) {
+                            score += 200; // O risco é aceitável, força o ataque para testar o terreno
+                        } else {
+                            score -= 5000; // Recua e espera um lacaio para testar (Evita Man-Eater Bug)
+                        }
                     } else {
                         score += 500; // Lacaios ganham bônus massivo para atacar face-downs e revelar armadilhas
                     }

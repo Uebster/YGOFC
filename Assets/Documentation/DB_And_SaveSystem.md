@@ -65,9 +65,11 @@ A fundação dos dados não é inserida à mão na Unity. O projeto conta com um
 
 ### 2.3.1 Sistema de Pools (`generate_pool_template.py`, `apply_pools_to_json.py`)
 O sistema classifica todas as cartas em 25 níveis de poder/raridade (de **1.1** a **5.5**).
-1.  **`generate_pool_template.py`:** Lê o `cards.json` cru e gera a planilha `card_pool_template.csv`. Usa heurística analisando ATK, DEF, Nível e Palavras-chave (ex: "Draw 2") para dar um "chute" de poder na coluna `Suggested_Pool`.
-2.  **Edição Humana:** O desenvolvedor avalia e preenche a coluna `Final_Pool` (apenas onde discordar da IA).
-3.  **`apply_pools_to_json.py`:** Lê o CSV e injeta a propriedade final `"pool": "X.Y"` de volta no JSON mestre.
+1.  **`generate_pool_template.py`:** Lê o `cards.json` cru e gera a planilha `card_pool_template.csv`. 
+    *   **Dicionários Estritos:** Utiliza `PREDEFINED_POOLS` (ex: Exodia, Relinquished, Staples antigas) para forçar tiers fixos de forma inquestionável, e analisa a `BANLIST` para impor tetos de poder (Forbidden = 5.5, Limited = 4.5, Semi = 3.5).
+    *   **Heurística Pente Fino:** Se não estiver fixada, analisa ATK, DEF, Taxa de Tributo (Nível vs Status) e Palavras-chave (ex: "destroy all", "draw 2") para dar um "chute" lógico na coluna `Suggested_Pool`.
+2.  **Edição Humana:** O desenvolvedor avalia o CSV no Excel/Sheets e preenche a coluna `Final_Pool` (apenas caso discorde da IA).
+3.  **`apply_pools_to_json.py`:** Lê o CSV. Prioriza `Final_Pool` (se preenchido) sobre `Suggested_Pool`. Valida a sintaxe "X.Y" em fallback (padrão 1.1) e injeta a propriedade `"pool"` de volta no JSON mestre (`cards.json`).
 
 ### 2.3.2 Geração Mestra (`generate_assets.py`)
 O script-mestre central de construção do `cards.json`. Flexível e multi-formato:
@@ -81,9 +83,16 @@ Um servidor local Flask (`http://localhost:5000`) que consome a API da *YGOPRODe
 *   Gera o arquivo `lista_cartas.txt` padronizado com 10 colunas e baixa as texturas automaticamente para a pasta `StreamingAssets`.
 
 ### 2.3.4 Geradores de Personagens e Bots
-*   **`generate_characters.py`:** Monta o esqueleto do `characters.json`, definindo 100 oponentes organizados por Atos e Dificuldade.
-*   **`generate_character_decks.py`:** Preenche os Decks (A, B, C) dos personagens usando busca por palavras-chave (ex: "Moth" para Weevil), respeitando o nível de Pool do Ato e incluindo cartas "Assinatura" obrigatórias.
-*   **`generate_character_rewards.py`:** Isola o Boss Monster do personagem para ser o drop "S+ (Única)" e distribui as cartas usadas por ele em 4 tiers matemáticos baseados em poder (Rank S/A: Top 15%, B: 25%, C: 30%, D: 30%) preenchendo as listas de recompensas.
+*   **`generate_characters.py`:** Monta o esqueleto inicial do `characters.json`. Define estritamente os 100 oponentes listados no Roteiro (Atos 1 ao 10), atrelando seus IDs oficiais (`XXX_nome_variacao`), dificuldade, `story_role` (Treinamento, Guardião, Chefe, etc.) e o ambiente virtual (`field`).
+*   **`generate_character_decks.py`:** O cérebro procedural de baralhos virtuais. 
+    *   **`ACT_POOL_RANGES`:** Restringe matematicamente as cartas baseadas no Ato (Ex: Ato 1 apenas usa cartas de Pool 1.1 a 1.5).
+    *   **`THEMES` & `CORES`:** Perfilamento inteligente. Associa strings no ID do duelista a pacotes de arquétipos estruturados (Ex: "Weevil" = "Insect", "Pegasus" = "Toon", "Marik" = "Burn").
+    *   **`EXACT_DEPENDENCIES`:** Regra dura da engine. Se uma carta for invocada aleatoriamente (Ex: *Relinquished*), a dependência (*Black Illusion Ritual*) é inserida automaticamente para evitar soft-locks no baralho do inimigo.
+    *   **Variantes A, B, e C:** Gera 3 decks únicos. As modificações de dificuldade B e C aumentam o teto do `Pool Range` (+0.2 / +0.5) e injetam `STAPLES` mais punitivas no preenchimento do Deck.
+*   **`generate_character_rewards.py`:** 
+    *   **Extração da Única (S+):** Separa a carta de maior raridade (normalmente Boss Monsters S+ inseridos via `FORCED_CARDS`) baseada no pool, limitando-a ao Drop S+ de apenas 15%.
+    *   **Fatiamento de Tiers:** Junta as 120 cartas de todas as variantes de Decks (A, B e C), limpa as duplicatas, ordena por poder e divide percentualmente: S (Top 15%), B (Mid 25%), C (Low 30%) e D (Fodder 30%).
+    *   **Preenchimento Inteligente:** Caso a soma dos decks do personagem não alcance 120 cartas, o algoritmo buscará na `cards_by_pool` preenchimentos genéricos ("fillers") nivelados ao Ato atual do personagem.
 
 ### 2.3.5 Validadores Externos
 *   **`test_card_viewer.py`:** Visualizador ágil em *Pygame*. Permite navegar (Setas Esq/Dir) e renderizar a arte e texto lidos do JSON localmente, poupando a lentidão de compilar no Editor da Unity.
