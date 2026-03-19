@@ -216,7 +216,7 @@ public class DuelFXManager : MonoBehaviour
         float t = 0;
         while (t < 1f)
         {
-            if (attacker == null) yield break; // Previne erro se a carta for destruída durante a animação
+            if (attacker == null) { onHit?.Invoke(); yield break; }
             t += Time.deltaTime * (animationSpeed * 2);
             attacker.transform.position = Vector3.Lerp(startPos, startPos - (targetPos - startPos).normalized * 50f, t);
             yield return null;
@@ -227,7 +227,7 @@ public class DuelFXManager : MonoBehaviour
         t = 0;
         while (t < 1f)
         {
-            if (attacker == null) yield break;
+            if (attacker == null) { onHit?.Invoke(); yield break; }
             t += Time.deltaTime * (animationSpeed * 5); // Muito rápido
             attacker.transform.position = Vector3.Lerp(startPos, targetPos, t);
             yield return null;
@@ -241,7 +241,7 @@ public class DuelFXManager : MonoBehaviour
         t = 0;
         while (t < 1f)
         {
-            if (attacker == null) yield break;
+            if (attacker == null) { yield break; }
             t += Time.deltaTime * animationSpeed;
             attacker.transform.position = Vector3.Lerp(targetPos, startPos, t);
             yield return null;
@@ -284,7 +284,11 @@ public class DuelFXManager : MonoBehaviour
 
         while (elapsed < duration)
         {
-            if (projectile != null) projectile.transform.position = Vector3.Lerp(startPos, endPos, elapsed / duration);
+            if (projectile != null) 
+            {
+                Vector3 currentTarget = target != null ? target.transform.position : endPos;
+                projectile.transform.position = Vector3.Lerp(startPos, currentTarget, elapsed / duration);
+            }            
             elapsed += Time.deltaTime;
             yield return null;
         }

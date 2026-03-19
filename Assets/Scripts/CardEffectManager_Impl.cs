@@ -5330,6 +5330,7 @@ void Effect_MagicCylinder(CardDisplay source)
     {
         int damage = BattleManager.Instance.currentAttacker.CurrentCardData.atk;
         Effect_DirectDamage(source, damage);
+        BattleManager.Instance.CancelCurrentAttack();
     }
 }
 

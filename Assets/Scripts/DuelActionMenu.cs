@@ -21,12 +21,37 @@ public class DuelActionMenu : MonoBehaviour
     void Awake()
     {
         Instance = this;
-        if (menuPanel != null) menuPanel.SetActive(false);
+        if (menuPanel == null) menuPanel = this.gameObject;
+
+        // Garante que o menu clássico apareça na frente de tudo e receba cliques
+        Canvas canvas = menuPanel.GetComponent<Canvas>();
+        if (canvas == null) canvas = menuPanel.AddComponent<Canvas>();
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = 30005; // Na frente das cartas
+        
+        GraphicRaycaster raycaster = menuPanel.GetComponent<GraphicRaycaster>();
+        if (raycaster == null) raycaster = menuPanel.AddComponent<GraphicRaycaster>();
+
+        // Auto-atribui os botões caso você tenha esquecido de arrastar no Inspector
+        if (summonBtn == null || setBtn == null || activateBtn == null || cancelBtn == null)
+        {
+            Button[] btns = GetComponentsInChildren<Button>(true);
+            foreach (Button b in btns)
+            {
+                string n = b.name.ToLower();
+                if (n.Contains("summon")) summonBtn = b;
+                else if (n.Contains("set")) setBtn = b;
+                else if (n.Contains("activate")) activateBtn = b;
+                else if (n.Contains("cancel")) cancelBtn = b;
+            }
+        }
         
         if (summonBtn) summonBtn.onClick.AddListener(OnSummon);
         if (setBtn) setBtn.onClick.AddListener(OnSet);
         if (activateBtn) activateBtn.onClick.AddListener(OnActivate);
         if (cancelBtn) cancelBtn.onClick.AddListener(CloseMenu);
+
+        menuPanel.SetActive(false);
     }
 
     void Start()

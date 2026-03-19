@@ -85,6 +85,8 @@ public class GameManager : MonoBehaviour
     [Header("Game Modes")]
     [Tooltip("Habilita funcionalidades de desenvolvedor.")]
     public bool devMode = false;
+    [Tooltip("Ativa o Painel de Testes Completo (Full Test Mode).")]
+    public bool fullTestMode = false;
     [Tooltip("Se marcado, pula os menus e inicia um duelo livre imediatamente ao dar Play.")]
     public bool testDuelDirectly = false;
     [Tooltip("Se marcado, pula para a página de Construção de Deck imediatamente ao dar Play.")]
@@ -97,6 +99,8 @@ public class GameManager : MonoBehaviour
     public string testOpponentID = ""; 
     [Tooltip("ID do personagem para substituir o deck do jogador (ex: 020_pegasus). Deixe vazio para usar o deck do save.")]
     public string testPlayerID = "";
+    [Tooltip("Força a variante do deck do oponente em testes (0 = Aleatório, 1 = Deck A, 2 = Deck B, 3 = Deck C).")]
+    public int testOpponentDeckVariant = 0;
     [Tooltip("Número do Ato (1-10) para forçar o tema visual. -1 para usar o padrão.")]
     public int testActThemeIndex = -1;
     [Tooltip("Define se as cartas na mão do oponente são visíveis.")]
@@ -135,6 +139,12 @@ public class GameManager : MonoBehaviour
     public bool alwaysCoinHead = false;
     [Tooltip("Se marcado, o resultado do dado será sempre 6. Útil para testar cartas de aposta.")]
     public bool alwaysDiceSix = false;
+    [Tooltip("Impede que as fases avancem sozinhas (útil para testar efeitos manualmente).")]
+    public bool disableAutoPhases = false;
+    [Tooltip("Habilita ou desabilita todos os Efeitos Visuais (VFX).")]
+    public bool enableVFX = true;
+    [Tooltip("Habilita ou desabilita todos os Efeitos Sonoros (SFX).")]
+    public bool enableSFX = true;
  
     [Header("Turn Clock Visuals")]
     [Tooltip("Habilita o visual de relógio central para contagem de turnos.")]
@@ -696,6 +706,10 @@ public class GameManager : MonoBehaviour
             string variant = "A";
 
             int rng = Random.Range(0, 3);
+            if (testOpponentDeckVariant == 1) rng = 0;
+            else if (testOpponentDeckVariant == 2) rng = 1;
+            else if (testOpponentDeckVariant == 3) rng = 2;
+
             if (rng == 1 && currentOpponent.deck_B != null && currentOpponent.deck_B.Count > 0)
             {
                 selectedMain = currentOpponent.deck_B;
@@ -1672,12 +1686,12 @@ public void ShuffleDeck(bool isPlayer)
         // 1. Mostra a mensagem de WIN/LOSE
         if (UIManager.Instance != null && UIManager.Instance.endDuelMessagePanel != null)
         {
-            TextMeshProUGUI messageText = UIManager.Instance.endDuelMessagePanel.GetComponentInChildren<TextMeshProUGUI>();
-            if (messageText != null)
-            {
-                messageText.text = playerWon ? "YOU WIN" : "YOU LOSE";
-                messageText.color = playerWon ? Color.yellow : new Color(1f, 0.2f, 0.2f);
-            }
+            Transform winImg = UIManager.Instance.endDuelMessagePanel.transform.Find("ImageWin");
+            Transform loseImg = UIManager.Instance.endDuelMessagePanel.transform.Find("ImageLose");
+            
+            if (winImg != null) winImg.gameObject.SetActive(playerWon);
+            if (loseImg != null) loseImg.gameObject.SetActive(!playerWon);
+
             UIManager.Instance.endDuelMessagePanel.SetActive(true);
         }
 
@@ -1730,7 +1744,15 @@ public void ShuffleDeck(bool isPlayer)
             
             if (UIManager.Instance != null)
             {
-                UIManager.Instance.ShowRewardScreen(rank.ToString(), rewardCard, isNewCard);
+                // Se venceu, passa o Rank real. Se perdeu, passa "LOSE" para a UI de Recompensas saber.
+                if (playerWon) 
+                {
+                    UIManager.Instance.ShowRewardScreen(rank.ToString(), rewardCard, isNewCard);
+                }
+                else 
+                {
+                    UIManager.Instance.ShowRewardScreen("LOSE", null, false);
+                }
             }
         }
         else

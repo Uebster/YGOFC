@@ -572,6 +572,7 @@ public partial class CardEffectManager
         {
             int atk = BattleManager.Instance.currentAttacker.currentAtk;
             Effect_GainLP(source, atk);
+            BattleManager.Instance.CancelCurrentAttack();
             // Negate attack logic (End Battle Step)
             Debug.Log("Draining Shield: Ataque negado.");
         }

@@ -7,6 +7,9 @@ using UnityEngine.Networking;
 using System.IO;
 using UnityEngine.EventSystems;
 using System.Linq; // Added for LINQ
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
@@ -876,6 +879,25 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             // No DeckBuilder, o DeckDragHandler cuida das interações.
             return;
+        }
+
+        // --- SISTEMA FULL TEST (Menu de Desenvolvedor da Carta) ---
+        bool isShiftPressed = false;
+#if ENABLE_INPUT_SYSTEM
+        if (Keyboard.current != null && (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed))
+            isShiftPressed = true;
+#else
+        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+            isShiftPressed = true;
+#endif
+
+        if (GameManager.Instance != null && GameManager.Instance.fullTestMode && eventData.button == PointerEventData.InputButton.Right && isShiftPressed)
+        {
+            if (FullTestManager.Instance != null)
+            {
+                FullTestManager.Instance.OpenDevCardMenu(this);
+                return;
+            }
         }
 
         // Lógica para cartas em PILHAS (Cemitério, Extra Deck, Banidas)

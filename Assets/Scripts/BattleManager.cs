@@ -233,15 +233,33 @@ public class BattleManager : MonoBehaviour
                      PerformDirectAttack(attacker);
                  }
              };
-             // Realiza o ataque direto
-             if (ChainManager.Instance != null)
-             {
-                ChainManager.Instance.AddToChain(attacker, attacker.isPlayerCard, ChainManager.TriggerType.Attack, null, triggerAttackEffect);
-             }
-             else
-             {
-                 triggerAttackEffect();
-             }
+             
+            System.Action executeAttack = () => {
+                currentTarget = null;
+                if (currentAttacker != null) currentAttacker.SetAttackSelectionVisual(false);
+
+                if (ChainManager.Instance != null)
+                {
+                   ChainManager.Instance.AddToChain(attacker, attacker.isPlayerCard, ChainManager.TriggerType.Attack, null, triggerAttackEffect);
+                }
+                else
+                {
+                    triggerAttackEffect();
+                }
+            };
+
+            if (GameManager.Instance != null && !GameManager.Instance.confirmAttackTarget)
+            {
+                executeAttack();
+            }
+            else
+            {
+                UIManager.Instance.ShowConfirmation($"Atacar diretamente com {attacker.CurrentCardData.name}?", executeAttack, CancelAttack);
+            }
+        }
+        else
+        {
+             CancelAttack();
         }
     }
 
@@ -433,6 +451,9 @@ public class BattleManager : MonoBehaviour
         };
 
         System.Action executeAttack = () => {
+             currentTarget = targetCard;
+             if (currentAttacker != null) currentAttacker.SetAttackSelectionVisual(false);
+             
              // FIX: Adicionado fallback. Se ChainManager não existir, ataca direto.
              if (ChainManager.Instance != null)
              {
@@ -450,14 +471,7 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
-            UIManager.Instance.ShowConfirmation($"Atacar {targetName}?", executeAttack);
-        }
-
-        currentTarget = target;
-        // Limpa a seleção visual após confirmar o alvo
-        if (currentAttacker != null) 
-        {
-            currentAttacker.SetAttackSelectionVisual(false);
+            UIManager.Instance.ShowConfirmation($"Atacar {targetName}?", executeAttack, CancelAttack);
         }
     }
 
@@ -610,6 +624,21 @@ public class BattleManager : MonoBehaviour
 
     public void PerformDirectAttack(CardDisplay attacker)
     {
+        if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Battle)
+        {
+            Debug.LogWarning("Ataque direto cancelado: A fase de batalha foi encerrada.");
+            ClearBattleState();
+            if (attacker != null) attacker.SetAttackSelectionVisual(false);
+            return;
+        }
+        if (attacker == null || !attacker.isOnField || currentAttacker != attacker)
+        {
+            Debug.LogWarning("Ataque direto cancelado: Atacante inválido ou ataque interrompido.");
+            ClearBattleState();
+            if (attacker != null) attacker.SetAttackSelectionVisual(false);
+            return;
+        }
+
         System.Action continueAttack = () => {
             int damage = attacker.currentAtk; // Usa currentAtk (pode ter mudado no hook acima)
             Debug.Log($"Ataque Direto! Dano: {damage}");
@@ -664,11 +693,21 @@ public class BattleManager : MonoBehaviour
 
     public void PerformBattle(CardDisplay attacker, CardDisplay target)
     {
-        // FIX: Verifica se os monstros ainda existem e estão no campo (podem ter sido destruídos durante a Chain)
-        if (attacker == null || !attacker.isOnField || target == null || !target.isOnField)
+        if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Battle)
         {
-            Debug.LogWarning("Batalha cancelada: Atacante ou Alvo não estão mais no campo.");
+            Debug.LogWarning("Batalha cancelada: A fase de batalha foi encerrada.");
             isBattleResolving = false;
+            ClearBattleState();
+            if (attacker != null) attacker.SetAttackSelectionVisual(false);
+            return;
+        }
+        // FIX: Verifica se os monstros ainda existem e estão no campo (podem ter sido destruídos durante a Chain)
+        if (attacker == null || !attacker.isOnField || target == null || !target.isOnField || currentAttacker != attacker)
+        {
+            Debug.LogWarning("Batalha cancelada: Atacante/Alvo inválidos ou ataque interrompido.");
+            isBattleResolving = false;
+            ClearBattleState();
+            if (attacker != null) attacker.SetAttackSelectionVisual(false);
             return;
         }
 
@@ -1035,6 +1074,12 @@ public class BattleManager : MonoBehaviour
         gravekeepersProtected = false; // Reseta no fim da batalha ou turno? Regra diz "until End Phase".
         // isBattleResolving = false; // Não reseta aqui, pois é controlado no PerformBattle
         // Se for até End Phase, deve ser resetado no PhaseManager ou CardEffectManager.
+    }
+
+    public void CancelCurrentAttack()
+    {
+        Debug.Log("Ataque atual cancelado por efeito de carta.");
+        ClearBattleState();
     }
 
     // Chamado pelo clique direito no monstro

@@ -17,8 +17,6 @@ public class DamagePopup : MonoBehaviour
 
     void Awake()
     {
-        rectTransform = GetComponent<RectTransform>();
-        
         canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null) canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
@@ -31,6 +29,10 @@ public class DamagePopup : MonoBehaviour
             layoutGroup.childControlWidth = false;
             layoutGroup.childControlHeight = false;
         }
+
+        // Pega o RectTransform por último, pois adicionar os componentes de UI acima força a Unity
+        // a converter um Transform comum em RectTransform caso o prefab tenha sido criado vazio.
+        rectTransform = GetComponent<RectTransform>();
     }
 
     public void Setup(int amount, bool isHeal, DamagePopupManager manager)

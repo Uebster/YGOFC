@@ -209,6 +209,7 @@ public partial class CardEffectManager
         if (!source.isOnField) // Da mão
         {
             GameManager.Instance.DiscardCard(source);
+            if (BattleManager.Instance != null) BattleManager.Instance.noBattleDamageThisTurn = true;
             Debug.Log("Kuriboh: Dano de batalha reduzido a 0 (Efeito ativado da mão).");
         }
     }
@@ -2803,6 +2804,7 @@ public partial class CardEffectManager
         if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
         {
             Debug.Log("Negate Attack: Ataque negado e Battle Phase encerrada.");
+            BattleManager.Instance.CancelCurrentAttack();
             // Lógica de encerrar fase
             if (PhaseManager.Instance != null) PhaseManager.Instance.ChangePhase(GamePhase.Main2);
         }

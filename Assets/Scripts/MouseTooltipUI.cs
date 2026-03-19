@@ -15,7 +15,7 @@ public class MouseTooltipUI : MonoBehaviour
     public TextMeshProUGUI rightClickText;
     
     [Header("Settings")]
-    public Vector3 mouseOffset = new Vector3(20f, -20f, 0f);
+    public Vector3 mouseOffset = new Vector3(5f, -5f, 0f); // Mais próximo ao cursor
 
     void Awake()
     {
