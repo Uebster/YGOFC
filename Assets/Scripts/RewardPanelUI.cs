@@ -7,12 +7,25 @@ using TMPro;
 /// </summary>
 public class RewardPanelUI : MonoBehaviour
 {
+    [System.Serializable]
+    public struct RankArtwork
+    {
+        public string rankName; // Ex: "S", "APlus", "A", "BPlus", "B", "C", "D", "F", "SPlus"
+        public Sprite artwork;
+    }
+
     [Header("UI References")]
     [Tooltip("Texto do título, ex: 'VITÓRIA'")]
     public TextMeshProUGUI titleText;
 
     [Tooltip("Texto que exibirá o Rank obtido, ex: 'RANK: S+'")]
     public TextMeshProUGUI rankText;
+
+    [Tooltip("Componente de imagem para exibir a arte do Rank (S, A, B, etc).")]
+    public Image rankImage;
+
+    [Tooltip("Lista associando o texto do Rank à sua respectiva imagem.")]
+    public List<RankArtwork> rankArtworks = new List<RankArtwork>();
 
     [Tooltip("Referência ao CardDisplay que mostrará a carta ganha.")]
     public CardDisplay cardDisplay;
@@ -50,6 +63,20 @@ public class RewardPanelUI : MonoBehaviour
 
         if (titleText) titleText.text = "VITÓRIA";
         if (rankText) rankText.text = $"RANK: {rank}";
+
+        if (rankImage != null)
+        {
+            var art = rankArtworks.Find(r => r.rankName.Equals(rank, System.StringComparison.OrdinalIgnoreCase));
+            if (art.artwork != null)
+            {
+                rankImage.sprite = art.artwork;
+                rankImage.gameObject.SetActive(true);
+            }
+            else
+            {
+                rankImage.gameObject.SetActive(false);
+            }
+        }
 
         if (wonCard != null && cardDisplay != null)
         {

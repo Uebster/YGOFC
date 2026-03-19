@@ -346,6 +346,18 @@ public class SpellTrapManager : MonoBehaviour
                                 validResponses.Add(cd);
                             }
                             
+                            // Blast Held by a Tribute (0198) vs Attack from Tribute Summoned monster
+                            if (cd.CurrentCardData.id == "0198" && triggerLink.cardSource != null && triggerLink.cardSource.isTributeSummoned)
+                            {
+                                validResponses.Add(cd);
+                            }
+                            
+                            // Dark Mirror Force (0426) vs Attack
+                            if (cd.CurrentCardData.id == "0426")
+                            {
+                                validResponses.Add(cd);
+                            }
+                            
                             // Trap of Board Eraser (1965) & Spell of Pain (1728) vs Burn effects
                             string burnId = triggerLink.cardSource.CurrentCardData.id;
                             if ((cd.CurrentCardData.id == "1965" || cd.CurrentCardData.id == "1728") && 

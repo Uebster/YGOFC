@@ -3359,61 +3359,6 @@ public partial class CardEffectManager
             target.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, -500, target));
             Debug.Log("Steamroid: -500 ATK ao ser atacado.");
         }
-
-        // Aqui poderíamos verificar Kuriboh na mão, etc.
-        // Por enquanto, apenas continua o fluxo.
-
-        // 0198 - Blast Held by a Tribute
-        bool trapped = false;
-        if (attacker.isTributeSummoned)
-        {
-            CheckActiveCards("0198", (trap) => {
-                if (trap.isPlayerCard != attacker.isPlayerCard && !trapped)
-                {
-                    trapped = true;
-                    isWaiting = true;
-                    if (UIManager.Instance != null) {
-                        UIManager.Instance.ShowConfirmation($"Ativar {trap.CurrentCardData.name}?", () => {
-                            GameManager.Instance.SendToGraveyard(trap.CurrentCardData, trap.isPlayerCard);
-                            Destroy(trap.gameObject);
-                            
-                            List<CardDisplay> toDestroy = new List<CardDisplay>();
-                            Transform[] zones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
-                            foreach(var z in zones) if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().position == CardDisplay.BattlePosition.Attack) toDestroy.Add(z.GetChild(0).GetComponent<CardDisplay>());
-                            
-                            DestroyCards(toDestroy, trap.isPlayerCard);
-                            Effect_DirectDamage(trap, 1000);
-                            isWaiting = false;
-                        }, () => { trapped = false; isWaiting = false; });
-                    }
-                }
-            });
-            while (isWaiting) yield return null;
-        }
-
-        // 0426 - Dark Mirror Force
-        bool darkMirrorFound = false;
-        CheckActiveCards("0426", (trap) => {
-            if (trap.isPlayerCard != attacker.isPlayerCard && !darkMirrorFound)
-            {
-                darkMirrorFound = true;
-                isWaiting = true;
-                if (UIManager.Instance != null) {
-                    UIManager.Instance.ShowConfirmation($"Ativar {trap.CurrentCardData.name}?", () => {
-                        GameManager.Instance.SendToGraveyard(trap.CurrentCardData, trap.isPlayerCard);
-                        Destroy(trap.gameObject);
-                        
-                        List<CardDisplay> toBanish = new List<CardDisplay>();
-                        Transform[] zones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
-                        foreach(var z in zones) if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().position == CardDisplay.BattlePosition.Defense) toBanish.Add(z.GetChild(0).GetComponent<CardDisplay>());
-                        
-                        foreach(var b in toBanish) GameManager.Instance.BanishCard(b);
-                        isWaiting = false;
-                    }, () => { darkMirrorFound = false; isWaiting = false; });
-                }
-            }
-        });
-        while (isWaiting) yield return null;
         
         // 0803 - Gravekeeper's Assailant
         if (attacker.CurrentCardData.id == "0803" && GameManager.Instance.IsCardActiveOnField("1324") && target != null)
@@ -3512,6 +3457,7 @@ public partial class CardEffectManager
         }
 
         if (!attackCanceled && !trapped) onContinue?.Invoke();
+        if (!attackCanceled) onContinue?.Invoke();
     }
 
     public void OnDamageCalculation(CardDisplay attacker, CardDisplay target, System.Action onContinue)

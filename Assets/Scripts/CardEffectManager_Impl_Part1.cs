@@ -2180,13 +2180,20 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0198_BlastHeldByATribute(CardDisplay source)
     {
-        // Activate when opponent attacks with Tribute Summoned monster. Destroy & 1000 dmg.
         if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
         {
-            // Checagem de tributo pendente
-            Debug.Log("Blast Held by a Tribute: Destruindo atacante...");
-            // Destroy logic
-            Effect_DirectDamage(source, 1000);
+            CardDisplay attacker = BattleManager.Instance.currentAttacker;
+            if (attacker.isTributeSummoned)
+            {
+                Debug.Log("Blast Held by a Tribute: Destruindo monstros em modo de ataque e causando 1000 de dano!");
+                List<CardDisplay> toDestroy = new List<CardDisplay>();
+                Transform[] zones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+                foreach(var z in zones) if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().position == CardDisplay.BattlePosition.Attack) toDestroy.Add(z.GetChild(0).GetComponent<CardDisplay>());
+                
+                DestroyCards(toDestroy, source.isPlayerCard);
+                Effect_DirectDamage(source, 1000);
+                BattleManager.Instance.CancelCurrentAttack();
+            }
         }
     }
 
@@ -5154,8 +5161,17 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
 
     void Effect_0426_DarkMirrorForce(CardDisplay source)
     {
-        Debug.Log("Dark Mirror Force: Resolvido no trigger de ataque (OnAttackDeclared).");
-    }
+        if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+        {
+            CardDisplay attacker = BattleManager.Instance.currentAttacker;
+            Debug.Log("Dark Mirror Force: Banindo todos os monstros em modo de defesa do oponente!");
+            List<CardDisplay> toBanish = new List<CardDisplay>();
+            Transform[] zones = attacker.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            foreach(var z in zones) if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().position == CardDisplay.BattlePosition.Defense) toBanish.Add(z.GetChild(0).GetComponent<CardDisplay>());
+            
+            foreach(var b in toBanish) GameManager.Instance.BanishCard(b);
+        }
+s    }
 
     void Effect_0427_DarkNecrofear(CardDisplay source)
     {
