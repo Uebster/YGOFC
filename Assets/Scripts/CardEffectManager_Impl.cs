@@ -3456,7 +3456,6 @@ public partial class CardEffectManager
             attackCanceled = true;
         }
 
-        if (!attackCanceled && !trapped) onContinue?.Invoke();
         if (!attackCanceled) onContinue?.Invoke();
     }
 

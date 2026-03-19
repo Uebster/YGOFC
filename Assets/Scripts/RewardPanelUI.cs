@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
 
 /// <summary>
 /// Gerencia a interface do painel de recompensas exibido ao final de um duelo.
@@ -61,7 +62,14 @@ public class RewardPanelUI : MonoBehaviour
     {
         gameObject.SetActive(true);
 
-        if (titleText) titleText.text = "VITÓRIA";
+        if (titleText)
+        {
+            if (rank.Equals("LOSE", System.StringComparison.OrdinalIgnoreCase))
+                titleText.text = "DERROTA";
+            else
+                titleText.text = "VITÓRIA";
+        }
+        
         if (rankText) rankText.text = $"RANK: {rank}";
 
         if (rankImage != null)

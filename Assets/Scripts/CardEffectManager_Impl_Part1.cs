@@ -5171,8 +5171,8 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
             
             foreach(var b in toBanish) GameManager.Instance.BanishCard(b);
         }
-s    }
-
+    }
+    
     void Effect_0427_DarkNecrofear(CardDisplay source)
     {
         // Efeito: SS banindo 3 Fiends. Na End Phase se destruído, equipa no oponente e controla.
