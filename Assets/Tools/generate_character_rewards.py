@@ -90,14 +90,38 @@ def main():
         for deck_key in ["deck_A", "deck_B", "deck_C"]:
             if deck_key in char:
                 used_cards.update(char[deck_key])
+
+        # Garante que todos os unique_drops entrem na lista base
+        used_cards.update(unique_drops)
         
         reward_pool = list(used_cards)
         
-        # 2. Preencher até 120 cartas se necessário (com cartas do Ato atual/anterior)
-        target_count = 120
+        # Identificar S+ e as demais Únicas (Super Raras)
+        s_plus_card = None
+        super_rares = []
+       
+        if unique_drops:
+            sorted_uniques = sorted(unique_drops, key=lambda x: get_card_power(cards_map.get(x, {})), reverse=True)
+            s_plus_card = sorted_uniques[0]
+        
+        if not s_plus_card and reward_pool:
+            sorted_by_power = sorted(reward_pool, key=lambda x: get_card_power(cards_map.get(x, {})), reverse=True)
+            super_rares = sorted_uniques[1:]
+
+            for cid in sorted_by_power:
+                c_data = cards_map.get(cid, {})
+                ctype = c_data.get("type", "")
+                if "Monster" in ctype and ("Effect" in ctype or "Fusion" in ctype):
+                    s_plus_card = cid
+                    break
+
+        # Remove a S+ e Super Rares do pool geral temporariamente para não se misturarem com os fillers
+        reward_pool = [x for x in reward_pool if x != s_plus_card and x not in super_rares]
+
+        # Preencher fillers (até 120 - S+ - super_rares)
+        target_count = 120 - 1 - len(super_rares)
         if len(reward_pool) < target_count:
             needed = target_count - len(reward_pool)
-            # Pega range do ato. Ex: Ato 1 (1.1-1.5). Filler deve ser um pouco mais fraco ou igual
             min_p, max_p = ACT_POOL_RANGES.get(act, (1.1, 1.5))
             filler_max = max(1.1, max_p) 
             
@@ -107,10 +131,7 @@ def main():
                     candidates.extend(ids)
             
             if candidates:
-                # Adiciona aleatórios que ainda não estão na lista
                 new_fillers = [c for c in candidates if c not in used_cards]
-                
-                # Se não tiver únicos suficientes, permite duplicatas do pool geral
                 if len(new_fillers) < needed:
                     reward_pool.extend(new_fillers)
                     remaining = needed - len(new_fillers)
@@ -118,38 +139,13 @@ def main():
                 else:
                     reward_pool.extend(random.sample(new_fillers, needed))
 
-        # 3. Identificar S+ (Carta Única)
-        s_plus_card = None
-        
-        # A carta S+ DEVE vir da lista de unique_drops se disponível
-        if unique_drops:
-            # Pega a mais forte das únicas
-            sorted_uniques = sorted(unique_drops, key=lambda x: get_card_power(cards_map.get(x, {})), reverse=True)
-            s_plus_card = sorted_uniques[0]
-        
-        # Fallback se não tiver unique_drops (não deveria acontecer se rodar o deck generator antes)
-        if not s_plus_card and reward_pool:
-            # Ordena pool por poder
-            sorted_by_power = sorted(reward_pool, key=lambda x: get_card_power(cards_map.get(x, {})), reverse=True)
-            
-            # Prioriza Monstros de Efeito ou Fusão de alto nível
-            for cid in sorted_by_power:
-                c_data = cards_map.get(cid, {})
-                ctype = c_data.get("type", "")
-                if "Monster" in ctype and ("Effect" in ctype or "Fusion" in ctype):
-                    s_plus_card = cid
-                    break
-
-        # Remove S+ do pool geral para garantir exclusividade (opcional, mas recomendado)
-        if s_plus_card and s_plus_card in reward_pool:
-            # Remove todas as cópias dela do pool comum
-            reward_pool = [x for x in reward_pool if x != s_plus_card] # Remove S+ das listas normais
-
-        # 4. Classificar o restante em 4 Tiers (S, B, C, D)
-        # Ordena do mais forte para o mais fraco
+        # Ordena os fillers e as cartas de deck comuns
         reward_pool.sort(key=lambda x: get_card_power(cards_map.get(x, {})), reverse=True)
         
-        total = len(reward_pool)
+        # Une as Super Rares no TOPO ABSOLUTO para forçar que caiam no Tier S/B
+        final_pool = super_rares + reward_pool
+        
+        total = len(final_pool)
         # Distribuição: 
         # S (High): Top 15%
         # B (Mid): Next 25%
@@ -160,14 +156,14 @@ def main():
         idx_b = int(total * 0.40)
         idx_c = int(total * 0.70)
         
-        pool_s = reward_pool[:idx_s]
-        pool_b = reward_pool[idx_s:idx_b]
-        pool_c = reward_pool[idx_b:idx_c]
-        pool_d = reward_pool[idx_c:]
-        
+        pool_s = final_pool[:idx_s]
+        pool_b = final_pool[idx_s:idx_b]
+        pool_c = final_pool[idx_b:idx_c]
+        pool_d = final_pool[idx_c:]
+
         # Fallback para listas vazias
-        if not pool_s: pool_s = reward_pool[:1]
-        if not pool_d: pool_d = reward_pool[-1:]
+        if not pool_s: pool_s = final_pool[:1]
+        if not pool_d: pool_d = final_pool[-1:]
 
         # Garante que as OUTRAS cartas únicas (além da S+) estejam distribuídas nos pools S e B
         # para que o jogador possa obtê-las sem precisar tirar S+ 7 vezes.

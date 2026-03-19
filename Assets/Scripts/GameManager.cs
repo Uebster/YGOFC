@@ -1729,7 +1729,7 @@ public void ShuffleDeck(bool isPlayer)
             CardData rewardCard = null;
             bool isNewCard = false;
 
-            if (playerWon && currentOpponent != null && currentOpponent.rewards.Count > 0)
+            if (playerWon && currentOpponent != null)
             {
                 // Registra vitória na Biblioteca
                 if (SaveLoadSystem.Instance != null)
@@ -1737,9 +1737,9 @@ public void ShuffleDeck(bool isPlayer)
                     SaveLoadSystem.Instance.RegisterDuelistWin(currentOpponent.id);
                 }
 
-                string rewardId = currentOpponent.rewards[Random.Range(0, currentOpponent.rewards.Count)];
-                rewardCard = cardDatabase.GetCardById(rewardId);
-                Debug.Log($"Recompensa: {rewardCard?.name ?? "Nenhuma"}");
+                // --- SISTEMA DE DROP RATE PERCENTUAL ---
+                rewardCard = CalculateDrop(rank, currentOpponent);
+                Debug.Log($"Recompensa Drop Rate: {rewardCard?.name ?? "Nenhuma"}");
 
                 // LÓGICA DE DROP: Adiciona ao Baú do Jogador
                 if (rewardCard != null)
@@ -1771,6 +1771,125 @@ public void ShuffleDeck(bool isPlayer)
         {
             if (UIManager.Instance != null) UIManager.Instance.Btn_BackToMenu();
         }
+    }
+
+    private CardData CalculateDrop(DuelRank rank, CharacterData opp)
+    {
+        // Percentuais definidos na documentação do Game Design (ScoringAndDropRate.md)
+        float pSPlus = 0, pS = 0, pB = 0, pC = 0, pD = 0;
+
+        switch (rank)
+        {
+            case DuelRank.SPlus: pSPlus = 15f; pS = 34f; pB = 25.5f; pC = 17f; pD = 8.5f; break;
+            case DuelRank.S:
+            case DuelRank.APlus:
+            case DuelRank.A:     pSPlus = 0f; pS = 40f; pB = 30f; pC = 20f; pD = 10f; break;
+            case DuelRank.BPlus:
+            case DuelRank.B:     pSPlus = 0f; pS = 10f; pB = 40f; pC = 30f; pD = 20f; break;
+            case DuelRank.C:     pSPlus = 0f; pS = 3f; pB = 17f; pC = 40f; pD = 40f; break;
+            case DuelRank.D:     pSPlus = 0f; pS = 1f; pB = 4f; pC = 25f; pD = 70f; break;
+            case DuelRank.F:     return null;
+        }
+
+        List<string> poolSPlus = new List<string>();
+        List<string> poolS = new List<string>();
+        List<string> poolB = new List<string>();
+        List<string> poolC = new List<string>();
+        List<string> poolD = new List<string>();
+
+        // Os drops S+ (A Única) e S (Super Raros) vêm diretamente do "unique_drops" gerado pelo Python
+        if (opp.unique_drops != null && opp.unique_drops.Count > 0)
+        {
+            poolSPlus.Add(opp.unique_drops[0]); // Primeira carta é a Assinatura S+
+            for (int i = 1; i < opp.unique_drops.Count; i++)
+            {
+                poolS.Add(opp.unique_drops[i]);
+            }
+        }
+
+        // Coleta todas as cartas de todos os decks do personagem para fatiar nas tiers inferiores
+        HashSet<string> allDeckCards = new HashSet<string>();
+        if (opp.deck_A != null) foreach (var id in opp.deck_A) allDeckCards.Add(id);
+        if (opp.deck_B != null) foreach (var id in opp.deck_B) allDeckCards.Add(id);
+        if (opp.deck_C != null) foreach (var id in opp.deck_C) allDeckCards.Add(id);
+        if (opp.extra_deck_A != null) foreach (var id in opp.extra_deck_A) allDeckCards.Add(id);
+        if (opp.extra_deck_B != null) foreach (var id in opp.extra_deck_B) allDeckCards.Add(id);
+        if (opp.extra_deck_C != null) foreach (var id in opp.extra_deck_C) allDeckCards.Add(id);
+
+        // Remove as cartas que já foram separadas como S/S+
+        foreach (var id in poolSPlus) allDeckCards.Remove(id);
+        foreach (var id in poolS) allDeckCards.Remove(id);
+
+        // Prepara para ordenar pelo poder do Pool (Ex: 5.5 -> 1.1)
+        List<CardData> fillerCards = new List<CardData>();
+        foreach (var id in allDeckCards)
+        {
+            CardData c = cardDatabase.GetCardById(id);
+            if (c != null) fillerCards.Add(c);
+        }
+
+        fillerCards.Sort((x, y) => {
+            float px = 1.1f; float py = 1.1f;
+            float.TryParse(x.pool, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out px);
+            float.TryParse(y.pool, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out py);
+            int comp = py.CompareTo(px);
+            if (comp == 0) return y.atk.CompareTo(x.atk); // Desempata pelo ATK
+            return comp;
+        });
+
+        // Fatiamento das cartas restantes (25% B, 30% C, 45% D)
+        int totalFiller = fillerCards.Count;
+        int bCount = Mathf.CeilToInt(totalFiller * 0.25f);
+        int cCount = Mathf.CeilToInt(totalFiller * 0.30f);
+
+        for (int i = 0; i < totalFiller; i++)
+        {
+            if (i < bCount) poolB.Add(fillerCards[i].id);
+            else if (i < bCount + cCount) poolC.Add(fillerCards[i].id);
+            else poolD.Add(fillerCards[i].id);
+        }
+
+        // Fallbacks de segurança (evita lista vazia)
+        if (poolSPlus.Count == 0) pSPlus = 0f;
+        if (poolS.Count == 0) { poolS.AddRange(poolB); pS = pS / 2f; } // Reduz a chance de S se não houver drops únicos reais
+        if (poolB.Count == 0) poolB.AddRange(poolC);
+        if (poolC.Count == 0) poolC.AddRange(poolD);
+        if (poolD.Count == 0) poolD.AddRange(poolC);
+
+        float totalWeight = pSPlus + pS + pB + pC + pD;
+        if (totalWeight <= 0) return null;
+
+        // Roleta de Porcentagens
+        float roll = Random.Range(0f, totalWeight);
+        List<string> selectedPool = null;
+
+        if (roll < pSPlus && poolSPlus.Count > 0) selectedPool = poolSPlus;
+        else
+        {
+            roll -= pSPlus;
+            if (roll < pS) selectedPool = poolS;
+            else
+            {
+                roll -= pS;
+                if (roll < pB) selectedPool = poolB;
+                else
+                {
+                    roll -= pB;
+                    if (roll < pC) selectedPool = poolC;
+                    else selectedPool = poolD;
+                }
+            }
+        }
+
+        if (selectedPool == null || selectedPool.Count == 0) selectedPool = poolD;
+
+        if (selectedPool != null && selectedPool.Count > 0)
+        {
+            string finalId = selectedPool[Random.Range(0, selectedPool.Count)];
+            return cardDatabase.GetCardById(finalId);
+        }
+
+        return null;
     }
 
     // Alterna entre Tela Cheia e Modo Janela
