@@ -2,12 +2,8 @@ import json
 import os
 import random
 import re
-
-# --- CONFIGURAÇÃO DE CAMINHOS ---
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-STREAMING_ASSETS_DIR = os.path.join(BASE_DIR, "Assets", "StreamingAssets")
-CARDS_JSON_PATH = os.path.join(STREAMING_ASSETS_DIR, "cards.json")
-CHARACTERS_JSON_PATH = os.path.join(STREAMING_ASSETS_DIR, "characters.json")
+import tkinter as tk
+from tkinter import filedialog
 
 # --- CONFIGURAÇÃO DE POOLS (Para preenchimento/filler) ---
 ACT_POOL_RANGES = {
@@ -59,9 +55,30 @@ def format_list_custom(data_list, indent_level=4):
     return f"[\n{content}\n{base_indent}]"
 
 def main():
-    print("-> Carregando dados...")
-    cards = load_json(CARDS_JSON_PATH)
-    characters = load_json(CHARACTERS_JSON_PATH)
+    root = tk.Tk()
+    root.withdraw()
+
+    print("-> Selecione o arquivo cards.json...")
+    cards_json_path = filedialog.askopenfilename(
+        title="Selecione o arquivo cards.json",
+        filetypes=[("Arquivos JSON", "*.json"), ("Todos os Arquivos", "*.*")]
+    )
+    if not cards_json_path:
+        print("Seleção cancelada.")
+        return
+
+    print("-> Selecione o arquivo characters.json para ATUALIZAR as recompensas...")
+    characters_json_path = filedialog.askopenfilename(
+        title="Selecione o arquivo characters.json",
+        filetypes=[("Arquivos JSON", "*.json"), ("Todos os Arquivos", "*.*")]
+    )
+    if not characters_json_path:
+        print("Seleção cancelada.")
+        return
+
+    print(f"-> Carregando {os.path.basename(cards_json_path)} e {os.path.basename(characters_json_path)}...")
+    cards = load_json(cards_json_path)
+    characters = load_json(characters_json_path)
     
     if not cards or not characters:
         print("ERRO: Arquivos JSON não encontrados.")
@@ -103,10 +120,10 @@ def main():
         if unique_drops:
             sorted_uniques = sorted(unique_drops, key=lambda x: get_card_power(cards_map.get(x, {})), reverse=True)
             s_plus_card = sorted_uniques[0]
+            super_rares = sorted_uniques[1:]
         
         if not s_plus_card and reward_pool:
             sorted_by_power = sorted(reward_pool, key=lambda x: get_card_power(cards_map.get(x, {})), reverse=True)
-            super_rares = sorted_uniques[1:]
 
             for cid in sorted_by_power:
                 c_data = cards_map.get(cid, {})
@@ -183,8 +200,8 @@ def main():
         print(f"   [{char_id}] Rewards gerados. S+: {s_name} | Total Pool: {len(reward_pool)+1}")
 
     # --- SALVAMENTO COM FORMATAÇÃO CUSTOMIZADA ---
-    print("-> Salvando characters.json formatado (10 cartas/linha)...")
-    with open(CHARACTERS_JSON_PATH, 'w', encoding='utf-8') as f:
+    print(f"-> Salvando {os.path.basename(characters_json_path)} formatado (10 cartas/linha)...")
+    with open(characters_json_path, 'w', encoding='utf-8') as f:
         f.write("[\n")
         for i, char in enumerate(characters):
             f.write("  {\n")

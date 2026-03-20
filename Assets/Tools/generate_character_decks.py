@@ -2,12 +2,8 @@ import json
 import os
 import random
 import re
-
-# --- CONFIGURAÇÃO DE CAMINHOS ---
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-STREAMING_ASSETS_DIR = os.path.join(BASE_DIR, "Assets", "StreamingAssets")
-CARDS_JSON_PATH = os.path.join(STREAMING_ASSETS_DIR, "cards.json")
-CHARACTERS_JSON_PATH = os.path.join(STREAMING_ASSETS_DIR, "characters.json")
+import tkinter as tk
+from tkinter import filedialog
 
 # --- CONFIGURAÇÃO DE BALANCEAMENTO ---
 # Define quais pools estão disponíveis para cada Ato (1-10)
@@ -339,9 +335,30 @@ def generate_deck(char_id, act, difficulty_modifier, cards_by_pool, all_cards_ma
     return main_deck, extra_deck
 
 def main():
-    print("-> Carregando banco de dados...")
-    cards_data = load_json(CARDS_JSON_PATH)
-    characters_data = load_json(CHARACTERS_JSON_PATH)
+    root = tk.Tk()
+    root.withdraw()
+
+    print("-> Selecione o arquivo cards.json...")
+    cards_json_path = filedialog.askopenfilename(
+        title="Selecione o arquivo cards.json",
+        filetypes=[("Arquivos JSON", "*.json"), ("Todos os Arquivos", "*.*")]
+    )
+    if not cards_json_path:
+        print("Seleção cancelada.")
+        return
+
+    print("-> Selecione o arquivo characters.json para ATUALIZAR os decks...")
+    characters_json_path = filedialog.askopenfilename(
+        title="Selecione o arquivo characters.json",
+        filetypes=[("Arquivos JSON", "*.json"), ("Todos os Arquivos", "*.*")]
+    )
+    if not characters_json_path:
+        print("Seleção cancelada.")
+        return
+
+    print(f"-> Carregando {os.path.basename(cards_json_path)} e {os.path.basename(characters_json_path)}...")
+    cards_data = load_json(cards_json_path)
+    characters_data = load_json(characters_json_path)
     
     if not cards_data or not characters_data: return
     all_cards_map = {c["id"]: c for c in cards_data}
@@ -420,8 +437,8 @@ def main():
         
         print(f"   [{char['id']}] Ato {act} - (Main A: {len(char['deck_A'])}, Extra A: {len(char['extra_deck_A'])})")
 
-    print("-> Salvando characters.json formatado...")
-    with open(CHARACTERS_JSON_PATH, 'w', encoding='utf-8') as f:
+    print(f"-> Salvando {os.path.basename(characters_json_path)} formatado...")
+    with open(characters_json_path, 'w', encoding='utf-8') as f:
         f.write("[\n")
         for i, char in enumerate(characters_data):
             f.write("  {\n")

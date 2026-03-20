@@ -1,19 +1,16 @@
 import json
 import os
 import random
+import tkinter as tk
+from tkinter import filedialog
 
-# Configuração de Caminhos
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CHARACTERS_OUT = os.path.join(BASE_DIR, "Characters", "characters.json")
-CARDS_JSON = os.path.join(BASE_DIR, "Cards", "cards.json")
-
-def load_card_map():
+def load_card_map(cards_json_path):
     """Carrega o cards.json e cria um mapa de Nome -> ID"""
-    if not os.path.exists(CARDS_JSON):
-        print(f"[AVISO] cards.json não encontrado em: {CARDS_JSON}")
+    if not os.path.exists(cards_json_path):
+        print(f"[AVISO] cards.json não encontrado em: {cards_json_path}")
         return {}, []
     
-    with open(CARDS_JSON, 'r', encoding='utf-8') as f:
+    with open(cards_json_path, 'r', encoding='utf-8') as f:
         cards = json.load(f)
     
     # Retorna mapa {nome_lower: id} e lista de todos os IDs para preenchimento
@@ -144,8 +141,30 @@ def get_character_roster():
     ]
 
 def generate():
+    root = tk.Tk()
+    root.withdraw()
+
+    print("-> Selecione o arquivo cards.json...")
+    cards_json_path = filedialog.askopenfilename(
+        title="Selecione o arquivo cards.json",
+        filetypes=[("Arquivos JSON", "*.json"), ("Todos os Arquivos", "*.*")]
+    )
+    if not cards_json_path:
+        print("Seleção cancelada.")
+        return
+
+    print("-> Escolha onde salvar o characters.json (ex: StreamingAssets/characters.json)...")
+    characters_out_path = filedialog.asksaveasfilename(
+        title="Salvar characters.json como...",
+        defaultextension=".json",
+        filetypes=[("Arquivos JSON", "*.json"), ("Todos os Arquivos", "*.*")]
+    )
+    if not characters_out_path:
+        print("Seleção cancelada.")
+        return
+
     print("Carregando banco de cartas...")
-    card_map, all_ids = load_card_map()
+    card_map, all_ids = load_card_map(cards_json_path)
     print(f"Cartas carregadas: {len(card_map)}")
 
     roster = get_character_roster()
@@ -169,11 +188,11 @@ def generate():
         }
         final_characters.append(char_entry)
     
-    os.makedirs(os.path.dirname(CHARACTERS_OUT), exist_ok=True)
-    with open(CHARACTERS_OUT, 'w', encoding='utf-8') as f:
+    os.makedirs(os.path.dirname(characters_out_path), exist_ok=True)
+    with open(characters_out_path, 'w', encoding='utf-8') as f:
         json.dump(final_characters, f, indent=2)
         
-    print(f"Sucesso! {len(final_characters)} personagens gerados em {CHARACTERS_OUT}")
+    print(f"Sucesso! {len(final_characters)} personagens gerados em {characters_out_path}")
 
 if __name__ == "__main__":
     generate()
