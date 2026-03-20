@@ -1365,7 +1365,14 @@ public void ShuffleDeck(bool isPlayer)
 
             if (isPlayerTurn)
             {
-                yield return StartCoroutine(PlayerDiscardHandLimit(toDiscard));
+                if (isSimulating)
+                {
+                    for (int i = 0; i < toDiscard; i++) DiscardCard(playerHand[0].GetComponent<CardDisplay>());
+                }
+                else
+                {
+                    yield return StartCoroutine(PlayerDiscardHandLimit(toDiscard));
+                }
             }
             else
             {
@@ -1410,6 +1417,15 @@ public void ShuffleDeck(bool isPlayer)
     // --- SISTEMA DE MOEDAS ---
     public void TossCoin(int numberOfCoins, System.Action<int> onResult)
     {
+        if (isSimulating)
+        {
+            int headsCount = 0;
+            for (int i = 0; i < numberOfCoins; i++)
+                if (alwaysCoinHead || Random.value > 0.5f) headsCount++;
+            onResult?.Invoke(headsCount);
+            return;
+        }
+
         StartCoroutine(CoinTossRoutine(numberOfCoins, onResult));
     }
 
@@ -1465,6 +1481,14 @@ public void ShuffleDeck(bool isPlayer)
     // --- SISTEMA DE DADOS ---
     public void RollDice(int count, bool requireChoice, Action<List<int>> callback)
     {
+        if (isSimulating)
+        {
+            List<int> results = new List<int>();
+            for (int i = 0; i < count; i++) results.Add(alwaysDiceSix ? 6 : UnityEngine.Random.Range(1, 7));
+            callback?.Invoke(results);
+            return;
+        }
+
         Action<List<int>> interceptCallback = (results) => {
             if (CardEffectManager.Instance != null && CardEffectManager.Instance.HasActiveDiceReRoll(out bool isPlayerToss))
             {
@@ -1695,8 +1719,8 @@ public void ShuffleDeck(bool isPlayer)
 
     private IEnumerator EndDuelRoutine(bool playerWon, bool isDeckOut)
     {
-        // 1. Mostra a mensagem de WIN/LOSE
-        if (UIManager.Instance != null && UIManager.Instance.endDuelMessagePanel != null)
+        // 1. Mostra a mensagem de WIN/LOSE (Pula no modo simulador rápido para não atrasar)
+        if (!isSimulating && UIManager.Instance != null && UIManager.Instance.endDuelMessagePanel != null)
         {
             Transform winImg = UIManager.Instance.endDuelMessagePanel.transform.Find("ImageWin");
             Transform loseImg = UIManager.Instance.endDuelMessagePanel.transform.Find("ImageLose");
@@ -1707,11 +1731,11 @@ public void ShuffleDeck(bool isPlayer)
             UIManager.Instance.endDuelMessagePanel.SetActive(true);
         }
 
-        // Pausa dramática
-        yield return new WaitForSeconds(2.5f);
+        // Pausa dramática apenas se não estiver simulando
+        if (!isSimulating) yield return new WaitForSeconds(2.5f);
 
         // 2. Esconde a mensagem
-        if (UIManager.Instance != null && UIManager.Instance.endDuelMessagePanel != null)
+        if (!isSimulating && UIManager.Instance != null && UIManager.Instance.endDuelMessagePanel != null)
         {
             UIManager.Instance.endDuelMessagePanel.SetActive(false);
         }
@@ -1754,7 +1778,7 @@ public void ShuffleDeck(bool isPlayer)
                 }
             }
             
-            if (UIManager.Instance != null)
+            if (!isSimulating && UIManager.Instance != null)
             {
                 // Se venceu, passa o Rank real. Se perdeu, passa "LOSE" para a UI de Recompensas saber.
                 if (playerWon) 
@@ -2103,6 +2127,12 @@ public void ShuffleDeck(bool isPlayer)
     // Novo método para Special Summon que pede a posição
     public void PerformSpecialSummon(GameObject cardGO, CardData cardData)
     {
+        if (isSimulating)
+        {
+            FinalizeSummon(cardGO, cardData, false, true, false); // false = Face-Up
+            return;
+        }
+
         if (UIManager.Instance != null)
         {
             UIManager.Instance.ShowPositionSelection(cardData, (selectedPosition) =>
@@ -2667,6 +2697,13 @@ public void ShuffleDeck(bool isPlayer)
     // Método para Seleção Múltipla
     public void OpenCardMultiSelection(List<CardData> sourceList, string title, int min, int max, System.Action<List<CardData>> onSelected)
     {
+        if (isSimulating)
+        {
+            int count = Mathf.Max(min, 1);
+            onSelected?.Invoke(sourceList.Take(count).ToList());
+            return;
+        }
+
         // Verifica se a seleção é um subconjunto da mão do jogador e se a quantidade é fixa (min == max)
         // Isso permite usar a seleção direta da mão
         bool isHandSubset = sourceList.Count > 0 && sourceList.All(c => playerHand.Exists(go => go.GetComponent<CardDisplay>().CurrentCardData == c));

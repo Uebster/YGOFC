@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using MoonSharp.Interpreter;
+using System.Text.RegularExpressions;
 
 public enum CardLocation { Hand, Deck, Field, ExtraDeck, Graveyard, Banished, Unknown }
 public enum SendReason { Battle, Effect, Cost, Tribute, Destroyed, Discarded, Mill, Return, Rule, Unknown }
@@ -166,6 +167,7 @@ public class CardEffectManager : MonoBehaviour
             luaEngine.Globals["self_code"] = numericId;
 
             string scriptCode = System.IO.File.ReadAllText(scriptPath);
+            scriptCode = SanitizeOCGScript(scriptCode);
             luaEngine.DoString(scriptCode);
 
             DynValue initialEffect = selfTable.Table.Get("initial_effect");
@@ -183,6 +185,31 @@ public class CardEffectManager : MonoBehaviour
         }
         
         return null;
+    }
+
+    private string SanitizeOCGScript(string script)
+    {
+        // A engine do EDOPro atualizou para Lua 5.3, que possui operadores bit a bit nativos (&, |, <<, >>, ~).
+        // O MoonSharp roda em Lua 5.2, que não os entende nativamente e usa a biblioteca bit32.
+        // Esta função sanitiza o script em tempo de execução para evitar crash da Máquina Virtual.
+
+        // 1. Substitui o Bitwise OR (|) por adição (+). 
+        // Em flags hexadecimais de YGO (potências de 2), "a | b" é matematicamente igual a "a + b".
+        script = script.Replace("|", "+");
+
+        // 2. Substitui o Bitwise AND (&) por bit32.band()
+        string prev = "";
+        while (script != prev)
+        {
+            prev = script;
+            script = Regex.Replace(script, @"([a-zA-Z0-9_\.\:]+(?:\([^\)]*\))?)\s*&\s*([a-zA-Z0-9_\.\:]+(?:\([^\)]*\))?)", "bit32.band($1, $2)");
+        }
+
+        // 3. Bitwise Shifts (<< e >>) para garantir compatibilidade
+        script = Regex.Replace(script, @"([a-zA-Z0-9_\.\:]+)\s*<<\s*([0-9]+)", "bit32.lshift($1, $2)");
+        script = Regex.Replace(script, @"([a-zA-Z0-9_\.\:]+)\s*>>\s*([0-9]+)", "bit32.rshift($1, $2)");
+
+        return script;
     }
 
     public void ActivateCard(CardDisplay card, object triggerArgs, System.Action onComplete)

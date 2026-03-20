@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using System.Linq;
+using System.Collections;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -38,9 +40,19 @@ public class FullTestManager : MonoBehaviour
         if (testPanel != null) testPanel.SetActive(GameManager.Instance != null && GameManager.Instance.fullTestMode);
     }
 
-    void Start()
+    IEnumerator Start()
     {
-        if (GameManager.Instance == null) return;
+        // Aguarda a inicialização do GameManager (evita o erro do return prematuro que matava os botões)
+        while (GameManager.Instance == null) yield return null;
+
+        // Auto-atribuição de botões caso tenham se perdido no Inspector
+        Button[] allButtons = testPanel != null ? testPanel.GetComponentsInChildren<Button>(true) : GetComponentsInChildren<Button>(true);
+        if (btnCoin == null) btnCoin = allButtons.FirstOrDefault(b => b.name.Contains("Coin"));
+        if (btnDice == null) btnDice = allButtons.FirstOrDefault(b => b.name.Contains("Dice"));
+        if (btnClock == null) btnClock = allButtons.FirstOrDefault(b => b.name.Contains("Clock"));
+        if (btnSpawnCard == null) btnSpawnCard = allButtons.FirstOrDefault(b => b.name.Contains("Spawn"));
+        if (btnSimulateAttack == null) btnSimulateAttack = allButtons.FirstOrDefault(b => b.name.Contains("Attack"));
+        if (btnSimulateTrap == null) btnSimulateTrap = allButtons.FirstOrDefault(b => b.name.Contains("Trap"));
 
         // Configura Toggles baseados no GameManager
         if (tglAI) { tglAI.isOn = OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeSelf; tglAI.onValueChanged.AddListener(ToggleAI); }
@@ -144,6 +156,13 @@ public class FullTestManager : MonoBehaviour
 
     public void TestSpawnCard()
     {
+        // Se o UI de Busca começar desativado na cena, o Instance dele será nulo.
+        // Isso força a Unity a encontrá-lo mesmo desligado e ligá-lo à força!
+        if (GlobalCardSearchUI.Instance == null)
+        {
+            GlobalCardSearchUI.Instance = Resources.FindObjectsOfTypeAll<GlobalCardSearchUI>().FirstOrDefault();
+        }
+
         if (GlobalCardSearchUI.Instance != null)
         {
             GlobalCardSearchUI.Instance.Show("Gerar Carta na Mão (ID ou Nome)", (data) => {
@@ -154,10 +173,17 @@ public class FullTestManager : MonoBehaviour
                 }
             });
         }
+        else
+        {
+            Debug.LogError("[TestMode] ERRO: GlobalCardSearchUI não encontrado na cena! Verifique se ele foi apagado acidentalmente.");
+        }
     }
 
     public void TestSimulateAttack()
     {
+        if (SpellTrapManager.Instance == null)
+            SpellTrapManager.Instance = FindFirstObjectByType<SpellTrapManager>();
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection((t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"), (attacker) => {
@@ -176,6 +202,9 @@ public class FullTestManager : MonoBehaviour
 
     public void TestSimulateTrap()
     {
+        if (SpellTrapManager.Instance == null)
+            SpellTrapManager.Instance = FindFirstObjectByType<SpellTrapManager>();
+
         if (SpellTrapManager.Instance != null)
         {
             SpellTrapManager.Instance.StartTargetSelection((t) => t.isOnField && t.CurrentCardData.type.Contains("Trap") && t.isFlipped, (trap) => {

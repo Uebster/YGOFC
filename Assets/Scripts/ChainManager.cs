@@ -96,6 +96,12 @@ public class ChainManager : MonoBehaviour
                 {
                     if (currentPlayerIsPlayer)
                     {
+                        if (GameManager.Instance != null && GameManager.Instance.isSimulating)
+                        {
+                            playerPassed = true;
+                            continue;
+                        }
+                        
                         Debug.Log($"[ChainManager] Aguardando resposta do Jogador. {responses.Count} opções.");
                         // Espera a resposta do jogador humano
                         try 

@@ -67,6 +67,13 @@ public class LuaDuel
         return amount; // OCGCore geralmente retorna quantas cartas foram compradas
     }
 
+    // Verifica se o jogador tem cartas suficientes no deck para sacar
+    public bool IsPlayerCanDraw(int player, int amount = 0)
+    {
+        int deckCount = IsPlayer(player) ? GameManager.Instance.GetPlayerMainDeck().Count : GameManager.Instance.GetOpponentMainDeck().Count;
+        return deckCount >= (amount > 0 ? amount : 1);
+    }
+
     public int SendtoGrave(object target, int reason)
     {
         int count = 0;
@@ -174,6 +181,11 @@ public class LuaDuel
     {
         // No YGOPro, isso serve para dar dicas à IA e à UI sobre o que a carta vai fazer.
         // Para a nossa Unity, não precisamos fazer nada estrito aqui por enquanto.
+    }
+
+    public void RegisterEffect(LuaEffect e, int? player)
+    {
+        Debug.Log($"[Lua] Duel.RegisterEffect (Global) - Evento: {e.code}");
     }
 
     public void SetTargetPlayer(int p) { targetPlayer = p; }
@@ -565,8 +577,9 @@ public class LuaCard
         return GetControler() == playerIndex;
     }
 
-    public bool IsLocation(int loc) 
+    public bool IsLocation(int? locationVal) 
     { 
+        int loc = locationVal ?? 0;
         if (unityCard != null && unityCard.isOnField)
         {
             if (unityData.type.Contains("Spell") || unityData.type.Contains("Trap")) return (loc & 0x08) != 0;
@@ -598,8 +611,9 @@ public class LuaCard
         return unityData.type.Contains("Spell") || unityData.type.Contains("Trap");
     }
 
-    public bool IsType(int typeVal)
+    public bool IsType(int? t)
     {
+        int typeVal = t ?? 0;
         if (unityData == null) return false;
         if ((typeVal & 0x1) != 0 && unityData.type.Contains("Monster")) return true;
         if ((typeVal & 0x2) != 0 && unityData.type.Contains("Spell")) return true;
@@ -608,22 +622,22 @@ public class LuaCard
     }
 
     // Stubs para compatibilidade da API Lua
-    public bool IsAttribute(int attr) { return true; }
-    public bool IsAttackBelow(int atk) { return GetAttack() <= atk; }
-    public bool IsCanBeSpecialSummoned(object e, int sumtype, int sumplayer, bool nocheck, bool nolimit, int pos = 0) { return true; }
+    public bool IsAttribute(int? attr) { return true; }
+    public bool IsAttackBelow(int? atk) { return GetAttack() <= (atk ?? 0); }
+    public bool IsCanBeSpecialSummoned(object e, int? sumtype, int? sumplayer, bool nocheck, bool nolimit, int? pos = 0) { return true; }
     public bool IsReleasable() { return true; }
-    public bool IsPreviousControler(int p) { return true; }
+    public bool IsPreviousControler(int? p) { return true; }
     public bool IsAbleToHand() { return true; }
-    public bool IsPreviousPosition(int pos) { return true; }
+    public bool IsPreviousPosition(int? pos) { return true; }
     public bool IsDefensePos() { return unityCard != null && unityCard.position == CardDisplay.BattlePosition.Defense; }
     public bool IsSummonable(bool ignoreLimit, object param) { return true; }
     public bool IsMSetable(bool ignoreLimit, object param) { return true; }
     public LuaGroup GetEquipGroup() { return new LuaGroup(); }
     public int GetSequence() { return 0; }
-    public int GetFlagEffect(int id) { return 0; }
-    public void RegisterFlagEffect(int id, int reset, int prop, int count) { }
+    public int GetFlagEffect(int? id) { return 0; }
+    public void RegisterFlagEffect(int? id, int? reset, int? prop, int? count) { }
     public void SetCardTarget(LuaCard tc) { }
-    public bool IsStatus(int status) { return false; }
+    public bool IsStatus(int? status) { return false; }
     public LuaCard GetFirstCardTarget() { return null; }
     public void SetTurnCounter(int ct) { }
     public int GetLabel() { return 0; }
@@ -655,6 +669,7 @@ public class LuaEffect
     public int type;
     public int property;
     public string description;
+    public int category;
     
     public Closure conditionFunc;
     public Closure costFunc;
@@ -667,11 +682,23 @@ public class LuaEffect
         return new LuaEffect { owner = c };
     }
 
-    public void SetType(int t) { type = t; }
-    public void SetCode(int c) { code = c; }
-    public void SetProperty(int p) { property = p; }
-    public void SetDescription(string d) { description = d; }
+    public void SetType(int? t) { type = t ?? 0; }
+    public void SetCode(int? c) { code = c ?? 0; }
+    public void SetProperty(int? p1, int? p2 = null) { property = p1 ?? 0; }
+    public void SetDescription(object d) { description = d?.ToString() ?? ""; }
+    public void SetCategory(int? c) { category = c ?? 0; }
     
+    // Funções muito usadas no OCGCore na inicialização ignoradas elegantemente
+    public void SetCountLimit(int? count, int? code = null) { }
+    public void SetHintTiming(int? t1, int? t2 = null) { }
+    public void SetTargetRange(int? r1, int? r2 = null) { }
+    public void SetReset(int? r, int? c = null) { }
+    public void SetValue(object v) { }
+    public void SetLabel(int? l) { }
+    public int GetLabel() { return 0; }
+    public void SetLabelObject(object o) { }
+    public object GetLabelObject() { return null; }
+
     // Callbacks do Lua (Condição, Alvo, Resolução)
     public void SetCondition(Closure condition) { conditionFunc = condition; }
     public void SetCost(Closure cost) { costFunc = cost; }
@@ -746,7 +773,7 @@ public class LuaGroup
         }
         
         // --- BYPASS DE INTELIGÊNCIA ARTIFICIAL ---
-        if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
+        if (player != 0 && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
         {
             LuaGroup aiChoice = OpponentAI.Instance.SelectLuaTargets(this, min, max);
             CardEffectManager.Instance.yieldReturnValue = UserData.Create(aiChoice);

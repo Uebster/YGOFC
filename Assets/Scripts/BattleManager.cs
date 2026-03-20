@@ -250,7 +250,7 @@ public class BattleManager : MonoBehaviour
                 }
             };
 
-            if (GameManager.Instance != null && !GameManager.Instance.confirmAttackTarget)
+            if (GameManager.Instance != null && (!GameManager.Instance.confirmAttackTarget || GameManager.Instance.isSimulating))
             {
                 executeAttack();
             }
@@ -473,7 +473,7 @@ public class BattleManager : MonoBehaviour
              }
         };
 
-        if (GameManager.Instance != null && !GameManager.Instance.confirmAttackTarget)
+        if (GameManager.Instance != null && (!GameManager.Instance.confirmAttackTarget || GameManager.Instance.isSimulating))
         {
             executeAttack();
         }
@@ -1170,7 +1170,7 @@ public class BattleManager : MonoBehaviour
             card.hasChangedPositionThisTurn = true;
         };
 
-        if (GameManager.Instance != null && !GameManager.Instance.confirmBattlePositionChange)
+        if (GameManager.Instance != null && (!GameManager.Instance.confirmBattlePositionChange || GameManager.Instance.isSimulating))
         {
             executeChange();
         }
