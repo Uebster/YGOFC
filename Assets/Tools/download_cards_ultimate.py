@@ -566,6 +566,22 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
             progresso["status"] = "Baixando Scripts Lua (Multi-Thread)..."
             os.makedirs(lua_dir, exist_ok=True)
 
+            # Baixa os arquivos base (A "Bíblia" de Constantes e Utilitários)
+            try:
+                const_url = "https://raw.githubusercontent.com/ProjectIgnis/CardScripts/master/constant.lua"
+                r_const = requests.get(const_url, timeout=10)
+                if r_const.status_code == 200:
+                    with open(os.path.join(folder, "constant.lua"), 'w', encoding='utf-8') as f: f.write(r_const.text)
+                    progresso["log"].append("✓ constant.lua (Docs) atualizado!")
+                
+                util_url = "https://raw.githubusercontent.com/ProjectIgnis/CardScripts/master/utility.lua"
+                r_util = requests.get(util_url, timeout=10)
+                if r_util.status_code == 200:
+                    with open(os.path.join(folder, "utility.lua"), 'w', encoding='utf-8') as f: f.write(r_util.text)
+                    progresso["log"].append("✓ utility.lua (Docs) atualizado!")
+            except Exception as e:
+                warnings_list.append(f"Falha ao baixar arquivos base (constant.lua / utility.lua): {e}")
+
             for i, c in enumerate(cards, 1): c['custom_id'] = i
             completed = 0
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
