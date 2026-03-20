@@ -1,367 +1,178 @@
+// Assets/Scripts/CardEffectManager.cs
 using UnityEngine;
 using System.Collections.Generic;
 
 public enum CardLocation { Hand, Deck, Field, ExtraDeck, Graveyard, Banished, Unknown }
 public enum SendReason { Battle, Effect, Cost, Tribute, Destroyed, Discarded, Mill, Return, Rule, Unknown }
 
-public partial class CardEffectManager : MonoBehaviour
+public class CardEffectManager : MonoBehaviour
 {
     public static CardEffectManager Instance;
 
     public enum TargetType { Monster, Spell, Trap, Any }
 
-    // Mapeia ID da carta -> Função de efeito
-    private Dictionary<string, System.Action<CardDisplay>> effectDatabase;
-
-    // Lista para reviver monstros na próxima Standby Phase (Vampire Lord, etc)
-    public List<CardData> reviveNextStandby = new List<CardData>();
-
-    public List<CardData> pharaohsTreasureCards = new List<CardData>();
+    // Dicionário de zonas físicas bloqueadas (ex: Ojama King)
+    public Dictionary<CardDisplay, List<Transform>> blockedZonesByCard = new Dictionary<CardDisplay, List<Transform>>();
 
     void Awake()
     {
         Instance = this;
-        InitializeEffects();
+        // O Interpretador MoonSharp LUA será inicializado aqui no futuro!
     }
 
-    void AddEffect(string id, System.Action<CardDisplay> effect)
-    {
-        if (!effectDatabase.ContainsKey(id))
-        {
-            effectDatabase.Add(id, effect);
-        }
-        else
-        {
-            Debug.LogWarning($"Tentativa de registrar efeito duplicado para ID: {id}");
-        }
-    }
-
-    // Método principal chamado pelo GameManager/ChainManager
     public bool ExecuteCardEffect(CardDisplay card)
     {
         if (card == null || card.CurrentCardData == null) return false;
+        
+        Debug.Log($"[API] Preparando para executar script LUA para: {card.CurrentCardData.name}");
+        // A lógica de ler o .lua da pasta e rodar virá no próximo passo!
+        return false;
+    }
 
-        string id = card.CurrentCardData.id;
+    // --- HOOKS DA ENGINE (O LUA VAI SE INSCREVER NELES DEPOIS) ---
+    public void OnSummon(CardDisplay card) { }
+    public void OnSet(CardDisplay card) { }
+    public void OnBattlePositionChanged(CardDisplay card) { }
+    public void OnDamageDealt(CardDisplay attacker, CardDisplay target, int amount) { }
+    public void OnCounterTrapResolved(CardDisplay trap) { }
+    public void OnCardAddedToHand(CardDisplay card) { }
+    public void OnTribute(CardDisplay card) { }
+    public void OnCardDiscarded(CardDisplay card, bool causedByOpponent) { }
+    public void OnCardDrawn(CardData card, bool isPlayer) { }
+    public void OnSpecialSummon(CardDisplay card) { }
+    public void OnControlSwitched(CardDisplay card) { }
+    public void OnPhaseStart(GamePhase phase) { if (phase == GamePhase.End) CleanAllExpiredModifiers(); }
+    public void OnPreDrawPhase(bool isPlayerTurn, System.Action onContinue) { onContinue?.Invoke(); }
+    public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, SendReason reason) { }
+    public void OnDamageTaken(bool isPlayer, int amount) { }
+    public void OnLifePointsGained(bool isPlayer, int amount) { }
+    public void OnCardEquipped(CardDisplay equip, CardDisplay target) { }
+    public void OnSpellActivated(CardDisplay spell) { }
 
-        // --- VERIFICAÇÕES DE NEGAÇÃO CONTÍNUA ---
-
-        // 1655 - Skill Drain: Nega efeitos de monstros face-up no campo
-        if (card.CurrentCardData.type.Contains("Monster") && card.isOnField && !card.isFlipped)
+    public void OnCardLeavesField(CardDisplay card)
+    {
+        // Limpeza Genérica Obrigatória (Isso continua sendo C# nativo para não bugar a engine)
+        if (GameManager.Instance.duelFieldUI != null)
         {
-            if (GameManager.Instance.IsCardActiveOnField("1655"))
+            List<Transform> allZones = new List<Transform>();
+            allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
+            allZones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+            foreach (var zone in allZones)
             {
-                Debug.Log($"Efeito de {card.CurrentCardData.name} negado por Skill Drain.");
-                return false;
-            }
-        }
-
-        // 1858 - The End of Anubis: Nega efeitos de cartas no Cemitério
-        if (card.isInPile && (GameManager.Instance.GetPlayerGraveyard().Contains(card.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(card.CurrentCardData)))
-        {
-            if (GameManager.Instance.IsCardActiveOnField("1858"))
-            {
-                Debug.Log($"Efeito de {card.CurrentCardData.name} no GY negado por The End of Anubis.");
-                return false;
-            }
-        }
-
-        // 1460 - Prohibition
-        if (GameManager.Instance.prohibitedCards.Contains(card.CurrentCardData.name))
-        {
-            Debug.Log($"Efeito de {card.CurrentCardData.name} negado por Prohibition.");
-            return false;
-        }
-
-        // 1489 - Rare Metalmorph: Nega magia que dê alvo
-        if (card.CurrentCardData.type.Contains("Spell") && ChainManager.Instance != null)
-        {
-            var link = ChainManager.Instance.GetLastChainLink();
-            if (link != null && link.target != null)
-            {
-                bool protectedByMetalmorph = false;
-                CardDisplay metalmorphCard = null;
-                CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
-                foreach (var cl in links) {
-                    if (cl.target == link.target && cl.source != null && cl.source.CurrentCardData.id == "1489" && cl.source.spellCounters == 0) {
-                        protectedByMetalmorph = true;
-                        metalmorphCard = cl.source;
-                        break;
-                    }
-                }
-                if (protectedByMetalmorph) {
-                    Debug.Log("Rare Metalmorph: Anulando efeito de magia que deu alvo!");
-                    metalmorphCard.spellCounters = 1; // Registra o uso único
-                    return false;
-                }
-            }
-        }
-
-        // 1443 - Pole Position
-        if (card.CurrentCardData.type.Contains("Spell") && ChainManager.Instance != null)
-        {
-            var link = ChainManager.Instance.GetLastChainLink();
-            if (link != null && link.target != null && link.target.CurrentCardData.type.Contains("Monster"))
-            {
-                if (GameManager.Instance.IsCardActiveOnField("1443") || GameManager.Instance.IsCardActiveOnField("Pole Position"))
+                if (zone.childCount > 0)
                 {
-                    int maxAtk = -1;
-                    List<CardDisplay> all = new List<CardDisplay>();
-                    if (GameManager.Instance.duelFieldUI != null) {
-                        CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, all);
-                        CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, all);
-                    }
-                    foreach(var m in all) if (!m.isFlipped && m.currentAtk > maxAtk) maxAtk = m.currentAtk;
-                    if (link.target.currentAtk == maxAtk) {
-                        Debug.Log("Pole Position: Magia negada pois o alvo é o monstro com maior ATK.");
-                        return false;
-                    }
-                }
-
-                // 1357 - Non-Spellcasting Area
-                if (GameManager.Instance.IsCardActiveOnField("1357") || GameManager.Instance.IsCardActiveOnField("Non-Spellcasting Area"))
-                {
-                    if (link.target.CurrentCardData.type.Contains("Normal") && !link.target.CurrentCardData.type.Contains("Effect"))
-                    {
-                        Debug.Log("Non-Spellcasting Area: Magia direcionada a um Monstro Normal negada.");
-                        return false;
-                    }
+                    CardDisplay target = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (target != null) target.RemoveModifiersFromSource(card);
                 }
             }
         }
 
-        // 2117 - Xing Zhen Hu
-        if (card.CurrentCardData.type.Contains("Spell") || card.CurrentCardData.type.Contains("Trap"))
+        // Destrói equipamentos físicos que dependem desta carta
+        CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        foreach (var link in links)
         {
-            CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
-            foreach (var cl in links) {
-                if (cl.target == card && cl.source != null && cl.source.CurrentCardData.id == "2117") {
-                    Debug.Log("Ativação de S/T bloqueada por Xing Zhen Hu.");
-                    return false;
-                }
-            }
-        }
-
-        if (effectDatabase.ContainsKey(id))
-        {
-            Debug.Log($"Executando efeito da carta: {card.CurrentCardData.name} (ID: {id})");
-            effectDatabase[id].Invoke(card);
-            return true;
-        }
-        else
-        {
-            // Debug.LogWarning($"Efeito não implementado para: {card.CurrentCardData.name} (ID: {id})");
-            return false;
-        }
-    }
-
-    public void OnSummon(CardDisplay card) { OnSummonImpl(card); }
-    public void OnSet(CardDisplay card) { OnSetImpl(card); }
-
-    public void OnBattlePositionChanged(CardDisplay card) { OnBattlePositionChangedImpl(card); }
-    public void OnDamageDealt(CardDisplay attacker, CardDisplay target, int amount) { OnDamageDealtImpl(attacker, target, amount); }
-    public void OnCounterTrapResolved(CardDisplay trap) { OnCounterTrapResolvedImpl(trap); }
-    public void OnCardAddedToHand(CardDisplay card) { OnCardAddedToHandImpl(card); }
-    public void OnTribute(CardDisplay card) { OnTributeImpl(card); }
-    public void OnCardDiscarded(CardDisplay card, bool causedByOpponent) { OnCardDiscardedImpl(card, causedByOpponent); }
-    public void OnCardDrawn(CardData card, bool isPlayer) { OnCardDrawnImpl(card, isPlayer); }
-    public void OnSpecialSummon(CardDisplay card) { OnSpecialSummonImpl(card); }
-    public void OnPreDrawPhase(bool isPlayerTurn, System.Action onContinue) { OnPreDrawPhaseImpl(isPlayerTurn, onContinue); }
-    public void OnControlSwitched(CardDisplay card) { OnControlSwitchedImpl(card); }
-
-    // --- VALIDAÇÕES DE REGRAS DE EFEITO ---
-
-    public bool invertDecks = false; // Para Convulsion of Nature (0327)
-
-    public string dnaTransplantDeclaredType = ""; // Para DNA Transplant (0391)
-
-    public bool CheckChainEnergy(bool isPlayer)
-    {
-        if (GameManager.Instance.IsCardActiveOnField("0284")) // Chain Energy
-        {
-            if (!GameManager.Instance.PayLifePoints(isPlayer, 500))
+            if (link.target == card && link.type == CardLink.LinkType.Equipment && link.source != null && link.source.isOnField)
             {
-                Debug.Log("Chain Energy: LP insuficientes para realizar a ação.");
-                return false;
+                GameManager.Instance.SendToGraveyard(link.source.CurrentCardData, link.source.isPlayerCard);
+                Destroy(link.source.gameObject);
             }
         }
-        return true;
-    }
 
-    public bool CheckSpatialCollapse(bool isPlayer)
-    {
-        if (GameManager.Instance.IsCardActiveOnField("1716")) // Spatial Collapse
+        // Libera zonas bloqueadas por cartas contínuas
+        if (blockedZonesByCard.ContainsKey(card))
         {
-            if (GameManager.Instance.GetFieldCardCount(isPlayer) >= 5)
-            {
-                Debug.LogWarning("Spatial Collapse: Limite de 5 cartas no campo atingido.");
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public bool CheckRivalryOfWarlords(bool isPlayer, string newRace)
-    {
-        if (GameManager.Instance.IsCardActiveOnField("1541")) // Rivalry of Warlords
-        {
-            bool conflict = false;
             if (GameManager.Instance.duelFieldUI != null)
             {
-                Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
-                foreach (var z in zones)
-                {
-                    if (z.childCount > 0)
-                    {
-                        var m = z.GetChild(0).GetComponent<CardDisplay>();
-                        if (m != null && m.CurrentCardData.race != newRace) conflict = true;
-                    }
-                }
+                foreach (var z in blockedZonesByCard[card]) GameManager.Instance.duelFieldUI.UnblockZone(z);
             }
-            if (conflict) 
-            { 
-                Debug.LogWarning($"Rivalry of Warlords: Você só pode controlar 1 Tipo. Tentativa: {newRace}."); 
-                return false; 
+            blockedZonesByCard.Remove(card);
+        }
+    }
+
+    // --- HOOKS DE BATALHA ---
+    public void OnAttackDeclared(CardDisplay attacker, CardDisplay target, System.Action onContinue) { onContinue?.Invoke(); }
+    public void OnDamageCalculation(CardDisplay attacker, CardDisplay target, System.Action onContinue) { onContinue?.Invoke(); }
+    public void OnBattleEnd(CardDisplay attacker, CardDisplay target) { }
+    public bool CanDeclareAttack(CardDisplay attacker) { return true; }
+    public bool IsAttackPreventedByContinuousEffect(CardDisplay attacker) { return false; }
+    public bool IsAttackRestricted(CardDisplay attacker) { return false; }
+
+    // --- REGRAS CONTÍNUAS GLOBAIS ---
+    public bool IsSummonRestricted(bool isSpecialSummon) { return false; }
+    public bool ShouldBanishInsteadOfGraveyard() { return false; }
+    public string GetEffectiveRace(CardDisplay card) { return !string.IsNullOrEmpty(card.temporaryRace) ? card.temporaryRace : (card.isTrapMonster ? card.trapMonsterRace : card.CurrentCardData.race); }
+    public string GetEffectiveAttribute(CardDisplay card) { return !string.IsNullOrEmpty(card.temporaryAttribute) ? card.temporaryAttribute : (card.isTrapMonster ? card.trapMonsterAttribute : card.CurrentCardData.attribute); }
+    public bool HasAttribute(CardDisplay card, string attribute) { return GetEffectiveAttribute(card).Equals(attribute, System.StringComparison.OrdinalIgnoreCase); }
+    public bool CheckChainEnergy(bool isPlayer) { return true; }
+    public bool CheckSpatialCollapse(bool isPlayer) { return true; }
+    public bool CheckRivalryOfWarlords(bool isPlayer, string newRace) { return true; }
+    public bool IsFusionSubstitute(string cardIdOrName) { return false; }
+
+    // --- HELPERS E UTILITÁRIOS (A PONTE LUA VAI CHAMÁ-LOS) ---
+
+    public void Effect_DirectDamage(CardDisplay source, int amount)
+    {
+        if (source.isPlayerCard) GameManager.Instance.DamageOpponent(amount);
+        else GameManager.Instance.DamagePlayer(amount);
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDamageEffect(Vector3.zero);
+    }
+
+    public void Effect_GainLP(CardDisplay source, int amount)
+    {
+        GameManager.Instance.GainLifePoints(source.isPlayerCard, amount);
+    }
+
+    public bool Effect_PayLP(CardDisplay source, int amount)
+    {
+        return GameManager.Instance.PayLifePoints(source.isPlayerCard, amount);
+    }
+
+    public List<CardDisplay> GetEquippedCards(CardDisplay target)
+    {
+        List<CardDisplay> equipped = new List<CardDisplay>();
+        CardLink[] links = Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        foreach (var link in links)
+            if (link.target == target && link.type == CardLink.LinkType.Equipment && link.source != null)
+                equipped.Add(link.source);
+        return equipped;
+    }
+
+    public void CleanAllExpiredModifiers()
+    {
+        if (GameManager.Instance.duelFieldUI == null) return;
+        List<Transform> allZones = new List<Transform>();
+        allZones.AddRange(GameManager.Instance.duelFieldUI.playerMonsterZones);
+        allZones.AddRange(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+
+        foreach (var zone in allZones)
+        {
+            if (zone.childCount > 0)
+            {
+                CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (cd != null) cd.CleanExpiredModifiers();
             }
         }
-        return true;
     }
 
-    /// <summary>
-    /// Retorna verdadeiro se a carta possuir o dom de substituir 1 material de fusão nomeado.
-    /// </summary>
-    public bool IsFusionSubstitute(string cardIdOrName)
-    {
-        string[] subs = { "0781", "1019", "1315", "2037", "1850", "1856", "1877", "King of the Swamp", "Goddess with the Third Eye", "Mystical Sheep #1", "Versago the Destroyer", "The Dark - Hex-Sealed Fusion", "The Earth - Hex-Sealed Fusion", "The Light - Hex-Sealed Fusion" };
-        return System.Array.Exists(subs, element => element == cardIdOrName);
-    }
-
-    // --- HELPERS DE SISTEMAS GLOBAIS (MINIGAMES) ---
-
-    /// <summary>
-    /// Rola um ou mais dados (1 a 6) e retorna a lista de resultados no callback.
-    /// Prepara o terreno para futura UI de dados 3D.
-    /// </summary>
     public void RollDice(int amount, System.Action<List<int>> onResult)
     {
         List<int> results = new List<int>();
         for (int i = 0; i < amount; i++) results.Add(Random.Range(1, 7));
-        // TODO: Chamar GameManager.Instance.ShowDiceUI(results, onResult) no futuro
         onResult?.Invoke(results);
     }
 
-    /// <summary>
-    /// Ativa o sistema visual de relógio e contagem regressiva em uma carta.
-    /// </summary>
     public void SetClockCounter(CardDisplay target, int turns)
     {
-        if (target == null) return;
-        target.turnCounter = turns; // O setter do turnCounter já aciona o UpdateTurnClockVisual nativamente
+        if (target != null) target.turnCounter = turns; 
     }
 
-    /// <summary>
-    /// Processa o tick de um relógio visualmente chamando o painel central, e depois aplica a lógica de continuidade.
-    /// Uso recomendado dentro de OnPhaseStart para decrementar Espadas da Luz Reveladora, etc.
-    /// </summary>
     public void TickClock(CardDisplay card, System.Action onComplete)
     {
         if (card == null || card.turnCounter <= 0) { onComplete?.Invoke(); return; }
-
         int oldTurns = card.turnCounter;
-        card.turnCounter--; // Decrementa os dados
-
+        card.turnCounter--; 
         if (GameManager.Instance != null && GameManager.Instance.turnClockUI != null && GameManager.Instance.enableTurnClockVisuals)
-        {
             GameManager.Instance.turnClockUI.AnimateTick(card.CurrentCardData.name, oldTurns, card.turnCounter, card.maxTurnCounter, onComplete);
-        }
-        else { onComplete?.Invoke(); }
-    }
-
-    // Métodos de Eventos (Implementados em CardEffectManager_Impl.cs)
-    // public void OnPhaseStart(GamePhase phase);
-    // public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer);
-    // public void OnSpecialSummon(CardDisplay summonedCard);
-    // public void OnDamageTaken(bool isPlayer, int amount);
-    // public void OnCardLeavesField(CardDisplay card);
-    // public bool IsAttackRestricted(CardDisplay attacker);
-    // public void OnAttackDeclared(CardDisplay attacker, CardDisplay target, System.Action onContinue);
-    // public void OnDamageCalculation(CardDisplay attacker, CardDisplay target);
-    // public void OnBattleEnd(CardDisplay attacker, CardDisplay target);
-    // public void OnLifePointsGained(bool isPlayer, int amount);
-    partial void OnSummonImpl(CardDisplay card);
-    partial void OnSetImpl(CardDisplay card);
-    partial void OnBattlePositionChangedImpl(CardDisplay card);
-    partial void OnCounterTrapResolvedImpl(CardDisplay trap);
-    partial void OnCardAddedToHandImpl(CardDisplay card);
-    partial void OnTributeImpl(CardDisplay card);
-    partial void OnCardDiscardedImpl(CardDisplay card, bool causedByOpponent);
-    partial void OnSpecialSummonImpl(CardDisplay card);
-    partial void OnCardDrawnImpl(CardData card, bool isPlayer);
-    partial void OnPreDrawPhaseImpl(bool isPlayerTurn, System.Action onContinue);
-    partial void OnControlSwitchedImpl(CardDisplay card);
-
-    void DestroyAllMonsters(bool targetOpponent, bool targetPlayer)
-    {
-        List<CardDisplay> toDestroy = new List<CardDisplay>();
-        if (GameManager.Instance.duelFieldUI != null)
-        {
-            if (targetPlayer) CollectMonsters(GameManager.Instance.duelFieldUI.playerMonsterZones, toDestroy);
-            if (targetOpponent) CollectMonsters(GameManager.Instance.duelFieldUI.opponentMonsterZones, toDestroy);
-        }
-        foreach (var monster in toDestroy)
-        {
-            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(monster);
-            GameManager.Instance.SendToGraveyard(monster.CurrentCardData, monster.isPlayerCard);
-            Destroy(monster.gameObject);
-        }
-    }
-
-    void CollectCards(Transform[] zones, List<CardDisplay> list)
-    {
-        foreach (var zone in zones)
-        {
-            if (zone != null && zone.childCount > 0)
-            {
-                var cd = zone.GetChild(0).GetComponent<CardDisplay>();
-                if (cd != null) list.Add(cd);
-            }
-        }
-    }
-
-    void DestroyCards(List<CardDisplay> cards, bool isPlayerSource)
-    {
-        // 1401 - Pandemonium Watchbear (Proteção)
-        cards.RemoveAll(c => c.CurrentCardData.name == "Pandemonium" && GameManager.Instance.IsCardActiveOnField("1401"));
-
-        foreach (var card in cards)
-        {
-            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
-            GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
-            Destroy(card.gameObject);
-        }
-    }
-
-    void CollectMonsters(Transform[] zones, List<CardDisplay> list)
-    {
-        foreach (var zone in zones)
-        {
-            if (zone.childCount > 0)
-            {
-                var cd = zone.GetChild(0).GetComponent<CardDisplay>();
-                if (cd != null) list.Add(cd);
-            }
-        }
-    }
-
-    bool IsValidTarget(CardDisplay target, TargetType type)
-    {
-        if (!target.isOnField) return false;
-        switch (type)
-        {
-            case TargetType.Monster: return target.CurrentCardData.type.Contains("Monster");
-            case TargetType.Spell: return target.CurrentCardData.type.Contains("Spell");
-            case TargetType.Trap: return target.CurrentCardData.type.Contains("Trap");
-            case TargetType.Any: return true;
-            default: return false;
-        }
+        else onComplete?.Invoke(); 
     }
 }
