@@ -7,6 +7,8 @@ import json as json_lib
 import csv
 import concurrent.futures
 import zipfile
+import re
+import shutil
 
 app = Flask(__name__)
 
@@ -76,6 +78,9 @@ HTML_UI = """
 
         .purple-btn { color: var(--purple); border-color: var(--purple); box-shadow: inset 0 0 8px rgba(181,55,242,0.3), 0 0 8px rgba(181,55,242,0.3); text-shadow: 0 0 5px var(--purple); }
         .purple-btn:hover { background: var(--purple); box-shadow: inset 0 0 20px var(--purple), 0 0 20px var(--purple); }
+        
+        .orange-btn { color: #ff9d00; border-color: #ff9d00; box-shadow: inset 0 0 8px rgba(255,157,0,0.3), 0 0 8px rgba(255,157,0,0.3); text-shadow: 0 0 5px #ff9d00; }
+        .orange-btn:hover { background: #ff9d00; box-shadow: inset 0 0 20px #ff9d00, 0 0 20px #ff9d00; color: #000 !important; }
 
         .red-btn { color: var(--red); border-color: var(--red); box-shadow: inset 0 0 8px rgba(255,7,58,0.3), 0 0 8px rgba(255,7,58,0.3); text-shadow: 0 0 5px var(--red); }
         .red-btn:hover { background: var(--red); box-shadow: inset 0 0 20px var(--red), 0 0 20px var(--red); color: #fff !important; }
@@ -84,7 +89,6 @@ HTML_UI = """
         .btn-small { padding: 10px; font-size: 0.8em; border-width: 1px;}
         
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;}
-        .btn-grid > :nth-child(7) { grid-column: span 2; } /* Botão Zip Ocupa tudo */
 
         /* TXT Options Block */
         #txt_options { background: #050505; padding: 20px; border-radius: 12px; border: 1px solid #222; margin-top: auto; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); flex-grow: 1; display: flex; flex-direction: column;}
@@ -185,6 +189,7 @@ HTML_UI = """
                     <button class="action-btn purple-btn" onclick="startTask('lua')">5. Scripts LUA</button>
                     <button class="action-btn green-btn" onclick="startTask('audit')">6. Auditoria</button>
                     <button class="action-btn cyan-btn" onclick="startTask('zip')">7. Zipar Backup</button>
+                    <button class="action-btn orange-btn" onclick="startTask('retry')">8. Repetir Erros</button>
                 </div>
 
                 <button class="action-btn red-btn" onclick="cancelProcess()">Parar Operação Ativa</button>
@@ -273,6 +278,7 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
     cancel_task = False
     progresso = {"atual": 0, "total": 0, "status": "Iniciando...", "card": "", "log": []}
     errors_list = []
+    warnings_list = []
     
     if not os.path.exists(folder): os.makedirs(folder)
     headers = {'User-Agent': 'Mozilla/5.0'}
@@ -292,6 +298,87 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
         cards.sort(key=lambda x: x['name'])
         total = len(cards)
         progresso["total"] = total
+
+        images_folder = os.path.join(folder, "Images")
+        alt_folder = os.path.join(images_folder, "Alt_Arts")
+        lua_dir = os.path.join(folder, "LuaScripts")
+
+        def download_image(c):
+            if cancel_task: return
+            name_raw = c['name']
+            clean_name = "".join([char for char in name_raw if char not in r'<>:"/\\|?*'])
+            custom_id = f"{c['custom_id']:04d}"
+
+            images = c.get('card_images', [])
+            for idx, img_info in enumerate(images):
+                img_url = img_info.get('image_url', '')
+                if not img_url: continue
+
+                if idx == 0: path = os.path.join(images_folder, f"{custom_id} - {clean_name}.jpg")
+                else: path = os.path.join(alt_folder, f"{custom_id}_Alt{idx} - {clean_name}.jpg")
+
+                if not os.path.exists(path):
+                    for attempt in range(3):
+                        try:
+                            img_data = requests.get(img_url, headers=headers, timeout=10).content
+                            with open(path, 'wb') as f: f.write(img_data)
+                            progresso["log"].append(f"✓ IMG: {custom_id}" + (" (Alt)" if idx > 0 else ""))
+                            if idx > 0: warnings_list.append(f"[{custom_id}] {name_raw}: Arte Alternativa baixada (Alt {idx}).")
+                            break
+                        except Exception as e:
+                            if attempt == 2:
+                                progresso["log"].append(f"✗ IMG FALHA: {custom_id}")
+                                errors_list.append(f"[{custom_id}] Falha de Rede IMG ({name_raw}): {e}")
+                            else:
+                                time.sleep(2 * (attempt + 1)) # Espera 2s, depois 4s
+                else:
+                    progresso["log"].append(f"✓ IMG Existe: {custom_id}" + (" (Alt)" if idx > 0 else ""))
+
+        def download_lua(c):
+            if cancel_task: return
+            name_raw = c.get('name', 'Unknown')
+            custom_id = f"{c['custom_id']:04d}"
+            official_id = str(c.get('id', ''))
+            tipo_api = c.get('type', '')
+
+            if "Normal Monster" in tipo_api and "Effect" not in tipo_api: return
+
+            lua_path = os.path.join(lua_dir, f"c{custom_id}.lua")
+            if os.path.exists(lua_path):
+                progresso["log"].append(f"✓ Lua Existe: c{custom_id}.lua")
+                return
+
+            possible_ids = [official_id]
+            for img in c.get('card_images', []):
+                img_id = str(img.get('id', ''))
+                if img_id and img_id not in possible_ids: possible_ids.append(img_id)
+
+            success = False
+            successful_id = ""
+
+            for try_id in possible_ids:
+                if success: break
+                for base_url in LUA_URLS:
+                    if success: break
+                    for attempt in range(3):
+                        try:
+                            r = requests.get(base_url.format(try_id), timeout=5)
+                            if r.status_code == 200:
+                                with open(lua_path, 'w', encoding='utf-8') as f: f.write(r.text)
+                                success = True
+                                successful_id = try_id
+                                break
+                            elif r.status_code == 404: break # Ignora retentativa se o arquivo não existe lá
+                        except requests.exceptions.RequestException: time.sleep(1.5 * (attempt + 1))
+            
+            if success:
+                extra = f" (Alt ID: {successful_id})" if successful_id != official_id else ""
+                progresso["log"].append(f"✓ Lua: c{custom_id}.lua{extra}")
+                if successful_id != official_id:
+                    warnings_list.append(f"[{custom_id}] {name_raw}: LUA corrigido! Usou ID de arte alternativa ({successful_id}).")
+            else:
+                progresso["log"].append(f"✗ Falha LUA: {custom_id}")
+                errors_list.append(f"[{custom_id}] LUA não encontrado: {name_raw} (IDs Testados: {', '.join(possible_ids)})")
 
         if tipo == 'txt':
             if not txt_cols:
@@ -461,42 +548,8 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
 
         elif tipo == 'img':
             progresso["status"] = "Baixando Imagens (Multi-Thread)..."
-            images_folder = os.path.join(folder, "Images")
-            alt_folder = os.path.join(images_folder, "Alt_Arts")
             os.makedirs(images_folder, exist_ok=True)
             os.makedirs(alt_folder, exist_ok=True)
-
-            def download_image(c):
-                if cancel_task: return
-                name_raw = c['name']
-                clean_name = "".join([char for char in name_raw if char not in r'<>:"/\\|?*'])
-                custom_id = f"{c['custom_id']:04d}"
-
-                images = c.get('card_images', [])
-                for idx, img_info in enumerate(images):
-                    img_url = img_info.get('image_url', '')
-                    if not img_url: continue
-
-                    if idx == 0: path = os.path.join(images_folder, f"{custom_id} - {clean_name}.jpg")
-                    else:
-                        # Salva Artes Alternativas
-                        path = os.path.join(alt_folder, f"{custom_id}_Alt{idx} - {clean_name}.jpg")
-
-                    if not os.path.exists(path):
-                        # Sistema de Retry Inteligente (Tenta 3 vezes antes de dar erro)
-                        for attempt in range(3):
-                            try:
-                                img_data = requests.get(img_url, headers=headers, timeout=10).content
-                                with open(path, 'wb') as f: f.write(img_data)
-                                progresso["log"].append(f"✓ IMG: {custom_id}" + (" (Alt)" if idx > 0 else ""))
-                                break
-                            except Exception as e:
-                                if attempt == 2:
-                                    progresso["log"].append(f"✗ IMG FALHA: {custom_id}")
-                                    errors_list.append(f"Falha de Rede ({name_raw}): {e}")
-                                time.sleep(1)
-                    else:
-                        progresso["log"].append(f"✓ IMG Existe: {custom_id}" + (" (Alt)" if idx > 0 else ""))
 
             for i, c in enumerate(cards, 1): c['custom_id'] = i
             completed = 0
@@ -511,40 +564,7 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
 
         elif tipo == 'lua':
             progresso["status"] = "Baixando Scripts Lua (Multi-Thread)..."
-            lua_dir = os.path.join(folder, "LuaScripts")
             os.makedirs(lua_dir, exist_ok=True)
-
-            def download_lua(c):
-                if cancel_task: return
-                name_raw = c.get('name', 'Unknown')
-                custom_id = f"{c['custom_id']:04d}"
-                official_id = str(c.get('id', ''))
-                tipo_api = c.get('type', '')
-
-                if "Normal Monster" in tipo_api and "Effect" not in tipo_api:
-                    return
-
-                lua_path = os.path.join(lua_dir, f"c{custom_id}.lua")
-                if not os.path.exists(lua_path):
-                    success = False
-                    for base_url in LUA_URLS:
-                        for attempt in range(2): # 2 Retries por repositório
-                            try:
-                                r = requests.get(base_url.format(official_id), timeout=5)
-                                if r.status_code == 200:
-                                    with open(lua_path, 'w', encoding='utf-8') as f: f.write(r.text)
-                                    success = True
-                                    break
-                            except: time.sleep(0.5)
-                        if success: break
-
-                    if success: 
-                        progresso["log"].append(f"✓ Lua: c{custom_id}.lua")
-                    else:
-                        progresso["log"].append(f"✗ Falha LUA: {custom_id}")
-                        errors_list.append(f"Nenhum repo possui o LUA de: {name_raw} ({official_id})")
-                else:
-                    progresso["log"].append(f"✓ Lua Existe: c{custom_id}.lua")
 
             for i, c in enumerate(cards, 1): c['custom_id'] = i
             completed = 0
@@ -559,8 +579,6 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
 
         elif tipo == 'audit':
             progresso["status"] = "Auditoria de Arquivos Faltantes..."
-            images_folder = os.path.join(folder, "Images")
-            lua_dir = os.path.join(folder, "LuaScripts")
             missing_images, missing_luas = [], []
 
             for i, c in enumerate(cards, 1):
@@ -610,22 +628,72 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                         progresso["log"].append(f"Zippando: {file[:20]}...")
                         while len(progresso["log"]) > 15: progresso["log"].pop(0)
             progresso["log"].append(f"✓ Pacote ZIP criado com sucesso!")
+            
+        elif tipo == 'retry':
+            progresso["status"] = "Analisando erros anteriores..."
+            error_file = os.path.join(folder, "error_log.txt")
+            failed_ids = set()
+            
+            if os.path.exists(error_file):
+                with open(error_file, "r", encoding="utf-8") as ef:
+                    failed_ids = set(re.findall(r"\[(\d{4})\]", ef.read()))
+            
+            if not failed_ids:
+                progresso["log"].append("Nenhum ID de erro encontrado no error_log.txt.")
+            else:
+                progresso["log"].append(f"Encontrados {len(failed_ids)} problemas. Repetindo...")
+                os.makedirs(images_folder, exist_ok=True)
+                os.makedirs(alt_folder, exist_ok=True)
+                os.makedirs(lua_dir, exist_ok=True)
+                
+                # Backup e limpeza do log antigo
+                shutil.copy(error_file, error_file + ".bak")
+                os.remove(error_file)
+                
+                cards_to_retry = [c for c in cards if f"{c['custom_id']:04d}" in failed_ids]
+                progresso["total"] = len(cards_to_retry) * 2
+                completed = 0
+                
+                def retry_both(c):
+                    download_image(c)
+                    download_lua(c)
+                    
+                with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                    futures = {executor.submit(retry_both, c): c for c in cards_to_retry}
+                    for future in concurrent.futures.as_completed(futures):
+                        if cancel_task: break
+                        completed += 2
+                        progresso["atual"] = completed
+                        progresso["card"] = futures[future]['name']
+                        while len(progresso["log"]) > 15: progresso["log"].pop(0)
 
         if cancel_task:
             progresso["log"].append("⚠ TAREFA CANCELADA PELO USUÁRIO.")
             progresso["status"] = "Cancelado"
-        elif errors_list:
-            error_file = os.path.join(folder, "error_log.txt")
-            with open(error_file, "a", encoding="utf-8") as ef:
-                ef.write(f"\n=== Relatório de Erros - Tarefa: {tipo} ===\n")
-                for err in errors_list:
-                    ef.write(f"- {err}\n")
-            progresso["log"].append("⚠ Alguns erros ocorreram. Veja error_log.txt")
-            progresso["status"] = "Concluído com Erros"
         
-        if not cancel_task and not errors_list:
-            progresso["log"].append("✓ Tarefa concluída com sucesso!")
-            progresso["status"] = "Finalizado!"
+        if not cancel_task:
+            log_file = os.path.join(folder, "error_log.txt")
+            with open(log_file, "a", encoding="utf-8") as ef:
+                if not errors_list and not warnings_list:
+                    ef.write(f"\n✓ Nenhum erro encontrado na execução de {tipo}!\n")
+                else:
+                    ef.write(f"\n=== Relatório - Tarefa: {tipo} ===\n")
+                    if errors_list:
+                        ef.write("ERROS:\n")
+                        for err in errors_list: ef.write(f"- {err}\n")
+                    if warnings_list:
+                        ef.write("AVISOS E CORREÇÕES AUTOMÁTICAS:\n")
+                        for warn in warnings_list: ef.write(f"- {warn}\n")
+            
+            if errors_list:
+                progresso["log"].append("⚠ Erros ocorreram. Veja error_log.txt")
+                progresso["status"] = "Concluído com Erros"
+            elif warnings_list:
+                progresso["log"].append("⚠ Correções aplicadas. Veja error_log.txt")
+                progresso["status"] = "Finalizado (Com Correções)"
+            else:
+                progresso["log"].append("✓ Tarefa concluída com sucesso!")
+                progresso["status"] = "Finalizado!"
     except Exception as e:
         progresso["status"] = f"Erro: {str(e)}"
 
