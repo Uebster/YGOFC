@@ -17,6 +17,7 @@ public class CardEffectManager : MonoBehaviour
     public Dictionary<CardDisplay, List<Transform>> blockedZonesByCard = new Dictionary<CardDisplay, List<Transform>>();
 
     public Script luaEngine;
+    public LuaDuel luaDuel;
 
     // Variáveis de controle de Assincronicidade do Lua
     public DynValue activeLuaCoroutine = null;
@@ -29,6 +30,15 @@ public class CardEffectManager : MonoBehaviour
     public bool invertDecks = false;
     public bool cannotSummonMonstersThisTurn = false;
     public bool trapsBlockedThisTurn = false;
+
+    public Dictionary<CardDisplay, LuaCard> activeLuaCards = new Dictionary<CardDisplay, LuaCard>();
+    
+    public class PendingEffect
+    {
+        public LuaEffect effect;
+        public object triggerArgs;
+    }
+    public Dictionary<CardDisplay, PendingEffect> pendingResolutions = new Dictionary<CardDisplay, PendingEffect>();
 
     void Awake()
     {
@@ -48,7 +58,8 @@ public class CardEffectManager : MonoBehaviour
         UserData.RegisterType<LuaGroup>();
 
         // 3. Injeta as instâncias globais na memória do Lua
-        luaEngine.Globals["Duel"] = new LuaDuel();
+        luaDuel = new LuaDuel();
+        luaEngine.Globals["Duel"] = luaDuel;
         luaEngine.Globals["Effect"] = typeof(LuaEffect); // Permite chamar Effect.CreateEffect(c)
         luaEngine.Globals["Card"] = typeof(LuaCard);
         luaEngine.Globals["Group"] = typeof(LuaGroup);
@@ -101,6 +112,18 @@ public class CardEffectManager : MonoBehaviour
         luaEngine.Globals["CATEGORY_DESTROY"] = 0x20000;
         luaEngine.Globals["REASON_COST"] = 0x2;
         luaEngine.Globals["REASON_BATTLE"] = 0x10;
+        
+        // Gatilhos e Eventos (Events OCGCore)
+        luaEngine.Globals["EVENT_SUMMON_SUCCESS"] = 11;
+        luaEngine.Globals["EVENT_FLIP_SUMMON_SUCCESS"] = 13;
+        luaEngine.Globals["EVENT_SPSUMMON_SUCCESS"] = 14;
+        luaEngine.Globals["EVENT_FLIP"] = 1014;
+        luaEngine.Globals["EVENT_BATTLE_DESTROYED"] = 1010;
+        luaEngine.Globals["EVENT_DESTROYED"] = 1011;
+        luaEngine.Globals["EVENT_PHASE"] = 4096;
+        luaEngine.Globals["EVENT_PHASE_START"] = 4097;
+        luaEngine.Globals["EVENT_CHANGE_POS"] = 1013;
+        luaEngine.Globals["EVENT_LEAVE_FIELD"] = 1012;
 
         // Tipos de Efeitos (EFFECT_TYPE)
         luaEngine.Globals["EFFECT_TYPE_SINGLE"] = 0x0001;
@@ -123,25 +146,18 @@ public class CardEffectManager : MonoBehaviour
         luaEngine.Globals["HINTMSG_EQUIP"] = 515;
     }
 
-    public bool ExecuteCardEffect(CardDisplay card)
+    public LuaCard EnsureCardScriptLoaded(CardDisplay card)
     {
-        if (card == null || card.CurrentCardData == null) return false;
+        if (card == null || card.CurrentCardData == null) return null;
+        if (activeLuaCards.ContainsKey(card)) return activeLuaCards[card];
         
         string cardId = card.CurrentCardData.id;
-        Debug.Log($"[API] Preparando para executar script LUA para: {card.CurrentCardData.name} ({cardId})");
-        
-        // Caminho físico do arquivo LUA gerado pelo seu Downloader
         string scriptPath = System.IO.Path.Combine(Application.dataPath, "Scripts", "LuaScripts", $"c{cardId}.lua");
         
-        if (!System.IO.File.Exists(scriptPath))
-        {
-            Debug.LogWarning($"[API LUA] Arquivo não encontrado em: {scriptPath}. A carta não possui efeito registrado.");
-            return false;
-        }
+        if (!System.IO.File.Exists(scriptPath)) return null;
 
         try
         {
-            // 1. Inicializa o estado local da carta no LUA (GetID)
             DynValue selfTable = DynValue.NewTable(luaEngine);
             int numericId = 0;
             int.TryParse(cardId, out numericId);
@@ -149,76 +165,240 @@ public class CardEffectManager : MonoBehaviour
             luaEngine.Globals["self_table"] = selfTable;
             luaEngine.Globals["self_code"] = numericId;
 
-            // 2. Lê e roda o arquivo .lua na memória
             string scriptCode = System.IO.File.ReadAllText(scriptPath);
             luaEngine.DoString(scriptCode);
 
-            // 3. Puxa a função de fábrica 'initial_effect' e registra os efeitos
             DynValue initialEffect = selfTable.Table.Get("initial_effect");
-            if (initialEffect.IsNil())
+            if (!initialEffect.IsNil())
             {
-                Debug.LogError($"[API LUA] Função 'initial_effect' não encontrada no arquivo c{cardId}.lua");
-                return false;
-            }
-
-            LuaCard luaCard = new LuaCard(card);
-            luaEngine.Call(initialEffect, luaCard);
-
-            // 4. Execução do Efeito (Emulando a Chain)
-            // Procura por um efeito ativável instantâneo (Magias/Armadilhas/Ignition)
-            LuaEffect activationEffect = luaCard.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0020);
-
-            if (activationEffect != null)
-            {
-                StartCoroutine(RunLuaEffectRoutine(luaCard, activationEffect));
-                return true;
-            }
-            else
-            {
-                Debug.LogWarning($"[API LUA] {card.CurrentCardData.name} possui scripts carregados, mas não tem efeito ativável imediato (Apenas efeitos passivos).");
+                LuaCard luaCard = new LuaCard(card);
+                luaEngine.Call(initialEffect, luaCard);
+                activeLuaCards[card] = luaCard;
+                return luaCard;
             }
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"[API LUA CRASH] c{cardId}.lua falhou de forma catastrófica:\n{ex.Message}\n{ex.StackTrace}");
+            Debug.LogError($"[API LUA CRASH] Ocorreu uma falha no carregamento do arquivo c{cardId}.lua:\n{ex.Message}");
         }
         
+        return null;
+    }
+
+    public void ActivateCard(CardDisplay card, object triggerArgs, System.Action onComplete)
+    {
+        LuaCard luaCard = EnsureCardScriptLoaded(card);
+        if (luaCard == null) 
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        // Procura por um efeito ativável instantâneo (Magia, Armadilha ou Ignition)
+        LuaEffect activationEffect = luaCard.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0020 || e.type == 0x0080);
+
+        if (activationEffect != null)
+        {
+            int tp = luaCard.GetControler();
+            if (!CanActivateEffect(luaCard, activationEffect, tp, triggerArgs))
+            {
+                Debug.LogWarning($"[API LUA] {card.CurrentCardData.name} não cumpre os requisitos/custos para ativação no momento.");
+                return; // Retorna sem chamar onComplete, abortando a ida para a Corrente
+            }
+
+            StartCoroutine(ActivationPhaseRoutine(luaCard, activationEffect, triggerArgs, onComplete));
+        }
+        else
+        {
+            onComplete?.Invoke(); // Não tem efeito manual, apenas deixa o jogo seguir
+        }
+    }
+
+    public bool ExecuteCardEffect(CardDisplay card)
+    {
+        LuaCard luaCard = EnsureCardScriptLoaded(card);
+        if (luaCard == null) return false;
+
+        // 1. Tenta encontrar e resolver um efeito que já foi ativado e passou pela Corrente
+        if (pendingResolutions.TryGetValue(card, out PendingEffect pending))
+        {
+            pendingResolutions.Remove(card);
+            StartCoroutine(ResolutionPhaseRoutine(luaCard, pending.effect, pending.triggerArgs));
+            return true;
+        }
+
+        // 2. Fallback Original: Procura por um efeito e o ativa instantaneamente (Pula a Corrente)
+        // Útil para efeitos engatilhados pela IA ou sistemas que não passam pela interface manual.
+        LuaEffect activationEffect = luaCard.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0020);
+
+        if (activationEffect != null)
+        {
+            int tp = luaCard.GetControler();
+            
+            // 1. Verificação Síncrona (Condition, Cost chk=0, Target chk=0)
+            if (!CanActivateEffect(luaCard, activationEffect, tp, null))
+            {
+                Debug.LogWarning($"[API LUA] {card.CurrentCardData.name} não cumpre os requisitos/custos para ativação no momento.");
+                return false;
+            }
+
+            // 2. Pagamento de Custo, Seleção de Alvos e Resolução (chk=1)
+            StartCoroutine(ActivateAndResolveRoutine(luaCard, activationEffect, null));
+            return true;
+        }
+
+        Debug.LogWarning($"[API LUA] {card.CurrentCardData.name} possui scripts carregados, mas não tem efeito ativável imediato.");
         return false;
     }
 
-    private IEnumerator RunLuaEffectRoutine(LuaCard luaCard, LuaEffect activationEffect)
+    private object WrapTriggerArgs(object triggerArgs)
+    {
+        if (triggerArgs is LuaCard card)
+        {
+            LuaGroup group = new LuaGroup();
+            group.AddCard(card);
+            return group;
+        }
+        else if (triggerArgs is List<CardDisplay> list)
+        {
+            LuaGroup group = new LuaGroup();
+            foreach (var c in list) group.AddCard(new LuaCard(c));
+            return group;
+        }
+        return triggerArgs;
+    }
+
+    public bool CanActivateEffect(LuaCard luaCard, LuaEffect effect, int tp, object triggerArgs)
+    {
+        object eg = WrapTriggerArgs(triggerArgs);
+        try 
+        {
+            if (effect.conditionFunc != null) {
+                DynValue res = luaEngine.Call(effect.conditionFunc, effect, tp, eg, 0, 0, null, 0, 0);
+                if (res.Type == DataType.Boolean && !res.Boolean) return false;
+            }
+            if (effect.costFunc != null) {
+                DynValue res = luaEngine.Call(effect.costFunc, effect, tp, eg, 0, 0, null, 0, 0, 0); // chk = 0
+                if (res.Type == DataType.Boolean && !res.Boolean) return false;
+            }
+            if (effect.targetFunc != null) {
+                DynValue res = luaEngine.Call(effect.targetFunc, effect, tp, eg, 0, 0, null, 0, 0, 0); // chk = 0
+                if (res.Type == DataType.Boolean && !res.Boolean) return false;
+            }
+            return true;
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[API LUA] Erro ao verificar condições de {luaCard.unityData.name}: {ex.Message}");
+            return false;
+        }
+    }
+
+    private IEnumerator ActivationPhaseRoutine(LuaCard luaCard, LuaEffect effect, object triggerArgs, System.Action onComplete)
     {
         int tp = luaCard.GetControler();
 
-        if (activationEffect.targetFunc != null)
-        {
-            activeLuaCoroutine = luaEngine.CreateCoroutine(activationEffect.targetFunc);
-            DynValue result = activeLuaCoroutine.Coroutine.Resume(activationEffect, tp, null, 0, 0, null, 0, 0, 1);
-            
-            while (activeLuaCoroutine.Coroutine.State == CoroutineState.Suspended)
-            {
-                while (isWaitingForLuaYield) yield return null;
-                result = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue);
-            }
-        }
+        // FASE DE ATIVAÇÃO (Custo e Alvo) [chk=1]
+        if (effect.costFunc != null) yield return StartCoroutine(RunLuaCoroutine(effect.costFunc, effect, tp, triggerArgs, 1));
+        if (effect.targetFunc != null) yield return StartCoroutine(RunLuaCoroutine(effect.targetFunc, effect, tp, triggerArgs, 1));
 
-        if (activationEffect.operationFunc != null)
+        // Guarda na Gaveta de Pendências esperando a autorização do ChainManager
+        pendingResolutions[luaCard.unityCard] = new PendingEffect { effect = effect, triggerArgs = triggerArgs };
+
+        onComplete?.Invoke();
+    }
+
+    private IEnumerator ResolutionPhaseRoutine(LuaCard luaCard, LuaEffect effect, object triggerArgs)
+    {
+        int tp = luaCard.GetControler();
+        if (effect.operationFunc != null) yield return StartCoroutine(RunLuaCoroutine(effect.operationFunc, effect, tp, triggerArgs, -1));
+        Debug.Log($"[API LUA] Efeito final resolvido: {luaCard.unityData.name}");
+    }
+
+    private IEnumerator ActivateAndResolveRoutine(LuaCard luaCard, LuaEffect effect, object triggerArgs)
+    {
+        int tp = luaCard.GetControler();
+
+        // FASE DE ATIVAÇÃO (Custo e Alvo) [chk=1]
+        if (effect.costFunc != null) yield return StartCoroutine(RunLuaCoroutine(effect.costFunc, effect, tp, triggerArgs, 1));
+        if (effect.targetFunc != null) yield return StartCoroutine(RunLuaCoroutine(effect.targetFunc, effect, tp, triggerArgs, 1));
+
+        // [FUTURO: Ponto onde o ChainManager entra em ação e pergunta ao oponente sobre Counter Traps]
+        
+        // FASE DE RESOLUÇÃO
+        if (effect.operationFunc != null) yield return StartCoroutine(RunLuaCoroutine(effect.operationFunc, effect, tp, triggerArgs, -1));
+
+        Debug.Log($"[API LUA] Efeito resolvido: {luaCard.unityData.name}");
+    }
+
+    private IEnumerator RunLuaCoroutine(Closure func, LuaEffect effect, int tp, object triggerArgs, int chk)
+    {
+        object eg = WrapTriggerArgs(triggerArgs);
+        activeLuaCoroutine = luaEngine.CreateCoroutine(func);
+        DynValue result;
+        
+        if (chk >= 0) result = activeLuaCoroutine.Coroutine.Resume(effect, tp, eg, 0, 0, null, 0, 0, chk);
+        else result = activeLuaCoroutine.Coroutine.Resume(effect, tp, eg, 0, 0, null, 0, 0);
+
+        while (activeLuaCoroutine.Coroutine.State == CoroutineState.Suspended)
         {
-            activeLuaCoroutine = luaEngine.CreateCoroutine(activationEffect.operationFunc);
-            DynValue result = activeLuaCoroutine.Coroutine.Resume(activationEffect, tp, null, 0, 0, null, 0, 0);
-            
-            while (activeLuaCoroutine.Coroutine.State == CoroutineState.Suspended)
+            while (isWaitingForLuaYield) yield return null;
+            result = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue);
+        }
+    }
+
+    public void TriggerLuaEvent(int eventCode, object triggerArgs)
+    {
+        if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return;
+
+        List<CardDisplay> allField = new List<CardDisplay>();
+        CollectCards(GameManager.Instance.duelFieldUI.playerMonsterZones, allField);
+        CollectCards(GameManager.Instance.duelFieldUI.opponentMonsterZones, allField);
+        CollectCards(GameManager.Instance.duelFieldUI.playerSpellZones, allField);
+        CollectCards(GameManager.Instance.duelFieldUI.opponentSpellZones, allField);
+
+        foreach(var c in allField)
+        {
+            LuaCard lc = EnsureCardScriptLoaded(c);
+            if (lc == null) continue;
+
+            var matchingEffects = lc.registeredEffects.FindAll(e => e.code == eventCode && (e.type & 0x0001) == 0);
+            foreach(var effect in matchingEffects)
             {
-                while (isWaitingForLuaYield) yield return null;
-                result = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue);
+                if (CanActivateEffect(lc, effect, lc.GetControler(), triggerArgs))
+                {
+                    StartCoroutine(ActivateAndResolveRoutine(lc, effect, triggerArgs));
+                }
             }
         }
-        
-        Debug.Log($"[API LUA] Rotina de Efeito concluída com sucesso: {luaCard.unityData.name}");
+    }
+
+    private void CollectCards(Transform[] zones, List<CardDisplay> list)
+    {
+        if (zones == null) return;
+        foreach (var z in zones)
+        {
+            if (z != null && z.childCount > 0)
+            {
+                var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                if (cd != null) list.Add(cd);
+            }
+        }
     }
 
     // --- HOOKS DA ENGINE (O LUA VAI SE INSCREVER NELES DEPOIS) ---
-    public void OnSummon(CardDisplay card) { }
+    public void OnSummon(CardDisplay card) { 
+        LuaCard lc = EnsureCardScriptLoaded(card);
+        if (lc != null) {
+            var singleEffects = lc.registeredEffects.FindAll(e => e.code == 11 && (e.type & 0x0001) != 0); // EFFECT_TYPE_SINGLE
+            foreach(var e in singleEffects) 
+            {
+                if (CanActivateEffect(lc, e, lc.GetControler(), null))
+                    StartCoroutine(ActivateAndResolveRoutine(lc, e, null));
+            }
+        }
+        TriggerLuaEvent(11, lc); // EVENT_SUMMON_SUCCESS
+    }
     public void OnSet(CardDisplay card) { }
     public void OnBattlePositionChanged(CardDisplay card) { }
     public void OnDamageDealt(CardDisplay attacker, CardDisplay target, int amount) { }
@@ -229,7 +409,10 @@ public class CardEffectManager : MonoBehaviour
     public void OnCardDrawn(CardData card, bool isPlayer) { }
     public void OnSpecialSummon(CardDisplay card) { }
     public void OnControlSwitched(CardDisplay card) { }
-    public void OnPhaseStart(GamePhase phase) { if (phase == GamePhase.End) CleanAllExpiredModifiers(); }
+    public void OnPhaseStart(GamePhase phase) { 
+        if (phase == GamePhase.End) CleanAllExpiredModifiers(); 
+        TriggerLuaEvent(4096, null); // EVENT_PHASE
+    }
     public void OnPreDrawPhase(bool isPlayerTurn, System.Action onContinue) { onContinue?.Invoke(); }
     public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, SendReason reason) { }
     public void OnDamageTaken(bool isPlayer, int amount) { }
@@ -246,6 +429,10 @@ public class CardEffectManager : MonoBehaviour
 
     public void OnCardLeavesField(CardDisplay card)
     {
+        // Limpeza de cache de Lua para não poluir a RAM
+        if (activeLuaCards.ContainsKey(card)) activeLuaCards.Remove(card);
+        if (pendingResolutions.ContainsKey(card)) pendingResolutions.Remove(card);
+
         // Limpeza Genérica Obrigatória (Isso continua sendo C# nativo para não bugar a engine)
         if (GameManager.Instance.duelFieldUI != null)
         {
@@ -287,7 +474,21 @@ public class CardEffectManager : MonoBehaviour
     // --- HOOKS DE BATALHA ---
     public void OnAttackDeclared(CardDisplay attacker, CardDisplay target, System.Action onContinue) { onContinue?.Invoke(); }
     public void OnDamageCalculation(CardDisplay attacker, CardDisplay target, System.Action onContinue) { onContinue?.Invoke(); }
-    public void OnBattleEnd(CardDisplay attacker, CardDisplay target) { }
+    public void OnBattleEnd(CardDisplay attacker, CardDisplay target) { 
+        if (target != null && target.CurrentCardData != null && (GameManager.Instance.GetPlayerGraveyard().Contains(target.CurrentCardData) || GameManager.Instance.GetOpponentGraveyard().Contains(target.CurrentCardData)))
+        {
+            LuaCard deadCard = EnsureCardScriptLoaded(target);
+            if (deadCard != null) {
+                var singleEffects = deadCard.registeredEffects.FindAll(e => e.code == 1010 && (e.type & 0x0001) != 0); // EVENT_BATTLE_DESTROYED
+                foreach(var e in singleEffects) 
+                {
+                    if (CanActivateEffect(deadCard, e, deadCard.GetControler(), deadCard))
+                        StartCoroutine(ActivateAndResolveRoutine(deadCard, e, deadCard));
+                }
+            }
+            TriggerLuaEvent(1010, deadCard);
+        }
+    }
     public bool CanDeclareAttack(CardDisplay attacker) { return true; }
     public bool IsAttackPreventedByContinuousEffect(CardDisplay attacker) { return false; }
     public bool IsAttackRestricted(CardDisplay attacker) { return false; }

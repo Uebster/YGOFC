@@ -2396,14 +2396,17 @@ public void ShuffleDeck(bool isPlayer)
                     else TrophyManager.Instance.TrackStat("spell_activated", 1);
                 }
 
-                // Integração com Sistema de Chains
-                if (ChainManager.Instance != null)
+                // Integração com Sistema de Chains e Motor LUA (Separação Ativação/Resolução)
+                if (CardEffectManager.Instance != null)
+                {
+                    CardEffectManager.Instance.ActivateCard(display, null, () => {
+                        if (ChainManager.Instance != null)
+                            ChainManager.Instance.AddToChain(display, isPlayer);
+                    });
+                }
+                else if (ChainManager.Instance != null)
                 {
                     ChainManager.Instance.AddToChain(display, isPlayer);
-                    // NÃO resolve imediatamente. O AddToChain agora chama CheckForResponse,
-                    // que eventualmente chamará ResolveChain.
-                    // A execução do efeito (ExecuteCardEffect) foi movida para dentro
-                    // do loop de resolução do ChainManager.
                 }
             }
         }
@@ -2462,12 +2465,17 @@ public void ShuffleDeck(bool isPlayer)
             else TrophyManager.Instance.TrackStat("spell_activated", 1);
         }
 
-        // Integração com Sistema de Chains
-        if (ChainManager.Instance != null)
+        // Integração com Sistema de Chains e Motor LUA (Separação Ativação/Resolução)
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.ActivateCard(display, null, () => {
+                if (ChainManager.Instance != null)
+                    ChainManager.Instance.AddToChain(display, isPlayer);
+            });
+        }
+        else if (ChainManager.Instance != null)
         {
             ChainManager.Instance.AddToChain(display, isPlayer);
-            // A resolução e execução agora são controladas pelo ChainManager
-            // após verificar respostas.
         }
     }
 

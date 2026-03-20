@@ -13,6 +13,7 @@ public class LuaDuel
 {
     public int targetPlayer;
     public int targetParam;
+    public LuaGroup currentTargetGroup;
 
     // Utilitário de Conversão: 0 = Human Player, 1 = AI Opponent
     public bool IsPlayer(int playerIndex)
@@ -109,6 +110,31 @@ public class LuaDuel
         return count;
     }
 
+    public int SendtoDeck(object target, int player, int seq, int reason)
+    {
+        int count = 0;
+        bool toTop = (seq == 0); // 0 = Top, 1 = Bottom (simplificado)
+        if (target is LuaGroup group)
+        {
+            foreach (var c in group.cards) { if (c.unityCard != null) { GameManager.Instance.ReturnToDeck(c.unityCard, toTop); count++; } }
+            Debug.Log($"[Lua] Duel.SendtoDeck(Grupo com {count} cartas)");
+        }
+        else if (target is LuaCard card && card.unityCard != null)
+        {
+            GameManager.Instance.ReturnToDeck(card.unityCard, toTop);
+            count = 1;
+            Debug.Log($"[Lua] Duel.SendtoDeck({card.unityCard.CurrentCardData.name})");
+        }
+        return count;
+    }
+
+    public int DiscardHand(int player, int amount, int reason)
+    {
+        bool isPlayer = IsPlayer(player);
+        GameManager.Instance.DiscardRandomHand(isPlayer, amount, false);
+        return amount;
+    }
+
     public int GetLocationCount(int player, int location)
     {
         // Exemplo: Retorna quantas zonas de monstro estão livres
@@ -160,6 +186,11 @@ public class LuaDuel
         return DynValue.NewTuple(DynValue.NewNumber(targetPlayer), DynValue.NewNumber(targetParam));
     }
 
+    public LuaCard GetFirstTarget()
+    {
+        return currentTargetGroup != null ? currentTargetGroup.GetFirst() : null;
+    }
+
     public int SendtoHand(object target, int player, int reason)
     {
         int count = 0;
@@ -205,6 +236,21 @@ public class LuaDuel
         SendtoGrave(target, reason); // Tribute usa a mesma lógica base de enviar ao GY por enquanto
     }
 
+    public bool Equip(int player, LuaCard equip_card, LuaCard target)
+    {
+        if (equip_card != null && target != null && equip_card.unityCard != null && target.unityCard != null)
+        {
+            if (equip_card.unityData.type.Contains("Monster"))
+                GameManager.Instance.EquipMonsterToMonster(equip_card.unityCard, target.unityCard);
+            else
+                GameManager.Instance.CreateCardLink(equip_card.unityCard, target.unityCard, CardLink.LinkType.Equipment);
+            
+            Debug.Log($"[Lua] Duel.Equip({equip_card.unityData.name} em {target.unityData.name})");
+            return true;
+        }
+        return false;
+    }
+
     public void ChangePosition(LuaCard card, int au, int ad, int du, int dd)
     {
         if (card.unityCard != null) card.unityCard.ChangePosition();
@@ -231,50 +277,65 @@ public class LuaDuel
         GameManager.Instance.PayLifePoints(IsPlayer(player), cost);
     }
 
+    public LuaCard GetAttacker()
+    {
+        // Exige reflexão da classe estática/singleton de Batalha do jogo
+        if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+            return new LuaCard(BattleManager.Instance.currentAttacker);
+        return null;
+    }
+
+    public LuaCard GetAttackTarget()
+    {
+        if (BattleManager.Instance != null && BattleManager.Instance.currentTarget != null)
+            return new LuaCard(BattleManager.Instance.currentTarget);
+        return null;
+    }
+
     // --- SISTEMA DE BUSCA E FILTROS DO LUA ---
 
-    private void CollectCandidates(int loc, bool isPlayer, List<LuaCard> candidates)
+    private void CollectCandidates(int loc, bool isPlayer, List<LuaCard> candidates, LuaCard excluded = null)
     {
         if ((loc & 0x01) != 0) // DECK
         {
             var deck = isPlayer ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
-            foreach(var c in deck) candidates.Add(new LuaCard(c));
+            foreach(var c in deck) { LuaCard lc = new LuaCard(c); if(excluded == null || lc.unityData != excluded.unityData) candidates.Add(lc); }
         }
         if ((loc & 0x02) != 0) // HAND
         {
             var handGOs = isPlayer ? GameManager.Instance.playerHand : GameManager.Instance.opponentHand;
-            foreach(var go in handGOs) candidates.Add(new LuaCard(go.GetComponent<CardDisplay>()));
+            foreach(var go in handGOs) { LuaCard lc = new LuaCard(go.GetComponent<CardDisplay>()); if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
         }
         if ((loc & 0x04) != 0) // MZONE
         {
             Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
-            foreach (var z in zones) if (z.childCount > 0) candidates.Add(new LuaCard(z.GetChild(0).GetComponent<CardDisplay>()));
+            foreach (var z in zones) if (z.childCount > 0) { LuaCard lc = new LuaCard(z.GetChild(0).GetComponent<CardDisplay>()); if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
         }
         if ((loc & 0x08) != 0) // SZONE
         {
             Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
-            foreach (var z in zones) if (z.childCount > 0) candidates.Add(new LuaCard(z.GetChild(0).GetComponent<CardDisplay>()));
+            foreach (var z in zones) if (z.childCount > 0) { LuaCard lc = new LuaCard(z.GetChild(0).GetComponent<CardDisplay>()); if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
             Transform fz = isPlayer ? GameManager.Instance.duelFieldUI.playerFieldSpell : GameManager.Instance.duelFieldUI.opponentFieldSpell;
-            if (fz.childCount > 0) candidates.Add(new LuaCard(fz.GetChild(0).GetComponent<CardDisplay>()));
+            if (fz.childCount > 0) { LuaCard lc = new LuaCard(fz.GetChild(0).GetComponent<CardDisplay>()); if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
         }
         if ((loc & 0x10) != 0) // GRAVE
         {
             var gy = isPlayer ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
-            foreach(var c in gy) candidates.Add(new LuaCard(c));
+            foreach(var c in gy) { LuaCard lc = new LuaCard(c); if(excluded == null || lc.unityData != excluded.unityData) candidates.Add(lc); }
         }
         if ((loc & 0x20) != 0) // REMOVED
         {
             var rm = isPlayer ? GameManager.Instance.GetPlayerRemoved() : GameManager.Instance.GetOpponentRemoved();
-            foreach(var c in rm) candidates.Add(new LuaCard(c));
+            foreach(var c in rm) { LuaCard lc = new LuaCard(c); if(excluded == null || lc.unityData != excluded.unityData) candidates.Add(lc); }
         }
         if ((loc & 0x40) != 0) // EXTRA
         {
             var ex = isPlayer ? GameManager.Instance.GetPlayerExtraDeck() : GameManager.Instance.GetOpponentExtraDeck();
-            foreach(var c in ex) candidates.Add(new LuaCard(c));
+            foreach(var c in ex) { LuaCard lc = new LuaCard(c); if(excluded == null || lc.unityData != excluded.unityData) candidates.Add(lc); }
         }
     }
 
-    public LuaGroup GetMatchingGroup(object filterFunc, int player, int locSelf, int locOpp, LuaCard excludedCard)
+    public LuaGroup GetMatchingGroup(object filterFunc, int player, int locSelf, int locOpp, LuaCard excludedCard, params object[] extraArgs)
     {
         LuaGroup group = new LuaGroup();
         List<LuaCard> candidates = new List<LuaCard>();
@@ -283,19 +344,19 @@ public class LuaDuel
         {
             bool isPlayer = IsPlayer(player);
             
-            if (locSelf != 0) CollectCandidates(locSelf, isPlayer, candidates);
-            if (locOpp != 0) CollectCandidates(locOpp, !isPlayer, candidates);
+            if (locSelf != 0) CollectCandidates(locSelf, isPlayer, candidates, excludedCard);
+            if (locOpp != 0) CollectCandidates(locOpp, !isPlayer, candidates, excludedCard);
         }
 
         // Aplica o filtro Lua em cada carta encontrada na Unity
         foreach (var c in candidates)
-        {
-            if (excludedCard != null && (excludedCard.unityCard == c.unityCard && excludedCard.unityData == c.unityData)) continue;
-            
+        {            
             if (filterFunc is Closure closure)
             {
-                DynValue result = closure.Call(c);
-                if (result.Type == DataType.Boolean && result.Boolean)
+                List<object> callArgs = new List<object> { c };
+                if (extraArgs != null && extraArgs.Length > 0) callArgs.AddRange(extraArgs);
+                
+                DynValue result = closure.Call(callArgs.ToArray());                if (result.Type == DataType.Boolean && result.Boolean)
                 {
                     group.AddCard(c);
                 }
@@ -308,27 +369,25 @@ public class LuaDuel
         return group;
     }
 
-    public bool IsExistingMatchingCard(object filterFunc, int player, int locSelf, int locOpp, int count, LuaCard excludedCard)
+    public bool IsExistingMatchingCard(object filterFunc, int player, int locSelf, int locOpp, int count, LuaCard excludedCard, params object[] extraArgs)
     {
-        LuaGroup group = GetMatchingGroup(filterFunc, player, locSelf, locOpp, excludedCard);
+        LuaGroup group = GetMatchingGroup(filterFunc, player, locSelf, locOpp, excludedCard, extraArgs);
         return group.GetCount() >= count;
     }
 
-    public bool IsExistingTarget(object filterFunc, int player, int locSelf, int locOpp, int count, LuaCard excludedCard)
+    public bool IsExistingTarget(object filterFunc, int player, int locSelf, int locOpp, int count, LuaCard excludedCard, params object[] extraArgs)
     {
-        // Semelhante ao MatchingCard, mas na engine oficial isso também travaria como alvo.
-        // Por enquanto, validamos a mesma busca de cartas.
-        return IsExistingMatchingCard(filterFunc, player, locSelf, locOpp, count, excludedCard);
+        return IsExistingMatchingCard(filterFunc, player, locSelf, locOpp, count, excludedCard, extraArgs);
     }
 
     // --- OPERAÇÕES ASSÍNCRONAS DE LUA (YIELD REQ) ---
 
-    public DynValue SelectTarget(int player, object filterFunc, int player2, int locSelf, int locOpp, int min, int max, LuaCard excludedCard)
+    public DynValue SelectTarget(int player, object filterFunc, int player2, int locSelf, int locOpp, int min, int max, LuaCard excludedCard, params object[] extraArgs)
     {
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
 
-        LuaGroup candidates = GetMatchingGroup(filterFunc, player, locSelf, locOpp, excludedCard);
+        LuaGroup candidates = GetMatchingGroup(filterFunc, player, locSelf, locOpp, excludedCard, extraArgs);
 
         if (candidates.cards.Count == 0)
         {
@@ -346,6 +405,7 @@ public class LuaDuel
                 LuaGroup selectedGroup = new LuaGroup();
                 selectedGroup.AddCard(new LuaCard(selectedCard));
                 CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
+                this.currentTargetGroup = selectedGroup; // Salva para o GetFirstTarget()
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
             });
         }
@@ -353,12 +413,12 @@ public class LuaDuel
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectTarget") });
     }
 
-    public DynValue SelectMatchingCard(int player, object filterFunc, int player2, int locSelf, int locOpp, int min, int max, LuaCard excludedCard)
+    public DynValue SelectMatchingCard(int player, object filterFunc, int player2, int locSelf, int locOpp, int min, int max, LuaCard excludedCard, params object[] extraArgs)
     {
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
 
-        LuaGroup candidates = GetMatchingGroup(filterFunc, player, locSelf, locOpp, excludedCard);
+        LuaGroup candidates = GetMatchingGroup(filterFunc, player, locSelf, locOpp, excludedCard, extraArgs);
         if (candidates.cards.Count == 0) {
             CardEffectManager.Instance.isWaitingForLuaYield = false;
             return DynValue.FromObject(CardEffectManager.Instance.luaEngine, new LuaGroup());
@@ -380,6 +440,7 @@ public class LuaDuel
                     else selectedGroup.AddCard(new LuaCard(data));
                 }
                 CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
+                this.currentTargetGroup = selectedGroup; // Salva para o GetFirstTarget()
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
             });
         }
@@ -387,14 +448,14 @@ public class LuaDuel
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectMatchingCard") });
     }
 
-    public DynValue SelectReleaseGroup(int player, object filterFunc, int min, int max, LuaCard excluded, int param)
+    public DynValue SelectReleaseGroup(int player, object filterFunc, int min, int max, LuaCard excluded, params object[] extraArgs)
     {
-        return SelectMatchingCard(player, filterFunc, player, 0x04, 0, min, max, excluded);
+        return SelectMatchingCard(player, filterFunc, player, 0x04, 0, min, max, excluded, extraArgs);
     }
 
-    public bool CheckReleaseGroup(int player, object filterFunc, int count, LuaCard excluded, int param)
+    public bool CheckReleaseGroup(int player, object filterFunc, int count, LuaCard excluded, params object[] extraArgs)
     {
-        return IsExistingMatchingCard(filterFunc, player, 0x04, 0, count, excluded);
+        return IsExistingMatchingCard(filterFunc, player, 0x04, 0, count, excluded, extraArgs);
     }
 
     public DynValue TossCoin(int player, int count)
@@ -410,6 +471,21 @@ public class LuaDuel
         });
 
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("TossCoin") });
+    }
+
+    public DynValue TossDice(int player, int count)
+    {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+
+        GameManager.Instance.RollDice(count, false, (results) => {
+            DynValue[] dynResults = new DynValue[count];
+            for (int i = 0; i < count; i++) dynResults[i] = DynValue.NewNumber(results[i]);
+            CardEffectManager.Instance.yieldReturnValue = DynValue.NewTuple(dynResults);
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+        });
+
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("TossDice") });
     }
 
     // Helper em Corrotina para a Destruição Simultânea com VFX
@@ -551,6 +627,7 @@ public class LuaEffect
     public string description;
     
     public Closure conditionFunc;
+    public Closure costFunc;
     public Closure targetFunc;
     public Closure operationFunc;
 
@@ -567,8 +644,13 @@ public class LuaEffect
     
     // Callbacks do Lua (Condição, Alvo, Resolução)
     public void SetCondition(Closure condition) { conditionFunc = condition; }
+    public void SetCost(Closure cost) { costFunc = cost; }
     public void SetTarget(Closure target) { targetFunc = target; }
     public void SetOperation(Closure operation) { operationFunc = operation; }
+
+    // Retorna a quem o efeito pertence (extremamente usado em Lua)
+    public LuaCard GetHandler() { return owner; }
+    public LuaCard GetOwner() { return owner; }
 }
 
 // ==============================================================================
@@ -585,7 +667,7 @@ public class LuaGroup
     public LuaCard GetFirst() { return cards.Count > 0 ? cards[0] : null; }
     public int GetCount() { return cards.Count; }
 
-    public bool IsExists(object filterFunc, int count, LuaCard excludedCard)
+    public bool IsExists(object filterFunc, int count, LuaCard excludedCard, params object[] extraArgs)
     {
         int matchCount = 0;
         foreach (var c in cards)
@@ -593,12 +675,61 @@ public class LuaGroup
             if (excludedCard != null && c == excludedCard) continue;
             if (filterFunc is Closure closure)
             {
-                DynValue result = closure.Call(c);
+                List<object> callArgs = new List<object> { c };
+                if (extraArgs != null && extraArgs.Length > 0) callArgs.AddRange(extraArgs);
+                
+                DynValue result = closure.Call(callArgs.ToArray());
                 if (result.Type == DataType.Boolean && result.Boolean) matchCount++;
             }
             else matchCount++;
         }
         return matchCount >= count;
+    }
+
+    public LuaGroup Filter(object filterFunc, LuaCard excludedCard, params object[] extraArgs)
+    {
+        LuaGroup newGroup = new LuaGroup();
+        foreach (var c in cards)
+        {
+            if (excludedCard != null && c == excludedCard) continue;
+            if (filterFunc is Closure closure)
+            {
+                List<object> callArgs = new List<object> { c };
+                if (extraArgs != null && extraArgs.Length > 0) callArgs.AddRange(extraArgs);
+                
+                DynValue result = closure.Call(callArgs.ToArray());
+                if (result.Type == DataType.Boolean && result.Boolean) newGroup.AddCard(c);
+            }
+            else newGroup.AddCard(c);
+        }
+        return newGroup;
+    }
+
+    public DynValue Select(int player, int min, int max, LuaCard excludedCard)
+    {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+        List<CardData> selectableData = new List<CardData>();
+        foreach (var c in cards) {
+            if (excludedCard != null && c == excludedCard) continue;
+            if (c.unityData != null && !selectableData.Contains(c.unityData)) selectableData.Add(c.unityData);
+        }
+        if (GameManager.Instance != null && selectableData.Count > 0) {
+            GameManager.Instance.OpenCardMultiSelection(selectableData, "Escolha um alvo do grupo", min, max, (selectedList) => {
+                LuaGroup selectedGroup = new LuaGroup();
+                foreach (var data in selectedList) {
+                    LuaCard match = cards.Find(lc => lc.unityData == data);
+                    if (match != null) selectedGroup.AddCard(match);
+                }
+                CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
+                CardEffectManager.Instance.luaDuel.currentTargetGroup = selectedGroup; 
+                CardEffectManager.Instance.isWaitingForLuaYield = false;
+            });
+        } else {
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+            return DynValue.FromObject(CardEffectManager.Instance.luaEngine, new LuaGroup());
+        }
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("Group.Select") });
     }
 
     public void KeepAlive() { }
