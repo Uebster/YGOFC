@@ -144,6 +144,18 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **5.6.7** Relógios e Turnos Virtuais (`TurnClockUI`)
     *   **5.6.8** Revelação Silenciosa (Silent Reveal)
     *   **5.6.9** Regras de Validação de Ativação (Activation Legality)
+    
+## 5.7 Transição para Lua e Rollback (Plano B - Segurança)
+O projeto está migrando da arquitetura Hardcoded C# (`CardEffectManager_Impl.cs`) para a arquitetura orientada a dados com scripts Lua (`MoonSharp` + Padrão YGOPro da comunidade open-source).
+
+### ⚠️ Procedimento de Rollback (Como voltar para o C# Puro)
+Se a integração com Lua falhar, causar quedas de FPS, ou o escopo sair de controle, siga estes passos estritos para reverter o motor à sua glória original em C#:
+
+1. **Restaurar os Arquivos:** Vá até a pasta de Backups do projeto (`Assets/Scripts/Backup_CSharp_Effects/`) e extraia os arquivos `CardEffectManager_Impl_Part1.cs` ao `Part5.cs`, além do `CardEffectManager_Registry_Part1.cs` ao `Part5.cs`.
+2. **Limpar a Lua:** Apague a pasta `Assets/Scripts/Lua/` inteira para não deixar lixo no repositório.
+3. **Remover a Ponte:** Apague a classe de Wrapper (A ponte do MoonSharp) e desinstale o plugin MoonSharp da Unity.
+4. **Restabelecer o Core:** No `CardEffectManager.cs`, certifique-se de que o método `ExecuteCardEffect` esteja usando a lógica do dicionário nativo: `if (effectDatabase.ContainsKey(id)) { effectDatabase[id].Invoke(card); return true; }`.
+5. **Recompilar:** Deixe a Unity recompilar. O jogo voltará a operar com os mais de 2147 métodos de cartas hardcoded nativamente, sem perder nenhuma lógica já escrita.
 
 ### 6. 🧠 `AI_And_Characters.md` (Inteligência Artificial e Personagens)
 *   **6.1.** Design da Inteligência Artificial (`OpponentAI.cs`)

@@ -82,7 +82,7 @@ public class DamagePopup : MonoBehaviour
             if (manager.customFont != null) txt.font = manager.customFont;
 
             // Previne que a fonte quebre de linha caso não caiba na largura e fique com aspecto estranho
-            txt.enableWordWrapping = false;
+            txt.textWrappingMode = TextWrappingModes.NoWrap;
             txt.overflowMode = TextOverflowModes.Overflow;
             
             // Adiciona Outline pra ficar bonito

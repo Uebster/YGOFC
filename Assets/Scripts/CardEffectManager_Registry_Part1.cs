@@ -84,7 +84,7 @@ public partial class CardEffectManager
         AddEffect("0031", Effect_0031_AirknightParshath);
 
         // 0037 - Alligator's Sword Dragon (Direct Attack condition)
-        AddEffect("0037", Effect_0037_AlligatorsSwordDragon);
+        // AddEffect("0037", Effect_0037_AlligatorsSwordDragon); // Condição passiva tratada direto no GameManager/BattleManager
 
         // 0039 - Altar for Tribute (Tribute to Heal)
         AddEffect("0039", Effect_0039_AltarForTribute);

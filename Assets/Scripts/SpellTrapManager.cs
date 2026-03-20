@@ -39,10 +39,32 @@ public class SpellTrapManager : MonoBehaviour
     public bool CanActivateCard(CardData card, bool isOwnerTurn)
     {
         // Jinzo (77585513): Traps não podem ser ativadas
-        if (card.type.Contains("Trap") && GameManager.Instance.IsCardActiveOnField("77585513"))
+        if (card.type.Contains("Trap"))
         {
-            Debug.Log("Ativação de Trap bloqueada por Jinzo!");
-            return false;
+            CardDisplay jinzo = GameManager.Instance.FindCardOnField("77585513", true);
+            if (jinzo == null) jinzo = GameManager.Instance.FindCardOnField("77585513", false);
+            if (jinzo == null) jinzo = GameManager.Instance.FindCardOnField("0975", true);
+            if (jinzo == null) jinzo = GameManager.Instance.FindCardOnField("0975", false);
+
+            if (jinzo != null)
+            {
+                // Verifica se o jogador ativando a trap é o controlador do Jinzo
+                bool isJinzoController = (jinzo.isPlayerCard && isOwnerTurn) || (!jinzo.isPlayerCard && !isOwnerTurn);
+                
+                var equips = CardEffectManager.Instance.GetEquippedCards(jinzo);
+                bool hasAmplifier = equips.Exists(e => e.CurrentCardData.id == "0054");
+
+                if (isJinzoController && hasAmplifier)
+                {
+                    // O controlador de Jinzo com Amplifier pode usar suas próprias Traps.
+                    // Não retorna false, continua a verificação.
+                }
+                else
+                {
+                    Debug.Log("Ativação de Trap bloqueada por Jinzo!");
+                    return false;
+                }
+            }
         }
 
         // Royal Decree (1563): Nega todas as outras Traps

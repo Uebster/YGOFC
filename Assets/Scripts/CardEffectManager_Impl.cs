@@ -2916,6 +2916,11 @@ public partial class CardEffectManager
     // Novo Hook para ativação de Spells (chamado pelo GameManager/SpellTrapManager)
     public void OnSpellActivated(CardDisplay spell)
     {
+        // Adicionado para o efeito da carta 7
+        if (spell.CurrentCardData.id == "0004")
+        {
+            Check7Effect(spell);
+        }
         // 1275 - Morale Boost (Heal on Equip)
         if (spell.CurrentCardData.property == "Equip")
         {
@@ -5689,4 +5694,40 @@ private void Effect_0206_BlindDestruction_Logic_Impl(CardDisplay source)
             else GameManager.Instance.DamagePlayer(1000);
         }
     }
-}
+private void Check7Effect(CardDisplay source)
+{
+    // Conta quantas cartas "7" est�o face-up no campo do jogador.
+    int sevenCount = 0;
+    List<CardDisplay> sevensOnField = new List<CardDisplay>();
+    if (GameManager.Instance.duelFieldUI != null)
+    {
+        Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+        foreach (var zone in zones)
+        {
+            if (zone.childCount > 0)
+            {
+                CardDisplay s = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (s != null && !s.isFlipped && s.CurrentCardData.id == "0004") // Check by ID for accuracy
+                {
+                    sevenCount++;
+                    sevensOnField.Add(s);
+                }
+            }
+        }
+    }
+
+    // Se 3 ou mais "7"s est�o no campo, ativa o efeito.
+    if (sevenCount >= 3)
+    {
+        Debug.Log("Condi��o da carta '7' atendida. Comprando 3 cartas e destruindo todos os '7's.");
+
+        // Compra 3 cartas.
+        for (int i = 0; i < 3; i++)
+        {
+            GameManager.Instance.DrawCard(source.isPlayerCard);
+        }
+
+        // Destroi todas as cartas "7".
+        DestroyCards(sevensOnField, source.isPlayerCard);
+    }
+}}

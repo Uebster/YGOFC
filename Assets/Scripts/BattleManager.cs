@@ -82,6 +82,8 @@ public class BattleManager : MonoBehaviour
         forcedAttackTarget = null;
         gravekeepersProtected = false;
         isBattleResolving = false;
+        cannotAttackFaceDown = false; // Reset A Feint Plan
+        isBattlePhase = false; // Garante que a fase de batalha seja resetada
     }
 
     // Prepara o monstro para atacar (Seleção)
@@ -298,6 +300,12 @@ public class BattleManager : MonoBehaviour
         if (target.isPlayerCard == currentAttacker.isPlayerCard)
         {
             Debug.LogWarning("Não pode atacar seu próprio monstro.");
+            return;
+        }
+
+        if (cannotAttackFaceDown && target.isFlipped)
+        {
+            UIManager.Instance.ShowMessage("Não é possível atacar monstros virados para baixo neste turno.");
             return;
         }
 
@@ -520,6 +528,35 @@ public class BattleManager : MonoBehaviour
             bool hasST = false;
             foreach (Transform zone in enemySpellZones) if (zone.childCount > 0) hasST = true;
             if (onlyDefense && !hasST) return true;
+        }
+
+        if (currentAttacker != null && currentAttacker.CurrentCardData.id == "0037")
+        {
+            bool canAttackDirectly = true;
+            Transform[] enemyMonsterZones = currentAttacker.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+
+            foreach (var zone in enemyMonsterZones)
+            {
+                if (zone.childCount > 0)
+                {
+                    CardDisplay monster = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (monster != null && !monster.isFlipped) // Só verifica monstros face-up
+                    {
+                        string attribute = monster.CurrentCardData.attribute;
+                        if (attribute != "Earth" && attribute != "Water" && attribute != "Fire")
+                        {
+                            canAttackDirectly = false;
+                            break;
+                        }
+                    }
+                    else if (monster != null && monster.isFlipped) // Se tiver monstro virado para baixo, não pode atacar direto
+                    {
+                        canAttackDirectly = false;
+                        break;
+                    }
+                }
+            }
+            if (canAttackDirectly) return true;
         }
 
         if (currentAttacker != null && currentAttacker.canAttackDirectly) return true;

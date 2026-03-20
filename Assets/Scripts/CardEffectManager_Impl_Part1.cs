@@ -29,18 +29,49 @@ public partial class CardEffectManager
 
         if (lacoodas.Count >= 3)
         {
-            Debug.Log("3-Hump Lacooda: Condição atendida. Tributando 2 '3-Hump Lacooda' para comprar 3 cartas.");
+            UIManager.Instance.ShowConfirmation("Ativar efeito do 3-Hump Lacooda? (Tributar 2 para comprar 3)", 
+            () => {
+                Debug.Log("3-Hump Lacooda: Condição atendida. Tributando 2 '3-Hump Lacooda' para comprar 3 cartas.");
             
-            // Tributa os 2 primeiros encontrados
-            for (int i = 0; i < 2; i++)
-            {
-                CardDisplay tribute = lacoodas[i];
-                GameManager.Instance.SendToGraveyard(tribute.CurrentCardData, tribute.isPlayerCard);
-                Destroy(tribute.gameObject);
-            }
-            
-            // Compra 3 cartas
-            for (int i = 0; i < 3; i++) GameManager.Instance.DrawCard(false); // ignoreLimit = false, mas forçamos 3 compras
+                // Garante que a lista ainda é válida antes de tributar
+                List<CardDisplay> currentLacoodas = new List<CardDisplay>();
+                Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+                foreach (var zone in zones)
+                {
+                    if (zone.childCount > 0)
+                    {
+                        CardDisplay m = zone.GetChild(0).GetComponent<CardDisplay>();
+                        if (m != null && !m.isFlipped && m.CurrentCardData.name == "3-Hump Lacooda")
+                        {
+                            currentLacoodas.Add(m);
+                        }
+                    }
+                }
+
+                if(currentLacoodas.Count >= 3)
+                {
+                    // Tributa os 2 primeiros encontrados que não sejam a fonte da ativação (se a fonte for um deles)
+                    List<CardDisplay> toTribute = currentLacoodas.FindAll(c => c != source);
+                    if (toTribute.Count < 2) toTribute = currentLacoodas; // Fallback se a fonte não estiver na lista por algum motivo
+
+                    for (int i = 0; i < 2; i++)
+                    {
+                        CardDisplay tribute = toTribute[i];
+                        GameManager.Instance.SendToGraveyard(tribute.CurrentCardData, tribute.isPlayerCard);
+                        Destroy(tribute.gameObject);
+                    }
+                
+                    // Compra 3 cartas
+                    for (int i = 0; i < 3; i++) GameManager.Instance.DrawCard(false);
+                }
+                else
+                {
+                     if (UIManager.Instance != null) UIManager.Instance.ShowMessage("A condição para o efeito de '3-Hump Lacooda' não é mais válida.");
+                }
+            }, 
+            () => {
+                Debug.Log("3-Hump Lacooda: Efeito não ativado pelo jogador.");
+            });
         }
         else
         {
@@ -73,7 +104,15 @@ public partial class CardEffectManager
 
     void Effect_0004_7(CardDisplay source)
     {
-        // Ganha 700 LP
+        // Regra: Quando existem 3 "7" face-up, compre 3 cartas e destrua todos os "7".
+        // Este é um efeito de gatilho que é verificado no hook OnSpellActivated.
+        // A função de ganho de LP ao ser destruído foi separada para clareza.
+        Check7Effect(source);
+    }
+
+    void Effect_0004_7_LPGain(CardDisplay source)
+    {
+        // Regra: Quando este card é enviado do campo para o Cemitério, ganhe 700 LP.
         Effect_GainLP(source, 700);
     }
 
@@ -122,10 +161,56 @@ public partial class CardEffectManager
             return;
         }
 
-        int cost = source.isPlayerCard ? GameManager.Instance.playerLP / 2 : GameManager.Instance.opponentLP / 2;
-        if (Effect_PayLP(source, cost))
+        List<CardData> deck = source.isPlayerCard ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+        List<CardData> hand = source.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+
+        CardData berserkInDeck = deck.Find(c => c.name.Contains("Berserk Dragon"));
+        CardData berserkInHand = hand.Find(c => c.name.Contains("Berserk Dragon"));
+
+        List<CardData> options = new List<CardData>();
+        if (berserkInHand != null) options.Add(berserkInHand);
+        if (berserkInDeck != null) options.Add(berserkInDeck);
+
+        if (options.Count == 0)
         {
-            Effect_SpecialSummonFromDeck(source, nameContains: "Berserk Dragon");
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Nenhum 'Berserk Dragon' encontrado na sua mão ou Deck.");
+            return;
+        }
+
+        if (options.Count == 1)
+        {
+            // Invoca diretamente se houver apenas uma opção
+            CardData toSummon = options[0];
+            bool fromHand = (toSummon == berserkInHand);
+            if (fromHand)
+            {
+                GameManager.Instance.RemoveCardFromHand(toSummon, source.isPlayerCard);
+            }
+            else
+            {
+                deck.Remove(toSummon);
+                GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+            }
+            GameManager.Instance.SpecialSummonFromData(toSummon, source.isPlayerCard);
+            Debug.Log($"'Berserk Dragon' invocado de {(fromHand ? "mão" : "deck")}.");
+        }
+        else
+        {
+            // Abre seletor para o jogador escolher
+            GameManager.Instance.OpenCardSelection(options, "Invocar 'Berserk Dragon' de:", (selected) => {
+                bool fromHand = (selected == berserkInHand);
+                if (fromHand)
+                {
+                    GameManager.Instance.RemoveCardFromHand(selected, source.isPlayerCard);
+                }
+                else
+                {
+                    deck.Remove(selected);
+                    GameManager.Instance.ShuffleDeck(source.isPlayerCard);
+                }
+                GameManager.Instance.SpecialSummonFromData(selected, source.isPlayerCard);
+                 Debug.Log($"'Berserk Dragon' invocado de {(fromHand ? "mão" : "deck")}.");
+            });
         }
     }
 
@@ -166,7 +251,7 @@ public partial class CardEffectManager
     {
         // Oponente não pode atacar monstros face-down neste turno
         // Define flag no BattleManager
-        Debug.Log("A Feint Plan: Monstros face-down protegidos de ataque este turno.");
+        Debug.Log("A Feint Plan: Nenhum jogador pode atacar monstros virados para baixo neste turno.");
         BattleManager.Instance.cannotAttackFaceDown = true;
     }
 
@@ -376,16 +461,40 @@ public partial class CardEffectManager
                                 string declaredAttribute = selectedAttr[0];
                                 Debug.Log($"Abyssal Designator: Declarou {declaredAttribute} / {declaredRace}.");
                                 
-                                List<CardData> oppDeck = GameManager.Instance.GetOpponentMainDeck();
-                                CardData target = oppDeck.Find(c => c.attribute == declaredAttribute && c.race == declaredRace);
-                                
-                                if (target != null) {
-                                    Debug.Log($"Abyssal Designator: Oponente enviou {target.name} ao GY.");
-                                    GameManager.Instance.SendToGraveyard(target, !source.isPlayerCard);
-                                    oppDeck.Remove(target);
-                                    GameManager.Instance.ShuffleDeck(!source.isPlayerCard);
-                                } else {
-                                    UIManager.Instance.ShowMessage("O oponente não possui monstro correspondente no Deck.");
+                                bool isOpponentPlayer = !source.isPlayerCard;
+                                List<CardData> oppDeck = isOpponentPlayer ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+                                List<CardData> oppHand = isOpponentPlayer ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+
+                                List<CardData> validChoices = new List<CardData>();
+                                validChoices.AddRange(oppHand.FindAll(c => c.attribute == declaredAttribute && c.race == declaredRace));
+                                validChoices.AddRange(oppDeck.FindAll(c => c.attribute == declaredAttribute && c.race == declaredRace));
+
+                                if (validChoices.Count > 0)
+                                {
+                                    if(isOpponentPlayer)
+                                    {
+                                        // Humano escolhe
+                                        GameManager.Instance.OpenCardSelection(validChoices, "Escolha um monstro para enviar ao GY", (selected) => {
+                                            if (oppHand.Contains(selected)) GameManager.Instance.RemoveCardFromHand(selected, true);
+                                            else oppDeck.Remove(selected);
+                                            GameManager.Instance.SendToGraveyard(selected, true);
+                                            GameManager.Instance.ShuffleDeck(true);
+                                        });
+                                    }
+                                    else
+                                    {
+                                        // IA escolhe aleatoriamente
+                                        CardData choice = validChoices[Random.Range(0, validChoices.Count)];
+                                        if (oppHand.Contains(choice)) GameManager.Instance.RemoveCardFromHand(choice, false);
+                                        else oppDeck.Remove(choice);
+                                        GameManager.Instance.SendToGraveyard(choice, false);
+                                        GameManager.Instance.ShuffleDeck(false);
+                                        Debug.Log($"Abyssal Designator: Oponente (IA) enviou {choice.name} ao GY.");
+                                    }
+                                }
+                                else 
+                                {
+                                    UIManager.Instance.ShowMessage("O oponente não possui monstro correspondente na mão ou no Deck.");
                                 }
                             }
                         });
@@ -461,7 +570,8 @@ public partial class CardEffectManager
         List<CardDisplay> targets = new List<CardDisplay>();
         if (GameManager.Instance.duelFieldUI != null)
         {
-             foreach(var zone in GameManager.Instance.duelFieldUI.opponentMonsterZones)
+             Transform[] zones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
+             foreach(var zone in zones)
              {
                  if(zone.childCount > 0)
                  {
@@ -480,7 +590,7 @@ public partial class CardEffectManager
         foreach (var monster in targets)
         {
              Debug.Log($"Adhesion Trap Hole: {monster.CurrentCardData.name} ATK reduzido pela metade.");
-             int reduction = monster.currentAtk / 2;
+             int reduction = monster.originalAtk / 2;
              monster.AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Continuous, StatModifier.Operation.Add, -reduction, source));
         }
     }
@@ -497,7 +607,7 @@ public partial class CardEffectManager
                 if(z.childCount > 0)
                 {
                     var m = z.GetChild(0).GetComponent<CardDisplay>();
-                    if(m != null && m.battledThisTurn) toDestroy.Add(m);
+                    if(m != null && m.battledThisTurn && !m.isFlipped) toDestroy.Add(m);
                 }
             }
         }
@@ -515,11 +625,7 @@ public partial class CardEffectManager
         }
 
         Debug.Log("After the Struggle: Destruindo monstros que batalharam.");
-        foreach(var m in toDestroy)
-        {
-            GameManager.Instance.SendToGraveyard(m.CurrentCardData, m.isPlayerCard);
-            Destroy(m.gameObject);
-        }
+        DestroyCards(toDestroy, source.isPlayerCard);
     }
 
     void Effect_0029_Agido(CardDisplay source)
@@ -553,48 +659,6 @@ public partial class CardEffectManager
         // Draw é trigger.
         Debug.Log("Airknight Parshath: Compra 1 carta (Trigger de dano).");
         if (source.isPlayerCard) GameManager.Instance.DrawCard();
-    }
-
-void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
-    {
-        // Pode atacar direto se os únicos monstros face-up do oponente forem Earth, Water ou Fire.
-        bool canAttackDirectly = true;
-        if (GameManager.Instance.duelFieldUI == null) return;
-        
-        Transform[] enemyMonsterZones = source.isPlayerCard ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
-
-        foreach (var zone in enemyMonsterZones)
-        {
-            if (zone.childCount > 0)
-            {
-                CardDisplay monster = zone.GetChild(0).GetComponent<CardDisplay>();
-                if (monster != null && !monster.isFlipped) // Só verifica monstros face-up
-                {
-                    string race = monster.CurrentCardData.race;
-                    if (race != "Earth" && race != "Water" && race != "Fire")
-                    {
-                        canAttackDirectly = false;
-                        break;
-                    }
-                }
-                else
-                {
-                    canAttackDirectly = false;
-                    break;
-                }
-            }
-        }
-
-        if (canAttackDirectly)
-        {
-            Debug.Log("Alligator's Sword Dragon: Pode atacar diretamente!");
-            //  BattleManager.Instance.canCurrentlyAttackDirectly = true; // Assuming you have a variable for this
-        }
-        else
-        {
-            Debug.Log("Alligator's Sword Dragon: Não pode atacar diretamente.");
-            // BattleManager.Instance.canCurrentlyAttackDirectly = false;
-        }
     }
 
     void Effect_0039_AltarForTribute(CardDisplay source)
@@ -971,9 +1035,22 @@ void Effect_0037_AlligatorsSwordDragon(CardDisplay source)
                     CardData oppCard = oppHand[Random.Range(0, oppHand.Count)];
                     Debug.Log($"Ante: Você ({myCard.name} Lv{myCard.level}) vs Oponente ({oppCard.name} Lv{oppCard.level})");
                     
-                    if (myCard.level > oppCard.level) GameManager.Instance.DamageOpponent(1000);
-                    else if (oppCard.level > myCard.level) GameManager.Instance.DamagePlayer(1000);
-                    else Debug.Log("Ante: Empate.");
+                    if (myCard.level > oppCard.level) 
+                    {
+                        GameManager.Instance.DamageOpponent(1000);
+                        GameManager.Instance.SendToGraveyard(oppCard, !source.isPlayerCard);
+                        GameManager.Instance.RemoveCardFromHand(oppCard, !source.isPlayerCard);
+                    }
+                    else if (oppCard.level > myCard.level)
+                    {
+                        GameManager.Instance.DamagePlayer(1000);
+                        GameManager.Instance.SendToGraveyard(myCard, source.isPlayerCard);
+                        GameManager.Instance.RemoveCardFromHand(myCard, source.isPlayerCard);
+                    }
+                    else 
+                    {
+                        Debug.Log("Ante: Empate.");
+                    }
                 }
             });
         }
