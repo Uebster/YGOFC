@@ -21,81 +21,187 @@ HTML_UI = """
     <meta charset="UTF-8">
     <title>Yu-Gi-Oh! Deck Extractor Pro</title>
     <style>
+        :root {
+            --gold: #d4af37;
+            --cyan: #00e5ff;
+            --purple: #b537f2;
+            --green: #39ff14;
+            --red: #ff073a;
+            --yellow: #ffee00;
+            --bg-dark: #080808;
+            --panel-bg: #111111;
+        }
         body { 
-            background: #0d0d0d; color: #d4af37; font-family: 'Segoe UI', sans-serif;
-            display: flex; flex-direction: column; align-items: center; padding: 40px;
+            background: var(--bg-dark); color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 40px;
         }
-        .panel { 
-            background: #1a1a1a; border: 3px solid #d4af37; padding: 25px; 
-            border-radius: 10px; width: 500px; box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+        .panel-container { 
+            background: var(--panel-bg); border: 2px solid var(--yellow); padding: 35px; 
+            border-radius: 20px; width: 1000px; box-shadow: 0 0 40px rgba(255, 238, 0, 0.15);
         }
-        h1 { text-align: center; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; }
-        label { display: block; margin-top: 15px; font-size: 0.9em; color: #aaa; }
-        input, select, button.browse { 
-            width: 100%; padding: 10px; margin-top: 5px; background: #222; 
-            border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box;
+        .neon-title { 
+            text-align: center; text-transform: uppercase; letter-spacing: 5px; margin-top: 0; margin-bottom: 35px;
+            color: var(--yellow); text-shadow: 0 0 10px var(--yellow), 0 0 20px rgba(255, 238, 0, 0.5);
         }
-        .input-group { display: flex; gap: 10px; align-items: center; }
-        button.browse { flex: 0 0 auto; width: 100px; background: #555; cursor: pointer; border: none; font-weight: bold; }
-        button.browse:hover { background: #777; }
-        .btn-group { display: flex; gap: 10px; margin-top: 25px; flex-wrap: wrap; }
-        button { 
-            flex: 1 1 45%; padding: 15px; background: #d4af37; 
-            color: #000; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase;
+        .panel-columns { display: flex; gap: 40px; align-items: stretch; }
+        .col { flex: 1; display: flex; flex-direction: column; gap: 18px; }
+        
+        label { font-size: 0.9em; color: #ccc; font-weight: bold; display: block; margin-bottom: 6px; }
+        .form-group { margin-bottom: 5px; }
+        
+        input[type="text"], input[type="date"], select { 
+            width: 100%; padding: 12px 15px; background: #050505; border: 1px solid #333; 
+            color: #fff; border-radius: 10px; box-sizing: border-box; transition: 0.3s; font-family: inherit;
         }
-        button.secondary { background: #3498db; color: #fff; }
-        button.tertiary { background: #27ae60; color: #fff; }
-        button.quaternary { background: #9b59b6; color: #fff; }
-        button.danger { background: #e74c3c; color: #fff; }
-        button:hover { opacity: 0.8; }
-        .progress-container { background: #000; height: 20px; border-radius: 10px; margin-top: 25px; border: 1px solid #d4af37; overflow: hidden; }
-        .progress-bar { width: 0%; height: 100%; background: #d4af37; transition: 0.2s; }
+        input:focus, select:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 12px rgba(0, 229, 255, 0.4); }
+        
+        .input-group { display: flex; gap: 10px; align-items: stretch; }
+        
+        /* Neon Buttons */
+        .action-btn {
+            background: transparent; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+            border-radius: 12px; padding: 14px; cursor: pointer; transition: all 0.3s ease;
+            border: 2px solid; display: flex; justify-content: center; align-items: center; text-align: center;
+        }
+        .action-btn:hover { color: #000 !important; text-shadow: none; transform: translateY(-2px); }
+
+        .gold-btn { color: var(--gold); border-color: var(--gold); box-shadow: inset 0 0 8px rgba(212,175,55,0.3), 0 0 8px rgba(212,175,55,0.3); text-shadow: 0 0 5px var(--gold); }
+        .gold-btn:hover { background: var(--gold); box-shadow: inset 0 0 20px var(--gold), 0 0 20px var(--gold); }
+
+        .cyan-btn { color: var(--cyan); border-color: var(--cyan); box-shadow: inset 0 0 8px rgba(0,229,255,0.3), 0 0 8px rgba(0,229,255,0.3); text-shadow: 0 0 5px var(--cyan); }
+        .cyan-btn:hover { background: var(--cyan); box-shadow: inset 0 0 20px var(--cyan), 0 0 20px var(--cyan); }
+
+        .green-btn { color: var(--green); border-color: var(--green); box-shadow: inset 0 0 8px rgba(57,255,20,0.3), 0 0 8px rgba(57,255,20,0.3); text-shadow: 0 0 5px var(--green); }
+        .green-btn:hover { background: var(--green); box-shadow: inset 0 0 20px var(--green), 0 0 20px var(--green); }
+
+        .purple-btn { color: var(--purple); border-color: var(--purple); box-shadow: inset 0 0 8px rgba(181,55,242,0.3), 0 0 8px rgba(181,55,242,0.3); text-shadow: 0 0 5px var(--purple); }
+        .purple-btn:hover { background: var(--purple); box-shadow: inset 0 0 20px var(--purple), 0 0 20px var(--purple); }
+
+        .red-btn { color: var(--red); border-color: var(--red); box-shadow: inset 0 0 8px rgba(255,7,58,0.3), 0 0 8px rgba(255,7,58,0.3); text-shadow: 0 0 5px var(--red); }
+        .red-btn:hover { background: var(--red); box-shadow: inset 0 0 20px var(--red), 0 0 20px var(--red); color: #fff !important; }
+
+        .browse { flex: 0 0 auto; width: auto; padding: 0 20px;}
+        .btn-small { padding: 10px; font-size: 0.8em; border-width: 1px;}
+        
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;}
+        .btn-grid > :nth-child(7) { grid-column: span 2; } /* Botão Zip Ocupa tudo */
+
+        /* TXT Options Block */
+        #txt_options { background: #050505; padding: 20px; border-radius: 12px; border: 1px solid #222; margin-top: auto; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); flex-grow: 1; display: flex; flex-direction: column;}
+        .section-title { color: var(--cyan); text-shadow: 0 0 5px rgba(0,229,255,0.4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;}
+        .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85em; color: #999; margin-bottom: auto; }
+        .checkbox-grid label { font-weight: normal; margin: 0; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: color 0.2s;}
+        .checkbox-grid label:hover { color: var(--cyan); }
+        .checkbox-actions { display: flex; gap: 10px; margin-top: 15px;}
+        .checkbox-actions button { flex: 1; }
+        input[type="checkbox"] { accent-color: var(--cyan); width: 16px; height: 16px; cursor: pointer;}
+
+        /* Progress & Log */
+        .progress-container { background: #050505; border: 1px solid var(--cyan); height: 22px; border-radius: 11px; overflow: hidden; box-shadow: 0 0 10px rgba(0,229,255,0.2); margin-top: 5px; flex-shrink: 0;}
+        .progress-bar { width: 0%; height: 100%; background: var(--cyan); box-shadow: 0 0 15px var(--cyan); transition: width 0.3s ease; }
+        
+        #info { text-align: center; color: #aaa; font-size: 0.9em; margin: 5px 0 0 0; font-style: italic;}
+        
         #log { 
-            margin-top: 20px; height: 150px; background: #000; border: 1px solid #333; 
-            padding: 10px; font-size: 0.75em; overflow-y: scroll; color: #0f0; font-family: monospace;
+            flex-grow: 1; background: #050505; border: 1px solid #222; padding: 15px; 
+            border-radius: 12px; overflow-y: auto; color: var(--green); font-family: 'Consolas', 'Courier New', monospace; 
+            font-size: 0.85em; box-shadow: inset 0 0 20px rgba(0,0,0,1); text-shadow: 0 0 2px rgba(57,255,20,0.3);
+            height: 250px; /* Base height */
         }
+        #log div { margin-bottom: 4px; line-height: 1.4;}
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #111; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
     </style>
 </head>
 <body>
-    <div class="panel">
-        <h1>Ultimate Extractor</h1>
+    <div class="panel-container">
+        <h1 class="neon-title">Ultimate Extractor</h1>
 
-        <label>Nome da Pasta</label>
-        <div class="input-group">
-            <input type="text" id="folder" placeholder="Ex: C:/YuGiOh_Assets">
-            <button class="browse" onclick="selectFolder()">Procurar...</button>
+        <div class="panel-columns">
+            
+            <!-- Coluna Esquerda: Configurações -->
+            <div class="col left-col">
+                <div class="form-group">
+                    <label>Nome da Pasta Destino</label>
+                    <div class="input-group">
+                        <input type="text" id="folder" placeholder="Ex: C:/YuGiOh_Assets">
+                        <button class="action-btn cyan-btn browse" onclick="selectFolder()">Procurar</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Data Inicial</label>
+                    <input type="date" id="start" value="1999-01-01">
+                </div>
+
+                <div class="form-group">
+                    <label>Data Final</label>
+                    <input type="date" id="end" value="2008-12-31">
+                </div>
+
+                <div class="form-group">
+                    <label>Região da API</label>
+                    <select id="region">
+                        <option value="ocg">OCG (Japão)</option>
+                        <option value="tcg">TCG (Ocidente)</option>
+                    </select>
+                </div>
+
+                <div id="txt_options">
+                    <label class="section-title">Colunas (Exportação TXT)</label>
+                    <div class="checkbox-grid">
+                        <label><input type="checkbox" id="col_id" checked> ID Custom</label>
+                        <label><input type="checkbox" id="col_name" checked> Nome</label>
+                        <label><input type="checkbox" id="col_type" checked> Tipo</label>
+                        <label><input type="checkbox" id="col_attr" checked> Atributo</label>
+                        <label><input type="checkbox" id="col_race" checked> Raça/Prop.</label>
+                        <label><input type="checkbox" id="col_level" checked> Nível/Link</label>
+                        <label><input type="checkbox" id="col_atk" checked> ATK</label>
+                        <label><input type="checkbox" id="col_def" checked> DEF</label>
+                        <label><input type="checkbox" id="col_pass" checked> Senha</label>
+                        <label><input type="checkbox" id="col_desc" checked> Descrição</label>
+                        <label><input type="checkbox" id="col_arch"> Arquétipo</label>
+                        <label><input type="checkbox" id="col_scale"> Scale</label>
+                        <label><input type="checkbox" id="col_goat"> Goat List</label>
+                    </div>
+                    <div class="checkbox-actions">
+                        <button class="action-btn cyan-btn btn-small" onclick="toggleAllTxt(true)">Selecionar Todos</button>
+                        <button class="action-btn cyan-btn btn-small" onclick="toggleAllTxt(false)">Limpar Seleção</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Ações e Log -->
+            <div class="col right-col">
+                <div class="btn-grid">
+                    <button class="action-btn cyan-btn" onclick="startTask('txt')">1. TXT Rápido</button>
+                    <button class="action-btn cyan-btn" onclick="startTask('json')">2. JSON Master</button>
+                    <button class="action-btn gold-btn" onclick="startTask('img')">3. Imagens (HD)</button>
+                    <button class="action-btn green-btn" onclick="startTask('csv')">4. Tabela CSV</button>
+                    <button class="action-btn purple-btn" onclick="startTask('lua')">5. Scripts LUA</button>
+                    <button class="action-btn green-btn" onclick="startTask('audit')">6. Auditoria</button>
+                    <button class="action-btn cyan-btn" onclick="startTask('zip')">7. Zipar Backup</button>
+                </div>
+
+                <button class="action-btn red-btn" onclick="cancelProcess()">Parar Operação Ativa</button>
+
+                <div class="progress-container">
+                    <div class="progress-bar" id="bar"></div>
+                </div>
+                <p id="info">Sistema Ocioso e Pronto.</p>
+                
+                <div id="log">
+                    <div style="color: var(--cyan);">[ SISTEMA ULTIMATE EXTRACTOR V2.0 ]</div>
+                    <div>- Módulo de Multi-Threading Ativo (x10)</div>
+                    <div>- Proteção de Auto-Retry Habilitada</div>
+                    <div>Aguardando comandos...</div>
+                </div>
+            </div>
         </div>
-
-        <label>Data Inicial</label>
-        <input type="date" id="start" value="1999-01-01">
-
-        <label>Data Final</label>
-        <input type="date" id="end" value="2008-12-31">
-
-        <label>Região</label>
-        <select id="region">
-            <option value="ocg">OCG (Japão)</option>
-            <option value="tcg">TCG (Ocidente)</option>
-        </select>
-
-        <div class="btn-group">
-            <button class="secondary" onclick="startTask('txt')">1. Lista TXT</button>
-            <button class="secondary" onclick="startTask('json')">2. JSON Master</button>
-            <button onclick="startTask('img')">3. Imagens</button>
-            <button class="tertiary" onclick="startTask('csv')">4. Lista CSV</button>
-            <button class="quaternary" onclick="startTask('lua')">5. Scripts LUA</button>
-            <button class="tertiary" onclick="startTask('audit')">6. Auditoria</button>
-            <button class="secondary" onclick="startTask('zip')">7. Gerar ZIP</button>
-        </div>
-
-        <div class="progress-container">
-            <div class="progress-bar" id="bar"></div>
-        </div>
-        <div style="margin-top:10px; text-align:center;">
-            <button class="danger" style="width:200px; padding:10px;" onclick="cancelProcess()">Parar Execução</button>
-        </div>
-        <p id="info" style="text-align:center; font-size:0.8em; margin-top:10px;">Aguardando...</p>
-        <div id="log"></div>
     </div>
 
     <script>
@@ -107,13 +213,33 @@ HTML_UI = """
             });
         }
 
+        function toggleAllTxt(state) {
+            const checkboxes = ['col_id', 'col_name', 'col_type', 'col_attr', 'col_race', 'col_level', 'col_atk', 'col_def', 'col_pass', 'col_desc', 'col_arch', 'col_scale', 'col_goat'];
+            checkboxes.forEach(id => document.getElementById(id).checked = state);
+        }
+
         function startTask(type) {
             const data = {
                 type: type,
                 folder: document.getElementById('folder').value || "Ultimate_Assets",
                 start: document.getElementById('start').value,
                 end: document.getElementById('end').value,
-                region: document.getElementById('region').value
+                region: document.getElementById('region').value,
+                txt_cols: {
+                    id: document.getElementById('col_id').checked,
+                    name: document.getElementById('col_name').checked,
+                    type: document.getElementById('col_type').checked,
+                    attr: document.getElementById('col_attr').checked,
+                    race: document.getElementById('col_race').checked,
+                    level: document.getElementById('col_level').checked,
+                    atk: document.getElementById('col_atk').checked,
+                    def: document.getElementById('col_def').checked,
+                    pass: document.getElementById('col_pass').checked,
+                    desc: document.getElementById('col_desc').checked,
+                    arch: document.getElementById('col_arch').checked,
+                    scale: document.getElementById('col_scale').checked,
+                    goat: document.getElementById('col_goat').checked
+                }
             };
             fetch('/start', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
             if(interval) clearInterval(interval);
@@ -142,7 +268,7 @@ HTML_UI = """
 </html>
 """
 
-def task_executor(tipo, folder, start, end, region):
+def task_executor(tipo, folder, start, end, region, txt_cols=None):
     global progresso, cancel_task
     cancel_task = False
     progresso = {"atual": 0, "total": 0, "status": "Iniciando...", "card": "", "log": []}
@@ -168,10 +294,27 @@ def task_executor(tipo, folder, start, end, region):
         progresso["total"] = total
 
         if tipo == 'txt':
+            if not txt_cols:
+                txt_cols = {'id': True, 'name': True, 'type': True, 'attr': True, 'race': True, 'level': True, 'atk': True, 'def': True, 'pass': True, 'desc': True, 'arch': False, 'scale': False, 'goat': False}
             progresso["status"] = "Gerando TXT..."
             path_txt = os.path.join(folder, "lista_cartas.txt")
             with open(path_txt, "w", encoding="utf-8") as f:
-                f.write("Nº\tNOME\tTIPO\tATRIBUTO\tRAÇA/PROPRIEDADE\tLV\tATK\tDEF\tID\tDESC\n")
+                headers = []
+                if txt_cols.get('id'): headers.append("Nº")
+                if txt_cols.get('name'): headers.append("NOME")
+                if txt_cols.get('type'): headers.append("TIPO")
+                if txt_cols.get('attr'): headers.append("ATRIBUTO")
+                if txt_cols.get('race'): headers.append("RAÇA/PROPRIEDADE")
+                if txt_cols.get('level'): headers.append("LV")
+                if txt_cols.get('atk'): headers.append("ATK")
+                if txt_cols.get('def'): headers.append("DEF")
+                if txt_cols.get('pass'): headers.append("ID")
+                if txt_cols.get('arch'): headers.append("ARCHETYPE")
+                if txt_cols.get('scale'): headers.append("SCALE")
+                if txt_cols.get('goat'): headers.append("GOAT")
+                if txt_cols.get('desc'): headers.append("DESC")
+                f.write("\t".join(headers) + "\n")
+                
                 for i, c in enumerate(cards, 1):
                     if cancel_task: break
                     if cancel_task: break
@@ -183,9 +326,11 @@ def task_executor(tipo, folder, start, end, region):
                     tipo_api = c.get('type', '')
                     cid = c.get('id', '')
                     desc = c.get('desc', '').replace('\n', ' ').replace('\r', ' ')
+                    archetype = c.get('archetype', 'None')
+                    goat_status = c.get('banlist_info', {}).get('banlist_goat', 'Unlimited')
+                    scale = c.get('scale', '-')
 
                     if "Monster" in tipo_api:
-                        # Mantém a lógica de subtipo e adiciona o atributo
                         if "Fusion" in tipo_api: sub_tipo = "Fusion"
                         elif "Ritual" in tipo_api: sub_tipo = "Ritual"
                         elif "Normal" in tipo_api: sub_tipo = "Normal"
@@ -194,17 +339,32 @@ def task_executor(tipo, folder, start, end, region):
 
                         attribute = c.get('attribute', '-').upper()
                         race = c.get('race', '-')
-                        level = c.get('level', c.get('linkval', 0))
-                        atk = c.get('atk', 0)
-                        defe = c.get('def', 0)
-                        archetype = c.get('archetype', 'None')
-                        linha = f"{num}\t{name}\t{tipo_final}\t{attribute}\t{race}\t{level}\t{atk}\t{defe}\t{cid}\t{desc}\n"
+                        level = str(c.get('level', c.get('linkval', 0)))
+                        atk = str(c.get('atk', 0))
+                        defe = str(c.get('def', 0))
                     else:
-                        # Adiciona a propriedade (subtipo) para Magias e Armadilhas
-                        property = c.get('race', 'Normal')
-                        linha = f"{num}\t{name}\t{tipo_api}\t-\t{property}\t-\t-\t-\t{cid}\t{desc}\n"
-                    
-                    f.write(linha)
+                        tipo_final = tipo_api
+                        attribute = "-"
+                        race = c.get('race', 'Normal')
+                        level = "-"
+                        atk = "-"
+                        defe = "-"
+                        
+                    row = []
+                    if txt_cols.get('id'): row.append(num)
+                    if txt_cols.get('name'): row.append(name)
+                    if txt_cols.get('type'): row.append(tipo_final)
+                    if txt_cols.get('attr'): row.append(attribute)
+                    if txt_cols.get('race'): row.append(race)
+                    if txt_cols.get('level'): row.append(level)
+                    if txt_cols.get('atk'): row.append(atk)
+                    if txt_cols.get('def'): row.append(defe)
+                    if txt_cols.get('pass'): row.append(str(cid))
+                    if txt_cols.get('arch'): row.append(archetype)
+                    if txt_cols.get('scale'): row.append(str(scale))
+                    if txt_cols.get('goat'): row.append(goat_status)
+                    if txt_cols.get('desc'): row.append(desc)
+                    f.write("\t".join(row) + "\n")
             
             progresso["log"].append(f"✓ Lista TXT gerada!")
 
@@ -495,7 +655,7 @@ def cancel():
 @app.route('/start', methods=['POST'])
 def start():
     d = request.json
-    threading.Thread(target=task_executor, args=(d['type'], d['folder'], d['start'], d['end'], d['region'])).start()
+    threading.Thread(target=task_executor, args=(d['type'], d['folder'], d['start'], d['end'], d['region'], d.get('txt_cols', {}))).start()
     return jsonify({"ok": True})
 
 @app.route('/status')
