@@ -1,54 +1,60 @@
 # 5. A Bíblia de Programação de Cartas (Card Programming API)
 
 ## Visão Geral
-Este documento é o guia absoluto e exaustivo para programar os efeitos das 2147 cartas do jogo. Ele unifica a arquitetura do sistema, os Gatilhos (Hooks), Funções Auxiliares (Helpers), o Dicionário de Variáveis de Estado (Flags), as lógicas de interrupções de UI e subsistemas complexos. Consulte este documento sempre que for implementar a lógica de uma carta no `CardEffectManager_Impl.cs`.
+Este documento é o guia absoluto e exaustivo para programar e interagir com os efeitos das 2147 cartas do jogo. Ele unifica a arquitetura do sistema, os Gatilhos (Hooks), Funções Auxiliares (Helpers), o Dicionário de Variáveis de Estado (Flags), as lógicas de interrupções de UI e subsistemas complexos. 
+
+**[REVOLUÇÃO DE ARQUITETURA]:** O projeto migrou de um modelo engessado de métodos C# Hardcoded (antigo `CardEffectManager_Impl`) para um motor dinâmico e flexível baseado em scripts **LUA (MoonSharp)**, emulando perfeitamente a API oficial do YGOPro (OCGCore).
 
 ---
 
-## 5.1 Arquitetura do Sistema de Efeitos (`CardEffectManager`)
+## 5.1 Arquitetura do Sistema de Efeitos (`CardEffectManager` e MoonSharp)
 
-O `CardEffectManager` é o sistema central responsável por executar a lógica de todas as cartas do jogo. Devido à grande quantidade de cartas, o sistema foi refatorado para usar **Partial Classes**, dividindo o código em múltiplos arquivos.
+O `CardEffectManager` é a Máquina Virtual central do jogo. Ele hospeda o interpretador Lua e atua como o regente da orquestra, delegando a inteligência matemática da carta para o script de texto e executando os gráficos/status no C#.
 
-### 5.1.1 Estrutura de Arquivos
-*   **`CardEffectManager.cs` (Core):** Contém a estrutura base da classe (`MonoBehaviour`), o Singleton `Instance`, o dicionário de efeitos (`effectDatabase`) e métodos de infraestrutura (como `DestroyAllMonsters`, `CollectCards`).
-*   **`CardEffectManager_Impl.cs` (Implementação Base e Utilitários):** Contém métodos genéricos de efeitos usados por muitas cartas (os *Helpers*), lógica de manutenção e os hooks de eventos principais (`OnPhaseStart`, `OnCardSentToGraveyard`, etc).
-*   **`CardEffectManager_Registry.cs`:** Ponto de entrada para o registro de todos os efeitos. O método `InitializeEffects()` chama as inicializações de cada parte.
-*   **Arquivos de Registro Parciais (`Registry_PartX.cs`):** Contêm apenas as chamadas `AddEffect("ID", Lógica)` para registrar as cartas no dicionário. Divididos por faixas de ID (ex: 0001-0500).
-*   **Arquivos de Implementação Parciais (`Impl_PartX.cs`):** Contêm a implementação detalhada de efeitos específicos para cada carta, seguindo a convenção `Effect_ID_Nome` (ex: `Effect_0031_AirknightParshath(CardDisplay source)`).
+### 5.1.1 Estrutura de Arquivos e Componentes
+*   **`CardEffectManager.cs` (A Máquina Virtual):** Singleton principal. Inicializa a `luaEngine`, gerencia o cache de memória das cartas na mesa (`activeLuaCards`) e comanda as Corrotinas que abrigam os efeitos em resolução (`pendingResolutions`).
+*   **`LuaAPI.cs` (A Ponte C# <-> LUA):** Um "Wrapper" maciço exposto para a máquina virtual. Ele mapeia os 4 pilares do sistema OCGCore:
+    *   `LuaDuel` (`Duel.`): Classe global de estado. Ex: `Duel.Damage`, `Duel.Destroy`, `Duel.GetMatchingGroup`.
+    *   `LuaCard` (`c:`): O invólucro do `CardDisplay` ou `CardData` real da Unity, provendo informações como `c:GetAttack()` para o script.
+    *   `LuaEffect` (`Effect.`): O contêiner lógico que estrutura a anatomia de uma habilidade (`Condition`, `Cost`, `Target`, `Operation`).
+    *   `LuaGroup` (`Group` ou `eg`): Tabelas de listas de cartas dinâmicas para aplicação em massa. Suporta métodos de injeção de delegates (Filtros C#) via `params object[] extraArgs`.
+*   **`Assets/Scripts/LuaScripts/`:** O diretório de dados definitivo. Contém a base canônica (`constant.lua` e `utility.lua`) e milhares de arquivos textuais `.lua` batizados pela Custom ID da carta (ex: `c0217.lua`).
+*   **`CardEffectManager_Impl.cs` (Sobrevivência):** Mantém apenas as funções utilitárias nativas (Helpers), flags temporárias da mesa e os `Hooks` de conexão, limpos de todas as lógicas hardcoded unitárias de cartas passadas.
 
-### 5.1.2 Fluxo de Execução
-1.  O jogador ativa uma carta (clique em "Activate" ou Flip).
-2.  O `GameManager` (ou `ChainManager` via corrente) chama `CardEffectManager.Instance.ExecuteCardEffect(card)`.
-3.  O Manager busca o ID da carta no `effectDatabase`.
-4.  Se encontrado, o `Action<CardDisplay>` correspondente é invocado.
-5.  A lógica (genérica ou específica) é executada, interagindo com `GameManager`, `DuelFieldUI`, etc.
+### 5.1.2 O Novo Fluxo de Execução e o Sistema `chk`
+O jogo agora obedece rigorosamente às janelas de ativação de um simulador autêntico. A ação foi dividida entre o momento de pagar/escolher alvos (Ativação) e a explosão do efeito (Resolução na Corrente):
+1.  **Gatilho Inicial:** Jogador clica "Activate". O GameManager aciona `CardEffectManager.Instance.ActivateCard()`. O script LUA é lido da pasta e cacheado na memória RAM em `activeLuaCards`.
+2.  **Modo de Validação Silenciosa (`chk=0`):** O C# vasculha o arquivo Lua. Executa `Condition()`, `Cost()` e `Target()` passando `chk=0`. Isso é uma checagem seca (Dry-run). Se a carta exigir um alvo específico e não houver, a engine retorna `false` antes mesmo de piscar a UI, blindando o jogador contra o gasto desnecessário de vida ou descarte.
+3.  **Fase de Ativação (`chk=1`):** Se válido, a Engine abre as corrotinas e roda as mesmas funções com `chk=1`. Aqui os Custos são pagos matematicamente e os Modais de Seleção visual aparecem pedindo para o jogador clicar em um monstro. O pacote pronto é embalado na classe `PendingEffect` (A Gaveta de Pendências).
+4.  **A Entrada na Corrente:** O `ChainManager` assume. O oponente tem a janela para ativar *Trap Holes* ou *Magic Jammers* em cima do que você acabou de fazer.
+5.  **A Resolução (`Operation`):** Quando a corrente LIFO finalmente aciona `ExecuteCardEffect()`, o Manager retira a carta de sua Gaveta de Pendências e executa **apenas** a `Operation()` do arquivo LUA (ex: destruir o campo inteiro), limpando a memória imediatamente a seguir.
 
 ---
 
-## 5.2 Referência de Gatilhos e Hooks da Engine
+## 5.2 Referência de Gatilhos C# e Escutas LUA (Event Listeners)
 
-Os Hooks são métodos chamados automaticamente pela Engine nos momentos exatos das regras do jogo. Para adicionar um efeito contínuo ou reativo, injete sua lógica no Hook apropriado em `CardEffectManager_Impl.cs`.
+Os Hooks são os radares do C# chamados automaticamente pela Engine. No novo sistema, ao invés do C# ter o código da carta aqui, ele atua como um "mega-fone". Quando algo ocorre, ele grita o ID do Evento em toda a arena através da função `TriggerLuaEvent(EventCode, args)`, e as cartas cujos scripts `.lua` pediram para ouvir aquilo (`e:SetCode(EVENTO)`) são ativadas.
 
 ### 5.2.1 Hooks de Fases e Turno
 *   **`OnPhaseStart(GamePhase phase)`**
     *   *Momento:* Logo após o `PhaseManager` alterar a fase atual, antes que o jogador aja.
-    *   *Uso Frequente:* Custos de manutenção na Standby Phase (*Imperial Order*), contagem regressiva de turnos (*Swords of Revealing Light*), destruição agendada na End Phase. Utilize sempre em conjunto com o helper `CheckActiveCards`.
+    *   *LUA:* O radar dispara o `EVENT_PHASE (4096)` e o `EVENT_PHASE_START (4097)`.
+    *   *Uso Frequente:* Custos de manutenção obrigatórios na Standby Phase e limpeza temporária na End Phase via `CleanAllExpiredModifiers()`.
 *   **`OnPreDrawPhaseImpl(bool isPlayerTurn, Action onContinue)`**
-    *   *Momento:* Ocorre *antes* da compra normal da Draw Phase.
-    *   *Uso Frequente:* Cartas que perguntam ao jogador se ele quer pular a compra em troca de um efeito (ex: *Freed the Matchless General*).
-    *   *Atenção Crítica:* Requer uso do padrão assíncrono (Corrotina) com `isWaiting` para não travar a engine. Lembre-se de invocar `onContinue?.Invoke()` se o saque não for cancelado.
+    *   *Momento:* Ocorre *antes* da compra automática normal da Draw Phase.
+    *   *Uso Frequente:* Utilizado por cartas "Pule sua Draw Phase para..." (ex: *Freed the Matchless General*). Em modo assíncrono absoluto, obriga a execução do delegate `onContinue?.Invoke()` se a compra não for negada.
 
 ### 5.2.2 Hooks de Batalha (Battle Step & Damage Step)
 *   **`OnAttackDeclared(CardDisplay attacker, CardDisplay target, Action onContinue)`**
     *   *Momento:* Battle Step. Assim que atacante e alvo são definidos (o ataque ainda pode ser negado). `target` pode ser nulo (Ataque Direto).
     *   *Uso Frequente:* Custos obrigatórios de ataque (*Panther Warrior*), rolagem de moedas/dados pré-dano (*Fairy Box*, *Sasuke Samurai #4*).
-    *   *Atenção:* Se o efeito cancelar o ataque ou destruir o alvo aqui, **não** chame `onContinue?.Invoke()`.
 *   **`OnDamageCalculation(CardDisplay attacker, CardDisplay target, Action onContinue)`**
     *   *Momento:* Damage Step. A última janela onde atributos podem flutuar antes da subtração matemática de LPs.
     *   *Uso Frequente:* Injeção temporária de ATK/DEF pagando LP (*Injection Fairy Lily*), bônus de campo específicos de combate (*Skyscraper*), ou habilidades de destruição pré-dano (*Drillroid*).
 *   **`OnBattleEnd(CardDisplay attacker, CardDisplay target)`**
     *   *Momento:* End of Damage Step. Os monstros derrotados já foram despachados para o cemitério e a matemática já foi aplicada.
-    *   *Uso Frequente:* Monstros que banem quem os destruiu (*D.D. Warrior Lady*), gatilhos de busca (*Mystic Tomato*), ou habilidades de abate pós-combate (*Ryu Kokki*).
+    *   *LUA:* Dispara `EVENT_BATTLE_DESTROYED (1010)`. 
+    *   **Engenharia Póstuma Avançada:** A engine C# detecta quais monstros morreram através de cruzamentos com as listas do GY no GameManager e chama a rotina `EnsureCardScriptLoaded` *postumamente* na memória. Isso permite que efeitos de ativação no túmulo (Ex: *Sangan*) consigam subir para a Corrente sem a carta existir fisicamente na tela.
 *   **`IsAttackRestricted(CardDisplay attacker)`**
     *   *Verificação contínua:* Usado no BattleManager para checar se um monstro pode atacar.
 
@@ -58,20 +64,17 @@ Os Hooks são métodos chamados automaticamente pela Engine nos momentos exatos 
     *   *Uso Frequente:* Disparo de efeitos de descarte ao causar dano letal ou direto (*Don Zaloog*, *White Magical Hat*, *Robbin' Goblin*).
 *   **`OnDamageTaken(bool isPlayer, int amount)`**
     *   *Momento:* Assim que um jogador sofre redução em seus LPs (por batalha ou Burn).
-    *   *Uso Frequente:* Reflexão de dano extra (*Dark Room of Nightmare*), ativação de armadilhas como *Numinous Healer* ou *Attack and Receive*.
 *   **`OnLifePointsGained(bool isPlayer, int amount)`**
     *   *Momento:* Sempre que um jogador cura LPs via efeito.
-    *   *Uso Frequente:* Combos de dano baseados em cura (*Fire Princess*, *Bad Reaction to Simochi*).
 
 ### 5.2.4 Hooks de Movimentação e Destruição de Cartas
 *   **`OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, SendReason reason)`**
     *   *Momento:* Assim que uma carta aterrissa no GY.
     *   *Parâmetros de Contexto:* `fromLocation` (Hand, Deck, Field) e `reason` (Battle, Effect, Cost, Tribute).
-    *   *Uso Frequente:* Efeitos de Busca (*Sangan*, *Witch of the Black Forest*), ressurreições engatilhadas.
     *   *Missing Timing (Atenção):* Efeitos opcionais ("Quando... você pode...") devem verificar se a `reason` **não é** `Cost` ou `Tribute` para não perderem a janela de ativação (ex: *Peten the Dark Clown*). Além disso, cartas enviadas como custo não ativam efeitos de "quando destruídas".
 *   **`OnCardLeavesField(CardDisplay card)`**
     *   *Momento:* Milissegundos antes da carta física ser destruída, banida ou retornada à mão.
-    *   *Uso Frequente:* Remoção de links de Equipamento em cascata, liberação de zonas bloqueadas (*Ojama King*), ou penalidades pela destruição de magias (*Call of the Haunted*).
+    *   *Limpeza Vital de LUA:* Aciona as deleções de cache no dicionário `activeLuaCards` e rasga pendências no `pendingResolutions` do `CardEffectManager` para prever falhas em corrotinas perdidas (Evitando brutalmente Memory Leaks na Unity). Suporta liberação autônoma das travas físicas de Zonas (*Ojama King*) e algemas nativas de união (*Call of the Haunted*).
 *   **`OnCardDiscardedImpl(CardDisplay card, bool causedByOpponent)`**
     *   *Momento:* Quando uma carta é fisicamente descartada da mão para o GY.
     *   *Uso Frequente:* A flag `causedByOpponent` é vital para ativar ressurreições do Arquétipo *Dark World* e de cartas como *Regenerating Mummy*.
@@ -81,25 +84,13 @@ Os Hooks são métodos chamados automaticamente pela Engine nos momentos exatos 
 
 ### 5.2.5 Hooks de Estado de Campo e Magias
 *   **`OnSummonImpl` / `OnSpecialSummonImpl` / `OnSetImpl`**
-    *   *Momento:* Assim que uma carta aterrissa no campo com sucesso (virada para cima, invocada de forma especial ou setada).
-    *   *Uso Frequente:* Floodgates instantâneos (*King Tiger Wanghu*, *Bottomless Trap Hole*), acúmulo de Spell Counters na invocação (*Breaker*), gatilhos de *Card of Safe Return*.
-*   **`OnBattlePositionChangedImpl(CardDisplay card)`**
-    *   *Momento:* Pós-mudança de posição (Atk <-> Def).
-    *   *Uso Frequente:* Habilidades de reposicionamento (*Dream Clown*, *Crass Clown*, *Tragedy*).
-*   **`OnTributeImpl` / `OnControlSwitchedImpl`**
-    *   *Momento:* Ao ser sacrificado ou ter seu dono alterado (*Change of Heart*). Ativa dano de *Ameba* ou cura de *Zolga*.
-*   **`OnSpellActivated` / `OnCounterTrapResolvedImpl`**
-    *   *Momento:* Quando uma mágica é confirmada ou quando uma armadilha Speed 3 resolve (negando algo).
-    *   *Uso Frequente:* Adição de Spell Counters globais (*Royal Magical Library*), invocações massivas por anulação de jogada (*Van'Dalgyon*).
-*   **`OnCardAddedToHandImpl(CardDisplay card)`**
-    *   *Momento:* Quando a carta entra na mão por efeito de busca (não Draw normal).
-    *   *Uso Frequente:* *Watapon*.
+    *   *LUA:* Dispara `EVENT_SUMMON_SUCCESS (11)`. Essencial para Trap Holes e acúmulo de Spell Counters na Invocação.
 
 ---
 
-## 5.3 API de Helpers e Caixa de Ferramentas (Card Helpers)
+## 5.3 API de Helpers, Conversão Lua e Caixa de Ferramentas C#
 
-**NUNCA** manipule LPs, altere status na mão grande, destrua GameObjects ou busque no deck diretamente sem usar os Helpers do `CardEffectManager_Impl`. Eles encapsulam animações, imunidades, redirecionamentos e recálculos matemáticos.
+Apesar da lógica ter sido movida para os scripts `.lua`, a Engine Unity não enxerga scripts, ela enxerga objetos 3D. Os métodos C# abaixo continuam abrigados no `CardEffectManager_Impl.cs` como os **motores reais** que movem as peças no tabuleiro. A `LuaAPI` chama esses métodos sob a camada (Under the hood) para criar a mágica que você vê na tela. Sempre que você chamar `Duel.Damage()` no arquivo Lua, ele transborda para o helper `Effect_DirectDamage()` documentado aqui.
 
 ### 5.3.1 Vida e Dano (LP)
 *   **`Effect_DirectDamage(CardDisplay source, int amount)`**
@@ -131,7 +122,7 @@ A matemática de status no jogo é não-destrutiva.
 *   **`GameManager.Instance.MillCards(bool isPlayer, int amount)`**
     *   Envia N cartas do topo do Deck direto para o Cemitério (*Needle Worm*).
 *   **`DestroyCards(List<CardDisplay> list, bool causedByPlayer)` / `DestroyAllMonsters(bool p, bool o)`**
-    *   Remoção massiva e simultânea enviando ao GY e tocando os VFXs (*Mirror Force*, *Raigeki*).
+    *   Remoção massiva e simultânea engatilhada pelo comando Lua `Duel.Destroy(group)`. Suporta as invocações em grupo (IEnumerator `DestroyCardsRoutine`) para destruir tabuleiros interios sem descompasso gráfico e tocando os VFXs (*Mirror Force*, *Raigeki*).
 *   **`GameManager.Instance.BanishCard(CardDisplay card)`**
     *   Remove de jogo instantaneamente. Destrói o visual, limpa links e modificadores gerados, e a move para a lista `Removed`.
 *   **`GameManager.Instance.ReturnToHand(CardDisplay card)`**
@@ -141,10 +132,6 @@ A matemática de status no jogo é não-destrutiva.
 
 ### 5.3.5 Lógicas Empacotadas (Subtipos)
 A engine foi projetada para que lógicas complexas não precisem ser recriadas do zero:
-*   **Equipamento (`Effect_Equip`):** Chama seleção de alvo. Se obedecer aos filtros (Raça/Atributo), amarra as cartas na memória usando `CardLink.LinkType.Equipment` e aplica os bônus matemáticos automaticamente.
-*   **Campo (`Effect_Field`):** Varre todo o tabuleiro aplicando `StatModifiers` do tipo `Field` aos monstros que batam com a regra.
-*   **Controle (`Effect_ChangeControl`):** Permite escolher um monstro do oponente, remove da zona inimiga e o coloca na do jogador (Lida com *Change of Heart* e a flag de devolução `returnControlAtEndPhase`).
-*   **Burn por Tributo (`Effect_TributeToBurn`):** Abre modal de tributos recursivo e causa Burn no oponente (*Cannon Soldier*).
 *   **Fusão (`BeginFusionSummon`):** Abre a `FusionUI` onde o `FusionManager` lida com sacrifícios, materiais curinga e invocações do Extra Deck.
 *   **Ritual (`BeginRitualSummon`):** Abre a `RitualUI`, travando o jogo para a seleção matemática de tributos de nível adequado.
 
@@ -273,19 +260,27 @@ Permite mover um `Equip Spell` já ativo para outro monstro (*Tailor of the Fick
 
 A Engine do jogo roda na Thread principal da Unity. Como as decisões exigem input humano, o jogo utiliza estritamente o padrão assíncrono.
 
-### 5.6.1 O Padrão Assíncrono (While-Yield e Delegação para IA)
-Se você precisar pausar a lógica da carta para perguntar algo ao jogador:
+### 5.6.1 O Padrão Assíncrono e a Mágica da Engine LUA (`YieldReq`)
+Se você estivesse programando direto em C#, pausaríamos uma rotina usando `while(isWaiting) yield return null`. No sistema híbrido, o **MoonSharp (LUA)** emite uma requisição física chamada `YieldReq` para avisar ao C# que o arquivo LUA está indo dormir.
+
+Quando uma carta Lua invoca `Duel.SelectTarget()`, a ponte age:
 ```csharp
-bool isWaiting = true;
-UIManager.Instance.ShowConfirmation("Deseja ativar o efeito opcional?", 
-    () => { /* Ação Sim */ isWaiting = false; }, 
-    () => { /* Ação Não */ isWaiting = false; }
-);
-// Congela a execução de fundo (Corrotina) até o humano clicar
-while(isWaiting) yield return null;
+// 1. C# Avisa a Mão Mestra (Coroutine State) que vai suspender
+CardEffectManager.Instance.isWaitingForLuaYield = true;
+
+// 2. Abre os modais da Unity (Painéis e mira do rato)
+SpellTrapManager.Instance.StartTargetSelection(unityFilter, (selectedCard) => {
+    // 3. Callback (Humano clicou no monstro após 5 segundos!)
+    // C# empacota a escolha num formato que o Lua entenda e solta a trava:
+    CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
+    CardEffectManager.Instance.isWaitingForLuaYield = false;
+});
+
+// 4. Comando letal que faz a Máquina Virtual decolar o YieldReq.
+return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectTarget") });
 ```
 
-### 4.2 Tipos de Modais Oficiais da Engine
+### 5.6.2 Tipos de Modais Oficiais da Engine
 Você não precisa criar UIs novas, tudo está envelopado:
 
 1.  **Confirmação Simples (Sim/Não):** 
@@ -308,11 +303,12 @@ Você não precisa criar UIs novas, tudo está envelopado:
 7.  **Reordenação de Topo de Deck (Drag & Drop):** 
     `ReorderCardsUI.Instance.Show(topCardsList, "Reordene", (orderedList) => { ... })`
 
-### 4.3 O Bypass de Simulação (Crucial para o DevMode)
-**Atenção Absoluta:** Sempre que houver uma condicional que demande a IA escolher algo para ela mesma e o código não estiver programado nativamente em `OpponentAI.cs`, ou se `GameManager.Instance.isSimulating == true` (Chaos Simulator em modo de teste estresse rodando a 50x de velocidade), **NENHUM** destes modais será aberto. 
-O sistema automaticamente escolherá um aleatório (ou o 1º índice válido) e prosseguirá o turno sem travar a interface esperando um clique de humano.
+### 5.6.3 O Bypass de IA e Simulação (O Cérebro Lua)
+A Engine Lua foi desenhada para interagir com interfaces humanas. Para que o jogo não trave quando a Inteligência Artificial ativa uma carta, um **Bypass Lógico** atua nas funções de mira (`SelectTarget`, `SelectMatchingCard`).
+*   **Como funciona:** Se `player == 1` (A IA), a Ponte LUA cancela a Corrotina de Interface e redireciona a lista de cartas candidatas diretamente para o método `OpponentAI.Instance.SelectLuaTargets(LuaGroup, min, max)`. A IA ordena a lista com base em ameaças e devolve a resposta instantaneamente, mantendo a performance fluída e veloz do duelo.
+*   **Simulador de Caos:** Se `GameManager.Instance.isSimulating == true` em ações residuais não cobertas pela IA, a Engine simplesmente seleciona o primeiro item válido da lista ou gera números aleatórios, garantindo que o ciclo noturno de testes a 50x de velocidade jamais fique congelado.
 
-### 4.4 Minigames de Sorte e Controle Visual
+### 5.6.4 Minigames de Sorte e Controle Visual
 *   **Sorte:** *Nunca* use o `Random` puramente oculto caso a carta exija interação. Chame:
     *   `GameManager.Instance.TossCoin(int count, Action<int> callback)`
     *   `CardEffectManager.Instance.RollDice(int amount, Action<List<int>> callback)`

@@ -395,6 +395,16 @@ public class LuaDuel
             return DynValue.FromObject(CardEffectManager.Instance.luaEngine, new LuaGroup());
         }
 
+        // --- BYPASS DE INTELIGÊNCIA ARTIFICIAL ---
+        if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
+        {
+            LuaGroup aiChoice = OpponentAI.Instance.SelectLuaTargets(candidates, min, max);
+            CardEffectManager.Instance.yieldReturnValue = UserData.Create(aiChoice);
+            this.currentTargetGroup = aiChoice;
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectTarget") });
+        }
+
         System.Predicate<CardDisplay> unityFilter = (cd) => {
             return candidates.cards.Exists(lc => lc.unityCard == cd);
         };
@@ -422,6 +432,16 @@ public class LuaDuel
         if (candidates.cards.Count == 0) {
             CardEffectManager.Instance.isWaitingForLuaYield = false;
             return DynValue.FromObject(CardEffectManager.Instance.luaEngine, new LuaGroup());
+        }
+
+        // --- BYPASS DE INTELIGÊNCIA ARTIFICIAL ---
+        if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
+        {
+            LuaGroup aiChoice = OpponentAI.Instance.SelectLuaTargets(candidates, min, max);
+            CardEffectManager.Instance.yieldReturnValue = UserData.Create(aiChoice);
+            this.currentTargetGroup = aiChoice;
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectMatchingCard") });
         }
 
         List<CardData> selectableData = new List<CardData>();
@@ -477,6 +497,16 @@ public class LuaDuel
     {
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
+
+        // --- BYPASS DE INTELIGÊNCIA ARTIFICIAL ---
+        if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
+        {
+            DynValue[] dynResults = new DynValue[count];
+            for (int i = 0; i < count; i++) dynResults[i] = DynValue.NewNumber(UnityEngine.Random.Range(1, 7));
+            CardEffectManager.Instance.yieldReturnValue = DynValue.NewTuple(dynResults);
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("TossDice") });
+        }
 
         GameManager.Instance.RollDice(count, false, (results) => {
             DynValue[] dynResults = new DynValue[count];
@@ -714,6 +744,17 @@ public class LuaGroup
             if (excludedCard != null && c == excludedCard) continue;
             if (c.unityData != null && !selectableData.Contains(c.unityData)) selectableData.Add(c.unityData);
         }
+        
+        // --- BYPASS DE INTELIGÊNCIA ARTIFICIAL ---
+        if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
+        {
+            LuaGroup aiChoice = OpponentAI.Instance.SelectLuaTargets(this, min, max);
+            CardEffectManager.Instance.yieldReturnValue = UserData.Create(aiChoice);
+            CardEffectManager.Instance.luaDuel.currentTargetGroup = aiChoice; 
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("Group.Select") });
+        }
+
         if (GameManager.Instance != null && selectableData.Count > 0) {
             GameManager.Instance.OpenCardMultiSelection(selectableData, "Escolha um alvo do grupo", min, max, (selectedList) => {
                 LuaGroup selectedGroup = new LuaGroup();

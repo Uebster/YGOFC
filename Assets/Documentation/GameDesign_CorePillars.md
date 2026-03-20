@@ -105,16 +105,16 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **4.5.2** Tipos de Special Summon Suportados
 
 ### 5. 📖 `Card_Programming_API.md` (A Bíblia de Programação de Cartas)
-*   **5.1.** Arquitetura do Sistema de Efeitos (`CardEffectManager`)
-    *   **5.1.1** Estrutura de Arquivos (Core, Impl, Registry, PartX)
-    *   **5.1.2** Fluxo de Execução
-*   **5.2.** Referência de Gatilhos e Hooks da Engine
+*   **5.1.** Arquitetura do Sistema de Efeitos (`CardEffectManager` e MoonSharp)
+    *   **5.1.1** Estrutura de Arquivos e Componentes
+    *   **5.1.2** O Novo Fluxo de Execução e o Sistema `chk`
+*   **5.2.** Referência de Gatilhos C# e Escutas LUA (Event Listeners)
     *   **5.2.1** Hooks de Fases e Turno (`OnPhaseStart`, `OnPreDrawPhaseImpl`)
     *   **5.2.2** Hooks de Batalha (`OnAttackDeclared`, `OnDamageCalculation`, `OnBattleEnd`, `IsAttackRestricted`)
     *   **5.2.3** Hooks de Dano e Pontos de Vida (`OnDamageDealtImpl`, `OnDamageTaken`, `OnLifePointsGained`)
     *   **5.2.4** Hooks de Movimentação e Destruição (`OnCardSentToGraveyard`, Missing Timing, `OnCardLeavesField`, `OnCardDiscardedImpl`)
     *   **5.2.5** Hooks de Estado de Campo e Magias (`OnSummonImpl`, `OnSetImpl`, `OnBattlePositionChangedImpl`, `OnSpellActivated`)
-*   **5.3.** API de Helpers e Caixa de Ferramentas (Card Helpers)
+*   **5.3.** API de Helpers, Conversão Lua e Caixa de Ferramentas C#
     *   **5.3.1** Dano e Vida (`Effect_DirectDamage`, `Effect_GainLP`)
     *   **5.3.2** Buscas e Filtros no Tabuleiro (`CheckActiveCards`)
     *   **5.3.3** Alteração de Status (ATK / DEF) (`AddStatModifier`, `RemoveModifiersFromSource`)
@@ -135,34 +135,23 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **5.5.6** Transferência Dinâmica de Equipamentos e Vínculos
     *   **5.5.7** Sistema de Vínculo Toon (Toon Link)
 *   **5.6.** Interações de UI, Modais e Minigames
-    *   **5.6.1** O Padrão Assíncrono (While-Yield e Delegação para IA)
+    *   **5.6.1** O Padrão Assíncrono e a Mágica da Engine LUA (`YieldReq`)
     *   **5.6.2** Tipos de Modais Oficiais da Engine
-    *   **5.6.3** O Bypass de Simulação (Crucial para o DevMode)
+    *   **5.6.3** O Bypass de IA e Simulação (O Cérebro Lua)
     *   **5.6.4** Sistema Global de Busca de Cartas (`GlobalCardSearchUI`)
     *   **5.6.5** Sistema de Reordenação e Seleção por Soma Matemática
     *   **5.6.6** Minigames Nativos (Moedas, Dados e Re-Rolagem)
     *   **5.6.7** Relógios e Turnos Virtuais (`TurnClockUI`)
     *   **5.6.8** Revelação Silenciosa (Silent Reveal)
     *   **5.6.9** Regras de Validação de Ativação (Activation Legality)
-    
-## 5.7 Transição para Lua e Rollback (Plano B - Segurança)
-O projeto está migrando da arquitetura Hardcoded C# (`CardEffectManager_Impl.cs`) para a arquitetura orientada a dados com scripts Lua (`MoonSharp` + Padrão YGOPro da comunidade open-source).
-
-### ⚠️ Procedimento de Rollback (Como voltar para o C# Puro)
-Se a integração com Lua falhar, causar quedas de FPS, ou o escopo sair de controle, siga estes passos estritos para reverter o motor à sua glória original em C#:
-
-1. **Restaurar os Arquivos:** Vá até a pasta de Backups do projeto (`Assets/Scripts/Backup_CSharp_Effects/`) e extraia os arquivos `CardEffectManager_Impl_Part1.cs` ao `Part5.cs`, além do `CardEffectManager_Registry_Part1.cs` ao `Part5.cs`.
-2. **Limpar a Lua:** Apague a pasta `Assets/Scripts/Lua/` inteira para não deixar lixo no repositório.
-3. **Remover a Ponte:** Apague a classe de Wrapper (A ponte do MoonSharp) e desinstale o plugin MoonSharp da Unity.
-4. **Restabelecer o Core:** No `CardEffectManager.cs`, certifique-se de que o método `ExecuteCardEffect` esteja usando a lógica do dicionário nativo: `if (effectDatabase.ContainsKey(id)) { effectDatabase[id].Invoke(card); return true; }`.
-5. **Recompilar:** Deixe a Unity recompilar. O jogo voltará a operar com os mais de 2147 métodos de cartas hardcoded nativamente, sem perder nenhuma lógica já escrita.
+*   **5.7.** Transição para Lua e Rollback (Plano B - Segurança)
 
 ### 6. 🧠 `AI_And_Characters.md` (Inteligência Artificial e Personagens)
 *   **6.1.** Design da Inteligência Artificial (`OpponentAI.cs`)
-    *   **6.1.1** O Sistema de Pontuação (Scoring Engine)
+    *   **6.1.1** O Sistema de Pontuação (Scoring Engine e Leitura de Custos `chk=0`)
     *   **6.1.2** Perfis de Personalidade (AI Archetypes)
-    *   **6.1.3** As Regras de Ouro (Fog of War, Card Advantage, Suicide Crash, etc.)
-    *   **6.1.4** Lógicas Específicas de Cartas e Win-Cons (Relinquished, Destiny Board)
+    *   **6.1.3** As Regras de Ouro (Bypass Lógico LUA, Fog of War, Card Advantage, etc.)
+    *   **6.1.4** Lógicas Específicas de Cartas e Win-Cons (Autonomia LUA, Relinquished, Destiny Board)
     *   **6.1.5** Estrutura do Loop de Decisão (Decision Tree)
 *   **6.2.** Sistema de Personagens e Decks (`CharacterDatabase.cs`)
     *   **6.2.1** Visão Geral e IDs

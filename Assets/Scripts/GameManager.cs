@@ -1786,7 +1786,9 @@ public void ShuffleDeck(bool isPlayer)
             case DuelRank.A:     pSPlus = 0f; pS = 40f; pB = 30f; pC = 20f; pD = 10f; break;
             case DuelRank.BPlus:
             case DuelRank.B:     pSPlus = 0f; pS = 10f; pB = 40f; pC = 30f; pD = 20f; break;
+            case DuelRank.CPlus:
             case DuelRank.C:     pSPlus = 0f; pS = 3f; pB = 17f; pC = 40f; pD = 40f; break;
+            case DuelRank.DPlus:
             case DuelRank.D:     pSPlus = 0f; pS = 1f; pB = 4f; pC = 25f; pD = 70f; break;
             case DuelRank.F:     return null;
         }

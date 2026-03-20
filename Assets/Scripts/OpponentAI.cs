@@ -279,34 +279,27 @@ public class OpponentAI : MonoBehaviour
 
             string id = monster.CurrentCardData.id;
 
-            if (id == "1513") // Relinquished
+            // INTEGRAÇÃO LUA: Verifica se o monstro tem um Efeito de Ignição e se o custo (chk=0) pode ser pago
+            LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(monster);
+            LuaEffect ignitionEffect = lc?.registeredEffects.Find(e => e.type == 0x0020); // 0x0020 = IGNITION
+
+            if (ignitionEffect != null && CardEffectManager.Instance.CanActivateEffect(lc, ignitionEffect, 1, null))
             {
-                // Só absorve se ainda não tem equipamento
-                if (CardEffectManager.Instance.GetEquippedCards(monster).Count == 0)
-                {
-                    var bestTarget = GetStrongestPlayerMonster();
-                    if (bestTarget != null && !bestTarget.isFlipped)
-                    {
-                        actions.Add(new AIAction {
-                            Score = bestTarget.currentAtk + 1000, // Alto valor por roubar o boss inimigo
-                            Description = $"Ativar Relinquished para absorver {bestTarget.CurrentCardData.name}.",
-                            Execute = () => CardEffectManager.Instance.ExecuteCardEffect(monster)
-                        });
+                float score = 500; // Pontuação base por usar um efeito no campo
+                
+                // Pontuações heurísticas específicas
+                if (id == "1513") score = GetStrongestPlayerMonster()?.currentAtk + 1000 ?? 0;
+                else if ((ignitionEffect.category & 0x20000) != 0) score = 800 + (fearScore * 100); // 0x20000 = DESTROY
+
+                actions.Add(new AIAction {
+                    Score = score,
+                    Description = $"Ativar efeito de Ignição de {monster.CurrentCardData.name}.",
+                    Execute = () => { 
+                        CardEffectManager.Instance.ActivateCard(monster, null, null); 
+                        monster.hasUsedEffectThisTurn = true; 
                     }
-                }
+                });
             }
-            else if (id == "0240") // Breaker the Magical Warrior
-            {
-                if (monster.spellCounters > 0 && fearScore > 0)
-                {
-                    actions.Add(new AIAction {
-                        Score = 800 + (fearScore * 100), // Quanto mais S/T o jogador tem, mais ele quer quebrar
-                        Description = "Ativar Breaker the Magical Warrior para destruir uma S/T.",
-                        Execute = () => CardEffectManager.Instance.ExecuteCardEffect(monster)
-                    });
-                }
-            }
-            // Novos monstros de efeito (Exiled Force, Tribe-Infecting Virus) podem ser adicionados aqui.
         }
         return actions;
     }
@@ -320,6 +313,13 @@ public class OpponentAI : MonoBehaviour
         {
             var cd = go.GetComponent<CardDisplay>();
             if (cd == null || !cd.CurrentCardData.type.Contains("Spell")) continue;
+
+            // INTEGRAÇÃO LUA: Checagem estrita de Ativação (chk=0)
+            LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(cd);
+            LuaEffect activationEffect = lc?.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0020);
+            
+            // Se a carta Lua exigir descartar 1 carta e a IA estiver sem mão, o CanActivateEffect retorna FALSE e a IA pula.
+            if (activationEffect != null && !CardEffectManager.Instance.CanActivateEffect(lc, activationEffect, 1, null)) continue;
 
             float score = 0;
             string description = "";
@@ -832,6 +832,15 @@ public class OpponentAI : MonoBehaviour
             float score = 100; 
             string id = card.CurrentCardData.id;
 
+            // INTEGRAÇÃO LUA: Verifica se pode ativar a Armadilha/Quick-Play em resposta (Pagar custo, Alvo válido)
+            LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(card);
+            LuaEffect quickEffect = lc?.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0080); // ACTIVATE / TRIGGER_O
+            
+            if (quickEffect != null && !CardEffectManager.Instance.CanActivateEffect(lc, quickEffect, 1, trigger))
+            {
+                return new { Card = card, Score = -9999f }; // Cortado na raiz.
+            }
+
             if (trigger != null && trigger.cardSource != null)
             {
                 if (trigger.trigger == ChainManager.TriggerType.Attack)
@@ -934,6 +943,40 @@ public class OpponentAI : MonoBehaviour
             return best.Card;
         }
         return null;
+    }
+
+    #endregion
+
+    #region Lógica LUA de Resolução (O Bypass de Seleção)
+
+    // Usado pela Ponte Lua (LuaAPI.cs) quando a Engine pede para a IA escolher alvos
+    public LuaGroup SelectLuaTargets(LuaGroup candidates, int min, int max)
+    {
+        LuaGroup result = new LuaGroup();
+        if (candidates == null || candidates.cards.Count == 0) return result;
+
+        int toSelect = Mathf.Clamp(max, 1, candidates.cards.Count);
+        
+        // Heurística de Seleção de Alvo (O que a IA gosta de mirar?)
+        var sorted = candidates.cards.OrderByDescending(c => {
+            float score = 0;
+            bool isMine = c.IsControler(1); // 1 = Oponente (IA)
+            bool isField = c.IsLocation(0x04) || c.IsLocation(0x08); // Campo
+            bool isGrave = c.IsLocation(0x10); // Cemitério
+            
+            if (!isMine && isField && c.GetAttack() > 0) score += 10000 + c.GetAttack(); // Matar o monstro mais forte do player
+            else if (!isMine && c.IsSpellTrap()) score += 8000; // Destruir S/T do player
+            else if (isMine && isGrave) score += 5000 + c.GetAttack(); // Reviver o próprio monstro mais forte do GY
+            else if (isMine && isField) score -= c.GetAttack(); // Se for alvo no campo (ex: tributo para custo), escolhe o lacaio mais fraco
+            
+            return score;
+        }).ToList();
+
+        for (int i = 0; i < toSelect && i < sorted.Count; i++)
+        {
+            result.AddCard(sorted[i]);
+        }
+        return result;
     }
 
     #endregion

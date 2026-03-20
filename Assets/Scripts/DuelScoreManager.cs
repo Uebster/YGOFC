@@ -5,7 +5,9 @@ public enum DuelRank
 {
     F,      // Derrota por Deck Out (Falta de cartas)
     D,      // Combate falho / Pontuação muito baixa
+    DPlus,  // Pontuação baixa
     C,      // Combate lento e pobre
+    CPlus,  // Combate medíocre
     B,      // Combate muito lento
     BPlus,  // Combate lento
     A,      // Vitória padrão
@@ -82,9 +84,14 @@ public class DuelScoreManager : MonoBehaviour
     public int bPlusRankThreshold = 1000;
     // B: Requer ~500. Vitória muito lenta.
     public int bRankThreshold = 500;
+    // C+: Requer ~350.
+    public int cPlusRankThreshold = 350;
     // C: Requer ~250.
     public int cRankThreshold = 250;
-    // Abaixo de 250 é D
+    // D+: Requer ~150.
+    public int dPlusRankThreshold = 150;
+    // D: Requer ~50. Abaixo de 50 é F.
+    public int dRankThreshold = 50;
 
     private DuelScoreData currentScore;
     private float startTime;
@@ -200,9 +207,12 @@ public class DuelScoreManager : MonoBehaviour
         if (score >= aRankThreshold) return DuelRank.A;
         if (score >= bPlusRankThreshold) return DuelRank.BPlus;
         if (score >= bRankThreshold) return DuelRank.B;
+        if (score >= cPlusRankThreshold) return DuelRank.CPlus;
         if (score >= cRankThreshold) return DuelRank.C;
+        if (score >= dPlusRankThreshold) return DuelRank.DPlus;
+        if (score >= dRankThreshold) return DuelRank.D;
         
-        return DuelRank.D;
+        return DuelRank.F;
     }
     
     // Retorna um relatório formatado para a tela de vitória

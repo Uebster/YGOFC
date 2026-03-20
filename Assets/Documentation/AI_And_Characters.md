@@ -10,6 +10,7 @@ A Inteligência Artificial do *Yu-Gi-Oh! Forbidden Chaos* não toma decisões pu
 
 ### 6.1.1 O Sistema de Pontuação (Scoring Engine)
 O script `OpponentAI.cs` utilizará as seguintes métricas antes de executar uma jogada:
+*   **Leitura de Custos LUA (`chk=0`):** Antes de sequer avaliar os pontos de uma mágica, armadilha ou efeito de monstro, a IA consulta silenciosamente a Máquina Virtual LUA (`CanActivateEffect`). Se a carta exigir um sacrifício ou descarte que a IA não pode pagar, o motor C# bloqueia a jogada preventivamente, poupando processamento e evitando *soft-locks*.
 *   **Board Value (Valor de Campo):** Calcula quem está ganhando. Soma do ATK/DEF dos monstros + peso das cartas S/T ativas.
 *   **Fear Score (Pontuação de Medo):** Quantidade de cartas setadas (viradas para baixo) pelo jogador. Dita a agressividade da IA.
 *   **Target Score (Alvo Prioritário):** Define qual monstro/carta do jogador deve ser destruída primeiro (Floodgates como *Jinzo* têm pontuação altíssima).
@@ -56,6 +57,11 @@ Para evitar que todos os duelistas joguem da mesma forma, o componente da IA ter
 ### 6.1.3 As Regras de Ouro (Golden Rules of the Engine)
 Estas regras estão codificadas diretamente nas rotinas de tomada de decisão:
 
+#### Bypass Lógico do LUA (Targeting Assíncrono)
+Como a engine agora é baseada em scripts de simulador (OCGCore), sempre que uma carta pede um alvo (Ex: *Offerings to the Doomed*), o LUA gera um `YieldReq` que pausa o código esperando o jogador clicar com o mouse na tela. A IA não possui mouse.
+*   **A Interceptação (`SelectLuaTargets`):** Se o jogador ativo for a IA (`tp == 1`), a Ponte LUA cancela a janela visual e desvia a lista de candidatos diretamente para a IA.
+*   **A Heurística de Alvos:** A IA pontua a lista (Matar o Boss Inimigo = +10000; Destruir S/T Inimiga = +8000; Escolher isca própria = -ATK). Ela converte sua escolha em um objeto `LuaGroup` e o devolve à Máquina Virtual, resumindo a execução sem travar a interface da Unity.
+
 #### Combate e Riscos (Fog of War)
 *   **Scouting (O Escoteiro):** Nunca atacar um monstro Face-down com o Boss Monster da IA. Sempre atacar primeiro com o monstro mais fraco capaz de causar dano, para testar se é um *Man-Eater Bug* ou *Cyber Jar*.
     *   **[❗ Nota de Manutenção / Ajuste de Bug]:** *Atualmente, a heurística de "Fear Score" da IA avalia os monstros Setados com um risco tão extremo que ela se recusa a atacá-los completamente (temendo perder seus próprios monstros para uma DEF alta ou efeito FLIP). É necessário calibrar o peso no `OpponentAI.cs` para que, se a IA possuir um "Escoteiro" descartável ou uma vantagem clara de campo, ela seja forçada a "chutar a porta" e atacar o monstro virado para baixo em vez de passar a Battle Phase em branco.*
@@ -80,7 +86,8 @@ Estas regras estão codificadas diretamente nas rotinas de tomada de decisão:
 *   **Imperial Order / LP Cost:** Na Standby Phase, a IA recusa o pagamento de manutenção de 700 LP da sua própria *Imperial Order* caso queira utilizar Magias de sua própria mão naquele mesmo turno, ou se seu HP for menor que o Limiar de Pânico.
 
 ### 6.1.4 Lógicas Específicas de Cartas e Condições de Vitória (Win-Cons)
-A IA possui rotinas de interceptação para cartas famosas:
+A IA evoluiu de decisões guiadas unicamente por "Hardcoded IDs" para "Interpretação de Tipos de Efeito LUA":
+*   **Autonomia de Efeitos:** A IA agora varre o campo, lê os `registeredEffects` de cada monstro, e procura por gatilhos ativáveis manualmente (`0x0010 ACTIVATE` e `0x0020 IGNITION`). Se a carta contiver a categoria `0x20000 DESTROY`, a IA eleva sua pontuação de uso dinamicamente conforme o *Fear Score*, tornando a IA universal para qualquer nova carta inserida no banco de dados.
 *   **Relinquished:** Absorver sempre o monstro virado para cima com maior ATK. Ignorar monstros virados para baixo (que dariam 0 de bônus).
 *   **Mystical Space Typhoon (MST):** Setar e usar preferencialmente na End Phase do jogador para destruir a carta que ele acabou de baixar, a menos que a IA tenha dano letal no próprio turno e precise "limpar a pista".
 *   **Destiny Board & Exodia:** Se o deck da IA foca nessas condições, o *Panic Threshold* muda. A IA jogará monstros em defesa face-down a todo custo e guardará todas as mágicas defensivas para ganhar tempo (Stall).
