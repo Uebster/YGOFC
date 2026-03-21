@@ -2108,7 +2108,7 @@ public void ShuffleDeck(bool isPlayer)
 
         // 1. Validação de Fase
         GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Main1;
-        if (!devMode && isPlayer && currentPhase != GamePhase.Main1 && currentPhase != GamePhase.Main2)
+        if (!devMode && isPlayer && currentPhase != GamePhase.Main1 && currentPhase != GamePhase.Main2 && !isSimulating)
         {
             Debug.LogWarning("Invocação só é permitida na Main Phase 1 ou 2.");
             return;

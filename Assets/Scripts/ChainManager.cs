@@ -37,7 +37,11 @@ public class ChainManager : MonoBehaviour
     {
         if (isChainResolving)
         {
-            Debug.LogWarning("Não é possível adicionar à corrente enquanto ela está resolvendo.");
+            if (triggerType != TriggerType.Summon) // Suprime aviso para invocações vindas de efeitos já em andamento
+                Debug.LogWarning($"Não é possível adicionar à corrente enquanto ela está resolvendo. (Tentou adicionar: {card.CurrentCardData.name})");
+            
+            // Garante a execução da continuação se a carta tentar travar
+            onChainResolved?.Invoke();
             return;
         }
 
@@ -249,7 +253,11 @@ public class ChainManager : MonoBehaviour
                     {
                         try
                         {
-                            CardEffectManager.Instance.ExecuteCardEffect(link.cardSource);
+                            // Só executa o efeito do card se ele entrou na corrente para Ativar um Efeito, e não apenas porque foi invocado.
+                            if (link.trigger == TriggerType.CardActivation || link.trigger == TriggerType.Effect)
+                            {
+                                CardEffectManager.Instance.ExecuteCardEffect(link.cardSource);
+                            }
                             
                             // Hook para Counter Traps (Van'Dalgyon)
                             if (link.cardSource.CurrentCardData.type.Contains("Counter Trap"))

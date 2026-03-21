@@ -25,7 +25,7 @@ public class BattleManager : MonoBehaviour
     public bool forceAllAttack = false; // Amazoness Archers (0042)
     public bool threateningRoarActive = false; // Threatening Roar (1918)
     public CardDisplay forcedAttackTarget; // Staunch Defender (1767) / Taunt (1827)
-    private bool isBattleResolving = false; // Proteção contra reentrada
+    public bool isBattleResolving = false; // Proteção contra reentrada
 
     // Verifica se a ativação de armadilhas está bloqueada (ex: Mirage Dragon)
     public bool IsTrapActivationBlocked(bool isPlayer)
@@ -663,7 +663,7 @@ public class BattleManager : MonoBehaviour
     {
         if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Battle)
         {
-            Debug.LogWarning("Ataque direto cancelado: A fase de batalha foi encerrada.");
+            if (GameManager.Instance == null || !GameManager.Instance.isSimulating) Debug.LogWarning("Ataque direto cancelado: A fase de batalha foi encerrada.");
             ClearBattleState();
             if (attacker != null) attacker.SetAttackSelectionVisual(false);
             return;
@@ -732,7 +732,7 @@ public class BattleManager : MonoBehaviour
     {
         if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Battle)
         {
-            Debug.LogWarning("Batalha cancelada: A fase de batalha foi encerrada.");
+            if (GameManager.Instance == null || !GameManager.Instance.isSimulating) Debug.LogWarning("Batalha cancelada: A fase de batalha foi encerrada.");
             isBattleResolving = false;
             ClearBattleState();
             if (attacker != null) attacker.SetAttackSelectionVisual(false);

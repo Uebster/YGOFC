@@ -144,7 +144,7 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **5.6.7** Relógios e Turnos Virtuais (`TurnClockUI`)
     *   **5.6.8** Revelação Silenciosa (Silent Reveal)
     *   **5.6.9** Regras de Validação de Ativação (Activation Legality)
-*   **5.7.** Transição para Lua e Rollback (Plano B - Segurança)
+*   **5.7.** Ferramenta de Validação em Massa (Mass Validator)
 
 ### 6. 🧠 `AI_And_Characters.md` (Inteligência Artificial e Personagens)
 *   **6.1.** Design da Inteligência Artificial (`OpponentAI.cs`)

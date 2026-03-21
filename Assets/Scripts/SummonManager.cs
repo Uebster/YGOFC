@@ -208,14 +208,14 @@ public class SummonManager : MonoBehaviour
         }
         else if (!CanNormalSummon() && !ignoreLimit)
         {
-            Debug.LogWarning("Já realizou Normal Summon neste turno.");
+            if (GameManager.Instance == null || !GameManager.Instance.isSimulating) Debug.LogWarning("Já realizou Normal Summon neste turno.");
             return;
         }
 
         int tributesNeeded = GetRequiredTributes(card.level);
         if (!HasEnoughTributes(tributesNeeded, isPlayer, card))
         {
-            if (isPlayer) Debug.LogWarning($"Tributos insuficientes! Precisa de {tributesNeeded}.");
+            if (isPlayer && (GameManager.Instance == null || !GameManager.Instance.isSimulating)) Debug.LogWarning($"Tributos insuficientes! Precisa de {tributesNeeded}.");
             return;
         }
 

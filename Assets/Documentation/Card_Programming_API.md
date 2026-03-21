@@ -314,3 +314,25 @@ A Engine Lua foi desenhada para interagir com interfaces humanas. Para que o jog
     *   `CardEffectManager.Instance.RollDice(int amount, Action<List<int>> callback)`
     *   Estes métodos abstraem cliques físicos nos dados rolando 3D na tela e processam a *Chance de Re-Roll* automaticamente se `Second Coin Toss` estiver ativo.
 *   **Revelação Silenciosa:** Se precisar revelar uma carta de face para baixo e evitar que a Engine dispare Correntes ou efeitos de Flip na Unity, use: `card.RevealCard(false, false);`.
+
+---
+
+## 5.7 Ferramenta de Validação em Massa (Mass Validator)
+
+Para garantir a estabilidade absoluta da Engine Lua contra atualizações de sintaxe do OCGCore ou falta de mapeamentos no C#, o jogo conta com um Validador em Massa embutido diretamente no Editor da Unity.
+
+### 5.7.1 Como Executar
+1. Com o jogo rodando (Play Mode) na Unity, selecione o GameObject que contém o `CardEffectManager` (geralmente dentro dos Managers).
+2. Clique com o botão direito no nome do script no Inspector e escolha **"DEV: Validar Todos os Scripts LUA"**.
+
+### 5.7.2 As Duas Fases de Validação
+O script processa silenciosamente as 2147 cartas do banco de dados (ignorando monstros normais) através de duas barreiras:
+
+1. **Validação de Compile-Time (Sintaxe e Tradução):**
+   A Engine extrai o texto do arquivo `.lua`, passa pelo Sanitizador Regex avançado e tenta compilar na Máquina Virtual. Isso garante que nenhum operador bitwise (`&`, `|`, `~`) corrompa a sintaxe e que não existam erros de caracteres estranhos.
+2. **Validação de Runtime (Dry-Run / Teste Profundo):**
+   Após carregada na memória, o Validador executa um "Dry-Run" em todos os Efeitos registrados (`LuaEffect`) da carta. Ele invoca as funções `conditionFunc`, `costFunc` e `targetFunc` injetando o argumento `chk = 0`. Isso força a carta a ler o estado do tabuleiro e a fazer perguntas à `LuaAPI` sem abrir nenhuma interface.
+   *Qualquer* tentativa da carta de acessar uma função inexistente na API C# (ex: `IsPhase`, `GetAttackedCount`) irá falhar e ser capturada nesta etapa.
+
+### 5.7.3 O Relatório Agrupado
+Para evitar o soterramento do log, a ferramenta não exibe erros isolados durante a varredura. Ela compila uma lista (`errorLogs`) e, ao final, imprime um Relatório Unificado Amarelo no console detalhando exatamente quais cartas falharam e o motivo exato do Crash na Máquina Virtual.

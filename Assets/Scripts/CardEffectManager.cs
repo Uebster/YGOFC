@@ -71,10 +71,22 @@ public class CardEffectManager : MonoBehaviour
         // Tabela Auxiliar Básica
         DynValue auxTable = DynValue.NewTable(luaEngine);
         auxTable.Table.Set("Stringid", DynValue.FromObject(luaEngine, (System.Func<int, int, string>)((code, id) => $"{code}_{id}")));
-        auxTable.Table.Set("GlobalCheck", DynValue.FromObject(luaEngine, (System.Action<object, Closure>)((s, func) => { })));
-        auxTable.Table.Set("EnableSpiritReturn", DynValue.FromObject(luaEngine, (System.Action<object, int, int>)((c, e1, e2) => { })));
+        
+        // O GlobalCheck garante que efeitos passivos no fundo sejam executados!
+        auxTable.Table.Set("GlobalCheck", DynValue.FromObject(luaEngine, (System.Action<object, Closure>)((s, func) => { func?.Call(); })));
+        
+        // Constantes lógicas (Criadas como closures nativas para evitar erros de casting inter-linguagem)
+        auxTable.Table.Set("TRUE", luaEngine.DoString("return function(...) return true end"));
+        auxTable.Table.Set("FALSE", luaEngine.DoString("return function(...) return false end"));
 
         luaEngine.Globals["aux"] = auxTable;
+
+        // Tabelas de Procedimentos Oficiais (EDOPro Lua Updates)
+        string[] procTables = { "Spirit", "Toon", "Union", "Gemini", "Pendulum", "Link", "Xyz", "Synchro", "Fusion", "Ritual" };
+        foreach (var pName in procTables)
+        {
+            luaEngine.Globals[pName] = DynValue.NewTable(luaEngine);
+        }
 
         // 5. Injeção de Constantes Vitais (Evita os erros de Bitwise do Lua 5.2)
         InjectVitalConstants();
@@ -92,7 +104,34 @@ public class CardEffectManager : MonoBehaviour
         luaEngine.Globals["LOCATION_ONFIELD"] = 0x4 | 0x8; // Resolvido no C#!
         luaEngine.Globals["LOCATION_HAND"] = 0x2;
         luaEngine.Globals["LOCATION_DECK"] = 0x1;
+        luaEngine.Globals["LOCATION_EXTRA"] = 0x40;
+        luaEngine.Globals["LOCATION_REMOVED"] = 0x20;
         
+        // Tipos de Cartas (TYPE_)
+        luaEngine.Globals["TYPE_MONSTER"] = 0x1;
+        luaEngine.Globals["TYPE_SPELL"] = 0x2;
+        luaEngine.Globals["TYPE_TRAP"] = 0x4;
+        luaEngine.Globals["TYPE_NORMAL"] = 0x10;
+        luaEngine.Globals["TYPE_EFFECT"] = 0x20;
+        luaEngine.Globals["TYPE_FUSION"] = 0x40;
+        luaEngine.Globals["TYPE_RITUAL"] = 0x80;
+        luaEngine.Globals["TYPE_TRAPMONSTER"] = 0x100;
+        luaEngine.Globals["TYPE_SPIRIT"] = 0x200;
+        luaEngine.Globals["TYPE_UNION"] = 0x400;
+        luaEngine.Globals["TYPE_GEMINI"] = 0x800;
+        luaEngine.Globals["TYPE_TUNER"] = 0x1000;
+        luaEngine.Globals["TYPE_SYNCHRO"] = 0x2000;
+        luaEngine.Globals["TYPE_TOKEN"] = 0x4000;
+        luaEngine.Globals["TYPE_QUICKPLAY"] = 0x10000;
+        luaEngine.Globals["TYPE_CONTINUOUS"] = 0x20000;
+        luaEngine.Globals["TYPE_EQUIP"] = 0x40000;
+        luaEngine.Globals["TYPE_FIELD"] = 0x80000;
+        luaEngine.Globals["TYPE_COUNTER"] = 0x100000;
+        luaEngine.Globals["TYPE_FLIP"] = 0x200000;
+        luaEngine.Globals["TYPE_TOON"] = 0x400000;
+        luaEngine.Globals["TYPE_XYZ"] = 0x800000;
+        luaEngine.Globals["TYPE_PENDULUM"] = 0x1000000;
+
         luaEngine.Globals["ATTRIBUTE_DARK"] = 0x10;
         luaEngine.Globals["ATTRIBUTE_LIGHT"] = 0x20;
         luaEngine.Globals["ATTRIBUTE_EARTH"] = 0x01;
@@ -145,6 +184,35 @@ public class CardEffectManager : MonoBehaviour
         luaEngine.Globals["HINTMSG_RTOHAND"] = 510;
         luaEngine.Globals["HINTMSG_TARGET"] = 514;
         luaEngine.Globals["HINTMSG_EQUIP"] = 515;
+
+        // 6. O Segredo da Sobrevivência (Metatable Global)
+        // Qualquer constante OCGCore (ALL_CAPS) não definida acima retornará 0 em vez de nil.
+        // Isso previne que a VM crashe com "attempt to perform arithmetic on a nil value" (Ex: FLAG_A + FLAG_B).
+        // Também blinda as tabelas procedurais (Fusion, Ritual, etc) para retornarem efeitos vazios inofensivos caso a função não exista.
+        luaEngine.DoString(@"
+            local dummyFunc = function() return Effect.CreateEffect(nil) end
+            local procMt = { __index = function() return dummyFunc end, __call = function() return dummyFunc end }
+            local dummyTable = {}
+            setmetatable(dummyTable, procMt)
+
+            local procTables = { aux, Spirit, Toon, Union, Gemini, Pendulum, Link, Xyz, Synchro, Fusion, Ritual }
+            for _, pTable in ipairs(procTables) do
+                setmetatable(pTable, procMt)
+            end
+
+            setmetatable(_G, {
+                __index = function(t, k)
+                    if type(k) == 'string' and string.match(k, '^[A-Z0-9_]+$') then
+                        return 0
+                    end
+                    -- Se começar com Letra Maiúscula (Ex: GladiatorBeast, Card, Effect) e for desconhecido, devolve Tabela Fantasma
+                    if type(k) == 'string' and string.match(k, '^[A-Z][a-zA-Z0-9_]*$') then
+                        return dummyTable
+                    end
+                    return nil
+                end
+            })
+        ");
     }
 
     public LuaCard EnsureCardScriptLoaded(CardDisplay card)
@@ -193,21 +261,63 @@ public class CardEffectManager : MonoBehaviour
         // O MoonSharp roda em Lua 5.2, que não os entende nativamente e usa a biblioteca bit32.
         // Esta função sanitiza o script em tempo de execução para evitar crash da Máquina Virtual.
 
-        // 1. Substitui o Bitwise OR (|) por adição (+). 
-        // Em flags hexadecimais de YGO (potências de 2), "a | b" é matematicamente igual a "a + b".
-        script = script.Replace("|", "+");
+        // 0. Remove comentários para evitar falsos positivos na tradução de operadores (Ex: -- // comment)
+        script = Regex.Replace(script, @"--\[\[.*?\]\]", "", RegexOptions.Singleline);
+        script = Regex.Replace(script, @"--.*", "");
 
-        // 2. Substitui o Bitwise AND (&) por bit32.band()
+        // Padrão Avançado: Captura parênteses balanceados infinitos sem gerar Catastrophic Backtracking
+        string parens = @"\((?>[^()]+|\((?<DEPTH>)|\)(?<-DEPTH>))*(?(DEPTH)(?!))\)";
+        string brackets = @"\[(?>[^\[\]]+|\[(?<DEPTH>)|\](?<-DEPTH>))*(?(DEPTH)(?!))\]";
+        string curlies = @"\{(?>[^{}]+|\{(?<DEPTH>)|}(?<-DEPTH>))*(?(DEPTH)(?!))\}";
+        
+        // O padrão captura variáveis, constantes, chamadas de métodos, arrays e agrupamentos
+        string termPattern = $@"(?:[\w_]+|{parens}|{brackets}|{curlies})(?:\s*[\.\:]\s*[\w_]+|\s*{parens}|\s*{brackets}|\s*{curlies})*";
+
+        // 1. Substitui o Bitwise NOT unário (~) por bit32.bnot()
+        // O (?!=) previne que o Regex altere o operador de desigualdade (~=) nativo do Lua!
+        script = Regex.Replace(script, $@"~(?!=)\s*({termPattern})", "bit32.bnot($1)");
+
+        // 2. Divisão Inteira (//) do Lua 5.3 para math.floor()
         string prev = "";
         while (script != prev)
         {
             prev = script;
-            script = Regex.Replace(script, @"([a-zA-Z0-9_\.\:]+(?:\([^\)]*\))?)\s*&\s*([a-zA-Z0-9_\.\:]+(?:\([^\)]*\))?)", "bit32.band($1, $2)");
+            script = Regex.Replace(script, $@"({termPattern})\s*//\s*({termPattern})", "math.floor($1 / $2)");
         }
 
         // 3. Bitwise Shifts (<< e >>) para garantir compatibilidade
-        script = Regex.Replace(script, @"([a-zA-Z0-9_\.\:]+)\s*<<\s*([0-9]+)", "bit32.lshift($1, $2)");
-        script = Regex.Replace(script, @"([a-zA-Z0-9_\.\:]+)\s*>>\s*([0-9]+)", "bit32.rshift($1, $2)");
+        prev = "";
+        while (script != prev)
+        {
+            prev = script;
+            script = Regex.Replace(script, $@"({termPattern})\s*<<\s*({termPattern})", "bit32.lshift($1, $2)");
+        }
+        prev = "";
+        while (script != prev)
+        {
+            prev = script;
+            script = Regex.Replace(script, $@"({termPattern})\s*>>\s*({termPattern})", "bit32.rshift($1, $2)");
+        }
+
+        // 4. Substitui o Bitwise AND (&) por bit32.band()
+        prev = "";
+        while (script != prev)
+        {
+            prev = script;
+            script = Regex.Replace(script, $@"({termPattern})\s*&\s*({termPattern})", "bit32.band($1, $2)");
+        }
+
+        // 5. Substitui o Bitwise OR (|) por bit32.bor() (Substitui a adição perigosa anterior)
+        prev = "";
+        while (script != prev)
+        {
+            prev = script;
+            script = Regex.Replace(script, $@"({termPattern})\s*\|\s*({termPattern})", "bit32.bor($1, $2)");
+        }
+
+        // 6. Operador de Comprimento (#) do Lua 5.3 para userdata (MoonSharp crash fix)
+        // Substitui a chamada de operador por uma verificação segura da função GetCount()
+        script = Regex.Replace(script, @"#\s*([a-zA-Z_][a-zA-Z0-9_]*)", "(type($1)=='userdata' and $1:GetCount() or #$1)");
 
         return script;
     }
@@ -229,7 +339,7 @@ public class CardEffectManager : MonoBehaviour
             int tp = luaCard.GetControler();
             if (!CanActivateEffect(luaCard, activationEffect, tp, triggerArgs))
             {
-                Debug.LogWarning($"[API LUA] {card.CurrentCardData.name} não cumpre os requisitos/custos para ativação no momento.");
+                if (GameManager.Instance == null || !GameManager.Instance.isSimulating) Debug.LogWarning($"[API LUA] {card.CurrentCardData.name} não cumpre os requisitos/custos para ativação no momento.");
                 return; // Retorna sem chamar onComplete, abortando a ida para a Corrente
             }
 
@@ -265,7 +375,7 @@ public class CardEffectManager : MonoBehaviour
             // 1. Verificação Síncrona (Condition, Cost chk=0, Target chk=0)
             if (!CanActivateEffect(luaCard, activationEffect, tp, null))
             {
-                Debug.LogWarning($"[API LUA] {card.CurrentCardData.name} não cumpre os requisitos/custos para ativação no momento.");
+                if (GameManager.Instance == null || !GameManager.Instance.isSimulating) Debug.LogWarning($"[API LUA] {card.CurrentCardData.name} não cumpre os requisitos/custos para ativação no momento.");
                 return false;
             }
 
@@ -274,12 +384,18 @@ public class CardEffectManager : MonoBehaviour
             return true;
         }
 
-        Debug.LogWarning($"[API LUA] {card.CurrentCardData.name} possui scripts carregados, mas não tem efeito ativável imediato.");
+        if (!GameManager.Instance.isSimulating) Debug.LogWarning($"[API LUA] {card.CurrentCardData.name} possui scripts carregados, mas não tem efeito ativável imediato.");
         return false;
     }
 
     private object WrapTriggerArgs(object triggerArgs)
     {
+        if (triggerArgs == null) 
+        {
+            LuaGroup dummyGroup = new LuaGroup();
+            dummyGroup.AddCard(new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 }));
+            return dummyGroup; 
+        }
         if (triggerArgs is LuaCard card)
         {
             LuaGroup group = new LuaGroup();
@@ -597,5 +713,84 @@ public class CardEffectManager : MonoBehaviour
         if (GameManager.Instance != null && GameManager.Instance.turnClockUI != null && GameManager.Instance.enableTurnClockVisuals)
             GameManager.Instance.turnClockUI.AnimateTick(card.CurrentCardData.name, oldTurns, card.turnCounter, card.maxTurnCounter, onComplete);
         else onComplete?.Invoke(); 
+    }
+
+    // =========================================================================
+    // FERRAMENTA DE DEV: VALIDADOR DE SCRIPTS EM MASSA
+    // =========================================================================
+    [ContextMenu("DEV: Validar Todos os Scripts LUA")]
+    public void DevValidateAllScripts()
+    {
+        if (GameManager.Instance == null || GameManager.Instance.cardDatabase == null) 
+        {
+            Debug.LogError("O jogo precisa estar rodando (Play) para executar a validação.");
+            return;
+        }
+        
+        int total = 0, success = 0, failed = 0;
+        List<string> errorLogs = new List<string>();
+        Debug.Log("<color=cyan>Iniciando Validação em Massa de LUA...</color>");
+        
+        foreach (var card in GameManager.Instance.cardDatabase.cardDatabase)
+        {
+            if (card.type.Contains("Normal") && !card.type.Contains("Effect")) continue;
+            
+            total++;
+            GameObject dummyGO = new GameObject("DummyTester");
+            dummyGO.AddComponent<UnityEngine.UI.RawImage>(); // Silencia o aviso visual
+            CardDisplay dummy = dummyGO.AddComponent<CardDisplay>();
+            dummy.gameObject.SetActive(false); // Mantém invisível
+            dummy.SetCard(card, null, true);
+            
+            try
+            {
+                LuaCard lc = EnsureCardScriptLoaded(dummy);
+                if (lc != null) 
+                {
+                    bool runtimeError = false;
+                    // Teste Profundo (Dry Run): Tenta avaliar condições, custos e alvos sem ativar a UI (chk=0)
+                    foreach (var eff in lc.registeredEffects)
+                    {
+                        try {
+                            object eg = WrapTriggerArgs(null);
+                            LuaEffect dummyRe = new LuaEffect { owner = lc };
+                            bool takesCard = (eff.type & 0x100D) != 0; // SINGLE, EQUIP, GRANT, XMATERIAL
+                            object arg2 = takesCard ? (object)lc : (object)lc.GetControler();
+                            LuaCard dummyChkc = new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 });
+
+                            if (eff.conditionFunc != null) luaEngine.Call(eff.conditionFunc, eff, arg2, eg, 0, 0, dummyRe, 0, 0);
+                            if (eff.costFunc != null) luaEngine.Call(eff.costFunc, eff, arg2, eg, 0, 0, dummyRe, 0, 0, 0);
+                            if (eff.targetFunc != null) luaEngine.Call(eff.targetFunc, eff, arg2, eg, 0, 0, dummyRe, 0, 0, 0, dummyChkc);
+                        } catch (System.Exception ex) {
+                            errorLogs.Add($"<color=orange>[RUNTIME] Falha na carta {card.name} ({card.id}): {ex.Message}</color>");
+                            runtimeError = true;
+                        }
+                    }
+                    if (runtimeError) failed++;
+                    else success++;
+                }
+                else 
+                {
+                    failed++;
+                    errorLogs.Add($"<color=red>Falha na carta {card.name} ({card.id}): EnsureCardScriptLoaded retornou nulo.</color>");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                failed++;
+                errorLogs.Add($"<color=red>Falha na carta {card.name} ({card.id}): {ex.Message}</color>");
+            }
+            DestroyImmediate(dummy.gameObject);
+        }
+        Debug.Log($"<color=green>Validação Concluída! Total: {total} | Sucesso: {success} | Falhas: {failed}</color>");
+
+        if (errorLogs.Count > 0)
+        {
+            Debug.LogWarning($"<color=yellow>--- RELATÓRIO DE ERROS ({errorLogs.Count}) ---</color>");
+            foreach (var err in errorLogs)
+            {
+                Debug.LogError(err);
+            }
+        }
     }
 }

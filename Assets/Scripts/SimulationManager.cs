@@ -287,6 +287,8 @@ public class SimulationManager : MonoBehaviour
             }
 
             yield return new WaitForSeconds(delay);
+            if (ChainManager.Instance != null) yield return new WaitWhile(() => ChainManager.Instance.isChainResolving);
+            if (BattleManager.Instance != null) yield return new WaitWhile(() => BattleManager.Instance.isBattleResolving);
         }
 
         // Tenta mudar posições
@@ -302,6 +304,7 @@ public class SimulationManager : MonoBehaviour
                     {
                         BattleManager.Instance.TryChangePosition(cd);
                         yield return new WaitForSeconds(delay);
+                        if (ChainManager.Instance != null) yield return new WaitWhile(() => ChainManager.Instance.isChainResolving);
                     }
                 }
             }
@@ -351,6 +354,8 @@ public class SimulationManager : MonoBehaviour
                 }
                 
                 yield return new WaitForSeconds(delay);
+                if (ChainManager.Instance != null) yield return new WaitWhile(() => ChainManager.Instance.isChainResolving);
+                if (BattleManager.Instance != null) yield return new WaitWhile(() => BattleManager.Instance.isBattleResolving);
             }
         }
     }
