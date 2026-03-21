@@ -728,7 +728,14 @@ public class GameManager : MonoBehaviour
             // Carrega Main Deck
             if (selectedMain != null && selectedMain.Count > 0) 
             {
-                foreach (string id in selectedMain) { CardData c = cardDatabase.GetCardById(id); if (c != null) newDeck.Add(c); else Debug.LogWarning($"[GameManager] Carta ID '{id}' não encontrada no DB para o oponente {currentOpponent.name}."); }
+                foreach (string id in selectedMain) { 
+                    CardData c = cardDatabase.GetCardById(id); 
+                    if (c != null) {
+                        // Pente-Fino: Se a carta for proibida e o jogo não permitir trapaça da IA, ela é removida e a de respaldo assume seu lugar!
+                        if (!allowForbiddenCards && !disableBanlist && c.goat_banlist == "Banned") continue;
+                        newDeck.Add(c); 
+                    } else Debug.LogWarning($"[GameManager] Carta ID '{id}' não encontrada no DB para o oponente {currentOpponent.name}."); 
+                }
             }
             else
             {
@@ -755,7 +762,13 @@ public class GameManager : MonoBehaviour
 
             // Carrega Extra Deck
             opponentExtraDeck.Clear();
-            if (selectedExtra != null) foreach (string id in selectedExtra) { CardData c = cardDatabase.GetCardById(id); if (c != null) opponentExtraDeck.Add(c); }
+            if (selectedExtra != null) foreach (string id in selectedExtra) { 
+                CardData c = cardDatabase.GetCardById(id); 
+                if (c != null) {
+                    if (!allowForbiddenCards && !disableBanlist && c.goat_banlist == "Banned") continue;
+                    opponentExtraDeck.Add(c); 
+                } 
+            }
         }
         else
         {
@@ -1648,7 +1661,7 @@ public void ShuffleDeck(bool isPlayer)
 
     IEnumerator LoadCardBackTexture()
     {
-        string fullPath = Path.Combine(Application.streamingAssetsPath, "YuGiOh_OCG_Classic_2147/0000 - Background.jpg");
+        string fullPath = Path.Combine(Application.streamingAssetsPath, "DMCardImages/0000 - Background.jpg");
         string url = "file://" + fullPath;
         try { url = new System.Uri(fullPath).AbsoluteUri; } catch { }
 

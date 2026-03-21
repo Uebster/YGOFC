@@ -15,6 +15,8 @@ public class CardData
     public string property;
     public string image_filename;
     public string pool;
+    public string password;
+    public string goat_banlist;
     public System.Collections.Generic.List<string> fusion_materials; // Lista de nomes dos materiais de fusão
 }
 

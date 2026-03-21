@@ -27,13 +27,15 @@ def main():
         return
 
     print("-> Lendo planilha de pools...")
-    pool_map = {}
+    pool_map_id = {}
+    pool_map_name = {}
     
     try:
         with open(csv_path, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                card_id = row["ID"]
+                card_id = row["ID"].strip()
+                card_name = row["Name"].strip().lower()
                 
                 # Lógica de prioridade: Final_Pool > Suggested_Pool
                 pool = row["Final_Pool"].strip()
@@ -44,18 +46,21 @@ def main():
                 try:
                     parts = pool.split('.')
                     if len(parts) == 2:
-                        pool_map[card_id] = pool
+                        pool_map_id[card_id] = pool
+                        pool_map_name[card_name] = pool
                     else:
                         print(f"AVISO: Formato de pool inválido para {row['Name']}: {pool}. Usando 1.1")
-                        pool_map[card_id] = "1.1"
+                        pool_map_id[card_id] = "1.1"
+                        pool_map_name[card_name] = "1.1"
                 except:
-                    pool_map[card_id] = "1.1"
+                    pool_map_id[card_id] = "1.1"
+                    pool_map_name[card_name] = "1.1"
                     
     except Exception as e:
         print(f"ERRO ao ler CSV: {e}")
         return
 
-    print(f"-> Carregados {len(pool_map)} definições de pool.")
+    print(f"-> Carregados {len(pool_map_id)} definições de pool.")
 
     # Atualizar o JSON
     print(f"-> Atualizando {os.path.basename(cards_json_path)}...")
@@ -64,8 +69,13 @@ def main():
 
     updated_count = 0
     for card in cards:
-        if card["id"] in pool_map:
-            card["pool"] = pool_map[card["id"]]
+        c_id = str(card.get("id", ""))
+        c_name = card["name"].lower()
+        if c_id in pool_map_id:
+            card["pool"] = pool_map_id[c_id]
+            updated_count += 1
+        elif c_name in pool_map_name:
+            card["pool"] = pool_map_name[c_name]
             updated_count += 1
         else:
             # Fallback se a carta não estava na planilha

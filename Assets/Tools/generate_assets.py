@@ -25,6 +25,28 @@ NAME_FIXES = {
     "Yamata Dragon Scroll": "Dragon Scroll"
 }
 
+# --- BANLIST MESTRA ---
+BANLIST_NAMES = {
+    "Raigeki": 0, "Dark Hole": 0, "Monster Reborn": 0, "Harpie's Feather Duster": 0,
+    "Change of Heart": 0, "Imperial Order": 0, "Chaos Emperor Dragon - Envoy of the End": 0,
+    "Yata-Garasu": 0, "Magical Scientist": 0, "Witch of the Black Forest": 0,
+    "Cyber Jar": 0, "Fiber Jar": 0, "Makyura the Destructor": 0, "Painful Choice": 0,
+    "The Forceful Sentry": 0, "Confiscation": 0, "Mirage of Nightmare": 0,
+    
+    "Black Luster Soldier - Envoy of the Beginning": 1, "Jinzo": 1, "Breaker the Magical Warrior": 1,
+    "Tribe-Infecting Virus": 1, "Sinister Serpent": 1, "Exiled Force": 1, "D.D. Warrior Lady": 1,
+    "Sangan": 1, "Morphing Jar": 1, "Dark Magician of Chaos": 1, "Pot of Greed": 1,
+    "Graceful Charity": 1, "Delinquent Duo": 1, "Heavy Storm": 1, "Mystical Space Typhoon": 1,
+    "Snatch Steal": 1, "Premature Burial": 1, "Swords of Revealing Light": 1, "Mirror Force": 1,
+    "Call of the Haunted": 1, "Ring of Destruction": 1, "Torrential Tribute": 1,
+    "Magic Cylinder": 1, "Exodia the Forbidden One": 1, "Right Arm of the Forbidden One": 1,
+    "Left Arm of the Forbidden One": 1, "Right Leg of the Forbidden One": 1, "Left Leg of the Forbidden One": 1,
+
+    "Upstart Goblin": 2, "Reinforcement of the Army": 2, "Creature Swap": 2,
+    "Level Limit - Area B": 2, "Gravity Bind": 2, "Good Goblin Housekeeping": 2,
+    "Magician of Faith": 2, "Apprentice Magician": 2, "Night Assailant": 2
+}
+
 def clean_name(name):
     name = name.strip()
     return NAME_FIXES.get(name, name)
@@ -163,7 +185,7 @@ def parse_tsv_cards(filepath, game_name):
                 raw_type = parts[2]
                 
                 card = {
-                    "id": int(fm_id),
+                    "id": str(fm_id),
                     "name": name,
                     "description": ""
                 }
@@ -223,7 +245,7 @@ def parse_tsv_cards(filepath, game_name):
             else:
                 # Fallback se tiver apenas ID e Nome
                 cards[clean_name(parts[1]).lower()] = {
-                    "id": int(parts[0]), 
+                    "id": str(parts[0]), 
                     "name": clean_name(parts[1]), 
                 }
         except:
@@ -313,15 +335,20 @@ def generate():
     final_list = list(master_db.values())
     final_list.sort(key=lambda x: x["name"])
     
-    # Adicionar mapeamento de imagem (Ordem Alfabética -> 1.jpg, 2.jpg...)
-    print(f"  -> Mapeando imagens (Ordem Alfabética) na pasta: {images_subdir_name}...")
+    # Adicionar mapeamento de imagem preservando o ID original
+    print(f"  -> Mapeando imagens na pasta: {images_subdir_name}...")
     for i, card in enumerate(final_list):
-        # IDs de imagem sequenciais baseados na ordem alfabética
-        formatted_id = f"{i + 1:04d}"
-        card["id"] = formatted_id
-        card["image_id"] = i + 1
+        custom_id = str(card["id"])
         safe_name = sanitize_filename(card["name"])
-        card["image_filename"] = f"{images_subdir_name}/{formatted_id} - {safe_name}.jpg"
+        card["image_filename"] = f"{images_subdir_name}/{custom_id} - {safe_name}.jpg"
+        
+        # Injeta a Banlist baseada no nome
+        c_name = card.get("name", "")
+        if c_name in BANLIST_NAMES:
+            limit = BANLIST_NAMES[c_name]
+            card["goat_banlist"] = "Banned" if limit == 0 else ("Limited" if limit == 1 else "Semi-Limited")
+        else:
+            card["goat_banlist"] = "Unlimited"
 
     # Salvar
     with open(json_out_path, 'w', encoding='utf-8') as f:

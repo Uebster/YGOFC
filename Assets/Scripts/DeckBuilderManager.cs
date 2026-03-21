@@ -157,105 +157,6 @@ public class DeckBuilderManager : MonoBehaviour
     private const int MAX_EXTRA = 15;
     private const int MAX_COPIES = 3;
 
-    private Dictionary<string, int> banList = new Dictionary<string, int>()
-    {
-        // --- PROIBIDAS (0 CÓPIAS) ---
-        {"Chaos Emperor Dragon - Envoy of the End", 0},
-        {"Sangan", 0},
-        {"Witch of the Black Forest", 0},
-        {"Yata-Garasu", 0},
-        {"Dark Hole", 0},
-        {"Delinquent Duo", 0},
-        {"Graceful Charity", 0},
-        {"Harpie's Feather Duster", 0},
-        {"Monster Reborn", 0},
-        {"Raigeki", 0},
-        {"United We Stand", 0},
-        {"Imperial Order", 0},
-        {"Mirror Force", 0},
-        {"Change of Heart", 0},
-        {"Confiscation", 0},
-        {"The Forceful Sentry", 0},
-        {"Fiber Jar", 0},
-        {"Cyber Jar", 0},
-        {"Magical Scientist", 0},
-        {"Cyber-Stein", 0},
-        {"Mirror Wall", 0},
-        {"Destruction Ring", 0},
-
-        // --- LIMITADAS (1 CÓPIA) ---
-        {"Black Luster Soldier - Envoy of the Beginning", 1},
-        {"Black Luster Soldier", 1}, // Ritual
-        {"Chaos Sorcerer", 1},
-        {"Breaker the Magical Warrior", 1},
-        {"Jinzo", 1},
-        {"Tribe-Infecting Virus", 1},
-        {"Sinister Serpent", 1},
-        {"Exiled Force", 1},
-        {"D.D. Assailant", 1},
-        {"D.D. Warrior Lady", 1},
-        {"Ancient Gear Beast", 1},
-        {"Armed Dragon LV5", 1},
-        {"Armed Dragon LV7", 1},
-        {"Behemoth the King of All Animals", 1},
-        {"Chaos Command Magician", 1},
-        {"Injection Fairy Lily", 1},
-        {"Reflect Bounder", 1},
-        {"Twin-Headed Behemoth", 1},
-        {"Vampire Lord", 1},
-        {"Morphing Jar", 1},
-        {"Dark Magician of Chaos", 1},
-        {"Relinquished", 1},
-        {"Summoner Monk", 1},
-        {"Rescue Cat", 1},
-        {"Exodia the Forbidden One", 1},
-        {"Right Arm of the Forbidden One", 1},
-        {"Left Arm of the Forbidden One", 1},
-        {"Right Leg of the Forbidden One", 1},
-        {"Left Leg of the Forbidden One", 1},
-        {"Pot of Greed", 1},
-        {"Heavy Storm", 1},
-        {"Snatch Steal", 1},
-        {"Premature Burial", 1},
-        {"Swords of Revealing Light", 1},
-        {"Book of Moon", 1},
-        {"Mystical Space Typhoon", 1},
-        {"Giant Trunade", 1},
-        {"Mage Power", 1},
-        {"Painful Choice", 1},
-        {"Mind Control", 1},
-        {"Brain Control", 1},
-        {"Limiter Removal", 1},
-        {"Megamorph", 1},
-        {"Card Destruction", 1},
-        {"Dimension Fusion", 1},
-        {"Primal Seed", 1},
-        {"Call of the Haunted", 1},
-        {"Ring of Destruction", 1},
-        {"Torrential Tribute", 1},
-        {"Magic Cylinder", 1},
-        {"Ceasefire", 1},
-        {"Reckless Greed", 1},
-        {"Royal Decree", 1},
-        {"Mask of Darkness", 1},
-        {"Time Seal", 1},
-        {"Wall of Revealing Light", 1},
-        {"Self-Destruct Button", 1},
-        {"Return from the Different Dimension", 1},
-        {"Protector of the Sanctuary", 1},
-
-        // --- SEMI-LIMITADAS (2 CÓPIAS) ---
-        {"Creature Swap", 2},
-        {"Manticore of Darkness", 2},
-        {"Marauding Captain", 2},
-        {"Nobleman of Crossout", 2},
-        {"Reinforcement of the Army", 2},
-        {"Upstart Goblin", 2},
-        {"Cyber Dragon", 2},
-        {"Enemy Controller", 2},
-        {"Magician of Faith", 2}
-    };
-    
     public enum SortType { ABC, Atk, Def }
     private SortType currentSort = SortType.ABC;
 
@@ -506,7 +407,7 @@ private void LoadData()
         foreach (var group in grouped)
         {
             CardData card = group.First();
-            int limit = GetCardLimit(card.name);
+            int limit = GetCardLimit(card);
             if (GameManager.Instance != null && GameManager.Instance.allowForbiddenCards && limit == 0) limit = 1;
             
             if (group.Count() > limit)
@@ -667,13 +568,15 @@ private void LoadData()
         return filteredCardGroups[index];
     }
 
-    public int GetCardLimit(string cardName)
+    public int GetCardLimit(CardData card)
     {
         if (GameManager.Instance != null && GameManager.Instance.disableBanlist)
             return MAX_COPIES;
 
-        if (banList.TryGetValue(cardName, out int limit))
-            return limit;
+        if (card == null) return MAX_COPIES;
+        if (card.goat_banlist == "Banned") return 0;
+        if (card.goat_banlist == "Limited" || card.goat_banlist == "1") return 1;
+        if (card.goat_banlist == "Semi-Limited" || card.goat_banlist == "2") return 2;
 
         return MAX_COPIES;
     }
@@ -833,7 +736,7 @@ public void CreateNewBanner(Transform parent)
     {
        // Validação de Limite de Cópias
        int currentCopies = GetCopiesInDecks(card.id);
-       int limit = GetCardLimit(card.name);
+       int limit = GetCardLimit(card);
 
        // Permite 1 cópia de cartas proibidas se a opção estiver ativa
        if (GameManager.Instance != null && GameManager.Instance.allowForbiddenCards && limit == 0) limit = 1;

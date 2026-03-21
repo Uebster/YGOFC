@@ -33,7 +33,7 @@ public class TrunkCardScrollItem : MonoBehaviour
 
         gameObject.SetActive(true);
         CardData card = cardGroup.First();
-        int limit = DeckBuilderManager.Instance.GetCardLimit(card.name);
+        int limit = DeckBuilderManager.Instance.GetCardLimit(card);
         
         if (GameManager.Instance != null && GameManager.Instance.allowForbiddenCards && limit == 0) limit = 1;
 

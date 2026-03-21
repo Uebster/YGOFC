@@ -41,6 +41,9 @@ public class CardEffectManager : MonoBehaviour
     }
     public Dictionary<CardDisplay, PendingEffect> pendingResolutions = new Dictionary<CardDisplay, PendingEffect>();
 
+    // Closures seguras para preencher funções em branco e evitar "attempt to call a nil value"
+    public Closure dummyClosureTrue;
+
     void Awake()
     {
         Instance = this;
@@ -70,7 +73,8 @@ public class CardEffectManager : MonoBehaviour
         
         // Tabela Auxiliar Básica
         DynValue auxTable = DynValue.NewTable(luaEngine);
-        auxTable.Table.Set("Stringid", DynValue.FromObject(luaEngine, (System.Func<int, int, string>)((code, id) => $"{code}_{id}")));
+        // Aceitar object para prevenir falhas se um userdata vazar como ID
+        auxTable.Table.Set("Stringid", DynValue.FromObject(luaEngine, (System.Func<object, object, string>)((code, id) => $"{code}_{id}")));
         
         // O GlobalCheck garante que efeitos passivos no fundo sejam executados!
         auxTable.Table.Set("GlobalCheck", DynValue.FromObject(luaEngine, (System.Action<object, Closure>)((s, func) => { func?.Call(); })));
@@ -78,6 +82,9 @@ public class CardEffectManager : MonoBehaviour
         // Constantes lógicas (Criadas como closures nativas para evitar erros de casting inter-linguagem)
         auxTable.Table.Set("TRUE", luaEngine.DoString("return function(...) return true end"));
         auxTable.Table.Set("FALSE", luaEngine.DoString("return function(...) return false end"));
+
+        // Cacheia a closure verdadeira para uso nos Dummies
+        dummyClosureTrue = auxTable.Table.Get("TRUE").Function;
 
         luaEngine.Globals["aux"] = auxTable;
 
@@ -229,7 +236,11 @@ public class CardEffectManager : MonoBehaviour
         {
             DynValue selfTable = DynValue.NewTable(luaEngine);
             int numericId = 0;
-            int.TryParse(cardId, out numericId);
+            
+            // Usa a senha oficial da Konami (password) como ID interno do LUA
+            // Isso garante que funções oficiais como "GetID()" recebam o número real
+            if (!string.IsNullOrEmpty(card.CurrentCardData.password))
+                int.TryParse(card.CurrentCardData.password, out numericId);
             
             luaEngine.Globals["self_table"] = selfTable;
             luaEngine.Globals["self_code"] = numericId;
@@ -754,13 +765,15 @@ public class CardEffectManager : MonoBehaviour
                         try {
                             object eg = WrapTriggerArgs(null);
                             LuaEffect dummyRe = new LuaEffect { owner = lc };
-                            bool takesCard = (eff.type & 0x100D) != 0; // SINGLE, EQUIP, GRANT, XMATERIAL
-                            object arg2 = takesCard ? (object)lc : (object)lc.GetControler();
                             LuaCard dummyChkc = new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 });
 
-                            if (eff.conditionFunc != null) luaEngine.Call(eff.conditionFunc, eff, arg2, eg, 0, 0, dummyRe, 0, 0);
-                            if (eff.costFunc != null) luaEngine.Call(eff.costFunc, eff, arg2, eg, 0, 0, dummyRe, 0, 0, 0);
-                            if (eff.targetFunc != null) luaEngine.Call(eff.targetFunc, eff, arg2, eg, 0, 0, dummyRe, 0, 0, 0, dummyChkc);
+                            // Efeitos de Ação/Gatilho (0x03F8 engloba Activate, Ignition, Quick, Trigger, Flip)
+                            // Eles sempre exigem 'tp' (Player ID) como arg2. Efeitos contínuos/equip exigem 'c' (LuaCard).
+                            bool isActionEffect = (eff.type & 0x03F8) != 0; 
+
+                            if (eff.conditionFunc != null) luaEngine.Call(eff.conditionFunc, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, 0, 0, dummyRe, 0, 0);
+                            if (eff.costFunc != null) luaEngine.Call(eff.costFunc, eff, lc.GetControler(), eg, 0, 0, dummyRe, 0, 0, 0);
+                            if (eff.targetFunc != null) luaEngine.Call(eff.targetFunc, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, 0, 0, dummyRe, 0, 0, 0, dummyChkc);
                         } catch (System.Exception ex) {
                             errorLogs.Add($"<color=orange>[RUNTIME] Falha na carta {card.name} ({card.id}): {ex.Message}</color>");
                             runtimeError = true;

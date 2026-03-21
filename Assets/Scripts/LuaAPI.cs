@@ -43,7 +43,7 @@ public class LuaDuel
         else GameManager.Instance.GainLifePoints(false, ConvertToInt(amount));
     }
 
-    public void Destroy(object target, int reason)
+    public void Destroy(object target, object reason)
     {
         if (target is LuaGroup group)
         {
@@ -239,6 +239,13 @@ public class LuaDuel
     public int AnnounceRace(object player, object count, object avail) { return 1; }
     public int AnnounceCard(object player, params object[] args) { return 0; }
     public bool IsChainNegatable(object chaincount) { return true; }
+    public int GetOperationCount(object chainc) { return 0; }
+    public bool IsChainDisablable(object chainc) { return true; }
+    public void DiscardDeck(object player, object count, object reason) { }
+    public bool CheckTribute(object card, object min, object max, object group = null, object zone = null) { return true; }
+    public void SetTargetCard(object target) { }
+    public void ClearTargetCard() { }
+    public bool CheckEvent(object event_code, object chainc = null) { return false; }
 
     public void RegisterEffect(LuaEffect e, object player = null)
     {
@@ -262,15 +269,21 @@ public class LuaDuel
             }
             else if (arg == 64 || arg == 128 || arg == 32) // TRIGGERING_EFFECT (0x40)
             {
-                LuaEffect dummyEff = new LuaEffect { owner = new LuaCard(new CardData { id = "0000", name = "Dummy" }) };
+                LuaEffect dummyEff = new LuaEffect { 
+                    owner = new LuaCard(new CardData { id = "0000", name = "Dummy" }),
+                    conditionFunc = CardEffectManager.Instance.dummyClosureTrue,
+                    costFunc = CardEffectManager.Instance.dummyClosureTrue,
+                    targetFunc = CardEffectManager.Instance.dummyClosureTrue,
+                    operationFunc = CardEffectManager.Instance.dummyClosureTrue
+                };
                 returns.Add(UserData.Create(dummyEff));
             }
             else
             {
-                returns.Add(DynValue.NewNumber(0));
+                returns.Add(DynValue.Nil);
             }
         }
-        if (returns.Count == 0) return DynValue.NewTuple(DynValue.NewNumber(0), DynValue.NewNumber(0));
+        if (returns.Count == 0) return DynValue.NewTuple(DynValue.Nil, DynValue.Nil);
         if (returns.Count == 1) return returns[0];
         return DynValue.NewTuple(returns.ToArray());
     }
@@ -354,12 +367,12 @@ public class LuaDuel
 
     public void Summon(object player, object card, object ignoreLimit, object param)
     {
-        if (card is LuaCard c && c.unityCard != null) GameManager.Instance.TrySummonMonster(c.unityCard.gameObject, c.unityData, false, ignoreLimit);
+        if (card is LuaCard c && c.unityCard != null) GameManager.Instance.TrySummonMonster(c.unityCard.gameObject, c.unityData, false, ConvertToInt(ignoreLimit) != 0);
     }
 
     public void MSet(object player, object card, object ignoreLimit, object param)
     {
-        if (card is LuaCard c && c.unityCard != null) GameManager.Instance.TrySummonMonster(c.unityCard.gameObject, c.unityData, true, ignoreLimit);
+        if (card is LuaCard c && c.unityCard != null) GameManager.Instance.TrySummonMonster(c.unityCard.gameObject, c.unityData, true, ConvertToInt(ignoreLimit) != 0);
     }
 
     public bool CheckLPCost(object player, object cost)
@@ -670,10 +683,10 @@ public class LuaCard
         return unityCard.isPlayerCard ? 0 : 1;
     }
 
-    public bool IsControler(int playerIndex)
+    public bool IsControler(object playerIndex)
     {
         // Retorna true se o 'tp' repassado no script for o dono atual desta carta física no tabuleiro
-        return GetControler() == playerIndex;
+        return GetControler() == ConvertToInt(playerIndex);
     }
 
     public bool IsOnField()
@@ -797,6 +810,10 @@ public class LuaCard
     public int GetFieldID() { return 0; }
     public int GetReason() { return 0; }
     public LuaGroup GetTarget() { return new LuaGroup(); }
+    public void SetMaterial(object g) { }
+    public LuaGroup GetAdminGroup() { return new LuaGroup(); }
+    public bool IsSummonLocation(object loc) { return true; }
+    public void SetStatus(object status, object enable) { }
     
     public int GetRace() 
     { 
@@ -887,7 +904,7 @@ public class LuaCard
     public int GetFlagEffect(object id) { return 0; }
 
     public int GetCode() {
-        if (unityData != null && int.TryParse(unityData.id, out int code)) return code;
+        if (unityData != null && !string.IsNullOrEmpty(unityData.password) && int.TryParse(unityData.password, out int code)) return code;
         return 0;
     }
     public int GetOriginalCode() { return GetCode(); }
@@ -914,7 +931,7 @@ public class LuaCard
     public bool IsCode(params object[] codes)
     {
         int myId = 0;
-        if (unityData != null) int.TryParse(unityData.id, out myId);
+        if (unityData != null && !string.IsNullOrEmpty(unityData.password)) int.TryParse(unityData.password, out myId);
         foreach(var c in codes) if (myId == ConvertToInt(c)) return true;
         return false;
     }
@@ -927,6 +944,31 @@ public class LuaCard
     }
 
     public bool IsSetCard(params object[] setCodes) { return true; }
+    
+    public LuaEffect CheckActivateResult(object b) 
+    { 
+        return new LuaEffect { 
+            owner = this, 
+            conditionFunc = CardEffectManager.Instance.dummyClosureTrue, 
+            costFunc = CardEffectManager.Instance.dummyClosureTrue, 
+            targetFunc = CardEffectManager.Instance.dummyClosureTrue, 
+            operationFunc = CardEffectManager.Instance.dummyClosureTrue 
+        }; 
+    }
+
+    public static LuaGroup operator +(LuaCard a, LuaCard b)
+    {
+        LuaGroup g = new LuaGroup();
+        if (a != null) g.AddCard(a);
+        if (b != null && a != b) g.AddCard(b);
+        return g;
+    }
+    public static LuaGroup operator -(LuaCard a, LuaCard b)
+    {
+        LuaGroup g = new LuaGroup();
+        if (a != null && a != b) g.AddCard(a);
+        return g;
+    }
 }
 
 // ==============================================================================
@@ -1072,7 +1114,7 @@ public class LuaGroup
         {
             if (c.unityData != null)
             {
-                if (int.TryParse(c.unityData.id, out int code))
+                if (!string.IsNullOrEmpty(c.unityData.password) && int.TryParse(c.unityData.password, out int code))
                     uniqueCodes.Add(code);
             }
         }

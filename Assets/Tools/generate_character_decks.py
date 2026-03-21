@@ -22,29 +22,29 @@ ACT_POOL_RANGES = {
 
 # --- CONFIGURAÇÃO DE CARTAS ASSINATURA & FORÇADAS ---
 # O primeiro ID da lista se torna a Carta S+ (Boss), as demais também são forçadas no deck.
-FORCED_CARDS = {
-    "kaiba": ["0217", "0217", "0217", "1183"], # Blue-Eyes White Dragon x3, Master of Oz
-    "yugi": ["0419"], # Dark Magician
-    "joey": ["1504"], # Red-Eyes B. Dragon
-    "pegasus": ["1513", "1950"], # Relinquished, Toon World
-    "mai": ["0867", "0867", "0867", "0871"], # Harpie Lady x3, Sisters
-    "weevil": ["0825", "0313", "1422"], # Great Moth combo
-    "rex": ["1995"], # Two-Headed King Rex
-    "mako": ["1876"], # The Legendary Fisherman
-    "bandit": ["0139"], # Barrel Dragon
-    "keith": ["0139"],
-    "marik": ["1060"], # Lava Golem
-    "strings": ["1527", "0965"], # Revival Jam, Jam Breeding
-    "bakura": ["0427"], # Dark Necrofear
-    "ishizu": ["0613"], # Exchange of the Spirit
-    "odion": ["0590"], # Embodiment of Apophis
-    "noah": ["1636"], # Shinato
-    "gozaburo": ["0617"], # Exodia Necross
-    "rare_hunter": ["0618"], # Exodia the Forbidden One
-    "arkana": ["0420"], # Dark Magician Girl
-    "shadi": ["1233"], # Millennium Shield
-    "heishin": ["2139"], # Zera the Mant
-    "isis": ["1612"] # Senju
+FORCED_CARDS_NAMES = {
+    "kaiba": ["Blue-Eyes White Dragon", "Blue-Eyes White Dragon", "Blue-Eyes White Dragon", "Master of Oz"],
+    "yugi": ["Dark Magician"],
+    "joey": ["Red-Eyes B. Dragon"],
+    "pegasus": ["Relinquished", "Toon World"],
+    "mai": ["Harpie Lady", "Harpie Lady", "Harpie Lady", "Harpie Lady Sisters"],
+    "weevil": ["Great Moth", "Cocoon of Evolution", "Petit Moth"],
+    "rex": ["Two-Headed King Rex"],
+    "mako": ["The Legendary Fisherman"],
+    "bandit": ["Barrel Dragon"],
+    "keith": ["Barrel Dragon"],
+    "marik": ["Lava Golem"],
+    "strings": ["Revival Jam", "Jam Breeding Machine"],
+    "bakura": ["Dark Necrofear"],
+    "ishizu": ["Exchange of the Spirit"],
+    "odion": ["Embodiment of Apophis"],
+    "noah": ["Shinato, King of a Higher Plane"],
+    "gozaburo": ["Exodia Necross"],
+    "rare_hunter": ["Exodia the Forbidden One"],
+    "arkana": ["Dark Magician Girl"],
+    "shadi": ["Millennium Shield"],
+    "heishin": ["Zera the Mant"],
+    "isis": ["Senju of the Thousand Hands"]
 }
 
 # --- THEMES & ARCHETYPES (PROFILES INTELIGENTES) ---
@@ -73,71 +73,83 @@ THEMES = {
 
 # --- PACOTES (CORES) PRÉ-DEFINIDOS ---
 # Repetir IDs garante que o deck builder priorize essas cópias (dentro do limite)
-CORES = {
-    "Exodia": ["0618", "1061", "1062", "1530", "1531", "0324", "0617"],
-    "Umi": ["2015", "2015", "2015", "0013", "0013", "1953", "1953", "0053", "0053", "1876", "1365", "0682"], 
-    "Burn": ["1606", "1606", "0985", "0985", "0235", "1344", "0442", "1967", "0654"], 
-    "Insect": ["0947", "0947", "0948", "1404", "1404", "0951", "1329", "0680", "0680"], 
-    "Dinosaur": ["2014", "2014", "2002", "1995", "1995", "0605", "1117", "0407"], 
-    "Zombie": ["0227", "0227", "2031", "1508", "1508", "0259", "1544", "1307", "0480"], 
-    "Warrior": ["1509", "1509", "1163", "1163", "0688", "0318", "0616", "0048", "1684", "1684"], 
-    "DestinyBoard": ["0482", "0482", "1741", "1742", "1743", "1744", "1811", "1811"], 
-    "Toon": ["1950", "1950", "1950", "1944", "1948", "1942", "1949", "1949", "1947", "0215"], 
-    "Spellcaster": ["1126", "1126", "1138", "0240", "1656", "1656", "0422", "1790", "2125"], 
-    "Machine": ["1088", "1088", "0879", "0975", "1113", "0359", "1507"], 
-    "Harpie": ["0867", "0867", "0867", "0570", "0570", "0874", "0874", "0871", "0873", "0366", "0366"], 
-    "Gravekeeper": ["1324", "1324", "1324", "0810", "0810", "0805", "0809", "0803", "0812"], 
-    "Fiend": ["0427", "0750", "1658", "0091", "1197", "0433", "2125", "2125"], 
-    "Fairy": ["1887", "1887", "1887", "0092", "1840", "1317", "1639", "1639", "1284"]
+CORES_NAMES = {
+    "Exodia": ["Exodia the Forbidden One", "Left Arm of the Forbidden One", "Left Leg of the Forbidden One", "Right Arm of the Forbidden One", "Right Leg of the Forbidden One", "Contract with Exodia", "Exodia Necross"],
+    "Umi": ["Umi", "Umi", "Umi", "A Legendary Ocean", "A Legendary Ocean", "Tornado Wall", "Tornado Wall", "Amphibian Bugroth MK-3", "Amphibian Bugroth MK-3", "The Legendary Fisherman", "Ocean Dragon Lord - Neo-Daedalus", "Levia-Dragon - Daedalus"], 
+    "Burn": ["Solar Flare Dragon", "Solar Flare Dragon", "Just Desserts", "Just Desserts", "Bowganian", "Ojama Trio", "Des Koala", "Tremendous Fire", "Meteor of Destruction"], 
+    "Insect": ["Insect Barrier", "Insect Barrier", "Insect Princess", "Pinch Hopper", "Pinch Hopper", "Insect Imitation", "Multiplication of Ants", "Flying Kamakiri #1", "Flying Kamakiri #1"], 
+    "Dinosaur": ["Uraby", "Uraby", "Tyrant Dragon", "Two-Headed King Rex", "Two-Headed King Rex", "Enraged Battle Ox", "Mad Sword Beast", "Dark Driceratops"], 
+    "Zombie": ["Blood Sucker", "Blood Sucker", "Vampire Lord", "Pyramid Turtle", "Pyramid Turtle", "Call of the Mummy", "Robbin' Zombie", "Mystic Tomato", "Despair from the Dark"], 
+    "Warrior": ["Marauding Captain", "Marauding Captain", "Goblin Attack Force", "Goblin Attack Force", "Exiled Force", "Command Knight", "D.D. Warrior Lady", "Amazoness Swords Woman", "Reinforcement of the Army", "Reinforcement of the Army"], 
+    "DestinyBoard": ["Destiny Board", "Destiny Board", "Spirit Message \"I\"", "Spirit Message \"N\"", "Spirit Message \"A\"", "Spirit Message \"L\"", "The Dark Door", "The Dark Door"], 
+    "Toon": ["Toon World", "Toon World", "Toon World", "Toon Mermaid", "Toon Summoned Skull", "Toon Dark Magician Girl", "Toon Goblin Attack Force", "Toon Goblin Attack Force", "Toon Masked Sorcerer", "Blue-Eyes Toon Dragon"], 
+    "Spellcaster": ["Magical Scientist", "Magical Scientist", "Magician of Faith", "Breaker the Magical Warrior", "Skilled Dark Magician", "Skilled Dark Magician", "Dark Magician Girl", "Pitch-Black Power Stone", "Apprentice Magician"], 
+    "Machine": ["Limiter Removal", "Limiter Removal", "Heavy Mech Support Platform", "Jinzo", "Machine Duplication", "Cyber Dragon", "Reflect Bounder"], 
+    "Harpie": ["Harpie Lady", "Harpie Lady", "Harpie Lady", "Elegant Egotist", "Elegant Egotist", "Harpies' Hunting Ground", "Harpies' Hunting Ground", "Harpie Lady Sisters", "Harpie's Brother", "Cyber Shield", "Cyber Shield"], 
+    "Gravekeeper": ["Necrovalley", "Necrovalley", "Necrovalley", "Gravekeeper's Spy", "Gravekeeper's Spy", "Gravekeeper's Chief", "Gravekeeper's Spear Soldier", "Gravekeeper's Assailant", "Gravekeeper's Vassal"], 
+    "Fiend": ["Dark Necrofear", "Giant Orc", "Skill Drain", "Archfiend Soldier", "Nightmare Wheel", "Dark Ruler Ha Des", "Wall of Illusion", "Wall of Illusion"], 
+    "Fairy": ["The Sanctuary in the Sky", "The Sanctuary in the Sky", "The Sanctuary in the Sky", "Archlord Zerato", "The Agent of Judgment - Saturn", "Mudora", "Shining Angel", "Shining Angel", "Zolga"]
 }
 
-STAPLES_TIER_1 = ["1962", "0666", "2047", "0457", "1781", "1483"] 
-STAPLES_TIER_2 = ["1679", "0555", "1582", "1120", "0228", "0602"] 
-STAPLES_TIER_3 = ["1480", "1251", "1447", "0881", "1318", "0287"] 
+STAPLES_TIER_1_NAMES = ["Pot of Greed", "Graceful Charity", "Delinquent Duo", "Mystical Space Typhoon", "Snatch Steal", "Premature Burial"] 
+STAPLES_TIER_2_NAMES = ["Heavy Storm", "Nobleman of Crossout", "Book of Moon", "Call of the Haunted", "Mirror Force", "Torrential Tribute"] 
+STAPLES_TIER_3_NAMES = ["Dust Tornado", "Sakuretsu Armor", "Bottomless Trap Hole", "Smashing Ground", "Waboku", "Magic Cylinder"] 
 
-# --- MOTOR DE DEPENDÊNCIAS EXATAS ---
-EXACT_DEPENDENCIES = {
-    "0618": ["1061", "1062", "1530", "1531"], 
-    "0617": ["0618", "1061", "1062", "1530", "1531", "0324"], 
-    "1513": ["0186"], 
-    "0188": ["0187"], 
-    "1137": ["0190"], 
-    "0215": ["1950"], 
-    "1942": ["1950"], 
-    "0871": ["0570"], 
-    "1417": ["1422", "0313"], 
-    "0825": ["1422", "0313"], 
-    "1175": ["1879"], 
-    "1880": ["0354"], 
-    "0214": ["0216", "0217", "0217", "0217", "1444"], 
-    "0421": ["0419", "1024"], 
+EXACT_DEPENDENCIES_NAMES = {
+    "Exodia the Forbidden One": ["Left Arm of the Forbidden One", "Left Leg of the Forbidden One", "Right Arm of the Forbidden One", "Right Leg of the Forbidden One"], 
+    "Exodia Necross": ["Exodia the Forbidden One", "Left Arm of the Forbidden One", "Left Leg of the Forbidden One", "Right Arm of the Forbidden One", "Right Leg of the Forbidden One", "Contract with Exodia"], 
+    "Relinquished": ["Black Illusion Ritual"], 
+    "Black Luster Soldier": ["Black Luster Ritual"], 
+    "Magician of Black Chaos": ["Black Magic Ritual"], 
+    "Blue-Eyes Toon Dragon": ["Toon World"], 
+    "Toon Dark Magician Girl": ["Toon World"], 
+    "Harpie Lady Sisters": ["Elegant Egotist"], 
+    "Perfectly Ultimate Great Moth": ["Petit Moth", "Cocoon of Evolution"], 
+    "Great Moth": ["Petit Moth", "Cocoon of Evolution"], 
+    "The Masked Beast": ["Curse of the Masked Beast"], 
+    "Blue-Eyes Shining Dragon": ["Blue-Eyes Ultimate Dragon", "Blue-Eyes White Dragon", "Polymerization"], 
+    "Dark Sage": ["Dark Magician", "Time Wizard"]
 }
 
-# --- BANLIST (ID -> Limit) ---
-# 0 = Forbidden, 1 = Limited, 2 = Semi-Limited
-BANLIST = {
-    "0289": 0, "1588": 0, "2097": 0, "2128": 0, "0414": 0, "0465": 0, "0791": 0,
-    "0872": 0, "1268": 0, "1480": 0, "2020": 0, "0932": 0, "1251": 0, "0639": 0,
-    "0363": 0, "1134": 0, "0370": 0, "1252": 0, "0485": 0, "0287": 0, "0321": 0, "1863": 0,
-    
-    "0189": 1, "0188": 1, "0293": 1, "0240": 1, "0975": 1, "1973": 1, "1651": 1,
-    "0616": 1, "0378": 1, "0388": 1, "0058": 1, "0097": 1, "0098": 1, "0166": 1,
-    "0288": 1, "0944": 1, "1507": 1, "1989": 1, "2031": 1, "1277": 1, "1457": 1,
-    "0422": 1, "1513": 1, "1790": 1, "1517": 1, "1447": 1, "0881": 1, "1683": 1,
-    "1453": 1, "0259": 1, "1533": 1, "1955": 1, "1120": 1, "0275": 1, "1499": 1,
-    "1811": 1, "0228": 1, "1318": 1, "0757": 1, "1563": 1, "1119": 1, "1397": 1,
-    "1462": 1, "1138": 1, "1170": 1, "1236": 1, "0237": 1, "1088": 1, "1200": 1,
-    "1929": 1, "2050": 1, "1610": 1, "0264": 1, "0497": 1, "1523": 1,
-    "0618": 1, "1061": 1, "1062": 1, "1530": 1, "1531": 1,
-    
-    "0338": 2, "1055": 2, "1162": 2, "1163": 2, "1278": 2, "1353": 2, "1509": 2,
-    "2024": 2, "0359": 2, "0011": 2, "0602": 2, "1209": 2, "1077": 2, "0817": 2,
-    "1245": 2, "0786": 2, "1329": 2, "0077": 2, "0460": 2, "1604": 2, "1498": 2,
-}
+ALLOW_FORBIDDEN = True
 
-ALLOW_FORBIDDEN = True 
+# Variáveis globais geradas dinamicamente
+FORCED_CARDS = {}
+CORES = {}
+STAPLES_TIER_1 = []
+STAPLES_TIER_2 = []
+STAPLES_TIER_3 = []
+EXACT_DEPENDENCIES = {}
+NAME_TO_ID = {}
 
 # --- FUNÇÕES AUXILIARES ---
+
+def generate_rewards(unique_drops, all_decks_cards, all_cards_map):
+    pool_s_plus = unique_drops[0] if len(unique_drops) > 0 else ""
+    pool_s = unique_drops[1:7] if len(unique_drops) > 1 else []
+    
+    used_cards = set(all_decks_cards)
+    if pool_s_plus in used_cards: used_cards.remove(pool_s_plus)
+    for s in pool_s:
+        if s in used_cards: used_cards.remove(s)
+        
+    def sort_key(cid):
+        c = all_cards_map.get(cid, {})
+        try: p = float(c.get("pool", "1.1"))
+        except: p = 1.1
+        atk = c.get("atk", 0) if "Monster" in c.get("type", "") else 0
+        return (p, atk)
+        
+    sorted_cards = sorted(list(used_cards), key=sort_key, reverse=True)
+    b_count = int(len(sorted_cards) * 0.25)
+    c_count = int(len(sorted_cards) * 0.30)
+    
+    return {
+        "s_plus": pool_s_plus, "s": pool_s,
+        "b": sorted_cards[:b_count],
+        "c": sorted_cards[b_count:b_count+c_count],
+        "d": sorted_cards[b_count+c_count:]
+    }
 
 def load_json(path):
     if not os.path.exists(path): return []
@@ -171,8 +183,8 @@ def build_dependency_map(cards):
 
 def get_pool_candidates(min_p, max_p, cards_by_pool, all_cards_map):
     candidates = []
-    for p, ids in cards_by_pool.items():
-        if min_p <= p <= max_p:
+    for pool_val, ids in cards_by_pool.items():
+        if min_p <= pool_val <= max_p:
             for cid in ids:
                 if cid in all_cards_map and "Token" not in all_cards_map[cid]["type"]:
                     candidates.append(cid)
@@ -188,6 +200,19 @@ def format_deck_list_custom(deck_list):
         lines.append(f"      {', '.join(quoted_chunk)}")
     return "[\n" + ",\n".join(lines) + "\n    ]"
 
+def format_list_custom(data_list, indent_level=4):
+    if not data_list: return "[]"
+    lines = []
+    chunk_size = 10
+    base_indent = " " * indent_level
+    item_indent = " " * (indent_level + 2)
+    for i in range(0, len(data_list), chunk_size):
+        chunk = data_list[i:i + chunk_size]
+        quoted_chunk = [f'"{x}"' for x in chunk]
+        lines.append(f"{item_indent}{', '.join(quoted_chunk)}")
+    content = ",\n".join(lines)
+    return f"[\n{content}\n{base_indent}]"
+
 # --- O DECK BUILDER ---
 
 def generate_deck(char_id, act, difficulty_modifier, cards_by_pool, all_cards_map, dependency_map, forced_cards=None, unique_pool=None):
@@ -200,13 +225,28 @@ def generate_deck(char_id, act, difficulty_modifier, cards_by_pool, all_cards_ma
             theme = v
             break
 
-    # Helper inteligente para blindar o cap de 40 cartas e injetar dependências
+    # Conta apenas cartas válidas (Não-Banidas) para garantir que o deck sempre tenha 40 jogáveis no mínimo!
+    def get_valid_main_count():
+        count = 0
+        for cid in main_deck:
+            c = all_cards_map.get(cid, {})
+            if c.get("goat_banlist", "Unlimited") != "Banned":
+                count += 1
+        return count
+
+    # Helper inteligente para blindar o cap de cartas e injetar dependências
     def add_card(cid, is_forced=False):
         if not cid or cid not in all_cards_map: return False
         c_data = all_cards_map[cid]
         
-        limit = BANLIST.get(cid, 3)
-        if ALLOW_FORBIDDEN and limit == 0: limit = 1
+        limit = 3
+        goat_status = c_data.get("goat_banlist", "Unlimited")
+        is_forbidden = (goat_status == "Banned")
+        if is_forbidden: limit = 0
+        elif goat_status == "Limited" or goat_status == "1": limit = 1
+        elif goat_status == "Semi-Limited": limit = 2
+        
+        if ALLOW_FORBIDDEN and is_forbidden: limit = 1
         
         if not is_forced and (main_deck.count(cid) + extra_deck.count(cid)) >= limit: 
             return False
@@ -214,16 +254,17 @@ def generate_deck(char_id, act, difficulty_modifier, cards_by_pool, all_cards_ma
         if "Fusion" in c_data["type"] or "Synchro" in c_data["type"] or "Xyz" in c_data["type"]:
             if len(extra_deck) < 15: 
                 extra_deck.append(cid)
-                if "1444" not in main_deck and len(main_deck) < 40:
-                    main_deck.append("1444")
+                poly_id = NAME_TO_ID.get("polymerization")
+                if poly_id and poly_id not in main_deck and get_valid_main_count() < 40:
+                    main_deck.append(poly_id)
                 return True
             return False
         else:
-            if len(main_deck) < 40 or is_forced:
+            if get_valid_main_count() < 40 or is_forced:
                 main_deck.append(cid)
                 if cid in EXACT_DEPENDENCIES:
                     for dep_id in EXACT_DEPENDENCIES[cid]:
-                        if main_deck.count(dep_id) == 0 and (len(main_deck) < 40 or is_forced):
+                        if main_deck.count(dep_id) == 0 and (get_valid_main_count() < 40 or is_forced):
                             add_card(dep_id, True)
                 return True
             return False
@@ -251,28 +292,28 @@ def generate_deck(char_id, act, difficulty_modifier, cards_by_pool, all_cards_ma
     if difficulty_modifier == "C": min_p += 0.4; max_p += 0.5
     
     def fetch_cards(mn, mx):
-        ml, mh, sp, tr = [], [], [], []
+        ml, mh, sp, tr, ex = [], [], [], [], []
         for pool_val, ids in cards_by_pool.items():
             if mn <= pool_val <= mx:
                 for cid in ids:
                     if cid not in all_cards_map: continue
                     c = all_cards_map[cid]
-                    if "Monster" in c["type"]:
+                    t = c.get("type", "")
+                    if "Fusion" in t or "Synchro" in t or "Xyz" in t:
+                        ex.append(cid)
+                    elif "Monster" in t:
                         if c.get("level", 1) <= 4: ml.append(cid)
                         else: mh.append(cid)
-                    elif "Spell" in c["type"]:
-                        # Previne Field Spells intrusas
-                        if c.get("property") == "Field":
-                            continue
-                        sp.append(cid)
-                    elif "Trap" in c["type"]: tr.append(cid)
-        return ml, mh, sp, tr
+                    elif "Spell" in t:
+                        if c.get("property") != "Field": sp.append(cid)
+                    elif "Trap" in t: tr.append(cid)
+        return ml, mh, sp, tr, ex
 
-    monsters_low, monsters_high, spells, traps = fetch_cards(min_p, max_p)
+    monsters_low, monsters_high, spells, traps, extras = fetch_cards(min_p, max_p)
     search_min = min_p
     while len(monsters_low) < 15 and search_min > 1.0:
         search_min -= 0.5
-        ml, _, _, _ = fetch_cards(search_min, max_p)
+        ml, _, _, _, _ = fetch_cards(search_min, max_p)
         monsters_low = list(set(monsters_low + ml))
             
     def weighted_choice(pool, count):
@@ -302,23 +343,25 @@ def generate_deck(char_id, act, difficulty_modifier, cards_by_pool, all_cards_ma
     need_high = max(0, 4)
     need_spell = max(0, 10 - spells_in_deck)
     need_trap = max(0, 10 - traps_in_deck)
+    need_extra = max(0, 4 - len(extra_deck))
     
     fillers = []
     fillers.extend(weighted_choice(monsters_low, need_low))
     fillers.extend(weighted_choice(monsters_high, need_high))
     fillers.extend(weighted_choice(spells, need_spell))
     fillers.extend(weighted_choice(traps, need_trap))
+    fillers.extend(weighted_choice(extras, need_extra))
     
     if difficulty_modifier in ["B", "C"]: fillers.extend(STAPLES_TIER_3 + STAPLES_TIER_2)
     else: fillers.extend(STAPLES_TIER_1)
         
     for cid in fillers:
-        if len(main_deck) >= 40: break
+        if get_valid_main_count() >= 40: break
         add_card(cid)
 
     fallback_attempts = 0
     safe_pool = monsters_low if len(monsters_low) > 0 else STAPLES_TIER_1
-    while len(main_deck) < 40 and fallback_attempts < 1000:
+    while get_valid_main_count() < 40 and fallback_attempts < 1000:
         add_card(random.choice(safe_pool))
         fallback_attempts += 1
 
@@ -370,6 +413,23 @@ def main():
         if pool_val not in cards_by_pool: cards_by_pool[pool_val] = []
         cards_by_pool[pool_val].append(c["id"])
 
+    # Tradução Dinâmica de Nomes para IDs (À Prova de Mudanças!)
+    global NAME_TO_ID, FORCED_CARDS, CORES, STAPLES_TIER_1, STAPLES_TIER_2, STAPLES_TIER_3, EXACT_DEPENDENCIES
+    NAME_TO_ID = {c["name"].lower(): c["id"] for c in cards_data}
+    
+    def names_to_ids(names_list):
+        return [NAME_TO_ID[n.lower()] for n in names_list if n.lower() in NAME_TO_ID]
+
+    FORCED_CARDS = {k: names_to_ids(v) for k, v in FORCED_CARDS_NAMES.items()}
+    CORES = {k: names_to_ids(v) for k, v in CORES_NAMES.items()}
+    STAPLES_TIER_1 = names_to_ids(STAPLES_TIER_1_NAMES)
+    STAPLES_TIER_2 = names_to_ids(STAPLES_TIER_2_NAMES)
+    STAPLES_TIER_3 = names_to_ids(STAPLES_TIER_3_NAMES)
+    EXACT_DEPENDENCIES = {}
+    for k, v in EXACT_DEPENDENCIES_NAMES.items():
+        if k.lower() in NAME_TO_ID:
+            EXACT_DEPENDENCIES[NAME_TO_ID[k.lower()]] = names_to_ids(v)
+
     dependency_map = build_dependency_map(cards_data)
     
     print("-> Distribuindo cartas exclusivas...")
@@ -386,7 +446,7 @@ def main():
         char_id_lower = char_id.lower()
         sig_id = None
         for key, sigs in FORCED_CARDS.items():
-            if key in char_id_lower:
+            if key in char_id_lower and sigs:
                 sig_id = sigs[0]
                 for s in sigs:
                     if s not in used_unique_ids and s in all_cards_map:
@@ -435,6 +495,9 @@ def main():
         char["deck_B"] = main_B; char["extra_deck_B"] = extra_B
         char["deck_C"] = main_C; char["extra_deck_C"] = extra_C
         
+        all_decks_cards = main_A + extra_A + main_B + extra_B + main_C + extra_C
+        char["rewards"] = generate_rewards(uniques, all_decks_cards, all_cards_map)
+        
         print(f"   [{char['id']}] Ato {act} - (Main A: {len(char['deck_A'])}, Extra A: {len(char['extra_deck_A'])})")
 
     print(f"-> Salvando {os.path.basename(characters_json_path)} formatado...")
@@ -458,8 +521,14 @@ def main():
             f.write(f'    "deck_C": {format_deck_list_custom(char["deck_C"])},\n')
             f.write(f'    "extra_deck_C": {format_deck_list_custom(char["extra_deck_C"])},\n')
             
-            rewards_str = json.dumps(char.get("rewards", []))
-            f.write(f'    "rewards": {rewards_str},\n')
+            rewards = char.get("rewards", {})
+            f.write('    "rewards": {\n')
+            f.write(f'      "s_plus": "{rewards.get("s_plus", "")}",\n')
+            f.write(f'      "s": {format_list_custom(rewards.get("s", []), 6)},\n')
+            f.write(f'      "b": {format_list_custom(rewards.get("b", []), 6)},\n')
+            f.write(f'      "c": {format_list_custom(rewards.get("c", []), 6)},\n')
+            f.write(f'      "d": {format_list_custom(rewards.get("d", []), 6)}\n')
+            f.write('    },\n')
             f.write(f'    "field": "{char.get("field", "Normal")}",\n')
             f.write(f'    "difficulty": "{char.get("difficulty", "Easy")}",\n')
             f.write(f'    "story_role": "{char.get("story_role", "Duelist")}"\n')

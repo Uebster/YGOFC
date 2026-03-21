@@ -16,6 +16,28 @@ app = Flask(__name__)
 progresso = {"atual": 0, "total": 0, "status": "Pronto", "card": "", "log": []}
 cancel_task = False
 
+# --- BANLIST MESTRA (Sobrescreve falhas da API do site) ---
+BANLIST_NAMES = {
+    "Raigeki": 0, "Dark Hole": 0, "Monster Reborn": 0, "Harpie's Feather Duster": 0,
+    "Change of Heart": 0, "Imperial Order": 0, "Chaos Emperor Dragon - Envoy of the End": 0,
+    "Yata-Garasu": 0, "Magical Scientist": 0, "Witch of the Black Forest": 0,
+    "Cyber Jar": 0, "Fiber Jar": 0, "Makyura the Destructor": 0, "Painful Choice": 0,
+    "The Forceful Sentry": 0, "Confiscation": 0, "Mirage of Nightmare": 0,
+    
+    "Black Luster Soldier - Envoy of the Beginning": 1, "Jinzo": 1, "Breaker the Magical Warrior": 1,
+    "Tribe-Infecting Virus": 1, "Sinister Serpent": 1, "Exiled Force": 1, "D.D. Warrior Lady": 1,
+    "Sangan": 1, "Morphing Jar": 1, "Dark Magician of Chaos": 1, "Pot of Greed": 1,
+    "Graceful Charity": 1, "Delinquent Duo": 1, "Heavy Storm": 1, "Mystical Space Typhoon": 1,
+    "Snatch Steal": 1, "Premature Burial": 1, "Swords of Revealing Light": 1, "Mirror Force": 1,
+    "Call of the Haunted": 1, "Ring of Destruction": 1, "Torrential Tribute": 1,
+    "Magic Cylinder": 1, "Exodia the Forbidden One": 1, "Right Arm of the Forbidden One": 1,
+    "Left Arm of the Forbidden One": 1, "Right Leg of the Forbidden One": 1, "Left Leg of the Forbidden One": 1,
+
+    "Upstart Goblin": 2, "Reinforcement of the Army": 2, "Creature Swap": 2,
+    "Level Limit - Area B": 2, "Gravity Bind": 2, "Good Goblin Housekeeping": 2,
+    "Magician of Faith": 2, "Apprentice Magician": 2, "Night Assailant": 2
+}
+
 HTML_UI = """
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -137,22 +159,51 @@ HTML_UI = """
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Data Inicial</label>
-                    <input type="date" id="start" value="1999-01-01">
+                <div class="form-group input-group">
+                    <div style="flex: 1;">
+                        <label>Data Inicial</label>
+                        <input type="date" id="start" value="1999-02-04">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Data Final</label>
+                        <input type="date" id="end" value="2005-05-25">
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Data Final</label>
-                    <input type="date" id="end" value="2008-12-31">
+                <div class="form-group input-group">
+                    <div style="flex: 1;">
+                        <label>Região da API</label>
+                        <select id="region">
+                            <option value="ocg">OCG (Japão)</option>
+                            <option value="tcg">TCG (Ocidente)</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Preset de Eras</label>
+                        <select id="era_preset" onchange="applyEraPreset()">
+                            <option value="DM">Era Clássica (DM)</option>
+                            <option value="GX">Apenas Era GX</option>
+                            <option value="5D">Apenas Era 5D's</option>
+                            <option value="ZX">Apenas Era ZEXAL</option>
+                            <option value="AV">Apenas Era ARC-V</option>
+                            <option value="VR">Apenas Era VRAINS</option>
+                            <option value="MD">Apenas Era Moderna (MR5)</option>
+                            <option value="CUSTOM">Personalizado</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Região da API</label>
-                    <select id="region">
-                        <option value="ocg">OCG (Japão)</option>
-                        <option value="tcg">TCG (Ocidente)</option>
-                    </select>
+                <div class="form-group" style="margin-top: 5px; padding: 12px; background: #0a0a0a; border: 1px solid #333; border-radius: 10px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                    <label style="color: var(--gold); text-shadow: 0 0 5px var(--gold); margin-bottom: 8px;">Guia de Eras Oficiais (OCG)</label>
+                    <ul style="margin: 0; padding-left: 20px; font-size: 0.8em; color: #aaa; line-height: 1.6;">
+                        <li><b style="color:#fff;">Clássica (DM):</b> 1999-02-04 até 2005-05-25 <i style="color:var(--cyan);">(Fim do Goat)</i></li>
+                        <li><b style="color:#fff;">Era GX:</b> 2005-05-26 até 2008-04-18</li>
+                        <li><b style="color:#fff;">Era 5D's:</b> 2008-04-19 até 2011-04-15</li>
+                        <li><b style="color:#fff;">Era ZEXAL:</b> 2011-04-16 até 2014-04-18</li>
+                        <li><b style="color:#fff;">Era ARC-V:</b> 2014-04-19 até 2017-04-14</li>
+                        <li><b style="color:#fff;">Era VRAINS:</b> 2017-04-15 até 2020-03-31</li>
+                        <li><b style="color:#fff;">Era Moderna:</b> 2020-04-01 em diante</li>
+                    </ul>
                 </div>
 
                 <div id="txt_options">
@@ -211,6 +262,20 @@ HTML_UI = """
 
     <script>
         let interval;
+
+        function applyEraPreset() {
+            const era = document.getElementById('era_preset').value;
+            const start = document.getElementById('start');
+            const end = document.getElementById('end');
+            
+            if (era === 'DM') { start.value = '1999-02-04'; end.value = '2005-05-25'; }
+            else if (era === 'GX') { start.value = '2005-05-26'; end.value = '2008-04-18'; }
+            else if (era === '5D') { start.value = '2008-04-19'; end.value = '2011-04-15'; }
+            else if (era === 'ZX') { start.value = '2011-04-16'; end.value = '2014-04-18'; }
+            else if (era === 'AV') { start.value = '2014-04-19'; end.value = '2017-04-14'; }
+            else if (era === 'VR') { start.value = '2017-04-15'; end.value = '2020-03-31'; }
+            else if (era === 'MD') { start.value = '2020-04-01'; end.value = new Date().toISOString().split('T')[0]; }
+        }
 
         function selectFolder() {
             fetch('/select_folder').then(r => r.json()).then(d => {
@@ -290,12 +355,57 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
         "https://raw.githubusercontent.com/Fluorohydride/ygopro-scripts/master/c{}.lua"
     ]
 
-    url = f"https://db.ygoprodeck.com/api/v7/cardinfo.php?startdate={start}&enddate={end}&dateregion={region}"
+    # Baixa o banco global para garantir que os IDs gerados sejam Absolutos e Imutáveis
+    url = "https://db.ygoprodeck.com/api/v7/cardinfo.php?misc=yes"
 
     try:
+        progresso["status"] = "Obtendo banco de dados global..."
         resp = requests.get(url, headers=headers).json()
-        cards = resp.get('data', [])
+        all_cards = resp.get('data', [])
+
+        def get_card_era_and_date(c):
+            misc = c.get('misc_info', [{}])[0] if c.get('misc_info') else {}
+            r_date = misc.get(f'{region}_date')
+            if not r_date: r_date = misc.get('tcg_date') if region == 'ocg' else misc.get('ocg_date')
+            if not r_date: return "UNK", "9999-12-31"
+            
+            if r_date <= "2005-05-25": return "DM", r_date
+            elif r_date <= "2008-04-18": return "GX", r_date
+            elif r_date <= "2011-04-15": return "5D", r_date
+            elif r_date <= "2014-04-18": return "ZX", r_date
+            elif r_date <= "2017-04-14": return "AV", r_date
+            elif r_date <= "2020-03-31": return "VR", r_date
+            else: return "MD", r_date
+
+        progresso["status"] = "Calculando IDs Absolutos..."
+        eras_dict = {"DM": [], "GX": [], "5D": [], "ZX": [], "AV": [], "VR": [], "MD": [], "UNK": []}
+        
+        for c in all_cards:
+            prefix, r_date = get_card_era_and_date(c)
+            c['custom_id'] = "" # Placeholder
+            c['release_date'] = r_date
+            eras_dict[prefix].append(c)
+
+        for prefix in eras_dict:
+            # Ordena estritamente por Ordem Alfabética para manter a organização visual
+            eras_dict[prefix].sort(key=lambda x: x['name'])
+            for idx, c in enumerate(eras_dict[prefix], 1):
+                c['custom_id'] = f"{prefix}{idx:04d}"
+
+        # Corta a lista usando as datas que o usuário escolheu na UI
+        cards = [c for c in all_cards if c['release_date'] != "9999-12-31" and start <= c['release_date'] <= end]
         cards.sort(key=lambda x: x['name'])
+        
+        # Injeção da Banlist Mestra (Corrige a preguiça da API)
+        for c in cards:
+            c_name = c.get('name', '')
+            if c_name in BANLIST_NAMES:
+                limit = BANLIST_NAMES[c_name]
+                status_str = "Banned" if limit == 0 else ("Limited" if limit == 1 else "Semi-Limited")
+                if 'banlist_info' not in c: 
+                    c['banlist_info'] = {}
+                c['banlist_info']['banlist_goat'] = status_str
+        
         total = len(cards)
         progresso["total"] = total
 
@@ -307,7 +417,7 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
             if cancel_task: return
             name_raw = c['name']
             clean_name = "".join([char for char in name_raw if char not in r'<>:"/\\|?*'])
-            custom_id = f"{c['custom_id']:04d}"
+            custom_id = c['custom_id']
 
             images = c.get('card_images', [])
             for idx, img_info in enumerate(images):
@@ -337,7 +447,7 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
         def download_lua(c):
             if cancel_task: return
             name_raw = c.get('name', 'Unknown')
-            custom_id = f"{c['custom_id']:04d}"
+            custom_id = c['custom_id']
             official_id = str(c.get('id', ''))
             tipo_api = c.get('type', '')
 
@@ -398,17 +508,15 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                 if txt_cols.get('pass'): headers.append("ID")
                 if txt_cols.get('arch'): headers.append("ARCHETYPE")
                 if txt_cols.get('scale'): headers.append("SCALE")
-                if txt_cols.get('goat'): headers.append("GOAT")
                 if txt_cols.get('desc'): headers.append("DESC")
                 f.write("\t".join(headers) + "\n")
                 
                 for i, c in enumerate(cards, 1):
                     if cancel_task: break
-                    if cancel_task: break
                     progresso["atual"] = i
                     progresso["card"] = c.get('name', 'Unknown')
 
-                    num = f"{i:04d}"
+                    num = c['custom_id']
                     name = c.get('name', 'Unknown')
                     tipo_api = c.get('type', '')
                     cid = c.get('id', '')
@@ -466,7 +574,7 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                     progresso["atual"] = i
                     progresso["card"] = c.get('name', 'Unknown')
 
-                    custom_id = f"{i:04d}"
+                    custom_id = c['custom_id']
                     name_raw = c.get('name', 'Unknown')
                     tipo_api = c.get('type', '')
                     cid = str(c.get('id', ''))
@@ -501,7 +609,7 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                 progresso["atual"] = i
                 progresso["card"] = c.get('name', 'Unknown')
 
-                custom_id = f"{i:04d}"
+                custom_id = c['custom_id']
                 name_raw = c.get('name', 'Unknown')
                 tipo_api = c.get('type', '')
                 desc = c.get('desc', '').replace('\r', '')
@@ -551,7 +659,6 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
             os.makedirs(images_folder, exist_ok=True)
             os.makedirs(alt_folder, exist_ok=True)
 
-            for i, c in enumerate(cards, 1): c['custom_id'] = i
             completed = 0
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 futures = {executor.submit(download_image, c): c for c in cards}
@@ -582,7 +689,6 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
             except Exception as e:
                 warnings_list.append(f"Falha ao baixar arquivos base (constant.lua / utility.lua): {e}")
 
-            for i, c in enumerate(cards, 1): c['custom_id'] = i
             completed = 0
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 futures = {executor.submit(download_lua, c): c for c in cards}
@@ -599,7 +705,7 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
 
             for i, c in enumerate(cards, 1):
                 if cancel_task: break
-                custom_id = f"{i:04d}"
+                custom_id = c['custom_id']
                 clean_name = "".join([char for char in c['name'] if char not in r'<>:"/\\|?*'])
                 
                 if not os.path.exists(os.path.join(images_folder, f"{custom_id} - {clean_name}.jpg")):
@@ -652,7 +758,7 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
             
             if os.path.exists(error_file):
                 with open(error_file, "r", encoding="utf-8") as ef:
-                    failed_ids = set(re.findall(r"\[(\d{4})\]", ef.read()))
+                    failed_ids = set(re.findall(r"\[([A-Z0-9]+)\]", ef.read()))
             
             if not failed_ids:
                 progresso["log"].append("Nenhum ID de erro encontrado no error_log.txt.")
@@ -666,7 +772,8 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                 shutil.copy(error_file, error_file + ".bak")
                 os.remove(error_file)
                 
-                cards_to_retry = [c for c in cards if f"{c['custom_id']:04d}" in failed_ids]
+                # Puxa do banco global, garantindo que o retry funcione independente da data atual na UI!
+                cards_to_retry = [c for c in all_cards if c['custom_id'] in failed_ids]
                 progresso["total"] = len(cards_to_retry) * 2
                 completed = 0
                 
