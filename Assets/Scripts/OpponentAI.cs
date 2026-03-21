@@ -37,7 +37,7 @@ public class OpponentAI : MonoBehaviour
 
     public void StartAITurn()
     {
-        if (isThinking) return;
+        if (isThinking || !gameObject.activeInHierarchy) return;
         StartCoroutine(AITurnRoutine());
     }
 
@@ -248,6 +248,12 @@ public class OpponentAI : MonoBehaviour
             if (monster.CurrentCardData.def > 2000) defenseScore += 500; // Bônus por ser uma boa parede
             if (tributesNeeded > 0) defenseScore -= tributeCost;
 
+            // TÁTICA DE SOBREVIVÊNCIA: Se nosso campo está aberto, SETAR um monstro é vital para não tomar OTK!
+            if (myMonsterCount == 0 && playerStrongestATK > 0)
+            {
+                defenseScore += playerStrongestATK; // A pontuação de defesa sobe proporcionalmente ao dano que ela vai absorver!
+            }
+
             // Regra de Ocultação: Monstros setados na defesa devem preferencialmente ser baixados na MP2
             if (PhaseManager.Instance.currentPhase == GamePhase.Main2) 
             {
@@ -256,7 +262,7 @@ public class OpponentAI : MonoBehaviour
             else 
             {
                 // Na MP1, penaliza setar monstros (a menos que a IA esteja desesperada)
-                defenseScore -= 600; 
+                if (myMonsterCount > 0) defenseScore -= 600; 
             }
             
             actions.Add(new AIAction {
@@ -281,7 +287,7 @@ public class OpponentAI : MonoBehaviour
 
             // INTEGRAÇÃO LUA: Verifica se o monstro tem um Efeito de Ignição e se o custo (chk=0) pode ser pago
             LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(monster);
-            LuaEffect ignitionEffect = lc?.registeredEffects.Find(e => e.type == 0x0020); // 0x0020 = IGNITION
+            LuaEffect ignitionEffect = lc?.registeredEffects.Find(e => e.type == 0x0040); // 0x0040 = IGNITION
 
             if (ignitionEffect != null && CardEffectManager.Instance.CanActivateEffect(lc, ignitionEffect, 1, null))
             {
@@ -316,7 +322,7 @@ public class OpponentAI : MonoBehaviour
 
             // INTEGRAÇÃO LUA: Checagem estrita de Ativação (chk=0)
             LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(cd);
-            LuaEffect activationEffect = lc?.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0020);
+            LuaEffect activationEffect = lc?.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0040);
             
             // Se a carta Lua exigir descartar 1 carta e a IA estiver sem mão, o CanActivateEffect retorna FALSE e a IA pula.
             if (activationEffect != null && !CardEffectManager.Instance.CanActivateEffect(lc, activationEffect, 1, null)) continue;
@@ -518,28 +524,52 @@ public class OpponentAI : MonoBehaviour
         foreach (var go in hand)
         {
             var cd = go.GetComponent<CardDisplay>();
-            if (cd != null && cd.CurrentCardData.type.Contains("Trap"))
+            if (cd != null)
             {
-                float score = 100; // Pontuação base para baixar uma armadilha
-                
-                // Ocultação de Intenção: Armadilhas SÓ devem ser baixadas na MP2
-                if (PhaseManager.Instance.currentPhase == GamePhase.Main2) 
+                if (cd.CurrentCardData.type.Contains("Trap"))
                 {
-                    score += 800;
-                }
-                else {
-                    score -= 500; // Desencoraja fortemente setar na MP1 para não tomar remoção de graça antes da hora
-                }
+                    float score = 100; // Pontuação base para baixar uma armadilha
+                    
+                    // Ocultação de Intenção: Armadilhas SÓ devem ser baixadas na MP2
+                    if (PhaseManager.Instance.currentPhase == GamePhase.Main2) 
+                    {
+                        score += 800;
+                    }
+                    else {
+                        score -= 500; // Desencoraja setar na MP1
+                    }
 
-                if (cd.CurrentCardData.id == "1251") score = 500; // Mirror Force
-                if (cd.CurrentCardData.id == "1962") score = 300; // Trap Hole
-                if (cd.CurrentCardData.id == "0259") score = 600; // Call of the Haunted (Prioridade alta para armar)
-                
-                actions.Add(new AIAction {
-                    Score = score,
-                    Description = $"Baixar (Set) {cd.CurrentCardData.name}.",
-                    Execute = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, true)
-                });
+                    if (cd.CurrentCardData.id == "1251") score = 500; // Mirror Force
+                    if (cd.CurrentCardData.id == "1962") score = 300; // Trap Hole
+                    if (cd.CurrentCardData.id == "0259") score = 600; // Call of the Haunted
+                    
+                    actions.Add(new AIAction {
+                        Score = score,
+                        Description = $"Baixar (Set) Armadilha {cd.CurrentCardData.name}.",
+                        Execute = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, true)
+                    });
+                }
+                else if (cd.CurrentCardData.type.Contains("Spell"))
+                {
+                    // Baixa Spells Rápidas (Quick-Play) na MP2 para usar como defesa no turno do inimigo
+                    if (cd.CurrentCardData.property == "Quick-Play" && PhaseManager.Instance.currentPhase == GamePhase.Main2)
+                    {
+                        actions.Add(new AIAction {
+                            Score = 400,
+                            Description = $"Baixar (Set) Quick-Play Spell {cd.CurrentCardData.name}.",
+                            Execute = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, true)
+                        });
+                    }
+                    // Blefe (Bluff) se estivermos perdendo terreno e quisermos assustar o jogador
+                    else if (fearScore < 1 && PhaseManager.Instance.currentPhase == GamePhase.Main2 && boardValue < -1000)
+                    {
+                        actions.Add(new AIAction {
+                            Score = 150, // Melhor setar como Blefe do que tomar OTK sem dar medo
+                            Description = $"Baixar (Set) Magia de Blefe {cd.CurrentCardData.name}.",
+                            Execute = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, true)
+                        });
+                    }
+                }
             }
         }
         // Pega apenas a melhor armadilha para baixar, para não encher o campo à toa

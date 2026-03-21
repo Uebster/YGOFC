@@ -825,6 +825,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     // Define o visual de "Selecionado para Atacar"
     public void SetAttackSelectionVisual(bool selected)
     {
+        if (this == null || gameObject == null) return;
+        
         isAttackSelected = selected; // Atualiza o estado
 
         // Se o efeito estiver desabilitado, garante que a cor da carta esteja normal e sai.

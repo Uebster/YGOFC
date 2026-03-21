@@ -1291,7 +1291,7 @@ public void ShuffleDeck(bool isPlayer)
         }
         
         // Se for turno do oponente, inicia a IA
-        if (!isPlayerTurn && OpponentAI.Instance != null)
+        if (!isPlayerTurn && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
         {
             OpponentAI.Instance.StartAITurn();
         }
@@ -1357,7 +1357,7 @@ public void ShuffleDeck(bool isPlayer)
         if (!enableHandLimit)
         {
             // Se for turno do jogador, troca o turno automaticamente (já que não haverá descarte)
-            if (isPlayerTurn)
+            if (isPlayerTurn && !isSimulating)
             {
                 yield return new WaitForSeconds(0.5f);
                 SwitchTurn();
@@ -1390,17 +1390,21 @@ public void ShuffleDeck(bool isPlayer)
             else
             {
                 // IA descarta
-                if (OpponentAI.Instance != null)
+                if (OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeSelf && !isSimulating)
                 {
                     OpponentAI.Instance.PerformHandLimitDiscard(toDiscard);
                     yield return new WaitForSeconds(1.0f); // Tempo para visualização
+                }
+                else if (isSimulating)
+                {
+                    for (int i = 0; i < toDiscard; i++) DiscardCard(opponentHand[0].GetComponent<CardDisplay>());
                 }
             }
         }
 
         // Se for turno do jogador, troca o turno automaticamente após processar a End Phase e Limite de Mão
         // (A IA troca o turno no final da rotina dela, então não precisamos chamar aqui para ela)
-        if (isPlayerTurn)
+        if (isPlayerTurn && !isSimulating)
         {
             yield return new WaitForSeconds(0.5f);
             SwitchTurn();
@@ -2375,6 +2379,25 @@ public void ShuffleDeck(bool isPlayer)
             return;
         }
 
+        // Validação de Condição de Ativação LUA antes de mover a carta para o campo
+        if (!isSet && CardEffectManager.Instance != null)
+        {
+            LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(display);
+            if (lc != null)
+            {
+                LuaEffect activationEffect = lc.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0040 || e.type == 0x0080);
+                if (activationEffect != null)
+                {
+                    int tp = isPlayer ? 0 : 1;
+                    if (!CardEffectManager.Instance.CanActivateEffect(lc, activationEffect, tp, null))
+                    {
+                        if (!isSimulating) Debug.LogWarning($"[GameManager] {cardData.name} não cumpre os requisitos para ser ativada.");
+                        return; // Cancela a jogada antes de mover a carta!
+                    }
+                }
+            }
+        }
+
         Transform targetZone = null;
 
         // 2. Verifica se é Field Spell
@@ -2488,6 +2511,25 @@ public void ShuffleDeck(bool isPlayer)
 
         CardData cardData = display.CurrentCardData;
         bool isPlayer = display.isPlayerCard;
+
+        // Validação LUA antes de revelar a carta
+        if (CardEffectManager.Instance != null)
+        {
+            LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(display);
+            if (lc != null)
+            {
+                LuaEffect activationEffect = lc.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0040 || e.type == 0x0080);
+                if (activationEffect != null)
+                {
+                    int tp = isPlayer ? 0 : 1;
+                    if (!CardEffectManager.Instance.CanActivateEffect(lc, activationEffect, tp, null))
+                    {
+                        if (!isSimulating) Debug.LogWarning($"[GameManager] {cardData.name} não cumpre os requisitos para ser ativada.");
+                        return;
+                    }
+                }
+            }
+        }
 
         // Vira a carta para cima
         display.ShowFront();

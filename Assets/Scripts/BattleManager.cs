@@ -101,7 +101,7 @@ public class BattleManager : MonoBehaviour
             if (!CanAttack(attacker)) return;
 
             // Desmarca anterior se houver
-            if (currentAttacker != null)
+            if (currentAttacker != null && currentAttacker.gameObject != null)
             {
                 currentAttacker.SetAttackSelectionVisual(false);
             }
@@ -238,7 +238,7 @@ public class BattleManager : MonoBehaviour
              
             System.Action executeAttack = () => {
                 currentTarget = null;
-                if (currentAttacker != null) currentAttacker.SetAttackSelectionVisual(false);
+                if (currentAttacker != null && currentAttacker.gameObject != null) currentAttacker.SetAttackSelectionVisual(false);
 
                 if (ChainManager.Instance != null)
                 {
@@ -460,7 +460,7 @@ public class BattleManager : MonoBehaviour
 
         System.Action executeAttack = () => {
              currentTarget = targetCard;
-             if (currentAttacker != null) currentAttacker.SetAttackSelectionVisual(false);
+             if (currentAttacker != null && currentAttacker.gameObject != null) currentAttacker.SetAttackSelectionVisual(false);
              
              // FIX: Adicionado fallback. Se ChainManager não existir, ataca direto.
              if (ChainManager.Instance != null)
@@ -668,7 +668,7 @@ public class BattleManager : MonoBehaviour
             if (attacker != null) attacker.SetAttackSelectionVisual(false);
             return;
         }
-        if (attacker == null || !attacker.isOnField || currentAttacker != attacker)
+        if (attacker == null || attacker.gameObject == null || !attacker.isOnField || currentAttacker != attacker)
         {
             Debug.LogWarning("Ataque direto cancelado: Atacante inválido ou ataque interrompido.");
             ClearBattleState();
@@ -738,8 +738,8 @@ public class BattleManager : MonoBehaviour
             if (attacker != null) attacker.SetAttackSelectionVisual(false);
             return;
         }
-        // FIX: Verifica se os monstros ainda existem e estão no campo (podem ter sido destruídos durante a Chain)
-        if (attacker == null || !attacker.isOnField || target == null || !target.isOnField || currentAttacker != attacker)
+        // FIX: Verifica se os monstros ainda existem (podem ter sido destruídos na Chain)
+        if (attacker == null || attacker.gameObject == null || !attacker.isOnField || target == null || target.gameObject == null || !target.isOnField || currentAttacker != attacker)
         {
             Debug.LogWarning("Batalha cancelada: Atacante/Alvo inválidos ou ataque interrompido.");
             isBattleResolving = false;

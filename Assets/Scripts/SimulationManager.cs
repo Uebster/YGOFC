@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 public class SimulationManager : MonoBehaviour
 {
@@ -83,6 +84,9 @@ public class SimulationManager : MonoBehaviour
         Time.timeScale = 1.0f;
         if (GameManager.Instance) GameManager.Instance.isSimulating = false;
         if (DuelFXManager.Instance) DuelFXManager.Instance.enableAnimations = true; 
+        
+        if (OpponentAI.Instance != null && FullTestManager.Instance != null)
+            OpponentAI.Instance.gameObject.SetActive(FullTestManager.Instance.tglAI.isOn);
         
         Log("=== SIMULAÇÃO INTERROMPIDA ===");
     }
@@ -175,6 +179,7 @@ public class SimulationManager : MonoBehaviour
         }
 
         GameManager.Instance.isSimulating = true;
+        if (OpponentAI.Instance != null) OpponentAI.Instance.gameObject.SetActive(false); // Impede conflito de mentes
         
         // Fecha janelas que possam estar abertas
         if (UIManager.Instance != null) UIManager.Instance.CloseAllPopups();
@@ -231,6 +236,7 @@ public class SimulationManager : MonoBehaviour
                 yield return new WaitForSeconds(currentDelay);
 
                 // Troca Turno
+                if (ChainManager.Instance != null) yield return new WaitWhile(() => ChainManager.Instance.isChainResolving);
                 GameManager.Instance.SwitchTurn();
                 yield return new WaitForSeconds(currentDelay);
             }
@@ -255,17 +261,20 @@ public class SimulationManager : MonoBehaviour
 
     IEnumerator SimulateMainPhase(bool isPlayer, float delay)
     {
-        // Tenta realizar ações aleatórias da mão
+        // Tenta realizar ações da mão (Tenta jogar o máximo possível)
         List<GameObject> hand = isPlayer ? GameManager.Instance.playerHand : GameManager.Instance.opponentHand;
         
-        int actionsToTry = Random.Range(1, 3); // Tenta 1 ou 2 ações
+        int actionsToTry = hand.Count + 2; // Tenta usar tudo o que tem na mão e mais um pouco
+        List<GameObject> triedCards = new List<GameObject>(); // Evita gastar tentativas na mesma carta travada
 
         for (int i = 0; i < actionsToTry; i++)
         {
             hand = isPlayer ? GameManager.Instance.playerHand : GameManager.Instance.opponentHand;
-            if (hand.Count == 0) break;
+            var available = hand.Where(c => !triedCards.Contains(c)).ToList();
+            if (available.Count == 0) break;
 
-            GameObject cardObj = hand[Random.Range(0, hand.Count)];
+            GameObject cardObj = available[Random.Range(0, available.Count)];
+            triedCards.Add(cardObj);
             if (cardObj == null) continue;
 
             CardDisplay display = cardObj.GetComponent<CardDisplay>();
@@ -291,15 +300,49 @@ public class SimulationManager : MonoBehaviour
             if (BattleManager.Instance != null) yield return new WaitWhile(() => BattleManager.Instance.isBattleResolving);
         }
 
+        // Tenta ativar Mágicas e Armadilhas já setadas no campo (Máxima Agressividade)
+        Transform[] mySpells = isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+        foreach (var zone in mySpells)
+        {
+            if (zone.childCount > 0)
+            {
+                CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (cd != null && cd.isFlipped) // Se estiver setada
+                {
+                    if (Random.value > 0.2f) // 80% de chance de tentar ativar
+                    {
+                        Log($"[SIM] {(isPlayer?"P":"O")} tenta Ativar S/T setada: {cd.CurrentCardData.name}");
+                        GameManager.Instance.ActivateFieldSpellTrap(cd.gameObject);
+                        yield return new WaitForSeconds(delay);
+                        if (ChainManager.Instance != null) yield return new WaitWhile(() => ChainManager.Instance.isChainResolving);
+                    }
+                }
+            }
+        }
+
         // Tenta mudar posições
         Transform[] myZones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
         foreach (var zone in myZones)
         {
             if (zone.childCount > 0)
             {
-                if (Random.value > 0.8f) // 20% chance
+                CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+
+                // Tenta estourar Efeitos de Monstros no campo
+                if (cd != null && !cd.isFlipped && cd.CurrentCardData.type.Contains("Effect") && !cd.hasUsedEffectThisTurn)
                 {
-                    CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (Random.value > 0.2f) // 80% de chance
+                    {
+                        Log($"[SIM] {(isPlayer?"P":"O")} tenta Ativar efeito do monstro: {cd.CurrentCardData.name}");
+                        CardEffectManager.Instance.ExecuteCardEffect(cd);
+                        cd.hasUsedEffectThisTurn = true;
+                        yield return new WaitForSeconds(delay);
+                        if (ChainManager.Instance != null) yield return new WaitWhile(() => ChainManager.Instance.isChainResolving);
+                    }
+                }
+
+                if (Random.value > 0.6f) // Aumenta chance de mudar posição para 40%
+                {
                     if (cd != null && !cd.hasChangedPositionThisTurn && !cd.summonedThisTurn)
                     {
                         BattleManager.Instance.TryChangePosition(cd);

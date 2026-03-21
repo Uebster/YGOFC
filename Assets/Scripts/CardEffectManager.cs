@@ -176,9 +176,15 @@ public class CardEffectManager : MonoBehaviour
         luaEngine.Globals["EFFECT_TYPE_SINGLE"] = 0x0001;
         luaEngine.Globals["EFFECT_TYPE_FIELD"] = 0x0002;
         luaEngine.Globals["EFFECT_TYPE_EQUIP"] = 0x0004;
+        luaEngine.Globals["EFFECT_TYPE_ACTIONS"] = 0x0008;
         luaEngine.Globals["EFFECT_TYPE_ACTIVATE"] = 0x0010;
-        luaEngine.Globals["EFFECT_TYPE_IGNITION"] = 0x0020;
+        luaEngine.Globals["EFFECT_TYPE_FLIP"] = 0x0020;
+        luaEngine.Globals["EFFECT_TYPE_IGNITION"] = 0x0040;
         luaEngine.Globals["EFFECT_TYPE_TRIGGER_O"] = 0x0080;
+        luaEngine.Globals["EFFECT_TYPE_QUICK_O"] = 0x0100;
+        luaEngine.Globals["EFFECT_TYPE_TRIGGER_F"] = 0x0200;
+        luaEngine.Globals["EFFECT_TYPE_QUICK_F"] = 0x0400;
+        luaEngine.Globals["EFFECT_TYPE_CONTINUOUS"] = 0x0800;
         
         // Cadeia e Alvos
         luaEngine.Globals["CHAININFO_TARGET_PLAYER"] = 1;
@@ -219,6 +225,19 @@ public class CardEffectManager : MonoBehaviour
                     return nil
                 end
             })
+
+            -- Suporte nativo para o iterador avançado: 'for tc in group do'
+            local dummyGroup = Group.CreateGroup()
+            local gm = getmetatable(dummyGroup)
+            if gm then
+                gm.__call = function(grp, state, var)
+                    if var == nil then return grp:GetFirst() end
+                    return grp:GetNext()
+                end
+                gm.__iterator = function(grp)
+                    return grp:Iter()
+                end
+            end
         ");
     }
 
@@ -330,6 +349,10 @@ public class CardEffectManager : MonoBehaviour
         // Substitui a chamada de operador por uma verificação segura da função GetCount()
         script = Regex.Replace(script, @"#\s*([a-zA-Z_][a-zA-Z0-9_]*)", "(type($1)=='userdata' and $1:GetCount() or #$1)");
 
+        // 7. Loop Direto sobre Userdata (Iterador para MoonSharp)
+        // Converte "for tc in eg do" para "for tc in eg:Iter() do"
+        script = Regex.Replace(script, @"for\s+([a-zA-Z0-9_]+)\s+in\s+([a-zA-Z0-9_]+)\s+do", "for $1 in $2:Iter() do");
+
         return script;
     }
 
@@ -343,7 +366,7 @@ public class CardEffectManager : MonoBehaviour
         }
 
         // Procura por um efeito ativável instantâneo (Magia, Armadilha ou Ignition)
-        LuaEffect activationEffect = luaCard.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0020 || e.type == 0x0080);
+        LuaEffect activationEffect = luaCard.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0040 || e.type == 0x0080);
 
         if (activationEffect != null)
         {
@@ -377,7 +400,7 @@ public class CardEffectManager : MonoBehaviour
 
         // 2. Fallback Original: Procura por um efeito e o ativa instantaneamente (Pula a Corrente)
         // Útil para efeitos engatilhados pela IA ou sistemas que não passam pela interface manual.
-        LuaEffect activationEffect = luaCard.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0020);
+        LuaEffect activationEffect = luaCard.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0040);
 
         if (activationEffect != null)
         {
@@ -425,18 +448,20 @@ public class CardEffectManager : MonoBehaviour
     public bool CanActivateEffect(LuaCard luaCard, LuaEffect effect, int tp, object triggerArgs)
     {
         object eg = WrapTriggerArgs(triggerArgs);
+        bool isActionEffect = (effect.type & 0x07F8) != 0;
+        object arg2 = isActionEffect ? (object)tp : (object)luaCard;
         try 
         {
             if (effect.conditionFunc != null) {
-                DynValue res = luaEngine.Call(effect.conditionFunc, effect, tp, eg, 0, 0, null, 0, 0);
+                DynValue res = luaEngine.Call(effect.conditionFunc, effect, arg2, eg, 0, 0, null, 0, 0);
                 if (res.Type == DataType.Boolean && !res.Boolean) return false;
             }
             if (effect.costFunc != null) {
-                DynValue res = luaEngine.Call(effect.costFunc, effect, tp, eg, 0, 0, null, 0, 0, 0); // chk = 0
+                DynValue res = luaEngine.Call(effect.costFunc, effect, arg2, eg, 0, 0, null, 0, 0, 0); // chk = 0
                 if (res.Type == DataType.Boolean && !res.Boolean) return false;
             }
             if (effect.targetFunc != null) {
-                DynValue res = luaEngine.Call(effect.targetFunc, effect, tp, eg, 0, 0, null, 0, 0, 0); // chk = 0
+                DynValue res = luaEngine.Call(effect.targetFunc, effect, arg2, eg, 0, 0, null, 0, 0, 0, null); // chk = 0
                 if (res.Type == DataType.Boolean && !res.Boolean) return false;
             }
             return true;
@@ -488,16 +513,36 @@ public class CardEffectManager : MonoBehaviour
     private IEnumerator RunLuaCoroutine(Closure func, LuaEffect effect, int tp, object triggerArgs, int chk)
     {
         object eg = WrapTriggerArgs(triggerArgs);
+        bool isActionEffect = (effect.type & 0x07F8) != 0;
+        object arg2 = isActionEffect ? (object)tp : (object)(effect.owner ?? new LuaCard(new CardData { id = "0000", name = "Dummy" }));
+
         activeLuaCoroutine = luaEngine.CreateCoroutine(func);
         DynValue result;
         
-        if (chk >= 0) result = activeLuaCoroutine.Coroutine.Resume(effect, tp, eg, 0, 0, null, 0, 0, chk);
-        else result = activeLuaCoroutine.Coroutine.Resume(effect, tp, eg, 0, 0, null, 0, 0);
+        try
+        {
+            if (chk >= 0) result = activeLuaCoroutine.Coroutine.Resume(effect, arg2, eg, 0, 0, null, 0, 0, chk);
+            else result = activeLuaCoroutine.Coroutine.Resume(effect, arg2, eg, 0, 0, null, 0, 0);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[API LUA CRASH] O efeito falhou graciosamente sem travar a engine: {e.Message}");
+            yield break; // Aborta apenas este efeito, o jogo continua!
+        }
 
         while (activeLuaCoroutine.Coroutine.State == CoroutineState.Suspended)
         {
             while (isWaitingForLuaYield) yield return null;
-            result = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue);
+            
+            try
+            {
+                result = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[API LUA CRASH] Falha ao continuar o yield: {e.Message}");
+                yield break;
+            }
         }
     }
 
@@ -759,21 +804,22 @@ public class CardEffectManager : MonoBehaviour
                 if (lc != null) 
                 {
                     bool runtimeError = false;
-                    // Teste Profundo (Dry Run): Tenta avaliar condições, custos e alvos sem ativar a UI (chk=0)
-                    foreach (var eff in lc.registeredEffects)
-                    {
+                     // Evita o erro 'Collection was modified' fazendo uma cópia da lista
+                    foreach (var eff in new List<LuaEffect>(lc.registeredEffects))
+                     {
                         try {
                             object eg = WrapTriggerArgs(null);
                             LuaEffect dummyRe = new LuaEffect { owner = lc };
                             LuaCard dummyChkc = new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 });
 
-                            // Efeitos de Ação/Gatilho (0x03F8 engloba Activate, Ignition, Quick, Trigger, Flip)
-                            // Eles sempre exigem 'tp' (Player ID) como arg2. Efeitos contínuos/equip exigem 'c' (LuaCard).
-                            bool isActionEffect = (eff.type & 0x03F8) != 0; 
+                            // Efeitos de Ação/Gatilho (0x07F8 cobre do 0x0008 ao 0x0400: Activate, Flip, Ignition, Quick, Trigger_F, etc)
+                            // Se for ação, envia o Jogador (tp). Se for contínuo/campo, envia a Carta (c).
+                            bool isActionEffect = (eff.type & 0x07F8) != 0; 
 
                             if (eff.conditionFunc != null) luaEngine.Call(eff.conditionFunc, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, 0, 0, dummyRe, 0, 0);
                             if (eff.costFunc != null) luaEngine.Call(eff.costFunc, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, 0, 0, dummyRe, 0, 0, 0);
-                            if (eff.targetFunc != null) luaEngine.Call(eff.targetFunc, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, 0, 0, dummyRe, 0, 0, dummyChkc);
+                            // O '0' a mais aqui corrige o chk=0, impedindo ativações falsas explosivas!
+                            if (eff.targetFunc != null) luaEngine.Call(eff.targetFunc, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, 0, 0, dummyRe, 0, 0, 0, dummyChkc);
                         } catch (System.Exception ex) {
                             errorLogs.Add($"<color=orange>[RUNTIME] Falha na carta {card.name} ({card.id}): {ex.Message}</color>");
                             runtimeError = true;
