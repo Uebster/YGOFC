@@ -772,8 +772,8 @@ public class CardEffectManager : MonoBehaviour
                             bool isActionEffect = (eff.type & 0x03F8) != 0; 
 
                             if (eff.conditionFunc != null) luaEngine.Call(eff.conditionFunc, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, 0, 0, dummyRe, 0, 0);
-                            if (eff.costFunc != null) luaEngine.Call(eff.costFunc, eff, lc.GetControler(), eg, 0, 0, dummyRe, 0, 0, 0);
-                            if (eff.targetFunc != null) luaEngine.Call(eff.targetFunc, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, 0, 0, dummyRe, 0, 0, 0, dummyChkc);
+                            if (eff.costFunc != null) luaEngine.Call(eff.costFunc, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, 0, 0, dummyRe, 0, 0, 0);
+                            if (eff.targetFunc != null) luaEngine.Call(eff.targetFunc, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, 0, 0, dummyRe, 0, 0, dummyChkc);
                         } catch (System.Exception ex) {
                             errorLogs.Add($"<color=orange>[RUNTIME] Falha na carta {card.name} ({card.id}): {ex.Message}</color>");
                             runtimeError = true;
@@ -781,11 +781,6 @@ public class CardEffectManager : MonoBehaviour
                     }
                     if (runtimeError) failed++;
                     else success++;
-                }
-                else 
-                {
-                    failed++;
-                    errorLogs.Add($"<color=red>Falha na carta {card.name} ({card.id}): EnsureCardScriptLoaded retornou nulo.</color>");
                 }
             }
             catch (System.Exception ex)

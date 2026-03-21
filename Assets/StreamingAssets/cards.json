@@ -16238,21 +16238,6 @@
     "pool": "3.5"
   },
   {
-    "id": "DM1187",
-    "name": "Meteo the Matchless",
-    "description": "This card cannot be Special Summoned. This card must be Tribute Summoned by offering 3 Beast-Warrior-Type monsters on your side of the field as Tributes. If this card attacks your opponent's Life Points directly and makes them 0, the controller of this card wins the Match.",
-    "type": "Monster (Effect)",
-    "attribute": "DARK",
-    "race": "Beast-Warrior",
-    "level": 8,
-    "atk": 2400,
-    "def": 2000,
-    "password": "501000001",
-    "image_filename": "DMCardImages/DM1187 - Meteo the Matchless.jpg",
-    "goat_banlist": "Unlimited",
-    "pool": "3.3"
-  },
-  {
     "id": "DM1188",
     "name": "Meteor Black Dragon",
     "description": "\"Red-Eyes Black Dragon\" + \"Meteor Dragon\"",
@@ -26489,21 +26474,6 @@
     "image_filename": "DMCardImages/DM1949 - UFO Turtle.jpg",
     "goat_banlist": "Unlimited",
     "pool": "2.5"
-  },
-  {
-    "id": "DM1950",
-    "name": "Ulevo",
-    "description": "This card cannot be Special Summoned. This card must be Tribute Summoned by offering 3 Winged Beast-Type monsters on your side of the field as Tributes. If this card attacks your opponent's Life Points directly and makes them 0, the controller of this card wins the Match.",
-    "type": "Monster (Effect)",
-    "attribute": "EARTH",
-    "race": "Winged Beast",
-    "level": 10,
-    "atk": 3000,
-    "def": 2500,
-    "password": "501000000",
-    "image_filename": "DMCardImages/DM1950 - Ulevo.jpg",
-    "goat_banlist": "Unlimited",
-    "pool": "5.1"
   },
   {
     "id": "DM1951",

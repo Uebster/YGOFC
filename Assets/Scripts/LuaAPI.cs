@@ -854,6 +854,16 @@ public class LuaCard
     public bool IsControlerCanBeChanged() { return true; }
     public int GetSummonType() { return 0; }
     public int GetPreviousLocation() { return 0; }
+    public LuaCard GetHandler() { return this; }
+    public int GetCardTargetCount() { return 0; }
+    public bool IsOriginalCodeRule(params object[] codes) { return IsCode(codes); }
+    public bool IsFieldSpell() { return IsType(0x80000); }
+    public int GetLocation() { return unityCard != null && unityCard.isOnField ? (unityData.type.Contains("Spell") || unityData.type.Contains("Trap") ? 0x08 : 0x04) : 0x02; }
+    public int GetDestination() { return 0; }
+    public int GetLeaveFieldDest() { return 0; }
+    public LuaGroup GetColumnGroup() { return new LuaGroup(); }
+    public LuaGroup GetOverlayGroup() { return new LuaGroup(); }
+    public int GetOverlayCount() { return 0; }
     public LuaGroup GetCardTarget() { return new LuaGroup(); }
     public bool HasNonZeroAttack() { return GetAttack() > 0; }
     public bool HasNonZeroDefense() { return GetDefense() > 0; }
@@ -1032,10 +1042,10 @@ public class LuaEffect
     public bool IsMonsterEffect() { return true; }
     public bool IsSpellTrapEffect() { return true; }
     
-    public Closure GetCondition() { return conditionFunc; }
-    public Closure GetCost() { return costFunc; }
-    public Closure GetTarget() { return targetFunc; }
-    public Closure GetOperation() { return operationFunc; }
+    public object GetCondition() { return conditionFunc != null ? (object)conditionFunc : CardEffectManager.Instance.dummyClosureTrue; }
+    public object GetCost() { return costFunc != null ? (object)costFunc : CardEffectManager.Instance.dummyClosureTrue; }
+    public object GetTarget() { return targetFunc != null ? (object)targetFunc : CardEffectManager.Instance.dummyClosureTrue; }
+    public object GetOperation() { return operationFunc != null ? (object)operationFunc : CardEffectManager.Instance.dummyClosureTrue; }
     
     public int GetCategory() { return category; }
     public int GetProperty() { return property; }
