@@ -74,6 +74,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool returnControlAtEndPhase = false; // Para Shien's Spy
     [HideInInspector] public bool scheduledForLevelUp = false; // Para monstros LV
     [HideInInspector] public List<CardData> tributedMonsters = new List<CardData>(); // Monstros usados para Tribute Summon
+    [HideInInspector] public bool isFaceDown = false; // Rastreia se é Face-Down Monster (posição virada)
 
     // Sistema Trap Monster
     [HideInInspector] public bool isTrapMonster = false;
@@ -122,6 +123,60 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     // Lista de modificadores ativos nesta carta
     public List<StatModifier> activeModifiers = new List<StatModifier>(); // Changed to public
+
+    // FASE 11: Flag Effect System - Turn-based effect tracking
+    public Dictionary<int, FlagEffect> flagEffects = new Dictionary<int, FlagEffect>();
+
+    public struct FlagEffect
+    {
+        public int effectId;
+        public int statusCode;
+        public object[] parameters;
+    }
+
+    // FASE 13: Card History Tracking - Warp condition support
+    [HideInInspector] public CardLocation previousLocation = CardLocation.Unknown;
+    [HideInInspector] public int previousOwner = 0; // 0 = player, 1 = opponent
+    [HideInInspector] public CardLocation previousPreviousLocation = CardLocation.Unknown; // For multi-hop warp checks
+
+    // FASE 26: Display data and ownership tracking
+    [HideInInspector] public Dictionary<string, object> displayData = new Dictionary<string, object>(); // Dynamic display properties
+    [HideInInspector] public bool ownerPlayer = true; // true = player, false = opponent
+    private CardLocation _currentLocation = CardLocation.Unknown;
+    [HideInInspector] public CardLocation CurrentLocation
+    {
+        get { return _currentLocation; }
+        set { _currentLocation = value; }
+    }
+
+    // FASE 14: Status System - Card status flags
+    private int statusFlags = 0;
+
+    /// <summary>
+    /// Sets or clears a status flag on this card
+    /// </summary>
+    public void SetStatus(int statusCode, bool activate)
+    {
+        if (activate)
+        {
+            statusFlags |= statusCode;
+            Debug.Log($"[CardDisplay] {CurrentCardData?.name} set status {statusCode}: flags now {statusFlags}");
+        }
+        else
+        {
+            statusFlags &= ~statusCode;
+            Debug.Log($"[CardDisplay] {CurrentCardData?.name} cleared status {statusCode}: flags now {statusFlags}");
+        }
+    }
+
+    /// <summary>
+    /// Checks if a status flag is active
+    /// </summary>
+    public bool IsStatusActive(int statusCode)
+    {
+        bool result = (statusFlags & statusCode) != 0;
+        return result;
+    }
 
     public CardData CurrentCardData => currentCardData; // Propriedade pública para acesso seguro (Renomeado para evitar conflito)
 

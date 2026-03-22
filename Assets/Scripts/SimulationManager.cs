@@ -171,17 +171,18 @@ public class SimulationManager : MonoBehaviour
         {
             Time.timeScale = visualTimeScale;
             if (DuelFXManager.Instance) DuelFXManager.Instance.enableAnimations = true;
+            if (OpponentAI.Instance) OpponentAI.Instance.actionDelay = visualActionDelay;
         }
         else
         {
             Time.timeScale = fastTimeScale;
-            if (DuelFXManager.Instance) DuelFXManager.Instance.enableAnimations = false; // Desativa VFX para velocidade máxima
+            if (DuelFXManager.Instance) DuelFXManager.Instance.enableAnimations = false;
+            if (OpponentAI.Instance) OpponentAI.Instance.actionDelay = fastActionDelay;
         }
 
         GameManager.Instance.isSimulating = true;
-        if (OpponentAI.Instance != null) OpponentAI.Instance.gameObject.SetActive(false); // Impede conflito de mentes
+        if (OpponentAI.Instance != null) OpponentAI.Instance.gameObject.SetActive(true);
         
-        // Fecha janelas que possam estar abertas
         if (UIManager.Instance != null) UIManager.Instance.CloseAllPopups();
 
         Log($"=== INÍCIO DA SIMULAÇÃO ({currentMode}) ===");
@@ -190,10 +191,8 @@ public class SimulationManager : MonoBehaviour
         {
             Log($"--- Iniciando Duelo {duelsFinished + 1}/{duelsToRun} ---");
             
-            // Inicia Duelo
             GameManager.Instance.StartDuel();
             
-            // Espera a animação de compra inicial (no modo rápido, isso passa voando devido ao TimeScale)
             yield return new WaitForSeconds(3.0f); 
 
             int turn = 0;
@@ -204,40 +203,40 @@ public class SimulationManager : MonoBehaviour
             {
                 turn++;
                 bool isPlayer = GameManager.Instance.isPlayerTurn;
-                // Log($"Turno {turn} - {(isPlayer ? "JOGADOR" : "OPONENTE")}");
+                Log($"Turno {turn} - {(isPlayer ? "JOGADOR (Simulado)" : "OPONENTE (IA)")}");
 
-                // --- Draw Phase ---
-                if (PhaseManager.Instance.currentPhase != GamePhase.Draw)
-                    PhaseManager.Instance.ChangePhase(GamePhase.Draw);
-                
-                yield return new WaitForSeconds(currentDelay);
-
-                // --- Standby Phase ---
-                PhaseManager.Instance.ChangePhase(GamePhase.Standby);
-                yield return new WaitForSeconds(currentDelay);
-
-                // --- Main Phase 1 ---
-                PhaseManager.Instance.ChangePhase(GamePhase.Main1);
-                yield return SimulateMainPhase(isPlayer, currentDelay);
-
-                // --- Battle Phase ---
-                if (turn > 1) // Regra: Não pode atacar no turno 1
+                if (isPlayer)
                 {
-                    PhaseManager.Instance.ChangePhase(GamePhase.Battle);
-                    yield return SimulateBattlePhase(isPlayer, currentDelay);
+                    // Simula o turno do jogador com lógica aleatória
+                    PhaseManager.Instance.ChangePhase(GamePhase.Draw);
+                    yield return new WaitForSeconds(currentDelay);
+                    PhaseManager.Instance.ChangePhase(GamePhase.Standby);
+                    yield return new WaitForSeconds(currentDelay);
+                    PhaseManager.Instance.ChangePhase(GamePhase.Main1);
+                    yield return StartCoroutine(SimulateMainPhase(true, currentDelay));
+                    if (turn > 1)
+                    {
+                        PhaseManager.Instance.ChangePhase(GamePhase.Battle);
+                        yield return StartCoroutine(SimulateBattlePhase(true, currentDelay));
+                    }
+                    PhaseManager.Instance.ChangePhase(GamePhase.Main2);
+                    yield return StartCoroutine(SimulateMainPhase(true, currentDelay));
+                    PhaseManager.Instance.ChangePhase(GamePhase.End);
+                    yield return new WaitForSeconds(currentDelay);
                 }
-
-                // --- Main Phase 2 ---
-                PhaseManager.Instance.ChangePhase(GamePhase.Main2);
-                yield return SimulateMainPhase(isPlayer, currentDelay);
-
-                // --- End Phase ---
-                PhaseManager.Instance.ChangePhase(GamePhase.End);
-                yield return new WaitForSeconds(currentDelay);
-
-                // Troca Turno
+                else
+                {
+                    // O turno da IA é iniciado pelo SwitchTurn do GameManager.
+                    // Apenas esperamos a IA terminar de "pensar".
+                    if (OpponentAI.Instance != null)
+                    {
+                        yield return new WaitWhile(() => OpponentAI.Instance.isThinking);
+                    }
+                }
+                
+                // Troca o turno no final da lógica de jogador ou da espera da IA
                 if (ChainManager.Instance != null) yield return new WaitWhile(() => ChainManager.Instance.isChainResolving);
-                GameManager.Instance.SwitchTurn();
+                if (!GameManager.Instance.isDuelOver) GameManager.Instance.SwitchTurn();
                 yield return new WaitForSeconds(currentDelay);
             }
 

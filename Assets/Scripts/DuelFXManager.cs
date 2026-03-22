@@ -380,7 +380,7 @@ public class DuelFXManager : MonoBehaviour
 
     // --- UTILITÁRIOS ---
 
-    private void PlaySound(AudioClip clip)
+    public void PlaySound(AudioClip clip)
     {
         if (audioSource != null && clip != null)
         {

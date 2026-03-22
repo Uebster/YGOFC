@@ -67,5 +67,6 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "YuGiOh_Forbidden_Chaos.slnx"
+    "dotnet.defaultSolution": "YuGiOh_Forbidden_Chaos.slnx",
+    "github.copilot.chat.copilotMemory.enabled": true
 }

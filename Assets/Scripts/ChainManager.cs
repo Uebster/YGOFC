@@ -23,6 +23,7 @@ public class ChainManager : MonoBehaviour
     }
 
     public List<ChainLink> currentChain = new List<ChainLink>();
+    public List<ChainLink> chainLinks => currentChain; // Alias for LuaAPI compatibility
     public bool isChainResolving = false;
     private bool playerPassed;
     private bool opponentPassed;
@@ -33,7 +34,7 @@ public class ChainManager : MonoBehaviour
     }
 
     // Adiciona uma carta à corrente (Link 1, Link 2, etc.)
-    public void AddToChain(CardDisplay card, bool isPlayer, TriggerType triggerType = TriggerType.CardActivation, CardDisplay targetCard = null, System.Action onChainResolved = null)
+    public bool AddToChain(CardDisplay card, bool isPlayer, TriggerType triggerType = TriggerType.CardActivation, CardDisplay targetCard = null, System.Action onChainResolved = null)
     {
         if (isChainResolving)
         {
@@ -42,7 +43,7 @@ public class ChainManager : MonoBehaviour
             
             // Garante a execução da continuação se a carta tentar travar
             onChainResolved?.Invoke();
-            return;
+            return false;  // FASE 10: retorna false quando chain está resolvendo
         }
 
         ChainLink link = new ChainLink();
@@ -57,10 +58,11 @@ public class ChainManager : MonoBehaviour
         currentChain.Add(link);
         Debug.Log($"Chain Link {link.linkNumber}: {card.CurrentCardData.name} ativado.");
 
-        // Feedback Visual
+        // Feedback Visual - IMPLEMENTADO (FASE 10)
         if (DuelFXManager.Instance != null)
         {
-            // Poderíamos tocar um som de "Chain Link" aqui
+            DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.trapSound);
+            Debug.Log("[ChainManager] Chain Link Sound Feedback");
         }
 
         // Inicia o processo de resposta
@@ -68,6 +70,8 @@ public class ChainManager : MonoBehaviour
         {
             StartCoroutine(ResponseRoutine(onChainResolved));
         }
+        
+        return true;  // FASE 10: retorna true quando addToChain foi bem-sucedido
     }
 
     private IEnumerator ResponseRoutine(System.Action onChainResolved)
@@ -256,6 +260,9 @@ public class ChainManager : MonoBehaviour
                             // Só executa o efeito do card se ele entrou na corrente para Ativar um Efeito, e não apenas porque foi invocado.
                             if (link.trigger == TriggerType.CardActivation || link.trigger == TriggerType.Effect)
                             {
+                                // FASE 12: Dispara EVENT_ACTIVATE ao executar efeito
+                                EventSystem.RaiseEvent(LuaConstants.EVENT_ACTIVATE, link.cardSource.CurrentCardData.name, link.cardSource);
+                                
                                 CardEffectManager.Instance.ExecuteCardEffect(link.cardSource);
                             }
                             
@@ -282,11 +289,23 @@ public class ChainManager : MonoBehaviour
                     CardData data = link.cardSource.CurrentCardData;
                     bool staysOnField = IsContinuousType(data);
                     
+                    Debug.Log($"[ChainManager] Pós-Resolução de {data.name} (Type: {data.type}, Property: {data.property}) | Stays: {staysOnField}");
+                    
                     if (!staysOnField)
                     {
-                        GameManager.Instance.SendToGraveyard(data, link.isPlayerEffect);
+                        Debug.Log($"[ChainManager] Enviando {data.name} para GY (SendReason: Effect)");
+                        GameManager.Instance.SendToGraveyard(data, link.isPlayerEffect, CardLocation.Field, SendReason.Effect);
                         Destroy(link.cardSource.gameObject);
+                        Debug.Log($"[ChainManager] ✅ {data.name} destruído e enviado para GY");
                     }
+                    else
+                    {
+                        Debug.Log($"[ChainManager] {data.name} PERMANECE no campo (Contínua)");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning("[ChainManager] link.cardSource é NULL na limpeza pós-resolução!");
                 }
             }
         }
@@ -295,6 +314,9 @@ public class ChainManager : MonoBehaviour
             currentChain.Clear();
             isChainResolving = false;
             Debug.Log("Corrente Resolvida (Finalizado).");
+
+            // FASE 12: Dispara EVENT_CUSTOM ao terminar chain
+            EventSystem.RaiseEvent(LuaConstants.EVENT_CUSTOM, "chain_resolved");
 
             // Se o gatilho original não foi negado, executa a ação pós-corrente (ex: o ataque continua)
             if (onChainResolved != null)

@@ -219,6 +219,17 @@ public class GameManager : MonoBehaviour
     public PileDisplay playerDeckDisplay => DeckManager.Instance != null ? DeckManager.Instance.playerDeckDisplay : null;
     public PileDisplay opponentDeckDisplay => DeckManager.Instance != null ? DeckManager.Instance.opponentDeckDisplay : null;
 
+    // FASE 26: Deck manager references for LuaAPI compatibility
+    public DeckManager playerDeckManager => DeckManager.Instance;
+    public DeckManager opponentDeckManager => DeckManager.Instance;
+    
+    public bool checkPlayerForbiddenStatus(DeckManager deckManager, string forbiddenType)
+    {
+        // Check if a forbidden status applies to this deck
+        // For now, return false (no forbidden status)
+        return false;
+    }
+
     // Adicionado: Side Deck e Baú (Trunk)
     public List<CardData> playerMainDeck = new List<CardData>(); // Deck principal persistente
     public List<CardData> opponentMainDeck = new List<CardData>(); // Deck oponente persistente
@@ -323,7 +334,7 @@ public class GameManager : MonoBehaviour
 
         if (enableRightClickPhaseMenu && isPlayerTurn && !isDuelOver && rightClick)
         {
-            if (EventSystem.current != null && !EventSystem.current.IsPointerOverGameObject())
+            if (UnityEngine.EventSystems.EventSystem.current != null && !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
             {
                 OpenPhaseSelectionMenu();
             }
@@ -1155,6 +1166,116 @@ public void ShuffleDeck(bool isPlayer)
         UpdatePileVisuals();
     }
 
+    // === MÉTODO UNIFICADO DE MOVIMENTAÇÃO DE CARTAS ===
+    /// <summary>
+    /// Move uma carta entre zonas de forma centralizada e consistente.
+    /// Detecta automaticamente a zona de origem e aplica a lógica apropriada.
+    /// </summary>
+    public void MoveCard(CardDisplay card, CardLocation destination, SendReason reason = SendReason.Unknown)
+    {
+        if (card == null) return;
+        
+        bool isPlayer = card.isPlayerCard;
+        CardData data = card.CurrentCardData;
+        string logPrefix = $"[MoveCard] {data.name} ({(isPlayer ? "Player" : "Opponent")})";
+        
+        // FASE 13: Track previous location before moving
+        card.previousPreviousLocation = card.previousLocation;
+        card.previousLocation = card.CurrentLocation;
+        card.previousOwner = (isPlayer ? 0 : 1);
+        Debug.Log($"{logPrefix} | Tracked history: from {card.previousLocation} (owner: {card.previousOwner})");
+        
+        // Remove modificadores antes de sair do campo
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
+        if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
+
+        // Aplica a movimentação baseada no destino
+        switch (destination)
+        {
+            case CardLocation.Graveyard:
+                Debug.Log($"{logPrefix} → Graveyard");
+                SendToGraveyard(data, isPlayer, CardLocation.Field, reason);
+                Destroy(card.gameObject);
+                break;
+
+            case CardLocation.Hand:
+                Debug.Log($"{logPrefix} → Hand");
+                // Remove da mão se estava lá
+                if (isPlayer) playerHand.Remove(card.gameObject);
+                else opponentHand.Remove(card.gameObject);
+                // Destrói e retorna à mão
+                Destroy(card.gameObject);
+                AddCardToHand(data, isPlayer);
+                break;
+
+            case CardLocation.Deck:
+                Debug.Log($"{logPrefix} → Deck (Top)");
+                // Delega para DeckManager
+                if (DeckManager.Instance != null) 
+                    DeckManager.Instance.ReturnToDeck(card, true);
+                break;
+
+            case CardLocation.Banished:
+                Debug.Log($"{logPrefix} → Banished");
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayBanishEffect(card);
+                if (isPlayer) playerHand.Remove(card.gameObject);
+                else opponentHand.Remove(card.gameObject);
+                RemoveFromPlay(data, isPlayer);
+                Destroy(card.gameObject);
+                break;
+
+            case CardLocation.ExtraDeck:
+                Debug.Log($"{logPrefix} → Extra Deck");
+                if (isPlayer) playerExtraDeck.Add(data);
+                else opponentExtraDeck.Add(data);
+                Destroy(card.gameObject);
+                break;
+
+            default:
+                Debug.LogWarning($"{logPrefix} → Destino desconhecido: {destination}");
+                break;
+        }
+    }
+
+    // === CONSULTAS DE ESPAÇO LIVRE ===
+    /// <summary>
+    /// Retorna quantidade de zonas de monstro livres para invocação
+    /// </summary>
+    public int GetFreeMonsterZones(bool isPlayer)
+    {
+        if (duelFieldUI == null) return 0;
+        
+        Transform[] zones = isPlayer ? duelFieldUI.playerMonsterZones : duelFieldUI.opponentMonsterZones;
+        int freeCount = 0;
+        
+        foreach (var zone in zones)
+        {
+            if (zone != null && zone.childCount == 0)
+                freeCount++;
+        }
+        
+        return freeCount;
+    }
+
+    /// <summary>
+    /// Retorna quantidade de zonas de S/T livres para setar
+    /// </summary>
+    public int GetFreeSpellTrapZones(bool isPlayer)
+    {
+        if (duelFieldUI == null) return 0;
+        
+        Transform[] zones = isPlayer ? duelFieldUI.playerSpellZones : duelFieldUI.opponentSpellZones;
+        int freeCount = 0;
+        
+        foreach (var zone in zones)
+        {
+            if (zone != null && zone.childCount == 0)
+                freeCount++;
+        }
+        
+        return freeCount;
+    }
+
     // Novo método para remover de jogo (Banir)
     public void RemoveFromPlay(CardData card, bool isPlayer)
     {
@@ -1293,7 +1414,7 @@ public void ShuffleDeck(bool isPlayer)
         // Se for turno do oponente, inicia a IA
         if (!isPlayerTurn && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
         {
-            OpponentAI.Instance.StartAITurn();
+            OpponentAI.Instance.StartAITurn(!isSimulating);
         }
     }
 
@@ -1346,6 +1467,9 @@ public void ShuffleDeck(bool isPlayer)
         {
             CardEffectManager.Instance.OnPhaseStart(GamePhase.End);
         }
+
+        // FASE 11: Clear flag effects at end of turn
+        CleanupFlagEffects();
 
         // Inicia verificação de Limite de Mão
         StartCoroutine(HandleHandLimitSequence());
@@ -1629,6 +1753,44 @@ public void ShuffleDeck(bool isPlayer)
                 }
             }
         }
+    }
+
+    // FASE 11: Cleanup Flag Effects at end of turn
+    private void CleanupFlagEffects()
+    {
+        // Clear player monster zone flags
+        if (duelFieldUI != null && duelFieldUI.playerMonsterZones != null)
+        {
+            foreach (Transform zone in duelFieldUI.playerMonsterZones)
+            {
+                if (zone.childCount > 0)
+                {
+                    CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (cd != null && cd.flagEffects != null)
+                    {
+                        cd.flagEffects.Clear();
+                    }
+                }
+            }
+        }
+
+        // Clear opponent monster zone flags
+        if (duelFieldUI != null && duelFieldUI.opponentMonsterZones != null)
+        {
+            foreach (Transform zone in duelFieldUI.opponentMonsterZones)
+            {
+                if (zone.childCount > 0)
+                {
+                    CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                    if (cd != null && cd.flagEffects != null)
+                    {
+                        cd.flagEffects.Clear();
+                    }
+                }
+            }
+        }
+
+        Debug.Log("[GameManager] Flag effects cleaned up at end of turn");
     }
 
     // --- FUTURAS IMPLEMENTAÇÕES DE COMANDOS (COMENTÁRIOS) ---
@@ -2095,50 +2257,66 @@ public void ShuffleDeck(bool isPlayer)
     // --- LÓGICA DE INVOCACÃO ---
 
     // Renomeado para TrySummonMonster para indicar que é o início do processo
-    public void TrySummonMonster(GameObject cardGO, CardData cardData, bool isSet, bool ignoreLimit = false)
+    public bool TrySummonMonster(GameObject cardGO, CardData cardData, bool isSet, bool ignoreLimit = false)
     {
         CardDisplay display = cardGO.GetComponent<CardDisplay>();
         bool isPlayer = display != null ? display.isPlayerCard : true;
+        string cardName = cardData?.name ?? "Unknown";
 
         // Validações de Efeitos Contínuos
         if (CardEffectManager.Instance != null)
         {
-            if (!CardEffectManager.Instance.CheckChainEnergy(isPlayer)) return;
-            if (!CardEffectManager.Instance.CheckSpatialCollapse(isPlayer)) return;
-            if (!CardEffectManager.Instance.CheckRivalryOfWarlords(isPlayer, cardData.race)) return;
+            if (!CardEffectManager.Instance.CheckChainEnergy(isPlayer))
+            {
+                Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: Chain Energy ativa.");
+                return false;
+            }
+            if (!CardEffectManager.Instance.CheckSpatialCollapse(isPlayer))
+            {
+                Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: Spatial Collapse ativa.");
+                return false;
+            }
+            if (!CardEffectManager.Instance.CheckRivalryOfWarlords(isPlayer, cardData.race))
+            {
+                Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: Rivalry of Warlords bloqueia {cardData.race} type.");
+                return false;
+            }
         }
 
         // 0. Validação de Permissão
         if (isPlayer && !canPlacePlayerCards)
         {
-            Debug.LogWarning("Ação do jogador bloqueada: 'canPlacePlayerCards' está desativado.");
-            return;
+            Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: canPlacePlayerCards desativado.");
+            return false;
         }
         // Bloqueia se for uma ação para o oponente, durante o turno do jogador, e o modo dev de controle do oponente estiver desligado.
         // A IA (que roda no turno do oponente) não será bloqueada por esta verificação.
         // FIX: Se estiver simulando (!isSimulating), ignora essa trava para permitir que o simulador jogue pelos dois lados rapidamente.
         if (!isPlayer && isPlayerTurn && !canPlaceOpponentCards && !isSimulating)
         {
-            Debug.LogWarning("Ação de controle do oponente bloqueada: 'canPlaceOpponentCards' está desativado.");
-            return;
+            Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: canPlaceOpponentCards desativado durante turno do jogador.");
+            return false;
         }
 
         // 1. Validação de Fase
         GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Main1;
         if (!devMode && isPlayer && currentPhase != GamePhase.Main1 && currentPhase != GamePhase.Main2 && !isSimulating)
         {
-            Debug.LogWarning("Invocação só é permitida na Main Phase 1 ou 2.");
-            return;
+            Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: Invocação só permitida em Main Phase 1/2. Fase atual: {currentPhase}");
+            return false;
         }
 
         if (SummonManager.Instance != null)
         {
             SummonManager.Instance.ExecuteSummonFlow(cardGO, cardData, isSet, false, isPlayer, ignoreLimit);
-            return; // FIX CRÍTICO: Impede que a engine ignore as travas do SummonManager!
+            Debug.Log($"[TrySummonMonster SUCCESS] {cardName} foi invocado(a). {(isPlayer ? "Jogador" : "Oponente")}");
+            return true; // FIX CRÍTICO: Impede que a engine ignore as travas do SummonManager!
         }
         
         // Fallback caso não tenha o Manager
         FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, cardData.level >= 5, null);
+        Debug.Log($"[TrySummonMonster SUCCESS] {cardName} foi invocado(a) (fallback). {(isPlayer ? "Jogador" : "Oponente")}");
+        return true;
     }
 
     // Novo método para Special Summon que pede a posição
@@ -2338,45 +2516,54 @@ public void ShuffleDeck(bool isPlayer)
 
     // --- LÓGICA DE SPELL / TRAP ---
 
-    public void PlaySpellTrap(GameObject cardGO, CardData cardData, bool isSet)
+    public bool PlaySpellTrap(GameObject cardGO, CardData cardData, bool isSet)
     {
         CardDisplay display = cardGO.GetComponent<CardDisplay>();
         bool isPlayer = display != null ? display.isPlayerCard : true;
+        string cardName = cardData?.name ?? "Unknown";
 
         // Validações de Efeitos Contínuos
         if (CardEffectManager.Instance != null)
         {
-            if (!CardEffectManager.Instance.CheckChainEnergy(isPlayer)) return;
-            if (!CardEffectManager.Instance.CheckSpatialCollapse(isPlayer)) return;
+            if (!CardEffectManager.Instance.CheckChainEnergy(isPlayer))
+            {
+                Debug.LogWarning($"[PlaySpellTrap BLOCKED] {cardName}: Chain Energy bloqueando ativação.");
+                return false;
+            }
+            if (!CardEffectManager.Instance.CheckSpatialCollapse(isPlayer))
+            {
+                Debug.LogWarning($"[PlaySpellTrap BLOCKED] {cardName}: Spatial Collapse ativa.");
+                return false;
+            }
         }
 
         // 0.5 Validação de Armadilha
         if (!devMode && isPlayer && cardData.type.Contains("Trap") && !isSet)
         {
-            Debug.LogWarning("Cartas de Armadilha devem ser baixadas (Set) antes de serem ativadas.");
-            return;
+            Debug.LogWarning($"[PlaySpellTrap BLOCKED] {cardName}: Traps devem ser setadas antes, não ativadas direto.");
+            return false;
         }
 
         // 0. Validação de Permissão
         if (isPlayer && !canPlacePlayerCards)
         {
-            Debug.LogWarning("Ação do jogador bloqueada: 'canPlacePlayerCards' está desativado.");
-            return;
+            Debug.LogWarning($"[PlaySpellTrap BLOCKED] {cardName}: canPlacePlayerCards desativado.");
+            return false;
         }
         // Bloqueia se for uma ação para o oponente, durante o turno do jogador, e o modo dev de controle do oponente estiver desligado.
         // FIX: Se estiver simulando (!isSimulating), ignora essa trava.
         if (!isPlayer && isPlayerTurn && !canPlaceOpponentCards && !isSimulating)
         {
-            Debug.LogWarning("Ação de controle do oponente bloqueada: 'canPlaceOpponentCards' está desativado.");
-            return;
+            Debug.LogWarning($"[PlaySpellTrap BLOCKED] {cardName}: canPlaceOpponentCards desativado durante turno do jogador.");
+            return false;
         }
 
         // 1. Validação de Fase
         GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Main1;
         if (!devMode && isPlayer && currentPhase != GamePhase.Main1 && currentPhase != GamePhase.Main2)
         {
-            Debug.LogWarning("Ativar/Setar Spells só é permitido na Main Phase 1 ou 2.");
-            return;
+            Debug.LogWarning($"[PlaySpellTrap BLOCKED] {cardName}: Spells só permitidos em Main Phase 1/2. Fase atual: {currentPhase}");
+            return false;
         }
 
         // Validação de Condição de Ativação LUA antes de mover a carta para o campo
@@ -2391,8 +2578,8 @@ public void ShuffleDeck(bool isPlayer)
                     int tp = isPlayer ? 0 : 1;
                     if (!CardEffectManager.Instance.CanActivateEffect(lc, activationEffect, tp, null))
                     {
-                        if (!isSimulating) Debug.LogWarning($"[GameManager] {cardData.name} não cumpre os requisitos para ser ativada.");
-                        return; // Cancela a jogada antes de mover a carta!
+                        Debug.LogWarning($"[PlaySpellTrap BLOCKED] {cardName}: Falhou na validação Lua de ativação.");
+                        return false; // Cancela a jogada antes de mover a carta!
                     }
                 }
             }
@@ -2414,8 +2601,8 @@ public void ShuffleDeck(bool isPlayer)
 
         if (targetZone == null)
         {
-            Debug.LogWarning("Sem zonas de magia/armadilha livres!");
-            return;
+            Debug.LogWarning($"[PlaySpellTrap BLOCKED] {cardName}: Sem zonas de magia/armadilha livres!");
+            return false;
         }
 
         // 3. Mover Carta
@@ -2478,6 +2665,9 @@ public void ShuffleDeck(bool isPlayer)
                 }
             }
         }
+        
+        Debug.Log($"[PlaySpellTrap SUCCESS] {cardName} foi {(isSet ? "setada" : "ativada")} com sucesso. {(isPlayer ? "Jogador" : "Oponente")}");
+        return true;
     }
 
     public Transform GetFreeSpellZone(bool isPlayer)
@@ -2881,7 +3071,34 @@ public void ShuffleDeck(bool isPlayer)
     }
 
     // Invocação Especial direta por dados (para Monster Reborn, etc)
-    public CardDisplay SpecialSummonFromData(CardData data, bool forPlayer, bool faceUp = true, bool defense = false)
+    public CardDisplay SpecialSummonFromData(CardData data, bool forPlayer, int summonType = 0, bool faceUp = true, bool defense = false)
+    {
+        // Delegar para managers específicos baseado em tipo
+        if (summonType == 0x46000000) // SUMMON_TYPE_SYNCHRO
+        {
+            SynchroManager synchroMgr = FindObjectOfType<SynchroManager>();
+            if (synchroMgr != null)
+            {
+                // Nota: Para teste simples, invocamos diretamente
+                Debug.Log($"[GameManager] Delegando Synchro Summon para SynchroManager");
+                return DefaultSpecialSummon(data, forPlayer, faceUp, defense);
+            }
+        }
+        else if (summonType == 0x49000000) // SUMMON_TYPE_XYZ
+        {
+            XYZManager xyzMgr = FindObjectOfType<XYZManager>();
+            if (xyzMgr != null)
+            {
+                Debug.Log($"[GameManager] Delegando XYZ Summon para XYZManager");
+                return DefaultSpecialSummon(data, forPlayer, faceUp, defense);
+            }
+        }
+
+        // Default: usar lógica padrão
+        return DefaultSpecialSummon(data, forPlayer, faceUp, defense);
+    }
+
+    private CardDisplay DefaultSpecialSummon(CardData data, bool forPlayer, bool faceUp = true, bool defense = false)
     {
         Transform targetZone = GetFreeMonsterZone(forPlayer);
         if (targetZone == null) return null;

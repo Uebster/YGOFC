@@ -17,6 +17,14 @@ public class OpponentAI : MonoBehaviour
     public float actionScoreThreshold = 10f;
     public bool isThinking = false;
 
+    // Propriedade para detectar modo simulação e acelerar
+    private bool useSimulationFastMode => GameManager.Instance != null && GameManager.Instance.isSimulating;
+    
+    // Sistema de prevenção de loop infinito na simulação
+    private HashSet<int> usedCardsThisTurn = new HashSet<int>();
+    private int simulationActionCount = 0;
+    private const int MAX_ACTIONS_PER_PHASE = 20; // Limite seguro de ações por fase
+
     [Header("Estado Calculado (Runtime)")]
     public int fearScore = 0;           // Quantidade de S/T setadas pelo jogador
     public float boardValue = 0f;       // Quem está ganhando a mesa? (+ = IA, - = Jogador)
@@ -35,48 +43,54 @@ public class OpponentAI : MonoBehaviour
         Instance = this;
     }
 
-    public void StartAITurn()
+    public void StartAITurn(bool switchTurn = true)
     {
         if (isThinking || !gameObject.activeInHierarchy) return;
-        StartCoroutine(AITurnRoutine());
+        StartCoroutine(AITurnRoutine(switchTurn));
     }
 
-    IEnumerator AITurnRoutine()
+    public IEnumerator AITurnRoutine(bool switchTurn = true)
     {
         isThinking = true;
         Debug.Log("AI: --- INÍCIO DO TURNO ---");
 
-        yield return new WaitForSeconds(actionDelay);
-
-        PhaseManager.Instance.ChangePhase(GamePhase.Standby);
-        yield return new WaitForSeconds(actionDelay);
+        if (!useSimulationFastMode)
+            yield return new WaitForSeconds(actionDelay);
 
         EvaluateBoardState();
 
         // --- MAIN PHASE 1 ---
-        PhaseManager.Instance.ChangePhase(GamePhase.Main1);
         yield return StartCoroutine(ExecuteMainPhaseLogic());
 
         // --- BATTLE PHASE ---
         if (CanEnterBattlePhase() && HasAttackCapableMonsters())
         {
             PhaseManager.Instance.ChangePhase(GamePhase.Battle);
-            yield return new WaitForSeconds(actionDelay);
+            
+            if (!useSimulationFastMode)
+                yield return new WaitForSeconds(actionDelay);
+                
             yield return StartCoroutine(ExecuteBattlePhaseLogic());
         }
 
         // --- MAIN PHASE 2 ---
         PhaseManager.Instance.ChangePhase(GamePhase.Main2);
-        yield return StartCoroutine(ExecuteMainPhaseLogic()); // Reavalia jogadas na Main Phase 2
+        yield return StartCoroutine(ExecuteMainPhaseLogic()); 
 
-        EvaluateBoardState(); // Avalia uma última vez
+        EvaluateBoardState(); 
 
         // --- END PHASE ---
         PhaseManager.Instance.ChangePhase(GamePhase.End);
-        yield return new WaitForSeconds(actionDelay);
+        
+        if (!useSimulationFastMode)
+            yield return new WaitForSeconds(actionDelay);
 
         Debug.Log("AI: --- FIM DO TURNO ---");
-        GameManager.Instance.SwitchTurn();
+        
+        if (switchTurn)
+        {
+            GameManager.Instance.SwitchTurn();
+        }
         isThinking = false;
     }
 
@@ -85,16 +99,33 @@ public class OpponentAI : MonoBehaviour
     {
         // Reavalia o campo sempre que entra na Main Phase
         EvaluateBoardState();
+        
+        // Reset de rastreamento para nova fase
+        if (useSimulationFastMode)
+        {
+            usedCardsThisTurn.Clear();
+            simulationActionCount = 0;
+        }
 
         while (true)
         {
-            // 1. Avalia todas as jogadas possíveis
-            List<AIAction> possibleActions = EvaluateAllPossibleActions();
+            // Proteção contra loop infinito na simulação
+            if (useSimulationFastMode && simulationActionCount >= MAX_ACTIONS_PER_PHASE)
+            {
+                Debug.LogWarning($"AI: Limite de ações por fase atingido ({MAX_ACTIONS_PER_PHASE}). Finalizando fase.");
+                break;
+            }
+
+            // Em simulação usa modo "burro", senão modo estratégico
+            List<AIAction> possibleActions = useSimulationFastMode 
+                ? EvaluateDumbActions()  
+                : EvaluateAllPossibleActions();
 
             // 2. Se não há jogadas, encerra a fase
             if (possibleActions.Count == 0)
             {
-                Debug.Log("AI: Nenhuma ação possível encontrada.");
+                if (useSimulationFastMode) Debug.Log($"[SIM] AI: Nenhuma ação nova encontrada. Finalizando fase ({simulationActionCount} ações executadas).");
+                else Debug.Log("AI: Nenhuma ação possível encontrada.");
                 break;
             }
 
@@ -102,20 +133,136 @@ public class OpponentAI : MonoBehaviour
             possibleActions.Sort((a, b) => b.Score.CompareTo(a.Score));
             AIAction bestAction = possibleActions[0];
 
-            // 4. Se a melhor jogada não for boa o suficiente, guarda recursos
-            if (bestAction.Score < actionScoreThreshold)
+            // Em simulação pula o threshold
+            if (!useSimulationFastMode && bestAction.Score < actionScoreThreshold)
             {
                 Debug.Log($"AI: Melhor ação ({bestAction.Description}) tem pontuação baixa ({bestAction.Score}). Guardando recursos.");
                 break;
             }
 
             // 5. Executa a melhor jogada
-            Debug.Log($"AI AÇÃO (Score: {bestAction.Score}): {bestAction.Description}");
+            if (useSimulationFastMode)
+            {
+                simulationActionCount++;
+                Debug.Log($"[SIM {simulationActionCount}] AI AÇÃO (Score: {bestAction.Score}): {bestAction.Description}");
+            }
+            else
+                Debug.Log($"AI AÇÃO (Score: {bestAction.Score}): {bestAction.Description}");
+                
             bestAction.Execute();
             
-            // Espera a ação ser processada visualmente
-            yield return new WaitForSeconds(actionDelay);
+            // Espera apenas se não estiver em simulação rápida
+            if (!useSimulationFastMode)
+                yield return new WaitForSeconds(actionDelay);
         }
+    }
+
+    // Modo otimizado para simulação - joga cartas inteligentemente sem delays
+    private List<AIAction> EvaluateDumbActions()
+    {
+        var actions = new List<AIAction>();
+        var hand = GameManager.Instance.opponentHand;
+        
+        // Separa cartas por tipo (EXCLUINDO cartas já usadas neste turno)
+        var monsters = hand.Where(go => {
+            var cd = go.GetComponent<CardDisplay>();
+            return cd != null && cd.CurrentCardData.type.Contains("Monster") && !usedCardsThisTurn.Contains(cd.GetInstanceID());
+        }).ToList();
+        
+        var spells = hand.Where(go => {
+            var cd = go.GetComponent<CardDisplay>();
+            return cd != null && cd.CurrentCardData.type.Contains("Spell") && !cd.CurrentCardData.type.Contains("Trap") && !usedCardsThisTurn.Contains(cd.GetInstanceID());
+        }).ToList();
+        
+        var traps = hand.Where(go => {
+            var cd = go.GetComponent<CardDisplay>();
+            return cd != null && cd.CurrentCardData.type.Contains("Trap") && !usedCardsThisTurn.Contains(cd.GetInstanceID());
+        }).ToList();
+
+        // === MONSTROS: Invoca normal summon (máximo 1 por turno) ===
+        if (!SummonManager.Instance.hasPerformedNormalSummon)
+        {
+            var bestMonster = monsters.FirstOrDefault(); // Pega primeiro disponível
+            if (bestMonster != null)
+            {
+                var cd = bestMonster.GetComponent<CardDisplay>();
+                if (cd != null)
+                {
+                    bool isDef = Random.value > 0.6f; // 40% chance de defesa
+                    var cardGO = bestMonster;
+                    var cardData = cd.CurrentCardData;
+                    int cardInstanceID = cd.GetInstanceID();
+                    
+                    actions.Add(new AIAction {
+                        Score = cd.CurrentCardData.atk + Random.value * 100f,
+                        Description = $"Invocar {cd.CurrentCardData.name} em {(isDef ? "Defesa" : "Ataque")}",
+                        Execute = () => {
+                            bool success = GameManager.Instance.TrySummonMonster(cardGO, cardData, isDef, false);
+                            if (success)
+                                usedCardsThisTurn.Add(cardInstanceID); // Marca como usada APENAS se sucesso
+                        }
+                    });
+                }
+            }
+        }
+
+        // === SPELLS: Ativa cartas de magia (máximo 1 por turno simples na simulação) ===
+        if (spells.Count > 0)
+        {
+            var bestSpell = spells.FirstOrDefault();
+            if (bestSpell != null)
+            {
+                var cd = bestSpell.GetComponent<CardDisplay>();
+                if (cd != null)
+                {
+                    var cardGO = bestSpell;
+                    var cardData = cd.CurrentCardData;
+                    int cardInstanceID = cd.GetInstanceID();
+                    bool isField = cd.CurrentCardData.property == "Field";
+                    
+                    // Spells contínuos e Fields geralmente não consomem a ação (apenas set)
+                    bool isContinuous = cd.CurrentCardData.type.Contains("Continuous");
+                    
+                    actions.Add(new AIAction {
+                        Score = (isContinuous ? 100f : 50f) + (isField ? 50f : 0f),
+                        Description = $"Ativar {cd.CurrentCardData.name}",
+                        Execute = () => {
+                            bool success = GameManager.Instance.PlaySpellTrap(cardGO, cardData, false); // false = ativa, não set
+                            if (success)
+                                usedCardsThisTurn.Add(cardInstanceID);
+                        }
+                    });
+                }
+            }
+        }
+
+        // === TRAPS: Baixa (será ativada por trigger depois) ===
+        if (traps.Count > 0)
+        {
+            var bestTrap = traps.FirstOrDefault();
+            if (bestTrap != null)
+            {
+                var cd = bestTrap.GetComponent<CardDisplay>();
+                if (cd != null)
+                {
+                    var cardGO = bestTrap;
+                    var cardData = cd.CurrentCardData;
+                    int cardInstanceID = cd.GetInstanceID();
+                    
+                    actions.Add(new AIAction {
+                        Score = 30f,
+                        Description = $"Baixar {cd.CurrentCardData.name}",
+                        Execute = () => {
+                            bool success = GameManager.Instance.PlaySpellTrap(cardGO, cardData, true); // true = set
+                            if (success)
+                                usedCardsThisTurn.Add(cardInstanceID);
+                        }
+                    });
+                }
+            }
+        }
+
+        return actions;
     }
 
     // Calcula o peso do campo e o perigo iminente

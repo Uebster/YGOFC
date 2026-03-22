@@ -36,6 +36,8 @@ public class SummonManager : MonoBehaviour
     public int specialSummonFromGYDef = 0;
     public int fusionSummonCount = 0;
     public int ritualSummonCount = 0;
+    public int synchroSummonCount = 0;
+    public int xyzSummonCount = 0;
 
     [Header("Contadores de Special Summon (Oponente)")]
     public int opponentSpecialSummonFromHand = 0;
@@ -118,12 +120,12 @@ public class SummonManager : MonoBehaviour
     }
 
     // Executa todo o fluxo de invocação e gerencia exceções antes de finalizar no GameManager
-    public void ExecuteSummonFlow(GameObject cardGO, CardData card, bool isSet, bool isSpecial, bool isPlayer, bool ignoreLimit = false)
+    public bool ExecuteSummonFlow(GameObject cardGO, CardData card, bool isSet, bool isSpecial, bool isPlayer, bool ignoreLimit = false)  // FASE 10: retorna bool
     {
         if (CardEffectManager.Instance != null && CardEffectManager.Instance.cannotSummonMonstersThisTurn)
         {
             if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Você não pode invocar monstros neste turno devido a um efeito de carta (ex: Dark Magic Curtain).");
-            return;
+            return false;  // FASE 10: retorna false quando summon é bloqueado
         }
         
         if (isSpecial)
@@ -135,7 +137,7 @@ public class SummonManager : MonoBehaviour
                 else if (card.type.Contains("Ritual")) ritualSummonCount++;
             }
             GameManager.Instance.FinalizeSummon(cardGO, card, isSet, isPlayer, isSet, false, null);
-            return;
+            return true;  // FASE 10: retorna true quando special summon foi bem-sucedido
         }
 
         // INTERCEPTAÇÃO: Condições Alternativas de Invocação e Custos Dinâmicos (Sistema 4)
@@ -155,7 +157,7 @@ public class SummonManager : MonoBehaviour
                     display.AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Continuous, StatModifier.Operation.Set, card.def / 2, display));
                 }, 
                 () => { ProcessStandardSummon(cardGO, card, isSet, isPlayer, ignoreLimit); });
-                return; // Espera a UI
+                return true; // Espera a UI
             }
             // 0768 - Gilford the Lightning / 1257 - Moisture Creature (Tributos massivos)
             else if ((card.id == "0768" || card.id == "1257") && GameManager.Instance.GetMonsterCount(isPlayer) >= 3) 
@@ -171,7 +173,7 @@ public class SummonManager : MonoBehaviour
                     });
                 }, 
                 () => { ProcessStandardSummon(cardGO, card, isSet, isPlayer, ignoreLimit); });
-                return; // Espera a UI
+                return true; // Espera a UI
             }
             // 0166 - Behemoth the King of All Animals (Tributo único = 2000 ATK)
             else if (card.id == "0166" && GameManager.Instance.GetMonsterCount(isPlayer) >= 1) 
@@ -188,12 +190,13 @@ public class SummonManager : MonoBehaviour
                     });
                 },
                 () => { ProcessStandardSummon(cardGO, card, isSet, isPlayer, ignoreLimit); });
-                return; // Espera a UI
+                return true; // Espera a UI
             }
         }
 
         // Se não foi interceptado, segue o fluxo normal
         ProcessStandardSummon(cardGO, card, isSet, isPlayer, ignoreLimit);
+        return true;  // FASE 10: retorna true quando summon foi processado
     }
 
     private void ProcessStandardSummon(GameObject cardGO, CardData card, bool isSet, bool isPlayer, bool ignoreLimit)
