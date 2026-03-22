@@ -58,6 +58,7 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **2.3.5** Validadores Externos (`test_card_viewer.py`, Pygame Viewer, `test_deck_system.py`, `generate_fields.py`)
     *   **2.3.6** Ferramentas de Editor Unity (`HierarchyDumper.cs`)
     *   **2.3.7** Debug In-Game (`InGameDebugConsole.cs`, Ctrl+Shift+D)
+    *   **2.3.8** Analisador Estático de Scripts Lua (`cardslua_analyzer.py`)
 *   **2.4.** Sistema de Save e Carregamento (Persistência)
     *   **2.4.1** Estrutura de Memória (`GameSaveData`)
     *   **2.4.2** Interface de Save/Load (`SaveLoadMenu.cs`)

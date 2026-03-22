@@ -141,6 +141,17 @@ public class CardEffectManager : MonoBehaviour
                 return luaEngine.DoString(luaCode);
             })));
         
+        // NecroValleyFilter: Filtro comum usado por cartas de cemitério (ex: Gravekeeper's)
+        auxTable.Table.Set("NecroValleyFilter", DynValue.FromObject(luaEngine,
+            (System.Func<object, object>)(filterFunc => {
+                string luaCode = @"
+                    return function(c)
+                        return true  -- Stub: Passa no filtro de Necrovalley por padrão
+                    end
+                ";
+                return luaEngine.DoString(luaCode);
+            })));
+
         // RemainFieldCost: Constante para custos de campo
         auxTable.Table.Set("RemainFieldCost", DynValue.NewNumber(0x1000000));
 

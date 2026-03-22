@@ -111,6 +111,17 @@ Painel invisível, configurado como `DontDestroyOnLoad`, que coleta logs durante
     *   Auto-Scroll dinâmico.
     *   **Botão "Copy":** Formata e copia o histórico para a área de transferência. Em caso de Exceções/Erros, embute o *StackTrace* completo para facilitar a caça a bugs fora da engine.
 
+### 2.3.8 Analisador Estático de Scripts Lua (`cardslua_analyzer.py`)
+Ferramenta suprema de validação de estabilidade do ecossistema OCGCore (Lua) perante o motor C# da Unity.
+*   **Função:** Executa uma varredura estática profunda em todos os milhares de scripts `.lua` na pasta `LuaScripts`, identificando precocemente chamadas de métodos inexistentes ou constantes globais não mapeadas.
+*   **Como funciona:**
+    *   Cruza os dados com `cards.json` para saber exatamente quais cartas deveriam ter scripts (monstros de efeito, magias, armadilhas) e alerta sobre faltas ou sobras (`ExtraneousScript`).
+    *   Vasculha o `LuaAPI.cs` extraindo dinamicamente, via Expressões Regulares (Regex), todos os métodos públicos (`public bool IsType()`, etc) suportados pela engine C#.
+    *   Lê o `constant.lua` e o `CardEffectManager.cs` para mapear todas as variáveis globais de status e fases injetadas (`LOCATION_DECK`, `EFFECT_TYPE_SINGLE`).
+    *   Limpa falsos positivos de forma inteligente: ignora comentários textuais, funções exclusivas da própria carta (ex: `target`, `condition`) e operadores nativos do Lua (`elseif`, `for`, `math`).
+*   **Exportação de Relatórios:** Sistema interativo via terminal. Pergunta ao desenvolvedor onde deseja salvar e permite despejar relatórios consolidados em formatos `JSON`, `CSV` e `TXT` formatado.
+*   **Fallback Inteligente (GUI):** Se o script for executado de um ambiente desconfigurado (diretório inválido), ele não "crasha". Em vez disso, utiliza a biblioteca `Tkinter` nativa para abrir janelas do *Windows Explorer*, solicitando que o usuário aponte os caminhos dos arquivos necessários (C#, JSON e Lua).
+
 ---
 
 ## 2.4 Sistema de Save e Carregamento (Persistência)

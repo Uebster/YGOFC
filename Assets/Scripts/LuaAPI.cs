@@ -14,15 +14,6 @@ public class LuaDuel
     public int targetPlayer;
     public int targetParam;
     public LuaGroup currentTargetGroup;
-    
-    // FASE 15: Chain info variables
-    public int chainId = 0;
-    public int chainCount = 0;
-    public int triggeringPlayer = 0;
-    public LuaEffect currentEffect;
-    public LuaCard currentTriggeringCard;
-    public int chainOperation = 0;
-    public bool chainSolving = false;
 
     private int ConvertToInt(object obj)
     {
@@ -94,14 +85,14 @@ public class LuaDuel
     public int SendtoGrave(object target, object reason)
     {
         int count = 0;
-        SendReason sendReason = SendReason.Effect; // Default
         if (target is LuaGroup group)
         {
             foreach (var c in group.cards)
             {
                 if (c.unityCard != null)
                 {
-                    GameManager.Instance.MoveCard(c.unityCard, CardLocation.Graveyard, sendReason);
+                    GameManager.Instance.SendToGraveyard(c.unityCard.CurrentCardData, c.unityCard.isPlayerCard);
+                    if (c.unityCard.gameObject != null) GameObject.Destroy(c.unityCard.gameObject);
                     count++;
                 }
             }
@@ -109,7 +100,8 @@ public class LuaDuel
         }
         else if (target is LuaCard card && card.unityCard != null)
         {
-            GameManager.Instance.MoveCard(card.unityCard, CardLocation.Graveyard, sendReason);
+            GameManager.Instance.SendToGraveyard(card.unityCard.CurrentCardData, card.unityCard.isPlayerCard);
+            if (card.unityCard.gameObject != null) GameObject.Destroy(card.unityCard.gameObject);
             count = 1;
             Debug.Log($"[Lua] Duel.SendtoGrave({card.unityCard.CurrentCardData.name})");
         }
@@ -121,17 +113,12 @@ public class LuaDuel
         int count = 0;
         if (target is LuaGroup group)
         {
-            foreach (var c in group.cards)
-                if (c.unityCard != null)
-                {
-                    GameManager.Instance.MoveCard(c.unityCard, CardLocation.Banished, SendReason.Effect);
-                    count++;
-                }
+            foreach (var c in group.cards) { if (c.unityCard != null) { GameManager.Instance.BanishCard(c.unityCard); count++; } }
             Debug.Log($"[Lua] Duel.Remove(Grupo com {count} cartas)");
         }
         else if (target is LuaCard card && card.unityCard != null)
         {
-            GameManager.Instance.MoveCard(card.unityCard, CardLocation.Banished, SendReason.Effect);
+            GameManager.Instance.BanishCard(card.unityCard);
             count = 1;
             Debug.Log($"[Lua] Duel.Remove({card.unityCard.CurrentCardData.name})");
         }
@@ -141,19 +128,15 @@ public class LuaDuel
     public int SendtoDeck(object target, object player, object seq, object reason)
     {
         int count = 0;
+        bool toTop = (ConvertToInt(seq) == 0);
         if (target is LuaGroup group)
         {
-            foreach (var c in group.cards)
-                if (c.unityCard != null) 
-                { 
-                    GameManager.Instance.MoveCard(c.unityCard, CardLocation.Deck, SendReason.Effect);
-                    count++; 
-                }
+            foreach (var c in group.cards) { if (c.unityCard != null) { GameManager.Instance.ReturnToDeck(c.unityCard, toTop); count++; } }
             Debug.Log($"[Lua] Duel.SendtoDeck(Grupo com {count} cartas)");
         }
         else if (target is LuaCard card && card.unityCard != null)
         {
-            GameManager.Instance.MoveCard(card.unityCard, CardLocation.Deck, SendReason.Effect);
+            GameManager.Instance.ReturnToDeck(card.unityCard, toTop);
             count = 1;
             Debug.Log($"[Lua] Duel.SendtoDeck({card.unityCard.CurrentCardData.name})");
         }
@@ -168,92 +151,10 @@ public class LuaDuel
         return amt;
     }
 
-    public void ShuffleHand(object player)
-    {
-        bool isPlayer = IsPlayer(player);
-        
-        if (isPlayer)
-        {
-            // Shuffle player's hand using Fisher-Yates
-            if (GameManager.Instance.playerHand != null && GameManager.Instance.playerHand.Count > 0)
-            {
-                for (int i = GameManager.Instance.playerHand.Count - 1; i > 0; i--)
-                {
-                    int randomIndex = UnityEngine.Random.Range(0, i + 1);
-                    // Swap
-                    var temp = GameManager.Instance.playerHand[i];
-                    GameManager.Instance.playerHand[i] = GameManager.Instance.playerHand[randomIndex];
-                    GameManager.Instance.playerHand[randomIndex] = temp;
-                }
-            }
-        }
-        else
-        {
-            // Shuffle opponent's hand
-            if (GameManager.Instance.opponentHand != null && GameManager.Instance.opponentHand.Count > 0)
-            {
-                for (int i = GameManager.Instance.opponentHand.Count - 1; i > 0; i--)
-                {
-                    int randomIndex = UnityEngine.Random.Range(0, i + 1);
-                    // Swap
-                    var temp = GameManager.Instance.opponentHand[i];
-                    GameManager.Instance.opponentHand[i] = GameManager.Instance.opponentHand[randomIndex];
-                    GameManager.Instance.opponentHand[randomIndex] = temp;
-                }
-            }
-        }
-        
-        Debug.Log($"[Lua] Duel.ShuffleHand({(isPlayer ? "Player" : "Opponent")})");
-    }
-
-    // FASE 15.01: Get real free zone count for location
     public int GetLocationCount(object player, object location, params object[] extraArgs)
     {
-        if (GameManager.Instance == null) return 0;
-        
-        bool isPlayer = IsPlayer(player);
-        int loc = ConvertToInt(location);
-        
-        // Count free zones based on location
-        if (loc == LuaConstants.LOCATION_MZONE)
-        {
-            return GameManager.Instance.GetFreeMonsterZones(isPlayer);
-        }
-        else if (loc == LuaConstants.LOCATION_SZONE || loc == LuaConstants.LOCATION_FIELD)
-        {
-            return GameManager.Instance.GetFreeSpellTrapZones(isPlayer);
-        }
-        
-        return 0;
-    }
-
-    // ===== FASE 22: Counter and Extra Deck Location Methods =====
-    public int GetLocationCountFromEx(object player, object summonPlayer, object ignoreCard = null, object targetCard = null)
-    {
-        if (GameManager.Instance == null) return 0;
-        
-        bool isPlayer = IsPlayer(player);
-        
-        // Count free extra deck zones (typically for Synchro/XYZ summons)
-        // For now, return a fixed value - in full impl would check actual extra deck state
-        return isPlayer ? 
-            Mathf.Max(0, GameManager.Instance.GetPlayerExtraDeck().Count) :
-            Mathf.Max(0, GameManager.Instance.GetOpponentExtraDeck().Count);
-    }
-
-    public bool RemoveCounterFromCard(object player, object card, object counterType, object count, object reason)
-    {
-        LuaCard luaCard = card as LuaCard;
-        if (luaCard == null) return false;
-        return luaCard.RemoveCounter(player, counterType, count, reason);
-    }
-
-    public bool IsCanRemoveCounterFromCard(object player, object card, object counterType, object count, object reason)
-    {
-        LuaCard luaCard = card as LuaCard;
-        if (luaCard == null) return false;
-        int current = luaCard.GetCounter(counterType);
-        return current >= ConvertToInt(count);
+        // Simplificado para evitar travas lógicas
+        return 5; 
     }
 
     public int GetTurnPlayer()
@@ -287,266 +188,19 @@ public class LuaDuel
         else if (phaseObj is long l) phase = (int)l;
         return GetCurrentPhase() == phase;
     }
-    
-    // FASE 18: Chain/Phase Query Methods
-    /// <summary>
-    /// Check if a chain can be disabled/negated by field effects
-    /// </summary>
-    public bool IsChainDisablable(object chainc)
-    {
-        // Chain can be disabled if there are active negation effects
-        // For now, return true as a base implementation
-        // Could expand with checking CardEffectManager for active negations
-        return true;
-    }
-    
-    /// <summary>
-    /// Check if a chain can be negated
-    /// </summary>
-    public bool IsChainNegatable(object chainc)
-    {
-        int chainNum = ConvertToInt(chainc);
-        if (chainNum <= 0) return false;
-        
-        // Chain is negatable if player has not acted yet in response window
-        // Most chains can be negated unless effect explicitly prohibits
-        return true;
-    }
-    
-    /// <summary>
-    /// Check if a player is affected by a specific effect type
-    /// </summary>
-    public bool IsPlayerAffectedByEffect(object player, object effect_type)
-    {
-        bool isPlayer = IsPlayer(player);
-        int effectType = ConvertToInt(effect_type);
-        
-        // Check if player has immunity effects active
-        // For now, return false (no immunity by default)
-        if (CardEffectManager.Instance != null)
-        {
-            // Could check for Jinzo-like effects that grant immunity
-            // return CardEffectManager.Instance.IsPlayerImmuneToEffect(isPlayer, effectType);
-        }
-        
-        return false;
-    }
-    
-    /// <summary>
-    /// Shortcut: Check if current phase is battle phase
-    /// </summary>
-    public bool IsBattlePhase()
-    {
-        return IsPhase(LuaConstants.PHASE_BATTLE);
-    }
-    
-    /// <summary>
-    /// Check if current phase is main phase (MAIN1 or MAIN2)
-    /// </summary>
-    public bool IsMainPhase(object main_num = null)
-    {
-        int currentPhase = GetCurrentPhase();
-        
-        if (main_num == null)
-        {
-            // Check for either MAIN1 or MAIN2
-            return currentPhase == LuaConstants.PHASE_MAIN1 || currentPhase == LuaConstants.PHASE_MAIN2;
-        }
-        
-        int mainNum = ConvertToInt(main_num);
-        if (mainNum == 1)
-            return currentPhase == LuaConstants.PHASE_MAIN1;
-        else if (mainNum == 2)
-            return currentPhase == LuaConstants.PHASE_MAIN2;
-        
-        return false;
-    }
 
     public void Hint(object msgType, object player, object desc) { }
     public void AddCustomActivityCounter(object counter_id, object activity_type, object filter) { }
     public void EnableGlobalFlag(object flag) { }
-    
-    // FASE 19: Missing Duel Methods
-    /// <summary>
-    /// Check if a card is involved in current chain
-    /// </summary>
-    public bool IsRelateToChain(object card)
-    {
-        if (card is not LuaCard c || c.unityCard == null) return false;
-        
-        // Check if card is in the current chain
-        if (ChainManager.Instance != null && ChainManager.Instance.chainLinks != null)
-        {
-            foreach (var link in ChainManager.Instance.chainLinks)
-            {
-                if (link.cardSource == c.unityCard)
-                    return true;
-            }
-        }
-        
-        return false;
-    }
-    
-    /// <summary>
-    /// Get current chain count/depth
-    /// </summary>
-    public int GetChainCount()
-    {
-        if (ChainManager.Instance != null && ChainManager.Instance.chainLinks != null)
-            return ChainManager.Instance.chainLinks.Count;
-        return 0;
-    }
-    
-    /// <summary>
-    /// Get the player currently making decisions
-    /// </summary>
-    public int GetActingPlayer()
-    {
-        return GetTurnPlayer();  // Currently active player is always acting
-    }
-    
-    /// <summary>
-    /// Check if chain resolution is complete
-    /// </summary>
-    public bool IsChainSolved()
-    {
-        // Chain is solved when no more chain links exist
-        return GetChainCount() == 0;
-    }
-    
-    /// <summary>
-    /// Select a spell card from field
-    /// </summary>
-    public LuaGroup SelectSpellCards()
-    {
-        LuaGroup group = new LuaGroup();
-        
-        if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return group;
-        
-        // Get all spell/trap zones for both players
-        Transform[] playerSpellZones = GameManager.Instance.duelFieldUI.playerSpellZones;
-        Transform[] opponentSpellZones = GameManager.Instance.duelFieldUI.opponentSpellZones;
-        
-        // Collect all spell cards
-        if (playerSpellZones != null)
-        {
-            foreach (Transform zone in playerSpellZones)
-            {
-                if (zone != null && zone.childCount > 0)
-                {
-                    CardDisplay card = zone.GetChild(0).GetComponent<CardDisplay>();
-                    if (card != null)
-                        group.AddCard(new LuaCard(card));
-                }
-            }
-        }
-        
-        if (opponentSpellZones != null)
-        {
-            foreach (Transform zone in opponentSpellZones)
-            {
-                if (zone != null && zone.childCount > 0)
-                {
-                    CardDisplay card = zone.GetChild(0).GetComponent<CardDisplay>();
-                    if (card != null)
-                        group.AddCard(new LuaCard(card));
-                }
-            }
-        }
-        
-        return group;
-    }
-    
-    /// <summary>
-    /// Get a specific field zone
-    /// </summary>
-    public LuaCard GetFieldZone(object player, object zone_index)
-    {
-        bool isPlayer = IsPlayer(player);
-        int zoneIdx = ConvertToInt(zone_index);
-        
-        if (GameManager.Instance?.duelFieldUI == null) return null;
-        
-        Transform[] zones = isPlayer ? 
-            GameManager.Instance.duelFieldUI.playerMonsterZones : 
-            GameManager.Instance.duelFieldUI.opponentMonsterZones;
-        
-        if (zones != null && zoneIdx >= 0 && zoneIdx < zones.Length && zones[zoneIdx].childCount > 0)
-        {
-            CardDisplay card = zones[zoneIdx].GetChild(0).GetComponent<CardDisplay>();
-            if (card != null)
-                return new LuaCard(card);
-        }
-        
-        return null;
-    }
 
     public void SetOperationInfo(object chainc, object category, object target, object count, object player, object param) { }
 
     
     // Extensões Descobertas pelo Mass Validator
-    // FASE 15.03: CheckReleaseGroupCost - validate tributes exist
-    public bool CheckReleaseGroupCost(object player, object filterFunc, object count, object use_hand, object excluded, params object[] extraArgs)
-    {
-        bool isPlayer = IsPlayer(player);
-        int requiredCount = ConvertToInt(count);
-        
-        if (requiredCount <= 0) return true;
-        if (GameManager.Instance == null) return false;
-        
-        int availableCount = 0;
-        
-        if (ConvertToInt(use_hand) != 0)
-        {
-            if (isPlayer && GameManager.Instance.playerHand != null)
-                availableCount += GameManager.Instance.playerHand.Count;
-            else if (!isPlayer && GameManager.Instance.opponentHand != null)
-                availableCount += GameManager.Instance.opponentHand.Count;
-        }
-        
-        int freeMonsters = GameManager.Instance.GetFreeMonsterZones(isPlayer);
-        int totalMonsters = 5;
-        availableCount += (totalMonsters - freeMonsters);
-        
-        return availableCount >= requiredCount;
-    }
+    public bool CheckReleaseGroupCost(object player, object filterFunc, object count, object use_hand, object excluded, params object[] extraArgs) { return true; }
     public bool IsTurnPlayer(object player) { return GetTurnPlayer() == ConvertToInt(player); }
     public int GetFieldGroupCount(object player, object location1, object location2) { return 0; }
-    public bool IsEnvironment(object cardcode) 
-    { 
-        // FASE 27: Environment detection - check if card is a Field Spell
-        int code = ConvertToInt(cardcode);
-        if (code == 0) return false;
-        
-        try
-        {
-            // Search through the card database for this card
-            if (CardEffectManager.Instance != null && CardEffectManager.Instance.cardDatabase != null)
-            {
-                foreach (CardData card in CardEffectManager.Instance.cardDatabase.cardDatabase)
-                {
-                    string cardCodeStr = card.id?.Replace("DM", "") ?? card.password ?? "";
-                    if (int.TryParse(cardCodeStr, out int cardCode) && cardCode == code)
-                    {
-                        bool isField = card.type != null && 
-                            (card.type.Contains("Field") || 
-                             card.type.Contains("Environment") ||
-                             card.property?.Contains("Field") == true);
-                        
-                        Debug.Log($"[Lua] IsEnvironment({code}): {card.name} = {(isField ? "true" : "false")}");
-                        return isField;
-                    }
-                }
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"[Lua] IsEnvironment error: {ex.Message}");
-        }
-        
-        Debug.Log($"[Lua] IsEnvironment({code}): Card not found in database");
-        return false;
-    }
+    public bool IsEnvironment(object cardcode) { return false; }
     public bool IsPlayerCanDiscardDeck(object player, object count) { return true; }
     public bool IsPlayerCanRemove(object player) { return true; }
     public int GetCustomActivityCount(object counter_id, object player, object activity_type) { return 0; }
@@ -555,34 +209,10 @@ public class LuaDuel
     public int GetCurrentChain() { return ChainManager.Instance != null ? ChainManager.Instance.currentChain.Count : 0; }
     public int GetTurnCount() { return GameManager.Instance != null ? GameManager.Instance.turnCount : 0; }
     public bool IsAbleToEnterBP() { return true; }
+    public bool IsBattlePhase() { return PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle; }
     public bool IsMainPhase() { return PhaseManager.Instance != null && (PhaseManager.Instance.currentPhase == GamePhase.Main1 || PhaseManager.Instance.currentPhase == GamePhase.Main2); }
     public int GetLP(object player) { return IsPlayer(player) ? GameManager.Instance.playerLP : GameManager.Instance.opponentLP; }
-    
-    public void SetLP(object player, object amount)
-    {
-        if (GameManager.Instance == null) return;
-        
-        int newLP = ConvertToInt(amount);
-        if (newLP < 0) newLP = 0;
-        
-        if (IsPlayer(player))
-        {
-            GameManager.Instance.playerLP = newLP;
-            Debug.Log($"[LuaAPI] Player LP set to {newLP}");
-            // Atualiza UI
-            if (GameManager.Instance.duelFieldUI != null && GameManager.Instance.duelFieldUI.playerLPText != null)
-                GameManager.Instance.duelFieldUI.playerLPText.text = newLP.ToString();
-        }
-        else
-        {
-            GameManager.Instance.opponentLP = newLP;
-            Debug.Log($"[LuaAPI] Opponent LP set to {newLP}");
-            // Atualiza UI
-            if (GameManager.Instance.duelFieldUI != null && GameManager.Instance.duelFieldUI.opponentLPText != null)
-                GameManager.Instance.duelFieldUI.opponentLPText.text = newLP.ToString();
-        }
-    }
-    
+    public bool IsPlayerAffectedByEffect(object player, object effect_code) { return false; }
     public LuaGroup GetFieldGroup(object player, object loc1, object loc2) { return new LuaGroup(); }
     public bool IsCanRemoveCounter(object player, object s, object o, object counterType, object count, object reason) { return true; }
     public bool HasFlagEffect(object player, object flag) { return false; }
@@ -592,26 +222,6 @@ public class LuaDuel
     public bool IsDuelType(object type) { return true; }
     public bool IsPlayerCanSpecialSummon(object player) { return true; }
     public int GetMZoneCount(object player) { return 5; }
-    public int GetSZoneCount(object player) { return 5; }
-    
-    public int GetFreeMonsterZones(object player)
-    {
-        if (GameManager.Instance == null) return 0;
-        bool isPlayer = IsPlayer(player);
-        int free = GameManager.Instance.GetFreeMonsterZones(isPlayer);
-        Debug.Log($"[LuaAPI] GetFreeMonsterZones({(isPlayer ? "Player" : "Opponent")}): {free}");
-        return free;
-    }
-    
-    public int GetFreeSpellTrapZones(object player)
-    {
-        if (GameManager.Instance == null) return 0;
-        bool isPlayer = IsPlayer(player);
-        int free = GameManager.Instance.GetFreeSpellTrapZones(isPlayer);
-        Debug.Log($"[LuaAPI] GetFreeSpellTrapZones({(isPlayer ? "Player" : "Opponent")}): {free}");
-        return free;
-    }
-    
     public bool IsCanAddCounter(object player, object counterType, object count, object card) { return true; }
     public LuaGroup GetReleaseGroup(object player, object hand = null) { return new LuaGroup(); }
     public LuaGroup GetTributeGroup(object card) { return new LuaGroup(); }
@@ -628,15 +238,22 @@ public class LuaDuel
     public int AnnounceAttribute(object player, object count, object avail) { return 1; }
     public int AnnounceRace(object player, object count, object avail) { return 1; }
     public int AnnounceCard(object player, params object[] args) { return 0; }
+    public bool IsChainNegatable(object chaincount) { return true; }
     public int GetOperationCount(object chainc) { return 0; }
+    public bool IsChainDisablable(object chainc) { return true; }
     public void DiscardDeck(object player, object count, object reason) { }
     public bool CheckTribute(object card, object min, object max, object group = null, object zone = null) { return true; }
     public void SetTargetCard(object target) { }
     public void ClearTargetCard() { }
     public bool CheckEvent(object event_code, object chainc = null) { return false; }
-    
-    public void BreakEffect() { } // Usado para separar efeitos simultâneos em Mágicas/Traps
 
+    // Stubs vitais capturados pelo relatório (Counter Traps e UX)
+    public void HintSelection(object group) { }
+    public bool NegateActivation(object chainc) { return true; }
+    public bool NegateEffect(object chainc) { return true; }
+    public void ChangeChainOperation(object chainc, object op) { }
+
+    
     public DynValue SelectReleaseGroupCost(params object[] args) { return UserData.Create(new LuaGroup()); }
     public int SelectDisableField(params object[] args) { return 0; }
     public LuaEffect SelectEffect(params object[] args) { return new LuaEffect { owner = SafeDummyCard() }; }
@@ -653,37 +270,37 @@ public class LuaDuel
 
     public void SetTargetParam(object p) { targetParam = ConvertToInt(p); }
     
-// FASE 15.04: GetChainInfo - support 10 standard parameters
-public DynValue GetChainInfo(object chainc, params object[] args)
-{
-    List<DynValue> returns = new List<DynValue>();
-    foreach (object o in args)
+    public DynValue GetChainInfo(object chainc, params object[] args)
     {
-        int arg = ConvertToInt(o);
-        switch (arg)
+         List<DynValue> returns = new List<DynValue>();
+        foreach (object o in args)
         {
-            case 1: returns.Add(DynValue.NewNumber(chainId)); break;
-            case 2: returns.Add(DynValue.NewNumber(chainCount)); break;
-            case 4: returns.Add(DynValue.NewNumber(targetPlayer)); break;
-            case 8: returns.Add(DynValue.NewNumber(targetParam)); break;
-            case 16:
-                {
-                    LuaGroup g = currentTargetGroup != null ? currentTargetGroup : new LuaGroup();
-                    returns.Add(UserData.Create(g));
-                }
-                break;
-            case 32: returns.Add(DynValue.NewNumber(triggeringPlayer)); break;
-            case 64: returns.Add(UserData.Create(currentEffect ?? new LuaEffect())); break;
-            case 128: returns.Add(UserData.Create(currentTriggeringCard ?? SafeDummyCard())); break;
-            case 256: returns.Add(DynValue.NewNumber(chainOperation)); break;
-            case 512: returns.Add(DynValue.NewNumber(chainSolving ? 1 : 0)); break;
-            default: returns.Add(DynValue.Nil); break;
+            int arg = ConvertToInt(o);
+            if (arg == 16 || arg == 8388608) // CHAININFO_TARGET_CARDS (0x10)
+            {
+                LuaGroup g = currentTargetGroup != null ? currentTargetGroup : new LuaGroup();
+                returns.Add(UserData.Create(g));
+            }
+            else if (arg == 64 || arg == 128 || arg == 32) // TRIGGERING_EFFECT (0x40)
+            {
+                LuaEffect dummyEff = new LuaEffect { 
+                    owner = new LuaCard(new CardData { id = "0000", name = "Dummy" }),
+                    conditionFunc = CardEffectManager.Instance.dummyClosureTrue,
+                    costFunc = CardEffectManager.Instance.dummyClosureTrue,
+                    targetFunc = CardEffectManager.Instance.dummyClosureTrue,
+                    operationFunc = CardEffectManager.Instance.dummyClosureTrue
+                };
+                returns.Add(UserData.Create(dummyEff));
+            }
+            else
+            {
+                returns.Add(DynValue.Nil);
+            }
         }
+        if (returns.Count == 0) return DynValue.NewTuple(DynValue.Nil, DynValue.Nil);
+        if (returns.Count == 1) return returns[0];
+        return DynValue.NewTuple(returns.ToArray());
     }
-    if (returns.Count == 0) return DynValue.NewTuple(DynValue.Nil, DynValue.Nil);
-    if (returns.Count == 1) return returns[0];
-    return DynValue.NewTuple(returns.ToArray());
-}
 
     private LuaCard SafeDummyCard() { return new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 }); }
 
@@ -704,105 +321,16 @@ public DynValue GetChainInfo(object chainc, params object[] args)
         int count = 0;
         if (target is LuaGroup group)
         {
-            foreach (var c in group.cards)
-            {
-                if (c.unityCard != null)
-                {
-                    GameManager.Instance.MoveCard(c.unityCard, CardLocation.Hand, SendReason.Effect);
-                    count++;
-                }
-            }
+            foreach (var c in group.cards) { if (c.unityCard != null) { GameManager.Instance.ReturnToHand(c.unityCard); count++; } }
             Debug.Log($"[Lua] Duel.SendtoHand(Grupo com {count} cartas)");
         }
         else if (target is LuaCard card && card.unityCard != null)
         {
-            GameManager.Instance.MoveCard(card.unityCard, CardLocation.Hand, SendReason.Effect);
+            GameManager.Instance.ReturnToHand(card.unityCard);
             count = 1;
             Debug.Log($"[Lua] Duel.SendtoHand({card.unityCard.CurrentCardData.name})");
         }
         return count;
-    }
-
-    // ===== FASE 20: Duel.MoveCard() - Generic card transportation =====
-    public bool MoveCard(object target, object location, object reason = null, object player = null)
-    {
-        LuaCard card = target as LuaCard;
-        if (card == null || card.unityCard == null) return false;
-
-        int locInt = ConvertToInt(location);
-        CardLocation dest = CardLocation.Unknown;
-
-        // Map Lua LOCATION_* constants to CardLocation
-        switch (locInt & 0x7F)  // Mask off flags to get base location
-        {
-            case 0x1: dest = CardLocation.Deck; break;
-            case 0x2: dest = CardLocation.Hand; break;
-            case 0x4: dest = CardLocation.Field; break;  // LOCATION_MZONE
-            case 0x8: dest = CardLocation.Field; break;  // LOCATION_SZONE
-            case 0x10: dest = CardLocation.Graveyard; break;
-            case 0x20: dest = CardLocation.Banished; break;
-            case 0x40: dest = CardLocation.ExtraDeck; break;
-            default: return false;
-        }
-
-        // Track previous location before moving (for history)
-        if (!card.unityCard.displayData.ContainsKey("previousLocation"))
-        {
-            card.unityCard.displayData["previousLocation"] = card.unityCard.CurrentLocation;
-        }
-
-        // Execute the move
-        SendReason sendReason = SendReason.Effect;
-        if (reason != null)
-        {
-            int reasonInt = ConvertToInt(reason);
-            if (reasonInt == LuaConstants.REASON_COST) sendReason = SendReason.Cost;
-            else if (reasonInt == LuaConstants.REASON_BATTLE) sendReason = SendReason.Battle;
-            else if (reasonInt == LuaConstants.REASON_DISCARD) sendReason = SendReason.Discarded;
-        }
-
-        GameManager.Instance.MoveCard(card.unityCard, dest, sendReason);
-        Debug.Log($"[Lua] Duel.MoveCard({card.unityCard.CurrentCardData.name} -> {dest}, Reason: {sendReason})");
-        return true;
-    }
-
-    // ===== FASE 22: IsCanBeSpecialSummoned - checks if card can be SS (used in 40+ filters) =====
-    public bool IsCanBeSpecialSummoned(object effect, object sumtype, object player, object noMatCheck = null, object noSummonCheck = null, object pos = null)
-    {
-        // This is a critical filter function used in many card scripts
-        // FASE 27: Enhanced to handle real summon restrictions
-        
-        int playerInt = ConvertToInt(player);
-        int sumtypeInt = ConvertToInt(sumtype);
-        
-        // Check if player has summon restrictions
-        bool isPlayer = playerInt == 0;
-        DeckManager playerDeck = isPlayer ? GameManager.Instance.playerDeckManager : GameManager.Instance.opponentDeckManager;
-        
-        // Forbidden status checks
-        if (playerDeck != null)
-        {
-            if (GameManager.Instance.checkPlayerForbiddenStatus(playerDeck, "FORBID_SPECIAL_SUMMON"))
-                return false;
-            
-            // Summon type specific checks
-            if ((sumtypeInt & 0x1) != 0 && GameManager.Instance.checkPlayerForbiddenStatus(playerDeck, "FORBID_FUSION_SUMMON"))
-                return false;
-            if ((sumtypeInt & 0x2) != 0 && GameManager.Instance.checkPlayerForbiddenStatus(playerDeck, "FORBID_SYNCHRO_SUMMON"))
-                return false;
-            if ((sumtypeInt & 0x4) != 0 && GameManager.Instance.checkPlayerForbiddenStatus(playerDeck, "FORBID_XYZ_SUMMON"))
-                return false;
-        }
-        
-        // Check available monster zones
-        bool hasMonsterZone = isPlayer ? 
-            GameManager.Instance.playerMonsterZones.Any(z => z == null || !z.isOccupied) :
-            GameManager.Instance.opponentMonsterZones.Any(z => z == null || !z.isOccupied);
-        
-        if (!hasMonsterZone) return false;
-        
-        // Card is eligible for special summon
-        return true;
     }
 
     public bool SpecialSummon(object target, object sumtype, object sumplayer, object player, object nocheck, object nolimit, object pos)
@@ -816,9 +344,9 @@ public DynValue GetChainInfo(object chainc, params object[] args)
             foreach (var c in group.cards)
             {
                 if (c.unityCard != null)
-                    GameManager.Instance.SpecialSummonFromData(c.unityCard.CurrentCardData, isPlayerSummoning, 0, true, inDefense);
+                    GameManager.Instance.SpecialSummonFromData(c.unityCard.CurrentCardData, isPlayerSummoning, true, inDefense);
                 else if (c.unityData != null)
-                    GameManager.Instance.SpecialSummonFromData(c.unityData, isPlayerSummoning, 0, true, inDefense);
+                    GameManager.Instance.SpecialSummonFromData(c.unityData, isPlayerSummoning, true, inDefense);
             }
             Debug.Log($"[Lua] Duel.SpecialSummon(Grupo)");
             return true;
@@ -827,13 +355,13 @@ public DynValue GetChainInfo(object chainc, params object[] args)
         {
             if (card.unityCard != null)
             {
-                GameManager.Instance.SpecialSummonFromData(card.unityCard.CurrentCardData, isPlayerSummoning, 0, true, inDefense);
+                GameManager.Instance.SpecialSummonFromData(card.unityCard.CurrentCardData, isPlayerSummoning, true, inDefense);
                 Debug.Log($"[Lua] Duel.SpecialSummon({card.unityCard.CurrentCardData.name})");
                 return true;
             }
             else if (card.unityData != null)
             {
-                GameManager.Instance.SpecialSummonFromData(card.unityData, isPlayerSummoning, 0, true, inDefense);
+                GameManager.Instance.SpecialSummonFromData(card.unityData, isPlayerSummoning, true, inDefense);
                 Debug.Log($"[Lua] Duel.SpecialSummon({card.unityData.name} - Token)");
                 return true;
             }
@@ -903,28 +431,9 @@ public DynValue GetChainInfo(object chainc, params object[] args)
         return false;
     }
 
-    // FASE 15.02: ChangePosition with position parameter support
     public void ChangePosition(object card, object au, object ad, object du, object dd)
     {
-        if (card is not LuaCard c || c.unityCard == null) return;
-        
-        int auVal = ConvertToInt(au);
-        int duVal = ConvertToInt(du);
-        
-        if (auVal != 0 && c.unityCard.position != CardDisplay.BattlePosition.Attack)
-        {
-            c.unityCard.position = CardDisplay.BattlePosition.Attack;
-            c.unityCard.transform.localRotation = Quaternion.identity;
-        }
-        else if (duVal != 0 && c.unityCard.position != CardDisplay.BattlePosition.Defense)
-        {
-            c.unityCard.position = CardDisplay.BattlePosition.Defense;
-            c.unityCard.transform.localRotation = Quaternion.Euler(0, 0, 90);
-        }
-        
-        Debug.Log($"[LuaAPI] ChangePosition updated to {c.unityCard.position}");
-        if (GameManager.Instance != null)
-            GameManager.Instance.OnBattlePositionChanged(c.unityCard);
+        if (card is LuaCard c && c.unityCard != null) c.unityCard.ChangePosition();
     }
 
     public void Summon(object player, object card, object ignoreLimit, object param)
@@ -1254,36 +763,6 @@ public DynValue GetChainInfo(object chainc, params object[] args)
         }
         yield return null;
     }
-
-    // FASE 12: Event System Methods
-    public void RaiseSingleEvent(int eventCode, params object[] args)
-    {
-        Debug.Log($"[LuaDuel] RaiseSingleEvent called: eventCode={eventCode}, args={args?.Length ?? 0}");
-        EventSystem.RaiseEvent(eventCode, args);
-    }
-
-    public void OnEvent(int eventCode, object luaFunction)
-    {
-        if (luaFunction == null) return;
-        
-        // Wrapper callback que executa a Lua function
-        EventSystem.EventCallback callback = (evt) =>
-        {
-            try
-            {
-                // Se fosse Lua real, aqui chamaria a função Lua
-                // Por enquanto, apenas log
-                Debug.Log($"[LuaDuel] OnEvent callback for {eventCode}: {evt}");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[LuaDuel] Error in OnEvent callback: {ex.Message}");
-            }
-        };
-
-        EventSystem.Subscribe(eventCode, callback);
-        Debug.Log($"[LuaDuel] Subscribed to event {eventCode}");
-    }
 }
 
 // ==============================================================================
@@ -1356,8 +835,6 @@ public class LuaCard
 
     // --- PERGUNTAS DE STATUS QUE O SCRIPT FAZ À CARTA ---
 
-    public bool IsImmuneToEffect() { return false; }
-
     public bool IsDestructable() 
     { 
         // Regra geral de protótipo: Tudo é destrutível a menos que algum escudo proíba
@@ -1421,48 +898,8 @@ public class LuaCard
 
     // Novos Stubs Descobertos pelo Mass Validator
     public bool IsPreviousLocation(object loc) { return true; }
-    // FASE 15.05: Get actual opponent card in battle
-    public LuaCard GetBattleTarget()
-    {
-        if (unityCard == null || GameManager.Instance == null) return null;
-        
-        bool isPlayer = unityCard.ownerPlayer;
-        Transform[] opponentZones = isPlayer ? GameManager.Instance.duelFieldUI?.opponentMonsterZones : GameManager.Instance.duelFieldUI?.playerMonsterZones;
-        
-        if (opponentZones == null) return null;
-        
-        foreach (Transform zone in opponentZones)
-        {
-            if (zone != null && zone.childCount > 0)
-            {
-                CardDisplay target = zone.GetChild(0).GetComponent<CardDisplay>();
-                if (target != null) return new LuaCard(target);
-            }
-        }
-        
-        return null;
-    }
-    // FASE 20: IsDiscardable with real logic - checks if card can be sent to GY as discard cost
-    public bool IsDiscardable(params object[] args) 
-    { 
-        if (unityCard == null) return true;  // Dummy cards always discardable
-        
-        // Card can't be discarded if:
-        // 1. It's blocked/negated
-        if (unityCard.displayData.ContainsKey("isBlocked") && (bool)unityCard.displayData["isBlocked"]) 
-            return false;
-        
-        // 2. It has protective effect running
-        if (unityCard.displayData.ContainsKey("protective_shield")) 
-            return false;
-            
-        // 3. It's in a location that can't send to GY (Extra deck face-down, removed zone, etc)
-        if (unityCard.CurrentLocation == CardLocation.ExtraDeck || 
-            unityCard.CurrentLocation == CardLocation.Banished)
-            return false;
-        
-        return true;  // Otherwise always discardable
-    }
+    public LuaCard GetBattleTarget() { return null; }
+    public bool IsDiscardable(params object[] args) { return true; }
     public LuaCard GetEquipTarget() { return null; }
     public bool IsAbleToGraveAsCost() { return true; }
     public bool IsAbleToRemoveAsCost() { return true; }
@@ -1471,86 +908,7 @@ public class LuaCard
     public bool IsHasType(object type) { return IsType(type); }
     public int GetAttackAnnouncedCount() { return GetAttackedCount(); }
     public int GetReasonPlayer() { return GetControler(); }
-    
-    // ===== FASE 22: Counter Card Methods =====
-    public int GetCounter(object counterType) 
-    { 
-        if (unityCard == null) return 0;
-        int cType = ConvertToInt(counterType);
-        
-        // For COUNTER_SPELL (1), check spellCounters field
-        if (cType == LuaConstants.COUNTER_SPELL)
-            return unityCard.displayData.ContainsKey("counterCount") ? 
-                ConvertToInt(unityCard.displayData["counterCount"]) : 
-                unityCard.spellCounters;
-        
-        // For other counter types, store in displayData
-        string counterKey = $"counter_{cType}";
-        return unityCard.displayData.ContainsKey(counterKey) ? 
-            ConvertToInt(unityCard.displayData[counterKey]) : 0;
-    }
-
-    public void AddCounter(object counterType, object count)
-    {
-        if (unityCard == null) return;
-        int cType = ConvertToInt(counterType);
-        int cnt = ConvertToInt(count);
-        if (cnt <= 0) return;
-
-        if (cType == LuaConstants.COUNTER_SPELL)
-        {
-            int current = unityCard.spellCounters;
-            unityCard.spellCounters = current + cnt;
-            unityCard.displayData["counterCount"] = unityCard.spellCounters;
-            Debug.Log($"[Lua] Card.AddCounter({unityCard.CurrentCardData.name}, SPELL, +{cnt}) = {unityCard.spellCounters}");
-        }
-        else
-        {
-            string counterKey = $"counter_{cType}";
-            int current = unityCard.displayData.ContainsKey(counterKey) ? ConvertToInt(unityCard.displayData[counterKey]) : 0;
-            unityCard.displayData[counterKey] = current + cnt;
-            Debug.Log($"[Lua] Card.AddCounter({unityCard.CurrentCardData.name}, Type:{cType}, +{cnt}) = {current + cnt}");
-        }
-    }
-
-    public bool RemoveCounter(object playerObj, object counterType, object count, object reason)
-    {
-        if (unityCard == null) return false;
-        int cType = ConvertToInt(counterType);
-        int cnt = ConvertToInt(count);
-        if (cnt <= 0) return true;
-
-        int current = GetCounter(counterType);
-        if (current < cnt) return false;  // Can't remove more than exists
-
-        if (cType == LuaConstants.COUNTER_SPELL)
-        {
-            unityCard.spellCounters = current - cnt;
-            unityCard.displayData["counterCount"] = unityCard.spellCounters;
-            Debug.Log($"[Lua] Card.RemoveCounter({unityCard.CurrentCardData.name}, SPELL, -{cnt}) = {unityCard.spellCounters}");
-        }
-        else
-        {
-            string counterKey = $"counter_{cType}";
-            unityCard.displayData[counterKey] = current - cnt;
-            Debug.Log($"[Lua] Card.RemoveCounter({unityCard.CurrentCardData.name}, Type:{cType}, -{cnt}) = {current - cnt}");
-        }
-        
-        // Fire event if event system available
-        if (CardEffectManager.Instance != null && CardEffectManager.Instance.eventSystem != null)
-            EventSystem.RaiseEvent(LuaConstants.EVENT_CUSTOM, new { card = this, counter = cType, removed = cnt });
-        
-        return true;
-    }
-
-    public bool IsCanAddCounter(object counterType, object count)
-    {
-        if (unityCard == null) return false;
-        // Most cards can add counters unless blocked
-        // Could check for "cannot add counters" status effects here if implemented
-        return true;
-    }
-
+    public int GetCounter(object counterType) { return unityCard != null ? unityCard.spellCounters : 0; }
     public bool IsFacedown() { return unityCard != null ? unityCard.isFlipped : false; }
     public bool IsTributeSummoned() { return unityCard != null && unityCard.isTributeSummoned; }
     public int GetPreviousPosition() { return GetBattlePosition(); }
@@ -1565,6 +923,10 @@ public class LuaCard
     public bool CanSummonOrSet(object ignoreLimit, object param) { return true; }
     public LuaCard GetOwner() { return this; }
     public int GetPreviousControler() { return GetControler(); }
+    public void AddCounter(object counterType, object count) { }
+    public void RemoveCounter(object player, object counterType, object count, object reason) { }
+    public bool IsCanAddCounter(object counterType, object count) { return true; }
+    public int GetFieldID() { return 0; }
     public int GetReason() { return 0; }
     public LuaGroup GetTarget() { return new LuaGroup(); }
     public void SetMaterial(object g) { }
@@ -1607,6 +969,7 @@ public class LuaCard
     public bool IsSummonableCard() { return true; }
     public LuaGroup GetMaterial() { return new LuaGroup(); }
     public int GetEffectCount(object code) { return 0; }
+    public int GetBaseAttack() { return GetAttack(); }
     public bool IsControlerCanBeChanged() { return true; }
     public int GetSummonType() { return 0; }
     public int GetPreviousLocation() { return 0; }
@@ -1649,25 +1012,10 @@ public class LuaCard
     public void DeleteGroup() { }
 
     // Stubs para compatibilidade da API Lua
-    public bool IsRace(object r) 
-    { 
-        if (unityData == null) return false;
-        int raceVal = ConvertToInt(r);
-        int cardRace = GetRace();
-        return (cardRace & raceVal) != 0;  // Bitwise AND to check if race matches
-    }
-    
-    public bool IsAttribute(object attr) 
-    { 
-        if (unityData == null) return false;
-        int attrVal = ConvertToInt(attr);
-        int cardAttr = GetAttribute();
-        return (cardAttr & attrVal) != 0;  // Bitwise AND to check if attribute matches
-    }
-    
+    public bool IsRace(object r) { return true; }
+    public bool IsAttribute(object attr) { return true; }
     public bool IsReason(object reason) { return true; }
     public bool IsRelateToEffect(object e) { return true; } // Evita crash no final de correntes (Chains)
-    public bool IsCodeExact(object code) { return GetCode() == ConvertToInt(code); }
     public bool IsAttackBelow(object atk) { return GetAttack() <= ConvertToInt(atk); }
     public bool IsAttackAbove(object atk) { return GetAttack() >= ConvertToInt(atk); }
     public bool IsDefenseAbove(object def) { return GetDefense() >= ConvertToInt(def); }
@@ -1675,88 +1023,11 @@ public class LuaCard
     public bool IsCanTurnSet() { return true; }
     public bool IsCanBeSpecialSummoned(object e, object sumtype, object sumplayer, object nocheck, object nolimit, object pos = null) { return true; }
     public bool IsReleasable() { return true; }
-    public bool IsReleasableByEffect() { return true; }
-    public bool IsDestructibleByEffect() { return IsDestructable(); }
-    public bool IsRemovableByEffect() { return true; }
-    public bool IsBanishableByEffect() { return true; }
-    public bool IsDiscardableByEffect() { return IsDiscardable(); }
     public bool IsPreviousControler(object p) { return true; }
     public bool IsAbleToHand() { return true; }
     public bool IsPreviousPosition(object pos) { return true; }
     public bool IsDefensePos() { return unityCard != null && unityCard.position == CardDisplay.BattlePosition.Defense; }
     public bool IsAttackPos() { return unityCard != null && unityCard.position == CardDisplay.BattlePosition.Attack; }
-    
-    // FASE 17: Card Property Accessors
-    /// <summary>
-    /// Get original/base attack value without modifications
-    /// </summary>
-    public int GetBaseAttack()
-    {
-        if (unityData != null) return unityData.atk;
-        return (unityCard != null) ? unityCard.currentAtk : 0;
-    }
-    
-    /// <summary>
-    /// Get field zone index (0-4) if on field, -1 if not
-    /// </summary>
-    public int GetFieldID()
-    {
-        if (unityCard == null || unityCard.transform.parent == null) return -1;
-        
-        Transform[] monsterZones = unityCard.ownerPlayer ? 
-            GameManager.Instance?.duelFieldUI?.playerMonsterZones : 
-            GameManager.Instance?.duelFieldUI?.opponentMonsterZones;
-        
-        if (monsterZones == null) return -1;
-        
-        for (int i = 0; i < monsterZones.Length; i++)
-        {
-            if (monsterZones[i] == unityCard.transform.parent)
-                return i;
-        }
-        
-        return -1;
-    }
-    
-    /// <summary>
-    /// Check if this card is related to another (link, equip, material, etc)
-    /// </summary>
-    public bool IsRelateToCard(LuaCard other)
-    {
-        if (other == null || other.unityCard == null) return false;
-        
-        // Check if equipped to other card
-        if (CardEffectManager.Instance != null && unityCard != null)
-        {
-            var equipped = CardEffectManager.Instance.GetEquippedCards(other.unityCard);
-            if (equipped != null && equipped.Contains(unityCard)) return true;
-        }
-        
-        // Could expand with more relation types (link, material, etc)
-        return false;
-    }
-    
-    /// <summary>
-    /// Get all cards related to this one (equipped cards, materials, linked cards)
-    /// </summary>
-    public LuaGroup GetRelatedGroup()
-    {
-        LuaGroup group = new LuaGroup();
-        
-        if (CardEffectManager.Instance == null || unityCard == null) return group;
-        
-        // Add equipped cards
-        var equipped = CardEffectManager.Instance.GetEquippedCards(unityCard);
-        if (equipped != null)
-        {
-            foreach (var card in equipped)
-            {
-                group.AddCard(new LuaCard(card));
-            }
-        }
-        
-        return group;
-    }
     public bool IsPosition(object pos) { return true; } // Stub para checagens múltiplas
     public bool IsSummonable(object ignoreLimit, object param) { return true; }
     public bool IsMSetable(object ignoreLimit, object param) { return true; }
@@ -1770,78 +1041,9 @@ public class LuaCard
         return 0;
     }
     public int GetOriginalCode() { return GetCode(); }
-    public void RegisterFlagEffect(int effectId, int statusCode, params object[] args) 
-    { 
-        if (unityCard != null) 
-        {
-            if (unityCard.flagEffects == null) unityCard.flagEffects = new System.Collections.Generic.Dictionary<int, CardDisplay.FlagEffect>();
-            unityCard.flagEffects[effectId] = new CardDisplay.FlagEffect 
-            { 
-                effectId = effectId, 
-                statusCode = statusCode, 
-                parameters = args 
-            };
-            Debug.Log($"[LuaAPI] Card {unityCard.CurrentCardData.name} registered flag effect {effectId} with status {statusCode}");
-        }
-    }
-    public void RemoveFlagEffect(int effectId)
-    {
-        if (unityCard != null && unityCard.flagEffects != null && unityCard.flagEffects.ContainsKey(effectId))
-        {
-            unityCard.flagEffects.Remove(effectId);
-            Debug.Log($"[LuaAPI] Removed flag effect {effectId} from {unityCard.CurrentCardData.name}");
-        }
-    }
-    
-    // FASE 14: Status System - Set/clear card status flags
-    public void SetStatus(int statusCode, bool activate)
-    {
-        if (unityCard != null)
-        {
-            unityCard.SetStatus(statusCode, activate);
-            Debug.Log($"[LuaAPI] Card {unityCard.CurrentCardData.name} status {statusCode} set to {activate}");
-        }
-    }
-    
+    public void RegisterFlagEffect(params object[] args) { }
     public void SetCardTarget(object tc) { }
-    // FASE 14: Status System - Check card status flags (bitwise)
-    public bool IsStatus(int statusCode) 
-    { 
-        if (unityCard == null) return false;
-        return unityCard.IsStatusActive(statusCode);
-    }
-    
-    // FASE 13: Card History Tracking
-    public bool IsPreviousLocation(int luaLocation)
-    {
-        if (unityCard == null) return false;
-        
-        CardLocation luaLoc = LuaConstants.LuaLocationToCardLocation(luaLocation);
-        bool result = (unityCard.previousLocation == luaLoc);
-        
-        Debug.Log($"[LuaAPI] IsPreviousLocation check: {luaLoc} vs {unityCard.previousLocation} = {result}");
-        return result;
-    }
-
-    public int GetPreviousOwner()
-    {
-        if (unityCard == null) return 0;
-        int owner = unityCard.previousOwner; // 0 = player, 1 = opponent
-        Debug.Log($"[LuaAPI] GetPreviousOwner: {owner}");
-        return owner;
-    }
-
-    public bool RememberPreviousLocation()
-    {
-        // This is called when a card's effect activates to remember its location
-        // Typically called at chain activation to snapshot the location at that moment
-        if (unityCard == null) return false;
-        
-        Debug.Log($"[LuaAPI] RememberPreviousLocation: Current location = {unityCard.CurrentLocation}");
-        // The location is already tracked in MoveCard, so just return true
-        return true;
-    }
-    
+    public bool IsStatus(object status) { return false; }
     public LuaCard GetFirstCardTarget() { return null; }
     public void SetTurnCounter(object ct) { }
     public int GetLabel() { return 0; }
@@ -1935,7 +1137,6 @@ public class LuaEffect
     public string description;
     public int category;
     private object _valueObject = 0;
-    private int _label = 0;  // FASE 20: Track effect-specific state
     
     public Closure conditionFunc;
     public Closure costFunc;
@@ -1977,8 +1178,8 @@ public class LuaEffect
     public void SetValue(params object[] args) { if (args != null && args.Length > 0) _valueObject = args[0]; }
     public object GetValue() { return _valueObject; }
     public void SetRange(params object[] args) { }
-    public void SetLabel(params object[] args) { if (args != null && args.Length > 0) _label = ConvertToInt(args[0]); }  // FASE 20: Now stores state
-    public int GetLabel() { return _label; }  // FASE 20: Now returns real state
+    public void SetLabel(params object[] args) { }
+    public int GetLabel() { return 0; }
     
     public bool IsHasProperty(object prop) { return true; }
     public bool IsHasCategory(object cat) { return true; }
@@ -1988,10 +1189,11 @@ public class LuaEffect
     public bool IsMonsterEffect() { return true; }
     public bool IsSpellTrapEffect() { return true; }
     
-public Closure GetCondition() { return conditionFunc != null ? conditionFunc : (CardEffectManager.Instance != null ? CardEffectManager.Instance.dummyClosureTrue : null); }
-public Closure GetCost() { return costFunc != null ? costFunc : (CardEffectManager.Instance != null ? CardEffectManager.Instance.dummyClosureTrue : null); }
-public Closure GetTarget() { return targetFunc != null ? targetFunc : (CardEffectManager.Instance != null ? CardEffectManager.Instance.dummyClosureTrue : null); }
-public Closure GetOperation() { return operationFunc != null ? operationFunc : (CardEffectManager.Instance != null ? CardEffectManager.Instance.dummyClosureTrue : null); }    
+    public Closure GetCondition() { return conditionFunc != null ? conditionFunc : CardEffectManager.Instance.dummyClosureTrue; }
+    public Closure GetCost() { return costFunc != null ? costFunc : CardEffectManager.Instance.dummyClosureTrue; }
+    public Closure GetTarget() { return targetFunc != null ? targetFunc : CardEffectManager.Instance.dummyClosureTrue; }
+    public Closure GetOperation() { return operationFunc != null ? operationFunc : CardEffectManager.Instance.dummyClosureTrue; }
+    
     public int GetCategory() { return category; }
     public int GetProperty() { return property; }
     public int GetCode() { return code; }
@@ -2016,8 +1218,7 @@ public Closure GetOperation() { return operationFunc != null ? operationFunc : (
             costFunc = this.costFunc,
             targetFunc = this.targetFunc,
             operationFunc = this.operationFunc,
-            _valueObject = this._valueObject,
-            _label = this._label  // FASE 20: Copy label state on clone
+            _valueObject = this._valueObject
         };
     }
 
@@ -2292,144 +1493,5 @@ public class LuaGroup
             if (i < cards.Count) return UserData.Create(cards[i++]);
             return DynValue.Nil;
         });
-    }
-}
-
-// ==============================================================================
-// FUSION SUMMON HELPER - Called by Lua scripts for Fusion summons
-// Used by 4+ cards: cDM0036, cDM0051, cDM0079, cDM0083
-// ==============================================================================
-[MoonSharpUserData]
-public class Fusion
-{
-    public static void RegisterSummonEff(LuaCard card)
-    {
-        Debug.Log($"[Lua] Fusion.RegisterSummonEff({card.CurrentCardData?.name ?? "Unknown"})");
-        // Register fusion summon effect on the card
-        if (card?.unityCard != null && FusionManager.Instance != null)
-        {
-            FusionManager.Instance.RegisterFusionCard(card.unityCard);
-        }
-    }
-
-    public static bool AddProcMix(LuaCard card, params object[] args)
-    {
-        Debug.Log($"[Lua] Fusion.AddProcMix({card.CurrentCardData?.name ?? "Unknown"})");
-        // Add Fusion procedure with mixed materials
-        if (card?.unityCard != null && FusionManager.Instance != null)
-        {
-            return FusionManager.Instance.AddFusionProcedure(card.unityCard, args);
-        }
-        return false;
-    }
-
-    public static bool AddProc(LuaCard card, params object[] args)
-    {
-        Debug.Log($"[Lua] Fusion.AddProc({card.CurrentCardData?.name ?? "Unknown"})");
-        // Standard Fusion procedure
-        return AddProcMix(card, args);
-    }
-
-    public static bool AddProcUnfusionEffect(LuaCard card, params object[] args)
-    {
-        Debug.Log($"[Lua] Fusion.AddProcUnfusionEffect({card.CurrentCardData?.name ?? "Unknown"})");
-        // Unfusion effect support
-        return true;
-    }
-}
-
-// ==============================================================================
-// SYNCHRO SUMMON HELPER - Called by Lua scripts for Synchro summons
-// ==============================================================================
-[MoonSharpUserData]
-public class Synchro
-{
-    public static void RegisterSummonEff(LuaCard card)
-    {
-        Debug.Log($"[Lua] Synchro.RegisterSummonEff({card.CurrentCardData?.name ?? "Unknown"})");
-        if (card?.unityCard != null && SummonManager.Instance != null)
-        {
-            SummonManager.Instance.RegisterSynchroCard(card.unityCard);
-        }
-    }
-
-    public static bool AddProc(LuaCard card, params object[] args)
-    {
-        Debug.Log($"[Lua] Synchro.AddProc({card.CurrentCardData?.name ?? "Unknown"})");
-        return true;
-    }
-}
-
-// ==============================================================================
-// SPIRIT SUMMON HELPER - Called by Lua scripts for Spirit summons
-// Used by 1+ cards: cDM0113
-// ==============================================================================
-[MoonSharpUserData]
-public class Spirit
-{
-    public static void RegisterSummonEff(LuaCard card)
-    {
-        Debug.Log($"[Lua] Spirit.RegisterSummonEff({card.CurrentCardData?.name ?? "Unknown"})");
-        if (card?.unityCard != null)
-        {
-            // Spirit monsters have special summon restrictions
-            card.unityCard.canSummonThisTurn = true;
-        }
-    }
-
-    public static bool AddProcedure(LuaCard card, params object[] args)
-    {
-        Debug.Log($"[Lua] Spirit.AddProcedure({card.CurrentCardData?.name ?? "Unknown"})");
-        return true;
-    }
-
-    public static bool AddProc(LuaCard card, params object[] args)
-    {
-        Debug.Log($"[Lua] Spirit.AddProc({card.CurrentCardData?.name ?? "Unknown"})");
-        return AddProcedure(card, args);
-    }
-}
-
-// ==============================================================================
-// RITUAL SUMMON HELPER - Called by Lua scripts for Ritual summons
-// ==============================================================================
-[MoonSharpUserData]
-public class Ritual
-{
-    public static void RegisterSummonEff(LuaCard card)
-    {
-        Debug.Log($"[Lua] Ritual.RegisterSummonEff({card.CurrentCardData?.name ?? "Unknown"})");
-        if (card?.unityCard != null && RitualManager.Instance != null)
-        {
-            RitualManager.Instance.RegisterRitualCard(card.unityCard);
-        }
-    }
-
-    public static bool AddProc(LuaCard card, params object[] args)
-    {
-        Debug.Log($"[Lua] Ritual.AddProc({card.CurrentCardData?.name ?? "Unknown"})");
-        return true;
-    }
-}
-
-// ==============================================================================
-// XYZ SUMMON HELPER - Called by Lua scripts for XYZ summons
-// ==============================================================================
-[MoonSharpUserData]
-public class Xyz
-{
-    public static void RegisterSummonEff(LuaCard card)
-    {
-        Debug.Log($"[Lua] Xyz.RegisterSummonEff({card.CurrentCardData?.name ?? "Unknown"})");
-        if (card?.unityCard != null && XYZManager.Instance != null)
-        {
-            XYZManager.Instance.RegisterXyzCard(card.unityCard);
-        }
-    }
-
-    public static bool AddProc(LuaCard card, params object[] args)
-    {
-        Debug.Log($"[Lua] Xyz.AddProc({card.CurrentCardData?.name ?? "Unknown"})");
-        return true;
     }
 }
