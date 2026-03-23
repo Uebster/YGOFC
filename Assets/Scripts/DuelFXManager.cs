@@ -200,6 +200,7 @@ public class DuelFXManager : MonoBehaviour
             
             while (t < 1f)
             {
+                if (card == null) break;
                 t += Time.deltaTime * (animationSpeed * 1.5f);
                 float smoothT = Mathf.SmoothStep(0, 1, t);
                 
@@ -209,9 +210,12 @@ public class DuelFXManager : MonoBehaviour
                 yield return null;
             }
             
-            card.transform.position = boardCenter.position;
-            card.transform.localScale = targetScale;
-            img.color = new Color(0, 0, 0, 0.7f);
+            if (card != null)
+            {
+                card.transform.position = boardCenter.position;
+                card.transform.localScale = targetScale;
+            }
+            if (img != null) img.color = new Color(0, 0, 0, 0.7f);
         }
 
         // 3. Toca Som e VFX de Ativação
@@ -229,6 +233,7 @@ public class DuelFXManager : MonoBehaviour
             float t = 0;
             while (t < 1f)
             {
+                if (card == null) break;
                 t += Time.deltaTime * (animationSpeed * 2f); // Volta mais rápido
                 float smoothT = Mathf.SmoothStep(0, 1, t);
                 
@@ -275,6 +280,7 @@ public class DuelFXManager : MonoBehaviour
             
             float t = 0; Vector3 targetScale = originalScale * 1.5f; 
             while (t < 1f) {
+                if (card == null) break;
                 t += Time.deltaTime * (animationSpeed * 1.5f); float smoothT = Mathf.SmoothStep(0, 1, t);
                 card.transform.position = Vector3.Lerp(originalPos, boardCenter.position, smoothT);
                 card.transform.localScale = Vector3.Lerp(originalScale, targetScale, smoothT);
@@ -294,6 +300,7 @@ public class DuelFXManager : MonoBehaviour
 
         while (fadeT < 1f)
         {
+            if (card == null) break;
             fadeT += Time.deltaTime * (animationSpeed * 1.5f);
             card.transform.localScale = Vector3.Lerp(currentScale, massiveScale, fadeT);
             cg.alpha = Mathf.Lerp(1f, 0f, fadeT);
@@ -310,6 +317,7 @@ public class DuelFXManager : MonoBehaviour
         fadeT = 0;
         while (fadeT < 1f)
         {
+            if (card == null) break;
             fadeT += Time.deltaTime * (animationSpeed * 2f);
             cg.alpha = Mathf.Lerp(0f, 1f, fadeT);
             if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0.7f, 0f, fadeT));
@@ -422,10 +430,11 @@ public class DuelFXManager : MonoBehaviour
         GameObject projectile = null;
         if (GameManager.Instance != null && GameManager.Instance.attackAnimationPrefab != null)
         {
-            projectile = Instantiate(GameManager.Instance.attackAnimationPrefab, startPos, Quaternion.identity);
+            projectile = Instantiate(GameManager.Instance.attackAnimationPrefab);
             
             // Garante que o projétil fique visível no Canvas do tabuleiro
-            if (boardCenter != null) projectile.transform.SetParent(boardCenter.root, true);
+            if (boardCenter != null) projectile.transform.SetParent(boardCenter.root, false);
+            projectile.transform.position = startPos;
             
             // Rotação 2D: Calcula o ângulo para a espada apontar para o alvo
             Vector3 dir = endPos - startPos;
@@ -649,14 +658,13 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlaySummonAura(CardDisplay card)
     {
-        if (!enableAnimations || card == null) return;
-        GameObject vfx = SpawnVFX(summonAuraVFX, card.transform.position);
-        if (vfx != null)
-        {
-            // Coloca o VFX atrás da carta na hierarquia
-            vfx.transform.SetParent(card.transform.parent, true);
-            vfx.transform.SetSiblingIndex(card.transform.GetSiblingIndex());
-        }
+        if (!enableAnimations || card == null || summonAuraVFX == null) return;
+        
+        // Instancia DENTRO da carta para não quebrar o LayoutGroup (que causava o retângulo inclinado)
+        GameObject vfx = Instantiate(summonAuraVFX, card.transform);
+        vfx.transform.localPosition = Vector3.zero;
+        vfx.transform.SetAsFirstSibling(); // Renderiza atrás da arte da carta
+        Destroy(vfx, 3.0f);
     }
 
     public void PlayEquipEffect(CardDisplay source, CardDisplay target)
@@ -942,9 +950,10 @@ public class DuelFXManager : MonoBehaviour
     {
         if (prefab != null)
         {
-            GameObject instance = Instantiate(prefab, position, Quaternion.identity);
+            GameObject instance = Instantiate(prefab);
             // Garante que o VFX fique na frente da UI
-            if (boardCenter != null) instance.transform.SetParent(boardCenter.root);
+            if (boardCenter != null) instance.transform.SetParent(boardCenter.root, false);
+            instance.transform.position = position;
             
             Destroy(instance, 3.0f); // Limpeza automática
             return instance;

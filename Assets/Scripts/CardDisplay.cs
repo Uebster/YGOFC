@@ -96,8 +96,10 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     private UnityWebRequest currentRequest; // Rastreia a requisição ativa para descarte correto
     private bool isAttackSelected = false; // Rastreia se a carta está selecionada para atacar
+    [HideInInspector] public bool hasAttackedThisTurn = false; // Rastreia se o monstro já atacou
     
     private List<CardDisplay> linkedCardsToHighlight = new List<CardDisplay>();
+    private List<GameObject> activeConnectionLines = new List<GameObject>();
 
     void Awake()
     {
@@ -373,7 +375,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     {
         float duration = 0.15f;
         float elapsed = 0f;
-        Vector3 startScale = originalScale;
+        Vector3 startScale = transform.localScale;
         
         while (elapsed < duration)
         {
@@ -762,9 +764,16 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
     }
 
+    private void ClearConnectionLines()
+    {
+        foreach (var line in activeConnectionLines) { if (line != null) Destroy(line); }
+        activeConnectionLines.Clear();
+    }
+
     private void HighlightLinkedCards(bool highlight)
     {
         linkedCardsToHighlight.Clear();
+        ClearConnectionLines();
         
         // Encontra todos os fios invisíveis do tabuleiro
         CardLink[] links = FindObjectsByType<CardLink>(FindObjectsSortMode.None);
@@ -778,6 +787,44 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         foreach (var card in linkedCardsToHighlight)
         {
             card.SetTributeHighlight(highlight);
+            
+            // Se estamos ativando o Hover, desenhamos a Linha de Energia Ciano
+            if (highlight)
+            {
+                GameObject lineObj = new GameObject("EquipConnectionLine", typeof(RectTransform), typeof(Image));
+                
+                // Coloca na raiz do Canvas para não ser cortado pela hierarquia das zonas
+                Canvas rootCanvas = GetComponentInParent<Canvas>();
+                if (rootCanvas != null) lineObj.transform.SetParent(rootCanvas.transform, false);
+                
+                RectTransform rt = lineObj.GetComponent<RectTransform>();
+                Image img = lineObj.GetComponent<Image>();
+                img.color = new Color(tributeColor.r, tributeColor.g, tributeColor.b, 0.7f); // Ciano translúcido
+                
+                // Matemática para desenhar uma linha reta entre a Carta A e Carta B
+                Vector3 startPos = this.transform.position;
+                Vector3 endPos = card.transform.position;
+                Vector3 dir = endPos - startPos;
+                
+                rt.position = startPos + (dir / 2f); // Centro do caminho
+                
+                float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+                rt.rotation = Quaternion.Euler(0, 0, angle); // Aponta pra carta
+                
+                float canvasScale = rootCanvas != null ? rootCanvas.transform.localScale.x : 1f;
+                rt.sizeDelta = new Vector2(dir.magnitude / canvasScale, 15f); // 15px de espessura de linha
+                
+                lineObj.transform.SetAsLastSibling(); // Fica por cima de tudo
+                
+                // Adiciona nosso canivete suíço para fazer a linha pulsar!
+                VfxAutoAnim anim = lineObj.AddComponent<VfxAutoAnim>();
+                anim.duration = 1000f; // Tempo infinito enquanto o mouse estiver sobre a carta
+                anim.fadeType = VfxAutoAnim.FadeType.Blink;
+                anim.blinkSpeed = 5f;
+                anim.scaleType = VfxAutoAnim.ScaleType.None;
+                
+                activeConnectionLines.Add(lineObj);
+            }
         }
     }
 
@@ -920,40 +967,45 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Lógica de Batalha (Battle Phase)
         if (GameManager.Instance != null && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle)
         {
-            if (isOnField && isPlayerCard && currentCardData.type.Contains("Monster"))
+            // Bloqueia ações de ataque se não for o turno do jogador!
+            if (GameManager.Instance.isPlayerTurn)
             {
-                if (eventData.button == PointerEventData.InputButton.Left)
+                if (isOnField && isPlayerCard && currentCardData.type.Contains("Monster"))
                 {
-                    CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(this);
-                    SetAttackSelectionVisual(true);
-                    if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Selecione o alvo do ataque.");
+                    if (eventData.button == PointerEventData.InputButton.Left)
+                    {
+                        if (hasAttackedThisTurn)
+                        {
+                            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Este monstro já atacou neste turno.");
+                            return;
+                        }
+                        CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(this);
+                        SetAttackSelectionVisual(true);
+                    }
+                    else if (eventData.button == PointerEventData.InputButton.Right)
+                    {
+                        CardEffectManager.Instance.luaDuel.currentAttacker = null;
+                        SetAttackSelectionVisual(false);
+                    }
+                    return;
                 }
-                else if (eventData.button == PointerEventData.InputButton.Right)
+                else if (isOnField && !isPlayerCard && currentCardData.type.Contains("Monster"))
                 {
-                    CardEffectManager.Instance.luaDuel.currentAttacker = null;
-                    SetAttackSelectionVisual(false);
+                    if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
+                    {
+                        if (GameManager.Instance != null && GameManager.Instance.confirmAttackTarget && UIManager.Instance != null)
+                        {
+                            UIManager.Instance.ShowConfirmation($"Atacar {currentCardData.name}?", () => {
+                                ExecuteAttackToTarget(this);
+                            });
+                        }
+                        else
+                        {
+                            ExecuteAttackToTarget(this);
+                        }
+                    }
+                    return;
                 }
-                return;
-            }
-            else if (isOnField && !isPlayerCard && currentCardData.type.Contains("Monster"))
-            {
-                if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
-                {
-                    CardEffectManager.Instance.luaDuel.currentAttackTarget = new LuaCard(this);
-                    CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.SetAttackSelectionVisual(false);
-
-                    if (DuelFXManager.Instance != null)
-                        DuelFXManager.Instance.PlayAttackDeclare();
-                    
-                    // Inicia o fluxo de combate real pelo LUA
-                    var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
-                    CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
-                        CardEffectManager.Instance.luaDuel.currentAttacker, 
-                        CardEffectManager.Instance.luaDuel.currentAttackTarget));
-                        
-                    CardEffectManager.Instance.luaDuel.currentAttacker = null;
-                }
-                return;
             }
         }
 
@@ -1049,6 +1101,27 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
     }
 
+    private void ExecuteAttackToTarget(CardDisplay targetCard)
+    {
+        if (CardEffectManager.Instance == null || CardEffectManager.Instance.luaDuel.currentAttacker == null) return;
+        
+        // Marca que o atacante concluiu o ataque neste turno
+        CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.hasAttackedThisTurn = true;
+
+        CardEffectManager.Instance.luaDuel.currentAttackTarget = new LuaCard(targetCard);
+        CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.SetAttackSelectionVisual(false);
+
+        if (DuelFXManager.Instance != null)
+            DuelFXManager.Instance.PlayAttackDeclare();
+        
+        var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
+        CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
+            CardEffectManager.Instance.luaDuel.currentAttacker, 
+            CardEffectManager.Instance.luaDuel.currentAttackTarget));
+            
+        CardEffectManager.Instance.luaDuel.currentAttacker = null;
+    }
+
 #if UNITY_EDITOR
     // Chamado automaticamente quando você altera algo no Inspector
     void OnValidate()
@@ -1134,6 +1207,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             currentRequest.Dispose();
             currentRequest = null;
         }
+        ClearConnectionLines();
     }
 
     void OnDestroy()
@@ -1148,5 +1222,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             Destroy(frontTexture);
             frontTexture = null;
         }
+        ClearConnectionLines();
     }
 }

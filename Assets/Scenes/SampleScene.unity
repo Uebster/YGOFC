@@ -4253,7 +4253,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 855043084}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9996564
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -7186,7 +7186,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1555180853}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99956495
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -18109,7 +18109,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.008570429}
+  m_AnchoredPosition: {x: 0, y: 0.0000053981557}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &250963708
@@ -23001,7 +23001,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.006509709}
+  m_AnchoredPosition: {x: 0, y: -0.000022772208}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &322488726
@@ -23568,7 +23568,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -17.000114, y: -0.000013461156}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &327607152
@@ -32551,7 +32551,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.006509709}
+  m_AnchoredPosition: {x: 0, y: -0.000022772208}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &440854236
@@ -40456,7 +40456,7 @@ MonoBehaviour:
   placeTributeSummonInTributeZone: 1
   enableRightClickPhaseMenu: 1
   confirmBattlePositionChange: 1
-  confirmAttackTarget: 0
+  confirmAttackTarget: 1
   useDirectHandSelection: 1
   confirmHandSelection: 1
   quickSummonFromHand: 0
@@ -44273,31 +44273,33 @@ MonoBehaviour:
   boardCenter: {fileID: 0}
   audioSource: {fileID: 0}
   bgmSource: {fileID: 0}
-  spellActivateVFX: {fileID: 0}
-  trapActivateVFX: {fileID: 0}
-  summonVFX: {fileID: 0}
-  tributeSummonVFX: {fileID: 0}
-  fusionVFX: {fileID: 0}
-  tributeVFX: {fileID: 0}
+  spellActivateVFX: {fileID: 5624116892997801917, guid: c0c6aa01b8b4e2b498d502803c544057, type: 3}
+  trapActivateVFX: {fileID: 8711922310275536041, guid: aaad7c6bcfad79340985c593ddd6f3e2, type: 3}
+  summonVFX: {fileID: 2242834916028318832, guid: 7012e4e82f2152e42b7ecad929301607, type: 3}
+  tributeSummonVFX: {fileID: 7255544249031024263, guid: 414b68294c1846e4b9986ab4c5d2f836, type: 3}
+  fusionVFX: {fileID: 7173987355294210737, guid: 241545851c8443043b4dfa0bdef97fdd, type: 3}
+  tributeVFX: {fileID: 7255544249031024263, guid: 414b68294c1846e4b9986ab4c5d2f836, type: 3}
   attackVFX: {fileID: 6109185898698873878, guid: 782653d1f05bded458f21027791efd02, type: 3}
-  explosionVFX: {fileID: 0}
+  explosionVFX: {fileID: 1180093936850700932, guid: 9fb1d23cdd27ec24a96347948326ad3a, type: 3}
   reflectVFX: {fileID: 2910360440696493387, guid: b06b319fc39089a418a61724e5b42372, type: 3}
-  banishVFX: {fileID: 0}
-  flipVFX: {fileID: 0}
+  banishVFX: {fileID: 8805334054961675783, guid: d9bfc9147b6837140b13059ed0ddaabe, type: 3}
+  flipVFX: {fileID: 3761866745961580641, guid: 11d46fac4c81c8244952cdb92f9f6f21, type: 3}
   damageVFX: {fileID: 4070735473352718420, guid: 37d24ae0fcb5c704799fb14e7cc1e4a2, type: 3}
-  defenseSuccessVFX: {fileID: 0}
-  chainLinkVFX: {fileID: 0}
-  monsterEffectVFX: {fileID: 0}
-  summonAuraVFX: {fileID: 0}
-  shuffleVFX: {fileID: 0}
-  tributeIconSprite: {fileID: 0}
-  tributeFieldMarkerVFX: {fileID: 0}
-  specialFieldMarkerVFX: {fileID: 0}
-  fusionFlashVFX: {fileID: 0}
-  ritualBackgroundSymbol: {fileID: 0}
-  ritualFlashVFX: {fileID: 0}
-  fusionFieldMarkerVFX: {fileID: 0}
-  ritualFieldMarkerVFX: {fileID: 0}
+  defenseSuccessVFX: {fileID: 7630478438581566550, guid: b7398fc67230dde46b7772034c9b953c, type: 3}
+  chainLinkVFX: {fileID: 4554727184471751013, guid: 828d3521e1decec4ebff4ceaffe624c5, type: 3}
+  monsterEffectVFX: {fileID: 1118113375338931295, guid: 7bed05d729177c149b8823a9d97aa30d, type: 3}
+  summonAuraVFX: {fileID: 3884964455655608047, guid: 5180cf753992e724990f05c65e252342, type: 3}
+  shuffleVFX: {fileID: 3958962744745436999, guid: 53e750ec04447b8428070b75859beea6, type: 3}
+  tributeIconSprite: {fileID: -4062675513596425979, guid: a7a8f9769ccf5f34c9aa54de6e5e02f6, type: 3}
+  tributeFieldMarkerVFX: {fileID: 5593010221128478186, guid: 067028498bf2ec34b94a9d1eccc79fbb, type: 3}
+  specialFieldMarkerVFX: {fileID: 8785413103711124661, guid: 61b81f5cb78fa6e4bb3970933c008028, type: 3}
+  fusionFlashVFX: {fileID: 4783769991002294843, guid: 042e571eb14d1784281a4973f5fcc8f5, type: 3}
+  fusionBackgroundSymbol: {fileID: 809355531832133225, guid: b5685d25b7d3f524c845f3d1b4b85a2c, type: 3}
+  ritualBackgroundSymbol: {fileID: -6338880756887614095, guid: 7abea0b8a1c994f4bb9f9c58547f2da9, type: 3}
+  ritualFlashVFX: {fileID: 4783769991002294843, guid: 042e571eb14d1784281a4973f5fcc8f5, type: 3}
+  fusionFieldMarkerVFX: {fileID: 2796587068913777182, guid: c23988431957eeb45a02bc0be3129cd9, type: 3}
+  ritualFieldMarkerVFX: {fileID: 1532991909144268670, guid: 3aff439fe92660d4d8648adfd94ef913, type: 3}
+  equipImpactVFX: {fileID: 1789789647255548136, guid: cc90356b6f5b5eb4f9166a261fc3bb92, type: 3}
   spellSound: {fileID: 0}
   trapSound: {fileID: 0}
   summonSound: {fileID: 0}
@@ -50289,7 +50291,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1701951476}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999331
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -55504,7 +55506,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -0.0000036540428}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &754209747
@@ -57489,7 +57491,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 660094935}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9996564
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -59730,7 +59732,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.006514415}
+  m_AnchoredPosition: {x: 0, y: 0.0000053981557}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &821356746
@@ -62170,7 +62172,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 847992110}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9996141
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -63803,7 +63805,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.01940765}
+  m_AnchoredPosition: {x: 0, y: 0.00008595466}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &882301599
@@ -66729,7 +66731,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 466731607}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9996564
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -78266,7 +78268,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 82258834}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9995649
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -78557,7 +78559,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 595497764}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99956495
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -85714,7 +85716,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1995952712}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9997995
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -99237,7 +99239,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.00010153089, y: -0.00079228985}
+  m_AnchoredPosition: {x: 0.00010153089, y: -0.000002051424}
   m_SizeDelta: {x: -0.00091553, y: 353.6}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1356954785
@@ -102393,7 +102395,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 2021891560}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9996564
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -102543,7 +102545,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00015269333}
+  m_AnchoredPosition: {x: 0, y: 0.000058004975}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1394461174
@@ -103376,7 +103378,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.006509709}
+  m_AnchoredPosition: {x: 0, y: -0.000022772208}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1403579448
@@ -104193,7 +104195,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.01940765}
+  m_AnchoredPosition: {x: 0, y: 0.00008595466}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1413832233
@@ -104868,7 +104870,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.006515723}
+  m_AnchoredPosition: {x: 0, y: 0.0000086980135}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1423252461
@@ -113202,7 +113204,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2087538614}
   m_HandleRect: {fileID: 2087538613}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -125727,6 +125729,7 @@ MonoBehaviour:
   previousOwner: 0
   previousPreviousLocation: 6
   ownerPlayer: 1
+  hasAttackedThisTurn: 0
 --- !u!114 &1668354901
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -129807,7 +129810,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1170065776}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99956495
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -150768,6 +150771,7 @@ MonoBehaviour:
   previousOwner: 0
   previousPreviousLocation: 6
   ownerPlayer: 1
+  hasAttackedThisTurn: 0
 --- !u!1 &2023984226
 GameObject:
   m_ObjectHideFlags: 0
@@ -151860,7 +151864,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 620101988}
   m_HandleRect: {fileID: 620101987}
   m_Direction: 0
-  m_Value: 0.5
+  m_Value: 1.0000036
   m_Size: 0
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -155213,7 +155217,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.01940765}
+  m_AnchoredPosition: {x: 0, y: 0.00008595466}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2079048823
@@ -156653,7 +156657,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.006509709}
+  m_AnchoredPosition: {x: 0, y: -0.000022772208}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &2109887084
@@ -157541,7 +157545,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.014107632}
+  m_AnchoredPosition: {x: 0, y: 0.0000053981557}
   m_SizeDelta: {x: 0, y: 650.88}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2123005588

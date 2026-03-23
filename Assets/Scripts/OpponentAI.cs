@@ -530,7 +530,7 @@ public class OpponentAI : MonoBehaviour
                     if (cd.CurrentCardData.property == "Equip")
                     {
                         // Regra de Ouro: Tall vs Wide
-                        var myMonsters = GetMyMonstersOnField().OrderByDescending(m => m.currentAtk).ToList();
+                        var myMonsters = GetMyMonstersOnField().Where(m => !m.isFlipped).OrderByDescending(m => m.currentAtk).ToList();
                         CardDisplay bestTargetToEquip = null;
                         
                         int playerMaxAtk = GetPlayerStrongestAtk();
@@ -1019,7 +1019,20 @@ public class OpponentAI : MonoBehaviour
             if (!isMine && isField && c.GetAttack() > 0) score += 10000 + c.GetAttack(); // Matar o monstro mais forte do player
             else if (!isMine && c.IsSpellTrap()) score += 8000; // Destruir S/T do player
             else if (isMine && isGrave) score += 5000 + c.GetAttack(); // Reviver o próprio monstro mais forte do GY
-            else if (isMine && isField) score -= c.GetAttack(); // Se for alvo no campo (ex: tributo para custo), escolhe o lacaio mais fraco
+            else if (isMine && isField) 
+            {
+                bool isEquipOrBuff = false;
+                if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentActivatingEffect != null)
+                {
+                    var eff = CardEffectManager.Instance.luaDuel.currentActivatingEffect;
+                    if (eff.owner != null && eff.owner.unityData != null && eff.owner.unityData.property == "Equip") isEquipOrBuff = true;
+                    // CATEGORY_ATKCHANGE (0x800) ou CATEGORY_EQUIP (0x40000)
+                    if ((eff.category & 0x800) != 0 || (eff.category & 0x40000) != 0) isEquipOrBuff = true;
+                }
+                
+                if (isEquipOrBuff) score += c.GetAttack(); // Queremos buffar o monstro mais forte
+                else score -= c.GetAttack(); // Se for custo/tributo, escolhe o lacaio mais fraco
+            }
             
             return score;
         }).ToList();

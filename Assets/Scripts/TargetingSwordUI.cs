@@ -34,9 +34,11 @@ public class TargetingSwordUI : MonoBehaviour
         // Só exibe a espada a partir do Turno 2 (Nenhum jogador ataca no primeiro turno).
         else if (GameManager.Instance != null && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle && GameManager.Instance.turnCount > 1)
         {
-            if (CardDisplay.HoveredCard != null && CardDisplay.HoveredCard.isOnField && CardDisplay.HoveredCard.isPlayerCard && 
+            if (GameManager.Instance.isPlayerTurn && CardDisplay.HoveredCard != null && 
+                CardDisplay.HoveredCard.isOnField && CardDisplay.HoveredCard.isPlayerCard && 
                 CardDisplay.HoveredCard.CurrentCardData != null && CardDisplay.HoveredCard.CurrentCardData.type.Contains("Monster") && 
-                CardDisplay.HoveredCard.position == CardDisplay.BattlePosition.Attack)
+                CardDisplay.HoveredCard.position == CardDisplay.BattlePosition.Attack &&
+                !CardDisplay.HoveredCard.hasAttackedThisTurn)
             {
                 attacker = CardDisplay.HoveredCard;
             }

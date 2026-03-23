@@ -16,6 +16,7 @@ public class LuaDuel
     public LuaGroup currentTargetGroup;
     public LuaCard currentAttacker;
     public LuaCard currentAttackTarget;
+    public LuaEffect currentActivatingEffect;
 
     private int ConvertToInt(object obj)
     {

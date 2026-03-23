@@ -9,7 +9,7 @@ public class PhaseManager : MonoBehaviour
     public static PhaseManager Instance;
 
     [Header("Configuração de Fases")]
-    public float standbyPhaseDuration = 0.5f;
+    public float standbyPhaseDuration = 0.2f;
     public TextMeshProUGUI phaseText;
 
     public GamePhase currentPhase = GamePhase.Draw;

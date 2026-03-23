@@ -1447,6 +1447,15 @@ public void ShuffleDeck(bool isPlayer)
         normalSummonsThisTurnPlayer = 0;
         normalSummonsThisTurnOpponent = 0;
 
+        // Reseta os ataques dos monstros em campo
+        if (duelFieldUI != null)
+        {
+            foreach (var zone in duelFieldUI.playerMonsterZones) 
+                if (zone.childCount > 0) zone.GetChild(0).GetComponent<CardDisplay>().hasAttackedThisTurn = false;
+            foreach (var zone in duelFieldUI.opponentMonsterZones) 
+                if (zone.childCount > 0) zone.GetChild(0).GetComponent<CardDisplay>().hasAttackedThisTurn = false;
+        }
+
         turnCount++; // Incrementa o turno
         if (DeckManager.Instance != null) DeckManager.Instance.ResetTurnStats();
         
@@ -2391,11 +2400,38 @@ public void ShuffleDeck(bool isPlayer)
 
     public void BeginRitualSummon(CardDisplay sourceCard)
     {
+        bool isPlayer = sourceCard.isPlayerCard;
         // 1. Verifica se tem Monstros de Ritual na mão
-        var ritualMonsters = GetPlayerHandData().Where(c => c.type.Contains("Ritual")).ToList();
+        var handData = isPlayer ? GetPlayerHandData() : GetOpponentHandData();
+        var ritualMonsters = handData.Where(c => c.type.Contains("Ritual")).ToList();
+
         if (ritualMonsters.Count == 0)
         {
             Debug.Log("Nenhum Monstro de Ritual na mão.");
+            SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+            Destroy(sourceCard.gameObject);
+            return;
+        }
+
+        // Bypass para a IA não travar a tela esperando clique
+        if (!isPlayer || isSimulating)
+        {
+            CardData chosenRitual = ritualMonsters[0];
+            List<CardData> tributes = new List<CardData>();
+            int sum = 0;
+            foreach (var c in handData) {
+                if (c != chosenRitual && c.level > 0) {
+                    tributes.Add(c);
+                    sum += c.level;
+                    if (sum >= chosenRitual.level) break;
+                }
+            }
+            if (sum >= chosenRitual.level) {
+                PerformRitualSummon(sourceCard, chosenRitual, tributes);
+            } else {
+                SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+                Destroy(sourceCard.gameObject);
+            }
             return;
         }
 
@@ -2510,10 +2546,33 @@ public void ShuffleDeck(bool isPlayer)
         Transform targetZone = null;
 
         // 2. Verifica se é Field Spell
-        if (cardData.race == "Field")
+        if (cardData.property == "Field")
         {
             if (duelFieldUI != null)
                 targetZone = isPlayer ? duelFieldUI.playerFieldSpell : duelFieldUI.opponentFieldSpell;
+
+            // Regra Clássica: Destrói qualquer Field Spell ativo no campo antes de colocar o novo
+            if (duelFieldUI != null)
+            {
+                if (duelFieldUI.playerFieldSpell.childCount > 0)
+                {
+                    var oldField = duelFieldUI.playerFieldSpell.GetChild(0).GetComponent<CardDisplay>();
+                    if (oldField != null) {
+                        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(oldField);
+                        SendToGraveyard(oldField.CurrentCardData, true, CardLocation.Field, SendReason.Rule);
+                        Destroy(oldField.gameObject);
+                    }
+                }
+                if (duelFieldUI.opponentFieldSpell.childCount > 0)
+                {
+                    var oldField = duelFieldUI.opponentFieldSpell.GetChild(0).GetComponent<CardDisplay>();
+                    if (oldField != null) {
+                        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(oldField);
+                        SendToGraveyard(oldField.CurrentCardData, false, CardLocation.Field, SendReason.Rule);
+                        Destroy(oldField.gameObject);
+                    }
+                }
+            }
         }
         else
         {
@@ -3207,10 +3266,22 @@ public void ShuffleDeck(bool isPlayer)
 
     public void BeginFusionSummon(CardDisplay sourceCard)
     {
+        bool isPlayer = sourceCard.isPlayerCard;
+        var extraDeck = isPlayer ? playerExtraDeck : opponentExtraDeck;
         // 1. Verifica se tem Monstros de Fusão no Extra Deck
-        if (playerExtraDeck.Count == 0)
+        if (extraDeck.Count == 0)
         {
             Debug.Log("Nenhum Monstro de Fusão no Extra Deck.");
+            SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+            Destroy(sourceCard.gameObject);
+            return;
+        }
+
+        if (!isPlayer || isSimulating)
+        {
+            // A IA de Fusão pura será tratada pela LUA. Por ora, abortamos para não travar a UI de humano.
+            SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+            Destroy(sourceCard.gameObject);
             return;
         }
 

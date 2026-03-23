@@ -144,18 +144,38 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
         }
         else if (eventData.button == PointerEventData.InputButton.Left)
         {
+            if (GameManager.Instance != null && !GameManager.Instance.isPlayerTurn) return; // Bloqueia no turno inimigo
+
             // Clique esquerdo no campo: Tenta ataque direto se houver atacante selecionado
             if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
             {
-                var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
-                CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
-                    CardEffectManager.Instance.luaDuel.currentAttacker, 
-                    null));
-                    
-                CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.SetAttackSelectionVisual(false);
-                CardEffectManager.Instance.luaDuel.currentAttacker = null;
+                if (GameManager.Instance != null && GameManager.Instance.confirmAttackTarget && UIManager.Instance != null)
+                {
+                    UIManager.Instance.ShowConfirmation("Atacar diretamente os Pontos de Vida?", () => {
+                        ExecuteDirectAttack();
+                    });
+                }
+                else
+                {
+                    ExecuteDirectAttack();
+                }
             }
         }
+    }
+
+    private void ExecuteDirectAttack()
+    {
+        if (CardEffectManager.Instance == null || CardEffectManager.Instance.luaDuel.currentAttacker == null) return;
+
+        CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.hasAttackedThisTurn = true;
+
+        var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
+        CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
+            CardEffectManager.Instance.luaDuel.currentAttacker, 
+            null));
+            
+        CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.SetAttackSelectionVisual(false);
+        CardEffectManager.Instance.luaDuel.currentAttacker = null;
     }
 
     public void BlockZone(Transform zone)

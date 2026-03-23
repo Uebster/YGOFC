@@ -108,27 +108,70 @@ public class CardEffectManager : MonoBehaviour
 
         // FASE 27: Adicionar funções auxiliares que retornam nil
         // FilterBoolFunction: Cria um filtro baseado em uma função booleana
-        // Padrão: aux.FilterBoolFunction(Card.IsType, TYPE_MONSTER) retorna uma função que checa tipo
-        auxTable.Table.Set("FilterBoolFunction", DynValue.FromObject(luaEngine, 
-            (System.Func<object, object, DynValue>)((methodObj, param) => {
-                // Retorna uma Lua closure que chama a função com o parâmetro fixado
-                string luaCode = @"
-                    return function(card)
-                        if card == nil then return false end
-                        return true  -- Stub: Lua will handle actual filtering
+        auxTable.Table.Set("FilterBoolFunction", luaEngine.DoString(@"
+            return function(f, val1, val2, val3)
+                return function(target)
+                    if target == nil then return false end
+                    if type(f) == 'function' then
+                        if val3 ~= nil then return f(target, val1, val2, val3) end
+                        if val2 ~= nil then return f(target, val1, val2) end
+                        if val1 ~= nil then return f(target, val1) end
+                        return f(target)
                     end
-                ";
-                return luaEngine.DoString(luaCode);
-            })));
+                    return true
+                end
+            end
+        "));
+
+        auxTable.Table.Set("FilterFaceupFunction", luaEngine.DoString(@"
+            return function(f, val1, val2, val3)
+                return function(target)
+                    if target == nil or not target:IsFaceup() then return false end
+                    if type(f) == 'function' then
+                        if val3 ~= nil then return f(target, val1, val2, val3) end
+                        if val2 ~= nil then return f(target, val1, val2) end
+                        if val1 ~= nil then return f(target, val1) end
+                        return f(target)
+                    end
+                    return true
+                end
+            end
+        "));
         
         // AddEquipProcedure: Registra procedimento de equipar
-        // Padrão: aux.AddEquipProcedure(c, nil, filter, nil, nil, nil, operation)
-        auxTable.Table.Set("AddEquipProcedure", DynValue.FromObject(luaEngine,
-            (System.Action<object, object, object, object, object, object, object>)
-            ((card, a, filter, b, c, d, operation) => {
-                Debug.Log("[Lua] aux.AddEquipProcedure called - card equipment procedureregistered");
-                // Stub: Actual equip procedure handled elsewhere
-            })));
+        auxTable.Table.Set("AddEquipProcedure", luaEngine.DoString(@"
+            return function(c, player, filter, eqlimit, prop, tg, op, con)
+                local e1=Effect.CreateEffect(c)
+                e1:SetCategory(CATEGORY_EQUIP)
+                e1:SetType(EFFECT_TYPE_ACTIVATE)
+                e1:SetCode(EVENT_FREE_CHAIN)
+                e1:SetProperty(prop or EFFECT_FLAG_CARD_TARGET)
+                if con then e1:SetCondition(con) end
+                e1:SetTarget(function(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+                    if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsFaceup() and (not filter or filter(chkc, e, tp)) end
+                    if chk==0 then return Duel.IsExistingTarget(function(mc) return mc:IsFaceup() and (not filter or filter(mc, e, tp)) end, tp, LOCATION_MZONE, LOCATION_MZONE, 1, nil) end
+                    Duel.Hint(HINT_SELECTMSG, tp, HINTMSG_EQUIP)
+                    Duel.SelectTarget(tp, function(mc) return mc:IsFaceup() and (not filter or filter(mc, e, tp)) end, tp, LOCATION_MZONE, LOCATION_MZONE, 1, 1, nil)
+                    Duel.SetOperationInfo(0, CATEGORY_EQUIP, e:GetHandler(), 1, 0, 0)
+                end)
+                e1:SetOperation(function(e,tp,eg,ep,ev,re,r,rp)
+                    local tc=Duel.GetFirstTarget()
+                    if e:GetHandler():IsRelateToEffect(e) and tc and tc:IsRelateToEffect(e) and tc:IsFaceup() then
+                        Duel.Equip(tp, e:GetHandler(), tc)
+                    end
+                    if op then op(e,tp,eg,ep,ev,re,r,rp) end
+                end)
+                c:RegisterEffect(e1)
+                local e2=Effect.CreateEffect(c)
+                e2:SetType(EFFECT_TYPE_SINGLE)
+                e2:SetCode(EFFECT_EQUIP_LIMIT)
+                e2:SetProperty(EFFECT_FLAG_CANNOT_DISABLE)
+                e2:SetValue(function(e,tc)
+                    return tc and tc:IsFaceup() and (not filter or filter(tc, e, tp))
+                end)
+                c:RegisterEffect(e2)
+            end
+        "));
         
         // AddRitualProcedure: Registra procedimento de ritual  
         auxTable.Table.Set("AddRitualProcedure", DynValue.FromObject(luaEngine,
@@ -1832,8 +1875,10 @@ public class CardEffectManager : MonoBehaviour
     private IEnumerator BuildAndResolveChainRoutine(LuaCard luaCard, LuaEffect effect, object triggerArgs, int tp, System.Action onComplete)
     {
         // FASE DE ATIVAÇÃO (Custo e Alvo) [chk=1]
+        luaDuel.currentActivatingEffect = effect;
         if (effect.costFunc != null) yield return StartCoroutine(RunLuaCoroutine(effect.costFunc, effect, tp, triggerArgs, 1));
         if (effect.targetFunc != null) yield return StartCoroutine(RunLuaCoroutine(effect.targetFunc, effect, tp, triggerArgs, 1));
+        luaDuel.currentActivatingEffect = null;
 
         // ADICIONA À CORRENTE LIFO
         ChainLink newLink = new ChainLink { 
@@ -2004,6 +2049,10 @@ public class CardEffectManager : MonoBehaviour
 
     public IEnumerator RunGenericLuaCoroutine(Closure func, params object[] args)
     {
+        // Captura o atacante e o alvo antes que o C# os limpe do cache global
+        LuaCard storedAttacker = luaDuel.currentAttacker;
+        LuaCard storedTarget = luaDuel.currentAttackTarget;
+
         activeLuaCoroutine = luaEngine.CreateCoroutine(func);
         DynValue result;
         
@@ -2035,19 +2084,19 @@ public class CardEffectManager : MonoBehaviour
                     if (GameManager.Instance != null && GameManager.Instance.enableAttackAnimation)
                     {
                         bool animDone = false;
-                        if (DuelFXManager.Instance != null && luaDuel.currentAttacker != null && luaDuel.currentAttacker.unityCard != null)
+                    if (DuelFXManager.Instance != null && storedAttacker != null && storedAttacker.unityCard != null)
                         {
-                            DuelFXManager.Instance.PlayAttack(luaDuel.currentAttacker.unityCard, luaDuel.currentAttackTarget?.unityCard, () => { animDone = true; });
-                            yield return new WaitUntil(() => animDone);
+                        DuelFXManager.Instance.PlayAttack(storedAttacker.unityCard, storedTarget?.unityCard, () => { animDone = true; });
+                        yield return new WaitUntil(() => animDone);
                         }
                         else yield return new WaitForSeconds(0.4f); // Fallback caso o Manager esteja ausente
                     }
                 }
                 else if (yieldCmd == "RevealTarget")
                 {
-                    if (luaDuel.currentAttackTarget != null && luaDuel.currentAttackTarget.unityCard != null)
+                    if (storedTarget != null && storedTarget.unityCard != null)
                     {
-                        luaDuel.currentAttackTarget.unityCard.RevealCard(true, true);
+                        storedTarget.unityCard.RevealCard(true, true);
                         yield return new WaitForSeconds(0.8f); // Pausa pra ver o flip dramático
                     }
                 }
