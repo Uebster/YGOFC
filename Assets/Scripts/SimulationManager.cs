@@ -235,7 +235,7 @@ public class SimulationManager : MonoBehaviour
                 }
                 
                 // Troca o turno no final da lógica de jogador ou da espera da IA
-                if (ChainManager.Instance != null) yield return new WaitWhile(() => ChainManager.Instance.isChainResolving);
+                if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving);
                 if (!GameManager.Instance.isDuelOver) GameManager.Instance.SwitchTurn();
                 yield return new WaitForSeconds(currentDelay);
             }
@@ -295,8 +295,7 @@ public class SimulationManager : MonoBehaviour
             }
 
             yield return new WaitForSeconds(delay);
-            if (ChainManager.Instance != null) yield return new WaitWhile(() => ChainManager.Instance.isChainResolving);
-            if (BattleManager.Instance != null) yield return new WaitWhile(() => BattleManager.Instance.isBattleResolving);
+            if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving);
         }
 
         // Tenta ativar Mágicas e Armadilhas já setadas no campo (Máxima Agressividade)
@@ -313,7 +312,7 @@ public class SimulationManager : MonoBehaviour
                         Log($"[SIM] {(isPlayer?"P":"O")} tenta Ativar S/T setada: {cd.CurrentCardData.name}");
                         GameManager.Instance.ActivateFieldSpellTrap(cd.gameObject);
                         yield return new WaitForSeconds(delay);
-                        if (ChainManager.Instance != null) yield return new WaitWhile(() => ChainManager.Instance.isChainResolving);
+                        if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving);
                     }
                 }
             }
@@ -328,25 +327,26 @@ public class SimulationManager : MonoBehaviour
                 CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
 
                 // Tenta estourar Efeitos de Monstros no campo
-                if (cd != null && !cd.isFlipped && cd.CurrentCardData.type.Contains("Effect") && !cd.hasUsedEffectThisTurn)
+                if (cd != null && !cd.isFlipped && cd.CurrentCardData.type.Contains("Effect") && !triedCards.Contains(cd.gameObject))
                 {
                     if (Random.value > 0.2f) // 80% de chance
                     {
                         Log($"[SIM] {(isPlayer?"P":"O")} tenta Ativar efeito do monstro: {cd.CurrentCardData.name}");
                         CardEffectManager.Instance.ExecuteCardEffect(cd);
-                        cd.hasUsedEffectThisTurn = true;
+                        triedCards.Add(cd.gameObject);
                         yield return new WaitForSeconds(delay);
-                        if (ChainManager.Instance != null) yield return new WaitWhile(() => ChainManager.Instance.isChainResolving);
+                        if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving);
                     }
                 }
 
                 if (Random.value > 0.6f) // Aumenta chance de mudar posição para 40%
                 {
-                    if (cd != null && !cd.hasChangedPositionThisTurn && !cd.summonedThisTurn)
+                    if (cd != null && !triedCards.Contains(cd.gameObject))
                     {
-                        BattleManager.Instance.TryChangePosition(cd);
+                        cd.ChangePosition();
+                        triedCards.Add(cd.gameObject);
                         yield return new WaitForSeconds(delay);
-                        if (ChainManager.Instance != null) yield return new WaitWhile(() => ChainManager.Instance.isChainResolving);
+                        if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving);
                     }
                 }
             }
@@ -364,41 +364,53 @@ public class SimulationManager : MonoBehaviour
             if (z.childCount > 0)
             {
                 var cd = z.GetChild(0).GetComponent<CardDisplay>();
-                if (cd != null && cd.position == CardDisplay.BattlePosition.Attack && !cd.hasAttackedThisTurn) 
+                if (cd != null && cd.position == CardDisplay.BattlePosition.Attack) 
                     potentialAttackers.Add(cd);
             }
         }
 
         foreach (var attacker in potentialAttackers)
         {
-            if (BattleManager.Instance == null) break;
-
-            BattleManager.Instance.PrepareAttack(attacker);
-
-            if (BattleManager.Instance.currentAttacker == attacker)
+            List<CardDisplay> targets = new List<CardDisplay>();
+            foreach (var z in oppZones)
             {
-                List<CardDisplay> targets = new List<CardDisplay>();
-                foreach (var z in oppZones)
-                {
-                    if (z.childCount > 0) targets.Add(z.GetChild(0).GetComponent<CardDisplay>());
-                }
-
-                if (targets.Count > 0)
-                {
-                    CardDisplay target = targets[Random.Range(0, targets.Count)];
-                    Log($"[SIM] {attacker.CurrentCardData.name} ataca {target.CurrentCardData.name}");
-                    BattleManager.Instance.SelectTarget(target);
-                }
-                else
-                {
-                    Log($"[SIM] {attacker.CurrentCardData.name} ataca direto");
-                    BattleManager.Instance.TryDirectAttack();
-                }
-                
-                yield return new WaitForSeconds(delay);
-                if (ChainManager.Instance != null) yield return new WaitWhile(() => ChainManager.Instance.isChainResolving);
-                if (BattleManager.Instance != null) yield return new WaitWhile(() => BattleManager.Instance.isBattleResolving);
+                if (z.childCount > 0) targets.Add(z.GetChild(0).GetComponent<CardDisplay>());
             }
+
+            if (targets.Count > 0)
+            {
+                CardDisplay target = targets[Random.Range(0, targets.Count)];
+                Log($"[SIM] {attacker.CurrentCardData.name} ataca {target.CurrentCardData.name}");
+                if (CardEffectManager.Instance != null) {
+                    CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(attacker);
+                    CardEffectManager.Instance.luaDuel.currentAttackTarget = new LuaCard(target);
+                    
+                    var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
+                    CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
+                        CardEffectManager.Instance.luaDuel.currentAttacker, 
+                        CardEffectManager.Instance.luaDuel.currentAttackTarget));
+                        
+                    CardEffectManager.Instance.luaDuel.currentAttacker = null;
+                }
+            }
+            else
+            {
+                Log($"[SIM] {attacker.CurrentCardData.name} ataca direto");
+                if (CardEffectManager.Instance != null) {
+                    CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(attacker);
+                    CardEffectManager.Instance.luaDuel.currentAttackTarget = null;
+                    
+                    var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
+                    CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
+                        CardEffectManager.Instance.luaDuel.currentAttacker, 
+                        null));
+                        
+                    CardEffectManager.Instance.luaDuel.currentAttacker = null;
+                }
+            }
+            
+            yield return new WaitForSeconds(delay);
+            if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving);
         }
     }
 }

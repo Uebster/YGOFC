@@ -125,14 +125,13 @@ public class FusionUI : MonoBehaviour
 
     private void UpdateConfirmButton()
     {
-        bool isValid = FusionManager.Instance.ValidateFusion(selectedFusionMonster, selectedMaterials);
-        confirmButton.interactable = isValid;
+        confirmButton.interactable = selectedFusionMonster != null && selectedMaterials.Count > 0;
     }
 
     private void OnConfirm()
     {
-        Debug.Log("Confirmando Fusão...");
-        FusionManager.Instance.PerformFusionSummon(sourceCard, selectedFusionMonster, selectedMaterials);
+        Debug.Log("Confirmando Fusão... (LUA)");
+        // A Resolução real passará pela Call Operation do LUA. O C# fica limpo.
         Close();
     }
 

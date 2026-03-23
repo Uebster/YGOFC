@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
+using System.Collections;
 
 public class PileDisplay : MonoBehaviour, IPointerClickHandler
 {
@@ -139,6 +140,72 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
                 rect.anchoredPosition = stackOffset * i;
                 cardObj.transform.SetSiblingIndex(i); // Garante a ordem de renderização
             }
+        }
+    }
+
+    public void PlayShuffleAnimation()
+    {
+        if (gameObject.activeInHierarchy && activeCards.Count > 0)
+        {
+            StartCoroutine(ShuffleRoutine());
+        }
+    }
+
+    private IEnumerator ShuffleRoutine()
+    {
+        float duration = (GameManager.Instance != null && GameManager.Instance.use3DDeckShuffle) ? 0.6f : 0.3f;
+        float elapsed = 0f;
+        
+        List<Vector2> originalPositions = new List<Vector2>();
+        List<Vector3> originalScales = new List<Vector3>();
+        
+        foreach (var card in activeCards) 
+        {
+            originalPositions.Add(card.GetComponent<RectTransform>().anchoredPosition);
+            originalScales.Add(card.transform.localScale);
+        }
+
+        if (DuelFXManager.Instance != null)
+            DuelFXManager.Instance.PlayShuffleEffect(transform);
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            
+            // Curva que vai e volta perfeitamente (0 -> 1 -> 0)
+            float pingPong = Mathf.Sin(t * Mathf.PI);
+            
+            for (int i = 0; i < activeCards.Count; i++)
+            {
+                RectTransform rect = activeCards[i].GetComponent<RectTransform>();
+                
+                // Divide o deck em duas metades intercaladas
+                bool isLeftHalf = i % 2 == 0;
+                
+                float moveX = isLeftHalf ? -50f : 50f; 
+                
+                if (GameManager.Instance != null && GameManager.Instance.use3DDeckShuffle)
+                {
+                    float moveY = isLeftHalf ? 30f : -30f; 
+                    float scaleIncrease = pingPong * 0.15f; 
+                    rect.anchoredPosition = originalPositions[i] + new Vector2(moveX * pingPong, moveY * pingPong);
+                    activeCards[i].transform.localScale = originalScales[i] + new Vector3(scaleIncrease, scaleIncrease, 0);
+                }
+                else
+                {
+                    // Shuffle 2D Simples e Rápido (Apenas desliza para os lados)
+                    rect.anchoredPosition = originalPositions[i] + new Vector2(moveX * pingPong, 0);
+                }
+            }
+            yield return null;
+        }
+
+        // Garante que as cartas voltem cirurgicamente ao normal no final
+        for (int i = 0; i < activeCards.Count; i++) 
+        {
+            activeCards[i].GetComponent<RectTransform>().anchoredPosition = originalPositions[i];
+            activeCards[i].transform.localScale = originalScales[i];
         }
     }
 

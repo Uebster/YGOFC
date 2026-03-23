@@ -361,7 +361,7 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    public void ShowResponseWindow(List<CardDisplay> responseCards, System.Action onPass)
+    public void ShowResponseWindow(List<CardDisplay> responseCards, System.Action<CardDisplay> onResponse, System.Action onPass)
     {
         // BYPASS DE SIMULAÇÃO
         if (GameManager.Instance != null && GameManager.Instance.isSimulating)
@@ -380,9 +380,9 @@ public class UIManager : MonoBehaviour
                 if (selected != null && selected.Count > 0)
                 {
                     // Jogador escolheu uma carta para ativar
-                    var cardToActivate = GameManager.Instance.FindCardOnField(selected[0].id, true); // Assume que a resposta é do jogador
-                    if (cardToActivate != null)
-                        GameManager.Instance.ActivateFieldSpellTrap(cardToActivate.gameObject);
+                    var cardToActivate = responseCards.Find(c => c.CurrentCardData.id == selected[0].id);
+                    if (cardToActivate != null) onResponse?.Invoke(cardToActivate);
+                    else onPass?.Invoke();
                 }
                 else { onPass?.Invoke(); } // Jogador cancelou/passou
             });

@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class DuelFXManager : MonoBehaviour
 {
@@ -28,6 +30,27 @@ public class DuelFXManager : MonoBehaviour
     public GameObject flipVFX;          // Efeito de Flip
     public GameObject damageVFX;        // Dano direto ou batalha vencida
     public GameObject defenseSuccessVFX;// Defesa bem sucedida (escudo metálico)
+    public GameObject chainLinkVFX;     // Prefab do texto flutuante (Ex: "Link 1")
+    public GameObject monsterEffectVFX; // Brilho ao ativar efeito de monstro
+    public GameObject summonAuraVFX;    // Aura por trás ao invocar
+    public GameObject shuffleVFX;       // Efeito visual (poeira/luz) ao embaralhar
+
+    [Header("Cinemáticas de Invocação (Etapa 2)")]
+    [Tooltip("Ícone de fogo/alma que fica sobre os monstros selecionados para sacrifício.")]
+    public Sprite tributeIconSprite;
+    public GameObject tributeFieldMarkerVFX; // Marcação que surge no campo no Tribute Summon
+    public GameObject specialFieldMarkerVFX; // Marcação (Ritual, Fusão, etc) no campo
+
+    [Header("Cinemáticas de Invocação (Etapa 3 - Fusão e Ritual)")]
+    public GameObject fusionFlashVFX; // Clarão branco com raios amarelos
+    public Sprite fusionBackgroundSymbol; // Símbolo da fusão (Imagem de fundo)
+    public Sprite ritualBackgroundSymbol; // Símbolo do ritual (Imagem de fundo)
+    public GameObject ritualFlashVFX; // Clarão do ritual
+    public GameObject fusionFieldMarkerVFX; // Marcação no campo (pouso da fusão)
+    public GameObject ritualFieldMarkerVFX; // Marcação no campo (pouso do ritual)
+
+    [Header("Efeitos de Magia (Field & Equip)")]
+    public GameObject equipImpactVFX;   // Efeito quando o fantasma entra no alvo
 
     [Header("Efeitos Sonoros (AudioClips)")]
     public AudioClip spellSound;
@@ -35,13 +58,17 @@ public class DuelFXManager : MonoBehaviour
     public AudioClip summonSound;
     public AudioClip fusionSound;
     public AudioClip tributeSound;
-    public AudioClip attackSound;
+    public AudioClip attackDeclareSound; // 1. Clique no monstro para atacar
+    public AudioClip attackTravelSound;  // 2. Espada em movimento (Whoosh)
+    public AudioClip attackImpactSound;  // 3. Impacto no alvo (Corte/Explosão)
     public AudioClip destroySound;
     public AudioClip reflectSound;
     public AudioClip banishSound;
     public AudioClip flipSound;
     public AudioClip damageSound;
     public AudioClip defenseSound;
+    public AudioClip shuffleSound;
+    public AudioClip monsterEffectSound;
 
     // Variáveis de BGM do Tema Atual
     private AudioClip currentBgmNormal;
@@ -113,6 +140,11 @@ public class DuelFXManager : MonoBehaviour
             bgmSource.clip = targetClip;
             bgmSource.Play();
         }
+        // Garante que a música toque se estiver parada (ex: início de duelo)
+        else if (bgmSource.clip != null && !bgmSource.isPlaying)
+        {
+            bgmSource.Play();
+        }
     }
 
     // --- ATIVAÇÃO DE MAGIA / ARMADILHA ---
@@ -124,50 +156,168 @@ public class DuelFXManager : MonoBehaviour
             onComplete?.Invoke();
             return;
         }
-        StartCoroutine(AnimateActivationRoutine(card, isTrap, onComplete));
+        
+        // Se for Magia de Campo, toca uma cinemática exclusiva
+        if (card != null && card.CurrentCardData != null && card.CurrentCardData.property == "Field")
+        {
+            StartCoroutine(FieldSpellActivationRoutine(card, onComplete));
+        }
+        else
+        {
+            StartCoroutine(AnimateActivationRoutine(card, isTrap, onComplete));
+        }
     }
 
     private IEnumerator AnimateActivationRoutine(CardDisplay card, bool isTrap, System.Action onComplete)
     {
         // 1. Salva posição original
         Vector3 originalPos = card.transform.position;
+        Vector3 originalScale = card.transform.localScale;
         Transform originalParent = card.transform.parent;
         int originalIndex = card.transform.GetSiblingIndex();
 
-        // 2. Move para o centro (traz para frente na UI)
+        // 2. Move para o centro, cresce e escurece a tela
+        GameObject darkOverlay = null;
+
         if (boardCenter != null)
         {
-            // Muda o pai para o root ou um canvas overlay para ficar por cima de tudo
+            // Cria um fundo escuro dinamicamente
+            darkOverlay = new GameObject("DarkOverlay", typeof(RectTransform), typeof(Image));
+            darkOverlay.transform.SetParent(boardCenter.root, false);
+            RectTransform rt = darkOverlay.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.sizeDelta = Vector2.zero;
+            Image img = darkOverlay.GetComponent<Image>();
+            img.color = new Color(0, 0, 0, 0); // Começa transparente
+
+            // Traz a carta para a frente de tudo
             card.transform.SetParent(boardCenter.root, true); 
+            card.transform.SetAsLastSibling();
             
             float t = 0;
+            Vector3 targetScale = originalScale * 1.5f; // Cresce 50%
+            
             while (t < 1f)
             {
-                t += Time.deltaTime * animationSpeed;
-                card.transform.position = Vector3.Lerp(originalPos, boardCenter.position, t);
+                t += Time.deltaTime * (animationSpeed * 1.5f);
+                float smoothT = Mathf.SmoothStep(0, 1, t);
+                
+                card.transform.position = Vector3.Lerp(originalPos, boardCenter.position, smoothT);
+                card.transform.localScale = Vector3.Lerp(originalScale, targetScale, smoothT);
+                img.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.7f, smoothT)); // Escurece 70%
                 yield return null;
             }
+            
+            card.transform.position = boardCenter.position;
+            card.transform.localScale = targetScale;
+            img.color = new Color(0, 0, 0, 0.7f);
         }
 
-        // 3. Toca Som e VFX
+        // 3. Toca Som e VFX de Ativação
         PlaySound(isTrap ? trapSound : spellSound);
         GameObject vfxPrefab = isTrap ? trapActivateVFX : spellActivateVFX;
         SpawnVFX(vfxPrefab, card.transform.position);
 
-        // 4. Aguarda um pouco (efeito visual acontecer)
-        yield return new WaitForSeconds(1.0f);
+        // 4. Aguarda o show
+        yield return new WaitForSeconds(0.8f);
 
-        // 5. Retorna (ou destrói, dependendo da lógica do jogo, mas aqui devolvemos o controle)
-        // Nota: Normalmente a carta vai para o cemitério depois, o GameManager cuidará disso.
-        // Por segurança visual, podemos devolver ao pai original se ela não for destruída imediatamente.
+        // 5. Retorna pro lugar (para efeitos contínuos) ou se prepara pra ser destruída
+        if (boardCenter != null && darkOverlay != null)
+        {
+            Image img = darkOverlay.GetComponent<Image>();
+            float t = 0;
+            while (t < 1f)
+            {
+                t += Time.deltaTime * (animationSpeed * 2f); // Volta mais rápido
+                float smoothT = Mathf.SmoothStep(0, 1, t);
+                
+                card.transform.position = Vector3.Lerp(boardCenter.position, originalPos, smoothT);
+                card.transform.localScale = Vector3.Lerp(originalScale * 1.5f, originalScale, smoothT);
+                img.color = new Color(0, 0, 0, Mathf.Lerp(0.7f, 0f, smoothT));
+                yield return null;
+            }
+            Destroy(darkOverlay);
+        }
+
         if (card != null && originalParent != null)
         {
             card.transform.SetParent(originalParent, true);
             card.transform.SetSiblingIndex(originalIndex);
-            // Opcional: Lerpar de volta
             card.transform.position = originalPos; 
+            card.transform.localScale = originalScale;
         }
 
+        onComplete?.Invoke();
+    }
+
+    private IEnumerator FieldSpellActivationRoutine(CardDisplay card, System.Action onComplete)
+    {
+        Vector3 originalPos = card.transform.position;
+        Vector3 originalScale = card.transform.localScale;
+        Transform originalParent = card.transform.parent;
+        int originalIndex = card.transform.GetSiblingIndex();
+
+        GameObject darkOverlay = null; Image darkImg = null;
+        CanvasGroup cg = card.GetComponent<CanvasGroup>();
+        if (cg == null) cg = card.gameObject.AddComponent<CanvasGroup>();
+
+        if (boardCenter != null)
+        {
+            darkOverlay = new GameObject("FieldDarkOverlay", typeof(RectTransform), typeof(Image));
+            darkOverlay.transform.SetParent(boardCenter.root, false);
+            RectTransform rt = darkOverlay.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.sizeDelta = Vector2.zero;
+            darkImg = darkOverlay.GetComponent<Image>();
+            darkImg.color = new Color(0, 0, 0, 0);
+
+            card.transform.SetParent(boardCenter.root, true); card.transform.SetAsLastSibling();
+            
+            float t = 0; Vector3 targetScale = originalScale * 1.5f; 
+            while (t < 1f) {
+                t += Time.deltaTime * (animationSpeed * 1.5f); float smoothT = Mathf.SmoothStep(0, 1, t);
+                card.transform.position = Vector3.Lerp(originalPos, boardCenter.position, smoothT);
+                card.transform.localScale = Vector3.Lerp(originalScale, targetScale, smoothT);
+                if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.7f, smoothT));
+                yield return null;
+            }
+        }
+
+        PlaySound(spellSound);
+        SpawnVFX(spellActivateVFX, card.transform.position);
+        yield return new WaitForSeconds(0.6f);
+
+        // Animação Especial do Field: Cresce engolindo a tela e some (Fade Out)
+        float fadeT = 0;
+        Vector3 currentScale = card.transform.localScale;
+        Vector3 massiveScale = currentScale * 2.5f;
+
+        while (fadeT < 1f)
+        {
+            fadeT += Time.deltaTime * (animationSpeed * 1.5f);
+            card.transform.localScale = Vector3.Lerp(currentScale, massiveScale, fadeT);
+            cg.alpha = Mathf.Lerp(1f, 0f, fadeT);
+            yield return null;
+        }
+
+        // Retorna pro lugar da Field Zone invisível
+        if (card != null && originalParent != null) {
+            card.transform.SetParent(originalParent, true); card.transform.SetSiblingIndex(originalIndex);
+            card.transform.position = originalPos; card.transform.localScale = originalScale;
+        }
+
+        // Volta a ficar visível lentamente enquanto a tela clareia
+        fadeT = 0;
+        while (fadeT < 1f)
+        {
+            fadeT += Time.deltaTime * (animationSpeed * 2f);
+            cg.alpha = Mathf.Lerp(0f, 1f, fadeT);
+            if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0.7f, 0f, fadeT));
+            yield return null;
+        }
+        
+        cg.alpha = 1f;
+        if (darkOverlay != null) Destroy(darkOverlay);
         onComplete?.Invoke();
     }
 
@@ -223,7 +373,7 @@ public class DuelFXManager : MonoBehaviour
         }
 
         // 2. Avanço (Strike)
-        PlaySound(attackSound);
+        PlaySound(attackTravelSound);
         t = 0;
         while (t < 1f)
         {
@@ -235,6 +385,7 @@ public class DuelFXManager : MonoBehaviour
 
         // 3. Impacto
         SpawnVFX(attackVFX, targetPos);
+        PlaySound(attackImpactSound);
         onHit?.Invoke(); // Chama o callback de dano/cálculo
 
         // 4. Retorno
@@ -272,12 +423,18 @@ public class DuelFXManager : MonoBehaviour
         if (GameManager.Instance != null && GameManager.Instance.attackAnimationPrefab != null)
         {
             projectile = Instantiate(GameManager.Instance.attackAnimationPrefab, startPos, Quaternion.identity);
-            // Faz o projétil olhar para o alvo
-            projectile.transform.LookAt(endPos); 
-            // Se for 2D, pode precisar de ajuste de rotação diferente (ex: LookAt2D)
+            
+            // Garante que o projétil fique visível no Canvas do tabuleiro
+            if (boardCenter != null) projectile.transform.SetParent(boardCenter.root, true);
+            
+            // Rotação 2D: Calcula o ângulo para a espada apontar para o alvo
+            Vector3 dir = endPos - startPos;
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            // Subtrai 90 graus assumindo que a ponta da sua espada aponta para CIMA na imagem original
+            projectile.transform.rotation = Quaternion.Euler(0, 0, angle - 90f); 
         }
 
-        PlaySound(attackSound);
+        PlaySound(attackTravelSound);
 
         float duration = 0.4f; // Duração do voo
         float elapsed = 0f;
@@ -297,15 +454,20 @@ public class DuelFXManager : MonoBehaviour
         
         // Impacto
         SpawnVFX(attackVFX, endPos);
+        // Treme a carta alvo se ela existir
+        if (target != null) PlayCardShake(target);
+        
+        PlaySound(attackImpactSound);
         Debug.Log("[DuelFXManager] Projétil atingiu o alvo. Chamando callback.");
         onHit?.Invoke();
     }
 
     public void PlayDestruction(CardDisplay card)
     {
+        if (!enableAnimations || card == null) return;
         PlaySound(destroySound);
         SpawnVFX(explosionVFX, card.transform.position);
-        // A lógica de destruir o objeto (Destroy) fica no GameManager/CardDisplay
+        AnimateCardDeath(card, false); // Morte Explosiva (Fantasmas)
     }
 
     public void PlayAttackFail(CardDisplay attacker)
@@ -356,8 +518,58 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayBanishEffect(CardDisplay card)
     {
+        if (!enableAnimations || card == null) return;
         PlaySound(banishSound);
         SpawnVFX(banishVFX, card.transform.position);
+        AnimateCardDeath(card, true); // Morte por Sugador (Fantasmas)
+    }
+
+    private void AnimateCardDeath(CardDisplay card, bool isBanish)
+    {
+        if (card == null || boardCenter == null) return;
+        
+        // Cria um clone visual perfeito (Fantasma) antes da carta original ser deletada pelo jogo
+        GameObject ghost = new GameObject("CardGhost", typeof(RectTransform), typeof(RawImage));
+        ghost.transform.SetParent(boardCenter.root, false);
+        ghost.transform.SetAsLastSibling();
+        
+        RectTransform rt = ghost.GetComponent<RectTransform>();
+        rt.position = card.transform.position;
+        rt.sizeDelta = card.GetComponent<RectTransform>().sizeDelta;
+        rt.rotation = card.transform.rotation;
+        rt.localScale = card.transform.localScale;
+        
+        RawImage ri = ghost.GetComponent<RawImage>();
+        ri.texture = card.cardImage.texture;
+        ri.color = card.cardImage.color;
+        
+        if (isBanish) StartCoroutine(BanishGhostRoutine(ghost));
+        else StartCoroutine(DestroyGhostRoutine(ghost));
+    }
+
+    private IEnumerator BanishGhostRoutine(GameObject ghost)
+    {
+        float t = 0; Vector3 startScale = ghost.transform.localScale; RawImage ri = ghost.GetComponent<RawImage>();
+        while(t < 1f) {
+            if (ghost == null) yield break;
+            t += Time.deltaTime * 2.5f; // Rápido!
+            ghost.transform.Rotate(0, 0, 720f * Time.deltaTime); // Gira violentamente para o centro
+            ghost.transform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
+            ri.color = new Color(0.5f, 0.5f, 0.5f, 1f - t); // Fica cinza e esmaece
+            yield return null;
+        } Destroy(ghost);
+    }
+
+    private IEnumerator DestroyGhostRoutine(GameObject ghost)
+    {
+        float t = 0; RawImage ri = ghost.GetComponent<RawImage>(); Vector3 startPos = ghost.transform.position;
+        while(t < 1f) {
+            if (ghost == null) yield break;
+            t += Time.deltaTime * 3f;
+            ghost.transform.position = startPos + new Vector3(UnityEngine.Random.Range(-10f, 10f), UnityEngine.Random.Range(-10f, 10f), 0); // Tremedeira Estilhaçada
+            ri.color = new Color(1f, 1f, 1f, 1f - t);
+            yield return null;
+        } Destroy(ghost);
     }
 
     public void PlayFlipEffect(CardDisplay card)
@@ -376,6 +588,344 @@ public class DuelFXManager : MonoBehaviour
     {
         PlaySound(defenseSound);
         SpawnVFX(defenseSuccessVFX, card.transform.position);
+    }
+
+    public void PlayCardShake(CardDisplay card)
+    {
+        if (!enableAnimations || card == null) return;
+        StartCoroutine(ShakeRoutine(card.transform));
+    }
+
+    private IEnumerator ShakeRoutine(Transform target)
+    {
+        Vector3 originalPos = target.position;
+        float elapsed = 0f;
+        float duration = 0.3f; // Tremedeira super rápida
+        float magnitude = 15f; // Intensidade (pixels de deslocamento)
+
+        while (elapsed < duration)
+        {
+            if (target == null) yield break;
+            float x = originalPos.x + Random.Range(-magnitude, magnitude);
+            float y = originalPos.y + Random.Range(-magnitude, magnitude);
+            target.position = new Vector3(x, y, originalPos.z);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        if (target != null) target.position = originalPos;
+    }
+
+    public void PlayChainLinkEffect(CardDisplay card, int linkNumber)
+    {
+        // Toca o som de magia/armadilha ativando na corrente
+        PlaySound(card.CurrentCardData.type.Contains("Trap") ? trapSound : spellSound);
+        
+        // Se tivermos um prefab de texto subindo, nós o instanciamos
+        if (chainLinkVFX != null)
+        {
+            GameObject vfx = SpawnVFX(chainLinkVFX, card.transform.position);
+            
+            var animScript = vfx.GetComponent<ChainLinkVFX>();
+            if (animScript != null) animScript.Setup(linkNumber);
+            else
+            {
+                TMPro.TextMeshProUGUI txt = vfx.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                if (txt != null) txt.text = $"Link {linkNumber}";
+            }
+        }
+    }
+
+    public void PlayAttackDeclare()
+    {
+        PlaySound(attackDeclareSound);
+    }
+
+    public void PlayMonsterEffect(CardDisplay card)
+    {
+        if (!enableAnimations || card == null) return;
+        PlaySound(monsterEffectSound);
+        SpawnVFX(monsterEffectVFX, card.transform.position);
+    }
+
+    public void PlaySummonAura(CardDisplay card)
+    {
+        if (!enableAnimations || card == null) return;
+        GameObject vfx = SpawnVFX(summonAuraVFX, card.transform.position);
+        if (vfx != null)
+        {
+            // Coloca o VFX atrás da carta na hierarquia
+            vfx.transform.SetParent(card.transform.parent, true);
+            vfx.transform.SetSiblingIndex(card.transform.GetSiblingIndex());
+        }
+    }
+
+    public void PlayEquipEffect(CardDisplay source, CardDisplay target)
+    {
+        if (!enableAnimations || source == null || target == null || boardCenter == null) return;
+        StartCoroutine(EquipGhostRoutine(source, target));
+    }
+
+    private IEnumerator EquipGhostRoutine(CardDisplay source, CardDisplay target)
+    {
+        // Cria o fantasma da carta mágica
+        GameObject ghost = new GameObject("EquipGhost", typeof(RectTransform), typeof(RawImage));
+        ghost.transform.SetParent(boardCenter.root, false); ghost.transform.SetAsLastSibling();
+
+        RectTransform rt = ghost.GetComponent<RectTransform>();
+        rt.position = source.transform.position; rt.sizeDelta = source.GetComponent<RectTransform>().sizeDelta;
+        rt.rotation = source.transform.rotation; rt.localScale = source.transform.localScale;
+
+        RawImage ri = ghost.GetComponent<RawImage>();
+        ri.texture = source.cardImage.texture; ri.color = new Color(1f, 1f, 1f, 0.7f); // Fantasma semitransparente
+
+        PlaySound(spellSound);
+        float t = 0; Vector3 startPos = rt.position; Vector3 startScale = rt.localScale;
+        
+        // Voa em direção ao alvo encolhendo e girando
+        while (t < 1f) {
+            if (target == null) break;
+            t += Time.deltaTime * 3f; float smoothT = Mathf.SmoothStep(0, 1, t);
+            rt.position = Vector3.Lerp(startPos, target.transform.position, smoothT);
+            rt.Rotate(0, 0, 360f * Time.deltaTime); // Gira
+            rt.localScale = Vector3.Lerp(startScale, startScale * 0.3f, smoothT); // Encolhe para "entrar"
+            yield return null;
+        }
+
+        if (target != null) {
+            GameObject vfxPrefab = equipImpactVFX != null ? equipImpactVFX : spellActivateVFX;
+            SpawnVFX(vfxPrefab, target.transform.position);
+            PlayCardShake(target); // Dá um "tranco" no monstro indicando que recebeu o poder
+        }
+        Destroy(ghost);
+    }
+
+    public void PlayShuffleEffect(Transform pileTransform)
+    {
+        if (!enableAnimations || pileTransform == null) return;
+        PlaySound(shuffleSound);
+        SpawnVFX(shuffleVFX, pileTransform.position);
+    }
+
+    public void PlaySummonCinematic(CardDisplay card, bool isTribute, bool isSpecial, System.Action onComplete)
+    {
+        if (!enableAnimations || card == null) { onComplete?.Invoke(); return; }
+        StartCoroutine(SummonCinematicRoutine(card, isTribute, isSpecial, onComplete));
+    }
+
+    private IEnumerator SummonCinematicRoutine(CardDisplay card, bool isTribute, bool isSpecial, System.Action onComplete)
+    {
+        GameObject darkOverlay = null;
+        Image darkImg = null;
+        
+        // 1. Fundo Escurecido
+        if (boardCenter != null)
+        {
+            darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image));
+            darkOverlay.transform.SetParent(boardCenter.root, false);
+            RectTransform rtDark = darkOverlay.GetComponent<RectTransform>();
+            rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; rtDark.sizeDelta = Vector2.zero;
+            darkImg = darkOverlay.GetComponent<Image>();
+            darkImg.color = new Color(0, 0, 0, 0f);
+        }
+
+        // 2. Carta Gigante Deslumbrante
+        GameObject cinCard = new GameObject("CinematicCard", typeof(RectTransform), typeof(RawImage));
+        if (boardCenter != null) cinCard.transform.SetParent(boardCenter.root, false);
+        cinCard.transform.SetAsLastSibling();
+        
+        RectTransform rt = cinCard.GetComponent<RectTransform>();
+        rt.position = boardCenter != null ? boardCenter.position : Vector3.zero;
+        rt.sizeDelta = new Vector2(200f, 290f);
+        
+        RawImage ri = cinCard.GetComponent<RawImage>();
+        
+        // REGRA DE OURO: Se for oponente, NÃO DA SPOILER! Mostra o verso caindo!
+        bool showBack = !card.isPlayerCard;
+        if (showBack && GameManager.Instance != null) ri.texture = GameManager.Instance.GetCardBackTexture();
+        else ri.texture = card.cardImage.texture;
+
+        PlaySound(summonSound);
+        float t = 0; float animSpeed = animationSpeed > 0 ? animationSpeed : 1.5f;
+
+        // FADE IN
+        while (t < 0.3f) { t += Time.deltaTime * animSpeed; float p = Mathf.Clamp01(t / 0.3f);
+            rt.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * 1.5f, p);
+            if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.7f, p));
+            yield return null; }
+
+        yield return new WaitForSeconds(0.6f / animSpeed); // SUSPENSE
+
+        // 3. Marca no Chão e Pouso
+        GameObject markerPrefab = isTribute ? tributeFieldMarkerVFX : specialFieldMarkerVFX;
+        GameObject marker = SpawnVFX(markerPrefab, card.transform.position);
+        PlaySound(attackTravelSound);
+
+        Vector3 startPos = rt.position; Vector3 targetPos = card.transform.position;
+        Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
+        Quaternion startRot = Quaternion.identity; Quaternion targetRot = card.transform.rotation;
+
+        t = 0;
+        while (t < 0.25f) { t += Time.deltaTime * animSpeed; float p = Mathf.SmoothStep(0, 1, Mathf.Clamp01(t / 0.25f));
+            rt.position = Vector3.Lerp(startPos, targetPos, p);
+            rt.localScale = Vector3.Lerp(Vector3.one * 1.5f, targetScale, p);
+            rt.rotation = Quaternion.Slerp(startRot, targetRot, p); // Rotação final (ex: deitar p/ Defesa)
+            if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0.7f, 0f, p));
+            yield return null; }
+
+        Destroy(cinCard); if (darkOverlay != null) Destroy(darkOverlay); if (marker != null) Destroy(marker, 0.3f);
+        onComplete?.Invoke();
+    }
+
+    public void PlayFusionCinematic(CardDisplay card, List<CardData> materials, CardData polyCard, System.Action onComplete)
+    {
+        if (!enableAnimations || card == null) { onComplete?.Invoke(); return; }
+        StartCoroutine(FusionCinematicRoutine(card, materials, polyCard, onComplete));
+    }
+
+    private IEnumerator FusionCinematicRoutine(CardDisplay card, List<CardData> materials, CardData polyCard, System.Action onComplete)
+    {
+        GameObject darkOverlay = null; Image darkImg = null;
+        
+        if (boardCenter != null)
+        {
+            darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image));
+            darkOverlay.transform.SetParent(boardCenter.root, false);
+            RectTransform rtDark = darkOverlay.GetComponent<RectTransform>();
+            rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; rtDark.sizeDelta = Vector2.zero;
+            darkImg = darkOverlay.GetComponent<Image>();
+            darkImg.color = new Color(0, 0, 0, 0f);
+        }
+
+        float animSpeed = animationSpeed > 0 ? animationSpeed : 1.5f; float t = 0;
+        while (t < 0.3f) { t += Time.deltaTime * animSpeed; if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.8f, t / 0.3f)); yield return null; }
+
+        Vector3 centerPos = boardCenter != null ? boardCenter.position : Vector3.zero;
+
+        GameObject symbolObj = null;
+        if (fusionBackgroundSymbol != null) { 
+            symbolObj = new GameObject("FusionSymbol", typeof(RectTransform), typeof(Image)); 
+            if (boardCenter != null) symbolObj.transform.SetParent(boardCenter.root, false);
+            RectTransform rtSym = symbolObj.GetComponent<RectTransform>(); rtSym.position = centerPos; rtSym.sizeDelta = new Vector2(400f, 400f);
+            Image imgSym = symbolObj.GetComponent<Image>(); imgSym.sprite = fusionBackgroundSymbol; imgSym.color = new Color(1, 1, 1, 0); 
+        }
+
+        List<RectTransform> matRects = new List<RectTransform>();
+        if (materials != null && materials.Count > 0 && GameManager.Instance != null)
+        {
+            foreach (var mat in materials)
+            {
+                GameObject matObj = new GameObject("MatCard", typeof(RectTransform), typeof(RawImage));
+                if (boardCenter != null) matObj.transform.SetParent(boardCenter.root, false);
+                RectTransform rtMat = matObj.GetComponent<RectTransform>(); rtMat.sizeDelta = new Vector2(100f, 145f);
+                matObj.GetComponent<RawImage>().texture = GameManager.Instance.GetCardBackTexture();
+                matRects.Add(rtMat);
+            }
+        }
+
+        if (matRects.Count > 0)
+        {
+            PlaySound(spellSound);
+            float orbitDuration = 1.5f; float orbitTime = 0f;
+            while (orbitTime < orbitDuration)
+            {
+                orbitTime += Time.deltaTime * animSpeed; float progress = orbitTime / orbitDuration;
+                float radius = Mathf.Lerp(300f, 0f, progress * progress); float angleSpeed = 360f * 3f;
+                if (symbolObj != null) {
+                    symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0f, 0.6f, progress)); 
+                    symbolObj.transform.Rotate(0, 0, -45f * Time.deltaTime * animSpeed); // Gira o universo!
+                }
+                for (int i = 0; i < matRects.Count; i++) {
+                    float offsetAngle = (360f / matRects.Count) * i; float currentAngle = (orbitTime * angleSpeed) + offsetAngle;
+                    float x = Mathf.Cos(currentAngle * Mathf.Deg2Rad) * radius; float y = Mathf.Sin(currentAngle * Mathf.Deg2Rad) * radius;
+                    matRects[i].position = centerPos + new Vector3(x, y, 0); matRects[i].rotation = Quaternion.Euler(0, 0, currentAngle);
+                }
+                yield return null;
+            }
+        }
+        else yield return new WaitForSeconds(0.5f);
+
+        foreach (var m in matRects) Destroy(m.gameObject);
+        PlaySound(fusionSound);
+        if (fusionFlashVFX != null) SpawnVFX(fusionFlashVFX, centerPos);
+
+        GameObject cinCard = new GameObject("CinematicFusion", typeof(RectTransform), typeof(RawImage));
+        if (boardCenter != null) cinCard.transform.SetParent(boardCenter.root, false);
+        cinCard.transform.SetAsLastSibling();
+        RectTransform rt = cinCard.GetComponent<RectTransform>(); rt.position = centerPos; rt.sizeDelta = new Vector2(200f, 290f);
+        RawImage ri = cinCard.GetComponent<RawImage>();
+        ri.texture = !card.isPlayerCard ? (GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null) : card.cardImage.texture;
+
+        t = 0;
+        while (t < 0.3f) { t += Time.deltaTime * animSpeed; float p = Mathf.Clamp01(t / 0.3f); rt.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * 1.5f, p); 
+            if (symbolObj != null) symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0.6f, 0f, p)); 
+            yield return null; }
+        yield return new WaitForSeconds(0.6f / animSpeed);
+
+        GameObject markerPrefab = fusionFieldMarkerVFX != null ? fusionFieldMarkerVFX : specialFieldMarkerVFX;
+        GameObject marker = SpawnVFX(markerPrefab, card.transform.position); PlaySound(attackTravelSound);
+        Vector3 startPos = rt.position; Vector3 targetPos = card.transform.position; Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
+        Quaternion startRot = Quaternion.identity; Quaternion targetRot = card.transform.rotation;
+
+        t = 0;
+        while (t < 0.25f) { t += Time.deltaTime * animSpeed; float p = Mathf.SmoothStep(0, 1, Mathf.Clamp01(t / 0.25f));
+            rt.position = Vector3.Lerp(startPos, targetPos, p); rt.localScale = Vector3.Lerp(Vector3.one * 1.5f, targetScale, p); rt.rotation = Quaternion.Slerp(startRot, targetRot, p); 
+            if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0.8f, 0f, p)); yield return null; }
+
+        Destroy(cinCard); if (darkOverlay != null) Destroy(darkOverlay); if (marker != null) Destroy(marker, 0.3f); if (symbolObj != null) Destroy(symbolObj);
+        onComplete?.Invoke();
+    }
+
+    public void PlayRitualCinematic(CardDisplay card, CardData ritualSpell, System.Action onComplete)
+    {
+        if (!enableAnimations || card == null) { onComplete?.Invoke(); return; }
+        StartCoroutine(RitualCinematicRoutine(card, ritualSpell, onComplete));
+    }
+
+    private IEnumerator RitualCinematicRoutine(CardDisplay card, CardData ritualSpell, System.Action onComplete)
+    {
+        GameObject darkOverlay = null; Image darkImg = null;
+        if (boardCenter != null) { darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image)); darkOverlay.transform.SetParent(boardCenter.root, false);
+            RectTransform rtDark = darkOverlay.GetComponent<RectTransform>(); rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; rtDark.sizeDelta = Vector2.zero;
+            darkImg = darkOverlay.GetComponent<Image>(); darkImg.color = new Color(0, 0, 0, 0f); }
+
+        float animSpeed = animationSpeed > 0 ? animationSpeed : 1.5f; float t = 0;
+        while (t < 0.3f) { t += Time.deltaTime * animSpeed; if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.8f, t / 0.3f)); yield return null; }
+
+        Vector3 centerPos = boardCenter != null ? boardCenter.position : Vector3.zero;
+        GameObject symbolObj = null;
+        if (ritualBackgroundSymbol != null) { symbolObj = new GameObject("RitualSymbol", typeof(RectTransform), typeof(Image)); if (boardCenter != null) symbolObj.transform.SetParent(boardCenter.root, false);
+            RectTransform rtSym = symbolObj.GetComponent<RectTransform>(); rtSym.position = centerPos; rtSym.sizeDelta = new Vector2(400f, 400f);
+            Image imgSym = symbolObj.GetComponent<Image>(); imgSym.sprite = ritualBackgroundSymbol; imgSym.color = new Color(1, 1, 1, 0); }
+
+        PlaySound(spellSound); t = 0;
+        while (t < 1.0f) { t += Time.deltaTime * animSpeed; if (symbolObj != null) {
+                symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0f, 0.6f, t)); symbolObj.transform.Rotate(0, 0, 45f * Time.deltaTime * animSpeed); } yield return null; }
+
+        yield return new WaitForSeconds(0.3f); PlaySound(fusionSound); 
+        if (ritualFlashVFX != null) SpawnVFX(ritualFlashVFX, centerPos); else if (fusionFlashVFX != null) SpawnVFX(fusionFlashVFX, centerPos); 
+
+        GameObject cinCard = new GameObject("CinematicRitual", typeof(RectTransform), typeof(RawImage));
+        if (boardCenter != null) cinCard.transform.SetParent(boardCenter.root, false); cinCard.transform.SetAsLastSibling();
+        RectTransform rt = cinCard.GetComponent<RectTransform>(); rt.position = centerPos; rt.sizeDelta = new Vector2(200f, 290f);
+        RawImage ri = cinCard.GetComponent<RawImage>(); ri.texture = !card.isPlayerCard ? (GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null) : card.cardImage.texture;
+
+        t = 0;
+        while (t < 0.3f) { t += Time.deltaTime * animSpeed; float p = Mathf.Clamp01(t / 0.3f); rt.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * 1.5f, p);
+            if (symbolObj != null) symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0.6f, 0f, p)); yield return null; }
+
+        if (symbolObj != null) Destroy(symbolObj); yield return new WaitForSeconds(0.6f / animSpeed);
+
+        GameObject markerPrefab = ritualFieldMarkerVFX != null ? ritualFieldMarkerVFX : specialFieldMarkerVFX;
+        GameObject marker = SpawnVFX(markerPrefab, card.transform.position); PlaySound(attackTravelSound);
+        Vector3 startPos = rt.position; Vector3 targetPos = card.transform.position; Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
+        Quaternion startRot = Quaternion.identity; Quaternion targetRot = card.transform.rotation;
+
+        t = 0;
+        while (t < 0.25f) { t += Time.deltaTime * animSpeed; float p = Mathf.SmoothStep(0, 1, Mathf.Clamp01(t / 0.25f)); rt.position = Vector3.Lerp(startPos, targetPos, p); rt.localScale = Vector3.Lerp(Vector3.one * 1.5f, targetScale, p);
+            rt.rotation = Quaternion.Slerp(startRot, targetRot, p); if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0.8f, 0f, p)); yield return null; }
+
+        Destroy(cinCard); if (darkOverlay != null) Destroy(darkOverlay); if (marker != null) Destroy(marker, 0.3f);
+        onComplete?.Invoke();
     }
 
     // --- UTILITÁRIOS ---

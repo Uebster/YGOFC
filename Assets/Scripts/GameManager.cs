@@ -45,6 +45,8 @@ public class GameManager : MonoBehaviour
     [Header("Card Visualization")]
     [Tooltip("A escala das cartas no campo.")]
     public Vector3 fieldCardScale = new Vector3(0.8f, 0.8f, 0.8f);
+    [Tooltip("Se marcado, o embaralhamento do deck fará o movimento 3D levantando cartas. Se desmarcado, usará um deslize 2D rápido.")]
+    public bool use3DDeckShuffle = true;
     [Tooltip("A escala das cartas na mão.")]
     public Vector3 handCardScale = new Vector3(1f, 1f, 1f);
     [Tooltip("A altura que a carta do jogador sobe ao passar o mouse.")]
@@ -280,6 +282,8 @@ public class GameManager : MonoBehaviour
     public bool enableAttackAnimation = true;
     [Tooltip("Habilita a animação visual ao realizar uma Invocação-Tributo.")]
     public bool enableTributeSummonAnimation = true;
+    [Tooltip("Habilita a cinemática (tela escura e carta gigante) para invocações Especiais e de Tributo.")]
+    public bool enableSummonCinematics = true;
     public GameObject tributeSummonAnimationPrefab; // Prefab do efeito de invocação por tributo
     public GameObject attackAnimationPrefab; // Prefab da espada/projétil
 
@@ -296,6 +300,9 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public int lpPaidLastTurnPlayer = 0;
     [HideInInspector] public int lpPaidThisTurnOpponent = 0;
     [HideInInspector] public int lpPaidLastTurnOpponent = 0;
+
+    [HideInInspector] public int normalSummonsThisTurnPlayer = 0;
+    [HideInInspector] public int normalSummonsThisTurnOpponent = 0;
 
     // --- ESTADO DE SELEÇÃO DE MÃO ---
     [HideInInspector] public bool isSelectingFromHand = false;
@@ -443,16 +450,6 @@ public class GameManager : MonoBehaviour
         (List<CardData> oMain, List<CardData> oExtra) = InitializeOpponentDeck();
         DeckManager.Instance.SetupDecks(pDeck, playerExtraDeck, oMain, oExtra);
 
-        // Embaralha os decks (a menos que o debug impeça)
-        if (!disableDeckShuffle)
-        {
-            DeckManager.Instance.ShuffleDeck(true);
-            DeckManager.Instance.ShuffleDeck(false);
-        }
-
-        // DrawInitialHand(5); // Substituído pela sequência de corrotina
-        // DrawInitialOpponentHand(5);
-
         // Inicializa LP
         playerLP = 8000;
         opponentLP = 8000;
@@ -497,7 +494,17 @@ public class GameManager : MonoBehaviour
         }
     private IEnumerator DuelStartSequence()
     {
-        yield return new WaitForSeconds(0.5f); // Delay inicial para respirar
+        yield return new WaitForSeconds(0.5f); // Delay inicial para a cena abrir e a UI estabilizar
+
+        // Embaralha os decks com animação visual ANTES de comprar as cartas
+        if (!disableDeckShuffle && DeckManager.Instance != null)
+        {
+            DeckManager.Instance.ShuffleDeck(true);
+            DeckManager.Instance.ShuffleDeck(false);
+            // Aguarda a animação de shuffle terminar (dura 0.6s)
+            yield return new WaitForSeconds(0.8f);
+        }
+
         yield return StartCoroutine(DrawInitialHandRoutine(5));
         yield return new WaitForSeconds(0.5f);
         yield return StartCoroutine(DrawInitialOpponentHandRoutine(5));
@@ -511,11 +518,6 @@ public class GameManager : MonoBehaviour
     void EnsureCoreManagers()
     {
         if (PhaseManager.Instance == null) CreateManager<PhaseManager>();
-        if (SummonManager.Instance == null) CreateManager<SummonManager>();
-        if (BattleManager.Instance == null) CreateManager<BattleManager>();
-        if (SpellTrapManager.Instance == null) CreateManager<SpellTrapManager>();
-        if (ChainManager.Instance == null) CreateManager<ChainManager>();
-        if (SpellCounterManager.Instance == null) CreateManager<SpellCounterManager>();
         if (CardEffectManager.Instance == null) CreateManager<CardEffectManager>();
         if (OpponentAI.Instance == null) CreateManager<OpponentAI>(); // Garante que a IA exista
         if (DeckManager.Instance == null) CreateManager<DeckManager>(); // Garante que o DeckManager exista
@@ -542,6 +544,31 @@ public class GameManager : MonoBehaviour
 
         foreach (GameObject card in opponentHand) if (card != null) Destroy(card);
         opponentHand.Clear();
+
+        // FASE DE LIMPEZA DO CAMPO (Visual e Físico para Simulações)
+        if (duelFieldUI != null)
+        {
+            System.Action<Transform[]> ClearZones = (zones) => {
+                if (zones == null) return;
+                foreach (var z in zones) {
+                    foreach (Transform child in z) Destroy(child.gameObject);
+                }
+            };
+            ClearZones(duelFieldUI.playerMonsterZones);
+            ClearZones(duelFieldUI.opponentMonsterZones);
+            ClearZones(duelFieldUI.playerSpellZones);
+            ClearZones(duelFieldUI.opponentSpellZones);
+            if (duelFieldUI.playerFieldSpell != null) foreach (Transform child in duelFieldUI.playerFieldSpell) Destroy(child.gameObject);
+            if (duelFieldUI.opponentFieldSpell != null) foreach (Transform child in duelFieldUI.opponentFieldSpell) Destroy(child.gameObject);
+        }
+
+        // Destrói vínculos remanescentes (Equipamentos)
+        CardLink[] links = UnityEngine.Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        foreach (var link in links) Destroy(link.gameObject);
+
+        // Desbloqueia as zonas presas por efeitos (ex: Ojama)
+        if (CardEffectManager.Instance != null)
+            CardEffectManager.Instance.blockedZonesByCard.Clear();
 
         // Limpa listas de dados
         playerGraveyard.Clear();
@@ -878,7 +905,6 @@ public class GameManager : MonoBehaviour
 
         // Remove modificadores que esta carta gerou em outras
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
-        if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
 
         // Destrói o objeto visual (Banish não vai pro GY, então não chama SendToGraveyard)
         Destroy(card.gameObject);
@@ -910,7 +936,6 @@ public void ShuffleDeck(bool isPlayer)
         // Remove modificadores (caso raro de efeito na mão, mas seguro)
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardDiscarded(card, causedByOpponent);
-        if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
 
         Destroy(card.gameObject);
     }
@@ -985,7 +1010,6 @@ public void ShuffleDeck(bool isPlayer)
 
         // Remove modificadores
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
-        if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
 
         // Destrói objeto do campo
         Destroy(card.gameObject);
@@ -1187,7 +1211,6 @@ public void ShuffleDeck(bool isPlayer)
         
         // Remove modificadores antes de sair do campo
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
-        if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
 
         // Aplica a movimentação baseada no destino
         switch (destination)
@@ -1421,12 +1444,8 @@ public void ShuffleDeck(bool isPlayer)
     // Chamado pelo PhaseManager quando entra na Draw Phase
     public void OnDrawPhaseStart()
     {
-        // Reseta estados de turno dos monstros no campo
-        if (duelFieldUI != null)
-        {
-            ResetCardStates(duelFieldUI.playerMonsterZones);
-            ResetCardStates(duelFieldUI.opponentMonsterZones);
-        }
+        normalSummonsThisTurnPlayer = 0;
+        normalSummonsThisTurnOpponent = 0;
 
         turnCount++; // Incrementa o turno
         if (DeckManager.Instance != null) DeckManager.Instance.ResetTurnStats();
@@ -1435,11 +1454,7 @@ public void ShuffleDeck(bool isPlayer)
         {
             if (!canPlayerDrawFromDeck)
             {
-                // Verifica exceções de Draw via SpellTrapManager
-                int draws = 1;
-                if (SpellTrapManager.Instance != null) draws += SpellTrapManager.Instance.extraDrawsPerTurn;
-
-                for (int i = 0; i < draws; i++)
+                for (int i = 0; i < 1; i++)
                     DrawCard();
             }
         }
@@ -1467,9 +1482,6 @@ public void ShuffleDeck(bool isPlayer)
         {
             CardEffectManager.Instance.OnPhaseStart(GamePhase.End);
         }
-
-        // FASE 11: Clear flag effects at end of turn
-        CleanupFlagEffects();
 
         // Inicia verificação de Limite de Mão
         StartCoroutine(HandleHandLimitSequence());
@@ -1736,61 +1748,6 @@ public void ShuffleDeck(bool isPlayer)
                 }
             });
         }
-    }
-
-    private void ResetCardStates(Transform[] zones)
-    {
-        foreach (Transform zone in zones)
-        {
-            if (zone.childCount > 0)
-            {
-                CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
-                if (cd != null)
-                {
-                    cd.hasAttackedThisTurn = false;
-                    cd.hasChangedPositionThisTurn = false;
-                    cd.summonedThisTurn = false;
-                }
-            }
-        }
-    }
-
-    // FASE 11: Cleanup Flag Effects at end of turn
-    private void CleanupFlagEffects()
-    {
-        // Clear player monster zone flags
-        if (duelFieldUI != null && duelFieldUI.playerMonsterZones != null)
-        {
-            foreach (Transform zone in duelFieldUI.playerMonsterZones)
-            {
-                if (zone.childCount > 0)
-                {
-                    CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
-                    if (cd != null && cd.flagEffects != null)
-                    {
-                        cd.flagEffects.Clear();
-                    }
-                }
-            }
-        }
-
-        // Clear opponent monster zone flags
-        if (duelFieldUI != null && duelFieldUI.opponentMonsterZones != null)
-        {
-            foreach (Transform zone in duelFieldUI.opponentMonsterZones)
-            {
-                if (zone.childCount > 0)
-                {
-                    CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
-                    if (cd != null && cd.flagEffects != null)
-                    {
-                        cd.flagEffects.Clear();
-                    }
-                }
-            }
-        }
-
-        Debug.Log("[GameManager] Flag effects cleaned up at end of turn");
     }
 
     // --- FUTURAS IMPLEMENTAÇÕES DE COMANDOS (COMENTÁRIOS) ---
@@ -2166,12 +2123,6 @@ public void ShuffleDeck(bool isPlayer)
         {
             CardEffectManager.Instance.OnDamageTaken(false, amount);
         }
-
-        // Notifica dano de batalha causado (para Robbin' Goblin, etc)
-        if (CardEffectManager.Instance != null && BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
-        {
-            CardEffectManager.Instance.OnDamageDealt(BattleManager.Instance.currentAttacker, null, amount);
-        }
     }
 
     // --- CONDIÇÕES DE VITÓRIA ESPECIAIS ---
@@ -2263,26 +2214,6 @@ public void ShuffleDeck(bool isPlayer)
         bool isPlayer = display != null ? display.isPlayerCard : true;
         string cardName = cardData?.name ?? "Unknown";
 
-        // Validações de Efeitos Contínuos
-        if (CardEffectManager.Instance != null)
-        {
-            if (!CardEffectManager.Instance.CheckChainEnergy(isPlayer))
-            {
-                Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: Chain Energy ativa.");
-                return false;
-            }
-            if (!CardEffectManager.Instance.CheckSpatialCollapse(isPlayer))
-            {
-                Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: Spatial Collapse ativa.");
-                return false;
-            }
-            if (!CardEffectManager.Instance.CheckRivalryOfWarlords(isPlayer, cardData.race))
-            {
-                Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: Rivalry of Warlords bloqueia {cardData.race} type.");
-                return false;
-            }
-        }
-
         // 0. Validação de Permissão
         if (isPlayer && !canPlacePlayerCards)
         {
@@ -2306,16 +2237,20 @@ public void ShuffleDeck(bool isPlayer)
             return false;
         }
 
-        if (SummonManager.Instance != null)
+        if (CardEffectManager.Instance != null)
         {
-            SummonManager.Instance.ExecuteSummonFlow(cardGO, cardData, isSet, false, isPlayer, ignoreLimit);
-            Debug.Log($"[TrySummonMonster SUCCESS] {cardName} foi invocado(a). {(isPlayer ? "Jogador" : "Oponente")}");
-            return true; // FIX CRÍTICO: Impede que a engine ignore as travas do SummonManager!
+            LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(display);
+            if (lc == null) lc = new LuaCard(display);
+
+            int tp = isPlayer ? 0 : 1;
+            var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("NormalSummon").Function;
+            CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, tp, lc, isSet));
+        }
+        else
+        {
+            FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, cardData.level >= 5, null);
         }
         
-        // Fallback caso não tenha o Manager
-        FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, cardData.level >= 5, null);
-        Debug.Log($"[TrySummonMonster SUCCESS] {cardName} foi invocado(a) (fallback). {(isPlayer ? "Jogador" : "Oponente")}");
         return true;
     }
 
@@ -2378,8 +2313,6 @@ public void ShuffleDeck(bool isPlayer)
             if (isDefensePos)
             {
                 display.position = CardDisplay.BattlePosition.Defense;
-                display.summonedThisTurn = true; // Marca invocação
-                display.isTributeSummoned = isTributeSummon;
                 // Modo Defesa (Set): Virado para baixo e Rotacionado 90 graus
                 float zRotation = isPlayer ? 90f : -90f;
 
@@ -2389,25 +2322,33 @@ public void ShuffleDeck(bool isPlayer)
             else
             {
                 display.position = CardDisplay.BattlePosition.Attack;
-                display.summonedThisTurn = true; // Marca invocação
-                display.isTributeSummoned = isTributeSummon;
                 // Modo Ataque: Virado para cima e Reto
                 float zRotation = isPlayer ? 0f : 180f;
                 display.ShowFront();
                 cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRotation);
+            }
 
-                // Toca efeito visual de invocação
-                if (DuelFXManager.Instance != null)
+            // Toca efeito visual e notifica a Corrente (Trap Holes)
+            bool useCinematic = enableSummonCinematics && isTributeSummon && !isSimulating;
+            
+            if (useCinematic && DuelFXManager.Instance != null)
+            {
+                display.SetVisibility(false);
+                DuelFXManager.Instance.PlaySummonCinematic(display, true, false, () => {
+                    display.SetVisibility(true);
+                    DuelFXManager.Instance.PlaySummonAura(display);
+                    if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnSummon(display);
+                });
+            }
+            else
+            {
+                if (DuelFXManager.Instance != null && !isDefensePos)
                 {
-                    if (isTributeSummon && enableTributeSummonAnimation)
-                    {
-                        DuelFXManager.Instance.PlayTributeSummonEffect(display);
-                    }
-                    else
-                    {
-                        DuelFXManager.Instance.PlaySummonEffect(display);
-                    }
+                    DuelFXManager.Instance.PlaySummonEffect(display);
+                    DuelFXManager.Instance.PlaySummonAura(display);
                 }
+                // Dispara gatilho síncrono
+                if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnSummon(display);
             }
         }
 
@@ -2418,10 +2359,6 @@ public void ShuffleDeck(bool isPlayer)
         if (isTributeSummon && TrophyManager.Instance != null)
             TrophyManager.Instance.TrackStat("tribute_summon", 1);
 
-        // Avisa a Engine e Correntes Nativas que o monstro desceu!
-        if (ChainManager.Instance != null)
-            ChainManager.Instance.AddToChain(display, isPlayer, ChainManager.TriggerType.Summon);
-        
         if (CardEffectManager.Instance != null)
             CardEffectManager.Instance.OnSummon(display);
     }
@@ -2522,21 +2459,6 @@ public void ShuffleDeck(bool isPlayer)
         bool isPlayer = display != null ? display.isPlayerCard : true;
         string cardName = cardData?.name ?? "Unknown";
 
-        // Validações de Efeitos Contínuos
-        if (CardEffectManager.Instance != null)
-        {
-            if (!CardEffectManager.Instance.CheckChainEnergy(isPlayer))
-            {
-                Debug.LogWarning($"[PlaySpellTrap BLOCKED] {cardName}: Chain Energy bloqueando ativação.");
-                return false;
-            }
-            if (!CardEffectManager.Instance.CheckSpatialCollapse(isPlayer))
-            {
-                Debug.LogWarning($"[PlaySpellTrap BLOCKED] {cardName}: Spatial Collapse ativa.");
-                return false;
-            }
-        }
-
         // 0.5 Validação de Armadilha
         if (!devMode && isPlayer && cardData.type.Contains("Trap") && !isSet)
         {
@@ -2618,7 +2540,6 @@ public void ShuffleDeck(bool isPlayer)
         {
             display.isInteractable = false;
             display.isOnField = true;
-            display.summonedThisTurn = true; // Marca que foi colocada neste turno
 
             if (isSet)
             {
@@ -2651,17 +2572,18 @@ public void ShuffleDeck(bool isPlayer)
                     else TrophyManager.Instance.TrackStat("spell_activated", 1);
                 }
 
-                // Integração com Sistema de Chains e Motor LUA (Separação Ativação/Resolução)
-                if (CardEffectManager.Instance != null)
+                // Integração com Interfaces Customizadas e LUA
+                if (cardData.property == "Ritual")
                 {
-                    CardEffectManager.Instance.ActivateCard(display, null, () => {
-                        if (ChainManager.Instance != null)
-                            ChainManager.Instance.AddToChain(display, isPlayer);
-                    });
+                    BeginRitualSummon(display);
                 }
-                else if (ChainManager.Instance != null)
+                else if (cardData.name == "Polymerization" || cardData.name.Contains("Fusion"))
                 {
-                    ChainManager.Instance.AddToChain(display, isPlayer);
+                    BeginFusionSummon(display);
+                }
+                else if (CardEffectManager.Instance != null)
+                {
+                    CardEffectManager.Instance.ActivateCard(display, null, null);
                 }
             }
         }
@@ -2742,17 +2664,18 @@ public void ShuffleDeck(bool isPlayer)
             else TrophyManager.Instance.TrackStat("spell_activated", 1);
         }
 
-        // Integração com Sistema de Chains e Motor LUA (Separação Ativação/Resolução)
-        if (CardEffectManager.Instance != null)
+        // Integração com Interfaces Customizadas e LUA
+        if (cardData.property == "Ritual")
         {
-            CardEffectManager.Instance.ActivateCard(display, null, () => {
-                if (ChainManager.Instance != null)
-                    ChainManager.Instance.AddToChain(display, isPlayer);
-            });
+            BeginRitualSummon(display);
         }
-        else if (ChainManager.Instance != null)
+        else if (cardData.name == "Polymerization" || cardData.name.Contains("Fusion"))
         {
-            ChainManager.Instance.AddToChain(display, isPlayer);
+            BeginFusionSummon(display);
+        }
+        else if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.ActivateCard(display, null, null);
         }
     }
 
@@ -2855,36 +2778,6 @@ public void ShuffleDeck(bool isPlayer)
         tokenGO.transform.localRotation = Quaternion.Euler(0, 0, zRotation);
 
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySummonEffect(display);
-    }
-
-    // Converte uma Trap ativada em um Monstro e a move para a Monster Zone
-    public bool ConvertTrapToMonster(CardDisplay trapCard, int atk, int def, int level, string race, string attribute)
-    {
-        Transform targetZone = GetFreeMonsterZone(trapCard.isPlayerCard);
-        if (targetZone == null) 
-        {
-            Debug.LogWarning("Sem zonas de monstro livres para Trap Monster.");
-            return false;
-        }
-
-        // Move para a zona de monstros
-        trapCard.transform.SetParent(targetZone);
-        trapCard.transform.localPosition = Vector3.zero;
-        trapCard.transform.localRotation = Quaternion.identity; // Face-up attack
-        trapCard.position = CardDisplay.BattlePosition.Attack;
-        
-        // Define as propriedades de Trap Monster
-        trapCard.isTrapMonster = true;
-        trapCard.trapMonsterBaseAtk = atk;
-        trapCard.trapMonsterBaseDef = def;
-        trapCard.trapMonsterRace = race;
-        trapCard.trapMonsterAttribute = attribute;
-        
-        trapCard.RecalculateStats(); // Atualiza e exibe stats
-
-        if (trapCard.cardInfoText != null) trapCard.cardInfoText.text = $"[Trap/Monster] / {race} / LV: {level}";
-        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySummonEffect(trapCard);
-        return true;
     }
 
     // Troca de Controle (Change of Heart, Snatch Steal)
@@ -3073,26 +2966,6 @@ public void ShuffleDeck(bool isPlayer)
     // Invocação Especial direta por dados (para Monster Reborn, etc)
     public CardDisplay SpecialSummonFromData(CardData data, bool forPlayer, int summonType = 0, bool faceUp = true, bool defense = false)
     {
-        // Delegar para managers específicos baseado em tipo
-        if (summonType == 0x46000000) // SUMMON_TYPE_SYNCHRO
-        {
-            SynchroManager synchroMgr = FindObjectOfType<SynchroManager>();
-            if (synchroMgr != null)
-            {
-                // Nota: Para teste simples, invocamos diretamente
-                Debug.Log($"[GameManager] Delegando Synchro Summon para SynchroManager");
-                return DefaultSpecialSummon(data, forPlayer, faceUp, defense);
-            }
-        }
-        else if (summonType == 0x49000000) // SUMMON_TYPE_XYZ
-        {
-            XYZManager xyzMgr = FindObjectOfType<XYZManager>();
-            if (xyzMgr != null)
-            {
-                Debug.Log($"[GameManager] Delegando XYZ Summon para XYZManager");
-                return DefaultSpecialSummon(data, forPlayer, faceUp, defense);
-            }
-        }
 
         // Default: usar lógica padrão
         return DefaultSpecialSummon(data, forPlayer, faceUp, defense);
@@ -3121,23 +2994,39 @@ public void ShuffleDeck(bool isPlayer)
 
         cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRot);
 
-        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySummonEffect(display);
-
-        // Notifica invocação especial (para Card of Safe Return, etc)
-        if (CardEffectManager.Instance != null)
+        bool useCinematic = enableSummonCinematics && !isSimulating;
+        if (useCinematic && DuelFXManager.Instance != null)
         {
-            CardEffectManager.Instance.OnSpecialSummon(display);
+            display.SetVisibility(false);
+            
+            System.Action onCinematicComplete = () => {
+                display.SetVisibility(true);
+                DuelFXManager.Instance.PlaySummonAura(display);
+                if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnSpecialSummon(display);
+            };
+
+            if (data.type.Contains("Fusion"))
+            {
+                DuelFXManager.Instance.PlayFusionCinematic(display, null, null, onCinematicComplete);
+            }
+            else if (data.type.Contains("Ritual"))
+            {
+                DuelFXManager.Instance.PlayRitualCinematic(display, null, onCinematicComplete);
+            }
+            else
+            {
+                DuelFXManager.Instance.PlaySummonCinematic(display, false, true, onCinematicComplete);
+            }
+        }
+        else
+        {
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySummonEffect(display);
+            if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnSpecialSummon(display);
         }
         
         // TROFÉU: Special Summon
         if (TrophyManager.Instance != null)
             TrophyManager.Instance.TrackStat("special_summon", 1);
-
-        // Notifica o ChainManager sobre a invocação para abrir janela de resposta (ex: Trap Hole)
-        if (ChainManager.Instance != null)
-        {
-            ChainManager.Instance.AddToChain(display, forPlayer, ChainManager.TriggerType.Summon);
-        }
 
         return display;
     }

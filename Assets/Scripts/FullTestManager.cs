@@ -181,37 +181,12 @@ public class FullTestManager : MonoBehaviour
 
     public void TestSimulateAttack()
     {
-        if (SpellTrapManager.Instance == null)
-            SpellTrapManager.Instance = FindFirstObjectByType<SpellTrapManager>();
-
-        if (SpellTrapManager.Instance != null)
-        {
-            SpellTrapManager.Instance.StartTargetSelection((t) => t.isOnField && !t.isPlayerCard && t.CurrentCardData.type.Contains("Monster"), (attacker) => {
-                SpellTrapManager.Instance.StartTargetSelection((t2) => t2.isOnField && t2.isPlayerCard && t2.CurrentCardData.type.Contains("Monster"), (target) => {
-                    Debug.Log($"[TestMode] Simulando ataque de {attacker.CurrentCardData.name} em {target.CurrentCardData.name}...");
-                    if (BattleManager.Instance != null)
-                    {
-                        BattleManager.Instance.currentAttacker = attacker;
-                        BattleManager.Instance.currentTarget = target;
-                        ChainManager.Instance.AddToChain(attacker, attacker.isPlayerCard, ChainManager.TriggerType.Attack, target);
-                    }
-                });
-            });
-        }
+        Debug.Log($"[TestMode] Teste de ataque simulado (Em migração para Lua API)");
     }
 
     public void TestSimulateTrap()
     {
-        if (SpellTrapManager.Instance == null)
-            SpellTrapManager.Instance = FindFirstObjectByType<SpellTrapManager>();
-
-        if (SpellTrapManager.Instance != null)
-        {
-            SpellTrapManager.Instance.StartTargetSelection((t) => t.isOnField && t.CurrentCardData.type.Contains("Trap") && t.isFlipped, (trap) => {
-                Debug.Log($"[TestMode] Forçando ativação de armadilha {trap.CurrentCardData.name} sem gatilho!");
-                GameManager.Instance.ActivateFieldSpellTrap(trap.gameObject);
-            });
-        }
+        Debug.Log($"[TestMode] Teste de trap simulado (Em migração para Lua API)");
     }
 
     // --- DEV ACTION MENU ---

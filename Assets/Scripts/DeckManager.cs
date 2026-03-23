@@ -63,6 +63,12 @@ public class DeckManager : MonoBehaviour
             deck[randomIndex] = temp;
         }
         UpdateDeckVisuals();
+        // Animação visual de Shuffle na tela
+        PileDisplay display = isPlayer ? playerDeckDisplay : opponentDeckDisplay;
+        if (display != null)
+        {
+            display.PlayShuffleAnimation();
+        }
     }
 
     public void DrawCard(bool isPlayer, bool ignoreLimit = false)
@@ -145,6 +151,11 @@ public class DeckManager : MonoBehaviour
 
             if (CardEffectManager.Instance != null) 
                 CardEffectManager.Instance.OnCardDrawn(drawnCard, false);
+                
+            if (!ignoreLimit && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Draw)
+            {
+                PhaseManager.Instance.ChangePhase(GamePhase.Standby);
+            }
         }
     }
 
@@ -175,7 +186,6 @@ public class DeckManager : MonoBehaviour
         else deck.Add(data);
 
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
-        if (SpellCounterManager.Instance != null) SpellCounterManager.Instance.OnCardLeavesField(card);
 
         Destroy(card.gameObject);
 

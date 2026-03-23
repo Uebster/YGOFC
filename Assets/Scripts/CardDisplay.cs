@@ -13,6 +13,8 @@ using UnityEngine.InputSystem;
 
 public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
+    public static CardDisplay HoveredCard;
+
     public enum BattlePosition { Attack, Defense }
 
     [Header("UI Elements")]
@@ -43,6 +45,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     private Canvas canvas;
     private GraphicRaycaster graphicRaycaster;
     private Vector3 originalScale = Vector3.one;
+    private GameObject tributeIconObj; // Efeito 2D de Tributo
 
     [HideInInspector] public float hoverYOffset = 30f;
     [HideInInspector] public bool isInteractable = false; // Usado para habilitar hover apenas para cartas na mão
@@ -51,52 +54,14 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool isInPile = false; // Define se a carta está em uma pilha (Deck, GY, Extra)
     [HideInInspector] public BattlePosition position; // Posição de batalha do monstro
 
-    // Variáveis de Estado de Turno
-    [HideInInspector] public bool hasAttackedThisTurn = false;
-    [HideInInspector] public bool hasChangedPositionThisTurn = false;
-    [HideInInspector] public bool summonedThisTurn = false;
-    [HideInInspector] public bool battledThisTurn = false;
-    [HideInInspector] public bool wasSpecialSummoned = false;
-    [HideInInspector] public bool hasUsedEffectThisTurn = false;
-    [HideInInspector] public int attacksDeclaredThisTurn = 0; // Substitui/Complementa hasAttackedThisTurn
-    [HideInInspector] public int maxAttacksPerTurn = 1; // Padrão 1
-    [HideInInspector] public bool cannotAttackDirectly = false; // Controle restrito de ataque direto por efeito
-    [HideInInspector] public bool cannotAttackThisTurn = false; // Controle restrito de ataque por efeito
-    [HideInInspector] public bool destroyedMonsterThisTurn = false; // Rastreia se foi o vitorioso num combate
-    [HideInInspector] public bool cannotInflictBattleDamage = false; // Para Union Attack
-    [HideInInspector] public int paidLifePoints = 0; // Para Wall of Revealing Light
-
-    [HideInInspector] public bool isTributeSummoned = false; // Novo: Rastreia Invocação por Tributo
-    [HideInInspector] public int tributeCount = 0; // Quantos monstros foram tributados para invocar esta carta
-    [HideInInspector] public bool originalOwnerIsPlayer = false; // Para Remove Brainwashing
-    [HideInInspector] public bool scheduledForBanishment = false; // Para Return from the Different Dimension
-    [HideInInspector] public bool canBeTributedByOpponent = false; // Para Soul Exchange
-    [HideInInspector] public bool returnControlAtEndPhase = false; // Para Shien's Spy
-    [HideInInspector] public bool scheduledForLevelUp = false; // Para monstros LV
-    [HideInInspector] public List<CardData> tributedMonsters = new List<CardData>(); // Monstros usados para Tribute Summon
-    [HideInInspector] public bool isFaceDown = false; // Rastreia se é Face-Down Monster (posição virada)
-
-    // Sistema Trap Monster
-    [HideInInspector] public bool isTrapMonster = false;
-    [HideInInspector] public int trapMonsterBaseAtk = 0;
-    [HideInInspector] public int trapMonsterBaseDef = 0;
-    [HideInInspector] public string trapMonsterRace = "";
-    [HideInInspector] public string trapMonsterAttribute = "";
-
     // Status Dinâmicos e Passivos de Batalha
-    [HideInInspector] public bool canAttackDirectly = false;
     [HideInInspector] public bool hasPiercing = false;
-    [HideInInspector] public string temporaryRace = "";
-    [HideInInspector] public string temporaryAttribute = "";
 
     // Stats em Tempo Real (Modificados por efeitos)
     [HideInInspector] public int originalAtk;
     [HideInInspector] public int originalDef;
     [HideInInspector] public int currentAtk;
     [HideInInspector] public int currentDef;
-
-    // Sistema de Spell Counters
-    [HideInInspector] public int spellCounters = 0;
 
     // Sistema de Contadores de Turno (para Swords of Revealing Light, etc)
     [SerializeField, HideInInspector] private int _turnCounter = 0;
@@ -111,28 +76,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
     }
     [HideInInspector] public int maxTurnCounter = 0; // Armazena o valor máximo que este contador já teve (para calcular a fração)
-
-    // Sistema de Efeitos Retardados
-    [HideInInspector] public bool scheduledForDestruction = false;
-    [HideInInspector] public bool scheduledForReturnToExtraDeck = false; // Para Magical Scientist
-    [HideInInspector] public int destructionTurnCountdown = -1;
-    [HideInInspector] public bool destructionCountdownOwnerIsPlayer;
-
-    // Sistema de Fusão
-    [HideInInspector] public List<CardData> fusionMaterialsUsed = new List<CardData>();
-
-    // Lista de modificadores ativos nesta carta
-    public List<StatModifier> activeModifiers = new List<StatModifier>(); // Changed to public
-
-    // FASE 11: Flag Effect System - Turn-based effect tracking
-    public Dictionary<int, FlagEffect> flagEffects = new Dictionary<int, FlagEffect>();
-
-    public struct FlagEffect
-    {
-        public int effectId;
-        public int statusCode;
-        public object[] parameters;
-    }
 
     // FASE 13: Card History Tracking - Warp condition support
     [HideInInspector] public CardLocation previousLocation = CardLocation.Unknown;
@@ -149,39 +92,12 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         set { _currentLocation = value; }
     }
 
-    // FASE 14: Status System - Card status flags
-    private int statusFlags = 0;
-
-    /// <summary>
-    /// Sets or clears a status flag on this card
-    /// </summary>
-    public void SetStatus(int statusCode, bool activate)
-    {
-        if (activate)
-        {
-            statusFlags |= statusCode;
-            Debug.Log($"[CardDisplay] {CurrentCardData?.name} set status {statusCode}: flags now {statusFlags}");
-        }
-        else
-        {
-            statusFlags &= ~statusCode;
-            Debug.Log($"[CardDisplay] {CurrentCardData?.name} cleared status {statusCode}: flags now {statusFlags}");
-        }
-    }
-
-    /// <summary>
-    /// Checks if a status flag is active
-    /// </summary>
-    public bool IsStatusActive(int statusCode)
-    {
-        bool result = (statusFlags & statusCode) != 0;
-        return result;
-    }
-
     public CardData CurrentCardData => currentCardData; // Propriedade pública para acesso seguro (Renomeado para evitar conflito)
 
     private UnityWebRequest currentRequest; // Rastreia a requisição ativa para descarte correto
     private bool isAttackSelected = false; // Rastreia se a carta está selecionada para atacar
+    
+    private List<CardDisplay> linkedCardsToHighlight = new List<CardDisplay>();
 
     void Awake()
     {
@@ -318,7 +234,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         currentCardData = card;
         backTexture = cardBackTexture;
         isFlipped = !startFaceUp; // Se startFaceUp for false, isFlipped será true (verso)
-        originalOwnerIsPlayer = isPlayerCard; // Grava o dono original ao criar
 
         // Inicializa stats
         originalAtk = card.atk;
@@ -326,27 +241,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         currentAtk = card.atk;
         currentDef = card.def;
 
-        activeModifiers.Clear(); // Limpa modificadores antigos ao resetar a carta
-        tributedMonsters.Clear(); // Limpa a lista de tributos passados
-        spellCounters = 0; // Reseta contadores
         turnCounter = 0; // Reseta contadores de turno
         maxTurnCounter = 0;
         
-        // Reseta dados de Trap Monster
-        isTrapMonster = false;
-        trapMonsterBaseAtk = 0;
-        trapMonsterBaseDef = 0;
-        trapMonsterRace = "";
-        trapMonsterAttribute = "";
-
-        canAttackDirectly = false;
-        cannotAttackDirectly = false;
-        cannotAttackThisTurn = false;
-        destroyedMonsterThisTurn = false;
-        hasPiercing = false;
-        temporaryRace = "";
-        temporaryAttribute = "";
-
         originalScale = transform.localScale; // Salva a escala inicial definida pelo GameManager
 
         DisplayCardDetails();
@@ -469,26 +366,78 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         request.Dispose();
     }
 
+    private Coroutine flipCoroutine;
+    
+    // Animação fluida de Flip 2D (esmagando e esticando o eixo X)
+    private IEnumerator DoFlipAnimation(Texture2D targetTexture)
+    {
+        float duration = 0.15f;
+        float elapsed = 0f;
+        Vector3 startScale = originalScale;
+        
+        while (elapsed < duration)
+        {
+            float t = elapsed / duration;
+            transform.localScale = new Vector3(Mathf.Lerp(startScale.x, 0f, t), startScale.y, startScale.z);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        
+        if (cardImage != null) cardImage.texture = targetTexture;
+        
+        elapsed = 0f;
+        while (elapsed < duration)
+        {
+            float t = elapsed / duration;
+            transform.localScale = new Vector3(Mathf.Lerp(0f, startScale.x, t), startScale.y, startScale.z);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        
+        transform.localScale = startScale;
+    }
+
+    private void TriggerTextureChange(Texture2D newTexture)
+    {
+        if (gameObject.activeInHierarchy && DuelFXManager.Instance != null && DuelFXManager.Instance.enableAnimations)
+        {
+            if (flipCoroutine != null) StopCoroutine(flipCoroutine);
+            flipCoroutine = StartCoroutine(DoFlipAnimation(newTexture));
+            
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayFlipEffect(this);
+        }
+        else if (cardImage != null)
+        {
+            cardImage.texture = newTexture;
+        }
+    }
+
     public void FlipCard()
     {
         if (cardImage == null || frontTexture == null || backTexture == null) return;
 
         isFlipped = !isFlipped;
-        cardImage.texture = isFlipped ? backTexture : frontTexture;
+        TriggerTextureChange(isFlipped ? backTexture : frontTexture);
     }
 
     public void ShowFront()
     {
         if (cardImage == null || frontTexture == null) return;
-        isFlipped = false;
-        cardImage.texture = frontTexture;
+        if (isFlipped)
+        {
+            isFlipped = false;
+            TriggerTextureChange(frontTexture);
+        }
     }
 
     public void ShowBack()
     {
         if (cardImage == null || backTexture == null) return;
-        isFlipped = true;
-        cardImage.texture = backTexture;
+        if (!isFlipped)
+        {
+            isFlipped = true;
+            TriggerTextureChange(backTexture);
+        }
     }
 
     public void ChangePosition()
@@ -548,21 +497,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Isso será tratado pelo GameManager/SpellTrapManager na resolução da chain.
     }
 
-    // --- SISTEMA DE SPELL COUNTERS ---
-
-    public void AddSpellCounter(int amount = 1)
-    {
-        spellCounters += amount;
-        Debug.Log($"{currentCardData.name} ganhou {amount} Spell Counter(s). Total: {spellCounters}");
-        // TODO: Adicionar visualização (ícone ou texto sobre a carta)
-    }
-
-    public void RemoveSpellCounter(int amount = 1)
-    {
-        spellCounters = Mathf.Max(0, spellCounters - amount);
-        Debug.Log($"{currentCardData.name} perdeu {amount} Spell Counter(s). Total: {spellCounters}");
-    }
-
     // --- SISTEMA VISUAL DE RELÓGIO (TURN CLOCK) ---
     
     private void UpdateTurnClockVisual()
@@ -575,102 +509,10 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         DisplayCardDetails();
     }
 
-    // --- SISTEMA DE MODIFICADORES DE STATS ---
-
-    public void AddStatModifier(StatModifier mod)
-    {
-        activeModifiers.Add(mod);
-        RecalculateStats();
-    }
-
-    public void RemoveStatModifier(string modId)
-    {
-        activeModifiers.RemoveAll(m => m.id == modId);
-        RecalculateStats();
-    }
-
-    public void RemoveModifiersFromSource(CardDisplay source)
-    {
-        int removed = activeModifiers.RemoveAll(m => m.source == source);
-        if (removed > 0) RecalculateStats();
-    }
-
-    public void CleanExpiredModifiers()
-    {
-        int removed = activeModifiers.RemoveAll(m => m.removeAtEndPhase);
-        if (removed > 0) RecalculateStats();
-    }
-
-    public void RecalculateStats()
-    {
-        if (currentCardData == null) return;
-
-        // 1. Começa com o valor base da carta
-        int finalAtk = isTrapMonster ? trapMonsterBaseAtk : (currentCardData.atk >= 0 ? currentCardData.atk : 0);
-        int finalDef = isTrapMonster ? trapMonsterBaseDef : (currentCardData.def >= 0 ? currentCardData.def : 0);
-
-        // 2. Aplica modificadores que definem um valor (Set) - ex: Megamorph, Beast King Barbaros
-        foreach (var mod in activeModifiers)
-        {
-            if (mod.operation == StatModifier.Operation.Set)
-            {
-                if (mod.statType == StatModifier.StatType.ATK) finalAtk = mod.value;
-                if (mod.statType == StatModifier.StatType.DEF) finalDef = mod.value;
-            }
-        }
-
-        // 3. Aplica adições e subtrações (Add) - ex: Equipamentos, Campos, Buffs
-        foreach (var mod in activeModifiers)
-        {
-            // 1857 - The Emperor's Holiday / 0103 - Armored Glass: Nega Equip Spells
-            if (mod.type == StatModifier.ModifierType.Equipment && GameManager.Instance != null && (GameManager.Instance.IsCardActiveOnField("1857") || (CardEffectManager.Instance != null && CardEffectManager.Instance.armoredGlassActive)))
-            {
-                continue;
-            }
-
-            if (mod.operation == StatModifier.Operation.Add)
-            {
-                int valueToAdd = mod.value;
-
-                // Reverse Trap (1526): Inverte adições e subtrações
-                if (CardEffectManager.Instance != null && CardEffectManager.Instance.reverseStats)
-                {
-                    // Se for buff (+500), vira debuff (-500). Se for debuff (-500), vira buff (+500).
-                    valueToAdd = -valueToAdd;
-                }
-
-                if (mod.statType == StatModifier.StatType.ATK) finalAtk += valueToAdd;
-                if (mod.statType == StatModifier.StatType.DEF) finalDef += valueToAdd;
-            }
-        }
-
-        // 4. Aplica multiplicadores (Multiply) - ex: Limiter Removal, Shrink
-        foreach (var mod in activeModifiers)
-        {
-            if (mod.operation == StatModifier.Operation.Multiply)
-            {
-                if (mod.statType == StatModifier.StatType.ATK) finalAtk = Mathf.FloorToInt(finalAtk * mod.multiplier);
-                if (mod.statType == StatModifier.StatType.DEF) finalDef = Mathf.FloorToInt(finalDef * mod.multiplier);
-            }
-        }
-
-        // Garante que não fique negativo
-        currentAtk = Mathf.Max(0, finalAtk);
-        currentDef = Mathf.Max(0, finalDef);
-
-        DisplayCardDetails(); // Atualiza o texto na carta
-    }
-
-    // Método antigo mantido para compatibilidade, agora usa o novo sistema
-    public void ModifyStats(int atkChange, int defChange)
-    {
-        // Cria modificadores temporários (até o fim do turno) por padrão para chamadas antigas
-        if (atkChange != 0) AddStatModifier(new StatModifier(StatModifier.StatType.ATK, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, atkChange, null));
-        if (defChange != 0) AddStatModifier(new StatModifier(StatModifier.StatType.DEF, StatModifier.ModifierType.Temporary, StatModifier.Operation.Add, defChange, null));
-    }
-
     public void OnPointerEnter(PointerEventData eventData)
     {
+        HoveredCard = this;
+
         bool shouldShowOutline = enableHoverOutline;
         bool isTopGraveyard = false;
 
@@ -835,10 +677,15 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             }
             MouseTooltipUI.Instance.Show(left, right);
         }
+
+        // FASE 4: Pulso Sincronizado para Equipamentos e Cartas Vínculadas
+        HighlightLinkedCards(true);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
+        if (HoveredCard == this) HoveredCard = null;
+
         // --- Remove Borda ---
         if (useSimpleOutline)
         {
@@ -851,6 +698,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             outlineImage.gameObject.SetActive(false);
         }
+
+        // Desliga o Pulso
+        HighlightLinkedCards(false);
 
         // --- Remove Efeito de Subir ---
         if (isInteractable && !useSimpleHover && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect && enableHoverLift)
@@ -873,7 +723,61 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             outlineImage.gameObject.SetActive(active);
             outlineImage.color = tributeColor;
-            // Dica: Você pode adicionar um componente de animação (ping-pong alpha) na imagem da borda para pulsar
+        }
+        
+        // Efeito da imagem de tributo (Cinemática)
+        if (active)
+        {
+            if (tributeIconObj == null)
+            {
+                tributeIconObj = new GameObject("TributeIcon", typeof(RectTransform), typeof(Image));
+                tributeIconObj.transform.SetParent(transform, false);
+                
+                RectTransform rt = tributeIconObj.GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(0.5f, 0.5f);
+                rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.sizeDelta = new Vector2(60f, 60f); // Tamanho do ícone no centro
+                rt.anchoredPosition = Vector2.zero;
+
+                Image img = tributeIconObj.GetComponent<Image>();
+                img.color = new Color(1f, 1f, 1f, 0.9f);
+                if (DuelFXManager.Instance != null && DuelFXManager.Instance.tributeIconSprite != null)
+                    img.sprite = DuelFXManager.Instance.tributeIconSprite;
+                else
+                    img.color = new Color(1f, 0.5f, 0f, 0.8f); // Fallback laranja
+                
+                // Pisca suavemente enquanto estiver selecionado
+                VfxAutoAnim anim = tributeIconObj.AddComponent<VfxAutoAnim>();
+                anim.duration = 1000f; // Infinito (some ao desativar)
+                anim.fadeType = VfxAutoAnim.FadeType.Blink;
+                anim.blinkSpeed = 5f;
+                anim.scaleType = VfxAutoAnim.ScaleType.None;
+            }
+            tributeIconObj.SetActive(true);
+            tributeIconObj.transform.SetAsLastSibling();
+        }
+        else
+        {
+            if (tributeIconObj != null) tributeIconObj.SetActive(false);
+        }
+    }
+
+    private void HighlightLinkedCards(bool highlight)
+    {
+        linkedCardsToHighlight.Clear();
+        
+        // Encontra todos os fios invisíveis do tabuleiro
+        CardLink[] links = FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        foreach (var link in links)
+        {
+            if (link.source == this && link.target != null) linkedCardsToHighlight.Add(link.target);
+            if (link.target == this && link.source != null) linkedCardsToHighlight.Add(link.source);
+        }
+
+        // Pede para o alvo pulsar no mesmo ritmo (Brilho Ciano)
+        foreach (var card in linkedCardsToHighlight)
+        {
+            card.SetTributeHighlight(highlight);
         }
     }
 
@@ -1003,29 +907,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             return;
         }
 
-        // Lógica de Seleção de Tributo (Prioridade Máxima)
-        if (SummonManager.Instance != null && SummonManager.Instance.isSelectingTributes)
-        {
-            if (isOnField && isPlayerCard && currentCardData.type.Contains("Monster"))
-            {
-                SummonManager.Instance.SelectTributeCandidate(this);
-            }
-            return; // Não faz mais nada se estiver selecionando tributo
-        }
-
-        // Lógica de Seleção de Alvo (Spell/Trap)
-        if (SpellTrapManager.Instance != null && SpellTrapManager.Instance.isSelectingTarget)
-        {
-            // Passa o clique para o gerenciador validar
-            SpellTrapManager.Instance.SelectTarget(this);
-            return;
-        }
-
         // Clique Direito: Mudar Posição (se no campo)
         if (eventData.button == PointerEventData.InputButton.Right && isOnField && currentCardData.type.Contains("Monster"))
         {
-            if (BattleManager.Instance != null)
-                BattleManager.Instance.TryChangePosition(this);
+            // TODO LUA: Implementar comunicação genérica de intenção de mudança de posição
+            ChangePosition(); // Por enquanto apenas vira visualmente
             return;
         }
 
@@ -1034,42 +920,38 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Lógica de Batalha (Battle Phase)
         if (GameManager.Instance != null && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle)
         {
-            // Se for carta do jogador e monstro: Seleciona como atacante
             if (isOnField && isPlayerCard && currentCardData.type.Contains("Monster"))
             {
-                if (BattleManager.Instance != null)
+                if (eventData.button == PointerEventData.InputButton.Left)
                 {
-                    // Atalho Cancelar Ataque (Direito)
-                    if (GameManager.Instance != null && GameManager.Instance.useMouseTooltipUI && eventData.button == PointerEventData.InputButton.Right)
-                    {
-                        BattleManager.Instance.CancelAttack();
-                        return;
-                    }
-                    
-                    if (BattleManager.Instance.currentAttacker == this)
-                        BattleManager.Instance.CancelAttack(); // Clicar de novo cancela
-                    else
-                    {
-                        BattleManager.Instance.PrepareAttack(this);
-
-                        // Lógica de Ataque Direto Rápido (Quick Attack)
-                        if (GameManager.Instance.quickAttackDirectly && BattleManager.Instance.currentAttacker == this)
-                        {
-                            if (BattleManager.Instance.CanAttackDirectly())
-                            {
-                                BattleManager.Instance.TryDirectAttack();
-                            }
-                        }
-                    }
+                    CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(this);
+                    SetAttackSelectionVisual(true);
+                    if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Selecione o alvo do ataque.");
+                }
+                else if (eventData.button == PointerEventData.InputButton.Right)
+                {
+                    CardEffectManager.Instance.luaDuel.currentAttacker = null;
+                    SetAttackSelectionVisual(false);
                 }
                 return;
             }
-            // Se for carta do oponente e monstro: Seleciona como alvo
             else if (isOnField && !isPlayerCard && currentCardData.type.Contains("Monster"))
             {
-                if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+                if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
                 {
-                    BattleManager.Instance.SelectTarget(this);
+                    CardEffectManager.Instance.luaDuel.currentAttackTarget = new LuaCard(this);
+                    CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.SetAttackSelectionVisual(false);
+
+                    if (DuelFXManager.Instance != null)
+                        DuelFXManager.Instance.PlayAttackDeclare();
+                    
+                    // Inicia o fluxo de combate real pelo LUA
+                    var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
+                    CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
+                        CardEffectManager.Instance.luaDuel.currentAttacker, 
+                        CardEffectManager.Instance.luaDuel.currentAttackTarget));
+                        
+                    CardEffectManager.Instance.luaDuel.currentAttacker = null;
                 }
                 return;
             }
@@ -1157,7 +1039,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                         // Fallback antigo
                         if (isFlipped && (currentCardData.type.Contains("Spell") || currentCardData.type.Contains("Trap")))
                         {
-                            bool canActivate = (GameManager.Instance.devMode) || (!summonedThisTurn);
+                            bool canActivate = true;
                             if (currentCardData.type.Contains("Spell") && currentCardData.property != "Quick-Play") canActivate = true;
                             if (canActivate) UIManager.Instance.ShowConfirmation($"Ativar {currentCardData.name}?", () => GameManager.Instance.ActivateFieldSpellTrap(gameObject));
                         }
@@ -1224,6 +1106,14 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         Debug.Log("Hierarquia da carta ajustada com sucesso: Pai(Mask) -> Art(RawImage).");
     }
 #endif
+
+    // Oculta/Exibe a carta fisicamente para a Cinemática
+    public void SetVisibility(bool visible)
+    {
+        CanvasGroup cg = GetComponent<CanvasGroup>();
+        if (cg == null) cg = gameObject.AddComponent<CanvasGroup>();
+        cg.alpha = visible ? 1f : 0f;
+    }
 
     void OnEnable()
     {

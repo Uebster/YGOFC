@@ -145,9 +145,15 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
         else if (eventData.button == PointerEventData.InputButton.Left)
         {
             // Clique esquerdo no campo: Tenta ataque direto se houver atacante selecionado
-            if (BattleManager.Instance != null && BattleManager.Instance.currentAttacker != null)
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
             {
-                BattleManager.Instance.TryDirectAttack();
+                var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
+                CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
+                    CardEffectManager.Instance.luaDuel.currentAttacker, 
+                    null));
+                    
+                CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.SetAttackSelectionVisual(false);
+                CardEffectManager.Instance.luaDuel.currentAttacker = null;
             }
         }
     }

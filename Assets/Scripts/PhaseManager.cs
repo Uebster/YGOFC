@@ -9,7 +9,7 @@ public class PhaseManager : MonoBehaviour
     public static PhaseManager Instance;
 
     [Header("Configuração de Fases")]
-    public float standbyPhaseDuration = 2.0f;
+    public float standbyPhaseDuration = 0.5f;
     public TextMeshProUGUI phaseText;
 
     public GamePhase currentPhase = GamePhase.Draw;
@@ -21,23 +21,6 @@ public class PhaseManager : MonoBehaviour
     public Color phaseActiveColor = new Color(1f, 0.8f, 0f, 1f);
     public Color phaseInactiveColor = new Color(0.2f, 0.2f, 0.2f, 0.8f);
     
-    [Header("Controle de Pulo de Fase")]
-    // Flags para o turno ATUAL
-    public bool skipDrawPhase = false;
-    public bool skipStandbyPhase = false;
-    public bool skipMain1Phase = false;
-    public bool skipBattlePhase = false;
-
-    // Flags para o PRÓXIMO turno (armazenamento)
-    public bool playerSkipNextDraw = false;
-    public bool opponentSkipNextDraw = false;
-    public bool playerSkipNextStandby = false;
-    public bool opponentSkipNextStandby = false;
-    public bool playerSkipNextMain1 = false;
-    public bool opponentSkipNextMain1 = false;
-    public bool playerSkipNextBattle = false;
-    public bool opponentSkipNextBattle = false;
-
     private Dictionary<GamePhase, Button> phaseButtons = new Dictionary<GamePhase, Button>();
     private Dictionary<GamePhase, Image> phaseImages = new Dictionary<GamePhase, Image>();
 
@@ -85,41 +68,6 @@ public class PhaseManager : MonoBehaviour
 
     public void StartTurn()
     {
-        if (SummonManager.Instance != null) SummonManager.Instance.ResetTurnStats();
-        if (SpellTrapManager.Instance != null) SpellTrapManager.Instance.ResetTurnStats();
-        if (BattleManager.Instance != null) BattleManager.Instance.ResetTurnStats();
-        
-        // Configura os pulos de fase para este turno
-        bool isPlayer = true;
-        if (GameManager.Instance != null) isPlayer = GameManager.Instance.isPlayerTurn;
-
-        // Reseta flags do turno atual
-        skipDrawPhase = false;
-        skipStandbyPhase = false;
-        skipMain1Phase = false;
-        skipBattlePhase = false;
-
-        // Aplica flags pendentes e as consome
-        if (isPlayer)
-        {
-            if (playerSkipNextDraw) { skipDrawPhase = true; playerSkipNextDraw = false; }
-            if (playerSkipNextStandby) { skipStandbyPhase = true; playerSkipNextStandby = false; }
-            if (playerSkipNextMain1) { skipMain1Phase = true; playerSkipNextMain1 = false; }
-            if (playerSkipNextBattle) { skipBattlePhase = true; playerSkipNextBattle = false; }
-        }
-        else
-        {
-            if (opponentSkipNextDraw) { skipDrawPhase = true; opponentSkipNextDraw = false; }
-            if (opponentSkipNextStandby) { skipStandbyPhase = true; opponentSkipNextStandby = false; }
-            if (opponentSkipNextMain1) { skipMain1Phase = true; opponentSkipNextMain1 = false; }
-            if (opponentSkipNextBattle) { skipBattlePhase = true; opponentSkipNextBattle = false; }
-        }
-
-        if (skipDrawPhase) Debug.Log("PhaseManager: Draw Phase será pulada.");
-        if (skipStandbyPhase) Debug.Log("PhaseManager: Standby Phase será pulada.");
-        if (skipMain1Phase) Debug.Log("PhaseManager: Main Phase 1 será pulada.");
-        if (skipBattlePhase) Debug.Log("PhaseManager: Battle Phase será pulada.");
-
         ChangePhase(GamePhase.Draw);
     }
 
@@ -135,133 +83,51 @@ public class PhaseManager : MonoBehaviour
         switch (currentPhase)
         {
             case GamePhase.Draw:
-                // Lógica de Draw Phase delegada ao GameManager ou executada aqui
                 if (GameManager.Instance != null)
                 {
-                    // Verifica se deve pular o Draw (ex: Time Seal, Offerings to the Doomed)
-                    if (skipDrawPhase || (SpellTrapManager.Instance != null && SpellTrapManager.Instance.skipDrawPhase))
+                    if (CardEffectManager.Instance != null)
                     {
-                        if (SpellTrapManager.Instance != null) SpellTrapManager.Instance.ConsumeSkipDraw();
-                        Debug.Log("Draw Phase pulada devido a efeito de carta.");
-                        ChangePhase(GamePhase.Standby); // Pula direto
+                        CardEffectManager.Instance.OnPreDrawPhase(GameManager.Instance.isPlayerTurn, () => {
+                            GameManager.Instance.OnDrawPhaseStart();
+                        });
                     }
                     else
                     {
-                        if (CardEffectManager.Instance != null)
-                        {
-                            CardEffectManager.Instance.OnPreDrawPhase(GameManager.Instance.isPlayerTurn, () => {
-                                GameManager.Instance.OnDrawPhaseStart();
-                            });
-                        }
-                        else
-                        {
-                        if (CardEffectManager.Instance != null)
-                        {
-                            CardEffectManager.Instance.OnPreDrawPhase(GameManager.Instance.isPlayerTurn, () => {
-                                GameManager.Instance.OnDrawPhaseStart();
-                            });
-                        }
-                        else
-                        {
-                            GameManager.Instance.OnDrawPhaseStart();
-                        }
-                        }
+                        GameManager.Instance.OnDrawPhaseStart();
                     }
                 }
                 break;
             case GamePhase.Standby:
-                // Notifica o CardEffectManager sobre o início da Standby Phase
                 if (CardEffectManager.Instance != null)
                 {
                     CardEffectManager.Instance.OnPhaseStart(GamePhase.Standby);
                 }
-                // FIX: Inicia a contagem para avançar automaticamente para a Main Phase 1
                 StartCoroutine(HandleStandbyPhase());
                 break;
             case GamePhase.Main1:
-                if (skipMain1Phase)
-                {
-                    Debug.Log("Main Phase 1 pulada.");
-                    ChangePhase(GamePhase.Battle);
-                    return;
-                }
-                // Habilita interações
                 break;
             case GamePhase.Battle:
-                if (skipBattlePhase)
-                {
-                    Debug.Log("Battle Phase pulada.");
-                    ChangePhase(GamePhase.End); // Se pular Battle, geralmente vai para End (ou Main 2 se permitido, mas End é mais seguro)
-                    return;
-                }
-                // Habilita batalha
                 break;
             case GamePhase.Main2:
-                // Habilita interações novamente (se possível)
                 break;
             case GamePhase.End:
                 if (GameManager.Instance != null)
                 {
                     GameManager.Instance.OnEndPhaseStart();
-                    // A troca de turno agora é gerenciada pelo GameManager após verificar o Hand Limit
                 }
                 break;
         }
     }
 
-    // Método para registrar um pulo de fase para o PRÓXIMO turno de um jogador
-    public void RegisterSkipNextPhase(bool targetPlayerIsHuman, GamePhase phase)
-    {
-        if (targetPlayerIsHuman)
-        {
-            if (phase == GamePhase.Draw) playerSkipNextDraw = true;
-            else if (phase == GamePhase.Standby) playerSkipNextStandby = true;
-            else if (phase == GamePhase.Main1) playerSkipNextMain1 = true;
-            else if (phase == GamePhase.Battle) playerSkipNextBattle = true;
-        }
-        else
-        {
-            if (phase == GamePhase.Draw) opponentSkipNextDraw = true;
-            else if (phase == GamePhase.Standby) opponentSkipNextStandby = true;
-            else if (phase == GamePhase.Main1) opponentSkipNextMain1 = true;
-            else if (phase == GamePhase.Battle) opponentSkipNextBattle = true;
-        }
-        Debug.Log($"PhaseManager: Agendado pulo de {phase} para o próximo turno de {(targetPlayerIsHuman ? "Player" : "Oponente")}.");
-    }
-
     IEnumerator HandleStandbyPhase()
     {
         yield return new WaitForSeconds(standbyPhaseDuration);
-        ChangePhase(GamePhase.Main1);
-    }
-
-    IEnumerator AutoSwitchTurn()
-    {
-        yield return new WaitForSeconds(1.5f); // Pequeno delay para feedback visual
-        if (GameManager.Instance != null) GameManager.Instance.SwitchTurn();
+        TryChangePhase(GamePhase.Main1);
     }
 
     public void TryChangePhase(GamePhase newPhase)
     {
-        bool devMode = GameManager.Instance != null && GameManager.Instance.devMode;
-        
-        if (!devMode)
-        {
-            if ((int)newPhase <= (int)currentPhase)
-            {
-                Debug.LogWarning("Não é possível voltar para uma fase anterior neste turno.");
-                return;
-            }
-        }
-        
-        // Validação de fluxo (Draw -> Standby -> Main1 -> Battle -> Main2 -> End)
-        // Impede pular fases obrigatórias se não for devMode (embora Standby seja automática)
-        if (!devMode && newPhase == GamePhase.Battle && currentPhase == GamePhase.Draw)
-        {
-             // Exemplo: Não pode ir direto pra Battle do Draw
-             return;
-        }
-
+        // TODO LUA: Substituir a chamada direta pela emissão de um Request para o motor Lua validar se a fase pode ser alterada.
         ChangePhase(newPhase);
     }
 

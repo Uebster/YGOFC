@@ -4253,7 +4253,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 855043084}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999823
+  m_Size: 0.9996564
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -7186,7 +7186,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1555180853}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999776
+  m_Size: 0.99956495
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -15142,6 +15142,41 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 201797759}
   m_CullTransparentMesh: 1
+--- !u!1 &205137727
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 205137728}
+  m_Layer: 5
+  m_Name: SpawnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &205137728
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 205137727}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 269636718}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: -150}
+  m_SizeDelta: {x: 120, y: 168}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &207352927
 GameObject:
   m_ObjectHideFlags: 0
@@ -18074,7 +18109,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.000011976681}
+  m_AnchoredPosition: {x: 0, y: 0.008570429}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &250963708
@@ -20072,6 +20107,7 @@ RectTransform:
   - {fileID: 482431547}
   - {fileID: 1525700326}
   - {fileID: 1586118513}
+  - {fileID: 205137728}
   m_Father: {fileID: 713163334}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -20138,6 +20174,9 @@ MonoBehaviour:
   delayBetweenPieces: 0.8
   delayBeforeEndDuel: 3
   obliterateSound: {fileID: 0}
+  spawnPoint: {fileID: 205137728}
+  finalExplosionVFX: {fileID: 4783769991002294843, guid: 042e571eb14d1784281a4973f5fcc8f5, type: 3}
+  flyDuration: 0.4
 --- !u!1 &272355417
 GameObject:
   m_ObjectHideFlags: 0
@@ -22962,7 +23001,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.000023331895}
+  m_AnchoredPosition: {x: 0, y: 0.006509709}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &322488726
@@ -26813,6 +26852,41 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 374842440}
   m_CullTransparentMesh: 1
+--- !u!1 &376139152
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 376139153}
+  m_Layer: 5
+  m_Name: SpawnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &376139153
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 376139152}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 633695277}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -2.4249, y: -358}
+  m_SizeDelta: {x: 120, y: 168}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &376364707
 GameObject:
   m_ObjectHideFlags: 0
@@ -32477,7 +32551,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.000023331895}
+  m_AnchoredPosition: {x: 0, y: 0.006509709}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &440854236
@@ -40327,6 +40401,7 @@ MonoBehaviour:
   use3DFlipEffect: 0
   useSimpleOutline: 1
   fieldCardScale: {x: 1, y: 1, z: 0.8}
+  use3DDeckShuffle: 1
   handCardScale: {x: 2, y: 2, z: 1}
   playerHandHoverYOffset: 30
   opponentHandHoverYOffset: -30
@@ -40446,8 +40521,9 @@ MonoBehaviour:
   targetAvatarOnDirectAttack: 1
   enableAttackAnimation: 0
   enableTributeSummonAnimation: 1
+  enableSummonCinematics: 1
   tributeSummonAnimationPrefab: {fileID: 0}
-  attackAnimationPrefab: {fileID: 0}
+  attackAnimationPrefab: {fileID: 3529578519891653018, guid: d490548199143e244ae5720415bbca9b, type: 3}
   playerDrawSpeed: 0.2
   opponentDrawSpeed: 0.2
   revealOpponentDraw: 0
@@ -40455,6 +40531,8 @@ MonoBehaviour:
   lpPaidLastTurnPlayer: 0
   lpPaidThisTurnOpponent: 0
   lpPaidLastTurnOpponent: 0
+  normalSummonsThisTurnPlayer: 0
+  normalSummonsThisTurnOpponent: 0
   isSelectingFromHand: 0
 --- !u!114 &532839427
 MonoBehaviour:
@@ -44201,25 +44279,41 @@ MonoBehaviour:
   tributeSummonVFX: {fileID: 0}
   fusionVFX: {fileID: 0}
   tributeVFX: {fileID: 0}
-  attackVFX: {fileID: 0}
+  attackVFX: {fileID: 6109185898698873878, guid: 782653d1f05bded458f21027791efd02, type: 3}
   explosionVFX: {fileID: 0}
-  reflectVFX: {fileID: 0}
+  reflectVFX: {fileID: 2910360440696493387, guid: b06b319fc39089a418a61724e5b42372, type: 3}
   banishVFX: {fileID: 0}
   flipVFX: {fileID: 0}
-  damageVFX: {fileID: 0}
+  damageVFX: {fileID: 4070735473352718420, guid: 37d24ae0fcb5c704799fb14e7cc1e4a2, type: 3}
   defenseSuccessVFX: {fileID: 0}
+  chainLinkVFX: {fileID: 0}
+  monsterEffectVFX: {fileID: 0}
+  summonAuraVFX: {fileID: 0}
+  shuffleVFX: {fileID: 0}
+  tributeIconSprite: {fileID: 0}
+  tributeFieldMarkerVFX: {fileID: 0}
+  specialFieldMarkerVFX: {fileID: 0}
+  fusionFlashVFX: {fileID: 0}
+  ritualBackgroundSymbol: {fileID: 0}
+  ritualFlashVFX: {fileID: 0}
+  fusionFieldMarkerVFX: {fileID: 0}
+  ritualFieldMarkerVFX: {fileID: 0}
   spellSound: {fileID: 0}
   trapSound: {fileID: 0}
   summonSound: {fileID: 0}
   fusionSound: {fileID: 0}
   tributeSound: {fileID: 0}
-  attackSound: {fileID: 0}
+  attackDeclareSound: {fileID: 0}
+  attackTravelSound: {fileID: 0}
+  attackImpactSound: {fileID: 0}
   destroySound: {fileID: 0}
   reflectSound: {fileID: 0}
   banishSound: {fileID: 0}
   flipSound: {fileID: 0}
   damageSound: {fileID: 0}
   defenseSound: {fileID: 0}
+  shuffleSound: {fileID: 0}
+  monsterEffectSound: {fileID: 0}
 --- !u!4 &589386419
 Transform:
   m_ObjectHideFlags: 0
@@ -47114,6 +47208,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 954998328}
+  - {fileID: 376139153}
   m_Father: {fileID: 713163334}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -47180,6 +47275,9 @@ MonoBehaviour:
   - {fileID: 329633832}
   delayBetweenLetters: 1
   delayBeforeEndDuel: 2.5
+  spawnPoint: {fileID: 376139153}
+  finalExplosionVFX: {fileID: 4783769991002294843, guid: 042e571eb14d1784281a4973f5fcc8f5, type: 3}
+  flyDuration: 0.4
 --- !u!1 &634555507
 GameObject:
   m_ObjectHideFlags: 0
@@ -50191,7 +50289,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1701951476}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99999654
+  m_Size: 0.9999331
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -57391,7 +57489,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 660094935}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999823
+  m_Size: 0.9996564
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -59632,7 +59730,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0000035809999}
+  m_AnchoredPosition: {x: 0, y: 0.006514415}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &821356746
@@ -62072,7 +62170,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 847992110}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99998003
+  m_Size: 0.9996141
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -63705,7 +63803,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000009641074}
+  m_AnchoredPosition: {x: 0, y: 0.01940765}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &882301599
@@ -66631,7 +66729,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 466731607}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999823
+  m_Size: 0.9996564
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -76309,12 +76407,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed7932142d4367a479015b92dcaa6e42, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpellTrapManager
-  canActivateTrapsFromHand: 0
-  canActivateSpellsInOpponentTurn: 0
-  extraDrawsPerTurn: 0
-  skipDrawPhase: 0
-  needsShuffle: 0
-  isSelectingTarget: 0
 --- !u!4 &1062997732
 Transform:
   m_ObjectHideFlags: 0
@@ -78174,7 +78266,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 82258834}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999777
+  m_Size: 0.9995649
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -78465,7 +78557,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 595497764}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999776
+  m_Size: 0.99956495
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -85622,7 +85714,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1995952712}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999897
+  m_Size: 0.9997995
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -88076,24 +88168,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b40137f3e9b83934d896f818ec6a8e6d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SummonManager
-  hasPerformedNormalSummon: 0
-  enableAutoTribute: 0
-  narrowPassActive: 0
-  narrowPassSummonCount: 0
-  lastAutoTributeZone: {fileID: 0}
-  isSelectingTributes: 0
-  specialSummonFromHandAtk: 0
-  specialSummonFromHandDef: 0
-  specialSummonFromDeckAtk: 0
-  specialSummonFromDeckDef: 0
-  specialSummonFromGYAtk: 0
-  specialSummonFromGYDef: 0
-  fusionSummonCount: 0
-  ritualSummonCount: 0
-  opponentSpecialSummonFromHand: 0
-  opponentSpecialSummonFromDeck: 0
-  opponentSpecialSummonFromGY: 0
-  opponentSpecialSummonFromField: 0
 --- !u!4 &1219269476
 Transform:
   m_ObjectHideFlags: 0
@@ -99525,6 +99599,94 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1360440425}
   m_CullTransparentMesh: 1
+--- !u!1 &1360454867
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1360454868}
+  - component: {fileID: 1360454871}
+  - component: {fileID: 1360454870}
+  - component: {fileID: 1360454869}
+  m_Layer: 5
+  m_Name: InteractiveTargetingSword
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1360454868
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1360454867}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1781033777}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 133.08, y: -44.927}
+  m_SizeDelta: {x: 36.4894, y: 137.4713}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1360454869
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1360454867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6ed1d21d5a78a443bdcf9b1ecbca9e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TargetingSwordUI
+--- !u!114 &1360454870
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1360454867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 7453903783320711511, guid: aabdbb13b981b7b418e6b5aa923080b2, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 1
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1360454871
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1360454867}
+  m_CullTransparentMesh: 1
 --- !u!1 &1362853023
 GameObject:
   m_ObjectHideFlags: 0
@@ -102231,7 +102393,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 2021891560}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999823
+  m_Size: 0.9996564
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -103214,7 +103376,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.000023331895}
+  m_AnchoredPosition: {x: 0, y: 0.006509709}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1403579448
@@ -104031,7 +104193,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000009641074}
+  m_AnchoredPosition: {x: 0, y: 0.01940765}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1413832233
@@ -104706,7 +104868,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.00000043074598}
+  m_AnchoredPosition: {x: 0, y: 0.006515723}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1423252461
@@ -110781,25 +110943,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b36f7de067179c74e8a5f307f141671e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BattleManager
-  currentAttacker: {fileID: 0}
-  currentTarget: {fileID: 0}
-  isBattlePhase: 0
-  cannotAttackFaceDown: 0
-  forceDirectAttack: 0
-  gravekeepersProtected: 0
-  dimensionWallActive: 0
-  globalPiercing: 0
-  battlePositionsLocked: 0
-  patricianOfDarknessActive: 0
-  wabokuActive: 0
-  noBattleDamageThisTurn: 0
-  bewdCannotAttackThisTurn: 0
-  terrorkingCanAttackDirectly: 0
-  crossCounterActive: 0
-  forceAllAttack: 0
-  threateningRoarActive: 0
-  forcedAttackTarget: {fileID: 0}
-  isBattleResolving: 0
 --- !u!4 &1503203517
 Transform:
   m_ObjectHideFlags: 0
@@ -115439,8 +115582,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 762ca12c65bc77345a978bd083785a07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChainManager
-  currentChain: []
-  isChainResolving: 0
 --- !u!4 &1554787251
 Transform:
   m_ObjectHideFlags: 0
@@ -125575,49 +125716,17 @@ MonoBehaviour:
   isOnField: 0
   isInPile: 0
   position: 0
-  hasAttackedThisTurn: 0
-  hasChangedPositionThisTurn: 0
-  summonedThisTurn: 0
-  battledThisTurn: 0
-  wasSpecialSummoned: 0
-  hasUsedEffectThisTurn: 0
-  attacksDeclaredThisTurn: 0
-  maxAttacksPerTurn: 1
-  cannotAttackDirectly: 0
-  cannotAttackThisTurn: 0
-  destroyedMonsterThisTurn: 0
-  cannotInflictBattleDamage: 0
-  paidLifePoints: 0
-  isTributeSummoned: 0
-  tributeCount: 0
-  originalOwnerIsPlayer: 0
-  scheduledForBanishment: 0
-  canBeTributedByOpponent: 0
-  returnControlAtEndPhase: 0
-  scheduledForLevelUp: 0
-  tributedMonsters: []
-  isTrapMonster: 0
-  trapMonsterBaseAtk: 0
-  trapMonsterBaseDef: 0
-  trapMonsterRace: 
-  trapMonsterAttribute: 
-  canAttackDirectly: 0
   hasPiercing: 0
-  temporaryRace: 
-  temporaryAttribute: 
   originalAtk: 0
   originalDef: 0
   currentAtk: 0
   currentDef: 0
-  spellCounters: 0
   _turnCounter: 0
   maxTurnCounter: 0
-  scheduledForDestruction: 0
-  scheduledForReturnToExtraDeck: 0
-  destructionTurnCountdown: -1
-  destructionCountdownOwnerIsPlayer: 0
-  fusionMaterialsUsed: []
-  activeModifiers: []
+  previousLocation: 6
+  previousOwner: 0
+  previousPreviousLocation: 6
+  ownerPlayer: 1
 --- !u!114 &1668354901
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -126251,18 +126360,6 @@ MonoBehaviour:
   phaseIndicatorContainer: {fileID: 1446248865}
   phaseActiveColor: {r: 0.8207547, g: 0.12354159, b: 0.019357419, a: 0.4392157}
   phaseInactiveColor: {r: 0.2, g: 0.2, b: 0.2, a: 0}
-  skipDrawPhase: 0
-  skipStandbyPhase: 0
-  skipMain1Phase: 0
-  skipBattlePhase: 0
-  playerSkipNextDraw: 0
-  opponentSkipNextDraw: 0
-  playerSkipNextStandby: 0
-  opponentSkipNextStandby: 0
-  playerSkipNextMain1: 0
-  opponentSkipNextMain1: 0
-  playerSkipNextBattle: 0
-  opponentSkipNextBattle: 0
 --- !u!4 &1691700789
 Transform:
   m_ObjectHideFlags: 0
@@ -126377,7 +126474,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1692763170
 RectTransform:
   m_ObjectHideFlags: 0
@@ -129710,7 +129807,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1170065776}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999776
+  m_Size: 0.99956495
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -134015,6 +134112,7 @@ RectTransform:
   - {fileID: 1628700975}
   - {fileID: 1634917410}
   - {fileID: 1253678152}
+  - {fileID: 1360454868}
   m_Father: {fileID: 713163334}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -150659,49 +150757,17 @@ MonoBehaviour:
   isOnField: 0
   isInPile: 0
   position: 0
-  hasAttackedThisTurn: 0
-  hasChangedPositionThisTurn: 0
-  summonedThisTurn: 0
-  battledThisTurn: 0
-  wasSpecialSummoned: 0
-  hasUsedEffectThisTurn: 0
-  attacksDeclaredThisTurn: 0
-  maxAttacksPerTurn: 1
-  cannotAttackDirectly: 0
-  cannotAttackThisTurn: 0
-  destroyedMonsterThisTurn: 0
-  cannotInflictBattleDamage: 0
-  paidLifePoints: 0
-  isTributeSummoned: 0
-  tributeCount: 0
-  originalOwnerIsPlayer: 0
-  scheduledForBanishment: 0
-  canBeTributedByOpponent: 0
-  returnControlAtEndPhase: 0
-  scheduledForLevelUp: 0
-  tributedMonsters: []
-  isTrapMonster: 0
-  trapMonsterBaseAtk: 0
-  trapMonsterBaseDef: 0
-  trapMonsterRace: 
-  trapMonsterAttribute: 
-  canAttackDirectly: 0
   hasPiercing: 0
-  temporaryRace: 
-  temporaryAttribute: 
   originalAtk: 0
   originalDef: 0
   currentAtk: 0
   currentDef: 0
-  spellCounters: 0
   _turnCounter: 0
   maxTurnCounter: 0
-  scheduledForDestruction: 0
-  scheduledForReturnToExtraDeck: 0
-  destructionTurnCountdown: -1
-  destructionCountdownOwnerIsPlayer: 0
-  fusionMaterialsUsed: []
-  activeModifiers: []
+  previousLocation: 6
+  previousOwner: 0
+  previousPreviousLocation: 6
+  ownerPlayer: 1
 --- !u!1 &2023984226
 GameObject:
   m_ObjectHideFlags: 0
@@ -155147,7 +155213,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000009641074}
+  m_AnchoredPosition: {x: 0, y: 0.01940765}
   m_SizeDelta: {x: 0, y: 894.27}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2079048823
@@ -156587,7 +156653,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.000023331895}
+  m_AnchoredPosition: {x: 0, y: 0.006509709}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &2109887084
@@ -157475,7 +157541,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000042439704}
+  m_AnchoredPosition: {x: 0, y: 0.014107632}
   m_SizeDelta: {x: 0, y: 650.88}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2123005588

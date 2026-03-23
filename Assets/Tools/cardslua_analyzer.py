@@ -301,36 +301,13 @@ class LuaScriptAnalyzer:
         }
 
         print("\n" + "=" * 50)
-        print("OPÇÕES DE EXPORTAÇÃO DE RELATÓRIO")
+        print("EXPORTANDO RELATÓRIOS AUTOMATICAMENTE")
         print("=" * 50)
         
-        choice = input("Como deseja salvar o relatório? (json / csv / txt / all / none) [all]: ").strip().lower()
-        if choice == '' or choice == 'all':
-            formats = ['json', 'csv', 'txt']
-        elif choice == 'none':
-            formats = []
-        else:
-            formats = [f.strip() for f in choice.split('/') if f.strip() in ['json', 'csv', 'txt']]
-            if not formats: formats = [choice]
-
-        if not formats:
-            print("Exportação ignorada.")
-            return
-
-        print("\n-> Pressione ENTER para salvar na pasta padrão (Analysis_Reports)")
-        print("-> Ou digite 'dir' para abrir a janela do Windows e escolher outra pasta.")
-        dir_choice = input("Onde deseja salvar? [padrão]: ").strip().lower()
-
-        if dir_choice == 'dir':
-            root = tk.Tk()
-            root.withdraw()
-            root.attributes('-topmost', True)
-            selected_dir = filedialog.askdirectory(title="Selecione a Pasta para salvar os Relatórios")
-            root.destroy()
-            
-            out_dir = Path(selected_dir) if selected_dir else Path(__file__).resolve().parent / "Analysis_Reports"
-        else:
-            out_dir = Path(__file__).resolve().parent / "Analysis_Reports"
+        formats = ['json', 'csv', 'txt']
+        
+        # Salva direto na pasta padrão sem perguntar para evitar travar em terminais read-only
+        out_dir = Path(__file__).resolve().parent / "Analysis_Reports"
 
         out_dir.mkdir(parents=True, exist_ok=True)
         print(f"\n[*] Salvando relatórios em: {out_dir}")

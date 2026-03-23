@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Linq;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -96,25 +97,38 @@ public class DuelActionMenu : MonoBehaviour
                 bool canSummon = true;
                 bool canSet = true;
                 
-                if (SummonManager.Instance != null)
+                // Regra 1: Limite de 1 Normal Summon
+                if (GameManager.Instance != null && GameManager.Instance.normalSummonsThisTurnPlayer > 0 && !GameManager.Instance.infiniteNormalSummons)
                 {
-                    if (!SummonManager.Instance.CanNormalSummon()) { canSummon = false; canSet = false; }
-                    int tributes = SummonManager.Instance.GetRequiredTributes(card.CurrentCardData.level);
-                    if (!SummonManager.Instance.HasEnoughTributes(tributes, true)) { canSummon = false; canSet = false; }
+                    canSummon = false;
+                    canSet = false;
                 }
-                
+
+                // Regra 2: Tributos Suficientes
+                int tributes = 0;
+                if (card.CurrentCardData.level >= 5 && card.CurrentCardData.level <= 6) tributes = 1;
+                if (card.CurrentCardData.level >= 7) tributes = 2;
+
+                if (GameManager.Instance != null && GameManager.Instance.GetMonsterCount(true) < tributes && !GameManager.Instance.disableTributeRequirements)
+                {
+                    canSummon = false;
+                    canSet = false;
+                }
+
                 summonBtn.gameObject.SetActive(canSummon);
                 setBtn.gameObject.SetActive(canSet);
             }
             else
             {
                 bool canActivate = true;
-                if (card.CurrentCardData.type.Contains("Trap") && !GameManager.Instance.devMode) canActivate = false;
-                
-                if (canActivate && SpellTrapManager.Instance != null)
+                if (card.CurrentCardData.type.Contains("Trap") && !GameManager.Instance.devMode) 
+                    canActivate = false;
+
+                // Regra de Magia de Ritual: Deve ter monstro Ritual na mão
+                if (card.CurrentCardData.property == "Ritual" && GameManager.Instance != null)
                 {
-                    if (!SpellTrapManager.Instance.CanActivateCard(card.CurrentCardData, GameManager.Instance.isPlayerTurn))
-                        canActivate = false;
+                    var ritualMonsters = GameManager.Instance.GetPlayerHandData().Where(c => c.type.Contains("Ritual")).ToList();
+                    if (ritualMonsters.Count == 0) canActivate = false;
                 }
 
                 activateBtn.gameObject.SetActive(canActivate);
@@ -129,8 +143,19 @@ public class DuelActionMenu : MonoBehaviour
             }
             else if ((card.CurrentCardData.type.Contains("Spell") || card.CurrentCardData.type.Contains("Trap")) && card.isFlipped)
             {
-                bool canActivate = (GameManager.Instance.devMode) || (!card.summonedThisTurn);
-                if (card.CurrentCardData.type.Contains("Spell") && card.CurrentCardData.property != "Quick-Play") canActivate = true;
+                bool canActivate = true;
+                
+                // Dry-Run LUA (Testa a ativação no fundo antes de acender o botão)
+                if (CardEffectManager.Instance != null)
+                {
+                    LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(card);
+                    LuaEffect eff = lc?.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0080);
+                    if (eff != null && !CardEffectManager.Instance.CanActivateEffect(lc, eff, 0, null))
+                    {
+                        canActivate = false;
+                    }
+                }
+
                 activateBtn.gameObject.SetActive(canActivate);
             }
         }
