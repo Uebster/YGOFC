@@ -432,8 +432,32 @@ public class DuelFXManager : MonoBehaviour
         {
             projectile = Instantiate(GameManager.Instance.attackAnimationPrefab);
             
-            // Garante que o projétil fique visível no Canvas do tabuleiro
+            // Arranca o script de autodestruição se ele existir, para a espada não sumir no meio do voo!
+            VfxAutoAnim autoKill = projectile.GetComponent<VfxAutoAnim>();
+            if (autoKill != null) 
+            {
+                autoKill.enabled = false; // Desativa imediatamente para garantir que o Update() não rode
+                Destroy(autoKill);
+            }
+        }
+        else
+        {
+            // Fallback Genial: Se você esqueceu de colocar o Prefab de ataque, ele clona a espada do mouse!
+            TargetingSwordUI mouseSword = Object.FindFirstObjectByType<TargetingSwordUI>();
+            if (mouseSword != null)
+            {
+                projectile = Instantiate(mouseSword.gameObject);
+                Destroy(projectile.GetComponent<TargetingSwordUI>()); // Tira o script de seguir o mouse
+                Image img = projectile.GetComponent<Image>();
+                if (img != null) img.enabled = true; // Força a ficar visível
+            }
+        }
+            
+        if (projectile != null)
+        {
             if (boardCenter != null) projectile.transform.SetParent(boardCenter.root, false);
+            projectile.transform.SetAsLastSibling();
+            projectile.transform.localScale = Vector3.one;
             projectile.transform.position = startPos;
             
             // Rotação 2D: Calcula o ângulo para a espada apontar para o alvo
@@ -445,7 +469,7 @@ public class DuelFXManager : MonoBehaviour
 
         PlaySound(attackTravelSound);
 
-        float duration = 0.4f; // Duração do voo
+        float duration = 0.6f; // Voo mais dramático e visível
         float elapsed = 0f;
 
         while (elapsed < duration)
@@ -954,6 +978,7 @@ public class DuelFXManager : MonoBehaviour
             // Garante que o VFX fique na frente da UI
             if (boardCenter != null) instance.transform.SetParent(boardCenter.root, false);
             instance.transform.position = position;
+            instance.transform.SetAsLastSibling(); // Traz para a FRENTE do tabuleiro e cartas
             
             Destroy(instance, 3.0f); // Limpeza automática
             return instance;

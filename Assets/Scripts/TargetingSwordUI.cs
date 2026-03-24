@@ -28,7 +28,7 @@ public class TargetingSwordUI : MonoBehaviour
         // 1. Se você já clicou no monstro e ele está selecionado para atacar, a espada fica presa nele
         if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
         {
-            attacker = CardEffectManager.Instance.luaDuel.currentAttacker.unityCard;
+            if (CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.isPlayerCard) attacker = CardEffectManager.Instance.luaDuel.currentAttacker.unityCard;
         }
         // 2. Se não clicou ainda, mas o mouse está sobre um monstro SEU em posição de ATAQUE durante a BATTLE PHASE
         // Só exibe a espada a partir do Turno 2 (Nenhum jogador ataca no primeiro turno).

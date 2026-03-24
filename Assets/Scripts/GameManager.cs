@@ -1125,16 +1125,7 @@ public void ShuffleDeck(bool isPlayer)
     public void DrawCard(bool ignoreLimit = false)
     {
         if (DeckManager.Instance != null) DeckManager.Instance.DrawCard(true, ignoreLimit);
-        
-        // A lógica de fase foi movida para o DeckManager, mas precisamos garantir que o PhaseManager seja chamado lá.
-        // DeckManager chama PhaseManager.ChangePhase(GamePhase.Standby) se for Draw Phase.
-        
-        GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Draw;
-        if (!ignoreLimit && currentPhase == GamePhase.Draw && PhaseManager.Instance != null)
-        {
-            // Avança para Standby via PhaseManager
-            PhaseManager.Instance.ChangePhase(GamePhase.Standby);
-        }
+        // Retiramos o avanço de fase redundante daqui, pois o DeckManager já cuida disso.
     }
 
     public void DrawOpponentCard()
@@ -2353,9 +2344,13 @@ public void ShuffleDeck(bool isPlayer)
             {
                 if (DuelFXManager.Instance != null && !isDefensePos)
                 {
-                    DuelFXManager.Instance.PlaySummonEffect(display);
+                    if (isTributeSummon && enableTributeSummonAnimation)
+                        DuelFXManager.Instance.PlayTributeSummonEffect(display);
+                    else
+                        DuelFXManager.Instance.PlaySummonEffect(display);
                     DuelFXManager.Instance.PlaySummonAura(display);
                 }
+                else if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayFlipEffect(display); // Poeirinha ao setar monstro
                 // Dispara gatilho síncrono
                 if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnSummon(display);
             }
@@ -2537,6 +2532,7 @@ public void ShuffleDeck(bool isPlayer)
                     if (!CardEffectManager.Instance.CanActivateEffect(lc, activationEffect, tp, null))
                     {
                         Debug.LogWarning($"[PlaySpellTrap BLOCKED] {cardName}: Falhou na validação Lua de ativação.");
+                        if (!isSimulating && UIManager.Instance != null) UIManager.Instance.ShowMessage("Não é possível ativar esta carta agora.");
                         return false; // Cancela a jogada antes de mover a carta!
                     }
                 }
@@ -2606,6 +2602,8 @@ public void ShuffleDeck(bool isPlayer)
                 display.ShowBack();
                 // Spells/Traps setadas ficam verticais (não rotacionam como monstros em defesa)
                 cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRotation);
+                
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayFlipEffect(display); // Toca "poeirinha" ao baixar
             }
             else
             {
@@ -2695,7 +2693,10 @@ public void ShuffleDeck(bool isPlayer)
                     int tp = isPlayer ? 0 : 1;
                     if (!CardEffectManager.Instance.CanActivateEffect(lc, activationEffect, tp, null))
                     {
-                        if (!isSimulating) Debug.LogWarning($"[GameManager] {cardData.name} não cumpre os requisitos para ser ativada.");
+                        if (!isSimulating) {
+                            Debug.LogWarning($"[GameManager] {cardData.name} não cumpre os requisitos para ser ativada.");
+                            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Não é possível ativar esta carta agora (condições não atendidas ou recém-baixada).");
+                        }
                         return;
                     }
                 }

@@ -399,9 +399,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         transform.localScale = startScale;
     }
 
-    private void TriggerTextureChange(Texture2D newTexture)
+    private void TriggerTextureChange(Texture2D newTexture, bool animate = true)
     {
-        if (gameObject.activeInHierarchy && DuelFXManager.Instance != null && DuelFXManager.Instance.enableAnimations)
+        if (animate && gameObject.activeInHierarchy && DuelFXManager.Instance != null && DuelFXManager.Instance.enableAnimations)
         {
             if (flipCoroutine != null) StopCoroutine(flipCoroutine);
             flipCoroutine = StartCoroutine(DoFlipAnimation(newTexture));
@@ -419,7 +419,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (cardImage == null || frontTexture == null || backTexture == null) return;
 
         isFlipped = !isFlipped;
-        TriggerTextureChange(isFlipped ? backTexture : frontTexture);
+        TriggerTextureChange(isFlipped ? backTexture : frontTexture, !isFlipped);
     }
 
     public void ShowFront()
@@ -428,7 +428,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (isFlipped)
         {
             isFlipped = false;
-            TriggerTextureChange(frontTexture);
+            TriggerTextureChange(frontTexture, true);
         }
     }
 
@@ -438,7 +438,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (!isFlipped)
         {
             isFlipped = true;
-            TriggerTextureChange(backTexture);
+            TriggerTextureChange(backTexture, false);
         }
     }
 
@@ -660,7 +660,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             if (!isOnField) // NA MÃO
             {
                 if (currentCardData.type.Contains("Monster")) { left = "Summon"; right = "Set"; }
-                else { left = "Set"; right = "Activate"; }
+                else { left = "Activate"; right = "Set"; }
             }
             else // NO CAMPO
             {
@@ -1039,8 +1039,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                     }
                     else if (isSpellTrap)
                     {
-                        if (isLeftClick) GameManager.Instance.PlaySpellTrap(gameObject, currentCardData, true); // Setar
-                        else if (isRightClick) GameManager.Instance.PlaySpellTrap(gameObject, currentCardData, false); // Ativar
+                        if (isLeftClick) GameManager.Instance.PlaySpellTrap(gameObject, currentCardData, false); // Ativar
+                        else if (isRightClick) GameManager.Instance.PlaySpellTrap(gameObject, currentCardData, true); // Setar
                     }
                     return; // Termina a ação aqui se usou atalho
                 }

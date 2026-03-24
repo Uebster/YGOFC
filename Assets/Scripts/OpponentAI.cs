@@ -313,7 +313,7 @@ public class OpponentAI : MonoBehaviour
         // Ajusta a personalidade dinamicamente dependendo da campanha
         if (GameManager.Instance.currentOpponent != null)
         {
-            string diff = GameManager.Instance.currentOpponent.difficulty.ToLower();
+            string diff = GameManager.Instance.currentOpponent.difficulty != null ? GameManager.Instance.currentOpponent.difficulty.ToLower() : "";
             if (diff.Contains("aggressive")) currentPersonality = AIPersonality.Aggressive;
             else if (diff.Contains("defensive")) currentPersonality = AIPersonality.Defensive;
         }
@@ -662,37 +662,37 @@ public class OpponentAI : MonoBehaviour
             CardDisplay bestTarget = FindBestTarget(attacker);
             bool didAttack = false;
 
-            // Executa a batalha dentro de um bloco try-catch para segurança
-            try
+            if (bestTarget != null) // Encontrou um alvo vantajoso
             {
-                if (bestTarget != null) // Encontrou um alvo vantajoso
-                {
-                    Debug.Log($"AI: {attacker.CurrentCardData.name} ataca {bestTarget.CurrentCardData.name}!");
-                    if (CardEffectManager.Instance != null) {
-                        CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(attacker);
-                        CardEffectManager.Instance.luaDuel.currentAttackTarget = new LuaCard(bestTarget);
-                        CardEffectManager.Instance.TriggerLuaEvent(1102, CardEffectManager.Instance.luaDuel.currentAttacker);
-                    }
-                    didAttack = true;
+                Debug.Log($"AI: {attacker.CurrentCardData.name} ataca {bestTarget.CurrentCardData.name}!");
+                if (CardEffectManager.Instance != null) {
+                    CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(attacker);
+                    CardEffectManager.Instance.luaDuel.currentAttackTarget = new LuaCard(bestTarget);
+                    var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
+                    yield return StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
+                        CardEffectManager.Instance.luaDuel.currentAttacker, 
+                        CardEffectManager.Instance.luaDuel.currentAttackTarget));
+                    CardEffectManager.Instance.luaDuel.currentAttacker = null;
                 }
-                else if (GetPlayerMonsterCount() == 0) // Campo aberto
-                {
-                    Debug.Log($"AI: {attacker.CurrentCardData.name} ataca diretamente!");
-                    if (CardEffectManager.Instance != null) {
-                        CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(attacker);
-                        CardEffectManager.Instance.luaDuel.currentAttackTarget = null;
-                        CardEffectManager.Instance.TriggerLuaEvent(1102, CardEffectManager.Instance.luaDuel.currentAttacker);
-                    }
-                    didAttack = true;
-                }
-                else
-                {
-                    Debug.Log($"AI: {attacker.CurrentCardData.name} não encontrou um alvo vantajoso. Não vai atacar.");
-                }
+                didAttack = true;
             }
-            catch (System.Exception e)
+            else if (GetPlayerMonsterCount() == 0) // Campo aberto
             {
-                Debug.LogError($"AI Error during battle: {e.Message}\n{e.StackTrace}");
+                Debug.Log($"AI: {attacker.CurrentCardData.name} ataca diretamente!");
+                if (CardEffectManager.Instance != null) {
+                    CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(attacker);
+                    CardEffectManager.Instance.luaDuel.currentAttackTarget = null;
+                    var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
+                    yield return StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
+                        CardEffectManager.Instance.luaDuel.currentAttacker, 
+                        null));
+                    CardEffectManager.Instance.luaDuel.currentAttacker = null;
+                }
+                didAttack = true;
+            }
+            else
+            {
+                Debug.Log($"AI: {attacker.CurrentCardData.name} não encontrou um alvo vantajoso. Não vai atacar.");
             }
 
             if (didAttack)

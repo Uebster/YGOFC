@@ -83,6 +83,15 @@ public class DuelActionMenu : MonoBehaviour
 
     public void ShowMenu(CardDisplay card)
     {
+        // FIX: Só permite abrir o menu de ações da mão durante as Main Phases
+        if (!card.isOnField && PhaseManager.Instance != null)
+        {
+            if (PhaseManager.Instance.currentPhase != GamePhase.Main1 && PhaseManager.Instance.currentPhase != GamePhase.Main2)
+            {
+                return; // Não faz nada se não for a fase correta
+            }
+        }
+
         targetCard = card;
 
         

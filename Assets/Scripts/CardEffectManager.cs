@@ -2012,14 +2012,17 @@ public class CardEffectManager : MonoBehaviour
         object eg = WrapTriggerArgs(triggerArgs);
         bool isActionEffect = (effect.type & 0x07F8) != 0;
         object arg2 = isActionEffect ? (object)tp : (object)(effect.owner ?? new LuaCard(new CardData { id = "0000", name = "Dummy" }));
+        
+        LuaEffect dummyRe = new LuaEffect { owner = effect.owner ?? new LuaCard(new CardData { id = "0000", name = "Dummy" }) };
 
         activeLuaCoroutine = luaEngine.CreateCoroutine(func);
         DynValue result;
         
         try
         {
-            if (chk >= 0) result = activeLuaCoroutine.Coroutine.Resume(effect, arg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), DynValue.Nil, DynValue.NewNumber(0), DynValue.NewNumber(0), DynValue.NewNumber(chk));
-            else result = activeLuaCoroutine.Coroutine.Resume(effect, arg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), DynValue.Nil, DynValue.NewNumber(0), DynValue.NewNumber(0));
+            // Assinatura YGOPro: (e, tp, eg, ep, ev, re, r, rp, chk)
+            if (chk >= 0) result = activeLuaCoroutine.Coroutine.Resume(effect, arg2, eg, DynValue.NewNumber(tp), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(tp), DynValue.NewNumber(chk));
+            else result = activeLuaCoroutine.Coroutine.Resume(effect, arg2, eg, DynValue.NewNumber(tp), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(tp));
         }
         catch (System.Exception e)
         {

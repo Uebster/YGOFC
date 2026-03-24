@@ -9,7 +9,7 @@ public class PhaseManager : MonoBehaviour
     public static PhaseManager Instance;
 
     [Header("Configuração de Fases")]
-    public float standbyPhaseDuration = 0.2f;
+    public float standbyPhaseDuration = 0.4f; // Mais rápido e ágil
     public TextMeshProUGUI phaseText;
 
     public GamePhase currentPhase = GamePhase.Draw;
@@ -23,6 +23,7 @@ public class PhaseManager : MonoBehaviour
     
     private Dictionary<GamePhase, Button> phaseButtons = new Dictionary<GamePhase, Button>();
     private Dictionary<GamePhase, Image> phaseImages = new Dictionary<GamePhase, Image>();
+    private Coroutine standbyCoroutine;
 
     void Awake()
     {
@@ -73,6 +74,14 @@ public class PhaseManager : MonoBehaviour
 
     public void ChangePhase(GamePhase newPhase)
     {
+        // Evita a loucura das fases mudando enquanto as 5 cartas iniciais estão sendo compradas!
+        if (GameManager.Instance != null && GameManager.Instance.turnCount == 0 && newPhase != GamePhase.Draw) 
+            return;
+
+        // Ignora chamadas duplas para a mesma fase (A menos que seja Draw para começar o turno)
+        if (currentPhase == newPhase && newPhase != GamePhase.Draw) return;
+        if (standbyCoroutine != null) { StopCoroutine(standbyCoroutine); standbyCoroutine = null; }
+
         currentPhase = newPhase;
         Debug.Log($"--- FASE: {currentPhase} ---");
 
@@ -102,7 +111,7 @@ public class PhaseManager : MonoBehaviour
                 {
                     CardEffectManager.Instance.OnPhaseStart(GamePhase.Standby);
                 }
-                StartCoroutine(HandleStandbyPhase());
+                standbyCoroutine = StartCoroutine(HandleStandbyPhase());
                 break;
             case GamePhase.Main1:
                 break;
