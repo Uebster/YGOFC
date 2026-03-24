@@ -284,8 +284,6 @@ public class GameManager : MonoBehaviour
     public bool enableTributeSummonAnimation = true;
     [Tooltip("Habilita a cinemática (tela escura e carta gigante) para invocações Especiais e de Tributo.")]
     public bool enableSummonCinematics = true;
-    public GameObject tributeSummonAnimationPrefab; // Prefab do efeito de invocação por tributo
-    public GameObject attackAnimationPrefab; // Prefab da espada/projétil
 
     [Header("Game Speed Settings")]
     [Tooltip("Tempo em segundos entre cada carta comprada pelo jogador no início.")]

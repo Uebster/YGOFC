@@ -1,121 +1,155 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class EffectTestManager : MonoBehaviour
 {
-    
     // Referências para as cartas de teste (podem ser atribuídas manualmente ou criadas)
-    public CardDisplay playerTestCard;
-    public CardDisplay opponentTestCard;
+    public CardDisplay playerMonster;
+    public CardDisplay opponentMonster;
+    public CardDisplay playerSpell;
+    public CardDisplay playerField;
+
+    private Texture2D darkTex;
+    private GUIStyle btnStyle;
+    private GUIStyle titleStyle;
+    private bool styleInitialized = false;
+
+    void InitStyles()
+    {
+        if (styleInitialized) return;
+
+        darkTex = new Texture2D(1, 1);
+        darkTex.SetPixel(0, 0, new Color(0, 0, 0, 0.85f));
+        darkTex.Apply();
+
+        btnStyle = new GUIStyle(GUI.skin.button);
+        btnStyle.fontSize = 13;
+        btnStyle.fixedHeight = 26;
+        btnStyle.margin = new RectOffset(0, 0, 3, 3);
+
+        titleStyle = new GUIStyle(GUI.skin.label);
+        titleStyle.fontSize = 15;
+        titleStyle.fontStyle = FontStyle.Bold;
+        titleStyle.normal.textColor = Color.yellow;
+        titleStyle.alignment = TextAnchor.MiddleCenter;
+
+        styleInitialized = true;
+    }
 
     void OnGUI()
     {
         // Verifica se o modo de teste está ativo no GameManager
         if (GameManager.Instance == null || !GameManager.Instance.effectTestMode) return;
 
-        // Área de botões no canto esquerdo
-        GUILayout.BeginArea(new Rect(10, 10, 220, Screen.height - 20));
+        InitStyles();
+
+        // Área de fundo escuro
+        GUI.DrawTexture(new Rect(10, 10, 280, Screen.height - 20), darkTex);
+
+        // Inicia o Layout
+        GUILayout.BeginArea(new Rect(20, 20, 260, Screen.height - 40));
         
-        // Estilo para o título
-        GUIStyle titleStyle = new GUIStyle(GUI.skin.label);
-        titleStyle.fontSize = 14;
-        titleStyle.fontStyle = FontStyle.Bold;
-        titleStyle.normal.textColor = Color.yellow;
+        GUILayout.Label("--- TESTE DE EFEITOS VFX ---", titleStyle);
+        GUILayout.Space(10);
+
+        // Botão opcional para limpar a tela se ficar muito bagunçado
+        if (GUILayout.Button("LIMPAR CENA", btnStyle))
+        {
+            if (playerMonster != null) Destroy(playerMonster.gameObject);
+            if (opponentMonster != null) Destroy(opponentMonster.gameObject);
+            if (playerSpell != null) Destroy(playerSpell.gameObject);
+            if (playerField != null) Destroy(playerField.gameObject);
+        }
+
+        GUILayout.Space(10);
+
+        // As cartas são geradas dinamicamente e de forma inteligente a cada clique!
+        GUILayout.Label("<color=cyan><b>INVOCAÇÕES</b></color>");
+        if (GUILayout.Button("Summon Comum", btnStyle)) { EnsurePlayerMonster(); DuelFXManager.Instance.PlaySummonEffect(playerMonster); }
+        if (GUILayout.Button("Tribute Summon", btnStyle)) { EnsurePlayerMonster(); DuelFXManager.Instance.PlayTributeSummonEffect(playerMonster); }
+        if (GUILayout.Button("Summon Aura", btnStyle)) { EnsurePlayerMonster(); DuelFXManager.Instance.PlaySummonAura(playerMonster); }
+        if (GUILayout.Button("Summon Cinemático", btnStyle)) { EnsurePlayerMonster(); DuelFXManager.Instance.PlaySummonCinematic(playerMonster, false, true, null); }
+        if (GUILayout.Button("Fusion Spin", btnStyle)) { EnsurePlayerMonster(); DuelFXManager.Instance.PlayFusionEffect(playerMonster); }
+        if (GUILayout.Button("Efeito de Poeira (Set)", btnStyle)) { EnsurePlayerMonster(); DuelFXManager.Instance.PlayFlipEffect(playerMonster); }
+        if (GUILayout.Button("Virar Carta (Flip 3D/2D)", btnStyle)) { EnsurePlayerMonster(); playerMonster.FlipCard(); }
+        if (GUILayout.Button("Mudar Posição (Atk <-> Def)", btnStyle)) { EnsurePlayerMonster(); playerMonster.ChangePosition(); }
         
-        GUILayout.Label("--- TESTE DE EFEITOS ---", titleStyle);
         GUILayout.Space(5);
+        GUILayout.Label("<color=cyan><b>MAGIAS E EFEITOS</b></color>");
+        if (GUILayout.Button("Ativar Magia (Spell)", btnStyle)) { EnsurePlayerSpell(); DuelFXManager.Instance.PlayCardActivation(playerSpell, false); }
+        if (GUILayout.Button("Ativar Armadilha (Trap)", btnStyle)) { EnsurePlayerSpell(); DuelFXManager.Instance.PlayCardActivation(playerSpell, true); }
+        if (GUILayout.Button("Ativar Field Spell", btnStyle)) { EnsurePlayerField(); DuelFXManager.Instance.PlayCardActivation(playerField, false); }
+        if (GUILayout.Button("Equipar Magia (Ghost)", btnStyle)) { EnsurePlayerSpell(); EnsurePlayerMonster(); DuelFXManager.Instance.PlayEquipEffect(playerSpell, playerMonster); }
+        if (GUILayout.Button("Chain Link (Corrente)", btnStyle)) { EnsurePlayerSpell(); DuelFXManager.Instance.PlayChainLinkEffect(playerSpell, 2); }
+        if (GUILayout.Button("Efeito de Monstro (Brilho)", btnStyle)) { EnsurePlayerMonster(); DuelFXManager.Instance.PlayMonsterEffect(playerMonster); }
+        if (GUILayout.Button("Tributar Carta (Alma)", btnStyle)) { EnsurePlayerMonster(); DuelFXManager.Instance.PlayTributeEffect(playerMonster); }
 
-        if (GUILayout.Button("1. Criar Cenário de Teste"))
-        {
-            SetupTestScenario();
-        }
-
-        GUILayout.Space(10);
-        GUILayout.Label("Efeitos de Carta (Player):");
-
-        if (playerTestCard != null)
-        {
-            if (GUILayout.Button("Summon (Invocação)")) DuelFXManager.Instance.PlaySummonEffect(playerTestCard);
-            if (GUILayout.Button("Set / Flip")) DuelFXManager.Instance.PlayFlipEffect(playerTestCard);
-            if (GUILayout.Button("Activate Spell")) DuelFXManager.Instance.PlayCardActivation(playerTestCard, false);
-            if (GUILayout.Button("Activate Trap")) DuelFXManager.Instance.PlayCardActivation(playerTestCard, true);
-            if (GUILayout.Button("Tribute (Sacrifício)")) DuelFXManager.Instance.PlayTributeEffect(playerTestCard);
-            if (GUILayout.Button("Fusion")) DuelFXManager.Instance.PlayFusionEffect(playerTestCard);
-            if (GUILayout.Button("Destruction (Destruir)")) DuelFXManager.Instance.PlayDestruction(playerTestCard);
-            if (GUILayout.Button("Banish (Remover)")) DuelFXManager.Instance.PlayBanishEffect(playerTestCard);
-        }
-        else
-        {
-            GUILayout.Label("(Crie o cenário primeiro)");
-        }
-
-        GUILayout.Space(10);
-        GUILayout.Label("Batalha:");
-
-        if (playerTestCard != null && opponentTestCard != null)
-        {
-            if (GUILayout.Button("Ataque (Player -> Oponente)"))
-            {
-                DuelFXManager.Instance.PlayAttack(playerTestCard, opponentTestCard, () => Debug.Log("Ataque finalizado (Callback)"));
-            }
-            if (GUILayout.Button("Ataque Bloqueado (Reflect)"))
-            {
-                DuelFXManager.Instance.PlayAttackFail(playerTestCard);
-            }
-            if (GUILayout.Button("Defesa Bem Sucedida"))
-            {
-                DuelFXManager.Instance.PlayDefenseSuccessEffect(opponentTestCard);
-            }
-        }
-        else
-        {
-            GUILayout.Label("(Precisa de 2 cartas)");
-        }
-
-        GUILayout.Space(10);
-        GUILayout.Label("Globais:");
+        GUILayout.Space(5);
+        GUILayout.Label("<color=cyan><b>BATALHA E REMOÇÃO</b></color>");
         
-        if (GUILayout.Button("Dano (Damage)"))
+        if (GUILayout.Button("Ataque Direto Completo (Dano Tela)", btnStyle)) { 
+            EnsurePlayerMonster();
+            if (GameManager.Instance != null) GameManager.Instance.enableAttackAnimation = true; // Força a espada
+            DuelFXManager.Instance.PlayAttack(playerMonster, null, () => {
+                DuelFXManager.Instance.PlayDamageEffect(Vector3.zero);
+            }); 
+        }
+        if (GUILayout.Button("Ataque e Destruir (Alvo Inimigo)", btnStyle)) { 
+            EnsurePlayerMonster(); EnsureOpponentMonster();
+            if (GameManager.Instance != null) GameManager.Instance.enableAttackAnimation = true; // Força a espada
+            DuelFXManager.Instance.PlayAttack(playerMonster, opponentMonster, () => {
+                DuelFXManager.Instance.PlayDestruction(opponentMonster);
+            }); 
+        }
+        if (GUILayout.Button("Ataque Bloqueado (Bate e Defende)", btnStyle)) { 
+            EnsurePlayerMonster(); EnsureOpponentMonster();
+            if (GameManager.Instance != null) GameManager.Instance.enableAttackAnimation = true; // Força a espada
+            DuelFXManager.Instance.PlayAttack(playerMonster, opponentMonster, () => {
+                DuelFXManager.Instance.PlayAttackFail(playerMonster);
+                DuelFXManager.Instance.PlayDefenseSuccessEffect(opponentMonster);
+            }); 
+        }
+        
+        if (GUILayout.Button("Apenas Banir (Vórtice)", btnStyle)) { EnsureOpponentMonster(); DuelFXManager.Instance.PlayBanishEffect(opponentMonster); }
+
+        GUILayout.FlexibleSpace(); // Empurra pro fundo
+        
+        GUILayout.Label("<color=cyan><b>GLOBAIS</b></color>");
+        if (GUILayout.Button("Tremor de Dano na Tela", btnStyle)) DuelFXManager.Instance.PlayDamageEffect(Vector3.zero);
+        if (GUILayout.Button("Teste: Cinemática de Ritual", btnStyle)) { 
+            EnsurePlayerMonster(); EnsurePlayerSpell(); 
+            DuelFXManager.Instance.PlayRitualCinematic(playerMonster, playerSpell.CurrentCardData, null); 
+        }
+        if (GUILayout.Button("Teste: Cinemática de Fusão", btnStyle)) { 
+            EnsurePlayerMonster(); EnsureOpponentMonster(); EnsurePlayerSpell(); 
+            List<CardData> mats = new List<CardData> { playerMonster.CurrentCardData, opponentMonster.CurrentCardData };
+            DuelFXManager.Instance.PlayFusionCinematic(playerMonster, mats, playerSpell.CurrentCardData, null); 
+        }
+        if (GUILayout.Button("Embaralhar Deck (Shuffle)", btnStyle)) 
         {
-            DuelFXManager.Instance.PlayDamageEffect(Vector3.zero);
+            if (GameManager.Instance.duelFieldUI != null) DuelFXManager.Instance.PlayShuffleEffect(GameManager.Instance.duelFieldUI.playerDeck);
         }
 
         GUILayout.EndArea();
     }
 
-    void SetupTestScenario()
-    {
-        if (GameManager.Instance == null) return;
+    // Helpers de auto-geração para facilitar o teste em um clique
+    void EnsurePlayerMonster() { if (playerMonster == null || playerMonster.gameObject == null) playerMonster = CreateDummyCard(true, "0001", true); }
+    void EnsureOpponentMonster() { if (opponentMonster == null || opponentMonster.gameObject == null) opponentMonster = CreateDummyCard(false, "0002", true); }
+    void EnsurePlayerSpell() { if (playerSpell == null || playerSpell.gameObject == null) playerSpell = CreateDummyCard(true, "0336", false); }
+    void EnsurePlayerField() { if (playerField == null || playerField.gameObject == null) playerField = CreateDummyCard(true, "0013", false, true); }
 
-        // Tenta encontrar cartas já existentes para não duplicar
-        if (playerTestCard == null || opponentTestCard == null)
-        {
-            var cards = FindObjectsByType<CardDisplay>(FindObjectsSortMode.None);
-            foreach (var c in cards)
-            {
-                if (c.isPlayerCard && playerTestCard == null) playerTestCard = c;
-                if (!c.isPlayerCard && opponentTestCard == null) opponentTestCard = c;
-            }
-        }
-
-        // Se ainda não tem, cria novas
-        if (playerTestCard == null)
-        {
-            playerTestCard = CreateDummyCard(true, "0001"); // Ex: 3-Hump Lacooda
-        }
-        
-        if (opponentTestCard == null)
-        {
-            opponentTestCard = CreateDummyCard(false, "0002"); // Ex: 30,000-Year White Turtle
-        }
-    }
-
-    CardDisplay CreateDummyCard(bool isPlayer, string cardId)
+    CardDisplay CreateDummyCard(bool isPlayer, string cardId, bool isMonster, bool isField = false)
     {
         if (GameManager.Instance.duelFieldUI == null) return null;
 
-        Transform zone = isPlayer ? 
-            GameManager.Instance.duelFieldUI.playerMonsterZones[2] : 
-            GameManager.Instance.duelFieldUI.opponentMonsterZones[2];
+        Transform zone = null;
+        if (isMonster)
+            zone = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones[2] : GameManager.Instance.duelFieldUI.opponentMonsterZones[2];
+        else if (isField)
+            zone = isPlayer ? GameManager.Instance.duelFieldUI.playerFieldSpell : GameManager.Instance.duelFieldUI.opponentFieldSpell;
+        else
+            zone = isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones[2] : GameManager.Instance.duelFieldUI.opponentSpellZones[2];
 
         // Limpa a zona se tiver algo
         if (zone.childCount > 0) Destroy(zone.GetChild(0).gameObject);
@@ -126,6 +160,9 @@ public class EffectTestManager : MonoBehaviour
         CardData data = GameManager.Instance.cardDatabase.GetCardById(cardId);
         if (data == null && GameManager.Instance.cardDatabase.cardDatabase.Count > 0) 
             data = GameManager.Instance.cardDatabase.cardDatabase[0]; // Fallback
+
+        // Força a propriedade Field se for na Field Zone para o VFX de cinemática reconhecer
+        if (isField && data != null) data.property = "Field";
 
         display.isPlayerCard = isPlayer;
         display.isOnField = true;
