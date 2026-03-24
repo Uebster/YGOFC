@@ -2216,13 +2216,15 @@ public class CardEffectManager : MonoBehaviour
     public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, SendReason reason) { }
     public void OnDamageTaken(bool isPlayer, int amount) { }
     public void OnLifePointsGained(bool isPlayer, int amount) { }
-    public void OnCardEquipped(CardDisplay equip, CardDisplay target) 
-    { 
+    public void OnCardEquipped(CardDisplay equip, CardDisplay target)
+    {
         if (DuelFXManager.Instance != null)
             DuelFXManager.Instance.PlayEquipEffect(equip, target);
+
+        RecalculateStats(target);
     }
     public void OnSpellActivated(CardDisplay spell) { }
-    
+
     // Métodos (Stubs) mantidos para não quebrar a lógica hardcoded do GameManager
     public void CheckMaintenanceCosts() { }
     public bool HasActiveSecondCoinToss(out bool isPlayerCard) { isPlayerCard = false; return false; }
@@ -2232,17 +2234,25 @@ public class CardEffectManager : MonoBehaviour
 
     public void OnCardLeavesField(CardDisplay card)
     {
+        // NOVA LÓGICA DE EQUIPAMENTO: Se a carta que sai é um equipamento, recalcula o status do alvo
+        // Este bloco deve vir ANTES da destruição dos links.
+        CardLink[] allLinks = UnityEngine.Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        foreach (var link in allLinks)
+        {
+            // Se a carta que está saindo é a FONTE de um link de equipamento
+            if (link.source == card && link.type == CardLink.LinkType.Equipment && link.target != null)
+            {
+                // Recalcula o status do alvo, que agora não tem mais este equipamento
+                // Atraso de um frame para garantir que o link seja destruído primeiro se necessário
+                StartCoroutine(RecalculateStatsNextFrame(link.target));
+            }
+        }
+
         // Limpeza de cache de Lua para não poluir a RAM
         if (activeLuaCards.ContainsKey(card)) activeLuaCards.Remove(card);
 
-        // Limpeza Genérica Obrigatória (Isso continua sendo C# nativo para não bugar a engine)
-        if (GameManager.Instance.duelFieldUI != null)
-        {
-        }
-
-        // Destrói equipamentos físicos que dependem desta carta
-        CardLink[] links = UnityEngine.Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
-        foreach (var link in links)
+        // Destrói equipamentos físicos que dependem DESTA carta (se esta carta for o ALVO)
+        foreach (var link in allLinks)
         {
             if (link.target == card && link.type == CardLink.LinkType.Equipment && link.source != null && link.source.isOnField)
             {
@@ -2260,6 +2270,70 @@ public class CardEffectManager : MonoBehaviour
             }
             blockedZonesByCard.Remove(card);
         }
+    }
+
+    private IEnumerator RecalculateStatsNextFrame(CardDisplay monster)
+    {
+        yield return null; // Aguarda 1 frame
+        RecalculateStats(monster);
+    }
+    
+    public void RecalculateStats(CardDisplay monster)
+    {
+        if (monster == null || monster.CurrentCardData == null || !monster.CurrentCardData.type.Contains("Monster")) return;
+
+        int newAtk = monster.originalAtk;
+        int newDef = monster.originalDef;
+
+        // Encontra os equipamentos
+        List<CardDisplay> equippedCards = GetEquippedCards(monster);
+
+        foreach (var equipCard in equippedCards)
+        {
+            if (equipCard == null) continue;
+            LuaCard luaEquip = EnsureCardScriptLoaded(equipCard);
+            if (luaEquip == null) continue;
+
+            var equipEffects = luaEquip.registeredEffects.FindAll(e => e.type == 0x4); // EFFECT_TYPE_EQUIP
+            foreach (var effect in equipEffects)
+            {
+                try
+                {
+                    int value = 0;
+                    object valObj = effect.GetValue();
+                    if (valObj is double || valObj is long)
+                    {
+                        value = System.Convert.ToInt32(valObj);
+                    }
+                    else if (valObj is Closure valClosure)
+                    {
+                        DynValue result = luaEngine.Call(valClosure, effect, new LuaCard(monster));
+                        if (result.Type == DataType.Number)
+                        {
+                            value = (int)result.Number;
+                        }
+                    }
+
+                    if (effect.code == 100) // EFFECT_UPDATE_ATTACK
+                    {
+                        newAtk += value;
+                    }
+                    else if (effect.code == 104) // EFFECT_UPDATE_DEFENSE
+                    {
+                        newDef += value;
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[RecalculateStats] Erro ao aplicar o efeito de {equipCard.CurrentCardData.name}: {ex.Message}");
+                }
+            }
+        }
+
+        monster.currentAtk = newAtk;
+        monster.currentDef = newDef;
+
+        Debug.Log($"[RecalculateStats] Status de {monster.CurrentCardData.name} atualizado para ATK {newAtk} / DEF {newDef}");
     }
 
     // --- HOOKS DE BATALHA ---

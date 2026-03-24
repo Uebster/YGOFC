@@ -174,17 +174,17 @@ public class OpponentAI : MonoBehaviour
         // Separa cartas por tipo (EXCLUINDO cartas já usadas neste turno)
         var monsters = hand.Where(go => {
             var cd = go.GetComponent<CardDisplay>();
-            return cd != null && cd.CurrentCardData.type.Contains("Monster") && !usedCardsThisTurn.Contains(cd.GetInstanceID());
+            return cd != null && cd.CurrentCardData != null && cd.CurrentCardData.type.Contains("Monster") && !usedCardsThisTurn.Contains(cd.GetInstanceID());
         }).ToList();
         
         var spells = hand.Where(go => {
             var cd = go.GetComponent<CardDisplay>();
-            return cd != null && cd.CurrentCardData.type.Contains("Spell") && !cd.CurrentCardData.type.Contains("Trap") && !usedCardsThisTurn.Contains(cd.GetInstanceID());
+            return cd != null && cd.CurrentCardData != null && cd.CurrentCardData.type.Contains("Spell") && !cd.CurrentCardData.type.Contains("Trap") && !usedCardsThisTurn.Contains(cd.GetInstanceID());
         }).ToList();
         
         var traps = hand.Where(go => {
             var cd = go.GetComponent<CardDisplay>();
-            return cd != null && cd.CurrentCardData.type.Contains("Trap") && !usedCardsThisTurn.Contains(cd.GetInstanceID());
+            return cd != null && cd.CurrentCardData != null && cd.CurrentCardData.type.Contains("Trap") && !usedCardsThisTurn.Contains(cd.GetInstanceID());
         }).ToList();
 
         // === MONSTROS: Invoca normal summon (máximo 1 por turno) ===
@@ -341,7 +341,7 @@ public class OpponentAI : MonoBehaviour
         if (GameManager.Instance.normalSummonsThisTurnOpponent > 0) return actions;
 
         var hand = GameManager.Instance.opponentHand;
-        var monstersInHand = hand.Select(go => go.GetComponent<CardDisplay>()).Where(cd => cd != null && cd.CurrentCardData.type.Contains("Monster")).ToList();
+        var monstersInHand = hand.Select(go => go.GetComponent<CardDisplay>()).Where(cd => cd != null && cd.CurrentCardData != null && cd.CurrentCardData.type.Contains("Monster")).ToList();
         
         int myMonsterCount = GetMyMonstersOnField().Count;
         int playerStrongestATK = GetPlayerStrongestAtk();
@@ -438,7 +438,7 @@ public class OpponentAI : MonoBehaviour
 
         foreach (var monster in myMonsters)
         {
-            if (usedCardsThisTurn.Contains(monster.GetInstanceID()) || monster.isFlipped) continue;
+            if (monster == null || monster.CurrentCardData == null || usedCardsThisTurn.Contains(monster.GetInstanceID()) || monster.isFlipped) continue;
 
             string id = monster.CurrentCardData.id;
 
@@ -475,7 +475,7 @@ public class OpponentAI : MonoBehaviour
         foreach (var go in hand)
         {
             var cd = go.GetComponent<CardDisplay>();
-            if (cd == null || !cd.CurrentCardData.type.Contains("Spell")) continue;
+            if (cd == null || cd.CurrentCardData == null || !cd.CurrentCardData.type.Contains("Spell")) continue;
 
             // INTEGRAÇÃO LUA: Checagem estrita de Ativação (chk=0)
             LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(cd);
@@ -588,7 +588,7 @@ public class OpponentAI : MonoBehaviour
         foreach (var go in hand)
         {
             var cd = go.GetComponent<CardDisplay>();
-            if (cd != null)
+            if (cd != null && cd.CurrentCardData != null)
             {
                 if (cd.CurrentCardData.type.Contains("Trap"))
                 {
@@ -717,7 +717,7 @@ public class OpponentAI : MonoBehaviour
             if (zone.childCount > 0)
             {
                 var defender = zone.GetChild(0).GetComponent<CardDisplay>();
-                if (defender == null) continue;
+                if (defender == null || defender.CurrentCardData == null) continue;
 
                 float score = 0;
 
@@ -805,7 +805,7 @@ public class OpponentAI : MonoBehaviour
         var scoredCards = hand.Select(go => {
             var cd = go.GetComponent<CardDisplay>();
             float score = 0;
-            if (cd != null)
+            if (cd != null && cd.CurrentCardData != null)
             {
                 if (cd.CurrentCardData.type.Contains("Monster"))
                 {
@@ -855,7 +855,7 @@ public class OpponentAI : MonoBehaviour
         var scoredCards = hand.Select(go => {
             var cd = go.GetComponent<CardDisplay>();
             float score = 0;
-            if (cd != null)
+            if (cd != null && cd.CurrentCardData != null)
             {
                 if (cd.CurrentCardData.type.Contains("Monster"))
                 {
@@ -1172,7 +1172,10 @@ public class OpponentAI : MonoBehaviour
         foreach (var zone in GameManager.Instance.duelFieldUI.opponentMonsterZones)
         {
             if (zone.childCount > 0)
-                list.Add(zone.GetChild(0).GetComponent<CardDisplay>());
+            {
+                var cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (cd != null) list.Add(cd);
+            }
         }
         return list;
     }

@@ -6,103 +6,86 @@ Este documento centraliza a arquitetura principal do motor do jogo, descrevendo 
 
 ## 3.1 Visão Geral dos Gerenciadores (Managers)
 
-O jogo utiliza uma arquitetura de múltiplos Managers (Singletons) para separar responsabilidades e facilitar a manutenção. O `GameManager` atua como o orquestrador central.
+O jogo utiliza uma arquitetura de múltiplos Managers (Singletons) para separar responsabilidades. O `GameManager` atua como o orquestrador central, com o `CardEffectManager` e `PhaseManager` como seus principais assistentes.
 
-### 1. PhaseManager
-**Responsabilidade:** Controlar o fluxo de tempo e fases do turno.
+### 1. GameManager
+**Responsabilidade:** Orquestrador central do duelo. Gerencia o estado do jogo (LP, turnos), as listas de cartas (mão, cemitério, etc.), e inicia as principais ações de jogo como invocações e ativação de cartas, servindo como a principal interface para a UI. Valida regras de alto nível antes de delegar a lógica de efeitos.
+*   **Funções Principais:** `StartDuel`, `EndDuel`, `SwitchTurn`, `TrySummonMonster`, `PlaySpellTrap`.
+
+### 2. PhaseManager
+**Responsabilidade:** Controlar o fluxo de tempo e as fases do turno.
 *   **Fases:** Draw -> Standby -> Main 1 -> Battle -> Main 2 -> End.
-*   **Funções:**
-    *   `ChangePhase(GamePhase)`: Avança para a próxima fase.
-    *   `StartTurn()`: Reseta contadores do turno.
-    *   Gerencia a UI da barra de fases (botões e brilho neon).
+*   **Funções:** `ChangePhase(GamePhase)`, `StartTurn()`.
+*   Atua como uma máquina de estados, chamando `hooks` no `GameManager` (`OnDrawPhaseStart`, etc.) quando as fases mudam.
 
-### 2. SummonManager
-**Responsabilidade:** Validar e executar regras de invocação de monstros.
-*   **Regras:** Limite de 1 Normal Summon por turno, Tributos necessários (Nível 5+).
-*   **Funções:**
-    *   `PerformSummon(...)`: Verifica se a invocação é válida.
-    *   `GetRequiredTributes(level)`: Retorna 0, 1 ou 2.
-    *   `SelectTributes(...)`: Inicia o fluxo de seleção manual de tributos com callback.
-    *   Gerencia o fluxo de **Tributo Manual** (pausa o jogo para o jogador selecionar os monstros a sacrificar).
+### 3. CardEffectManager
+**Responsabilidade:** Hub central para execução de lógica de cartas (via scripts Lua), gerenciamento de correntes (Chains) e escuta de eventos globais.
+*   **Estrutura:** Usa a engine **MoonSharp** para interpretar scripts Lua associados a cada carta.
+*   **Hooks:** `OnSummon`, `OnAttack`, `OnCardSentToGraveyard`, `OnPhaseStart`, etc. É notificado pelo `GameManager` e `PhaseManager` sobre os eventos do jogo.
+*   **Correntes (Chains):** Gerencia a pilha de efeitos LIFO (Last-In, First-Out) quando múltiplos efeitos são ativados em resposta.
 
-### 3. BattleManager
-**Responsabilidade:** Gerenciar a Battle Phase, ataques e cálculo de dano.
-*   **Funções:**
-    *   `DeclareAttack(attacker)`: Inicia um ataque.
-    *   `SelectTarget(target)`: Define o alvo e calcula o resultado.
-    *   `ResolveDamage(...)`: Aplica a lógica de ATK vs ATK ou ATK vs DEF e destrói monstros.
-    *   `IsTrapActivationBlocked(...)`: Verifica se armadilhas podem ser ativadas na Battle Phase (ex: *Mirage Dragon*).
-    *   `TryChangePosition(card)`: Gerencia a mudança manual de posição (Ataque/Defesa) com limite de 1x por turno.
-
-### 4. SpellTrapManager
-**Responsabilidade:** Gerenciar regras de Magias e Armadilhas e respostas (Chains).
-*   **Funções:**
-    *   `CheckForTraps(...)`: Verifica se há armadilhas que podem ser ativadas em resposta a um ataque ou invocação.
-    *   `CanActivateCard(...)`: Valida se uma carta pode ser usada (ex: Trap só no turno seguinte).
-    *   Gerencia exceções como pular Draw Phase ou comprar cartas extras.
-
-### 5. ChainManager
-**Responsabilidade:** Gerenciar a pilha de efeitos (Corrente/Chain).
-*   **Lógica:** LIFO (Last-In, First-Out). O último card ativado resolve primeiro.
-*   **Funções:**
-    *   `AddToChain(card)`: Adiciona um efeito à pilha.
-    *   `ResolveChain()`: Executa os efeitos na ordem inversa e envia as cartas para o cemitério (se não forem contínuas).
-
-### 6. SpellCounterManager
-**Responsabilidade:** Gerenciar contadores de magia (Spell Counters) em cartas.
-*   **Funções:**
-    *   `AddCounter(card, amount)`: Adiciona contadores.
-    *   `RemoveCounter(card, amount)`: Remove contadores.
-    *   `GetCount(card)`: Retorna a quantidade atual.
-    *   `RemoveCountersFromField(...)`: Remove contadores de qualquer lugar do campo (para custos).
-
-### 7. CardEffectManager
-**Responsabilidade:** Hub central para execução de lógica de cartas e escuta de eventos globais.
-*   **Estrutura:** Dividido em classes parciais (`Impl`, `Registry`, `Part1`..`Part5`) para organização.
-*   **Hooks:** `OnSummon`, `OnSet`, `OnBattlePositionChanged`, `OnCardSentToGraveyard`, `OnPhaseStart`, etc.
-*   **Flags Globais:** Gerencia estados como `reverseStats` (Reverse Trap) e `banishInsteadOfGraveyard` (Macro Cosmos).
-
-### 8. DuelFXManager
+### 4. DuelFXManager
 **Responsabilidade:** Feedback visual e sonoro.
-*   **Funções:**
-    *   Toca sons (SFX) e instancia partículas (VFX) para ações como Invocação, Ataque, Dano, Flip, etc.
-    *   `UpdateBGM(playerLP, opponentLP)`: Altera a música de fundo dinamicamente baseada na vantagem de vida.
+*   **Funções:** Toca sons (SFX) e instancia partículas (VFX) para ações como Invocação, Ataque, Dano, etc. Também gerencia a música de fundo dinâmica.
+
+*(Nota: Gerenciadores como `SummonManager`, `BattleManager` e `ChainManager` foram consolidados no `GameManager` e `CardEffectManager` para centralizar o fluxo de controle).*
 
 ---
 
 ## 3.2 Funções Vitais e Configurações (`GameManager.cs`)
 
-O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente. Ele orquestra o duelo e abriga diversas configurações de inspeção (Inspector).
+O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente. Ele orquestra o duelo, atuando como o "mestre de cerimônias" que detém o estado do jogo e serve como a API principal para a UI e outros gerenciadores.
 
-### 3.2.1 Controle de Duelo, Vida e Dados
-*   **Duelo:**
-    *   `StartDuel()`: Inicia um duelo (Free Duel ou Campanha). Limpa o tabuleiro, embaralha decks e compra mãos iniciais.
-    *   `EndDuel(bool playerWon)`: Finaliza o duelo, calcula pontuação e rank.
-    *   `CleanupDuelState()`: Reseta todas as listas e destrói objetos visuais.
-*   **Vida (LP):**
-    *   `DamagePlayer(int amount)` / `DamageOpponent(int amount)`: Reduz LP, atualiza UI e checa vitória/derrota.
-    *   `PayLifePoints(isPlayer, amount)`: Tenta pagar LP. Retorna `false` se não tiver o suficiente.
-    *   `GainLifePoints(isPlayer, amount)`: Aumenta os LP.
-*   **Perfil e Dados:**
-    *   `GetPlayerMainDeck()`: Retorna a lista atual do Deck.
-    *   `PlayerHasCard(id)`: Verifica se o jogador possui uma carta no Trunk (Baú).
-    *   `SetPlayerProfile(name, saveID)`: Atualiza dados do perfil.
+### 3.2.1 Orquestração do Duelo e Gerenciamento de Estado
+*   **Controle do Duelo:**
+    *   `StartDuel()`: Ponto de entrada para iniciar um duelo. Limpa o estado anterior, inicializa decks, LPs e chama a corrotina `DuelStartSequence` para a animação inicial.
+    *   `StartDuel(opponent, duelIndex)`: Sobrecarga para iniciar um duelo de campanha contra um oponente específico.
+    *   `EndDuel(bool playerWon, isDeckOut)`: Finaliza o duelo, chama o `DuelScoreManager` e exibe a tela de recompensas.
+    *   `SwitchTurn()`: Realiza a troca de turno, limpa contadores (`lpPaidThisTurn`), atualiza a UI de fase e invoca a IA se for o turno do oponente.
+    *   `CleanupDuelState()`: Método de limpeza pesada que destrói todos os GameObjects de cartas, limpa todas as listas de dados (mão, campo, GY, etc.) e reseta a UI.
+*   **Gerenciamento de Vida (LP):**
+    *   `DamagePlayer(int amount)` / `DamageOpponent(int amount)`: Reduz LP, exibe pop-up de dano, notifica o `CardEffectManager` e verifica condição de derrota.
+    *   `PayLifePoints(isPlayer, amount)`: Tenta pagar um custo em LP. Retorna `false` se os LPs forem insuficientes.
+    *   `GainLifePoints(isPlayer, amount)`: Aumenta os LPs, exibe pop-up e notifica o `CardEffectManager`.
+*   **Eventos de Fase (Hooks):**
+    *   `OnDrawPhaseStart()`: Chamado pelo `PhaseManager`. Reseta contadores de turno (Normal Summon, ataques) e inicia o saque.
+    *   `OnStandbyPhaseStart()`: Chamado pelo `PhaseManager`. Dispara a verificação de custos de manutenção no `CardEffectManager`.
+    *   `OnEndPhaseStart()`: Chamado pelo `PhaseManager`. Inicia a corrotina `HandleHandLimitSequence` para verificar o limite de mão.
+*   **Consultas de Estado:**
+    *   `IsCardActiveOnField(cardId)`: Verifica se uma carta com um ID específico está com a face para cima no campo (para efeitos contínuos como *Jinzo*).
+    *   `GetFieldCardCount(isPlayer)`, `GetMonsterCount(isPlayer)`, `GetFreeMonsterZones(isPlayer)`, `GetFreeSpellTrapZones(isPlayer)`: Helpers para a IA e efeitos de cartas consultarem o estado do tabuleiro.
+    *   `GetPlayerHandData()`, `GetPlayerGraveyard()`, etc.: Métodos que retornam as listas de `CardData` das zonas correspondentes.
 
-### 3.2.2 Ações de Cartas e Tabuleiro
-*   `DrawCard(bool ignoreLimit)`: Compra uma carta do Deck.
-*   `DrawOpponentCard()`: Compra carta para IA.
-*   `TrySummonMonster(cardGO, data, isSet)`: Inicia o fluxo de invocação.
-*   `PerformSpecialSummon(cardGO, data)`: Abre o modal de escolha de posição (Atk/Def) e realiza Special Summon.
-*   `PlaySpellTrap(cardGO, data, isSet)`: Ativa ou Seta uma M/T.
-*   `ActivateFieldSpellTrap(cardGO)`: Ativa uma carta que já estava Setada.
-*   `TributeCard(card)`: Envia ao GY como tributo (com VFX).
-*   `SendToGraveyard(card, isPlayer)` / `RemoveFromPlay(data, isPlayer)`: Envia ao GY ou Bane a carta.
-*   `DiscardCard(card)` / `DiscardHand(isPlayer)`: Regras de descarte direto.
-*   `ReturnToHand(card)` / `ReturnToDeck(card, toTop)`: Bounce e Spin.
-*   `ShuffleDeck(isPlayer)`: Re-embaralha o deck de um jogador.
-*   `MillCards(isPlayer, amount)`: Envia cartas do topo do deck para o GY.
-*   `CreateCardLink(source, target, type)`: Cria o elo invisível de Equipamento.
-*   **Mecânicas Especiais:** `BeginFusionSummon`, `PerformFusionSummon`, `BeginRitualSummon`, `PerformRitualSummon`, `TossCoin`, `SpawnToken`.
+### 3.2.2 API de Ações de Jogo (A Caixa de Ferramentas)
+Esta é a API principal que a UI e o `CardEffectManager` usam para executar ações no jogo.
+
+*   **Movimentação de Cartas (Core):**
+    *   `MoveCard(card, destination, reason)`: **Método unificado** para mover uma carta entre zonas (Mão, Deck, GY, Banida). Centraliza a lógica de saída de campo.
+    *   `DrawCard(ignoreLimit)` / `DrawOpponentCard()`: Delega a compra de cartas ao `DeckManager`.
+    *   `SendToGraveyard(card, isPlayer, from, reason)`: Adiciona a carta à lista do cemitério e notifica o `CardEffectManager`.
+    *   `BanishCard(card)`: Nova implementação para banir uma carta do jogo.
+    *   `ReturnToHand(card)` / `ReturnToDeck(card, toTop)`: Efeitos de "Bounce" e "Spin".
+    *   `EquipMonsterToMonster(equip, target)`: Transforma um monstro em equipamento e cria um `CardLink`.
+*   **Ações de Jogo:**
+    *   `TrySummonMonster(cardGO, data, isSet)`: Inicia a validação de invocação e, se aprovada, delega para `CardEffectManager` (Lua) ou `FinalizeSummon`.
+    *   `FinalizeSummon(...)`: Etapa final da invocação, responsável por colocar a carta fisicamente na zona e aplicar os efeitos visuais.
+    *   `PlaySpellTrap(cardGO, data, isSet)`: Inicia a validação para ativar ou baixar uma Magia/Armadilha.
+    *   `ActivateFieldSpellTrap(cardGO)`: Ativa uma carta que já estava Setada no campo.
+    *   `TributeCard(card)`: Envia uma carta ao cemitério como tributo (com VFX).
+    *   `DiscardCard(card)` / `DiscardRandomHand(isPlayer, amount)` / `DiscardHand(isPlayer)`: Métodos para descarte.
+*   **Invocações Especiais e Mecânicas:**
+    *   `SpecialSummonFromData(...)`: Invoca um monstro diretamente a partir de seus dados (`CardData`), usado para reviver do cemitério ou invocar do deck.
+    *   `BeginFusionSummon(source)` / `BeginRitualSummon(source)`: Abrem as UIs de Fusão/Ritual para seleção de materiais.
+    *   `PerformRitualSummon(source, ritual, tributes)`: Executa a invocação ritual após a seleção.
+    *   `SpawnToken(...)`: Cria um Token em uma zona de monstro livre.
+    *   `SwitchControl(card)`: Troca o controle de um monstro para o oponente.
+*   **Interação com UI e Minigames:**
+    *   `OpenCardMultiSelection(...)`: Abre a UI para seleção de cartas de uma lista.
+    *   `HandleHandCardClick(card)`: Gerencia a lógica de clique para o modo `useDirectHandSelection`.
+    *   `TossCoin(...)` / `RollDice(...)`: Inicia os respectivos minigames.
+    *   `ViewGraveyard(isPlayer)`, `ViewDeck(isPlayer)`, etc: Abrem os painéis de visualização das pilhas.
+    *   `UpdateCardViewer(card, isFaceUp)` / `ClearCardViewer()`: Controla a janela de visualização principal.
+    *   `ToggleOpponentHandVisibility()`: Ferramenta de debug para mostrar/esconder a mão do oponente.
 
 ### 3.2.3 Modos de Jogo, Debug e Ferramentas (Inspector Flags)
 *   `devMode`: Habilita trapaças gerais (comprar a qualquer hora, controlar cartas do oponente).

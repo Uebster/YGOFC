@@ -77,10 +77,22 @@ O script-mestre central de construção do `cards.json`. Flexível e multi-forma
 *   **Limpeza de Dados:** Extrai corretamente a diferença entre `attribute` (para monstros) e `property` (para mágicas/armadilhas) que vêm fundidos das APIs originais. Preserva subtipos exatos (ex: "Monster (Fusion)").
 *   **Mapeamento de Imagem:** Numera e linka as imagens sequenciais baseadas na ordem alfabética das cartas.
 
-### 2.3.3 Aquisição e Scrapers (`download_cards.py`)
-Um servidor local Flask (`http://localhost:5000`) que consome a API da *YGOPRODeck*. 
-*   Filtra as cartas por data (escopo de 1999 a 2005) e região (OCG/TCG).
-*   Gera o arquivo `lista_cartas.txt` padronizado com 10 colunas e baixa as texturas automaticamente para a pasta `StreamingAssets`.
+### 2.3.3 Aquisição e Scrapers (`download_cards_ultimate.py`)
+A aquisição de dados brutos foi centralizada em uma única e poderosa ferramenta, `download_cards_ultimate.py`. Este script não é uma simples ferramenta de linha de comando, mas sim uma aplicação web local completa, construída com Flask.
+
+*   **Interface Web (UI):** Ao ser executado, o script inicia um servidor em `http://localhost:5000` que renderiza uma interface gráfica no navegador. A partir dela, o desenvolvedor pode configurar e disparar diferentes tarefas de extração.
+*   **Multi-Funcionalidade ("Ultimate Extractor"):** A ferramenta pode executar uma variedade de tarefas de forma independente:
+    *   **Gerar TXT/CSV:** Cria listas de cartas formatadas com colunas selecionáveis.
+    *   **Gerar JSON Master:** Produz o `cards_ultimate.json`, uma versão mais completa e estruturada que a usada pelo jogo, servindo como uma base de dados crua.
+    *   **Baixar Imagens (HD):** Utiliza Multi-Threading para baixar rapidamente todas as imagens de alta resolução da API, incluindo artes alternativas.
+    *   **Baixar Scripts LUA:** Busca os scripts de efeito de múltiplos repositórios do YGOPro (ProjectIgnis, etc.) para garantir a maior cobertura possível.
+    *   **Auditoria:** Varre as pastas de destino e gera um relatório `audit_report.txt` com todas as imagens e scripts LUA que estão faltando.
+    *   **Repetir Erros:** Analisa um `error_log.txt` para tentar baixar novamente apenas os arquivos que falharam em uma execução anterior.
+    *   **Backup (ZIP):** Compacta toda a base de dados gerada em um único arquivo `.zip`.
+*   **Geração de ID Customizado:** Uma das características mais importantes deste script é a geração de um ID customizado e imutável para cada carta (ex: `DM0001`). Ele faz isso categorizando todas as cartas da história do Yu-Gi-Oh! por era (DM, GX, 5D's, etc.) e depois ordenando-as alfabeticamente dentro de cada era. Isso garante que, mesmo que a API mude os IDs oficiais, o sistema interno do jogo permaneça estável.
+*   **Robustez:** A ferramenta inclui um sistema de `retry` automático para downloads que falham e um botão de "Cancelar" na UI para interromper processos longos.
+
+*(Nota: O antigo `download_cards.py` foi mantido como um fallback mais simples, mas o fluxo de trabalho principal agora depende da versão "ultimate").*
 
 ### 2.3.4 Geradores de Personagens e Bots
 *   **`generate_characters.py`:** Monta o esqueleto inicial do `characters.json`. Define estritamente os 100 oponentes listados no Roteiro (Atos 1 ao 10), atrelando seus IDs oficiais (`XXX_nome_variacao`), dificuldade, `story_role` (Treinamento, Guardião, Chefe, etc.) e o ambiente virtual (`field`).
@@ -135,6 +147,7 @@ A classe mestra que serializa a vida do duelista. Carrega blocos cruciais:
 *   `campaignProgress`: Nível numérico indicando em qual Ato/Oponente do mapa o jogador está travado.
 *   `trunkCards`: A colossal lista (List de Strings) dos IDs de **todas** as cartas que o jogador possui no Baú.
 *   `mainDeck`, `sideDeck`, `extraDeck`: As listas de IDs das cartas ativamente equipadas no baralho principal.
+*   `playerExtraDeckIDs`: Lista de IDs dedicada para o Extra Deck do jogador, separada do `extraDeck` genérico.
 *   `libraryData`: Metadados da enciclopédia. Contém:
     *   Vitórias acumuladas contra cada oponente (vital para liberar a visualização do deck do bot na biblioteca).
     *   Lista de cartas já usadas/vistas (vital para a remoção da etiqueta "NEW").

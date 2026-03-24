@@ -31,6 +31,21 @@ public class DuelTheme : ScriptableObject
     public Sprite handleRemoved;
     public Sprite closeRemovedBtn;
 
+    [Header("Minigame Panels")]
+    public Sprite coinTossPanelBg;
+    public Sprite diceRollPanelBg;
+    public Sprite turnClockPanelBg;
+
+    [Header("Global Search UI")]
+    public Sprite globalSearchPanel;
+    public Sprite handleGlobalSearch;
+    public Sprite closeGlobalSearchBtn;
+
+    [Header("Card Selection UI")]
+    public Sprite cardSelectionPanel;
+    public Sprite handleCardSelection;
+    public Sprite closeCardSelectionBtn;
+
     [Header("Minigames (Sorte/Tempo)")]
     public Sprite coinHeadsSprite;
     public Sprite coinTailsSprite;

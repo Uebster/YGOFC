@@ -1007,6 +1007,51 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                     return;
                 }
             }
+            else // Turno do Oponente (Controle Manual)
+            {
+                // Apenas em modo de teste e com IA desligada
+                if (GameManager.Instance.fullTestMode && OpponentAI.Instance != null && !OpponentAI.Instance.gameObject.activeSelf)
+                {
+                    if (isOnField && !isPlayerCard && currentCardData.type.Contains("Monster"))
+                    {
+                        // Seleciona o monstro do oponente como atacante
+                        if (eventData.button == PointerEventData.InputButton.Left)
+                        {
+                            if (hasAttackedThisTurn)
+                            {
+                                if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Este monstro já atacou neste turno.");
+                                return;
+                            }
+                            CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(this);
+                            SetAttackSelectionVisual(true);
+                        }
+                        else if (eventData.button == PointerEventData.InputButton.Right)
+                        {
+                            CardEffectManager.Instance.luaDuel.currentAttacker = null;
+                            SetAttackSelectionVisual(false);
+                        }
+                        return;
+                    }
+                    else if (isOnField && isPlayerCard && currentCardData.type.Contains("Monster"))
+                    {
+                        // Seleciona o monstro do jogador como alvo
+                        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
+                        {
+                            if (GameManager.Instance != null && GameManager.Instance.confirmAttackTarget && UIManager.Instance != null)
+                            {
+                                UIManager.Instance.ShowConfirmation($"Oponente ataca {currentCardData.name}?", () => {
+                                    ExecuteAttackToTarget(this);
+                                });
+                            }
+                            else
+                            {
+                                ExecuteAttackToTarget(this);
+                            }
+                        }
+                        return;
+                    }
+                }
+            }
         }
 
         // Lógica para cartas na MÃO (isInteractable é o flag para isso)

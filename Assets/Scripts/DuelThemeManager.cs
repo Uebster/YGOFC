@@ -68,6 +68,16 @@ public class DuelThemeManager : MonoBehaviour
     public Image rewardRankBackground;
     public Image rewardContinueButton;
 
+    [Header("Minigame Panels")]
+    public Image coinTossPanel;
+    public Image diceRollPanel;
+    public Image turnClockPanel;
+
+    [Header("Global Search UI")]
+    public Image globalSearchPanel;
+    public Image handleGlobalSearch;
+    public Image closeGlobalSearch;
+
     [Header("Text Containers")]
     // Arraste o objeto pai (Canvas ou Panel_Duel) para buscar todos os textos automaticamente
     public Transform uiRootForTexts; 
@@ -102,23 +112,31 @@ public class DuelThemeManager : MonoBehaviour
         SetSprite(handleExtraDeck, theme.handleExtraDeck);
         SetSprite(closeExtraDeck, theme.closeExtraDeckBtn);
         
-        SetSprite(removedViewerPanel, theme.removedViewerPanel);
-        SetSprite(handleRemoved, theme.handleRemoved);
-        SetSprite(closeRemoved, theme.closeRemovedBtn);
-
-        SetSprite(deckViewerPanel, theme.graveyardViewerPanel); // Reusa estilo do GY
-        SetSprite(handleDeckViewer, theme.handleGraveyard);
-        SetSprite(closeDeckViewer, theme.closeGraveyardBtn);
-
-        SetSprite(cardSelectionPanel, theme.graveyardViewerPanel); // Reusa estilo do GY ou cria novo
-        SetSprite(handleCardSelection, theme.handleGraveyard);
-        SetSprite(closeCardSelection, theme.closeGraveyardBtn);
+                SetSprite(removedViewerPanel, theme.removedViewerPanel);
+                SetSprite(handleRemoved, theme.handleRemoved);
+                SetSprite(closeRemoved, theme.closeRemovedBtn);
         
-        // Opcional: Se quiser que a zona no tabuleiro tenha um sprite específico do tema
-        // SetSprite(playerRemovedZone, theme.removedZoneBg); 
-
-        SetSprite(panelActionMenu, theme.panelActionMenu);
-        SetSprite(btnSummon, theme.btnSummon);
+                SetSprite(deckViewerPanel, theme.graveyardViewerPanel); // Reusa estilo do GY
+                SetSprite(handleDeckViewer, theme.handleGraveyard);
+                SetSprite(closeDeckViewer, theme.closeGraveyardBtn);
+        
+                // UI de Seleção de Carta agora tem seu próprio tema
+                SetSprite(cardSelectionPanel, theme.cardSelectionPanel);
+                SetSprite(handleCardSelection, theme.handleCardSelection);
+                SetSprite(closeCardSelection, theme.closeCardSelectionBtn);
+        
+                // Novos paineis de Minigame e Busca
+                SetSprite(coinTossPanel, theme.coinTossPanelBg);
+                SetSprite(diceRollPanel, theme.diceRollPanelBg);
+                SetSprite(turnClockPanel, theme.turnClockPanelBg);
+                SetSprite(globalSearchPanel, theme.globalSearchPanel);
+                SetSprite(handleGlobalSearch, theme.handleGlobalSearch);
+                SetSprite(closeGlobalSearch, theme.closeGlobalSearchBtn);
+        
+                // Opcional: Se quiser que a zona no tabuleiro tenha um sprite específico do tema
+                // SetSprite(playerRemovedZone, theme.removedZoneBg); 
+        
+                SetSprite(panelActionMenu, theme.panelActionMenu);        SetSprite(btnSummon, theme.btnSummon);
         SetSprite(btnSet, theme.btnSet);
         SetSprite(btnActivate, theme.btnActivate);
         SetSprite(btnCancel, theme.btnCancel);

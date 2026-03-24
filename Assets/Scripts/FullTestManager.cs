@@ -25,6 +25,7 @@ public class FullTestManager : MonoBehaviour
     public TMP_Dropdown dropAct;
     public TMP_Dropdown dropOpponent;
     public TMP_Dropdown dropDeckVariant;
+    public TMP_Dropdown dropPlayer;
 
     [Header("Botões de Ação")]
     public Button btnCoin;
@@ -33,6 +34,9 @@ public class FullTestManager : MonoBehaviour
     public Button btnSpawnCard;
     public Button btnSimulateAttack;
     public Button btnSimulateTrap;
+    public Button btnCleanField;
+    public Button btnRestartDuel;
+    public Button btnSwitchTurn;
 
     void Awake()
     {
@@ -53,6 +57,12 @@ public class FullTestManager : MonoBehaviour
         if (btnSpawnCard == null) btnSpawnCard = allButtons.FirstOrDefault(b => b.name.Contains("Spawn"));
         if (btnSimulateAttack == null) btnSimulateAttack = allButtons.FirstOrDefault(b => b.name.Contains("Attack"));
         if (btnSimulateTrap == null) btnSimulateTrap = allButtons.FirstOrDefault(b => b.name.Contains("Trap"));
+        if (btnCleanField == null) btnCleanField = allButtons.FirstOrDefault(b => b.name.Contains("Clean"));
+        if (btnRestartDuel == null) btnRestartDuel = allButtons.FirstOrDefault(b => b.name.Contains("Restart"));
+        if (btnSwitchTurn == null) btnSwitchTurn = allButtons.FirstOrDefault(b => b.name.Contains("Switch"));
+
+        TMP_Dropdown[] allDropdowns = testPanel != null ? testPanel.GetComponentsInChildren<TMP_Dropdown>(true) : GetComponentsInChildren<TMP_Dropdown>(true);
+        if (dropPlayer == null) dropPlayer = allDropdowns.FirstOrDefault(d => d.name.Contains("Player"));
 
         // Configura Toggles baseados no GameManager
         if (tglAI) { tglAI.isOn = OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeSelf; tglAI.onValueChanged.AddListener(ToggleAI); }
@@ -87,6 +97,20 @@ public class FullTestManager : MonoBehaviour
             dropOpponent.onValueChanged.AddListener(v => GameManager.Instance.testOpponentID = v == 0 ? "" : GameManager.Instance.characterDatabase.characterDatabase[v - 1].id);
         }
 
+        if (dropPlayer)
+        {
+            dropPlayer.ClearOptions();
+            List<string> playerOptions = new List<string> { "Default/Save" };
+            if (GameManager.Instance.characterDatabase != null)
+                foreach (var c in GameManager.Instance.characterDatabase.characterDatabase) playerOptions.Add($"{c.name} ({c.id})");
+            dropPlayer.AddOptions(playerOptions);
+            int currentPlayerIdx = 0;
+            if (!string.IsNullOrEmpty(GameManager.Instance.testPlayerID) && GameManager.Instance.characterDatabase != null)
+                currentPlayerIdx = GameManager.Instance.characterDatabase.characterDatabase.FindIndex(c => c.id == GameManager.Instance.testPlayerID) + 1;
+            dropPlayer.value = Mathf.Max(0, currentPlayerIdx);
+            dropPlayer.onValueChanged.AddListener(v => GameManager.Instance.testPlayerID = v == 0 ? "" : GameManager.Instance.characterDatabase.characterDatabase[v - 1].id);
+        }
+
         if (dropDeckVariant)
         {
             dropDeckVariant.ClearOptions();
@@ -102,6 +126,8 @@ public class FullTestManager : MonoBehaviour
         if (btnSpawnCard) btnSpawnCard.onClick.AddListener(TestSpawnCard);
         if (btnSimulateAttack) btnSimulateAttack.onClick.AddListener(TestSimulateAttack);
         if (btnSimulateTrap) btnSimulateTrap.onClick.AddListener(TestSimulateTrap);
+        if (btnCleanField) btnCleanField.onClick.AddListener(TestCleanField);
+        if (btnRestartDuel) btnRestartDuel.onClick.AddListener(() => GameManager.Instance.StartDuel());
     }
 
     void Update()
@@ -151,7 +177,16 @@ public class FullTestManager : MonoBehaviour
 
     public void TestClock()
     {
-        Debug.Log("[TestMode] O Relógio será testado na próxima ativação de Swords of Revealing Light.");
+        Debug.Log("[TestMode] Simulando Relógio de Turno...");
+        if (GameManager.Instance != null && GameManager.Instance.turnClockUI != null)
+        {
+            GameObject clockGo = GameManager.Instance.turnClockUI.gameObject;
+            clockGo.SetActive(!clockGo.activeSelf);
+        }
+        else
+        {
+            Debug.LogWarning("[TestMode] Referência para TurnClockUI não encontrada no GameManager.");
+        }
     }
 
     public void TestSpawnCard()
@@ -181,12 +216,43 @@ public class FullTestManager : MonoBehaviour
 
     public void TestSimulateAttack()
     {
-        Debug.Log($"[TestMode] Teste de ataque simulado (Em migração para Lua API)");
+        Debug.Log("[TestMode] Configurando cenário de batalha simulado...");
+        TestCleanField();
+
+        StartCoroutine(SimulateAttackRoutine());
+    }
+
+    private IEnumerator SimulateAttackRoutine()
+    {
+        yield return new WaitForSeconds(0.2f); // Pequeno delay para o campo limpar
+
+        // Invoca monstros para o jogador
+        CardData p_monster1_data = GameManager.Instance.cardDatabase.GetCardById("0001"); // Blue-Eyes White Dragon
+        if (p_monster1_data != null) GameManager.Instance.SpecialSummonFromData(p_monster1_data, true, 0, true, false);
+
+        yield return new WaitForSeconds(0.1f);
+
+        // Invoca monstros para o oponente
+        CardData o_monster1_data = GameManager.Instance.cardDatabase.GetCardById("0005"); // Dark Magician
+        if (o_monster1_data != null) GameManager.Instance.SpecialSummonFromData(o_monster1_data, false, 0, true, false);
+        
+        yield return new WaitForSeconds(0.1f);
+
+        CardData o_monster2_data = GameManager.Instance.cardDatabase.GetCardById("0010"); // Giant Soldier of Stone
+        if (o_monster2_data != null) GameManager.Instance.SpecialSummonFromData(o_monster2_data, false, 0, true, true); // Em defesa
+
+        Debug.Log("[TestMode] Cenário de batalha pronto. É o turno do jogador. Mude para a Battle Phase para atacar.");
     }
 
     public void TestSimulateTrap()
     {
         Debug.Log($"[TestMode] Teste de trap simulado (Em migração para Lua API)");
+    }
+
+    public void TestCleanField()
+    {
+        Debug.Log("[TestMode] Limpando o campo...");
+        GameManager.Instance.CleanupDuelState();
     }
 
     // --- DEV ACTION MENU ---

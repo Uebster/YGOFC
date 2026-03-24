@@ -209,6 +209,10 @@ public class GameManager : MonoBehaviour
     public Transform playerHandLayoutGroup; // O HorizontalLayoutGroup da mão do jogador
     public Transform opponentHandLayoutGroup; // O HorizontalLayoutGroup da mão do oponente
 
+    [Header("UI Interaction Control")]
+    public CanvasGroup playerHandCanvasGroup;
+    public CanvasGroup opponentHandCanvasGroup;
+
     [Header("Piles Visuals")]
     public PileDisplay playerGraveyardDisplay;
     public PileDisplay opponentGraveyardDisplay;
@@ -431,6 +435,15 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
+    public void EnableHandInteraction()
+    {
+        if (playerHandCanvasGroup != null)
+        {
+            playerHandCanvasGroup.interactable = true;
+            Debug.Log("[GameManager] Interação com a mão do jogador ATIVADA.");
+        }
+    }
+
     // Novo método chamado pelo botão "Free Duel"
     public void StartDuel()
     {
@@ -443,6 +456,17 @@ public class GameManager : MonoBehaviour
 
         // Garante que os gerenciadores essenciais existam na cena
         EnsureCoreManagers();
+
+        // NOVA LÓGICA: Desabilita cliques na mão até o jogo estar pronto
+        if (playerHandLayoutGroup != null && playerHandCanvasGroup == null)
+            playerHandCanvasGroup = playerHandLayoutGroup.GetComponent<CanvasGroup>();
+        if (playerHandLayoutGroup != null && playerHandCanvasGroup == null)
+            playerHandCanvasGroup = playerHandLayoutGroup.gameObject.AddComponent<CanvasGroup>();
+        
+        if (playerHandCanvasGroup != null)
+        {
+            playerHandCanvasGroup.interactable = false;
+        }
 
         List<CardData> pDeck = InitializePlayerDeck();
         (List<CardData> oMain, List<CardData> oExtra) = InitializeOpponentDeck();
@@ -534,7 +558,7 @@ public class GameManager : MonoBehaviour
         Debug.Log($"GameManager: Auto-criado gerenciador ausente: {typeof(T).Name}");
     }
 
-    void CleanupDuelState()
+    public void CleanupDuelState()
     {
         // Destrói objetos visuais das mãos
         foreach (GameObject card in playerHand) if (card != null) Destroy(card);
@@ -582,6 +606,148 @@ public class GameManager : MonoBehaviour
         UpdatePileVisuals();
         ClearCardViewer();
     }
+
+    public void ClearFieldZonesOnly()
+    {
+        if (duelFieldUI == null) return;
+
+        List<CardDisplay> cardsToClear = new List<CardDisplay>();
+
+        System.Action<Transform[]> CollectCardsFromZones = (zones) => {
+            if (zones == null) return;
+            foreach (var z in zones) {
+                if (z == null) continue;
+                foreach (Transform child in z) {
+                    CardDisplay cd = child.GetComponent<CardDisplay>();
+                    if (cd != null) cardsToClear.Add(cd);
+                }
+            }
+        };
+
+        CollectCardsFromZones(duelFieldUI.playerMonsterZones);
+        CollectCardsFromZones(duelFieldUI.opponentMonsterZones);
+        CollectCardsFromZones(duelFieldUI.playerSpellZones);
+        CollectCardsFromZones(duelFieldUI.opponentSpellZones);
+        
+        if (duelFieldUI.playerFieldSpell != null && duelFieldUI.playerFieldSpell.childCount > 0) {
+            CardDisplay cd = duelFieldUI.playerFieldSpell.GetChild(0).GetComponent<CardDisplay>();
+            if (cd != null) cardsToClear.Add(cd);
+        }
+        if (duelFieldUI.opponentFieldSpell != null && duelFieldUI.opponentFieldSpell.childCount > 0) {
+            CardDisplay cd = duelFieldUI.opponentFieldSpell.GetChild(0).GetComponent<CardDisplay>();
+            if (cd != null) cardsToClear.Add(cd);
+        }
+
+        foreach (CardDisplay card in cardsToClear)
+        {
+            if (card != null && card.gameObject != null)
+            {
+                // Simula destruição: envia para o GY e destrói o objeto
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
+                SendToGraveyard(card.CurrentCardData, card.isPlayerCard, CardLocation.Field, SendReason.Destroyed);
+                
+                if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
+                
+                Destroy(card.gameObject);
+            }
+        }
+    }
+
+    public void SetSpellTrapFromData(CardData cardData, bool isPlayer, int zoneIndex)
+    {
+        if (cardData == null || (!cardData.type.Contains("Spell") && !cardData.type.Contains("Trap")))
+        {
+            Debug.LogError("[GameManager] SetSpellTrapFromData: Card is not a Spell or Trap.");
+            return;
+        }
+        
+        if (duelFieldUI == null) return;
+        Transform[] spellZones = isPlayer ? duelFieldUI.playerSpellZones : duelFieldUI.opponentSpellZones;
+        if (zoneIndex < 0 || zoneIndex >= spellZones.Length) return;
+
+        Transform zone = spellZones[zoneIndex];
+        if (zone.childCount > 0)
+        {
+            Debug.LogWarning($"[GameManager] SetSpellTrapFromData: Zona {zoneIndex} já está ocupada.");
+            return;
+        }
+
+        GameObject cardGO = Instantiate(cardPrefab, zone);
+        CardDisplay cardDisplay = cardGO.GetComponent<CardDisplay>();
+
+        cardGO.transform.localScale = fieldCardScale;
+        cardDisplay.isInteractable = true; // Set to true so it can be flipped up
+        cardDisplay.isPlayerCard = isPlayer;
+        cardDisplay.isOnField = true;
+        
+        cardDisplay.SetCard(cardData, cardBackTexture, false); // false = set face-down
+        cardGO.transform.localRotation = Quaternion.identity;
+    }
+
+    public CardDisplay SpecialSummonFromData(CardData cardData, bool isPlayer, int zoneIndex = -1, bool inAttackPosition = true, bool faceDown = false)
+    {
+        if (cardData == null || !cardData.type.Contains("Monster"))
+        {
+            Debug.LogError("[GameManager] SpecialSummonFromData: Card is not a Monster.");
+            return null;
+        }
+
+        if (duelFieldUI == null) return null;
+        Transform[] monsterZones = isPlayer ? duelFieldUI.playerMonsterZones : duelFieldUI.opponentMonsterZones;
+        Transform zone = null;
+        
+        if (zoneIndex >= 0 && zoneIndex < monsterZones.Length)
+        {
+            zone = monsterZones[zoneIndex];
+            if (zone.childCount > 0)
+            {
+                Debug.LogWarning($"[GameManager] SpecialSummonFromData: Zona {zoneIndex} já está ocupada.");
+                return null;
+            }
+        }
+        else
+        {
+            zone = GetFreeMonsterZone(isPlayer);
+            if (zone == null)
+            {
+                Debug.LogWarning("[GameManager] SpecialSummonFromData: Nenhuma zona livre encontrada.");
+                return null;
+            }
+        }
+        
+        GameObject cardGO = Instantiate(cardPrefab, zone);
+        CardDisplay cardDisplay = cardGO.GetComponent<CardDisplay>();
+
+        cardGO.transform.localScale = fieldCardScale;
+        cardDisplay.isInteractable = true;
+        cardDisplay.isPlayerCard = isPlayer;
+        cardDisplay.isOnField = true;
+        cardDisplay.position = inAttackPosition ? CardDisplay.BattlePosition.Attack : CardDisplay.BattlePosition.Defense;
+        
+        cardDisplay.SetCard(cardData, cardBackTexture, !faceDown);
+        
+        if (inAttackPosition)
+        {
+            cardGO.transform.localRotation = Quaternion.identity;
+        }
+        else
+        {
+            cardGO.transform.localRotation = Quaternion.Euler(0, 0, 90);
+        }
+        
+        OnSummon(cardDisplay);
+        return cardDisplay;
+    }
+
+    public void OnSummon(CardDisplay card)
+    {
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.OnSummon(card);
+        }
+    }
+
+
 
     // Sobrecarga para iniciar duelo contra personagem específico (Campanha)
     public void StartDuel(CharacterData opponent, int duelIndex = -1)
@@ -1439,10 +1605,28 @@ public void ShuffleDeck(bool isPlayer)
         // Reseta os ataques dos monstros em campo
         if (duelFieldUI != null)
         {
-            foreach (var zone in duelFieldUI.playerMonsterZones) 
-                if (zone.childCount > 0) zone.GetChild(0).GetComponent<CardDisplay>().hasAttackedThisTurn = false;
-            foreach (var zone in duelFieldUI.opponentMonsterZones) 
-                if (zone.childCount > 0) zone.GetChild(0).GetComponent<CardDisplay>().hasAttackedThisTurn = false;
+            if (duelFieldUI.playerMonsterZones != null)
+            {
+                foreach (var zone in duelFieldUI.playerMonsterZones)
+                {
+                    if (zone != null && zone.childCount > 0)
+                    {
+                        var card = zone.GetChild(0).GetComponent<CardDisplay>();
+                        if (card != null) card.hasAttackedThisTurn = false;
+                    }
+                }
+            }
+            if (duelFieldUI.opponentMonsterZones != null)
+            {
+                foreach (var zone in duelFieldUI.opponentMonsterZones)
+                {
+                    if (zone != null && zone.childCount > 0)
+                    {
+                        var card = zone.GetChild(0).GetComponent<CardDisplay>();
+                        if (card != null) card.hasAttackedThisTurn = false;
+                    }
+                }
+            }
         }
 
         turnCount++; // Incrementa o turno
@@ -3022,12 +3206,6 @@ public void ShuffleDeck(bool isPlayer)
     }
 
     // Invocação Especial direta por dados (para Monster Reborn, etc)
-    public CardDisplay SpecialSummonFromData(CardData data, bool forPlayer, int summonType = 0, bool faceUp = true, bool defense = false)
-    {
-
-        // Default: usar lógica padrão
-        return DefaultSpecialSummon(data, forPlayer, faceUp, defense);
-    }
 
     private CardDisplay DefaultSpecialSummon(CardData data, bool forPlayer, bool faceUp = true, bool defense = false)
     {
@@ -3087,12 +3265,6 @@ public void ShuffleDeck(bool isPlayer)
             TrophyManager.Instance.TrackStat("special_summon", 1);
 
         return display;
-    }
-
-    public void OnSummon(CardDisplay card)
-    {
-        if (CardEffectManager.Instance != null)
-            CardEffectManager.Instance.OnSummon(card);
     }
 
     // Helper para encontrar um CardDisplay no campo pelo ID

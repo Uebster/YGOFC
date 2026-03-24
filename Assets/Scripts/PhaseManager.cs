@@ -114,6 +114,18 @@ public class PhaseManager : MonoBehaviour
                 standbyCoroutine = StartCoroutine(HandleStandbyPhase());
                 break;
             case GamePhase.Main1:
+                // FIX: Limpa o foco do EventSystem para garantir que o primeiro clique do jogador
+                // seja registrado corretamente pelas cartas, resolvendo o "bug do clique duplo".
+                if (UnityEngine.EventSystems.EventSystem.current != null)
+                {
+                    UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
+                }
+
+                // NOVA SOLUÇÃO: Habilita a interação com a mão explicitamente.
+                if (GameManager.Instance != null && GameManager.Instance.isPlayerTurn)
+                {
+                    GameManager.Instance.EnableHandInteraction();
+                }
                 break;
             case GamePhase.Battle:
                 break;

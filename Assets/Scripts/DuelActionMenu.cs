@@ -55,12 +55,6 @@ public class DuelActionMenu : MonoBehaviour
         menuPanel.SetActive(false);
     }
 
-    void Start()
-    {
-        // Garante que comece fechado ao iniciar a cena
-        CloseMenu();
-    }
-
     void Update()
     {
         // Fecha o menu se clicar com o botão direito ou Esc
