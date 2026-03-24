@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b80f2649cb31c5249b996cc1da9cb79e, type: 3}
+  m_Name: Act1
+  m_EditorClassIdentifier: Assembly-CSharp::DuelTheme
+  boardBackground: {fileID: 322752994480017407, guid: 1f64d315e936e9746b2659bf93ac4033, type: 3}
+  fieldImage: {fileID: 5785788689562075526, guid: 9a64000eb8dc84a4f8b781e2e5a1acc4, type: 3}
+  phaseIndicatorBg: {fileID: -9098939572161323971, guid: 18d72cca3171f994cac7b8af032fe477, type: 3}
+  playerProfileBg: {fileID: -2482609106372050137, guid: f41e133ea15d109438e1962e934f1138, type: 3}
+  opponentProfileBg: {fileID: -2482609106372050137, guid: f41e133ea15d109438e1962e934f1138, type: 3}
+  panelCardViewer: {fileID: 2939670385129936122, guid: 7777f25159fc88e4ab6d40a4c1ed735e, type: 3}
+  panelDescription: {fileID: -5811017481154352843, guid: 51e8ed02f04c4124bab9a0b661555bb6, type: 3}
+  handleDescription: {fileID: 0}
+  graveyardViewerPanel: {fileID: 0}
+  handleGraveyard: {fileID: 0}
+  closeGraveyardBtn: {fileID: 0}
+  extraDeckViewerPanel: {fileID: 0}
+  handleExtraDeck: {fileID: 0}
+  closeExtraDeckBtn: {fileID: 0}
+  removedViewerPanel: {fileID: 0}
+  handleRemoved: {fileID: 0}
+  closeRemovedBtn: {fileID: 0}
+  coinTossPanelBg: {fileID: 0}
+  diceRollPanelBg: {fileID: 0}
+  turnClockPanelBg: {fileID: 0}
+  globalSearchPanel: {fileID: 0}
+  handleGlobalSearch: {fileID: 0}
+  closeGlobalSearchBtn: {fileID: 0}
+  cardSelectionPanel: {fileID: 0}
+  handleCardSelection: {fileID: 0}
+  closeCardSelectionBtn: {fileID: 0}
+  coinHeadsSprite: {fileID: -8375272697886875661, guid: daef7912f51e4704ab2920086250d10a, type: 3}
+  coinTailsSprite: {fileID: 1995312225930061159, guid: f18aa60b16777414fa26c1652e919205, type: 3}
+  diceFaceSprites:
+  - {fileID: 7535218880811846889, guid: da6b52708c3daf74892cd223c3dd13bb, type: 3}
+  - {fileID: 2306126822443807518, guid: fdb49553825a96348a88537c388e7c05, type: 3}
+  - {fileID: -8592604203863145710, guid: c0cf3d38baa3ff140b22bc65e2c338fe, type: 3}
+  - {fileID: -842393109206759153, guid: 66288d154fb1e8848afb424410181e74, type: 3}
+  - {fileID: 4796439767014711779, guid: ee05e9c0a60bcd9438f5d5cd9b786a75, type: 3}
+  - {fileID: 3130881699014804359, guid: 34d4209bc4f436940a4314a1b66a0a3f, type: 3}
+  clockBaseSprite: {fileID: -8506806670338686528, guid: dc3e6b70d90819e4aa328133c2a11af8, type: 3}
+  clockHandSprite: {fileID: 3242361394745516952, guid: 5a74e91cf079f0d43b62e76c7bea641c, type: 3}
+  panelActionMenu: {fileID: 0}
+  btnSummon: {fileID: 0}
+  btnSet: {fileID: 0}
+  btnActivate: {fileID: 0}
+  btnCancel: {fileID: 0}
+  panelConfirmation: {fileID: 0}
+  btnYes: {fileID: 0}
+  btnNo: {fileID: 0}
+  panelPositionSelection: {fileID: 0}
+  btnPositionAttack: {fileID: 0}
+  btnPositionDefense: {fileID: 0}
+  rewardPanelBackground: {fileID: 0}
+  rewardRankBackground: {fileID: 0}
+  rewardContinueButton: {fileID: 0}
+  globalFont: {fileID: 0}
+  mainTextColor: {r: 1, g: 1, b: 1, a: 1}
+  fontSizeMultiplier: 1
+  playerHoverColor: {r: 0.5, g: 1, b: 0.5, a: 1}
+  opponentHoverColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  phaseActiveColor: {r: 1, g: 0.8, b: 0, a: 1}
+  phaseInactiveColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.8}
+  spellActivateVFX: {fileID: 0}
+  trapActivateVFX: {fileID: 0}
+  summonVFX: {fileID: 0}
+  fusionVFX: {fileID: 0}
+  tributeVFX: {fileID: 0}
+  attackVFX: {fileID: 0}
+  explosionVFX: {fileID: 0}
+  banishVFX: {fileID: 0}
+  flipVFX: {fileID: 0}
+  walkthroughBGM: {fileID: 0}
+  bgmNormal: {fileID: 0}
+  bgmTense: {fileID: 0}
+  bgmWinning: {fileID: 0}
