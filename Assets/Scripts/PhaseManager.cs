@@ -9,7 +9,8 @@ public class PhaseManager : MonoBehaviour
     public static PhaseManager Instance;
 
     [Header("Configuração de Fases")]
-    public float standbyPhaseDuration = 0.4f; // Mais rápido e ágil
+    [Tooltip("Dica: Alterar no código não funciona se o valor já estiver salvo na Unity. Mude no Inspector!")]
+    public float standbyPhaseDuration = 0.4f;
     public TextMeshProUGUI phaseText;
 
     public GamePhase currentPhase = GamePhase.Draw;
@@ -142,7 +143,18 @@ public class PhaseManager : MonoBehaviour
 
     IEnumerator HandleStandbyPhase()
     {
+        // Aguarda o tempo base (Lembre-se de mudar este valor no INSPECTOR da Unity!)
         yield return new WaitForSeconds(standbyPhaseDuration);
+        
+        // CRÍTICO: Não avança para a Main Phase se houver alguma corrente/efeito de Standby Phase sendo resolvida pela Engine LUA (Ex: Tomando dano de veneno).
+        if (CardEffectManager.Instance != null)
+        {
+            yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield);
+        }
+
+        // Respeita a opção do painel DEV (Não avança sozinho se o jogador travou as fases automáticas)
+        if (GameManager.Instance != null && GameManager.Instance.disableAutoPhases) yield break;
+
         TryChangePhase(GamePhase.Main1);
     }
 

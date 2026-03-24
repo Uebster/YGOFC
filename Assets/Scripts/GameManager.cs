@@ -164,6 +164,8 @@ public class GameManager : MonoBehaviour
     public bool disableBanlist = false;
     [Tooltip("Se marcado, o monstro invocado por tributo ocupará a zona do primeiro monstro sacrificado.")]
     public bool placeTributeSummonInTributeZone = true;
+    [Tooltip("Se marcado (Regra Oficial MR3+), o jogador que começar o duelo NÃO saca uma carta no 1º turno.")]
+    public bool applyModernFirstTurnDrawRule = true;
 
     [Header("Input & UI Options")]
     [Tooltip("Se marcado, clicar com o botão direito no campo (vazio) abre um menu para trocar de fase.")]
@@ -1632,18 +1634,22 @@ public void ShuffleDeck(bool isPlayer)
         turnCount++; // Incrementa o turno
         if (DeckManager.Instance != null) DeckManager.Instance.ResetTurnStats();
         
+        // Validação da Regra do Primeiro Turno
+        bool skipDraw = (turnCount == 1 && applyModernFirstTurnDrawRule);
+
         if (isPlayerTurn)
         {
-            if (!canPlayerDrawFromDeck)
+            if (!canPlayerDrawFromDeck && !skipDraw)
             {
                 for (int i = 0; i < 1; i++)
                     DrawCard();
             }
+            else if (skipDraw) Debug.Log("[GameManager] Regra Moderna: Turno 1. Nenhuma carta comprada.");
         }
         else
         {
-            // Turno do Oponente: Saca automaticamente
-            DrawOpponentCard();
+            if (!skipDraw) DrawOpponentCard();
+            else Debug.Log("[GameManager] Regra Moderna: Turno 1 (Oponente). Nenhuma carta comprada.");
         }
     }
 
@@ -2046,15 +2052,49 @@ public void ShuffleDeck(bool isPlayer)
             if (winImg != null) winImg.gameObject.SetActive(playerWon);
             if (loseImg != null) loseImg.gameObject.SetActive(!playerWon);
 
+            CanvasGroup cg = UIManager.Instance.endDuelMessagePanel.GetComponent<CanvasGroup>();
+            if (cg == null) cg = UIManager.Instance.endDuelMessagePanel.AddComponent<CanvasGroup>();
+            
+            cg.alpha = 0f;
             UIManager.Instance.endDuelMessagePanel.SetActive(true);
+
+            float fadeTime = 1.0f;
+            float elapsed = 0f;
+            while (elapsed < fadeTime)
+            {
+                elapsed += Time.deltaTime;
+                cg.alpha = Mathf.Lerp(0f, 1f, elapsed / fadeTime);
+                yield return null;
+            }
+            cg.alpha = 1f;
         }
 
         // Pausa dramática apenas se não estiver simulando
-        if (!isSimulating) yield return new WaitForSeconds(2.5f);
+        if (!isSimulating) yield return new WaitForSeconds(1.5f);
 
-        // 2. Esconde a mensagem
+        GameObject blackOverlay = null;
+        Image blackImg = null;
+
+        // 2. Transição suave para tela preta antes de esconder a mensagem e ir pros rewards
         if (!isSimulating && UIManager.Instance != null && UIManager.Instance.endDuelMessagePanel != null)
         {
+            blackOverlay = new GameObject("BlackOverlay_EndDuel", typeof(RectTransform), typeof(Canvas), typeof(Image));
+            Canvas canvas = blackOverlay.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 32000; // Fica por cima de tudo
+            
+            blackImg = blackOverlay.GetComponent<Image>();
+            blackImg.color = new Color(0, 0, 0, 0);
+
+            float fadeTime = 1.0f;
+            float elapsed = 0f;
+            while (elapsed < fadeTime)
+            {
+                elapsed += Time.deltaTime;
+                blackImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 1f, elapsed / fadeTime));
+                yield return null;
+            }
+
             UIManager.Instance.endDuelMessagePanel.SetActive(false);
         }
 
@@ -2071,16 +2111,26 @@ public void ShuffleDeck(bool isPlayer)
             CardData rewardCard = null;
             bool isNewCard = false;
 
-            if (playerWon && currentOpponent != null)
+            if (playerWon)
             {
-                // Registra vitória na Biblioteca
-                if (SaveLoadSystem.Instance != null)
+                if (currentOpponent != null)
                 {
-                    SaveLoadSystem.Instance.RegisterDuelistWin(currentOpponent.id);
+                    // Registra vitória na Biblioteca
+                    if (SaveLoadSystem.Instance != null)
+                    {
+                        SaveLoadSystem.Instance.RegisterDuelistWin(currentOpponent.id);
+                    }
+
+                    // --- SISTEMA DE DROP RATE PERCENTUAL ---
+                    rewardCard = CalculateDrop(rank, currentOpponent);
                 }
 
-                // --- SISTEMA DE DROP RATE PERCENTUAL ---
-                rewardCard = CalculateDrop(rank, currentOpponent);
+                // FALLBACK DE TESTE: Se não tiver oponente ou o drop dele falhar, dá uma carta aleatória do banco inteiro!
+                if (rewardCard == null && cardDatabase != null && cardDatabase.cardDatabase.Count > 0)
+                {
+                    rewardCard = cardDatabase.cardDatabase[UnityEngine.Random.Range(0, cardDatabase.cardDatabase.Count)];
+                }
+
                 Debug.Log($"Recompensa Drop Rate: {rewardCard?.name ?? "Nenhuma"}");
 
                 // LÓGICA DE DROP: Adiciona ao Baú do Jogador
@@ -2112,6 +2162,20 @@ public void ShuffleDeck(bool isPlayer)
         else
         {
             if (UIManager.Instance != null) UIManager.Instance.Btn_BackToMenu();
+        }
+
+        // 4. Remove a tela preta suavemente revelando a tela de Rewards
+        if (blackOverlay != null && blackImg != null)
+        {
+            float fadeTime = 1.0f;
+            float elapsed = 0f;
+            while (elapsed < fadeTime)
+            {
+                elapsed += Time.deltaTime;
+                blackImg.color = new Color(0, 0, 0, Mathf.Lerp(1f, 0f, elapsed / fadeTime));
+                yield return null;
+            }
+            Destroy(blackOverlay);
         }
     }
 
@@ -2312,7 +2376,7 @@ public void ShuffleDeck(bool isPlayer)
     public void CheckExodiaWin()
     {
         // IDs das 5 partes do Exodia (Baseado no seu JSON)
-        string[] exodiaParts = { "0618", "1061", "1062", "1530", "1531" };
+        string[] exodiaParts = { "DM0595", "DM1490", "DM1030", "DM1491", "DM1031" };
         HashSet<string> handIds = new HashSet<string>();
 
         foreach (GameObject cardGO in playerHand)
@@ -2328,6 +2392,12 @@ public void ShuffleDeck(bool isPlayer)
             // TROFÉU: Exodia
             if (TrophyManager.Instance != null) TrophyManager.Instance.Unlock(80);
             
+            // Tenta forçar a busca caso o painel tenha começado desativado no Inspector
+            if (ExodiaWinUI.Instance == null)
+            {
+                ExodiaWinUI.Instance = Resources.FindObjectsOfTypeAll<ExodiaWinUI>().FirstOrDefault();
+            }
+
             if (ExodiaWinUI.Instance != null)
             {
                 ExodiaWinUI.Instance.ShowWinSequence(true, () => EndDuel(true));

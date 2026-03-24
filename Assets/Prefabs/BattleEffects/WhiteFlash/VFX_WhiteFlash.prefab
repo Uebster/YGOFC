@@ -88,8 +88,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc52208127f97b3448ee799cb58ecf4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VfxAutoAnim
-  duration: 0.8
+  duration: 2
+  spinEffect: 0
+  spinSpeed: 180
   fadeType: 1
+  blinkSpeed: 10
   scaleType: 0
   startScale: 0.5
   endScale: 2.5

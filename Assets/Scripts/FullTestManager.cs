@@ -32,11 +32,15 @@ public class FullTestManager : MonoBehaviour
     public Button btnDice;
     public Button btnClock;
     public Button btnSpawnCard;
+    public Button btnExodiaWin;
+    public Button btnDestinyBoardWin;
     public Button btnSimulateAttack;
     public Button btnSimulateTrap;
     public Button btnCleanField;
     public Button btnRestartDuel;
     public Button btnSwitchTurn;
+    public Button btnFusion;
+    public Button btnRitual;
 
     void Awake()
     {
@@ -55,11 +59,15 @@ public class FullTestManager : MonoBehaviour
         if (btnDice == null) btnDice = allButtons.FirstOrDefault(b => b.name.Contains("Dice"));
         if (btnClock == null) btnClock = allButtons.FirstOrDefault(b => b.name.Contains("Clock"));
         if (btnSpawnCard == null) btnSpawnCard = allButtons.FirstOrDefault(b => b.name.Contains("Spawn"));
+        if (btnExodiaWin == null) btnExodiaWin = allButtons.FirstOrDefault(b => b.name.Contains("Exodia"));
+        if (btnDestinyBoardWin == null) btnDestinyBoardWin = allButtons.FirstOrDefault(b => b.name.Contains("Destiny"));
         if (btnSimulateAttack == null) btnSimulateAttack = allButtons.FirstOrDefault(b => b.name.Contains("Attack"));
         if (btnSimulateTrap == null) btnSimulateTrap = allButtons.FirstOrDefault(b => b.name.Contains("Trap"));
         if (btnCleanField == null) btnCleanField = allButtons.FirstOrDefault(b => b.name.Contains("Clean"));
         if (btnRestartDuel == null) btnRestartDuel = allButtons.FirstOrDefault(b => b.name.Contains("Restart"));
         if (btnSwitchTurn == null) btnSwitchTurn = allButtons.FirstOrDefault(b => b.name.Contains("Switch"));
+        if (btnFusion == null) btnFusion = allButtons.FirstOrDefault(b => b.name.Contains("Fusion"));
+        if (btnRitual == null) btnRitual = allButtons.FirstOrDefault(b => b.name.Contains("Ritual"));
 
         TMP_Dropdown[] allDropdowns = testPanel != null ? testPanel.GetComponentsInChildren<TMP_Dropdown>(true) : GetComponentsInChildren<TMP_Dropdown>(true);
         if (dropPlayer == null) dropPlayer = allDropdowns.FirstOrDefault(d => d.name.Contains("Player"));
@@ -94,7 +102,10 @@ public class FullTestManager : MonoBehaviour
             if (!string.IsNullOrEmpty(GameManager.Instance.testOpponentID) && GameManager.Instance.characterDatabase != null)
                 currentIdx = GameManager.Instance.characterDatabase.characterDatabase.FindIndex(c => c.id == GameManager.Instance.testOpponentID) + 1;
             dropOpponent.value = Mathf.Max(0, currentIdx);
-            dropOpponent.onValueChanged.AddListener(v => GameManager.Instance.testOpponentID = v == 0 ? "" : GameManager.Instance.characterDatabase.characterDatabase[v - 1].id);
+            dropOpponent.onValueChanged.AddListener(v => {
+                GameManager.Instance.testOpponentID = v == 0 ? "" : GameManager.Instance.characterDatabase.characterDatabase[v - 1].id;
+                GameManager.Instance.StartDuel(); // Força o reinício para aplicar o novo baralho
+            });
         }
 
         if (dropPlayer)
@@ -108,7 +119,10 @@ public class FullTestManager : MonoBehaviour
             if (!string.IsNullOrEmpty(GameManager.Instance.testPlayerID) && GameManager.Instance.characterDatabase != null)
                 currentPlayerIdx = GameManager.Instance.characterDatabase.characterDatabase.FindIndex(c => c.id == GameManager.Instance.testPlayerID) + 1;
             dropPlayer.value = Mathf.Max(0, currentPlayerIdx);
-            dropPlayer.onValueChanged.AddListener(v => GameManager.Instance.testPlayerID = v == 0 ? "" : GameManager.Instance.characterDatabase.characterDatabase[v - 1].id);
+            dropPlayer.onValueChanged.AddListener(v => {
+                GameManager.Instance.testPlayerID = v == 0 ? "" : GameManager.Instance.characterDatabase.characterDatabase[v - 1].id;
+                GameManager.Instance.StartDuel(); // Força o reinício para aplicar o novo baralho
+            });
         }
 
         if (dropDeckVariant)
@@ -116,7 +130,10 @@ public class FullTestManager : MonoBehaviour
             dropDeckVariant.ClearOptions();
             dropDeckVariant.AddOptions(new List<string> { "Aleatório", "Deck A", "Deck B", "Deck C" });
             dropDeckVariant.value = GameManager.Instance.testOpponentDeckVariant;
-            dropDeckVariant.onValueChanged.AddListener(v => GameManager.Instance.testOpponentDeckVariant = v);
+            dropDeckVariant.onValueChanged.AddListener(v => {
+                GameManager.Instance.testOpponentDeckVariant = v;
+                GameManager.Instance.StartDuel();
+            });
         }
 
         // Configura Botões
@@ -124,10 +141,14 @@ public class FullTestManager : MonoBehaviour
         if (btnDice) btnDice.onClick.AddListener(TestDice);
         if (btnClock) btnClock.onClick.AddListener(TestClock);
         if (btnSpawnCard) btnSpawnCard.onClick.AddListener(TestSpawnCard);
+        if (btnExodiaWin) btnExodiaWin.onClick.AddListener(TestExodiaWin);
+        if (btnDestinyBoardWin) btnDestinyBoardWin.onClick.AddListener(TestDestinyBoardWin);
         if (btnSimulateAttack) btnSimulateAttack.onClick.AddListener(TestSimulateAttack);
         if (btnSimulateTrap) btnSimulateTrap.onClick.AddListener(TestSimulateTrap);
         if (btnCleanField) btnCleanField.onClick.AddListener(TestCleanField);
         if (btnRestartDuel) btnRestartDuel.onClick.AddListener(() => GameManager.Instance.StartDuel());
+        if (btnFusion) btnFusion.onClick.AddListener(TestFusion);
+        if (btnRitual) btnRitual.onClick.AddListener(TestRitual);
     }
 
     void Update()
@@ -214,6 +235,105 @@ public class FullTestManager : MonoBehaviour
         }
     }
 
+    public void TestExodiaWin()
+    {
+        Debug.Log("[TestMode] Simulando Exodia...");
+        
+        // Limpa a mão do jogador
+        foreach (var go in new List<GameObject>(GameManager.Instance.playerHand)) Destroy(go);
+        GameManager.Instance.playerHand.Clear();
+
+        string[] names = { "Exodia the Forbidden One", "Right Arm of the Forbidden One", "Left Arm of the Forbidden One", "Right Leg of the Forbidden One", "Left Leg of the Forbidden One" };
+        foreach(var n in names) {
+            CardData data = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == n);
+            if (data != null) GameManager.Instance.AddCardToHand(data, true);
+        }
+        
+        GameManager.Instance.CheckExodiaWin();
+    }
+
+    public void TestDestinyBoardWin()
+    {
+        Debug.Log("[TestMode] Simulando Destiny Board...");
+        StartCoroutine(DestinyBoardRoutine());
+    }
+
+    private IEnumerator DestinyBoardRoutine()
+    {
+        TestCleanField();
+        
+        string[] letters = { "Destiny Board", "Spirit Message \"I\"", "Spirit Message \"N\"", "Spirit Message \"A\"", "Spirit Message \"L\"" };
+        
+        for (int i = 0; i < letters.Length; i++)
+        {
+            CardData data = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == letters[i]);
+            if (data != null)
+            {
+                GameManager.Instance.SetSpellTrapFromData(data, true, i);
+                
+                if (GameManager.Instance.turnClockUI != null)
+                {
+                    bool clockDone = false;
+                    GameManager.Instance.turnClockUI.AnimateTick(data.name, 5 - i, 4 - i, 5, () => clockDone = true);
+                    yield return new WaitUntil(() => clockDone);
+                }
+                else yield return new WaitForSeconds(1.0f);
+            }
+        }
+        
+        yield return new WaitForSeconds(0.5f);
+        if (DestinyBoardWinUI.Instance != null)
+            DestinyBoardWinUI.Instance.ShowWinSequence(true, () => GameManager.Instance.EndDuel(true));
+        else GameManager.Instance.EndDuel(true);
+    }
+
+    public void TestFusion()
+    {
+        Debug.Log("[TestMode] Configurando Fusão na Mão...");
+        TestCleanField();
+        
+        CardData gaia = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == "Gaia The Fierce Knight");
+        CardData curse = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == "Curse of Dragon");
+        CardData poly = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == "Polymerization");
+        CardData fusionMon = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == "Gaia the Dragon Champion");
+
+        if (gaia != null && curse != null && poly != null && fusionMon != null)
+        {
+            if (!GameManager.Instance.GetPlayerExtraDeck().Contains(fusionMon))
+                GameManager.Instance.GetPlayerExtraDeck().Add(fusionMon);
+            GameManager.Instance.AddCardToHand(gaia, true);
+            GameManager.Instance.AddCardToHand(curse, true);
+            GameManager.Instance.AddCardToHand(poly, true);
+            StartCoroutine(ActivateSpellAfterDelay("Polymerization"));
+        }
+    }
+
+    public void TestRitual()
+    {
+        Debug.Log("[TestMode] Configurando Ritual na Mão...");
+        TestCleanField();
+        
+        CardData relinquished = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == "Relinquished");
+        CardData ritualSpell = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == "Black Illusion Ritual");
+        CardData tributeFodder = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == "Sangan"); 
+
+        if (relinquished != null && ritualSpell != null && tributeFodder != null)
+        {
+            GameManager.Instance.AddCardToHand(relinquished, true);
+            GameManager.Instance.AddCardToHand(tributeFodder, true);
+            GameManager.Instance.AddCardToHand(ritualSpell, true);
+            StartCoroutine(ActivateSpellAfterDelay("Black Illusion Ritual"));
+        }
+    }
+
+    private IEnumerator ActivateSpellAfterDelay(string spellName)
+    {
+        if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Main1) { PhaseManager.Instance.currentPhase = GamePhase.Main1; GameManager.Instance.isPlayerTurn = true; }
+        yield return new WaitForSeconds(0.5f);
+        GameObject spellGO = GameManager.Instance.playerHand.FirstOrDefault(go => go.GetComponent<CardDisplay>().CurrentCardData.name == spellName);
+        if (spellGO != null) GameManager.Instance.PlaySpellTrap(spellGO, spellGO.GetComponent<CardDisplay>().CurrentCardData, false);
+    }
+
     public void TestSimulateAttack()
     {
         Debug.Log("[TestMode] Configurando cenário de batalha simulado...");
@@ -246,13 +366,66 @@ public class FullTestManager : MonoBehaviour
 
     public void TestSimulateTrap()
     {
-        Debug.Log($"[TestMode] Teste de trap simulado (Em migração para Lua API)");
+        Debug.Log("[TestMode] Iniciando simulação de Trap...");
+        StartCoroutine(SimulateTrapRoutine());
+    }
+
+    private IEnumerator SimulateTrapRoutine()
+    {
+        TestCleanField();
+        
+        CardData trapData = GameManager.Instance.cardDatabase.GetCardById("0164"); // Trap Hole
+        if (trapData == null && GameManager.Instance.cardDatabase.cardDatabase.Count > 0)
+            trapData = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.type.Contains("Trap"));
+
+        if (trapData != null)
+        {
+            GameManager.Instance.SetSpellTrapFromData(trapData, true, 2); 
+        }
+
+        yield return new WaitForSeconds(1.0f);
+
+        if (GameManager.Instance.isPlayerTurn) GameManager.Instance.SwitchTurn();
+        yield return new WaitForSeconds(1.0f);
+
+        Debug.Log("[TestMode] Oponente invoca monstro. Verifique a janela de Chain para sua Armadilha!");
+        CardData oMon = GameManager.Instance.cardDatabase.GetCardById("0001"); // Blue-Eyes ou algo forte
+        GameManager.Instance.SpecialSummonFromData(oMon, false, 2, true, false);
     }
 
     public void TestCleanField()
     {
-        Debug.Log("[TestMode] Limpando o campo...");
-        GameManager.Instance.CleanupDuelState();
+        Debug.Log("[TestMode] Limpando APENAS o campo cirurgicamente...");
+        if (GameManager.Instance.duelFieldUI != null)
+        {
+            System.Action<Transform[]> ClearZones = (zones) => {
+                if (zones == null) return;
+                foreach (var z in zones) {
+                    foreach (Transform child in z) {
+                        var cd = child.GetComponent<CardDisplay>();
+                        if (cd != null && CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(cd);
+                        Destroy(child.gameObject);
+                    }
+                }
+            };
+            ClearZones(GameManager.Instance.duelFieldUI.playerMonsterZones);
+            ClearZones(GameManager.Instance.duelFieldUI.opponentMonsterZones);
+            ClearZones(GameManager.Instance.duelFieldUI.playerSpellZones);
+            ClearZones(GameManager.Instance.duelFieldUI.opponentSpellZones);
+            
+            if (GameManager.Instance.duelFieldUI.playerFieldSpell != null) foreach (Transform child in GameManager.Instance.duelFieldUI.playerFieldSpell) {
+                var cd = child.GetComponent<CardDisplay>(); if (cd != null && CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(cd); Destroy(child.gameObject);
+            }
+            if (GameManager.Instance.duelFieldUI.opponentFieldSpell != null) foreach (Transform child in GameManager.Instance.duelFieldUI.opponentFieldSpell) {
+                var cd = child.GetComponent<CardDisplay>(); if (cd != null && CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(cd); Destroy(child.gameObject);
+            }
+        }
+        
+        CardLink[] links = FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        foreach (var link in links) Destroy(link.gameObject);
+
+        if (CardEffectManager.Instance != null)
+            CardEffectManager.Instance.blockedZonesByCard.Clear();
     }
 
     // --- DEV ACTION MENU ---

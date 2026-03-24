@@ -106,6 +106,7 @@ Esta é a API principal que a UI e o `CardEffectManager` usam para executar aç�
 *   `enableHandLimit`: Ativa a regra de limite de mão (6 cartas) no End Phase.
 *   `allowForbiddenCards` / `disableBanlist`: Flexibiliza ou ignora a lista de cartas proibidas.
 *   `placeTributeSummonInTributeZone`: Monstros invocados ocupam a zona do primeiro sacrifício.
+*   `applyModernFirstTurnDrawRule`: Se marcado (Regra MR3+), o jogador que iniciar o duelo NÃO saca uma carta no seu 1º turno. Se desmarcado, utiliza a Regra Clássica/Goat, permitindo a compra. Essencial para suporte futuro a múltiplas eras (Classic vs Modern).
 *   `ToggleFullscreen()`: Alterna modo janela/tela cheia (Atalho: F11 em DevMode).
 
 ### 3.2.4 Opções de Input, UX e Velocidade

@@ -1,124 +1,186 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
+using System;
+using System.Collections.Generic;
 
 public class ExodiaWinUI : MonoBehaviour
 {
     public static ExodiaWinUI Instance;
-    
-    [Header("Referências UI")]
-    public GameObject panel;
-    public Transform exodiaHead;
-    public Transform exodiaLeftArm;
-    public Transform exodiaRightArm;
-    public Transform exodiaLeftLeg;
-    public Transform exodiaRightLeg;
-    
-    [Header("Configurações")]
-    public float delayBetweenPieces = 0.8f; 
-    public float delayBeforeEndDuel = 3.0f;  
-    [Tooltip("Som brutal para tocar quando a cabeça surgir (Opcional)")]
-    public AudioClip obliterateSound; 
 
-    [Header("Animações Extras")]
-    public Transform spawnPoint; // Ponto de onde as cartas saem (Ex: Centro da tela)
-    public GameObject finalExplosionVFX; // Prefab do clarão branco ou explosão
-    public float flyDuration = 0.4f; // Tempo de voo até o slot
+    [Header("Hierarquia da UI (Arraste do Inspector)")]
+    public GameObject panelExodiaWin;
+    public RectTransform exodiaHead;
+    public RectTransform exodiaLeftArm;
+    public RectTransform exodiaRightArm;
+    public RectTransform exodiaLeftLeg;
+    public RectTransform exodiaRightLeg;
+    public RectTransform spawnPoint;
+
+    [Header("Efeitos Visuais")]
+    public GameObject flashPrefab; // Opcional: Prefab do clarão
+    public float animDuration = 0.5f; // Tempo de voo de cada peça
+
+    private List<GameObject> spawnedCards = new List<GameObject>();
 
     void Awake()
     {
         Instance = this;
-        if (panel) panel.SetActive(false);
-    }
-
-    public void ShowWinSequence(bool playerWon, System.Action onSequenceComplete)
-    {
-        StartCoroutine(PlayWinSequence(playerWon, onSequenceComplete));
-    }
-
-    private IEnumerator PlayWinSequence(bool playerWon, System.Action onSequenceComplete)
-    {
-        if (panel) panel.SetActive(true);
-
-        // Ordem dramática de aparição: Pernas, Braços e, por fim, a Cabeça!
-        Transform[] slots = { exodiaLeftLeg, exodiaRightLeg, exodiaLeftArm, exodiaRightArm, exodiaHead };
-        string[] pieceNames = { "Left Leg of the Forbidden One", "Right Leg of the Forbidden One", "Left Arm of the Forbidden One", "Right Arm of the Forbidden One", "Exodia the Forbidden One" };
-
-        // Limpa resquícios antigos (se o jogador jogar outro duelo)
-        foreach (Transform slot in slots)
-        {
-            if (slot != null) foreach (Transform child in slot) Destroy(child.gameObject);
-        }
-
-        // Usa o prefab original das cartas para exibição visual
-        GameObject cardPrefab = null;
-        if (GameManager.Instance != null && GameManager.Instance.playerDeckDisplay != null)
-            cardPrefab = GameManager.Instance.playerDeckDisplay.cardPrefab;
-
-        for (int i = 0; i < 5; i++)
-        {
-            if (slots[i] != null && cardPrefab != null)
-            {
-                // Instancia primeiro no spawn point
-                Transform startTransform = spawnPoint != null ? spawnPoint : slots[i];
-                GameObject cardGO = Instantiate(cardPrefab, startTransform.position, Quaternion.identity, slots[i]);
-                CardDisplay display = cardGO.GetComponent<CardDisplay>();
-                CardData data = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == pieceNames[i]);
-                
-                if (display != null && data != null)
-                {
-                    // Remove o modificador de Layout para caber exatamente no seu slot
-                    UnityEngine.UI.LayoutElement le = cardGO.GetComponent<UnityEngine.UI.LayoutElement>();
-                    if (le != null) Destroy(le);
-
-                    display.SetCard(data, GameManager.Instance.GetCardBackTexture(), true);
-                    display.isInteractable = false; 
-                }
-
-                // Faz a carta voar do spawn point até o slot dela
-                yield return StartCoroutine(FlyCardToSlot(cardGO.transform, startTransform.position, slots[i].position));
-
-                // Toca som de impacto a cada peça que surge
-                if (DuelFXManager.Instance != null && DuelFXManager.Instance.attackImpactSound != null)
-                    DuelFXManager.Instance.audioSource.PlayOneShot(DuelFXManager.Instance.attackImpactSound);
-            }
-            yield return new WaitForSeconds(delayBetweenPieces); 
-        }
-
-        // Toca o som "Obliterate!" ou explosão especial
-        if (obliterateSound != null && DuelFXManager.Instance != null)
-            DuelFXManager.Instance.audioSource.PlayOneShot(obliterateSound);
-            
-        // Instancia o Efeito Visual Final (Clarão)
-        if (finalExplosionVFX != null)
-        {
-            Instantiate(finalExplosionVFX, transform.position, Quaternion.identity, transform);
-        }
-
-        // Aguarda a admiração do jogador
-        yield return new WaitForSeconds(delayBeforeEndDuel);
+        if (panelExodiaWin == null) panelExodiaWin = this.gameObject;
+        panelExodiaWin.SetActive(false);
         
-        if (panel) panel.SetActive(false);
-        onSequenceComplete?.Invoke();
+        // Remove alphas antigos das Imagens placeholders se houver
+        SetAlpha(exodiaHead, 0);
+        SetAlpha(exodiaLeftArm, 0);
+        SetAlpha(exodiaRightArm, 0);
+        SetAlpha(exodiaLeftLeg, 0);
+        SetAlpha(exodiaRightLeg, 0);
     }
 
-    private IEnumerator FlyCardToSlot(Transform card, Vector3 start, Vector3 end)
+    private void SetAlpha(RectTransform rt, float alpha)
     {
-        float elapsed = 0f;
-        Vector3 startScale = Vector3.zero; // Nasce pequena
-        Vector3 endScale = Vector3.one;    // Cresce até o tamanho normal
-        
-        while (elapsed < flyDuration)
+        if (rt == null) return;
+        Image img = rt.GetComponent<Image>();
+        if (img != null)
         {
-            if (card == null) yield break;
-            float t = elapsed / flyDuration;
-            float smoothT = Mathf.SmoothStep(0, 1, t); // Movimento suave
+            Color c = img.color;
+            c.a = alpha;
+            img.color = c;
+        }
+    }
+
+    public void ShowWinSequence(bool isPlayer, Action onComplete)
+    {
+        gameObject.SetActive(true); // Garante que a raiz do script acorde para a Corrotina
+        if (panelExodiaWin != null) panelExodiaWin.SetActive(true);
+        
+        // Trava as interações da mão do jogador durante a animação
+        if (GameManager.Instance != null && GameManager.Instance.playerHandCanvasGroup != null)
+            GameManager.Instance.playerHandCanvasGroup.interactable = false;
+
+        StartCoroutine(ExodiaRoutine(onComplete));
+    }
+
+    private IEnumerator ExodiaRoutine(Action onComplete)
+    {
+        // Limpa resquícios de animações anteriores
+        foreach (var c in spawnedCards) if (c != null) Destroy(c);
+        spawnedCards.Clear();
+
+        // A ordem clássica de revelação das peças do Exodia
+        RectTransform[] parts = { 
+            exodiaRightLeg, 
+            exodiaLeftLeg, 
+            exodiaRightArm, 
+            exodiaLeftArm, 
+            exodiaHead 
+        };
+        
+        string[] cardNames = { 
+            "Right Leg of the Forbidden One", 
+            "Left Leg of the Forbidden One", 
+            "Right Arm of the Forbidden One", 
+            "Left Arm of the Forbidden One", 
+            "Exodia the Forbidden One" 
+        };
+        
+        GameObject cardPrefab = GameManager.Instance?.cardPrefab;
+        
+        for (int i = 0; i < parts.Length; i++)
+        {
+            if (parts[i] == null || cardPrefab == null) continue;
             
-            card.position = Vector3.Lerp(start, end, smoothT);
-            card.localScale = Vector3.Lerp(startScale, endScale, smoothT);
-            
+            CardData cardData = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == cardNames[i]);
+            if (cardData != null) yield return StartCoroutine(AnimateRealCard(parts[i], cardData, cardPrefab));
+            yield return new WaitForSeconds(0.15f);
+        }
+
+        // OBLITERATE! (Invoca o Clarão Final)
+        yield return new WaitForSeconds(0.5f);
+        if (flashPrefab != null) Instantiate(flashPrefab, panelExodiaWin.transform);
+        
+        // Treme a câmera e aguarda exatamente os 2.0s de duração do clarão para dar o veredito
+        yield return StartCoroutine(ScreenShake(2.0f, 10f));
+
+        // Limpa a sujeira
+        foreach (var c in spawnedCards) if (c != null) Destroy(c);
+        spawnedCards.Clear();
+        
+        if (panelExodiaWin != null) panelExodiaWin.SetActive(false);
+
+        // Informa ao GameManager para finalizar a partida matematicamente
+        onComplete?.Invoke();
+    }
+
+    private IEnumerator AnimateRealCard(RectTransform targetPart, CardData cardData, GameObject cardPrefab)
+    {
+        Transform startTransform = spawnPoint != null ? spawnPoint : targetPart;
+        
+        // Instancia a carta real do seu jogo
+        GameObject cardGO = Instantiate(cardPrefab, startTransform.position, Quaternion.identity, targetPart);
+        spawnedCards.Add(cardGO);
+
+        // Iguala o tamanho da carta ao tamanho exato do espaço vazio (target) do Exodia
+        RectTransform cardRect = cardGO.GetComponent<RectTransform>();
+        if (cardRect != null)
+        {
+            cardRect.sizeDelta = targetPart.sizeDelta; 
+        }
+
+        CardDisplay display = cardGO.GetComponent<CardDisplay>();
+        if (display != null)
+        {
+            LayoutElement le = cardGO.GetComponent<LayoutElement>();
+            if (le != null) Destroy(le);
+
+            display.SetCard(cardData, GameManager.Instance.GetCardBackTexture(), true);
+            display.isInteractable = false; 
+        }
+
+        float t = 0;
+        Vector3 startPos = startTransform.position;
+        Vector3 endPos = targetPart.position;
+        
+        Vector3 startScale = Vector3.one * 0.3f;
+        Vector3 endScale = Vector3.one; 
+
+        while (t < 1)
+        {
+            t += Time.deltaTime / animDuration;
+            float easedT = Mathf.SmoothStep(0, 1, t);
+
+            cardGO.transform.position = Vector3.Lerp(startPos, endPos, easedT);
+            cardGO.transform.localScale = Vector3.Lerp(startScale, endScale, easedT);
+
+            yield return null;
+        }
+
+        cardGO.transform.position = endPos;
+        cardGO.transform.localRotation = Quaternion.identity;
+        cardGO.transform.localScale = endScale;
+
+        Image targetImg = targetPart.GetComponent<Image>();
+        if (targetImg != null)
+        {
+            Color originalColor = targetImg.color;
+            targetImg.color = new Color(2f, 2f, 2f, 1f); // Estoura o branco
+            yield return new WaitForSeconds(0.05f);
+            targetImg.color = originalColor;
+        }
+    }
+
+    private IEnumerator ScreenShake(float duration, float magnitude)
+    {
+        Vector3 originalPos = Camera.main.transform.localPosition;
+        float elapsed = 0.0f;
+        while (elapsed < duration)
+        {
+            float x = originalPos.x + UnityEngine.Random.Range(-1f, 1f) * magnitude;
+            float y = originalPos.y + UnityEngine.Random.Range(-1f, 1f) * magnitude;
+            Camera.main.transform.localPosition = new Vector3(x, y, originalPos.z);
             elapsed += Time.deltaTime;
             yield return null;
         }
-        if (card != null) { card.position = end; card.localScale = endScale; }
+        Camera.main.transform.localPosition = originalPos;
     }
 }
