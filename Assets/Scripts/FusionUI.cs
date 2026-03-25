@@ -24,8 +24,16 @@ public class FusionUI : MonoBehaviour
 
     void Awake()
     {
-        confirmButton.onClick.AddListener(OnConfirm);
-        cancelButton.onClick.AddListener(OnCancel);
+        if (mainPanel == null) mainPanel = this.gameObject;
+        if (titleText == null) titleText = transform.Find("TitleText")?.GetComponent<TextMeshProUGUI>();
+        if (extraDeckContent == null) extraDeckContent = transform.Find("ScrollView_ExtraDeck/Viewport/Content");
+        if (handContent == null) handContent = transform.Find("ScrollView_Hand/Viewport/Content");
+        if (fieldContent == null) fieldContent = transform.Find("ScrollView_Field/Viewport/Content");
+        if (confirmButton == null) confirmButton = transform.Find("Btn_Confirm")?.GetComponent<Button>();
+        if (cancelButton == null) cancelButton = transform.Find("Btn_Cancel")?.GetComponent<Button>();
+
+        if (confirmButton != null) confirmButton.onClick.AddListener(OnConfirm);
+        if (cancelButton != null) cancelButton.onClick.AddListener(OnCancel);
         if(mainPanel != null) mainPanel.SetActive(false);
     }
 
@@ -43,8 +51,11 @@ public class FusionUI : MonoBehaviour
     {
         ClearContent();
 
-        // Popula o Extra Deck (Monstros de Fusão)
-        var extraDeck = DeckManager.Instance.GetPlayerExtraDeck().Where(c => c.type.Contains("Fusion")).ToList();
+        // Fallback de segurança para o Prefab
+        if (cardItemPrefab == null && GameManager.Instance != null) cardItemPrefab = GameManager.Instance.cardPrefab;
+
+        // Popula o Extra Deck (Monstros de Fusão) via GameManager (compatível com Simulação/Testes)
+        var extraDeck = GameManager.Instance.GetPlayerExtraDeck().Where(c => c.type.Contains("Fusion")).ToList();
         foreach (var card in extraDeck)
         {
             CreateCardItem(card, extraDeckContent, () => SelectFusionMonster(card));
@@ -125,14 +136,37 @@ public class FusionUI : MonoBehaviour
 
     private void UpdateConfirmButton()
     {
-        confirmButton.interactable = selectedFusionMonster != null && selectedMaterials.Count > 0;
+        if (selectedFusionMonster != null && titleText != null)
+        {
+            int reqCount = 2;
+            if (selectedFusionMonster.fusion_materials != null && selectedFusionMonster.fusion_materials.Count > 0)
+                reqCount = selectedFusionMonster.fusion_materials.Count;
+            else if (selectedFusionMonster.description != null && selectedFusionMonster.description.Contains("+"))
+                reqCount = selectedFusionMonster.description.Split('+').Length;
+
+            titleText.text = $"Fusão: {selectedFusionMonster.name} (Materiais: {selectedMaterials.Count} / {reqCount})";
+        }
+        else if (titleText != null)
+        {
+            titleText.text = "Selecione a Fusão e os Materiais";
+        }
+
+        bool isValid = selectedFusionMonster != null && FusionManager.Instance != null && FusionManager.Instance.ValidateFusion(selectedFusionMonster, selectedMaterials);
+        confirmButton.interactable = isValid;
     }
 
     private void OnConfirm()
     {
-        Debug.Log("Confirmando Fusão... (LUA)");
-        // A Resolução real passará pela Call Operation do LUA. O C# fica limpo.
+        Debug.Log("Confirmando Fusão...");
+        var source = sourceCard;
+        var target = selectedFusionMonster;
+        var mats = new List<CardData>(selectedMaterials);
         Close();
+        
+        UIManager.Instance.ShowPositionSelection(target, (position) => {
+            bool isDefense = position == CardDisplay.BattlePosition.Defense;
+            FusionManager.Instance.PerformFusionSummon(source, target, mats, isDefense);
+        });
     }
 
     private void OnCancel()

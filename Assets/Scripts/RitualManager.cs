@@ -47,4 +47,20 @@ public class RitualManager : MonoBehaviour
 
         return true; // Todos os critérios foram atendidos
     }
+
+    public List<CardData> GetPossibleRitualMonsters(CardData ritualSpell, List<CardData> hand)
+    {
+        List<CardData> possible = new List<CardData>();
+        if (ritualSpell == null || hand == null) return possible;
+
+        foreach (var card in hand)
+        {
+            if (card != null && card.type.Contains("Ritual") && card.type.Contains("Monster"))
+            {
+                if (!string.IsNullOrEmpty(ritualSpell.description) && ritualSpell.description.Contains(card.name) || ritualSpell.id == "0325")
+                    possible.Add(card);
+            }
+        }
+        return possible;
+    }
 }

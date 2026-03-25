@@ -24,8 +24,16 @@ public class RitualUI : MonoBehaviour
 
     void Awake()
     {
-        confirmButton.onClick.AddListener(OnConfirm);
-        cancelButton.onClick.AddListener(OnCancel);
+        if (mainPanel == null) mainPanel = this.gameObject;
+        if (titleText == null) titleText = transform.Find("TitleText")?.GetComponent<TextMeshProUGUI>();
+        if (ritualMonstersContent == null) ritualMonstersContent = transform.Find("ScrollView_RitualMonsters/Viewport/Content");
+        if (handTributesContent == null) handTributesContent = transform.Find("ScrollView_Hand/Viewport/Content");
+        if (fieldTributesContent == null) fieldTributesContent = transform.Find("ScrollView_Field/Viewport/Content");
+        if (confirmButton == null) confirmButton = transform.Find("Btn_Confirm")?.GetComponent<Button>();
+        if (cancelButton == null) cancelButton = transform.Find("Btn_Cancel")?.GetComponent<Button>();
+
+        if (confirmButton != null) confirmButton.onClick.AddListener(OnConfirm);
+        if (cancelButton != null) cancelButton.onClick.AddListener(OnCancel);
         if(mainPanel != null) mainPanel.SetActive(false);
     }
 
@@ -43,6 +51,9 @@ public class RitualUI : MonoBehaviour
     {
         ClearContent();
         var hand = GameManager.Instance.GetPlayerHandData();
+
+        // Fallback de segurança para o Prefab
+        if (cardItemPrefab == null && GameManager.Instance != null) cardItemPrefab = GameManager.Instance.cardPrefab;
 
         // Popula a lista de Monstros de Ritual na mão
         var ritualMonstersInHand = hand.Where(c => c.type.Contains("Ritual") && c.type.Contains("Monster")).ToList();
@@ -122,6 +133,18 @@ public class RitualUI : MonoBehaviour
 
     private void UpdateConfirmButton()
     {
+        int totalLevels = 0;
+        foreach (var t in selectedTributes) totalLevels += t.level;
+        
+        if (selectedRitualMonster != null && titleText != null)
+        {
+            titleText.text = $"Ritual: {selectedRitualMonster.name} (Tributos: {totalLevels} / {selectedRitualMonster.level} Níveis)";
+        }
+        else if (titleText != null)
+        {
+            titleText.text = "Selecione o Monstro de Ritual e os Tributos";
+        }
+
         bool isValid = RitualManager.Instance.ValidateRitual(sourceRitualSpell.CurrentCardData, selectedRitualMonster, selectedTributes);
         confirmButton.interactable = isValid;
     }
@@ -129,8 +152,15 @@ public class RitualUI : MonoBehaviour
     private void OnConfirm()
     {
         Debug.Log("Confirmando Ritual...");
-        GameManager.Instance.PerformRitualSummon(sourceRitualSpell, selectedRitualMonster, selectedTributes);
+        var source = sourceRitualSpell;
+        var target = selectedRitualMonster;
+        var mats = new List<CardData>(selectedTributes);
         Close();
+        
+        UIManager.Instance.ShowPositionSelection(target, (position) => {
+            bool isDefense = position == CardDisplay.BattlePosition.Defense;
+            GameManager.Instance.PerformRitualSummon(source, target, mats, isDefense);
+        });
     }
 
     private void OnCancel()

@@ -809,10 +809,11 @@ public class DuelFXManager : MonoBehaviour
 
         // 3. Marca no Chão e Pouso
         GameObject markerPrefab = isTribute ? tributeFieldMarkerVFX : specialFieldMarkerVFX;
-        GameObject marker = SpawnVFX(markerPrefab, card.transform.position);
+        Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
+        GameObject marker = SpawnVFX(markerPrefab, targetPos);
         PlaySound(attackTravelSound);
 
-        Vector3 startPos = rt.position; Vector3 targetPos = card.transform.position;
+        Vector3 startPos = rt.position; 
         Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
         Quaternion startRot = Quaternion.identity; Quaternion targetRot = card.transform.rotation;
 
@@ -914,8 +915,9 @@ public class DuelFXManager : MonoBehaviour
         yield return new WaitForSeconds(0.6f / animSpeed);
 
         GameObject markerPrefab = fusionFieldMarkerVFX != null ? fusionFieldMarkerVFX : specialFieldMarkerVFX;
-        GameObject marker = SpawnVFX(markerPrefab, card.transform.position); PlaySound(attackTravelSound);
-        Vector3 startPos = rt.position; Vector3 targetPos = card.transform.position; Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
+        Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
+        GameObject marker = SpawnVFX(markerPrefab, targetPos); PlaySound(attackTravelSound);
+        Vector3 startPos = rt.position; Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
         Quaternion startRot = Quaternion.identity; Quaternion targetRot = card.transform.rotation;
 
         t = 0;
@@ -968,8 +970,9 @@ public class DuelFXManager : MonoBehaviour
         if (symbolObj != null) Destroy(symbolObj); yield return new WaitForSeconds(0.6f / animSpeed);
 
         GameObject markerPrefab = ritualFieldMarkerVFX != null ? ritualFieldMarkerVFX : specialFieldMarkerVFX;
-        GameObject marker = SpawnVFX(markerPrefab, card.transform.position); PlaySound(attackTravelSound);
-        Vector3 startPos = rt.position; Vector3 targetPos = card.transform.position; Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
+        Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
+        GameObject marker = SpawnVFX(markerPrefab, targetPos); PlaySound(attackTravelSound);
+        Vector3 startPos = rt.position; Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
         Quaternion startRot = Quaternion.identity; Quaternion targetRot = card.transform.rotation;
 
         t = 0;

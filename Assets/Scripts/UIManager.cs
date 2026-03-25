@@ -330,6 +330,9 @@ public class UIManager : MonoBehaviour
             return;
         }
 
+        // Fallback de segurança: Tenta encontrar o painel na cena caso tenha esquecido de atribuir
+        if (fusionUI == null) fusionUI = Resources.FindObjectsOfTypeAll<FusionUI>().FirstOrDefault();
+
         if (fusionUI != null)
         {
             fusionUI.Show(source);
@@ -350,6 +353,9 @@ public class UIManager : MonoBehaviour
             Destroy(source.gameObject);
             return;
         }
+
+        // Fallback de segurança: Tenta encontrar o painel na cena caso tenha esquecido de atribuir
+        if (ritualUI == null) ritualUI = Resources.FindObjectsOfTypeAll<RitualUI>().FirstOrDefault();
 
         if (ritualUI != null)
         {

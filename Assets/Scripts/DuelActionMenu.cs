@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Linq;
+using System.Collections.Generic;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -127,11 +128,27 @@ public class DuelActionMenu : MonoBehaviour
                 if (card.CurrentCardData.type.Contains("Trap") && !GameManager.Instance.devMode) 
                     canActivate = false;
 
-                // Regra de Magia de Ritual: Deve ter monstro Ritual na mão
-                if (card.CurrentCardData.property == "Ritual" && GameManager.Instance != null)
+                // Regra de Magia de Ritual: Deve ter monstro Ritual COMPATÍVEL na mão
+                if (card.CurrentCardData.property == "Ritual" && GameManager.Instance != null && RitualManager.Instance != null)
                 {
-                    var ritualMonsters = GameManager.Instance.GetPlayerHandData().Where(c => c.type.Contains("Ritual")).ToList();
-                    if (ritualMonsters.Count == 0) canActivate = false;
+                    var possibleRituals = RitualManager.Instance.GetPossibleRitualMonsters(card.CurrentCardData, GameManager.Instance.GetPlayerHandData());
+                    if (possibleRituals.Count == 0) canActivate = false;
+                }
+
+                // Regra de Polimerização: Deve ter Fusão e materiais compatíveis
+                if ((card.CurrentCardData.name == "Polymerization" || card.CurrentCardData.name.Contains("Fusion")) && GameManager.Instance != null && FusionManager.Instance != null)
+                {
+                    List<CardData> availableMats = new List<CardData>();
+                    availableMats.AddRange(GameManager.Instance.GetPlayerHandData().Where(c => c.type.Contains("Monster")));
+                    foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones) {
+                        if (z.childCount > 0) {
+                            var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                            if (cd != null && !cd.isFlipped) availableMats.Add(cd.CurrentCardData);
+                        }
+                    }
+                    var fusions = GameManager.Instance.GetPlayerExtraDeck().Where(c => c.type.Contains("Fusion")).ToList();
+                    bool canFuse = fusions.Any(f => FusionManager.Instance.CanBeFusionSummoned(f, availableMats));
+                    if (!canFuse) canActivate = false;
                 }
 
                 activateBtn.gameObject.SetActive(canActivate);
