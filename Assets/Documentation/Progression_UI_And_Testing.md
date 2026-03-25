@@ -190,10 +190,25 @@ Ferramenta de automação para testes de estresse, balanço de deck e procura po
 
 Permite alterar a identidade gráfica e sonora de toda a Interface (UI) sem tocar em código, dependendo de qual "Ato" o jogador se encontra.
 
-### Arquitetura
-1.  **`DuelTheme` (ScriptableObject):** Arquivo de dados que arquiva sprites de Background (Tabuleiro, Perfis), Painéis, Botões, Fontes, VFXs (partículas) e BGMs (Música).
-2.  **`DuelThemeManager`:** Aplicado à cena `Panel_Duel`. No `Start()`, o GameManager consulta a `CampaignDatabase` para saber o Ato atual e envia o tema para este Manager através de `ApplyTheme(theme)`.
-3.  **Integração Minigames:** O Theme repassa os assets visuais para injetar moedas (`CoinTossUI`) e dados (`DiceRollUI`) tematizados de acordo com a região (Ex: Moedas egípcias no Ato 8).
+### 9.7.1 A Arquitetura de Temas (O Console e os Cartuchos)
+O jogo utiliza um sistema modular (Data-Driven Design) para evitar sobrecarregar a memória.
+*   **`DuelThemeManager` (O Console):** Fica na cena (`Panel_Duel`). Ele possui referências vazias para os componentes de UI (Images, Texts). Ele não armazena as artes, apenas as aplica.
+*   **`DuelTheme` (O Cartucho):** É um arquivo de dados (`ScriptableObject`) salvo em `Assets/Data/Themes/`. Ele guarda todas as imagens, sons e coordenadas de um tema específico.
+*   **Como é Aplicado:** No `Start()`, o `GameManager` consulta a `CampaignDatabase` para saber o Ato atual e envia o tema para `DuelThemeManager.Instance.ApplyTheme(theme)`. Se a campanha não retornar um tema válido, o Manager utiliza o `defaultTheme` (Tema Padrão) configurado nele.
+
+### 9.7.2 Configurando o Relógio de Turnos (`TurnClockUI`)
+O Relógio Gigante é customizável via `DuelTheme`, permitindo adaptar qualquer formato de desenho.
+*   **As Três Camadas do Relógio:**
+    1.  **Base (`clockBaseImage`):** Imagem estática de fundo (escura/semitransparente).
+    2.  **Fill (`clockFillImage`):** A mesma imagem da base, configurada como `Image Type: Filled` (Radial 360). A fatia diminui com o tempo, revelando a base escura (Efeito de Luz Varrendo). Pode ser desativada na flag `Use Clock Fill Effect`.
+    3.  **Hand (`clockHandImage`):** O ponteiro que gira livremente na frente.
+*   **O Segredo do Alinhamento Físico:** Como os desenhos variam, ajustamos a posição ancorando a espada matematicamente:
+    *   **Clock Hand Center (X, Y):** Define onde o ponteiro deve ser pregado em relação ao centro exato da imagem de fundo.
+    *   **Clock Hand Pivot (X, Y):** Define qual é o "eixo de rotação" do próprio ponteiro (0.0 a 1.0). Ex: `X: 0.5` e `Y: 0.0` faz girar pela base exata da imagem. Valores negativos jogam o centro de giro para fora do PNG.
+
+### 9.7.3 Minigames (Moedas e Dados)
+*   `CoinTossUI` e `DiceRollUI` resgatam dinamicamente seus sprites baseados no `currentTheme`.
+*   Os dados suportam um Array de 6 faces (`diceFaceSprites`). Se o tema não tiver imagens definidas, a Unity exibirá blocos brancos alertando o Desenvolvedor para preencher o Cartucho de Tema.
 
 ---
 

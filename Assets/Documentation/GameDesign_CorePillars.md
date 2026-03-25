@@ -185,7 +185,10 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
 *   **9.4.** Mecânica Efêmera da Tag "NEW" (Lógica de Persistência, `SaveLoadSystem.MarkCardAsUsed`)
 *   **9.5.** Sistemas de Teste, Debug e UI Dinâmica (`DamagePopupManager.cs`, `MouseTooltipUI.cs`, `FullTestManager.cs`, Toggles, Dev Card Menu, `InGameDebugConsole.cs`)
 *   **9.6.** Simulador de Caos (`SimulationManager.cs`, Bypass de UI, Visual Mode 1.5x, Fast Mode 50x)
-*   **9.7.** Sistema de Temas de Duelo (`DuelThemeManager.cs`, ScriptableObject `DuelTheme`, Minigames visuais)
+*   **9.7.** Sistema de Temas de Duelo (`DuelThemeManager.cs`, `DuelTheme`)
+    *   **9.7.1** Arquitetura de Temas (Console e Cartuchos)
+    *   **9.7.2** Configurando o Relógio de Turnos (`TurnClockUI`, Camadas e Pivot)
+    *   **9.7.3** Minigames Dinâmicos (Moeda e Dados)
 *   **9.8.** Efeitos Visuais e Sonoros (`DuelFXManager.cs`, Tabela de VFX de Cartas/Batalha, Música Dinâmica/BGM)
 
 ---
