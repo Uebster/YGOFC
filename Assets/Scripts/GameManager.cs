@@ -511,9 +511,17 @@ public class GameManager : MonoBehaviour
             }
 
             DuelTheme theme = campaignDatabase.GetThemeForLevel(levelToUse);
-            if (theme != null)
+            // Fallback Robusto: Só aceita o tema da campanha se ele tiver pelo menos o tabuleiro preenchido!
+            if (theme != null && theme.boardBackground != null)
                 DuelThemeManager.Instance.ApplyTheme(theme);
+            else if (DuelThemeManager.Instance.defaultTheme != null)
+                DuelThemeManager.Instance.ApplyTheme(DuelThemeManager.Instance.defaultTheme);
+        }
+        else if (DuelThemeManager.Instance != null && DuelThemeManager.Instance.defaultTheme != null)
+        {
+            DuelThemeManager.Instance.ApplyTheme(DuelThemeManager.Instance.defaultTheme);
             }
+
                 StartCoroutine(DuelStartSequence());    
         }
     private IEnumerator DuelStartSequence()
@@ -655,7 +663,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void SetSpellTrapFromData(CardData cardData, bool isPlayer, int zoneIndex)
+    public void SetSpellTrapFromData(CardData cardData, bool isPlayer, int zoneIndex, bool faceUp = false)
     {
         if (cardData == null || (!cardData.type.Contains("Spell") && !cardData.type.Contains("Trap")))
         {
@@ -677,12 +685,13 @@ public class GameManager : MonoBehaviour
         GameObject cardGO = Instantiate(cardPrefab, zone);
         CardDisplay cardDisplay = cardGO.GetComponent<CardDisplay>();
 
+        cardGO.transform.localPosition = Vector3.zero;
         cardGO.transform.localScale = fieldCardScale;
         cardDisplay.isInteractable = true; // Set to true so it can be flipped up
         cardDisplay.isPlayerCard = isPlayer;
         cardDisplay.isOnField = true;
         
-        cardDisplay.SetCard(cardData, cardBackTexture, false); // false = set face-down
+        cardDisplay.SetCard(cardData, cardBackTexture, faceUp);
         cardGO.transform.localRotation = Quaternion.identity;
     }
 

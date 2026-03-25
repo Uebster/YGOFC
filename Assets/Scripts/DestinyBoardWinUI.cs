@@ -13,13 +13,15 @@ public class DestinyBoardWinUI : MonoBehaviour
     public Transform[] letterSlots; 
     
     [Header("Configurações")]
-    public float delayBetweenLetters = 1.0f; // Suspense entre o drop das letras
-    public float delayBeforeEndDuel = 2.5f;  // Tempo olhando a palavra finalizada
+    public float delayBetweenLetters = 0.6f; // Suspense mais rápido e dinâmico
+    private float exactFlashDuration = 2.0f;  // Tempo cravado do clarão
 
     [Header("Animações Extras")]
     public Transform spawnPoint; // De onde as letras surgem (ex: do nada no centro)
     public GameObject finalExplosionVFX; // Prefab do clarão/energia negra
-    public float flyDuration = 0.4f;
+    public float flyDuration = 0.2f; // Voo mais rápido e agressivo
+
+    private List<GameObject> spawnedCards = new List<GameObject>();
 
     void Awake()
     {
@@ -29,12 +31,16 @@ public class DestinyBoardWinUI : MonoBehaviour
 
     public void ShowWinSequence(bool playerWon, System.Action onSequenceComplete)
     {
+        gameObject.SetActive(true); // Garante que a raiz do script acorde para a Corrotina
         StartCoroutine(PlayWinSequence(playerWon, onSequenceComplete));
     }
 
     private IEnumerator PlayWinSequence(bool playerWon, System.Action onSequenceComplete)
     {
         if (panel) panel.SetActive(true);
+
+        foreach (var c in spawnedCards) if (c != null) Destroy(c);
+        spawnedCards.Clear();
 
         // Limpa resquícios antigos nos slots
         foreach (Transform slot in letterSlots)
@@ -55,6 +61,15 @@ public class DestinyBoardWinUI : MonoBehaviour
             {
                 Transform startTransform = spawnPoint != null ? spawnPoint : letterSlots[i];
                 GameObject cardGO = Instantiate(cardPrefab, startTransform.position, Quaternion.identity, letterSlots[i]);
+                spawnedCards.Add(cardGO);
+
+                // Iguala o tamanho da carta ao tamanho exato do espaço vazio
+                RectTransform cardRect = cardGO.GetComponent<RectTransform>();
+                RectTransform targetRect = letterSlots[i].GetComponent<RectTransform>();
+                if (cardRect != null && targetRect != null) {
+                    cardRect.sizeDelta = targetRect.sizeDelta;
+                }
+
                 CardDisplay display = cardGO.GetComponent<CardDisplay>();
                 CardData data = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == letterNames[i]);
                 
@@ -83,8 +98,12 @@ public class DestinyBoardWinUI : MonoBehaviour
             Instantiate(finalExplosionVFX, transform.position, Quaternion.identity, transform);
         }
 
-        yield return new WaitForSeconds(delayBeforeEndDuel);
+        // Treme a tela por exatos 2 segundos para sincronizar perfeitamente com o clarão e o Fade do GameManager
+        yield return StartCoroutine(ScreenShake(exactFlashDuration, 8f));
         
+        foreach (var c in spawnedCards) if (c != null) Destroy(c);
+        spawnedCards.Clear();
+
         if (panel) panel.SetActive(false);
         onSequenceComplete?.Invoke();
     }
@@ -99,13 +118,33 @@ public class DestinyBoardWinUI : MonoBehaviour
         {
             if (card == null) yield break;
             float t = elapsed / flyDuration;
+            float easedT = Mathf.SmoothStep(0, 1, t);
             
-            card.position = Vector3.Lerp(start, end, t);
-            card.localScale = Vector3.Lerp(startScale, endScale, t);
+            // Acompanha a posição do pai caso o HorizontalLayoutGroup mova os slots durante a animação
+            Vector3 currentEnd = card.parent.position;
+
+            card.position = Vector3.Lerp(start, currentEnd, easedT);
+            card.localScale = Vector3.Lerp(startScale, endScale, easedT);
             
             elapsed += Time.deltaTime;
             yield return null;
         }
-        if (card != null) { card.position = end; card.localScale = endScale; }
+        // Trava perfeitamente no centro do slot zerando a posição local!
+        if (card != null) { card.localPosition = Vector3.zero; card.localScale = endScale; }
+    }
+
+    private IEnumerator ScreenShake(float duration, float magnitude)
+    {
+        Vector3 originalPos = Camera.main.transform.localPosition;
+        float elapsed = 0.0f;
+        while (elapsed < duration)
+        {
+            float x = originalPos.x + UnityEngine.Random.Range(-1f, 1f) * magnitude;
+            float y = originalPos.y + UnityEngine.Random.Range(-1f, 1f) * magnitude;
+            Camera.main.transform.localPosition = new Vector3(x, y, originalPos.z);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        Camera.main.transform.localPosition = originalPos;
     }
 }

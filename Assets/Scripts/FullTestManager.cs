@@ -269,7 +269,7 @@ public class FullTestManager : MonoBehaviour
             CardData data = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == letters[i]);
             if (data != null)
             {
-                GameManager.Instance.SetSpellTrapFromData(data, true, i);
+                GameManager.Instance.SetSpellTrapFromData(data, true, i, true); // True = Face-up
                 
                 if (GameManager.Instance.turnClockUI != null)
                 {
@@ -282,6 +282,11 @@ public class FullTestManager : MonoBehaviour
         }
         
         yield return new WaitForSeconds(0.5f);
+
+        // Tenta achar o painel mesmo se estiver desativado no Inspector
+        if (DestinyBoardWinUI.Instance == null)
+            DestinyBoardWinUI.Instance = Resources.FindObjectsOfTypeAll<DestinyBoardWinUI>().FirstOrDefault();
+
         if (DestinyBoardWinUI.Instance != null)
             DestinyBoardWinUI.Instance.ShowWinSequence(true, () => GameManager.Instance.EndDuel(true));
         else GameManager.Instance.EndDuel(true);
@@ -380,7 +385,7 @@ public class FullTestManager : MonoBehaviour
 
         if (trapData != null)
         {
-            GameManager.Instance.SetSpellTrapFromData(trapData, true, 2); 
+            GameManager.Instance.SetSpellTrapFromData(trapData, true, 2, false); // False = Face-Down
         }
 
         yield return new WaitForSeconds(1.0f);

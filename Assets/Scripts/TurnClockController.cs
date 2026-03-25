@@ -6,6 +6,7 @@ public class TurnClockController : MonoBehaviour
     [Header("Componentes")]
     public Image clockFace; // A imagem de fundo (o relógio)
     public Transform clockHand; // O ponteiro que vai girar
+    public Image clockHandImage; // O sprite do ponteiro para receber o tema
     
     [Header("Configuração")]
     [Tooltip("Se verdadeiro, esconde o relógio quando o contador chegar a 0.")]
@@ -18,6 +19,16 @@ public class TurnClockController : MonoBehaviour
 
         // Garante que o objeto esteja ativo se tiver turnos
         if (!gameObject.activeSelf && currentTurns > 0) gameObject.SetActive(true);
+
+        // Aplica o tema visual atual ao relógio embutido na carta
+        if (DuelThemeManager.Instance != null && DuelThemeManager.Instance.currentTheme != null)
+        {
+            DuelTheme theme = DuelThemeManager.Instance.currentTheme;
+            if (clockFace != null && theme.clockBaseSprite != null) 
+                clockFace.sprite = theme.clockBaseSprite;
+            if (clockHandImage != null && theme.clockHandSprite != null) 
+                clockHandImage.sprite = theme.clockHandSprite;
+        }
 
         // Calcula a rotação
         // Exemplo Swords: Max 3.
@@ -34,9 +45,6 @@ public class TurnClockController : MonoBehaviour
             // Rotaciona no eixo Z (negativo para sentido horário)
             clockHand.localRotation = Quaternion.Euler(0, 0, -angle);
         }
-
-        // Opcional: Trocar a cor ou sprite do clockFace dependendo do Ato (lógica futura)
-        // if (DuelThemeManager.Instance != null) ...
 
         if (hideOnZero && currentTurns <= 0)
         {

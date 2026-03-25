@@ -55,6 +55,18 @@ public class DuelTheme : ScriptableObject
     public Sprite clockBaseSprite;
     [Tooltip("Opcional: Sprite do ponteiro do relógio de turnos.")]
     public Sprite clockHandSprite;
+    [Tooltip("Pivô (centro de rotação) do ponteiro (0 a 1). Padrão: 0.5, 0.5. (Ex: X: 0.5, Y: 0 para girar pela base, ou Y: -0.1 para girar fora da imagem)")]
+    public Vector2 clockHandPivot = new Vector2(0.5f, 0.5f);
+    [Tooltip("Posição (X, Y) do centro do relógio onde a base do ponteiro deve ser fixada (Apenas para o Relógio Gigante).")]
+    public Vector2 clockHandCenter = Vector2.zero;
+    [Tooltip("Tamanho customizado da base do relógio. Deixe (0,0) para manter o padrão.")]
+    public Vector2 clockBaseSize = Vector2.zero;
+    [Tooltip("Tamanho customizado do ponteiro. Deixe (0,0) para manter o padrão.")]
+    public Vector2 clockHandSize = Vector2.zero;
+    [Tooltip("Preserva a proporção (Aspect Ratio) das imagens do relógio.")]
+    public bool preserveClockAspect = true;
+    [Tooltip("Se marcado, o relógio terá o efeito de cor (fatia) diminuindo. Se desmarcado, apenas o ponteiro gira livremente.")]
+    public bool useClockFillEffect = false;
 
     [Header("Action Menu")]
     public Sprite panelActionMenu;

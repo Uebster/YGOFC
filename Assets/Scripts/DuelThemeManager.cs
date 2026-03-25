@@ -82,15 +82,32 @@ public class DuelThemeManager : MonoBehaviour
     // Arraste o objeto pai (Canvas ou Panel_Duel) para buscar todos os textos automaticamente
     public Transform uiRootForTexts; 
 
+    [Header("Fallback / Padrão")]
+    public DuelTheme defaultTheme;
+
+    [HideInInspector]
+    public DuelTheme currentTheme; // Guarda o tema atual para objetos instanciados dinamicamente
+
     void Awake()
     {
         Instance = this;
+    }
+
+    void Start()
+    {
+        // Garante que as UIs de teste fiquem com as artes corretas logo ao dar Play, 
+        // mesmo antes de você clicar no botão "Start Duel"
+        if (currentTheme == null && defaultTheme != null)
+        {
+            ApplyTheme(defaultTheme);
+        }
     }
 
     public void ApplyTheme(DuelTheme theme)
     {
         if (theme == null) return;
 
+        currentTheme = theme;
         Debug.Log($"Aplicando tema: {theme.name}");
 
         // 1. Aplica Sprites (Verifica null para não quebrar se o tema não tiver tudo)
@@ -205,7 +222,9 @@ public class DuelThemeManager : MonoBehaviour
             if (GameManager.Instance.turnClockUI != null)
             {
                 SetSprite(GameManager.Instance.turnClockUI.clockBaseImage, theme.clockBaseSprite);
+                SetSprite(GameManager.Instance.turnClockUI.clockFillImage, theme.clockBaseSprite);
                 SetSprite(GameManager.Instance.turnClockUI.clockHandImage, theme.clockHandSprite);
+                GameManager.Instance.turnClockUI.ApplyThemeSettings(theme.clockHandCenter, theme.useClockFillEffect, theme.clockBaseSize, theme.clockHandSize, theme.preserveClockAspect, theme.clockHandPivot);
             }
         }
     }

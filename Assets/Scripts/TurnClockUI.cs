@@ -31,11 +31,73 @@ public class TurnClockUI : MonoBehaviour
     public float displayTime = 1.5f;       // Tempo que o relógio fica na tela antes de sumir
 
     private Action onAnimationComplete;
+    private bool useFillEffect = true;
 
     void Awake()
     {
         // Garante que comece invisível
         gameObject.SetActive(false);
+        
+        // Força o relógio a aparecer na frente de todas as cartas
+        Canvas canvas = GetComponent<Canvas>();
+        if (canvas == null) canvas = gameObject.AddComponent<Canvas>();
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = 30000;
+        
+        // Tenta auto-atribuir as imagens baseadas na sua hierarquia
+        if (clockBaseImage == null) 
+        {
+            Transform baseTr = transform.Find("BaseClock");
+            if (baseTr != null) clockBaseImage = baseTr.GetComponent<Image>();
+        }
+        
+        if (clockFillImage == null)
+        {
+            Transform fillTr = transform.Find("BaseClock/Fill");
+            if (fillTr != null) clockFillImage = fillTr.GetComponent<Image>();
+        }
+        
+        if (clockHand == null)
+        {
+            Transform handTr = transform.Find("BaseClock/Hand");
+            if (handTr != null) clockHand = handTr.GetComponent<RectTransform>();
+        }
+        
+        if (clockHandImage == null && clockHand != null) clockHandImage = clockHand.GetComponent<Image>();
+    }
+
+    public void ApplyThemeSettings(Vector2 handCenter, bool useFill, Vector2 baseSize, Vector2 handSize, bool preserveAspect, Vector2 handPivot)
+    {
+        useFillEffect = useFill;
+        if (clockHand != null) 
+        {
+            // Força a âncora para o meio exato do relógio. Assim o X e Y funcionam como coordenadas reais a partir do centro!
+            clockHand.anchorMin = new Vector2(0.5f, 0.5f);
+            clockHand.anchorMax = new Vector2(0.5f, 0.5f);
+            clockHand.pivot = handPivot;
+            clockHand.anchoredPosition = handCenter;
+        }
+        
+        if (clockFillImage != null)
+            clockFillImage.gameObject.SetActive(useFill);
+
+        if (clockBaseImage != null)
+        {
+            clockBaseImage.preserveAspect = preserveAspect;
+            if (baseSize != Vector2.zero) clockBaseImage.rectTransform.sizeDelta = baseSize;
+        }
+
+        if (clockFillImage != null)
+        {
+            clockFillImage.preserveAspect = preserveAspect;
+            if (baseSize != Vector2.zero) clockFillImage.rectTransform.sizeDelta = baseSize;
+        }
+
+        if (clockHandImage != null)
+        {
+            clockHandImage.preserveAspect = preserveAspect;
+            if (handSize != Vector2.zero) clockHandImage.rectTransform.sizeDelta = handSize;
+        }
     }
 
     /// <summary>
@@ -45,6 +107,16 @@ public class TurnClockUI : MonoBehaviour
     {
         gameObject.SetActive(true);
         onAnimationComplete = onComplete;
+
+        // Puxa o tema dinamicamente para blindar o sistema de testes!
+        if (DuelThemeManager.Instance != null && DuelThemeManager.Instance.currentTheme != null)
+        {
+            DuelTheme theme = DuelThemeManager.Instance.currentTheme;
+            if (clockBaseImage != null && theme.clockBaseSprite != null) clockBaseImage.sprite = theme.clockBaseSprite;
+            if (clockFillImage != null && theme.clockBaseSprite != null) clockFillImage.sprite = theme.clockBaseSprite;
+            if (clockHandImage != null && theme.clockHandSprite != null) clockHandImage.sprite = theme.clockHandSprite;
+            ApplyThemeSettings(theme.clockHandCenter, theme.useClockFillEffect, theme.clockBaseSize, theme.clockHandSize, theme.preserveClockAspect, theme.clockHandPivot);
+        }
 
         if (cardNameText != null) cardNameText.text = cardName;
         if (turnsLeftText != null) turnsLeftText.text = $"{newTurns} Turn(s) Left";
@@ -62,7 +134,7 @@ public class TurnClockUI : MonoBehaviour
         float newFill = (float)newTurns / maxTurns;
 
         // Define a cor baseada na urgência (se for o último turno, fica vermelho)
-        if (clockFillImage != null)
+        if (clockFillImage != null && useFillEffect)
         {
             clockFillImage.color = (newTurns <= 1) ? warningColor : startColor;
         }
@@ -79,7 +151,7 @@ public class TurnClockUI : MonoBehaviour
 
             float currentFill = Mathf.Lerp(oldFill, newFill, smoothT);
 
-            if (clockFillImage != null) clockFillImage.fillAmount = currentFill;
+            if (clockFillImage != null && useFillEffect) clockFillImage.fillAmount = currentFill;
             
             if (clockHand != null)
             {
@@ -92,7 +164,7 @@ public class TurnClockUI : MonoBehaviour
         }
 
         // Garante os valores finais exatos
-        if (clockFillImage != null) clockFillImage.fillAmount = newFill;
+        if (clockFillImage != null && useFillEffect) clockFillImage.fillAmount = newFill;
         if (clockHand != null) clockHand.localRotation = Quaternion.Euler(0f, 0f, newFill * -360f);
 
         // Toca um som de relógio aqui se quiser! (Ex: AudioManager.Play("Tick"))

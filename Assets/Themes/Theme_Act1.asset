@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b80f2649cb31c5249b996cc1da9cb79e, type: 3}
-  m_Name: Act1
+  m_Name: Theme_Act1
   m_EditorClassIdentifier: Assembly-CSharp::DuelTheme
   boardBackground: {fileID: 322752994480017407, guid: 1f64d315e936e9746b2659bf93ac4033, type: 3}
   fieldImage: {fileID: 5785788689562075526, guid: 9a64000eb8dc84a4f8b781e2e5a1acc4, type: 3}
@@ -47,8 +47,14 @@ MonoBehaviour:
   - {fileID: -842393109206759153, guid: 66288d154fb1e8848afb424410181e74, type: 3}
   - {fileID: 4796439767014711779, guid: ee05e9c0a60bcd9438f5d5cd9b786a75, type: 3}
   - {fileID: 3130881699014804359, guid: 34d4209bc4f436940a4314a1b66a0a3f, type: 3}
-  clockBaseSprite: {fileID: -8506806670338686528, guid: dc3e6b70d90819e4aa328133c2a11af8, type: 3}
-  clockHandSprite: {fileID: 3242361394745516952, guid: 5a74e91cf079f0d43b62e76c7bea641c, type: 3}
+  clockBaseSprite: {fileID: 1913614699371108689, guid: 8d4475b4567669d46aebd4bd76bec4e9, type: 3}
+  clockHandSprite: {fileID: -2483671142480114915, guid: 353014fa75ee7424ea68231bd57d367b, type: 3}
+  clockHandPivot: {x: 0.5, y: 0.1}
+  clockHandCenter: {x: 0, y: -25}
+  clockBaseSize: {x: 350, y: 350}
+  clockHandSize: {x: 100, y: 100}
+  preserveClockAspect: 1
+  useClockFillEffect: 0
   panelActionMenu: {fileID: 0}
   btnSummon: {fileID: 0}
   btnSet: {fileID: 0}
