@@ -157,10 +157,7 @@ public class RitualUI : MonoBehaviour
         var mats = new List<CardData>(selectedTributes);
         Close();
         
-        UIManager.Instance.ShowPositionSelection(target, (position) => {
-            bool isDefense = position == CardDisplay.BattlePosition.Defense;
-            GameManager.Instance.PerformRitualSummon(source, target, mats, isDefense);
-        });
+        GameManager.Instance.PerformRitualSummon(source, target, mats, false);
     }
 
     private void OnCancel()

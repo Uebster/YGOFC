@@ -111,6 +111,11 @@ public class EffectTestManager : MonoBehaviour
         }
         
         if (GUILayout.Button("Apenas Banir (Vórtice)", btnStyle)) { EnsureOpponentMonster(); DuelFXManager.Instance.PlayBanishEffect(opponentMonster); }
+        if (GUILayout.Button("Trocar Controle (Change of Heart)", btnStyle)) { 
+            EnsureOpponentMonster(); 
+            GameManager.Instance.SwitchControl(opponentMonster); 
+            opponentMonster = null; 
+        }
 
         GUILayout.FlexibleSpace(); // Empurra pro fundo
         
@@ -118,12 +123,12 @@ public class EffectTestManager : MonoBehaviour
         if (GUILayout.Button("Tremor de Dano na Tela", btnStyle)) DuelFXManager.Instance.PlayDamageEffect(Vector3.zero);
         if (GUILayout.Button("Teste: Cinemática de Ritual", btnStyle)) { 
             EnsurePlayerMonster(); EnsurePlayerSpell(); 
-            DuelFXManager.Instance.PlayRitualCinematic(playerMonster, playerSpell.CurrentCardData, null); 
+            DuelFXManager.Instance.PlayRitualCinematic(playerMonster, playerSpell.CurrentCardData, false, null); 
         }
         if (GUILayout.Button("Teste: Cinemática de Fusão", btnStyle)) { 
             EnsurePlayerMonster(); EnsureOpponentMonster(); EnsurePlayerSpell(); 
             List<CardData> mats = new List<CardData> { playerMonster.CurrentCardData, opponentMonster.CurrentCardData };
-            DuelFXManager.Instance.PlayFusionCinematic(playerMonster, mats, playerSpell.CurrentCardData, null); 
+            DuelFXManager.Instance.PlayFusionCinematic(playerMonster, mats, playerSpell.CurrentCardData, false, null); 
         }
         if (GUILayout.Button("Embaralhar Deck (Shuffle)", btnStyle)) 
         {

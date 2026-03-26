@@ -72,3 +72,8 @@ Assets/Travis Game Assets/
 Assets/UnityTechnologies/
 Assets/100BestEffectPack/
 Assets/Support/
+
+# Ignorar documentações de rascunho
+Assets/Documentation/Padroes_e_Atalhos.md
+Assets/Documentation/Sketch*
+Assets/Documentation/Ideas*

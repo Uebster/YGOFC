@@ -1308,13 +1308,19 @@ public void ShuffleDeck(bool isPlayer)
 
     public void DrawCard(bool ignoreLimit = false)
     {
-        if (DeckManager.Instance != null) DeckManager.Instance.DrawCard(true, ignoreLimit);
+        if (DeckManager.Instance != null && DeckManager.Instance.GetPlayerDeck() != null && DeckManager.Instance.GetPlayerDeck().Count > 0)
+        {
+            DeckManager.Instance.DrawCard(true, ignoreLimit);
+        }
         // Retiramos o avanço de fase redundante daqui, pois o DeckManager já cuida disso.
     }
 
     public void DrawOpponentCard()
     {
-        if (DeckManager.Instance != null) DeckManager.Instance.DrawCard(false);
+        if (DeckManager.Instance != null && DeckManager.Instance.GetOpponentDeck() != null && DeckManager.Instance.GetOpponentDeck().Count > 0)
+        {
+            DeckManager.Instance.DrawCard(false);
+        }
     }
 
     public void DrawInitialHand(int count)
@@ -2546,7 +2552,7 @@ public void ShuffleDeck(bool isPlayer)
 
     // Novo método público para finalizar a invocação (chamado pelo SummonManager após tributo manual)
     // Atualizado para suportar Face-Down explicitamente
-    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false, bool isTributeSummon = false, Transform specificZone = null)
+    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false, bool isTributeSummon = false, Transform specificZone = null, bool askPosition = false, List<CardData> specialMaterials = null)
     {
         // 2. Encontrar Zona Livre
         Transform targetZone = specificZone;
@@ -2615,11 +2621,11 @@ public void ShuffleDeck(bool isPlayer)
 
                 if (isFusion)
                 {
-                    DuelFXManager.Instance.PlayFusionCinematic(display, null, null, onCinematicComplete);
+                    DuelFXManager.Instance.PlayFusionCinematic(display, specialMaterials, null, askPosition, onCinematicComplete);
                 }
                 else if (isRitual)
                 {
-                    DuelFXManager.Instance.PlayRitualCinematic(display, null, onCinematicComplete);
+                    DuelFXManager.Instance.PlayRitualCinematic(display, null, askPosition, onCinematicComplete);
                 }
                 else
                 {
@@ -2759,12 +2765,9 @@ public void ShuffleDeck(bool isPlayer)
                 return;
             }
 
-            // Passo 3: Escolhe Posição e Executa
+            // Passo 3: Executa direto (a posição será pedida durante a cinemática)
             System.Action<CardData> onTargetSelected = (targetRitual) => {
-                UIManager.Instance.ShowPositionSelection(targetRitual, (position) => {
-                    bool isDefense = position == CardDisplay.BattlePosition.Defense;
-                    PerformRitualSummon(sourceCard, targetRitual, selectedTributes, isDefense);
-                });
+                PerformRitualSummon(sourceCard, targetRitual, selectedTributes, false);
             };
 
             // Passo 2: Dedução automática ou Desempate
@@ -2815,14 +2818,29 @@ public void ShuffleDeck(bool isPlayer)
         // 3. Invoca o Monstro de Ritual da mão
         RemoveCardFromHand(ritualMonster, sourceCard.isPlayerCard);
        
-       // Usa FinalizeSummon para ativar a Cinemática de Ritual Oficialmente
-       GameObject cardGO = Instantiate(cardPrefab);
-       CardDisplay display = cardGO.GetComponent<CardDisplay>();
-       display.SetCard(ritualMonster, cardBackTexture, true);
-       display.isPlayerCard = sourceCard.isPlayerCard;
-       
-       FinalizeSummon(cardGO, ritualMonster, isDefense, sourceCard.isPlayerCard, false, false);
-        
+       bool useCinematic = enableSummonCinematics && !isSimulating;
+
+       System.Action<bool> doSummon = (def) => {
+           // Usa FinalizeSummon para ativar a Cinemática de Ritual Oficialmente
+           GameObject cardGO = Instantiate(cardPrefab);
+           CardDisplay display = cardGO.GetComponent<CardDisplay>();
+           display.SetCard(ritualMonster, cardBackTexture, true);
+           display.isPlayerCard = sourceCard.isPlayerCard;
+
+           FinalizeSummon(cardGO, ritualMonster, def, sourceCard.isPlayerCard, false, false, null, useCinematic, tributes);
+       };
+
+       if (!useCinematic && sourceCard.isPlayerCard && UIManager.Instance != null && !isSimulating)
+       {
+           UIManager.Instance.ShowPositionSelection(ritualMonster, (pos) => {
+               doSummon(pos == CardDisplay.BattlePosition.Defense);
+           });
+       }
+       else
+       {
+           doSummon(isDefense);
+       }
+
         // TROFÉU: Ritual
         if (TrophyManager.Instance != null)
             TrophyManager.Instance.TrackStat("ritual_summon", 1);
@@ -3209,23 +3227,31 @@ public void ShuffleDeck(bool isPlayer)
         if (card.isPlayerCard) playerHand.Remove(card.gameObject);
         else opponentHand.Remove(card.gameObject);
 
-        card.transform.SetParent(newZone);
-        card.transform.localPosition = Vector3.zero;
-        card.isPlayerCard = newOwnerIsPlayer;
-
         // Ajusta rotação visual baseada na posição de batalha e novo dono
-        float zRot = 0;
-        if (card.position == CardDisplay.BattlePosition.Defense) zRot = newOwnerIsPlayer ? 90f : -90f;
-        else zRot = newOwnerIsPlayer ? 0f : 180f;
+        float targetZRot = 0;
+        if (card.position == CardDisplay.BattlePosition.Defense) targetZRot = newOwnerIsPlayer ? 90f : -90f;
+        else targetZRot = newOwnerIsPlayer ? 0f : 180f;
 
-        card.transform.localRotation = Quaternion.Euler(0, 0, zRot);
+        if (DuelFXManager.Instance != null && DuelFXManager.Instance.enableAnimations && !isSimulating)
+        {
+            DuelFXManager.Instance.PlayControlSwap(card, newZone, targetZRot, newOwnerIsPlayer, () => {
+                card.isPlayerCard = newOwnerIsPlayer;
+                if (CardEffectManager.Instance != null && (card.CurrentCardData.id == "0834" || card.CurrentCardData.id == "0050"))
+                    CardEffectManager.Instance.ExecuteCardEffect(card);
+            });
+        }
+        else
+        {
+            card.transform.SetParent(newZone);
+            card.transform.localPosition = Vector3.zero;
+            card.transform.localRotation = Quaternion.Euler(0, 0, targetZRot);
+            card.isPlayerCard = newOwnerIsPlayer;
+
+            if (CardEffectManager.Instance != null && (card.CurrentCardData.id == "0834" || card.CurrentCardData.id == "0050"))
+                CardEffectManager.Instance.ExecuteCardEffect(card);
+        }
         Debug.Log($"Controle de {card.CurrentCardData.name} alterado.");
 
-        // Efeito do Griggle (0834) e Ameba (0050)
-        if (CardEffectManager.Instance != null && (card.CurrentCardData.id == "0834" || card.CurrentCardData.id == "0050"))
-        {
-            CardEffectManager.Instance.ExecuteCardEffect(card);
-        }
     }
 
     // Método para Seleção Única (Mantido para compatibilidade, redireciona para Multi)
@@ -3432,11 +3458,11 @@ public void ShuffleDeck(bool isPlayer)
 
             if (data.type.Contains("Fusion"))
             {
-                DuelFXManager.Instance.PlayFusionCinematic(display, null, null, onCinematicComplete);
+                DuelFXManager.Instance.PlayFusionCinematic(display, null, null, false, onCinematicComplete);
             }
             else if (data.type.Contains("Ritual"))
             {
-                DuelFXManager.Instance.PlayRitualCinematic(display, null, onCinematicComplete);
+                DuelFXManager.Instance.PlayRitualCinematic(display, null, false, onCinematicComplete);
             }
             else
             {
@@ -3700,12 +3726,9 @@ public void ShuffleDeck(bool isPlayer)
                return;
            }
 
-           // Passo 3: Escolhe Posição e Executa
+           // Passo 3: Executa direto (a posição será pedida durante a cinemática)
            System.Action<CardData> onTargetSelected = (targetFusion) => {
-               UIManager.Instance.ShowPositionSelection(targetFusion, (position) => {
-                   bool isDefense = position == CardDisplay.BattlePosition.Defense;
-                   FusionManager.Instance.PerformFusionSummon(sourceCard, targetFusion, selectedMaterials, isDefense);
-               });
+               FusionManager.Instance.PerformFusionSummon(sourceCard, targetFusion, selectedMaterials, false);
            };
 
            // Passo 2: Dedução automática ou Desempate

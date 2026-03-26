@@ -155,13 +155,24 @@ public class FullTestManager : MonoBehaviour
     {
         // Atalho para abrir/fechar o painel (Ctrl + T)
         bool openPanel = false;
+        bool shiftPressed = false;
+        bool rightClicked = false;
+        Vector2 mousePos = Vector2.zero;
 
 #if ENABLE_INPUT_SYSTEM
         if (Keyboard.current != null && Keyboard.current.leftCtrlKey.isPressed && Keyboard.current.tKey.wasPressedThisFrame)
             openPanel = true;
+            
+        shiftPressed = Keyboard.current != null && (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed);
+        rightClicked = Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame;
+        mousePos = Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero;
 #else
         if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.T))
             openPanel = true;
+            
+        shiftPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        rightClicked = Input.GetMouseButtonDown(1);
+        mousePos = Input.mousePosition;
 #endif
 
         if (openPanel)
@@ -170,6 +181,31 @@ public class FullTestManager : MonoBehaviour
             {
                 GameManager.Instance.fullTestMode = !GameManager.Instance.fullTestMode;
                 testPanel.SetActive(GameManager.Instance.fullTestMode);
+            }
+        }
+
+        // NOVA LÓGICA DE CLIQUE SHIFT + DIREITO AQUI
+        if (GameManager.Instance != null && GameManager.Instance.fullTestMode && shiftPressed && rightClicked)
+        {
+            if (UnityEngine.EventSystems.EventSystem.current != null)
+            {
+                UnityEngine.EventSystems.PointerEventData pointerData = new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current)
+                {
+                    position = mousePos
+                };
+
+                List<UnityEngine.EventSystems.RaycastResult> results = new List<UnityEngine.EventSystems.RaycastResult>();
+                UnityEngine.EventSystems.EventSystem.current.RaycastAll(pointerData, results);
+
+                foreach (var result in results)
+                {
+                    CardDisplay card = result.gameObject.GetComponentInParent<CardDisplay>();
+                    if (card != null && card.isOnField)
+                    {
+                        OpenDevCardMenu(card);
+                        break;
+                    }
+                }
             }
         }
     }
@@ -443,8 +479,15 @@ public class FullTestManager : MonoBehaviour
             "3. Retornar à Mão (Bounce)", 
             "4. Retornar ao Topo do Deck",
             "5. Mudar Posição",
-            "6. Virar Face-Up/Down"
+            "6. Virar Face-Up/Down",
+            "7. Trocar Controle (Change of Heart)"
         };
+
+        // Força a busca da UI caso ela comece desligada no Inspector
+        if (MultipleChoiceUI.Instance == null)
+        {
+            MultipleChoiceUI.Instance = Resources.FindObjectsOfTypeAll<MultipleChoiceUI>().FirstOrDefault();
+        }
 
         if (MultipleChoiceUI.Instance != null)
         {
@@ -471,7 +514,14 @@ public class FullTestManager : MonoBehaviour
                     if (card.isFlipped) card.RevealCard();
                     else card.ShowBack();
                 }
+                else if (opt.Contains("Controle")) {
+                    GameManager.Instance.SwitchControl(card);
+                }
             });
+        }
+        else
+        {
+            Debug.LogError("[DevMenu] ERRO: O painel 'MultipleChoiceUI' não foi encontrado na cena! Siga as instruções para criar o Panel_MultipleChoice no Canvas.");
         }
     }
 }

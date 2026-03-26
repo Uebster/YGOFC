@@ -93,6 +93,20 @@ public class DuelFXManager : MonoBehaviour
         }
     }
 
+    // Busca o Canvas mais próximo na hierarquia para garantir que a UI renderize!
+    private Transform GetUIParent()
+    {
+        Canvas canvas = null;
+        if (boardCenter != null)
+        {
+            canvas = boardCenter.GetComponentInParent<Canvas>();
+        }
+        
+        if (canvas == null) canvas = Object.FindFirstObjectByType<Canvas>();
+
+        return canvas != null ? canvas.transform : null;
+    }
+
     public void UpdateThemeFX(DuelTheme theme)
     {
         if (theme == null) return;
@@ -186,7 +200,7 @@ public class DuelFXManager : MonoBehaviour
         {
             // Cria um fundo escuro dinamicamente
             darkOverlay = new GameObject("DarkOverlay", typeof(RectTransform), typeof(Image));
-            darkOverlay.transform.SetParent(boardCenter.root, false);
+            darkOverlay.transform.SetParent(GetUIParent(), false);
             RectTransform rt = darkOverlay.GetComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;
@@ -195,7 +209,7 @@ public class DuelFXManager : MonoBehaviour
             img.color = new Color(0, 0, 0, 0); // Começa transparente
 
             // Traz a carta para a frente de tudo
-            card.transform.SetParent(boardCenter.root, true); 
+            card.transform.SetParent(GetUIParent(), true); 
             card.transform.SetAsLastSibling();
             
             float t = 0;
@@ -273,13 +287,13 @@ public class DuelFXManager : MonoBehaviour
         if (boardCenter != null)
         {
             darkOverlay = new GameObject("FieldDarkOverlay", typeof(RectTransform), typeof(Image));
-            darkOverlay.transform.SetParent(boardCenter.root, false);
+            darkOverlay.transform.SetParent(GetUIParent(), false);
             RectTransform rt = darkOverlay.GetComponent<RectTransform>();
             rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.sizeDelta = Vector2.zero;
             darkImg = darkOverlay.GetComponent<Image>();
             darkImg.color = new Color(0, 0, 0, 0);
 
-            card.transform.SetParent(boardCenter.root, true); card.transform.SetAsLastSibling();
+            card.transform.SetParent(GetUIParent(), true); card.transform.SetAsLastSibling();
             
             float t = 0; Vector3 targetScale = originalScale * 1.5f; 
             while (t < 1f) {
@@ -460,7 +474,7 @@ public class DuelFXManager : MonoBehaviour
             
         if (projectile != null)
         {
-            if (boardCenter != null) projectile.transform.SetParent(boardCenter.root, false);
+            if (boardCenter != null) projectile.transform.SetParent(GetUIParent(), false);
             projectile.transform.SetAsLastSibling();
             projectile.transform.localScale = Vector3.one;
             projectile.transform.position = startPos;
@@ -571,7 +585,7 @@ public class DuelFXManager : MonoBehaviour
         
         // Cria um clone visual perfeito (Fantasma) antes da carta original ser deletada pelo jogo
         GameObject ghost = new GameObject("CardGhost", typeof(RectTransform), typeof(RawImage));
-        ghost.transform.SetParent(boardCenter.root, false);
+        ghost.transform.SetParent(GetUIParent(), false);
         ghost.transform.SetAsLastSibling();
         
         RectTransform rt = ghost.GetComponent<RectTransform>();
@@ -721,7 +735,7 @@ public class DuelFXManager : MonoBehaviour
     {
         // Cria o fantasma da carta mágica
         GameObject ghost = new GameObject("EquipGhost", typeof(RectTransform), typeof(RawImage));
-        ghost.transform.SetParent(boardCenter.root, false); ghost.transform.SetAsLastSibling();
+        ghost.transform.SetParent(GetUIParent(), false); ghost.transform.SetAsLastSibling();
 
         RectTransform rt = ghost.GetComponent<RectTransform>();
         rt.position = source.transform.position; rt.sizeDelta = source.GetComponent<RectTransform>().sizeDelta;
@@ -766,27 +780,29 @@ public class DuelFXManager : MonoBehaviour
 
     private IEnumerator SummonCinematicRoutine(CardDisplay card, bool isTribute, bool isSpecial, System.Action onComplete)
     {
+        Transform uiParent = GetUIParent();
+        if (uiParent == null) { onComplete?.Invoke(); yield break; }
+
         GameObject darkOverlay = null;
         Image darkImg = null;
         
         // 1. Fundo Escurecido
-        if (boardCenter != null)
-        {
-            darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image));
-            darkOverlay.transform.SetParent(boardCenter.root, false);
-            RectTransform rtDark = darkOverlay.GetComponent<RectTransform>();
-            rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; rtDark.sizeDelta = Vector2.zero;
-            darkImg = darkOverlay.GetComponent<Image>();
-            darkImg.color = new Color(0, 0, 0, 0f);
-        }
+        darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image));
+        darkOverlay.transform.SetParent(uiParent, false);
+        RectTransform rtDark = darkOverlay.GetComponent<RectTransform>();
+        rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; 
+        rtDark.offsetMin = Vector2.zero; rtDark.offsetMax = Vector2.zero;
+        darkImg = darkOverlay.GetComponent<Image>();
+        darkImg.color = new Color(0, 0, 0, 0f);
 
         // 2. Carta Gigante Deslumbrante
         GameObject cinCard = new GameObject("CinematicCard", typeof(RectTransform), typeof(RawImage));
-        if (boardCenter != null) cinCard.transform.SetParent(boardCenter.root, false);
+        cinCard.transform.SetParent(uiParent, false);
         cinCard.transform.SetAsLastSibling();
         
         RectTransform rt = cinCard.GetComponent<RectTransform>();
-        rt.position = boardCenter != null ? boardCenter.position : Vector3.zero;
+        rt.anchorMin = new Vector2(0.5f, 0.5f); rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = Vector2.zero;
         rt.sizeDelta = new Vector2(200f, 290f);
         
         RawImage ri = cinCard.GetComponent<RawImage>();
@@ -829,36 +845,37 @@ public class DuelFXManager : MonoBehaviour
         onComplete?.Invoke();
     }
 
-    public void PlayFusionCinematic(CardDisplay card, List<CardData> materials, CardData polyCard, System.Action onComplete)
+    public void PlayFusionCinematic(CardDisplay card, List<CardData> materials, CardData polyCard, bool askPosition, System.Action onComplete)
     {
         if (!enableAnimations || card == null) { onComplete?.Invoke(); return; }
-        StartCoroutine(FusionCinematicRoutine(card, materials, polyCard, onComplete));
+        StartCoroutine(FusionCinematicRoutine(card, materials, polyCard, askPosition, onComplete));
     }
 
-    private IEnumerator FusionCinematicRoutine(CardDisplay card, List<CardData> materials, CardData polyCard, System.Action onComplete)
+    private IEnumerator FusionCinematicRoutine(CardDisplay card, List<CardData> materials, CardData polyCard, bool askPosition, System.Action onComplete)
     {
+        Transform uiParent = GetUIParent();
+        if (uiParent == null) { onComplete?.Invoke(); yield break; }
+
         GameObject darkOverlay = null; Image darkImg = null;
         
-        if (boardCenter != null)
-        {
-            darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image));
-            darkOverlay.transform.SetParent(boardCenter.root, false);
-            RectTransform rtDark = darkOverlay.GetComponent<RectTransform>();
-            rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; rtDark.sizeDelta = Vector2.zero;
-            darkImg = darkOverlay.GetComponent<Image>();
-            darkImg.color = new Color(0, 0, 0, 0f);
-        }
+        darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image));
+        darkOverlay.transform.SetParent(uiParent, false);
+        RectTransform rtDark = darkOverlay.GetComponent<RectTransform>();
+        rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; 
+        rtDark.offsetMin = Vector2.zero; rtDark.offsetMax = Vector2.zero;
+        darkImg = darkOverlay.GetComponent<Image>();
+        darkImg.color = new Color(0, 0, 0, 0f);
 
         float animSpeed = animationSpeed > 0 ? animationSpeed : 1.5f; float t = 0;
         while (t < 0.3f) { t += Time.deltaTime * animSpeed; if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.8f, t / 0.3f)); yield return null; }
 
-        Vector3 centerPos = boardCenter != null ? boardCenter.position : Vector3.zero;
-
         GameObject symbolObj = null;
         if (fusionBackgroundSymbol != null) { 
             symbolObj = new GameObject("FusionSymbol", typeof(RectTransform), typeof(Image)); 
-            if (boardCenter != null) symbolObj.transform.SetParent(boardCenter.root, false);
-            RectTransform rtSym = symbolObj.GetComponent<RectTransform>(); rtSym.position = centerPos; rtSym.sizeDelta = new Vector2(400f, 400f);
+            symbolObj.transform.SetParent(uiParent, false);
+            RectTransform rtSym = symbolObj.GetComponent<RectTransform>(); 
+            rtSym.anchorMin = new Vector2(0.5f, 0.5f); rtSym.anchorMax = new Vector2(0.5f, 0.5f);
+            rtSym.anchoredPosition = Vector2.zero; rtSym.sizeDelta = new Vector2(400f, 400f);
             Image imgSym = symbolObj.GetComponent<Image>(); imgSym.sprite = fusionBackgroundSymbol; imgSym.color = new Color(1, 1, 1, 0); 
         }
 
@@ -868,8 +885,10 @@ public class DuelFXManager : MonoBehaviour
             foreach (var mat in materials)
             {
                 GameObject matObj = new GameObject("MatCard", typeof(RectTransform), typeof(RawImage));
-                if (boardCenter != null) matObj.transform.SetParent(boardCenter.root, false);
-                RectTransform rtMat = matObj.GetComponent<RectTransform>(); rtMat.sizeDelta = new Vector2(100f, 145f);
+                matObj.transform.SetParent(uiParent, false);
+                RectTransform rtMat = matObj.GetComponent<RectTransform>(); 
+                rtMat.anchorMin = new Vector2(0.5f, 0.5f); rtMat.anchorMax = new Vector2(0.5f, 0.5f);
+                rtMat.anchoredPosition = Vector2.zero; rtMat.sizeDelta = new Vector2(100f, 145f);
                 matObj.GetComponent<RawImage>().texture = GameManager.Instance.GetCardBackTexture();
                 matRects.Add(rtMat);
             }
@@ -890,7 +909,7 @@ public class DuelFXManager : MonoBehaviour
                 for (int i = 0; i < matRects.Count; i++) {
                     float offsetAngle = (360f / matRects.Count) * i; float currentAngle = (orbitTime * angleSpeed) + offsetAngle;
                     float x = Mathf.Cos(currentAngle * Mathf.Deg2Rad) * radius; float y = Mathf.Sin(currentAngle * Mathf.Deg2Rad) * radius;
-                    matRects[i].position = centerPos + new Vector3(x, y, 0); matRects[i].rotation = Quaternion.Euler(0, 0, currentAngle);
+                    matRects[i].anchoredPosition = new Vector2(x, y); matRects[i].rotation = Quaternion.Euler(0, 0, currentAngle);
                 }
                 yield return null;
             }
@@ -899,12 +918,15 @@ public class DuelFXManager : MonoBehaviour
 
         foreach (var m in matRects) Destroy(m.gameObject);
         PlaySound(fusionSound);
-        if (fusionFlashVFX != null) SpawnVFX(fusionFlashVFX, centerPos);
+        Vector3 worldCenter = symbolObj != null ? symbolObj.transform.position : uiParent.position;
+        if (fusionFlashVFX != null) SpawnVFX(fusionFlashVFX, worldCenter);
 
         GameObject cinCard = new GameObject("CinematicFusion", typeof(RectTransform), typeof(RawImage));
-        if (boardCenter != null) cinCard.transform.SetParent(boardCenter.root, false);
+        cinCard.transform.SetParent(uiParent, false);
         cinCard.transform.SetAsLastSibling();
-        RectTransform rt = cinCard.GetComponent<RectTransform>(); rt.position = centerPos; rt.sizeDelta = new Vector2(200f, 290f);
+        RectTransform rt = cinCard.GetComponent<RectTransform>(); 
+        rt.anchorMin = new Vector2(0.5f, 0.5f); rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = Vector2.zero; rt.sizeDelta = new Vector2(200f, 290f);
         RawImage ri = cinCard.GetComponent<RawImage>();
         ri.texture = !card.isPlayerCard ? (GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null) : card.cardImage.texture;
 
@@ -912,7 +934,23 @@ public class DuelFXManager : MonoBehaviour
         while (t < 0.3f) { t += Time.deltaTime * animSpeed; float p = Mathf.Clamp01(t / 0.3f); rt.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * 1.5f, p); 
             if (symbolObj != null) symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0.6f, 0f, p)); 
             yield return null; }
-        yield return new WaitForSeconds(0.6f / animSpeed);
+        
+        if (askPosition && UIManager.Instance != null && card.isPlayerCard && GameManager.Instance != null && !GameManager.Instance.isSimulating)
+        {
+            bool positionSelected = false;
+            UIManager.Instance.ShowPositionSelection(card.CurrentCardData, (pos) => {
+                bool isDef = pos == CardDisplay.BattlePosition.Defense;
+                card.position = isDef ? CardDisplay.BattlePosition.Defense : CardDisplay.BattlePosition.Attack;
+                float zRot = isDef ? (card.isPlayerCard ? 90f : -90f) : (card.isPlayerCard ? 0f : 180f);
+                card.transform.localRotation = Quaternion.Euler(0, 0, zRot);
+                positionSelected = true;
+            });
+            yield return new WaitUntil(() => positionSelected);
+        }
+        else
+        {
+            yield return new WaitForSeconds(0.6f / animSpeed);
+        }
 
         GameObject markerPrefab = fusionFieldMarkerVFX != null ? fusionFieldMarkerVFX : specialFieldMarkerVFX;
         Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
@@ -929,26 +967,32 @@ public class DuelFXManager : MonoBehaviour
         onComplete?.Invoke();
     }
 
-    public void PlayRitualCinematic(CardDisplay card, CardData ritualSpell, System.Action onComplete)
+    public void PlayRitualCinematic(CardDisplay card, CardData ritualSpell, bool askPosition, System.Action onComplete)
     {
         if (!enableAnimations || card == null) { onComplete?.Invoke(); return; }
-        StartCoroutine(RitualCinematicRoutine(card, ritualSpell, onComplete));
+        StartCoroutine(RitualCinematicRoutine(card, ritualSpell, askPosition, onComplete));
     }
 
-    private IEnumerator RitualCinematicRoutine(CardDisplay card, CardData ritualSpell, System.Action onComplete)
+    private IEnumerator RitualCinematicRoutine(CardDisplay card, CardData ritualSpell, bool askPosition, System.Action onComplete)
     {
-        GameObject darkOverlay = null; Image darkImg = null;
-        if (boardCenter != null) { darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image)); darkOverlay.transform.SetParent(boardCenter.root, false);
-            RectTransform rtDark = darkOverlay.GetComponent<RectTransform>(); rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; rtDark.sizeDelta = Vector2.zero;
-            darkImg = darkOverlay.GetComponent<Image>(); darkImg.color = new Color(0, 0, 0, 0f); }
+        Transform uiParent = GetUIParent();
+        if (uiParent == null) { onComplete?.Invoke(); yield break; }
+
+        GameObject darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image)); 
+        darkOverlay.transform.SetParent(uiParent, false);
+        RectTransform rtDark = darkOverlay.GetComponent<RectTransform>(); 
+        rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; 
+        rtDark.offsetMin = Vector2.zero; rtDark.offsetMax = Vector2.zero;
+        Image darkImg = darkOverlay.GetComponent<Image>(); darkImg.color = new Color(0, 0, 0, 0f);
 
         float animSpeed = animationSpeed > 0 ? animationSpeed : 1.5f; float t = 0;
         while (t < 0.3f) { t += Time.deltaTime * animSpeed; if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.8f, t / 0.3f)); yield return null; }
 
-        Vector3 centerPos = boardCenter != null ? boardCenter.position : Vector3.zero;
         GameObject symbolObj = null;
-        if (ritualBackgroundSymbol != null) { symbolObj = new GameObject("RitualSymbol", typeof(RectTransform), typeof(Image)); if (boardCenter != null) symbolObj.transform.SetParent(boardCenter.root, false);
-            RectTransform rtSym = symbolObj.GetComponent<RectTransform>(); rtSym.position = centerPos; rtSym.sizeDelta = new Vector2(400f, 400f);
+        if (ritualBackgroundSymbol != null) { symbolObj = new GameObject("RitualSymbol", typeof(RectTransform), typeof(Image)); symbolObj.transform.SetParent(uiParent, false);
+            RectTransform rtSym = symbolObj.GetComponent<RectTransform>(); 
+            rtSym.anchorMin = new Vector2(0.5f, 0.5f); rtSym.anchorMax = new Vector2(0.5f, 0.5f);
+            rtSym.anchoredPosition = Vector2.zero; rtSym.sizeDelta = new Vector2(400f, 400f);
             Image imgSym = symbolObj.GetComponent<Image>(); imgSym.sprite = ritualBackgroundSymbol; imgSym.color = new Color(1, 1, 1, 0); }
 
         PlaySound(spellSound); t = 0;
@@ -956,18 +1000,38 @@ public class DuelFXManager : MonoBehaviour
                 symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0f, 0.6f, t)); symbolObj.transform.Rotate(0, 0, 45f * Time.deltaTime * animSpeed); } yield return null; }
 
         yield return new WaitForSeconds(0.3f); PlaySound(fusionSound); 
-        if (ritualFlashVFX != null) SpawnVFX(ritualFlashVFX, centerPos); else if (fusionFlashVFX != null) SpawnVFX(fusionFlashVFX, centerPos); 
+        Vector3 worldCenter = symbolObj != null ? symbolObj.transform.position : uiParent.position;
+        if (ritualFlashVFX != null) SpawnVFX(ritualFlashVFX, worldCenter); else if (fusionFlashVFX != null) SpawnVFX(fusionFlashVFX, worldCenter); 
 
         GameObject cinCard = new GameObject("CinematicRitual", typeof(RectTransform), typeof(RawImage));
-        if (boardCenter != null) cinCard.transform.SetParent(boardCenter.root, false); cinCard.transform.SetAsLastSibling();
-        RectTransform rt = cinCard.GetComponent<RectTransform>(); rt.position = centerPos; rt.sizeDelta = new Vector2(200f, 290f);
+        cinCard.transform.SetParent(uiParent, false); cinCard.transform.SetAsLastSibling();
+        RectTransform rt = cinCard.GetComponent<RectTransform>(); 
+        rt.anchorMin = new Vector2(0.5f, 0.5f); rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = Vector2.zero; rt.sizeDelta = new Vector2(200f, 290f);
         RawImage ri = cinCard.GetComponent<RawImage>(); ri.texture = !card.isPlayerCard ? (GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null) : card.cardImage.texture;
 
         t = 0;
         while (t < 0.3f) { t += Time.deltaTime * animSpeed; float p = Mathf.Clamp01(t / 0.3f); rt.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * 1.5f, p);
             if (symbolObj != null) symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0.6f, 0f, p)); yield return null; }
 
-        if (symbolObj != null) Destroy(symbolObj); yield return new WaitForSeconds(0.6f / animSpeed);
+        if (symbolObj != null) Destroy(symbolObj); 
+        
+        if (askPosition && UIManager.Instance != null && card.isPlayerCard && GameManager.Instance != null && !GameManager.Instance.isSimulating)
+        {
+            bool positionSelected = false;
+            UIManager.Instance.ShowPositionSelection(card.CurrentCardData, (pos) => {
+                bool isDef = pos == CardDisplay.BattlePosition.Defense;
+                card.position = isDef ? CardDisplay.BattlePosition.Defense : CardDisplay.BattlePosition.Attack;
+                float zRot = isDef ? (card.isPlayerCard ? 90f : -90f) : (card.isPlayerCard ? 0f : 180f);
+                card.transform.localRotation = Quaternion.Euler(0, 0, zRot);
+                positionSelected = true;
+            });
+            yield return new WaitUntil(() => positionSelected);
+        }
+        else
+        {
+            yield return new WaitForSeconds(0.6f / animSpeed);
+        }
 
         GameObject markerPrefab = ritualFieldMarkerVFX != null ? ritualFieldMarkerVFX : specialFieldMarkerVFX;
         Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
@@ -1000,7 +1064,7 @@ public class DuelFXManager : MonoBehaviour
             Debug.Log($"[DuelFXManager] SpawnVFX: {prefab.name} instanciado com sucesso.");
             GameObject instance = Instantiate(prefab);
             // Garante que o VFX fique na frente da UI
-            if (boardCenter != null) instance.transform.SetParent(boardCenter.root, false);
+            if (boardCenter != null) instance.transform.SetParent(GetUIParent(), false);
             instance.transform.position = position;
             instance.transform.SetAsLastSibling(); // Traz para a FRENTE do tabuleiro e cartas
             
@@ -1043,5 +1107,65 @@ public class DuelFXManager : MonoBehaviour
             else if (ui.playerAvatarImage != null) targetPos = ui.playerAvatarImage.transform.position;
         }
         return targetPos;
+    }
+
+    public void PlayControlSwap(CardDisplay card, Transform targetZone, float targetZRot, bool newOwnerIsPlayer, System.Action onComplete)
+    {
+        if (!enableAnimations || card == null || targetZone == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+        StartCoroutine(ControlSwapRoutine(card, targetZone, targetZRot, newOwnerIsPlayer, onComplete));
+    }
+
+    private IEnumerator ControlSwapRoutine(CardDisplay card, Transform targetZone, float targetZRot, bool newOwnerIsPlayer, System.Action onComplete)
+    {
+        Vector3 startPos = card.transform.position;
+        Quaternion startRot = card.transform.rotation;
+        
+        Transform uiParent = GetUIParent();
+        if (uiParent != null) { card.transform.SetParent(uiParent, true); card.transform.SetAsLastSibling(); }
+
+        // Salva a escala que a Unity calculou para manter a carta com o mesmo tamanho visual na UI
+        Vector3 flightScale = card.transform.localScale;
+
+        PlaySound(spellSound);
+        SpawnVFX(spellActivateVFX, startPos);
+
+        // Um pouco mais de tempo para apreciar a animação
+        float duration = 1.0f / (animationSpeed > 0 ? animationSpeed : 1f);
+        float elapsed = 0f;
+        Vector3 endPos = targetZone.position;
+        Quaternion endRot = Quaternion.Euler(0, 0, targetZRot);
+
+        while (elapsed < duration)
+        {
+            if (card == null) yield break;
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0, 1, elapsed / duration);
+
+            card.transform.position = Vector3.Lerp(startPos, endPos, t);
+            card.transform.rotation = Quaternion.Slerp(startRot, endRot, t);
+            
+            // Efeito 3D: Cresce 50% no ar para dar a ilusão de parábola em direção à câmera
+            float scaleMultiplier = 1f + Mathf.Sin(t * Mathf.PI) * 0.5f;
+            card.transform.localScale = flightScale * scaleMultiplier;
+
+            yield return null;
+        }
+
+        if (card != null) { 
+            card.transform.SetParent(targetZone, false); 
+            card.transform.localPosition = Vector3.zero; 
+            card.transform.localRotation = endRot; 
+            
+            // FIX CRÍTICO: Garante que a carta volte ao tamanho original da mesa
+            card.transform.localScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one; 
+            
+            SpawnVFX(summonVFX, endPos); 
+            PlaySound(summonSound); 
+        }
+        onComplete?.Invoke();
     }
 }

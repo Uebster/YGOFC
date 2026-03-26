@@ -163,13 +163,27 @@ public class FusionManager : MonoBehaviour
         if (GameManager.Instance.GetPlayerExtraDeck().Contains(fusionMonster))
             GameManager.Instance.GetPlayerExtraDeck().Remove(fusionMonster);
 
-        // Usa o FinalizeSummon do GameManager para ativar a Cinemática de Fusão
-        GameObject cardGO = Instantiate(GameManager.Instance.cardPrefab);
-        CardDisplay display = cardGO.GetComponent<CardDisplay>();
-        display.SetCard(fusionMonster, GameManager.Instance.GetCardBackTexture(), true);
-        display.isPlayerCard = sourceCard != null ? sourceCard.isPlayerCard : true;
+        bool useCinematic = GameManager.Instance.enableSummonCinematics && !GameManager.Instance.isSimulating;
+        bool isPlayer = sourceCard != null ? sourceCard.isPlayerCard : true;
         
-        GameManager.Instance.FinalizeSummon(cardGO, fusionMonster, isDefense, display.isPlayerCard, false, false);
+        System.Action<bool> doSummon = (def) => {
+            GameObject cardGO = Instantiate(GameManager.Instance.cardPrefab);
+            CardDisplay display = cardGO.GetComponent<CardDisplay>();
+            display.SetCard(fusionMonster, GameManager.Instance.GetCardBackTexture(), true);
+            display.isPlayerCard = isPlayer;
+            GameManager.Instance.FinalizeSummon(cardGO, fusionMonster, def, isPlayer, false, false, null, useCinematic, materials);
+        };
+
+        if (!useCinematic && isPlayer && UIManager.Instance != null && !GameManager.Instance.isSimulating)
+        {
+            UIManager.Instance.ShowPositionSelection(fusionMonster, (pos) => {
+                doSummon(pos == CardDisplay.BattlePosition.Defense);
+            });
+        }
+        else
+        {
+            doSummon(isDefense);
+        }
         
         if (TrophyManager.Instance != null) TrophyManager.Instance.TrackStat("fusion_summon", 1);
     }

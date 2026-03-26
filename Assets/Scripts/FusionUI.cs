@@ -163,10 +163,7 @@ public class FusionUI : MonoBehaviour
         var mats = new List<CardData>(selectedMaterials);
         Close();
         
-        UIManager.Instance.ShowPositionSelection(target, (position) => {
-            bool isDefense = position == CardDisplay.BattlePosition.Defense;
-            FusionManager.Instance.PerformFusionSummon(source, target, mats, isDefense);
-        });
+        FusionManager.Instance.PerformFusionSummon(source, target, mats, false);
     }
 
     private void OnCancel()

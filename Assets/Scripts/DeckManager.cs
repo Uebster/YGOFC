@@ -77,7 +77,15 @@ public class DeckManager : MonoBehaviour
         if (GameManager.Instance.duelFieldUI != null) {
             Transform[] enemyZones = isPlayer ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
             bool hasProtector = false;
-            foreach(var z in enemyZones) if (z.childCount > 0 && z.GetChild(0).GetComponent<CardDisplay>().CurrentCardData.id == "1462" && !z.GetChild(0).GetComponent<CardDisplay>().isFlipped) hasProtector = true;
+            
+            if (enemyZones != null) {
+                foreach(var z in enemyZones) {
+                    if (z != null && z.childCount > 0) {
+                        var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                        if (cd != null && cd.CurrentCardData != null && cd.CurrentCardData.id == "1462" && !cd.isFlipped) hasProtector = true;
+                    }
+                }
+            }
             
             if (hasProtector && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Draw) {
                 Debug.Log("Protector of the Sanctuary: Compra fora da Draw Phase bloqueada.");
