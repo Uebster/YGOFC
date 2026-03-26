@@ -399,8 +399,26 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         transform.localScale = startScale;
     }
 
-    private void TriggerTextureChange(Texture2D newTexture, bool animate = true)
+    private void TriggerTextureChange(Texture2D newTexture, bool isRevealing, bool allowAnimation = true)
     {
+        bool animate = false;
+        // A animação só é permitida se o chamador permitir E o GameManager estiver configurado para isso
+        if (allowAnimation && GameManager.Instance != null)
+        {
+            switch (GameManager.Instance.flipMode)
+            {
+                case FlipAnimationMode.AnimateAlways:
+                    animate = true;
+                    break;
+                case FlipAnimationMode.AnimateOnReveal:
+                    animate = isRevealing;
+                    break;
+                case FlipAnimationMode.NoAnimation:
+                    animate = false;
+                    break;
+            }
+        }
+
         if (animate && gameObject.activeInHierarchy && DuelFXManager.Instance != null && DuelFXManager.Instance.enableAnimations)
         {
             if (flipCoroutine != null) StopCoroutine(flipCoroutine);
@@ -419,26 +437,39 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (cardImage == null || frontTexture == null || backTexture == null) return;
 
         isFlipped = !isFlipped;
-        TriggerTextureChange(isFlipped ? backTexture : frontTexture, !isFlipped);
+        // O segundo parâmetro é 'isRevealing'. Ele é true quando a carta VAI para a frente.
+        // Se isFlipped se tornou false, significa que a carta foi revelada.
+        TriggerTextureChange(isFlipped ? backTexture : frontTexture, !isFlipped, true);
     }
 
-    public void ShowFront()
+    public void ShowFront(bool animate = true)
     {
         if (cardImage == null || frontTexture == null) return;
         if (isFlipped)
         {
             isFlipped = false;
-            TriggerTextureChange(frontTexture, true);
+            TriggerTextureChange(frontTexture, true, animate);
         }
     }
 
-    public void ShowBack()
+    public Texture2D GetFrontTexture()
+    {
+        return frontTexture;
+    }
+
+    public void ForceTexture(Texture2D tex)
+    {
+        if (flipCoroutine != null) StopCoroutine(flipCoroutine);
+        if (cardImage != null && tex != null) cardImage.texture = tex;
+    }
+
+    public void ShowBack(bool animate = true)
     {
         if (cardImage == null || backTexture == null) return;
         if (!isFlipped)
         {
             isFlipped = true;
-            TriggerTextureChange(backTexture, false);
+            TriggerTextureChange(backTexture, false, animate);
         }
     }
 

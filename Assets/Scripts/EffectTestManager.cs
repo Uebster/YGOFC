@@ -123,12 +123,12 @@ public class EffectTestManager : MonoBehaviour
         if (GUILayout.Button("Tremor de Dano na Tela", btnStyle)) DuelFXManager.Instance.PlayDamageEffect(Vector3.zero);
         if (GUILayout.Button("Teste: Cinemática de Ritual", btnStyle)) { 
             EnsurePlayerMonster(); EnsurePlayerSpell(); 
-            DuelFXManager.Instance.PlayRitualCinematic(playerMonster, playerSpell.CurrentCardData, false, null); 
+            DuelFXManager.Instance.PlayRitualCinematic(playerMonster, playerSpell.CurrentCardData, null); 
         }
         if (GUILayout.Button("Teste: Cinemática de Fusão", btnStyle)) { 
             EnsurePlayerMonster(); EnsureOpponentMonster(); EnsurePlayerSpell(); 
             List<CardData> mats = new List<CardData> { playerMonster.CurrentCardData, opponentMonster.CurrentCardData };
-            DuelFXManager.Instance.PlayFusionCinematic(playerMonster, mats, playerSpell.CurrentCardData, false, null); 
+            DuelFXManager.Instance.PlayFusionCinematic(playerMonster, mats, playerSpell.CurrentCardData, null); 
         }
         if (GUILayout.Button("Embaralhar Deck (Shuffle)", btnStyle)) 
         {

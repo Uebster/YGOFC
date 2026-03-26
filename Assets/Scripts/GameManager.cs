@@ -23,6 +23,13 @@ public enum GamePhase
     End
 }
 
+public enum FlipAnimationMode
+{
+    AnimateOnReveal, // Anima apenas ao virar para cima (Padrão)
+    AnimateAlways,   // Anima em ambas as direções (Cima -> Baixo, Baixo -> Cima)
+    NoAnimation      // Nunca anima, troca a textura instantaneamente
+}
+
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
@@ -37,10 +44,12 @@ public class GameManager : MonoBehaviour
 
     // --- CONTROLES GERAIS ---
     [Header("View Mode")]
-    [Tooltip("Se marcado, usa um efeito 3D para virar as cartas. Se desmarcado, usa uma troca de textura 2D.")]
-    public bool use3DFlipEffect = false;
+    [Tooltip("Controla como a animação de virar a carta (flip) se comporta.")]
+    public FlipAnimationMode flipMode = FlipAnimationMode.AnimateOnReveal;
     [Tooltip("Se marcado, usa o componente Outline do Unity para o contorno. Se desmarcado, usa uma imagem filha (OutlineImage).")]
     public bool useSimpleOutline = true;
+    [Tooltip("Habilita a animação de comprar carta voando do deck para a mão.")]
+    public bool enableDrawAnimation = true;
 
     [Header("Card Visualization")]
     [Tooltip("A escala das cartas no campo.")]
@@ -188,8 +197,10 @@ public class GameManager : MonoBehaviour
     public bool useMouseTooltipUI = true;
     [Tooltip("Habilita o painel visual pop-up de Dano/Cura saltando no campo.")]
     public bool enableDamagePopups = true;
-    [Tooltip("Se marcado, usa os painéis customizados Panel_Fusion e Panel_Ritual. Se desmarcado, usa o CardSelectionUI nativo (Smart Casting).")]
-    public bool useCustomFusionRitualUI = true;
+    [Tooltip("Se marcado, usa o painel customizado Panel_Fusion. Se desmarcado, usa a seleção tática no tabuleiro.")]
+    public bool useCustomFusionUI = true;
+    [Tooltip("Se marcado, usa o painel customizado Panel_Ritual. Se desmarcado, usa a seleção tática no tabuleiro.")]
+    public bool useCustomRitualUI = true;
 
     [Header("Minigames Settings")]
     [Tooltip("Ativa a escolha manual de Cara/Coroa para os lançamentos de moeda.")]
@@ -292,6 +303,10 @@ public class GameManager : MonoBehaviour
     public bool enableTributeSummonAnimation = true;
     [Tooltip("Habilita a cinemática (tela escura e carta gigante) para invocações Especiais e de Tributo.")]
     public bool enableSummonCinematics = true;
+    [Tooltip("Habilita a cinemática para Invocação-Fusão.")]
+    public bool enableFusionCinematic = true;
+    [Tooltip("Habilita a cinemática para Invocação-Ritual.")]
+    public bool enableRitualCinematic = true;
 
     [Header("Game Speed Settings")]
     [Tooltip("Tempo em segundos entre cada carta comprada pelo jogador no início.")]
@@ -357,6 +372,23 @@ public class GameManager : MonoBehaviour
                 OpenPhaseSelectionMenu();
             }
         }
+    }
+
+    // Helper para encontrar o Canvas principal da UI
+    private Transform GetUIParent()
+    {
+        if (duelFieldUI != null && duelFieldUI.transform != null)
+        {
+            Canvas canvas = duelFieldUI.transform.GetComponentInParent<Canvas>();
+            if (canvas != null) return canvas.transform;
+        }
+        
+        // Busca o Canvas Principal da UI (Root) para evitar pegar o Canvas escondido de uma carta
+        Canvas[] allCanvases = UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+        foreach (Canvas c in allCanvases) if (c.isRootCanvas && c.gameObject.name.Contains("Panel_Duel")) return c.transform;
+        foreach (Canvas c in allCanvases) if (c.isRootCanvas) return c.transform;
+            
+        return null;
     }
 
     IEnumerator Start()
@@ -1290,20 +1322,106 @@ public void ShuffleDeck(bool isPlayer)
         newCardDisplay.isInteractable = true;
         newCardDisplay.isPlayerCard = isPlayer;
 
-        if (isPlayer)
+        // Adiciona à lista lógica IMEDIATAMENTE para o LayoutGroup calcular a posição
+        if (isPlayer) playerHand.Add(newCardGO);
+        else opponentHand.Add(newCardGO);
+
+        // Lógica de animação de saque
+        if (enableDrawAnimation && !isSimulating && gameObject.activeInHierarchy)
         {
-            newCardDisplay.SetCard(cardData, cardBackTexture);
-            playerHand.Add(newCardGO);
+            // Começa virada para baixo APENAS se for animar
+            newCardDisplay.SetCard(cardData, cardBackTexture, false);
+            StartCoroutine(AnimateCardToHand(newCardGO, isPlayer));
         }
         else
         {
-            newCardGO.transform.localRotation = Quaternion.Euler(0, 0, 180);
-            newCardDisplay.SetCard(cardData, cardBackTexture, showOpponentHand);
-            opponentHand.Add(newCardGO);
+            // Lógica antiga: Apenas mostra
+            if (isPlayer) newCardDisplay.SetCard(cardData, cardBackTexture, true);
+            else
+            {
+                newCardGO.transform.localRotation = Quaternion.Euler(0, 0, 180);
+                newCardDisplay.SetCard(cardData, cardBackTexture, showOpponentHand);
+            }
         }
 
-        // Notifica adição à mão (Watapon)
+        // Notifica adição à mão (Watapon) - Acontece aqui, pois a carta já está logicamente na mão
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardAddedToHand(newCardDisplay);
+    }
+
+    private IEnumerator AnimateCardToHand(GameObject realCard, bool isPlayer)
+    {
+        CardDisplay realCardDisplay = realCard.GetComponent<CardDisplay>();
+        CanvasGroup realCardCG = realCard.GetComponent<CanvasGroup>();
+        if (realCardCG == null) realCardCG = realCard.AddComponent<CanvasGroup>();
+        realCardCG.alpha = 0; // Esconde a carta real
+
+        // Espera o LayoutGroup fazer sua mágica
+        yield return new WaitForEndOfFrame();
+
+        // Cria um "fantasma" na posição do deck para animar
+        Transform startZone = isPlayer ? playerDeckDisplay.transform : opponentDeckDisplay.transform;
+        if (startZone == null) { // Fallback de segurança se a pilha não existir
+             realCardCG.alpha = 1;
+             if (isPlayer) realCardDisplay.ShowFront(false);
+             else if (showOpponentHand) realCardDisplay.ShowFront(false);
+             else realCardDisplay.ShowBack(false);
+             yield break;
+        }
+
+        // OTIMIZAÇÃO: Instancia o prefab mas não chama SetCard() para evitar o lag de carregar a textura duas vezes.
+        GameObject ghost = Instantiate(cardPrefab, GetUIParent());
+        CardDisplay ghostDisplay = ghost.GetComponent<CardDisplay>();
+        if (ghostDisplay != null && ghostDisplay.cardImage != null)
+        {
+            ghostDisplay.cardImage.texture = cardBackTexture;
+        }
+        ghost.transform.position = startZone.position;
+
+        // Anima o fantasma até a posição da carta real
+        Vector3 endPos = realCard.transform.position;
+        float duration = 0.6f / (DuelFXManager.Instance != null && DuelFXManager.Instance.animationSpeed > 0 ? DuelFXManager.Instance.animationSpeed : 1f);
+        float elapsed = 0f;
+        bool textureSwapped = false;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0, 1, elapsed / duration);
+            ghost.transform.position = Vector3.Lerp(startZone.position, endPos, t);
+
+            // Rotação 3D suave no eixo Y para simular o flip natural
+            float yRot = Mathf.Lerp(180f, 0f, t);
+            ghost.transform.rotation = Quaternion.Euler(0, yRot, 0);
+
+            // Vira a textura na metade do caminho
+            if (t >= 0.5f && !textureSwapped)
+            {
+                textureSwapped = true;
+                // FIX: Só revela a frente se for o jogador OU se a opção de ver a mão do oponente estiver ativa
+                if (isPlayer || showOpponentHand)
+                {
+                    Texture2D frontTex = realCardDisplay.GetFrontTexture();
+                    if (frontTex != null) ghostDisplay.ForceTexture(frontTex);
+                }
+            }
+            yield return null;
+        }
+
+        // Destrói o fantasma e revela a carta real
+        Destroy(ghost);
+        
+        // Garante o estado final correto da carta real ANTES de torná-la visível
+        if (isPlayer) 
+        {
+            realCardDisplay.ShowFront(false); // Chama ShowFront SEM animar para evitar o "duplo flip"
+        }
+        else
+        {
+            if (showOpponentHand) realCardDisplay.ShowFront(false);
+            else realCardDisplay.ShowBack(false);
+        }
+        
+        realCardCG.alpha = 1;
     }
 
     public void DrawCard(bool ignoreLimit = false)
@@ -2552,7 +2670,7 @@ public void ShuffleDeck(bool isPlayer)
 
     // Novo método público para finalizar a invocação (chamado pelo SummonManager após tributo manual)
     // Atualizado para suportar Face-Down explicitamente
-    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false, bool isTributeSummon = false, Transform specificZone = null, bool askPosition = false, List<CardData> specialMaterials = null)
+    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false, bool isTributeSummon = false, Transform specificZone = null, List<CardData> specialMaterials = null)
     {
         // 2. Encontrar Zona Livre
         Transform targetZone = specificZone;
@@ -2607,8 +2725,11 @@ public void ShuffleDeck(bool isPlayer)
             // Toca efeito visual e notifica a Corrente (Trap Holes)
             bool isFusion = cardData.type.Contains("Fusion");
             bool isRitual = cardData.type.Contains("Ritual");
-            bool isSpecialCinematic = isFusion || isRitual;
-            bool useCinematic = enableSummonCinematics && (isTributeSummon || isSpecialCinematic) && !isSimulating && !isDefensePos;
+            bool useCinematic = false;
+            
+            if (isFusion) useCinematic = enableFusionCinematic && !isSimulating && !isFaceDown;
+            else if (isRitual) useCinematic = enableRitualCinematic && !isSimulating && !isFaceDown;
+            else useCinematic = enableSummonCinematics && isTributeSummon && !isSimulating && !isFaceDown;
             
             if (useCinematic && DuelFXManager.Instance != null)
             {
@@ -2621,11 +2742,11 @@ public void ShuffleDeck(bool isPlayer)
 
                 if (isFusion)
                 {
-                    DuelFXManager.Instance.PlayFusionCinematic(display, specialMaterials, null, askPosition, onCinematicComplete);
+                    DuelFXManager.Instance.PlayFusionCinematic(display, specialMaterials, null, onCinematicComplete);
                 }
                 else if (isRitual)
                 {
-                    DuelFXManager.Instance.PlayRitualCinematic(display, null, askPosition, onCinematicComplete);
+                    DuelFXManager.Instance.PlayRitualCinematic(display, null, onCinematicComplete);
                 }
                 else
                 {
@@ -2723,7 +2844,7 @@ public void ShuffleDeck(bool isPlayer)
         }
 
         // Se a opção estiver ativa, desvia o fluxo para os painéis customizados!
-        if (useCustomFusionRitualUI)
+        if (useCustomRitualUI)
         {
             if (UIManager.Instance != null) UIManager.Instance.ShowRitualUI(sourceCard);
             return;
@@ -2818,8 +2939,6 @@ public void ShuffleDeck(bool isPlayer)
         // 3. Invoca o Monstro de Ritual da mão
         RemoveCardFromHand(ritualMonster, sourceCard.isPlayerCard);
        
-       bool useCinematic = enableSummonCinematics && !isSimulating;
-
        System.Action<bool> doSummon = (def) => {
            // Usa FinalizeSummon para ativar a Cinemática de Ritual Oficialmente
            GameObject cardGO = Instantiate(cardPrefab);
@@ -2827,10 +2946,10 @@ public void ShuffleDeck(bool isPlayer)
            display.SetCard(ritualMonster, cardBackTexture, true);
            display.isPlayerCard = sourceCard.isPlayerCard;
 
-           FinalizeSummon(cardGO, ritualMonster, def, sourceCard.isPlayerCard, false, false, null, useCinematic, tributes);
+           FinalizeSummon(cardGO, ritualMonster, def, sourceCard.isPlayerCard, false, false, null, tributes);
        };
 
-       if (!useCinematic && sourceCard.isPlayerCard && UIManager.Instance != null && !isSimulating)
+       if (sourceCard.isPlayerCard && UIManager.Instance != null && !isSimulating)
        {
            UIManager.Instance.ShowPositionSelection(ritualMonster, (pos) => {
                doSummon(pos == CardDisplay.BattlePosition.Defense);
@@ -3445,7 +3564,14 @@ public void ShuffleDeck(bool isPlayer)
 
         cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRot);
 
-        bool useCinematic = enableSummonCinematics && !isSimulating;
+        bool isFusion = data.type.Contains("Fusion");
+        bool isRitual = data.type.Contains("Ritual");
+        bool useCinematic = false;
+        
+        if (isFusion) useCinematic = enableFusionCinematic && !isSimulating;
+        else if (isRitual) useCinematic = enableRitualCinematic && !isSimulating;
+        else useCinematic = enableSummonCinematics && !isSimulating;
+
         if (useCinematic && DuelFXManager.Instance != null)
         {
             display.SetVisibility(false);
@@ -3456,13 +3582,13 @@ public void ShuffleDeck(bool isPlayer)
                 if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnSpecialSummon(display);
             };
 
-            if (data.type.Contains("Fusion"))
+            if (isFusion)
             {
-                DuelFXManager.Instance.PlayFusionCinematic(display, null, null, false, onCinematicComplete);
+                DuelFXManager.Instance.PlayFusionCinematic(display, null, null, onCinematicComplete);
             }
-            else if (data.type.Contains("Ritual"))
+            else if (isRitual)
             {
-                DuelFXManager.Instance.PlayRitualCinematic(display, null, false, onCinematicComplete);
+                DuelFXManager.Instance.PlayRitualCinematic(display, null, onCinematicComplete);
             }
             else
             {
@@ -3695,7 +3821,7 @@ public void ShuffleDeck(bool isPlayer)
         }
 
         // Se a opção estiver ativa, desvia o fluxo para os painéis customizados!
-        if (useCustomFusionRitualUI)
+        if (useCustomFusionUI)
         {
             if (UIManager.Instance != null) UIManager.Instance.ShowFusionUI(sourceCard);
             return;

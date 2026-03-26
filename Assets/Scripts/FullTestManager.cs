@@ -492,6 +492,8 @@ public class FullTestManager : MonoBehaviour
         if (MultipleChoiceUI.Instance != null)
         {
             MultipleChoiceUI.Instance.Show(options, $"[DEV] Ações para {card.CurrentCardData.name}", 1, 1, (selected) => {
+                if (selected == null || selected.Count == 0) return; // Blinda contra cliques no botão Cancel/Close
+
                 string opt = selected[0];
                 if (opt.Contains("Cemitério")) {
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);

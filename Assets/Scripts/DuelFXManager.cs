@@ -96,15 +96,17 @@ public class DuelFXManager : MonoBehaviour
     // Busca o Canvas mais próximo na hierarquia para garantir que a UI renderize!
     private Transform GetUIParent()
     {
-        Canvas canvas = null;
         if (boardCenter != null)
         {
-            canvas = boardCenter.GetComponentInParent<Canvas>();
+            Canvas canvas = boardCenter.GetComponentInParent<Canvas>();
+            if (canvas != null) return canvas.transform;
         }
         
-        if (canvas == null) canvas = Object.FindFirstObjectByType<Canvas>();
-
-        return canvas != null ? canvas.transform : null;
+        Canvas[] allCanvases = UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+        foreach (Canvas c in allCanvases) if (c.isRootCanvas && c.gameObject.name.Contains("Panel_Duel")) return c.transform;
+        foreach (Canvas c in allCanvases) if (c.isRootCanvas) return c.transform;
+            
+        return null;
     }
 
     public void UpdateThemeFX(DuelTheme theme)
@@ -845,13 +847,13 @@ public class DuelFXManager : MonoBehaviour
         onComplete?.Invoke();
     }
 
-    public void PlayFusionCinematic(CardDisplay card, List<CardData> materials, CardData polyCard, bool askPosition, System.Action onComplete)
+    public void PlayFusionCinematic(CardDisplay card, List<CardData> materials, CardData polyCard, System.Action onComplete)
     {
         if (!enableAnimations || card == null) { onComplete?.Invoke(); return; }
-        StartCoroutine(FusionCinematicRoutine(card, materials, polyCard, askPosition, onComplete));
+        StartCoroutine(FusionCinematicRoutine(card, materials, polyCard, onComplete));
     }
 
-    private IEnumerator FusionCinematicRoutine(CardDisplay card, List<CardData> materials, CardData polyCard, bool askPosition, System.Action onComplete)
+    private IEnumerator FusionCinematicRoutine(CardDisplay card, List<CardData> materials, CardData polyCard, System.Action onComplete)
     {
         Transform uiParent = GetUIParent();
         if (uiParent == null) { onComplete?.Invoke(); yield break; }
@@ -935,22 +937,7 @@ public class DuelFXManager : MonoBehaviour
             if (symbolObj != null) symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0.6f, 0f, p)); 
             yield return null; }
         
-        if (askPosition && UIManager.Instance != null && card.isPlayerCard && GameManager.Instance != null && !GameManager.Instance.isSimulating)
-        {
-            bool positionSelected = false;
-            UIManager.Instance.ShowPositionSelection(card.CurrentCardData, (pos) => {
-                bool isDef = pos == CardDisplay.BattlePosition.Defense;
-                card.position = isDef ? CardDisplay.BattlePosition.Defense : CardDisplay.BattlePosition.Attack;
-                float zRot = isDef ? (card.isPlayerCard ? 90f : -90f) : (card.isPlayerCard ? 0f : 180f);
-                card.transform.localRotation = Quaternion.Euler(0, 0, zRot);
-                positionSelected = true;
-            });
-            yield return new WaitUntil(() => positionSelected);
-        }
-        else
-        {
-            yield return new WaitForSeconds(0.6f / animSpeed);
-        }
+        yield return new WaitForSeconds(0.6f / animSpeed);
 
         GameObject markerPrefab = fusionFieldMarkerVFX != null ? fusionFieldMarkerVFX : specialFieldMarkerVFX;
         Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
@@ -967,13 +954,13 @@ public class DuelFXManager : MonoBehaviour
         onComplete?.Invoke();
     }
 
-    public void PlayRitualCinematic(CardDisplay card, CardData ritualSpell, bool askPosition, System.Action onComplete)
+    public void PlayRitualCinematic(CardDisplay card, CardData ritualSpell, System.Action onComplete)
     {
         if (!enableAnimations || card == null) { onComplete?.Invoke(); return; }
-        StartCoroutine(RitualCinematicRoutine(card, ritualSpell, askPosition, onComplete));
+        StartCoroutine(RitualCinematicRoutine(card, ritualSpell, onComplete));
     }
 
-    private IEnumerator RitualCinematicRoutine(CardDisplay card, CardData ritualSpell, bool askPosition, System.Action onComplete)
+    private IEnumerator RitualCinematicRoutine(CardDisplay card, CardData ritualSpell, System.Action onComplete)
     {
         Transform uiParent = GetUIParent();
         if (uiParent == null) { onComplete?.Invoke(); yield break; }
@@ -1016,22 +1003,7 @@ public class DuelFXManager : MonoBehaviour
 
         if (symbolObj != null) Destroy(symbolObj); 
         
-        if (askPosition && UIManager.Instance != null && card.isPlayerCard && GameManager.Instance != null && !GameManager.Instance.isSimulating)
-        {
-            bool positionSelected = false;
-            UIManager.Instance.ShowPositionSelection(card.CurrentCardData, (pos) => {
-                bool isDef = pos == CardDisplay.BattlePosition.Defense;
-                card.position = isDef ? CardDisplay.BattlePosition.Defense : CardDisplay.BattlePosition.Attack;
-                float zRot = isDef ? (card.isPlayerCard ? 90f : -90f) : (card.isPlayerCard ? 0f : 180f);
-                card.transform.localRotation = Quaternion.Euler(0, 0, zRot);
-                positionSelected = true;
-            });
-            yield return new WaitUntil(() => positionSelected);
-        }
-        else
-        {
-            yield return new WaitForSeconds(0.6f / animSpeed);
-        }
+        yield return new WaitForSeconds(0.6f / animSpeed);
 
         GameObject markerPrefab = ritualFieldMarkerVFX != null ? ritualFieldMarkerVFX : specialFieldMarkerVFX;
         Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
