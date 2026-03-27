@@ -45,12 +45,23 @@ public class FieldStatUI : MonoBehaviour
             return;
         }
 
-        // Segue a posição da carta no mundo
-        transform.position = attachedCard.transform.position;
+        // 1. Segue a posição local da carta dentro da Zona (seguro para UI / Canvas)
+        transform.localPosition = attachedCard.transform.localPosition;
 
-        // Aplica o offset para cima ou para baixo
         float yOffset = (gm.monsterStatDisplayMode == StatDisplayMode.AboveCard) ? gm.statDisplayYOffset : -gm.statDisplayYOffset;
-        transform.position += new Vector3(0, yOffset * transform.lossyScale.y, 0); // Compensa a escala do Canvas
+        
+        // 2. Aplica o espelhamento exato de perspectiva (Rotação e Inversão de Eixo Y)
+        if (gm.statDisplayMatchCardRotation && !attachedCard.isPlayerCard)
+        {
+            transform.localEulerAngles = new Vector3(0, 0, 180f);
+            // Como o oponente está do outro lado, "baixo" (-yOffset) vira "cima" (+Y) na tela do jogador
+            transform.localPosition += new Vector3(0, -yOffset, 0);
+        }
+        else
+        {
+            transform.localEulerAngles = Vector3.zero;
+            transform.localPosition += new Vector3(0, yOffset, 0);
+        }
         
         UpdateStats(); // Atualização inicial
     }

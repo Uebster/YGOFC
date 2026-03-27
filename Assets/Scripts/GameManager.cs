@@ -107,6 +107,8 @@ public class GameManager : MonoBehaviour
     public Color statInactiveColor = Color.gray;
     [Tooltip("Quanto a carta do monstro deve se deslocar para dar espaço ao texto de stats.")]
     public float cardYAdjustmentForStats = 15f;
+    [Tooltip("Se verdadeiro, acompanha a rotação do dono da carta (cartas do oponente mostram stats de ponta-cabeça para o jogador).")]
+    public bool statDisplayMatchCardRotation = true;
 
     [Header("Rounded Corners")]
     [Tooltip("Arredonda as bordas das cartas no campo.")]
@@ -828,6 +830,7 @@ public class GameManager : MonoBehaviour
 
             // Desloca a carta para dar espaço ao texto
             float adjustment = (monsterStatDisplayMode == StatDisplayMode.AboveCard) ? -cardYAdjustmentForStats : cardYAdjustmentForStats;
+            if (statDisplayMatchCardRotation && !isPlayer) adjustment = -adjustment; // oponente inverte
             cardGO.transform.localPosition += new Vector3(0, adjustment, 0);
         }
 
@@ -2780,6 +2783,7 @@ public void ShuffleDeck(bool isPlayer)
                     statUI.Setup(display);
                 }
                 float adjustment = (monsterStatDisplayMode == StatDisplayMode.AboveCard) ? -cardYAdjustmentForStats : cardYAdjustmentForStats;
+                if (statDisplayMatchCardRotation && !isPlayer) adjustment = -adjustment; // oponente inverte
                 cardGO.transform.localPosition += new Vector3(0, adjustment, 0);
             }
 
