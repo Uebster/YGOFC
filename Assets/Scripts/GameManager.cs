@@ -201,6 +201,8 @@ public class GameManager : MonoBehaviour
     public bool useCustomFusionUI = true;
     [Tooltip("Se marcado, usa o painel customizado Panel_Ritual. Se desmarcado, usa a seleção tática no tabuleiro.")]
     public bool useCustomRitualUI = true;
+    [Tooltip("Se marcado, sempre pedirá confirmação para seleção de alvo, mesmo que haja apenas um alvo possível.")]
+    public bool alwaysConfirmSingleTarget = false;
 
     [Header("Minigames Settings")]
     [Tooltip("Ativa a escolha manual de Cara/Coroa para os lançamentos de moeda.")]
@@ -770,21 +772,24 @@ public class GameManager : MonoBehaviour
         GameObject cardGO = Instantiate(cardPrefab, zone);
         CardDisplay cardDisplay = cardGO.GetComponent<CardDisplay>();
 
+        cardGO.transform.localPosition = Vector3.zero; // Explicitamente centraliza dentro da zona
         cardGO.transform.localScale = fieldCardScale;
-        cardDisplay.isInteractable = true;
+        cardGO.transform.localRotation = Quaternion.identity; // Reseta a rotação antes de aplicar a específica
+
+        cardDisplay.isInteractable = false; // Cartas no campo não são interativas como as da mão
         cardDisplay.isPlayerCard = isPlayer;
         cardDisplay.isOnField = true;
         cardDisplay.position = inAttackPosition ? CardDisplay.BattlePosition.Attack : CardDisplay.BattlePosition.Defense;
         
         cardDisplay.SetCard(cardData, cardBackTexture, !faceDown);
         
-        if (inAttackPosition)
+        if (!inAttackPosition) // Defesa
         {
-            cardGO.transform.localRotation = Quaternion.identity;
+            cardGO.transform.localRotation = Quaternion.Euler(0, 0, isPlayer ? 90f : -90f);
         }
         else
         {
-            cardGO.transform.localRotation = Quaternion.Euler(0, 0, 90);
+            cardGO.transform.localRotation = Quaternion.Euler(0, 0, isPlayer ? 0f : 180f);
         }
         
         OnSummon(cardDisplay);
@@ -3392,13 +3397,18 @@ public void ShuffleDeck(bool isPlayer)
             onSelected?.Invoke(sourceList.Take(count).ToList());
             return;
         }
+        // Verifica se TODAS as cartas da seleção estão fisicamente presentes na Mesa ou na Mão
+        bool isHandOrFieldSubset = sourceList.Count > 0 && sourceList.All(c => {
+            if (playerHand.Exists(go => go.GetComponent<CardDisplay>().CurrentCardData == c)) return true;
+            if (opponentHand.Exists(go => go.GetComponent<CardDisplay>().CurrentCardData == c)) return true;
+            if (FindCardOnField(c.id, true) != null) return true;
+            if (FindCardOnField(c.id, false) != null) return true;
+            return false;
+        });
 
-        // Verifica se a seleção é um subconjunto da mão do jogador e se a quantidade é fixa (min == max)
-        // Isso permite usar a seleção direta da mão
-        bool isHandSubset = sourceList.Count > 0 && sourceList.All(c => playerHand.Exists(go => go.GetComponent<CardDisplay>().CurrentCardData == c));
         bool isFusionOrRitual = title.Contains("Fusão") || title.Contains("Ritual") || title.Contains("Tributo");
 
-        if (useDirectHandSelection && isHandSubset && min == max && !isFusionOrRitual)
+        if (useDirectHandSelection && isHandOrFieldSubset && min == max && !isFusionOrRitual)
         {
             StartDirectSelection(sourceList, min, max, null, title, onSelected);
             return;
@@ -3439,6 +3449,8 @@ public void ShuffleDeck(bool isPlayer)
         if (duelFieldUI != null) {
             foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
             foreach(var z in duelFieldUI.playerSpellZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
+            foreach(var z in duelFieldUI.opponentMonsterZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
+            foreach(var z in duelFieldUI.opponentSpellZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
         }
 
         foreach (var go in allCards)
@@ -3497,8 +3509,12 @@ public void ShuffleDeck(bool isPlayer)
                         
                         // Atualiza visual da carta cancelada
                         List<GameObject> allCards = new List<GameObject>(playerHand);
-                        if (duelFieldUI != null) { foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject); }
-                        
+                        if (duelFieldUI != null) { 
+                            foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject); }
+                            foreach(var z in duelFieldUI.playerSpellZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
+                            foreach(var z in duelFieldUI.opponentMonsterZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
+                            foreach(var z in duelFieldUI.opponentSpellZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
+
                         var go = allCards.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == last);
                         if (go != null)
                         {
@@ -3523,6 +3539,8 @@ public void ShuffleDeck(bool isPlayer)
         if (duelFieldUI != null) {
             foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
             foreach(var z in duelFieldUI.playerSpellZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
+            foreach(var z in duelFieldUI.opponentMonsterZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
+            foreach(var z in duelFieldUI.opponentSpellZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
         }
 
         foreach (var go in allCards)

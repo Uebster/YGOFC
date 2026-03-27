@@ -41,6 +41,7 @@ public class FullTestManager : MonoBehaviour
     public Button btnSwitchTurn;
     public Button btnFusion;
     public Button btnRitual;
+    public Button btnEquip;
 
     void Awake()
     {
@@ -68,6 +69,7 @@ public class FullTestManager : MonoBehaviour
         if (btnSwitchTurn == null) btnSwitchTurn = allButtons.FirstOrDefault(b => b.name.Contains("Switch"));
         if (btnFusion == null) btnFusion = allButtons.FirstOrDefault(b => b.name.Contains("Fusion"));
         if (btnRitual == null) btnRitual = allButtons.FirstOrDefault(b => b.name.Contains("Ritual"));
+        if (btnEquip == null) btnEquip = allButtons.FirstOrDefault(b => b.name.Contains("Equip"));
 
         TMP_Dropdown[] allDropdowns = testPanel != null ? testPanel.GetComponentsInChildren<TMP_Dropdown>(true) : GetComponentsInChildren<TMP_Dropdown>(true);
         if (dropPlayer == null) dropPlayer = allDropdowns.FirstOrDefault(d => d.name.Contains("Player"));
@@ -149,6 +151,7 @@ public class FullTestManager : MonoBehaviour
         if (btnRestartDuel) btnRestartDuel.onClick.AddListener(() => GameManager.Instance.StartDuel());
         if (btnFusion) btnFusion.onClick.AddListener(TestFusion);
         if (btnRitual) btnRitual.onClick.AddListener(TestRitual);
+        if (btnEquip != null) btnEquip.onClick.AddListener(TestEquip);
     }
 
     void Update()
@@ -364,6 +367,41 @@ public class FullTestManager : MonoBehaviour
             GameManager.Instance.AddCardToHand(tributeFodder, true);
             GameManager.Instance.AddCardToHand(ritualSpell, true);
             StartCoroutine(ActivateSpellAfterDelay("Black Illusion Ritual"));
+        }
+    }
+
+    public void TestEquip()
+    {
+        Debug.Log("[TestMode] Configurando Equipamento...");
+        TestCleanField();
+
+        // Puxamos Axe Raider (Monstro) e Axe of Despair (Equip)
+        CardData axeRaider = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == "Axe Raider");
+        CardData equipSpell = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == "Axe of Despair");
+        
+        if (axeRaider == null) axeRaider = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.type.Contains("Monster"));
+        if (equipSpell == null) equipSpell = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.id == "0103"); // Fallback para Axe of Despair por ID
+
+        if (axeRaider != null && equipSpell != null)
+        {
+            // 1. Invoca o monstro no campo do JOGADOR para testar o equipamento em um alvo próprio.
+            CardDisplay monsterDisplay = GameManager.Instance.SpecialSummonFromData(axeRaider, true, 2, true, false);
+            
+            // 2. Coloca a magia na mão do jogador
+            GameManager.Instance.AddCardToHand(equipSpell, true);
+            
+            // 3. Força a transição para a Main Phase 1 para que o Activate seja legal
+            if (PhaseManager.Instance != null)
+            {
+                PhaseManager.Instance.currentPhase = GamePhase.Main1;
+                GameManager.Instance.isPlayerTurn = true;
+            }
+
+            // 4. Informa o jogador para testar
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowMessage($"Cenário de Equip pronto. Ative '{equipSpell.name}' da sua mão e selecione o seu '{axeRaider.name}' como alvo.");
+            }
         }
     }
 

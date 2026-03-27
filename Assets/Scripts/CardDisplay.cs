@@ -977,8 +977,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             return;
         }
 
-        // Lógica de Seleção Direta da Mão (GameManager)
-        if (GameManager.Instance != null && GameManager.Instance.isSelectingFromHand && isInteractable)
+        // Lógica de Seleção Direta Tática (Mão ou Campo)
+        if (GameManager.Instance != null && GameManager.Instance.isSelectingFromHand)
         {
             // Passa o clique para o GameManager gerenciar a seleção
             GameManager.Instance.HandleHandCardClick(this);

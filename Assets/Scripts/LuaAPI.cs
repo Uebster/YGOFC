@@ -869,6 +869,17 @@ public class LuaDuel
             return UserData.Create(new LuaGroup());
         }
 
+        // Otimização: Se há apenas um alvo possível, seleciona automaticamente (a menos que min > 1) OU se alwaysConfirmSingleTarget for true
+        if (!GameManager.Instance.alwaysConfirmSingleTarget && candidates.cards.Count == 1 && ConvertToInt(min) <= 1)
+        {
+            LuaGroup selectedGroup = new LuaGroup();
+            selectedGroup.AddCard(candidates.cards[0]);
+            CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
+            this.currentTargetGroup = selectedGroup;
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectTarget") });
+        }
+
         // --- BYPASS DE INTELIGÊNCIA ARTIFICIAL ---
         if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
         {
@@ -879,19 +890,27 @@ public class LuaDuel
             return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectTarget") });
         }
 
-        System.Predicate<CardDisplay> unityFilter = (cd) => {
-            return candidates.cards.Exists(lc => lc.unityCard == cd);
-        };
-
-        // TODO: C# 100% LUA - Substituir pelo novo sistema de seleção genérica no UIManager
-        // Por enquanto, resolve automaticamente (Pega o 1º) para evitar crash de compilação
-        if (candidates.cards.Count > 0)
+        // Extrai CardData dos candidatos para a UI de seleção
+        List<CardData> selectableData = new List<CardData>();
+        foreach (var c in candidates.cards)
         {
-            LuaGroup selectedGroup = new LuaGroup();
-            selectedGroup.AddCard(candidates.cards[0]);
-            CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
-            this.currentTargetGroup = selectedGroup;
-            CardEffectManager.Instance.isWaitingForLuaYield = false;
+            if (c.unityData != null && !selectableData.Contains(c.unityData)) selectableData.Add(c.unityData);
+        }
+
+        if (GameManager.Instance != null && selectableData.Count > 0)
+        {
+            GameManager.Instance.OpenCardMultiSelection(selectableData, GetHintMessageString(500), ConvertToInt(min), ConvertToInt(max), (selectedList) => {
+                LuaGroup selectedGroup = new LuaGroup();
+                foreach (var data in selectedList)
+                {
+                    LuaCard match = candidates.cards.Find(lc => lc.unityData == data);
+                    if (match != null) selectedGroup.AddCard(match);
+                    else selectedGroup.AddCard(new LuaCard(data)); // Fallback se não encontrar a instância original
+                }
+                CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
+                this.currentTargetGroup = selectedGroup; // Salva para o GetFirstTarget()
+                CardEffectManager.Instance.isWaitingForLuaYield = false;
+            });
         }
         else
         {
