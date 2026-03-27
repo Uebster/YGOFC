@@ -711,6 +711,18 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             MouseTooltipUI.Instance.Show(left, right);
         }
 
+        // --- Espadinha de Ataque no Hover ---
+        if (GameManager.Instance != null && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle && GameManager.Instance.turnCount > 1)
+        {
+            if (GameManager.Instance.isPlayerTurn && isOnField && isPlayerCard && currentCardData != null && currentCardData.type.Contains("Monster") && position == BattlePosition.Attack && !hasAttackedThisTurn && !isAttackSelected)
+            {
+                if (TargetingSwordUI.Instance != null)
+                {
+                    TargetingSwordUI.Instance.ShowHover(transform);
+                }
+            }
+        }
+
         // FASE 4: Pulso Sincronizado para Equipamentos e Cartas Vínculadas
         HighlightLinkedCards(true);
     }
@@ -742,6 +754,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             canvas.overrideSorting = false;
             canvas.sortingOrder = 0;
             rectTransform.anchoredPosition -= new Vector2(0, hoverYOffset);
+        }
+
+        if (TargetingSwordUI.Instance != null)
+        {
+            TargetingSwordUI.Instance.HideHover(transform);
         }
 
         // FIX 4: NÃO limpamos o Card Viewer aqui para ele ficar "travado".
@@ -1012,11 +1029,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                         }
                         CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(this);
                         SetAttackSelectionVisual(true);
+                        if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.ShowAndFollowMouse(transform);
                     }
                     else if (eventData.button == PointerEventData.InputButton.Right)
                     {
                         CardEffectManager.Instance.luaDuel.currentAttacker = null;
                         SetAttackSelectionVisual(false);
+                        if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
                     }
                     return;
                 }
@@ -1026,12 +1045,16 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                     {
                         if (GameManager.Instance != null && GameManager.Instance.confirmAttackTarget && UIManager.Instance != null)
                         {
+                            if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.LockOn(transform);
                             UIManager.Instance.ShowConfirmation($"Atacar {currentCardData.name}?", () => {
                                 ExecuteAttackToTarget(this);
+                            }, () => {
+                                if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Unlock();
                             });
                         }
                         else
                         {
+                            if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.LockOn(transform);
                             ExecuteAttackToTarget(this);
                         }
                     }

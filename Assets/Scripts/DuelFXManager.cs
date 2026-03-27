@@ -240,7 +240,7 @@ public class DuelFXManager : MonoBehaviour
         // 3. Toca Som e VFX de Ativação
         PlaySound(isTrap ? trapSound : spellSound);
         GameObject vfxPrefab = isTrap ? trapActivateVFX : spellActivateVFX;
-        SpawnVFX(vfxPrefab, card.transform.position);
+        SpawnVFXPublic(vfxPrefab, card.transform.position);
 
         // 4. Aguarda o show
         yield return new WaitForSeconds(0.8f);
@@ -309,7 +309,7 @@ public class DuelFXManager : MonoBehaviour
         }
 
         PlaySound(spellSound);
-        SpawnVFX(spellActivateVFX, card.transform.position);
+        SpawnVFXPublic(spellActivateVFX, card.transform.position);
         yield return new WaitForSeconds(0.6f);
 
         // Animação Especial do Field: Cresce engolindo a tela e some (Fade Out)
@@ -352,168 +352,23 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayAttack(CardDisplay attacker, CardDisplay target, System.Action onHit)
     {
-        Debug.Log($"[DuelFXManager] PlayAttack de {attacker?.CurrentCardData?.name} para {(target != null ? target.CurrentCardData.name : "Direto")}");
+        Debug.Log($"[DuelFXManager] Delegating attack from {attacker?.CurrentCardData?.name} to TargetingSwordUI.");
         if (!enableAnimations)
         {
             onHit?.Invoke();
             return;
         }
 
-        // Verifica se deve usar a nova animação de projétil (espada) ou a clássica (mover carta)
-        // FIX: A restrição do prefab foi movida para que o Fallback da TargetingSword funcione!
-        if (GameManager.Instance != null && GameManager.Instance.enableAttackAnimation)
+        if (TargetingSwordUI.Instance != null)
         {
-            Debug.Log("[DuelFXManager] Usando animação de Projétil (Espada).");
-            StartCoroutine(AttackProjectileRoutine(attacker, target, onHit));
+            TargetingSwordUI.Instance.PerformAttack(target, onHit);
         }
         else
         {
-            Debug.Log("[DuelFXManager] Usando animação Clássica (Mover Carta).");
-            StartCoroutine(AttackRoutine(attacker, target, onHit));
+            Debug.LogError("[DuelFXManager] TargetingSwordUI.Instance is null! Cannot perform attack animation.");
+            // Fallback: immediately call onHit to not stall the duel.
+            onHit?.Invoke();
         }
-    }
-
-    private IEnumerator AttackRoutine(CardDisplay attacker, CardDisplay target, System.Action onHit)
-    {
-        // Safeguard: Evita loop infinito se a velocidade for 0 ou negativa
-        if (animationSpeed <= 0.1f) animationSpeed = 1.5f;
-
-        Vector3 startPos = attacker.transform.position;
-        Vector3 targetPos;
-
-        if (target != null)
-        {
-            targetPos = target.transform.position;
-        }
-        else // Ataque Direto
-        {
-            targetPos = GetDirectAttackTarget(attacker, startPos + (attacker.transform.up * 200f));
-        }
-
-        // 1. Recuo (Anticipation)
-        float t = 0;
-        while (t < 1f)
-        {
-            if (attacker == null) { onHit?.Invoke(); yield break; }
-            t += Time.deltaTime * (animationSpeed * 2);
-            attacker.transform.position = Vector3.Lerp(startPos, startPos - (targetPos - startPos).normalized * 50f, t);
-            yield return null;
-        }
-
-        // 2. Avanço (Strike)
-        PlaySound(attackTravelSound);
-        t = 0;
-        while (t < 1f)
-        {
-            if (attacker == null) { onHit?.Invoke(); yield break; }
-            t += Time.deltaTime * (animationSpeed * 5); // Muito rápido
-            attacker.transform.position = Vector3.Lerp(startPos, targetPos, t);
-            yield return null;
-        }
-
-        // 3. Impacto
-        SpawnVFX(attackVFX, targetPos);
-        PlaySound(attackImpactSound);
-        onHit?.Invoke(); // Chama o callback de dano/cálculo
-
-        // 4. Retorno
-        t = 0;
-        while (t < 1f)
-        {
-            if (attacker == null) { yield break; }
-            t += Time.deltaTime * animationSpeed;
-            attacker.transform.position = Vector3.Lerp(targetPos, startPos, t);
-            yield return null;
-        }
-    }
-
-    // Esqueleto da nova animação de ataque (Espada/Projétil)
-    private IEnumerator AttackProjectileRoutine(CardDisplay attacker, CardDisplay target, System.Action onHit)
-    {
-        // Safeguard
-        if (animationSpeed <= 0.1f) animationSpeed = 1.5f;
-
-        Vector3 startPos = attacker.transform.position;
-        Vector3 endPos;
-
-        // Define o destino: Centro da carta alvo ou Avatar do oponente (Ataque Direto)
-        if (target != null)
-        {
-            endPos = target.transform.position;
-        }
-        else
-        {
-            endPos = GetDirectAttackTarget(attacker, startPos + Vector3.up * 5f);
-        }
-
-        // Instancia o projétil (Espada) se houver prefab
-        GameObject projectile = null;
-        if (attackProjectileVFX != null)
-        {
-            projectile = Instantiate(attackProjectileVFX);
-            
-            // Arranca o script de autodestruição se ele existir, para a espada não sumir no meio do voo!
-            VfxAutoAnim autoKill = projectile.GetComponent<VfxAutoAnim>();
-            if (autoKill != null) 
-            {
-                autoKill.enabled = false; // Desativa imediatamente para garantir que o Update() não rode
-                Destroy(autoKill);
-            }
-        }
-        else
-        {
-            Debug.LogWarning("[DuelFXManager] Nenhum prefab de espada atribuído! Usando Fallback da espada do mouse.");
-            // Fallback Genial: Se você esqueceu de colocar o Prefab de ataque, ele clona a espada do mouse!
-            TargetingSwordUI mouseSword = Object.FindFirstObjectByType<TargetingSwordUI>();
-            if (mouseSword != null)
-            {
-                projectile = Instantiate(mouseSword.gameObject);
-                Destroy(projectile.GetComponent<TargetingSwordUI>()); // Tira o script de seguir o mouse
-                Image img = projectile.GetComponent<Image>();
-                if (img != null) img.enabled = true; // Força a ficar visível
-            }
-        }
-            
-        if (projectile != null)
-        {
-            if (boardCenter != null) projectile.transform.SetParent(GetUIParent(), false);
-            projectile.transform.SetAsLastSibling();
-            projectile.transform.localScale = Vector3.one;
-            projectile.transform.position = startPos;
-            
-            // Rotação 2D: Calcula o ângulo para a espada apontar para o alvo
-            Vector3 dir = endPos - startPos;
-            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            // Subtrai 90 graus assumindo que a ponta da sua espada aponta para CIMA na imagem original
-            projectile.transform.rotation = Quaternion.Euler(0, 0, angle - 90f); 
-        }
-
-        PlaySound(attackTravelSound);
-
-        float duration = 0.6f; // Voo mais dramático e visível
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            if (projectile != null) 
-            {
-                Vector3 currentTarget = target != null ? target.transform.position : endPos;
-                projectile.transform.position = Vector3.Lerp(startPos, currentTarget, elapsed / duration);
-            }            
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        if (projectile != null) Destroy(projectile);
-        
-        // Impacto
-        SpawnVFX(attackVFX, endPos);
-        // Treme a carta alvo se ela existir
-        if (target != null) PlayCardShake(target);
-        
-        PlaySound(attackImpactSound);
-        Debug.Log("[DuelFXManager] Projétil atingiu o alvo. Chamando callback.");
-        onHit?.Invoke();
     }
 
     public void PlayDestruction(CardDisplay card)
@@ -521,7 +376,7 @@ public class DuelFXManager : MonoBehaviour
         Debug.Log($"[DuelFXManager] PlayDestruction em {card?.CurrentCardData?.name}");
         if (!enableAnimations || card == null) return;
         PlaySound(destroySound);
-        SpawnVFX(explosionVFX, card.transform.position);
+        SpawnVFXPublic(explosionVFX, card.transform.position);
         AnimateCardDeath(card, false); // Morte Explosiva (Fantasmas)
     }
 
@@ -529,7 +384,7 @@ public class DuelFXManager : MonoBehaviour
     {
         Debug.Log($"[DuelFXManager] PlayAttackFail em {attacker?.CurrentCardData?.name}");
         PlaySound(reflectSound);
-        SpawnVFX(reflectVFX, attacker.transform.position);
+        SpawnVFXPublic(reflectVFX, attacker.transform.position);
     }
 
     // --- INVOCAÇÃO / TRIBUTO ---
@@ -538,7 +393,7 @@ public class DuelFXManager : MonoBehaviour
     {
         Debug.Log($"[DuelFXManager] PlaySummonEffect em {card?.CurrentCardData?.name}");
         PlaySound(summonSound);
-        SpawnVFX(summonVFX, card.transform.position);
+        SpawnVFXPublic(summonVFX, card.transform.position);
     }
 
     public void PlayTributeSummonEffect(CardDisplay card)
@@ -547,14 +402,14 @@ public class DuelFXManager : MonoBehaviour
         PlaySound(summonSound); // Pode ter um som específico se quiser
         // Usa o prefab específico se existir, senão usa o padrão do GameManager, senão o de summon comum
         GameObject prefab = tributeSummonVFX != null ? tributeSummonVFX : summonVFX;
-        SpawnVFX(prefab, card.transform.position);
+        SpawnVFXPublic(prefab, card.transform.position);
     }
 
     public void PlayFusionEffect(CardDisplay card)
     {
         Debug.Log($"[DuelFXManager] PlayFusionEffect em {card?.CurrentCardData?.name}");
         PlaySound(fusionSound);
-        SpawnVFX(fusionVFX, card.transform.position);
+        SpawnVFXPublic(fusionVFX, card.transform.position);
     }
 
     public void PlayTributeEffect(CardDisplay card)
@@ -562,7 +417,7 @@ public class DuelFXManager : MonoBehaviour
         Debug.Log($"[DuelFXManager] PlayTributeEffect em {card?.CurrentCardData?.name}");
         PlaySound(tributeSound);
         // Instancia o efeito de portal na carta e o torna filho dela para seguir se mover
-        GameObject vfx = SpawnVFX(tributeVFX, card.transform.position);
+        GameObject vfx = SpawnVFXPublic(tributeVFX, card.transform.position);
         if (vfx != null)
         {
             vfx.transform.SetParent(card.transform);
@@ -577,7 +432,7 @@ public class DuelFXManager : MonoBehaviour
         Debug.Log($"[DuelFXManager] PlayBanishEffect em {card?.CurrentCardData?.name}");
         if (!enableAnimations || card == null) return;
         PlaySound(banishSound);
-        SpawnVFX(banishVFX, card.transform.position);
+        SpawnVFXPublic(banishVFX, card.transform.position);
         AnimateCardDeath(card, true); // Morte por Sugador (Fantasmas)
     }
 
@@ -633,21 +488,21 @@ public class DuelFXManager : MonoBehaviour
     {
         Debug.Log($"[DuelFXManager] PlayFlipEffect em {card?.CurrentCardData?.name}");
         PlaySound(flipSound);
-        SpawnVFX(flipVFX, card.transform.position);
+        SpawnVFXPublic(flipVFX, card.transform.position);
     }
 
     public void PlayDamageEffect(Vector3 position)
     {
         Debug.Log($"[DuelFXManager] PlayDamageEffect (Tremor/Flash na tela)");
         PlaySound(damageSound);
-        SpawnVFX(damageVFX, position);
+        SpawnVFXPublic(damageVFX, position);
     }
 
     public void PlayDefenseSuccessEffect(CardDisplay card)
     {
         Debug.Log($"[DuelFXManager] PlayDefenseSuccessEffect (Escudo) em {card?.CurrentCardData?.name}");
         PlaySound(defenseSound);
-        SpawnVFX(defenseSuccessVFX, card.transform.position);
+        SpawnVFXPublic(defenseSuccessVFX, card.transform.position);
     }
 
     public void PlayCardShake(CardDisplay card)
@@ -684,7 +539,7 @@ public class DuelFXManager : MonoBehaviour
         // Se tivermos um prefab de texto subindo, nós o instanciamos
         if (chainLinkVFX != null)
         {
-            GameObject vfx = SpawnVFX(chainLinkVFX, card.transform.position);
+            GameObject vfx = SpawnVFXPublic(chainLinkVFX, card.transform.position);
             
             var animScript = vfx.GetComponent<ChainLinkVFX>();
             if (animScript != null) animScript.Setup(linkNumber);
@@ -706,7 +561,7 @@ public class DuelFXManager : MonoBehaviour
         Debug.Log($"[DuelFXManager] PlayMonsterEffect em {card?.CurrentCardData?.name}");
         if (!enableAnimations || card == null) return;
         PlaySound(monsterEffectSound);
-        SpawnVFX(monsterEffectVFX, card.transform.position);
+        SpawnVFXPublic(monsterEffectVFX, card.transform.position);
     }
 
     public void PlaySummonAura(CardDisplay card)
@@ -761,7 +616,7 @@ public class DuelFXManager : MonoBehaviour
 
         if (target != null) {
             GameObject vfxPrefab = equipImpactVFX != null ? equipImpactVFX : spellActivateVFX;
-            SpawnVFX(vfxPrefab, target.transform.position);
+            SpawnVFXPublic(vfxPrefab, target.transform.position);
             PlayCardShake(target); // Dá um "tranco" no monstro indicando que recebeu o poder
         }
         Destroy(ghost);
@@ -771,7 +626,7 @@ public class DuelFXManager : MonoBehaviour
     {
         if (!enableAnimations || pileTransform == null) return;
         PlaySound(shuffleSound);
-        SpawnVFX(shuffleVFX, pileTransform.position);
+        SpawnVFXPublic(shuffleVFX, pileTransform.position);
     }
 
     public void PlaySummonCinematic(CardDisplay card, bool isTribute, bool isSpecial, System.Action onComplete)
@@ -828,7 +683,7 @@ public class DuelFXManager : MonoBehaviour
         // 3. Marca no Chão e Pouso
         GameObject markerPrefab = isTribute ? tributeFieldMarkerVFX : specialFieldMarkerVFX;
         Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
-        GameObject marker = SpawnVFX(markerPrefab, targetPos);
+        GameObject marker = SpawnVFXPublic(markerPrefab, targetPos);
         PlaySound(attackTravelSound);
 
         Vector3 startPos = rt.position; 
@@ -921,7 +776,7 @@ public class DuelFXManager : MonoBehaviour
         foreach (var m in matRects) Destroy(m.gameObject);
         PlaySound(fusionSound);
         Vector3 worldCenter = symbolObj != null ? symbolObj.transform.position : uiParent.position;
-        if (fusionFlashVFX != null) SpawnVFX(fusionFlashVFX, worldCenter);
+        if (fusionFlashVFX != null) SpawnVFXPublic(fusionFlashVFX, worldCenter);
 
         GameObject cinCard = new GameObject("CinematicFusion", typeof(RectTransform), typeof(RawImage));
         cinCard.transform.SetParent(uiParent, false);
@@ -941,7 +796,7 @@ public class DuelFXManager : MonoBehaviour
 
         GameObject markerPrefab = fusionFieldMarkerVFX != null ? fusionFieldMarkerVFX : specialFieldMarkerVFX;
         Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
-        GameObject marker = SpawnVFX(markerPrefab, targetPos); PlaySound(attackTravelSound);
+        GameObject marker = SpawnVFXPublic(markerPrefab, targetPos); PlaySound(attackTravelSound);
         Vector3 startPos = rt.position; Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
         Quaternion startRot = Quaternion.identity; Quaternion targetRot = card.transform.rotation;
 
@@ -988,7 +843,7 @@ public class DuelFXManager : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f); PlaySound(fusionSound); 
         Vector3 worldCenter = symbolObj != null ? symbolObj.transform.position : uiParent.position;
-        if (ritualFlashVFX != null) SpawnVFX(ritualFlashVFX, worldCenter); else if (fusionFlashVFX != null) SpawnVFX(fusionFlashVFX, worldCenter); 
+        if (ritualFlashVFX != null) SpawnVFXPublic(ritualFlashVFX, worldCenter); else if (fusionFlashVFX != null) SpawnVFXPublic(fusionFlashVFX, worldCenter); 
 
         GameObject cinCard = new GameObject("CinematicRitual", typeof(RectTransform), typeof(RawImage));
         cinCard.transform.SetParent(uiParent, false); cinCard.transform.SetAsLastSibling();
@@ -1007,7 +862,7 @@ public class DuelFXManager : MonoBehaviour
 
         GameObject markerPrefab = ritualFieldMarkerVFX != null ? ritualFieldMarkerVFX : specialFieldMarkerVFX;
         Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
-        GameObject marker = SpawnVFX(markerPrefab, targetPos); PlaySound(attackTravelSound);
+        GameObject marker = SpawnVFXPublic(markerPrefab, targetPos); PlaySound(attackTravelSound);
         Vector3 startPos = rt.position; Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
         Quaternion startRot = Quaternion.identity; Quaternion targetRot = card.transform.rotation;
 
@@ -1029,7 +884,7 @@ public class DuelFXManager : MonoBehaviour
         }
     }
 
-    private GameObject SpawnVFX(GameObject prefab, Vector3 position)
+    public GameObject SpawnVFXPublic(GameObject prefab, Vector3 position)
     {
         if (prefab != null)
         {
@@ -1058,7 +913,7 @@ public class DuelFXManager : MonoBehaviour
         return null;
     }
 
-    private Vector3 GetDirectAttackTarget(CardDisplay attacker, Vector3 fallbackPos)
+    public Vector3 GetDirectAttackTargetPublic(CardDisplay attacker, Vector3 fallbackPos)
     {
         if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return fallbackPos;
 
@@ -1103,7 +958,7 @@ public class DuelFXManager : MonoBehaviour
         Vector3 flightScale = card.transform.localScale;
 
         PlaySound(spellSound);
-        SpawnVFX(spellActivateVFX, startPos);
+        SpawnVFXPublic(spellActivateVFX, startPos);
 
         // Um pouco mais de tempo para apreciar a animação
         float duration = 1.0f / (animationSpeed > 0 ? animationSpeed : 1f);
@@ -1135,7 +990,7 @@ public class DuelFXManager : MonoBehaviour
             // FIX CRÍTICO: Garante que a carta volte ao tamanho original da mesa
             card.transform.localScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one; 
             
-            SpawnVFX(summonVFX, endPos); 
+            SpawnVFXPublic(summonVFX, endPos); 
             PlaySound(summonSound); 
         }
         onComplete?.Invoke();

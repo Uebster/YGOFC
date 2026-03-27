@@ -23,6 +23,13 @@ public enum GamePhase
     End
 }
 
+public enum StatDisplayMode
+{
+    None,
+    AboveCard,
+    BelowCard
+}
+
 public enum FlipAnimationMode
 {
     AnimateOnReveal, // Anima apenas ao virar para cima (Padrão)
@@ -84,6 +91,22 @@ public class GameManager : MonoBehaviour
     public bool enableExtraDeckHoverOutline = true;
     [Tooltip("Ativa o contorno de hover nas cartas Removidas.")]
     public bool enableRemovedHoverOutline = true;
+
+    [Header("On-Field Stats Display")]
+    [Tooltip("Exibe o ATK/DEF atual dos monstros no campo.")]
+    public StatDisplayMode monsterStatDisplayMode = StatDisplayMode.None;
+    [Tooltip("O prefab que contém o TextMeshPro para exibir os stats.")]
+    public GameObject fieldStatDisplayPrefab;
+    [Tooltip("A distância (em pixels) do centro da carta para exibir os stats.")]
+    public float statDisplayYOffset = 45f;
+    [Tooltip("Cor para stats que foram aumentados (buff).")]
+    public Color statBuffColor = new Color(0.1f, 1f, 0.1f);
+    [Tooltip("Cor para stats que foram reduzidos (debuff).")]
+    public Color statDebuffColor = new Color(1f, 0.2f, 0.2f);
+    [Tooltip("Cor para o stat que não está sendo usado (ATK em defesa, DEF em ataque).")]
+    public Color statInactiveColor = Color.gray;
+    [Tooltip("Quanto a carta do monstro deve se deslocar para dar espaço ao texto de stats.")]
+    public float cardYAdjustmentForStats = 15f;
 
     [Header("Rounded Corners")]
     [Tooltip("Arredonda as bordas das cartas no campo.")]
@@ -791,7 +814,23 @@ public class GameManager : MonoBehaviour
         {
             cardGO.transform.localRotation = Quaternion.Euler(0, 0, isPlayer ? 0f : 180f);
         }
-        
+
+        // Adiciona o display de stats se a opção estiver ativa
+        if (monsterStatDisplayMode != StatDisplayMode.None && fieldStatDisplayPrefab != null && cardData.type.Contains("Monster"))
+        {
+            // Instancia como irmão da carta (no mesmo pai, a zona) para evitar problemas de renderização
+            GameObject statGO = Instantiate(fieldStatDisplayPrefab, cardGO.transform.parent);
+            FieldStatUI statUI = statGO.GetComponent<FieldStatUI>();
+            if (statUI != null)
+            {
+                statUI.Setup(cardDisplay); // Passa a referência da carta para o script de UI segui-la
+            }
+
+            // Desloca a carta para dar espaço ao texto
+            float adjustment = (monsterStatDisplayMode == StatDisplayMode.AboveCard) ? -cardYAdjustmentForStats : cardYAdjustmentForStats;
+            cardGO.transform.localPosition += new Vector3(0, adjustment, 0);
+        }
+
         OnSummon(cardDisplay);
         return cardDisplay;
     }

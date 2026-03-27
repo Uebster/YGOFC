@@ -149,14 +149,19 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
             // Clique esquerdo no campo: Tenta ataque direto se houver atacante selecionado
             if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
             {
+                Transform targetTransform = opponentAvatarImage != null ? opponentAvatarImage.transform : null;
                 if (GameManager.Instance != null && GameManager.Instance.confirmAttackTarget && UIManager.Instance != null)
                 {
+                    if (TargetingSwordUI.Instance != null && targetTransform != null) TargetingSwordUI.Instance.LockOn(targetTransform);
                     UIManager.Instance.ShowConfirmation("Atacar diretamente os Pontos de Vida?", () => {
                         ExecuteDirectAttack();
+                    }, () => {
+                        if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Unlock();
                     });
                 }
                 else
                 {
+                    if (TargetingSwordUI.Instance != null && targetTransform != null) TargetingSwordUI.Instance.LockOn(targetTransform);
                     ExecuteDirectAttack();
                 }
             }

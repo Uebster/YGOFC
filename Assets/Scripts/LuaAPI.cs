@@ -664,6 +664,7 @@ public class LuaDuel
                     if (defIsPlayer) GameManager.Instance.DamagePlayer(atkPower - defPower);
                     else GameManager.Instance.DamageOpponent(atkPower - defPower);
                     
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
                     GameManager.Instance.SendToGraveyard(defCard.CurrentCardData, defCard.isPlayerCard, CardLocation.Field, SendReason.Battle);
                     GameObject.Destroy(defCard.gameObject);
                 }
@@ -672,11 +673,16 @@ public class LuaDuel
                     if (atkIsPlayer) GameManager.Instance.DamagePlayer(defPower - atkPower);
                     else GameManager.Instance.DamageOpponent(defPower - atkPower);
                     
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(atkCard);
                     GameManager.Instance.SendToGraveyard(atkCard.CurrentCardData, atkCard.isPlayerCard, CardLocation.Field, SendReason.Battle);
                     GameObject.Destroy(atkCard.gameObject);
                 }
                 else
                 {
+                    if (DuelFXManager.Instance != null) {
+                        DuelFXManager.Instance.PlayDestruction(atkCard);
+                        DuelFXManager.Instance.PlayDestruction(defCard);
+                    }
                     GameManager.Instance.SendToGraveyard(atkCard.CurrentCardData, atkCard.isPlayerCard, CardLocation.Field, SendReason.Battle);
                     GameObject.Destroy(atkCard.gameObject);
                     GameManager.Instance.SendToGraveyard(defCard.CurrentCardData, defCard.isPlayerCard, CardLocation.Field, SendReason.Battle);
@@ -692,13 +698,26 @@ public class LuaDuel
                         if (defIsPlayer) GameManager.Instance.DamagePlayer(atkPower - defPower);
                         else GameManager.Instance.DamageOpponent(atkPower - defPower);
                     }
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
                     GameManager.Instance.SendToGraveyard(defCard.CurrentCardData, defCard.isPlayerCard, CardLocation.Field, SendReason.Battle);
                     GameObject.Destroy(defCard.gameObject);
                 }
                 else if (atkPower < defPower)
                 {
+                    if (DuelFXManager.Instance != null) {
+                        DuelFXManager.Instance.PlayAttackFail(atkCard);
+                        DuelFXManager.Instance.PlayDefenseSuccessEffect(defCard);
+                    }
                     if (atkIsPlayer) GameManager.Instance.DamagePlayer(defPower - atkPower);
                     else GameManager.Instance.DamageOpponent(defPower - atkPower);
+                }
+                else
+                {
+                    // Equal ATK and DEF: reflect VFX but no damage
+                    if (DuelFXManager.Instance != null) {
+                        DuelFXManager.Instance.PlayAttackFail(atkCard);
+                        DuelFXManager.Instance.PlayDefenseSuccessEffect(defCard);
+                    }
                 }
             }
         }
