@@ -1046,7 +1046,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                         if (GameManager.Instance != null && GameManager.Instance.confirmAttackTarget && UIManager.Instance != null)
                         {
                             if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.LockOn(transform);
-                            UIManager.Instance.ShowConfirmation($"Atacar {currentCardData.name}?", () => {
+                            string targetName = isFlipped ? "monstro virado para baixo" : currentCardData.name;
+                            UIManager.Instance.ShowConfirmation($"Atacar {targetName}?", () => {
                                 ExecuteAttackToTarget(this);
                             }, () => {
                                 if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Unlock();

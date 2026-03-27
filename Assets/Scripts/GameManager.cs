@@ -2769,6 +2769,20 @@ public void ShuffleDeck(bool isPlayer)
             // Toca efeito visual e notifica a Corrente (Trap Holes)
             bool isFusion = cardData.type.Contains("Fusion");
             bool isRitual = cardData.type.Contains("Ritual");
+
+            // Adiciona o display de stats se a opção estiver ativa (COPIADO DE SpecialSummonFromData)
+            if (monsterStatDisplayMode != StatDisplayMode.None && fieldStatDisplayPrefab != null && cardData.type.Contains("Monster"))
+            {
+                GameObject statGO = Instantiate(fieldStatDisplayPrefab, cardGO.transform.parent);
+                FieldStatUI statUI = statGO.GetComponent<FieldStatUI>();
+                if (statUI != null)
+                {
+                    statUI.Setup(display);
+                }
+                float adjustment = (monsterStatDisplayMode == StatDisplayMode.AboveCard) ? -cardYAdjustmentForStats : cardYAdjustmentForStats;
+                cardGO.transform.localPosition += new Vector3(0, adjustment, 0);
+            }
+
             bool useCinematic = false;
             
             if (isFusion) useCinematic = enableFusionCinematic && !isSimulating && !isFaceDown;

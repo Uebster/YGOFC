@@ -36,3 +36,42 @@ O controle de tempo da *Standby Phase* apresentou dois sintomas distintos que ma
     
     TryChangePhase(GamePhase.Main1);
     ```
+
+---
+
+## 3. FieldStats Dinâmico e Posicionamento (ATK/DEF no Campo)
+*   **Sintoma:** O display de ATK/DEF não aparecia para todas as invocações, ficava atrás da carta e revelava os status de monstros virados para baixo do oponente.
+*   **A Causa Raiz:** O prefab de texto estava sendo instanciado como filho do `CardDisplay`, sofrendo interferência do `Canvas` da carta (renderizando atrás). Além disso, a lógica de instanciação só estava presente na Invocação Especial.
+*   **A Solução:** O `FieldStatUI` foi alterado para ser instanciado como *irmão* da carta na hierarquia (na própria zona). Ele usa `LateUpdate()` para seguir as coordenadas da carta alvo e aplicar o `Y Offset` (acima ou abaixo), compensando a escala. O código foi injetado também no `FinalizeSummon` para cobrir Invocações Normais. Adicionamos uma trava no `UpdateStats()`: se a carta estiver virada para baixo (`isFlipped`) e for do oponente, o texto recebe `""` (vazio), impedindo o jogador de espionar os dados antes do ataque.
+
+---
+
+## 4. Cinemáticas de Invocação (Fusão e Ritual)
+*   **O Desafio:** As invocações de Fusão e Ritual aconteciam de forma instantânea e sem impacto visual, destoando da importância dessas mecânicas.
+*   **A Solução:** Foram criadas rotinas assíncronas no `DuelFXManager` (`PlayFusionCinematic` e `PlayRitualCinematic`). Elas instanciam um `DarkOverlay` no Canvas raiz para focar a atenção, usam matemática de seno/cosseno para fazer as cartas materiais orbitarem o centro (Fusão) ou aplicam símbolos de fundo giratórios (Ritual). A engine Lua é pausada enquanto a animação roda e retoma através do callback `onCinematicComplete` antes de colocar o monstro definitivo no tabuleiro e disparar o evento de sucesso.
+
+---
+
+## 5. Cartas Nascendo Fora do Campo e Escala Incorreta
+*   **Sintoma:** Após certas invocações, cinemáticas ou trocas de controle (*Snatch Steal*), a carta aterrissava fora do centro da zona de monstro ou ficava gigantesca.
+*   **A Causa Raiz:** Animações baseadas em corrotinas alteravam o `localScale` e a posição global da carta para criar o efeito de voo. Ao trocar o `parent` da carta para a nova zona no final da animação, os valores alterados eram mantidos pela Unity.
+*   **A Solução:** Adição de "Hard Resets" no `GameManager`. Sempre que uma carta é anexada a uma zona (ex: `cardGO.transform.SetParent(targetZone)` no `FinalizeSummon` ou no `ControlSwapRoutine`), o código força `localPosition = Vector3.zero` e `localScale = GameManager.Instance.fieldCardScale`, garantindo o encaixe e tamanho perfeitos no tabuleiro.
+
+---
+
+## 6. Spoiler do Nome em Ataques a Monstros Setados
+*   **Sintoma:** Ao clicar para atacar um monstro inimigo virado para baixo, a janela de confirmação perguntava "Deseja atacar [Nome do Monstro]?", revelando a identidade da carta antes do Damage Step.
+*   **A Causa Raiz:** O modal de UI lia diretamente o `currentCardData.name` do alvo selecionado para montar a string de confirmação, ignorando o estado visual (`isFlipped`) da carta.
+*   **A Solução:** No `CardDisplay.cs`, a chamada do modal foi interceptada com uma verificação ternária simples: `string targetName = isFlipped ? "monstro virado para baixo" : currentCardData.name;`.
+
+---
+
+## 7. A Máquina de Estados da Espada de Mira (Targeting Sword)
+*   **O Desafio:** A "espadinha" que indica o alvo do ataque era estática, instável e não tinha animação de voo, o que deixava o combate confuso.
+*   **A Solução:** O `TargetingSwordUI.cs` foi reescrito como uma Máquina de Estados (`SwordState`).
+    1.  **Hovering:** Aparece apontando para o mouse só de passar o cursor sobre um monstro apto a atacar.
+    2.  **FollowingMouse:** Prende-se ao atacante selecionado e a ponta acompanha o cursor livremente pelo campo.
+    3.  **LockedOnTarget:** Trava no alvo durante o popup de confirmação de ataque, apontando diretamente para ele. Destrava se a ação for cancelada.
+    4.  **Attacking:** Inicia uma corrotina que interpola a posição da espada do atacante até o alvo. Adicionamos a corrotina `TrailEffect` que clona o sprite da espada com Alpha reduzido e aplica um *Fade Out*, criando um "Rastro de Sombra" durante o voo até o impacto com instâncias que se autodestroem para evitar memory leaks.
+
+---

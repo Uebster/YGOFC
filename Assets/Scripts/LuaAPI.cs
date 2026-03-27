@@ -665,8 +665,6 @@ public class LuaDuel
                     else GameManager.Instance.DamageOpponent(atkPower - defPower);
                     
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
-                    GameManager.Instance.SendToGraveyard(defCard.CurrentCardData, defCard.isPlayerCard, CardLocation.Field, SendReason.Battle);
-                    GameObject.Destroy(defCard.gameObject);
                 }
                 else if (atkPower < defPower)
                 {
@@ -674,8 +672,6 @@ public class LuaDuel
                     else GameManager.Instance.DamageOpponent(defPower - atkPower);
                     
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(atkCard);
-                    GameManager.Instance.SendToGraveyard(atkCard.CurrentCardData, atkCard.isPlayerCard, CardLocation.Field, SendReason.Battle);
-                    GameObject.Destroy(atkCard.gameObject);
                 }
                 else
                 {
@@ -683,10 +679,6 @@ public class LuaDuel
                         DuelFXManager.Instance.PlayDestruction(atkCard);
                         DuelFXManager.Instance.PlayDestruction(defCard);
                     }
-                    GameManager.Instance.SendToGraveyard(atkCard.CurrentCardData, atkCard.isPlayerCard, CardLocation.Field, SendReason.Battle);
-                    GameObject.Destroy(atkCard.gameObject);
-                    GameManager.Instance.SendToGraveyard(defCard.CurrentCardData, defCard.isPlayerCard, CardLocation.Field, SendReason.Battle);
-                    GameObject.Destroy(defCard.gameObject);
                 }
             }
             else // Defesa
@@ -699,8 +691,6 @@ public class LuaDuel
                         else GameManager.Instance.DamageOpponent(atkPower - defPower);
                     }
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
-                    GameManager.Instance.SendToGraveyard(defCard.CurrentCardData, defCard.isPlayerCard, CardLocation.Field, SendReason.Battle);
-                    GameObject.Destroy(defCard.gameObject);
                 }
                 else if (atkPower < defPower)
                 {

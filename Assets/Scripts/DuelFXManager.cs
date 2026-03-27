@@ -375,6 +375,7 @@ public class DuelFXManager : MonoBehaviour
     {
         Debug.Log($"[DuelFXManager] PlayDestruction em {card?.CurrentCardData?.name}");
         if (!enableAnimations || card == null) return;
+        GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard, CardLocation.Field, SendReason.Battle);
         PlaySound(destroySound);
         SpawnVFXPublic(explosionVFX, card.transform.position);
         AnimateCardDeath(card, false); // Morte Explosiva (Fantasmas)
@@ -457,6 +458,10 @@ public class DuelFXManager : MonoBehaviour
         
         if (isBanish) StartCoroutine(BanishGhostRoutine(ghost));
         else StartCoroutine(DestroyGhostRoutine(ghost));
+
+        // Destrói o objeto original imediatamente após criar o fantasma.
+        // A corrotina do fantasma é independente e continuará.
+        if (card != null) Destroy(card.gameObject);
     }
 
     private IEnumerator BanishGhostRoutine(GameObject ghost)

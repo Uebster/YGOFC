@@ -13,6 +13,7 @@ public class FieldStatUI : MonoBehaviour
     private int lastAtk;
     private int lastDef;
     private CardDisplay.BattlePosition lastPos;
+    private bool lastFlipped;
 
     // Método público para receber a referência da carta que deve seguir
     public void Setup(CardDisplay cardToFollow)
@@ -59,7 +60,15 @@ public class FieldStatUI : MonoBehaviour
         if (attachedCard == null || gm == null) return;
 
         // Otimização: Só atualiza o texto se os valores ou a posição mudaram
-        if (attachedCard.currentAtk == lastAtk && attachedCard.currentDef == lastDef && attachedCard.position == lastPos) return;
+        if (attachedCard.currentAtk == lastAtk && attachedCard.currentDef == lastDef && attachedCard.position == lastPos && attachedCard.isFlipped == lastFlipped) return;
+
+        // Oculta os stats se a carta estiver virada para baixo e for do oponente
+        if (attachedCard.isFlipped && !attachedCard.isPlayerCard)
+        {
+            statText.text = "";
+            lastAtk = attachedCard.currentAtk; lastDef = attachedCard.currentDef; lastPos = attachedCard.position; lastFlipped = attachedCard.isFlipped;
+            return;
+        }
 
         string atkColorHex = ColorUtility.ToHtmlStringRGB(GetStatColor(attachedCard.currentAtk, attachedCard.originalAtk));
         string defColorHex = ColorUtility.ToHtmlStringRGB(GetStatColor(attachedCard.currentDef, attachedCard.originalDef));
@@ -75,7 +84,7 @@ public class FieldStatUI : MonoBehaviour
 
         statText.text = $"{atkString}  {defString}";
 
-        lastAtk = attachedCard.currentAtk; lastDef = attachedCard.currentDef; lastPos = attachedCard.position;
+        lastAtk = attachedCard.currentAtk; lastDef = attachedCard.currentDef; lastPos = attachedCard.position; lastFlipped = attachedCard.isFlipped;
     }
 
     private Color GetStatColor(int current, int original) => current > original ? gm.statBuffColor : (current < original ? gm.statDebuffColor : Color.white);

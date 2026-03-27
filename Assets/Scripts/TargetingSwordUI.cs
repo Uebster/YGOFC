@@ -14,6 +14,11 @@ public class TargetingSwordUI : MonoBehaviour
     [Header("State")]
     public SwordState currentState = SwordState.Hidden;
 
+    [Header("Trail Effect")]
+    public bool enableTrail = true;
+    public float trailInterval = 0.02f;
+    public float trailFadeTime = 0.3f;
+
     [Header("References")]
     private RectTransform rectTransform;
     private Image img;
@@ -177,6 +182,7 @@ public class TargetingSwordUI : MonoBehaviour
         this.onAttackHit = onHit;
         currentState = SwordState.Attacking;
 
+        if (enableTrail) StartCoroutine(TrailEffect());
         StartCoroutine(AnimateAttackRoutine());
     }
 
@@ -186,6 +192,36 @@ public class TargetingSwordUI : MonoBehaviour
         lockedTarget = null;
         currentState = SwordState.Hidden;
         if (img != null) img.enabled = false;
+    }
+
+    private IEnumerator TrailEffect()
+    {
+        while (currentState == SwordState.Attacking)
+        {
+            GameObject trailGO = new GameObject("SwordTrail");
+            trailGO.transform.SetParent(transform.parent, false);
+            trailGO.transform.SetAsFirstSibling();
+
+            Image trailImg = trailGO.AddComponent<Image>();
+            trailImg.sprite = this.img.sprite;
+            trailImg.color = new Color(0, 0, 0, 0.35f); // Sombra preta semitransparente
+
+            RectTransform trailRect = trailGO.GetComponent<RectTransform>();
+            trailRect.position = rectTransform.position;
+            trailRect.rotation = rectTransform.rotation;
+            trailRect.localScale = rectTransform.localScale;
+            trailRect.sizeDelta = rectTransform.sizeDelta;
+
+            StartCoroutine(FadeOutTrail(trailImg));
+            yield return new WaitForSeconds(trailInterval);
+        }
+    }
+
+    private IEnumerator FadeOutTrail(Image trailImg)
+    {
+        float t = 0f;
+        while (t < 1f) { t += Time.deltaTime / trailFadeTime; trailImg.color = new Color(0, 0, 0, Mathf.Lerp(0.35f, 0f, t)); yield return null; }
+        if (trailImg != null && trailImg.gameObject != null) Destroy(trailImg.gameObject);
     }
 
     private IEnumerator AnimateAttackRoutine()
