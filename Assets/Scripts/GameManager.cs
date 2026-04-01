@@ -3891,9 +3891,14 @@ public void ShuffleDeck(bool isPlayer)
         CardLink link = linkObj.AddComponent<CardLink>();
         link.Initialize(source, target, type);
 
-        if (type == CardLink.LinkType.Equipment && CardEffectManager.Instance != null)
+        if (type == CardLink.LinkType.Equipment)
         {
-            CardEffectManager.Instance.OnCardEquipped(source, target);
+            // Toca a animação do Fantasma indo em direção ao alvo
+            if (DuelFXManager.Instance != null)
+                DuelFXManager.Instance.PlayEquipEffect(source, target);
+                
+            if (CardEffectManager.Instance != null)
+                CardEffectManager.Instance.OnCardEquipped(source, target);
         }
     }
 

@@ -64,9 +64,9 @@ public class EffectTestManager : MonoBehaviour
         TestAction("Summon Cinemático", () => { EnsurePlayerMonster(); DuelFXManager.Instance.PlaySummonCinematic(playerMonster, false, true, null); });
         TestAction("Fusion Spin", () => { EnsurePlayerMonster(); DuelFXManager.Instance.PlayFusionEffect(playerMonster); });
         TestAction("Efeito de Poeira (Set)", () => { EnsurePlayerMonster(); DuelFXManager.Instance.PlayFlipEffect(playerMonster); });
-        TestAction("Virar Carta (Flip 3D/2D)", () => { EnsurePlayerMonster(); playerMonster.FlipCard(); });
-        TestAction("Mudar Posição (Atk <-> Def)", () => { EnsurePlayerMonster(); playerMonster.ChangePosition(); });
-         
+        TestAction("Virar Carta (Flip 3D/2D)", () => { EnsurePlayerMonster(); playerMonster.FlipCard(); }, false);
+        TestAction("Mudar Posição (Atk <-> Def)", () => { EnsurePlayerMonster(); playerMonster.ChangePosition(); }, false);
+                 
         GUILayout.Space(5);
         GUILayout.Label("<color=cyan><b>MAGIAS E EFEITOS</b></color>");
         TestAction("Ativar Magia (Spell)", () => { EnsurePlayerSpell(); DuelFXManager.Instance.PlayCardActivation(playerSpell, false); });
@@ -123,11 +123,11 @@ public class EffectTestManager : MonoBehaviour
     }
 
     // Wrapper para executar uma ação de teste, limpando o campo antes.
-    private void TestAction(string buttonText, System.Action testAction)
+    private void TestAction(string buttonText, System.Action testAction, bool clearField = true)
     {
         if (GUILayout.Button(buttonText, btnStyle))
         {
-            ClearFieldForTesting();
+            if (clearField) ClearFieldForTesting();
             testAction?.Invoke();
         }
     }

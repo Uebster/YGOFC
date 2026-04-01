@@ -600,7 +600,7 @@ public class DuelFXManager : MonoBehaviour
     public void PlayEquipEffect(CardDisplay source, CardDisplay target)
     {
         Debug.Log($"[DuelFXManager] PlayEquipEffect de {source?.CurrentCardData?.name} para {target?.CurrentCardData?.name}");
-        if (!enableAnimations || source == null || target == null || boardCenter == null) return;
+        if (!enableAnimations || source == null || target == null) return; // FIX: Removida a exigência desnecessária do boardCenter
         StartCoroutine(EquipGhostRoutine(source, target));
     }
 
@@ -608,25 +608,34 @@ public class DuelFXManager : MonoBehaviour
     {
         // Cria o fantasma da carta mágica
         GameObject ghost = new GameObject("EquipGhost", typeof(RectTransform), typeof(RawImage));
-        ghost.transform.SetParent(GetUIParent(), false); ghost.transform.SetAsLastSibling();
+        Transform uiParent = GetUIParent();
+        if (uiParent != null) { ghost.transform.SetParent(uiParent, false); ghost.transform.SetAsLastSibling(); }
 
         RectTransform rt = ghost.GetComponent<RectTransform>();
-        rt.position = source.transform.position; rt.sizeDelta = source.GetComponent<RectTransform>().sizeDelta;
-        rt.rotation = source.transform.rotation; rt.localScale = source.transform.localScale;
+        RectTransform sourceRT = source.GetComponent<RectTransform>();
+        rt.position = sourceRT.position; rt.sizeDelta = sourceRT.sizeDelta;
+        rt.rotation = sourceRT.rotation; rt.localScale = sourceRT.localScale;
 
         RawImage ri = ghost.GetComponent<RawImage>();
-        ri.texture = source.cardImage.texture; ri.color = new Color(1f, 1f, 1f, 0.7f); // Fantasma semitransparente
+        ri.texture = source.cardImage.texture; ri.color = new Color(1f, 1f, 1f, 0.8f); // Fantasma semitransparente
 
         PlaySound(spellSound);
         float t = 0; Vector3 startPos = rt.position; Vector3 startScale = rt.localScale;
+        Vector3 endScale = target.transform.localScale * 0.3f; // Fica pequenininho ao entrar
         
-        // Voa em direção ao alvo encolhendo e girando
+        float startZ = rt.eulerAngles.z;
+        float targetZ = target.transform.eulerAngles.z;
+        
         while (t < 1f) {
             if (target == null) break;
             t += Time.deltaTime * 3f; float smoothT = Mathf.SmoothStep(0, 1, t);
             rt.position = Vector3.Lerp(startPos, target.transform.position, smoothT);
-            rt.Rotate(0, 0, 360f * Time.deltaTime); // Gira
-            rt.localScale = Vector3.Lerp(startScale, startScale * 0.3f, smoothT); // Encolhe para "entrar"
+            
+            // Desliza suavemente para a rotação alvo sem giros extras (0 ou 180 graus dependendo do lado do campo)
+            float currentZ = Mathf.LerpAngle(startZ, targetZ, smoothT);
+            rt.rotation = Quaternion.Euler(0, 0, currentZ); 
+            
+            rt.localScale = Vector3.Lerp(startScale, endScale, smoothT); // Encolhe para "entrar"
             yield return null;
         }
 
