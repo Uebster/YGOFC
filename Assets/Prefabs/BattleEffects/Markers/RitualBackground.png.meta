@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 7abea0b8a1c994f4bb9f9c58547f2da9
+guid: 8a9e3f8841031cc46b26635aee4a0dee
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -6338880756887614095
-    second: Gemini_Generated_Image_kivh5kivh5kivh5k_0
+      213: 7543808486263190842
+    second: Remover fundo suaviz_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Gemini_Generated_Image_kivh5kivh5kivh5k_0
+      name: Remover fundo suaviz_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 0
-        width: 2272
-        height: 1744
+        y: 1
+        width: 1524
+        height: 1023
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 17d87245985c708a0800000000000000
-      internalID: -6338880756887614095
+      spriteID: a357b4579ddf0b860800000000000000
+      internalID: 7543808486263190842
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Gemini_Generated_Image_kivh5kivh5kivh5k_0: -6338880756887614095
+      Remover fundo suaviz_0: 7543808486263190842
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

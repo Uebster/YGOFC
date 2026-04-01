@@ -97,6 +97,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     private UnityWebRequest currentRequest; // Rastreia a requisição ativa para descarte correto
     private bool isAttackSelected = false; // Rastreia se a carta está selecionada para atacar
     [HideInInspector] public bool hasAttackedThisTurn = false; // Rastreia se o monstro já atacou
+
+    [HideInInspector] public int summonedTurnCount = -1; // Rastreia o turno em que a carta foi invocada
+    [HideInInspector] public bool hasChangedPositionThisTurn = false; // Rastreia se a posição foi alterada manualmente
     
     private List<CardDisplay> linkedCardsToHighlight = new List<CardDisplay>();
     private List<GameObject> activeConnectionLines = new List<GameObject>();
@@ -1005,8 +1008,39 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Clique Direito: Mudar Posição (se no campo)
         if (eventData.button == PointerEventData.InputButton.Right && isOnField && currentCardData.type.Contains("Monster"))
         {
-            // TODO LUA: Implementar comunicação genérica de intenção de mudança de posição
-            ChangePosition(); // Por enquanto apenas vira visualmente
+            if (!isPlayerCard && !GameManager.Instance.devMode) return; // Só pode mudar os seus próprios monstros
+
+            if (PhaseManager.Instance != null && (PhaseManager.Instance.currentPhase == GamePhase.Main1 || PhaseManager.Instance.currentPhase == GamePhase.Main2))
+            {
+                if (summonedTurnCount == GameManager.Instance.turnCount)
+                {
+                    if (UIManager.Instance != null && !GameManager.Instance.isSimulating) UIManager.Instance.ShowMessage("Não pode mudar a posição no turno em que foi invocado.");
+                    return;
+                }
+                if (hasAttackedThisTurn)
+                {
+                    if (UIManager.Instance != null && !GameManager.Instance.isSimulating) UIManager.Instance.ShowMessage("Não pode mudar a posição após atacar neste turno.");
+                    return;
+                }
+                if (hasChangedPositionThisTurn)
+                {
+                    if (UIManager.Instance != null && !GameManager.Instance.isSimulating) UIManager.Instance.ShowMessage("Só pode mudar a posição de batalha 1 vez por turno.");
+                    return;
+                }
+                
+                if (GameManager.Instance.confirmBattlePositionChange && UIManager.Instance != null && !GameManager.Instance.isSimulating)
+                {
+                    UIManager.Instance.ShowConfirmation("Mudar a posição de batalha deste monstro?", () => {
+                        hasChangedPositionThisTurn = true;
+                        ChangePosition();
+                    });
+                }
+                else
+                {
+                    hasChangedPositionThisTurn = true;
+                    ChangePosition();
+                }
+            }
             return;
         }
 
@@ -1022,6 +1056,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 {
                     if (eventData.button == PointerEventData.InputButton.Left)
                     {
+                        if (position != BattlePosition.Attack)
+                        {
+                            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Monstros em Defesa não podem atacar.");
+                            return;
+                        }
                         if (hasAttackedThisTurn)
                         {
                             if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Este monstro já atacou neste turno.");
@@ -1072,6 +1111,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                         // Seleciona o monstro do oponente como atacante
                         if (eventData.button == PointerEventData.InputButton.Left)
                         {
+                            if (position != BattlePosition.Attack)
+                            {
+                                if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Monstros em Defesa não podem atacar.");
+                                return;
+                            }
                             if (hasAttackedThisTurn)
                             {
                                 if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Este monstro já atacou neste turno.");

@@ -159,6 +159,12 @@ public class OpponentAI : MonoBehaviour
                 
             bestAction.Execute();
             
+            // Garante que a IA espere correntes resolverem antes de pensar na próxima ação!
+            if (CardEffectManager.Instance != null)
+            {
+                yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield);
+            }
+
             // Espera apenas se não estiver em simulação rápida
             if (!useSimulationFastMode)
                 yield return new WaitForSeconds(actionDelay);
@@ -174,7 +180,7 @@ public class OpponentAI : MonoBehaviour
         // Separa cartas por tipo (EXCLUINDO cartas já usadas neste turno)
         var monsters = hand.Where(go => {
             var cd = go.GetComponent<CardDisplay>();
-            return cd != null && cd.CurrentCardData != null && cd.CurrentCardData.type.Contains("Monster") && !usedCardsThisTurn.Contains(cd.GetInstanceID());
+            return cd != null && cd.CurrentCardData != null && cd.CurrentCardData.type.Contains("Monster") && !cd.CurrentCardData.type.Contains("Ritual") && !cd.CurrentCardData.type.Contains("Fusion") && !cd.CurrentCardData.type.Contains("Synchro") && !cd.CurrentCardData.type.Contains("Xyz") && !cd.CurrentCardData.type.Contains("Link") && !usedCardsThisTurn.Contains(cd.GetInstanceID());
         }).ToList();
         
         var spells = hand.Where(go => {
@@ -341,7 +347,7 @@ public class OpponentAI : MonoBehaviour
         if (GameManager.Instance.normalSummonsThisTurnOpponent > 0) return actions;
 
         var hand = GameManager.Instance.opponentHand;
-        var monstersInHand = hand.Select(go => go.GetComponent<CardDisplay>()).Where(cd => cd != null && cd.CurrentCardData != null && cd.CurrentCardData.type.Contains("Monster")).ToList();
+        var monstersInHand = hand.Select(go => go.GetComponent<CardDisplay>()).Where(cd => cd != null && cd.CurrentCardData != null && cd.CurrentCardData.type.Contains("Monster") && !cd.CurrentCardData.type.Contains("Ritual") && !cd.CurrentCardData.type.Contains("Fusion") && !cd.CurrentCardData.type.Contains("Synchro") && !cd.CurrentCardData.type.Contains("Xyz") && !cd.CurrentCardData.type.Contains("Link")).ToList();
         
         int myMonsterCount = GetMyMonstersOnField().Count;
         int playerStrongestATK = GetPlayerStrongestAtk();
@@ -522,7 +528,7 @@ public class OpponentAI : MonoBehaviour
                 }
 
                 description = $"Ativar Magia {cd.CurrentCardData.name} [Categorias LUA avaliadas]";
-                execution = () => CardEffectManager.Instance.ExecuteCardEffect(cd);
+                execution = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, false);
 
                 // Fallback para tipos persistentes não cobertos bem por categorias simples
                 if (cd.CurrentCardData.property == "Equip")
@@ -656,7 +662,7 @@ public class OpponentAI : MonoBehaviour
 
         foreach (var attacker in myMonsters)
         {
-            if (attacker == null || attacker.position == CardDisplay.BattlePosition.Defense || usedCardsThisTurn.Contains(attacker.GetInstanceID())) continue;
+            if (attacker == null || attacker.position == CardDisplay.BattlePosition.Defense || attacker.hasAttackedThisTurn) continue;
 
             // Avalia o melhor alvo para este atacante
             CardDisplay bestTarget = FindBestTarget(attacker);
@@ -1112,7 +1118,7 @@ public class OpponentAI : MonoBehaviour
     bool HasAttackCapableMonsters()
     {
         var monsters = GetMyMonstersOnField();
-        return monsters.Any(m => m.position == CardDisplay.BattlePosition.Attack && !usedCardsThisTurn.Contains(m.GetInstanceID()));
+        return monsters.Any(m => m.position == CardDisplay.BattlePosition.Attack && !m.hasAttackedThisTurn);
     }
 
     int GetPlayerStrongestAtk()

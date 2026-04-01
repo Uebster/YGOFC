@@ -168,9 +168,10 @@ public class TargetingSwordUI : MonoBehaviour
         }
     }
 
-    public void PerformAttack(CardDisplay target, System.Action onHit)
+    public void PerformAttack(CardDisplay attackerCard, CardDisplay target, System.Action onHit)
     {
-        if (attacker == null)
+        if (attackerCard != null) this.attacker = attackerCard.transform;
+        if (this.attacker == null)
         {
             Debug.LogError("[TargetingSwordUI] Attack performed without an attacker set!");
             onHit?.Invoke();
@@ -297,6 +298,10 @@ public class TargetingSwordUI : MonoBehaviour
             }
         }
         
+        // FIX: Aguarda um único frame para garantir que o sistema de partículas seja inicializado
+        // antes que a lógica do Lua continue e potencialmente altere o estado do jogo (ex: destruindo o alvo).
+        yield return null;
+
         // Signal that the animation has finished and the duel logic can continue
         onAttackHit?.Invoke();
     }

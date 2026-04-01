@@ -1990,13 +1990,13 @@ public class CardEffectManager : MonoBehaviour
         // Só aplicamos a limpeza a Mágicas e Armadilhas
         if (!luaCard.unityData.type.Contains("Spell") && !luaCard.unityData.type.Contains("Trap")) return;
 
-        string prop = luaCard.unityData.property ?? "";
-        string type = luaCard.unityData.type ?? "";
+        string prop = (luaCard.unityData.property ?? "").ToLower();
+        string type = (luaCard.unityData.type ?? "").ToLower();
 
         // Se for de permanência, fica
-        bool isContinuous = type.Contains("Continuous") || prop.Contains("Continuous");
-        bool isEquip = type.Contains("Equip") || prop.Contains("Equip");
-        bool isField = type.Contains("Field") || prop.Contains("Field");
+        bool isContinuous = type.Contains("continuous") || prop.Contains("continuous");
+        bool isEquip = type.Contains("equip") || prop.Contains("equip");
+        bool isField = type.Contains("field") || prop.Contains("field");
         bool hasRemainField = luaCard.registeredEffects.Exists(e => e.code == 17); // 17 = EFFECT_REMAIN_FIELD
 
         if (!isContinuous && !isEquip && !isField && !hasRemainField)

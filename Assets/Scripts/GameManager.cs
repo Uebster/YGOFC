@@ -805,6 +805,8 @@ public class GameManager : MonoBehaviour
         cardDisplay.isPlayerCard = isPlayer;
         cardDisplay.isOnField = true;
         cardDisplay.position = inAttackPosition ? CardDisplay.BattlePosition.Attack : CardDisplay.BattlePosition.Defense;
+        cardDisplay.summonedTurnCount = turnCount;
+        cardDisplay.hasChangedPositionThisTurn = false;
         
         cardDisplay.SetCard(cardData, cardBackTexture, !faceDown);
         
@@ -1803,7 +1805,10 @@ public void ShuffleDeck(bool isPlayer)
                     if (zone != null && zone.childCount > 0)
                     {
                         var card = zone.GetChild(0).GetComponent<CardDisplay>();
-                        if (card != null) card.hasAttackedThisTurn = false;
+                        if (card != null) {
+                            card.hasAttackedThisTurn = false;
+                            card.hasChangedPositionThisTurn = false;
+                        }
                     }
                 }
             }
@@ -1814,7 +1819,10 @@ public void ShuffleDeck(bool isPlayer)
                     if (zone != null && zone.childCount > 0)
                     {
                         var card = zone.GetChild(0).GetComponent<CardDisplay>();
-                        if (card != null) card.hasAttackedThisTurn = false;
+                        if (card != null) {
+                            card.hasAttackedThisTurn = false;
+                            card.hasChangedPositionThisTurn = false;
+                        }
                     }
                 }
             }
@@ -2655,6 +2663,21 @@ public void ShuffleDeck(bool isPlayer)
         bool isPlayer = display != null ? display.isPlayerCard : true;
         string cardName = cardData?.name ?? "Unknown";
 
+        // 0.1 Validação de Limite de Invocação Normal (se não for ignorado por efeito)
+        if (!ignoreLimit && !infiniteNormalSummons)
+        {
+            int currentSummons = isPlayer ? normalSummonsThisTurnPlayer : normalSummonsThisTurnOpponent;
+            if (currentSummons > 0)
+            {
+                Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: Limite de 1 Invocação Normal por turno atingido.");
+                if (isPlayer && !isSimulating && UIManager.Instance != null) 
+                {
+                    UIManager.Instance.ShowMessage("Você já realizou uma Invocação Normal/Set neste turno.");
+                }
+                return false;
+            }
+        }
+
         // 0. Validação de Permissão
         if (isPlayer && !canPlacePlayerCards)
         {
@@ -2689,6 +2712,10 @@ public void ShuffleDeck(bool isPlayer)
         }
         else
         {
+            if (!ignoreLimit && !infiniteNormalSummons) {
+                if (isPlayer) normalSummonsThisTurnPlayer++;
+                else normalSummonsThisTurnOpponent++;
+            }
             FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, cardData.level >= 5, null);
         }
         
@@ -2743,6 +2770,8 @@ public void ShuffleDeck(bool isPlayer)
         {
             display.isInteractable = false; // Desativa o hover de mão (subir)
             display.isOnField = true;
+            display.summonedTurnCount = turnCount; // Registra o turno de invocação
+            display.hasChangedPositionThisTurn = false;
 
             // 1081 - Light of Intervention
             if (isFaceDown && IsCardActiveOnField("1081"))
@@ -3086,8 +3115,11 @@ public void ShuffleDeck(bool isPlayer)
 
         Transform targetZone = null;
 
+        string propStr = cardData.property != null ? cardData.property.ToLower() : "";
+        string typeStr = cardData.type != null ? cardData.type.ToLower() : "";
+
         // 2. Verifica se é Field Spell
-        if (cardData.property == "Field")
+        if (propStr.Contains("field") || typeStr.Contains("field"))
         {
             if (duelFieldUI != null)
                 targetZone = isPlayer ? duelFieldUI.playerFieldSpell : duelFieldUI.opponentFieldSpell;
@@ -3174,19 +3206,26 @@ public void ShuffleDeck(bool isPlayer)
                     else TrophyManager.Instance.TrackStat("spell_activated", 1);
                 }
 
-                // Integração com Interfaces Customizadas e LUA
-                if (cardData.property == "Ritual")
-                {
-                    BeginRitualSummon(display);
-                }
-                else if (cardData.name == "Polymerization" || cardData.name.Contains("Fusion"))
-                {
-                    BeginFusionSummon(display);
-                }
-                else if (CardEffectManager.Instance != null)
-                {
-                    CardEffectManager.Instance.ActivateCard(display, null, null);
-                }
+                System.Action onActivationComplete = () => {
+                    // Integração com Interfaces Customizadas e LUA
+                    if (cardData.property == "Ritual")
+                    {
+                        BeginRitualSummon(display);
+                    }
+                    else if (cardData.name == "Polymerization" || cardData.name.Contains("Fusion"))
+                    {
+                        BeginFusionSummon(display);
+                    }
+                    else if (CardEffectManager.Instance != null)
+                    {
+                        CardEffectManager.Instance.ActivateCard(display, null, null);
+                    }
+                };
+
+                if (DuelFXManager.Instance != null)
+                    DuelFXManager.Instance.PlayCardActivation(display, isTrap, onActivationComplete);
+                else
+                    onActivationComplete();
             }
         }
         
@@ -3269,19 +3308,26 @@ public void ShuffleDeck(bool isPlayer)
             else TrophyManager.Instance.TrackStat("spell_activated", 1);
         }
 
-        // Integração com Interfaces Customizadas e LUA
-        if (cardData.property == "Ritual")
-        {
-            BeginRitualSummon(display);
-        }
-        else if (cardData.name == "Polymerization" || cardData.name.Contains("Fusion"))
-        {
-            BeginFusionSummon(display);
-        }
-        else if (CardEffectManager.Instance != null)
-        {
-            CardEffectManager.Instance.ActivateCard(display, null, null);
-        }
+        System.Action onActivationComplete = () => {
+            // Integração com Interfaces Customizadas e LUA
+            if (cardData.property == "Ritual")
+            {
+                BeginRitualSummon(display);
+            }
+            else if (cardData.name == "Polymerization" || cardData.name.Contains("Fusion"))
+            {
+                BeginFusionSummon(display);
+            }
+            else if (CardEffectManager.Instance != null)
+            {
+                CardEffectManager.Instance.ActivateCard(display, null, null);
+            }
+        };
+
+        if (DuelFXManager.Instance != null)
+            DuelFXManager.Instance.PlayCardActivation(display, isTrap, onActivationComplete);
+        else
+            onActivationComplete();
     }
 
     // --- CONTROLE DE FASE (UI) ---

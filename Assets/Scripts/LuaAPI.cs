@@ -665,6 +665,7 @@ public class LuaDuel
                     else GameManager.Instance.DamageOpponent(atkPower - defPower);
                     
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
+                    GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, SendReason.Battle);
                 }
                 else if (atkPower < defPower)
                 {
@@ -672,6 +673,7 @@ public class LuaDuel
                     else GameManager.Instance.DamageOpponent(defPower - atkPower);
                     
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(atkCard);
+                    GameManager.Instance.MoveCard(atkCard, CardLocation.Graveyard, SendReason.Battle);
                 }
                 else
                 {
@@ -679,6 +681,8 @@ public class LuaDuel
                         DuelFXManager.Instance.PlayDestruction(atkCard);
                         DuelFXManager.Instance.PlayDestruction(defCard);
                     }
+                    GameManager.Instance.MoveCard(atkCard, CardLocation.Graveyard, SendReason.Battle);
+                    GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, SendReason.Battle);
                 }
             }
             else // Defesa
@@ -691,6 +695,7 @@ public class LuaDuel
                         else GameManager.Instance.DamageOpponent(atkPower - defPower);
                     }
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
+                    GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, SendReason.Battle);
                 }
                 else if (atkPower < defPower)
                 {

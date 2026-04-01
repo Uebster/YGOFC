@@ -75,3 +75,44 @@ O controle de tempo da *Standby Phase* apresentou dois sintomas distintos que ma
     4.  **Attacking:** Inicia uma corrotina que interpola a posição da espada do atacante até o alvo. Adicionamos a corrotina `TrailEffect` que clona o sprite da espada com Alpha reduzido e aplica um *Fade Out*, criando um "Rastro de Sombra" durante o voo até o impacto com instâncias que se autodestroem para evitar memory leaks.
 
 ---
+
+## 10. Correções Críticas de Batalha e IA (VFX, Cemitério, Field Spells)
+*   **Sintoma:** O console acusava `Attack performed without an attacker set!`, os efeitos visuais geravam quadrados opacos, os monstros derrotados não iam para o cemitério e a IA descartava as Magias de Campo imediatamente após a ativação.
+*   **A Causa Raiz:** O atacante não estava sendo passado na chamada assíncrona do ataque no LUA. O envio de monstros para o cemitério dependia da animação visual (que por causa da escala do Canvas estava abortando). O LUA verificava as strings "Field" usando Maiúsculas/Minúsculas fixas (Case Sensitive).
+*   **A Solução:** No `DuelFXManager`, passamos o atacante. O `MoveCard` (Envio ao GY + Destroy) foi retornado para o `LuaAPI.cs` logo após os danos, delegando à Unity apenas as criações de fantasmas e poeira no *World Space*. Na limpeza do LUA (`CleanupSpellTrapAfterResolution`) as propriedades foram formatadas com `.ToLower()` para evitar o descarte incorreto.
+
+---
+
+## 11. Limite de Invocações, Batalhas e Looping de Chains
+*   **Sintoma:** O jogo entrava em loop infinito de Chain Links (Link 1, 2, 3...) quando a IA usava magias da mão. Era possível invocar monstros na MP1 e na MP2 livremente e alterar posições de batalha à vontade (como um ioiô).
+*   **A Causa Raiz:** 
+    1. A IA chamava `ExecuteCardEffect` diretamente para magias da mão, o que iniciava a Chain, mas não movia a carta pro campo. Como ela ainda estava na mão, a IA via a mesma jogada vantajosa repetidamente. 
+    2. A trava de 1 Invocação Normal não estava implementada fora dos scripts Lua, permitindo que a UI "furasse a fila" via ação rápida.
+    3. O `ChangePosition` via clique direito não validava os estados de jogo.
+*   **A Solução:**
+    1. Em `OpponentAI`, a IA agora usa `PlaySpellTrap` para cartas da mão. Ela também respeita um `WaitWhile` aguardando a Chain resolver antes de planejar a próxima ação.
+    2. Adicionado o bloqueio hardcoded `normalSummonsThisTurnPlayer > 0` no `TrySummonMonster` do `GameManager`.
+    3. Adicionadas flags `summonedTurnCount` e `hasChangedPositionThisTurn` no `CardDisplay` para bloquear trocas no turno de invocação, ou após atacar, ou mais de 1x por turno.
+
+---
+
+## 12. Ataque Inválido a Partir do Modo de Defesa
+*   **Sintoma:** O jogador conseguia declarar ataques com monstros que estavam em posição de defesa, ignorando as regras do jogo.
+*   **A Causa Raiz:** O evento `OnPointerClick` da carta, que define o `currentAttacker`, não verificava o estado da propriedade `position`. Ele apenas validava se era um monstro, se estava no campo e se ainda não havia atacado.
+*   **A Solução:** Adicionada a validação `if (position != BattlePosition.Attack)` no início do bloco de clique esquerdo durante a Battle Phase, acionando o bloqueio e exibindo o popup "Monstros em Defesa não podem atacar".
+
+---
+
+## 13. Efeitos de Impacto de Batalha (Hit VFX) Invisíveis
+*   **Sintoma:** A animação de "corte" ou "impacto" (`attackVFX`) não aparecia no momento em que a espada do ataque atingia o alvo, embora o som do impacto tocasse.
+*   **A Causa Raiz (Race Condition):** A corrotina de animação da espada (`AnimateAttackRoutine`) instancionava o prefab da partícula e, no mesmo frame, liberava a engine Lua para continuar o cálculo de dano. A lógica do Lua era tão rápida que, em muitos casos, o monstro alvo era destruído e o estado do jogo mudava antes que o `ParticleSystem` da Unity tivesse a chance de renderizar seu primeiro frame, fazendo com que o efeito "nunca aparecesse".
+*   **A Solução:** Foi adicionado um `yield return null;` no final da `AnimateAttackRoutine`, logo após a instanciação do VFX e antes de liberar a engine Lua. Essa pausa de um único frame é imperceptível para o jogador, mas dá tempo suficiente para a Unity processar e iniciar a renderização da partícula, corrigindo a condição de corrida e garantindo que o impacto seja sempre visível.
+
+---
+
+## 14. Renderização de Partículas (VFX) e o "Quadrado Verde"
+*   **Sintoma:** Muitos efeitos de batalha (Hit, Deflect, Banish) não apareciam na tela ou eram substituídos por um retângulo verde/rosa. Efeitos que apareciam pareciam "inclinados".
+*   **A Causa Raiz:** A inclinação era uma configuração de Rotação (`Rotation over Lifetime`) dentro do próprio prefab da partícula. A invisibilidade e os quadrados verdes tinham duas causas: 1) O `DuelFXManager` aplicava um `Destroy(instance, 3.0f)` fixo em todos os efeitos, cortando-os no meio ou apagando-os antes de começarem; 2) O quadrado verde indica um `Material` ausente no componente `Particle System Renderer` do prefab.
+*   **A Solução:** O `DuelFXManager.cs` foi atualizado para gerenciar a destruição de forma inteligente, lendo as propriedades `duration` e `startLifetime` do próprio `ParticleSystem` (`Destroy(instance, ps.main.duration + ps.main.startLifetime.constantMax + 0.5f)`). O script avulso `DestroyOnParticleEnd` foi descartado para manter a arquitetura centralizada e limpa. A correção dos quadrados verdes deve ser feita reatribuindo o material nas propriedades dos prefabs no Inspector.
+
+---

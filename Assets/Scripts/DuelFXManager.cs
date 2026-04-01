@@ -19,7 +19,8 @@ public class DuelFXManager : MonoBehaviour
     [Header("Efeitos Visuais (Prefabs)")]
     public GameObject spellActivateVFX; // Partículas de magia
     public GameObject trapActivateVFX;  // Partículas de armadilha
-    public GameObject summonVFX;        // Invocação Comum
+    public GameObject summonVFX;        // Invocação Comum (Impacto/Poeira)
+    public GameObject tokenSummonVFX;   // Invocação de Ficha (Fumaça/Poof)
     public GameObject tributeSummonVFX; // Invocação por Tributo (Novo)
     public GameObject fusionVFX;        // Fusão
     public GameObject tributeVFX;       // Luz azulada / Portal
@@ -33,7 +34,8 @@ public class DuelFXManager : MonoBehaviour
     public GameObject defenseSuccessVFX;// Defesa bem sucedida (escudo metálico)
     public GameObject chainLinkVFX;     // Prefab do texto flutuante (Ex: "Link 1")
     public GameObject monsterEffectVFX; // Brilho ao ativar efeito de monstro
-    public GameObject summonAuraVFX;    // Aura por trás ao invocar
+    [UnityEngine.Serialization.FormerlySerializedAs("summonAuraVFX")]
+    public GameObject placementAuraVFX; // Aura por trás ao colocar qualquer carta (Pouso)
     public GameObject shuffleVFX;       // Efeito visual (poeira/luz) ao embaralhar
 
     [Header("Cinemáticas de Invocação (Etapa 2)")]
@@ -57,6 +59,7 @@ public class DuelFXManager : MonoBehaviour
     public AudioClip spellSound;
     public AudioClip trapSound;
     public AudioClip summonSound;
+    public AudioClip tokenSummonSound;   // Som de fumaça (Poof)
     public AudioClip fusionSound;
     public AudioClip tributeSound;
     public AudioClip attackDeclareSound; // 1. Clique no monstro para atacar
@@ -361,7 +364,7 @@ public class DuelFXManager : MonoBehaviour
 
         if (TargetingSwordUI.Instance != null)
         {
-            TargetingSwordUI.Instance.PerformAttack(target, onHit);
+            TargetingSwordUI.Instance.PerformAttack(attacker, target, onHit);
         }
         else
         {
@@ -375,7 +378,6 @@ public class DuelFXManager : MonoBehaviour
     {
         Debug.Log($"[DuelFXManager] PlayDestruction em {card?.CurrentCardData?.name}");
         if (!enableAnimations || card == null) return;
-        GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard, CardLocation.Field, SendReason.Battle);
         PlaySound(destroySound);
         SpawnVFXPublic(explosionVFX, card.transform.position);
         AnimateCardDeath(card, false); // Morte Explosiva (Fantasmas)
@@ -392,9 +394,17 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlaySummonEffect(CardDisplay card)
     {
-        Debug.Log($"[DuelFXManager] PlaySummonEffect em {card?.CurrentCardData?.name}");
+        Debug.Log($"[DuelFXManager] PlaySummonEffect (Impacto) em {card?.CurrentCardData?.name}");
         PlaySound(summonSound);
         SpawnVFXPublic(summonVFX, card.transform.position);
+    }
+
+    public void PlayTokenSummonEffect(CardDisplay card)
+    {
+        Debug.Log($"[DuelFXManager] PlayTokenSummonEffect (Fumaça) em {card?.CurrentCardData?.name}");
+        PlaySound(tokenSummonSound != null ? tokenSummonSound : summonSound);
+        GameObject prefab = tokenSummonVFX != null ? tokenSummonVFX : summonVFX;
+        SpawnVFXPublic(prefab, card.transform.position);
     }
 
     public void PlayTributeSummonEffect(CardDisplay card)
@@ -439,11 +449,13 @@ public class DuelFXManager : MonoBehaviour
 
     private void AnimateCardDeath(CardDisplay card, bool isBanish)
     {
-        if (card == null || boardCenter == null) return;
+        if (card == null) return;
+        Transform uiParent = GetUIParent();
+        if (uiParent == null) return;
         
         // Cria um clone visual perfeito (Fantasma) antes da carta original ser deletada pelo jogo
         GameObject ghost = new GameObject("CardGhost", typeof(RectTransform), typeof(RawImage));
-        ghost.transform.SetParent(GetUIParent(), false);
+        ghost.transform.SetParent(uiParent, false);
         ghost.transform.SetAsLastSibling();
         
         RectTransform rt = ghost.GetComponent<RectTransform>();
@@ -458,10 +470,6 @@ public class DuelFXManager : MonoBehaviour
         
         if (isBanish) StartCoroutine(BanishGhostRoutine(ghost));
         else StartCoroutine(DestroyGhostRoutine(ghost));
-
-        // Destrói o objeto original imediatamente após criar o fantasma.
-        // A corrotina do fantasma é independente e continuará.
-        if (card != null) Destroy(card.gameObject);
     }
 
     private IEnumerator BanishGhostRoutine(GameObject ghost)
@@ -569,12 +577,15 @@ public class DuelFXManager : MonoBehaviour
         SpawnVFXPublic(monsterEffectVFX, card.transform.position);
     }
 
-    public void PlaySummonAura(CardDisplay card)
+    // Wrapper de retrocompatibilidade
+    public void PlaySummonAura(CardDisplay card) => PlayPlacementAura(card);
+
+    public void PlayPlacementAura(CardDisplay card)
     {
-        if (!enableAnimations || card == null || summonAuraVFX == null) return;
+        if (!enableAnimations || card == null || placementAuraVFX == null) return;
         
         // Instancia no mesmo PAI da carta (a zona de monstros no tabuleiro)
-        GameObject vfx = Instantiate(summonAuraVFX, card.transform.parent);
+        GameObject vfx = Instantiate(placementAuraVFX, card.transform.parent);
         vfx.transform.position = card.transform.position;
         vfx.transform.SetSiblingIndex(card.transform.GetSiblingIndex()); // Renderiza exatamente atrás da carta na hierarquia
         
@@ -895,14 +906,28 @@ public class DuelFXManager : MonoBehaviour
         {
             Debug.Log($"[DuelFXManager] SpawnVFX: {prefab.name} instanciado com sucesso.");
             GameObject instance = Instantiate(prefab);
-            // Garante que o VFX fique na frente da UI
-            if (boardCenter != null) instance.transform.SetParent(GetUIParent(), false);
-            instance.transform.position = position;
-            instance.transform.SetAsLastSibling(); // Traz para a FRENTE do tabuleiro e cartas
+
+            // Se for interface 2D, prende no Canvas. Se for Partícula 3D, mantém no World Space!
+            if (instance.GetComponent<RectTransform>() != null)
+            {
+                Transform uiParent = GetUIParent();
+                if (uiParent != null)
+                {
+                    instance.transform.SetParent(uiParent, true); // true para manter a posição no World Space original
+                    instance.transform.position = position;
+                    instance.transform.SetAsLastSibling();
+                }
+                else instance.transform.position = position;
+            }
+            else
+            {
+                instance.transform.position = position;
+            }
             
             // FIX: Força Sistemas de Partículas 3D a renderizarem por CIMA do Canvas (Interface)!
             ParticleSystemRenderer[] renderers = instance.GetComponentsInChildren<ParticleSystemRenderer>(true);
-            Canvas rootCanvas = boardCenter != null ? boardCenter.GetComponentInParent<Canvas>() : null;
+            Transform rootUiParent = GetUIParent();
+            Canvas rootCanvas = rootUiParent != null ? rootUiParent.GetComponentInParent<Canvas>() : null;
             string targetLayer = rootCanvas != null ? rootCanvas.sortingLayerName : "Default";
             int targetOrder = rootCanvas != null ? rootCanvas.sortingOrder + 30000 : 30000; // Valor bem alto
             
@@ -912,7 +937,17 @@ public class DuelFXManager : MonoBehaviour
                 r.sortingOrder = targetOrder;
             }
             
-            Destroy(instance, 3.0f); // Limpeza automática
+            // FIX: Lê a duração real do próprio sistema de partículas para a destruição
+            ParticleSystem ps = instance.GetComponent<ParticleSystem>();
+            if (ps != null)
+            {
+                Destroy(instance, ps.main.duration + ps.main.startLifetime.constantMax + 0.5f);
+            }
+            else
+            {
+                Destroy(instance, 5.0f); // Fallback para objetos sem ParticleSystem
+            }
+            
             return instance;
         }
         return null;
