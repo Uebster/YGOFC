@@ -546,6 +546,11 @@ public class DuelFXManager : MonoBehaviour
     public void PlayChainLinkEffect(CardDisplay card, int linkNumber)
     {
         Debug.Log($"[DuelFXManager] PlayChainLinkEffect (Corrente) Link {linkNumber}");
+        
+        // A corrente visual (e seu som) só deve aparecer quando é uma RESPOSTA (Link 2 em diante).
+        // O Link 1 já tem sua própria cinemática e som via PlayCardActivation ou PlayMonsterEffect.
+        if (linkNumber <= 1) return;
+
         // Toca o som de magia/armadilha ativando na corrente
         PlaySound(card.CurrentCardData.type.Contains("Trap") ? trapSound : spellSound);
         
