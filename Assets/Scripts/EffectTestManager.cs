@@ -13,6 +13,7 @@ public class EffectTestManager : MonoBehaviour
     private GUIStyle btnStyle;
     private GUIStyle titleStyle;
     private bool styleInitialized = false;
+    private Vector2 scrollPos;
 
     void InitStyles()
     {
@@ -43,18 +44,30 @@ public class EffectTestManager : MonoBehaviour
 
         InitStyles();
 
-        // Área de fundo escuro
-        GUI.DrawTexture(new Rect(10, 10, 280, Screen.height - 20), darkTex);
+        // Área de fundo escuro (Aumentada para caber a barra de rolagem)
+        GUI.DrawTexture(new Rect(10, 10, 320, Screen.height - 20), darkTex);
 
         // Inicia o Layout
-        GUILayout.BeginArea(new Rect(20, 20, 260, Screen.height - 40));
+        GUILayout.BeginArea(new Rect(20, 20, 300, Screen.height - 40));
         
         GUILayout.Label("--- TESTE DE EFEITOS VFX ---", titleStyle);
         GUILayout.Space(10);
 
         if (GUILayout.Button("LIMPAR CENA", btnStyle)) { ClearFieldForTesting(); }
 
+        // Inicia a área de Rolagem (importante para caber todas as opções)
+        scrollPos = GUILayout.BeginScrollView(scrollPos, false, true, GUILayout.Width(280));
 
+        GUILayout.Label("<color=cyan><b>AURAS DE POUSO COLORIDAS</b></color>");
+        TestAction("Aura: Monstro Normal (Amarelo)", () => TestColoredAura("Monster (Normal)", false));
+        TestAction("Aura: Monstro Efeito (Marrom)", () => TestColoredAura("Monster (Effect)", false));
+        TestAction("Aura: Monstro Fusão (Roxo)", () => TestColoredAura("Monster (Fusion)", false));
+        TestAction("Aura: Monstro Ritual (Azul)", () => TestColoredAura("Monster (Ritual)", false));
+        TestAction("Aura: Magia (Verde)", () => TestColoredAura("Spell", false));
+        TestAction("Aura: Armadilha (Rosa)", () => TestColoredAura("Trap", false));
+        TestAction("Aura: Carta Baixada (Cinza)", () => TestColoredAura("Monster (Normal)", true));
+
+        GUILayout.Space(5);
         // As cartas são geradas dinamicamente e de forma inteligente a cada clique!
         GUILayout.Label("<color=cyan><b>POUSO E INVOCAÇÕES</b></color>");
         TestAction("Aura de Pouso (Universal)", () => { EnsurePlayerMonster(); DuelFXManager.Instance.PlayPlacementAura(playerMonster); });
@@ -102,8 +115,8 @@ public class EffectTestManager : MonoBehaviour
         TestAction("Apenas Banir (Vórtice)", () => { EnsureOpponentMonster(); DuelFXManager.Instance.PlayBanishEffect(opponentMonster); });
         TestAction("Trocar Controle (Change of Heart)", () => { EnsureOpponentMonster(); GameManager.Instance.SwitchControl(opponentMonster); });
 
-        GUILayout.FlexibleSpace(); // Empurra pro fundo
         
+        GUILayout.Space(5);
         GUILayout.Label("<color=cyan><b>GLOBAIS</b></color>");
         TestAction("Tremor de Dano na Tela", () => DuelFXManager.Instance.PlayDamageEffect(Vector3.zero));
         TestAction("Teste: Cinemática de Ritual", () => {
@@ -116,9 +129,11 @@ public class EffectTestManager : MonoBehaviour
              DuelFXManager.Instance.PlayFusionCinematic(playerMonster, mats, playerSpell.CurrentCardData, null);
         });
         TestAction("Embaralhar Deck (Shuffle)", () => {
-             if (GameManager.Instance.duelFieldUI != null) DuelFXManager.Instance.PlayShuffleEffect(GameManager.Instance.duelFieldUI.playerDeck);
+             if (GameManager.Instance.duelFieldUI != null && GameManager.Instance.duelFieldUI.playerDeck != null) 
+                 DuelFXManager.Instance.PlayShuffleEffect(GameManager.Instance.duelFieldUI.playerDeck);
         });
 
+        GUILayout.EndScrollView();
         GUILayout.EndArea();
     }
 
@@ -130,6 +145,21 @@ public class EffectTestManager : MonoBehaviour
             if (clearField) ClearFieldForTesting();
             testAction?.Invoke();
         }
+    }
+
+    private void TestColoredAura(string mockType, bool isFaceDown)
+    {
+        EnsurePlayerMonster();
+        string originalType = playerMonster.CurrentCardData.type;
+        bool originalFlipped = playerMonster.isFlipped;
+
+        playerMonster.CurrentCardData.type = mockType;
+        playerMonster.isFlipped = isFaceDown;
+
+        DuelFXManager.Instance.PlayPlacementAura(playerMonster);
+
+        playerMonster.CurrentCardData.type = originalType;
+        playerMonster.isFlipped = originalFlipped;
     }
 
     void ClearFieldForTesting()

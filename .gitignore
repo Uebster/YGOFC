@@ -71,9 +71,17 @@ Assets/Hovl Studio/
 Assets/Travis Game Assets/
 Assets/UnityTechnologies/
 Assets/100BestEffectPack/
+Assets/Inguz Media Studio/
+Assets/Vefects/
+Assets/VisualX_Studio/
 Assets/Support/
+Assets/FX_Kandol_Pack/
 
 # Ignorar documentações de rascunho
 Assets/Documentation/Padroes_e_Atalhos.md
+Assets/Documentation/Fix_History.md
 Assets/Documentation/Sketch*
 Assets/Documentation/Ideas*
+
+
+SpriteGeneratorAI/

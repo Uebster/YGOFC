@@ -111,9 +111,21 @@ A aquisição de dados brutos foi centralizada em uma única e poderosa ferramen
 *   **`test_deck_system.py`:** Importa o núcleo (`duel_core`) para simular a criação, embaralhamento e compra de uma mão de 5 cartas de um bot no console Python.
 *   **`generate_fields.py`:** Converte a lista de textos em `fields.json` para o sistema de arenas.
 
-### 2.3.6 Ferramentas de Editor Unity (`HierarchyDumper.cs`)
-*   **Caminho:** `Assets/Scripts/Editor/HierarchyDumper.cs`
-*   **Função:** Ferramenta de debugging de UI. Ao clicar com o botão direito em um GameObject na janela *Hierarchy* e selecionar **"Dump Hierarchy (Copiar Texto)"**, o script copia a árvore completa do objeto e seus componentes (ignorando lixo como `Transform` e `CanvasRenderer`) diretamente para a área de transferência do Windows. Vital para documentação e para enviar o esqueleto da interface gráfica (ex: Árvore do Deck Builder) para a IA.
+### 2.3.6 Ferramentas de Editor Unity (`HierarchyDumper.cs`, `InspectorDumper.cs`, `VFXOptimizer.cs`, `VFXBuilder.cs`)
+Estas ferramentas facilitam a extração e criação ágil de dados da Unity.
+
+*   **`HierarchyDumper.cs`:**
+    *   **Caminho:** `Assets/Scripts/Editor/HierarchyDumper.cs`
+    *   **Função:** Ferramenta de debugging estrutural. Ao clicar com o botão direito em um GameObject na janela *Hierarchy* e selecionar **"Dump Hierarchy (Copiar Texto)"**, o script copia a árvore completa do objeto e seus componentes (ignorando lixo como `Transform` e `CanvasRenderer`) diretamente para a área de transferência. Vital para enviar o esqueleto da interface gráfica (ex: Árvore do Deck Builder).
+*   **`InspectorDumper.cs`:**
+    *   **Caminho:** `Assets/Scripts/Editor/InspectorDumper.cs`
+    *   **Função:** Ferramenta de extração de propriedades. Lê todos os valores, checkboxes, cores e referências visíveis no *Inspector*. Funciona tanto para GameObjects na cena quanto para Assets na pasta Project (Prefabs, ScriptableObjects, Materiais). Acessível via clique direito **"Dump Inspector (Copiar Texto)"**. Excelente para debugar configurações matemáticas ou copiar parâmetros complexos de *Particle Systems*.
+*   **`VFXOptimizer.cs`:**
+    *   **Caminho:** `Assets/Scripts/Editor/VFXOptimizer.cs`
+    *   **Função:** Canivete suíço de Editor para partículas. Possui ferramentas acessíveis via clique direito para formatar qualquer partícula da internet para a engine do jogo. **"Otimizar para Impacto"** troca emissões contínuas por "Bursts" curtos. **"Escalar para UI"** multiplica os vetores matemáticos da partícula por 50x, resolvendo o bug visual de sistemas de partículas 3D se tornarem invisíveis (tamanho de 2 a 3 pixels) ao serem instanciados em *Canvas* 2D.
+*   **`VFXBuilder.cs`:**
+    *   **Caminho:** `Assets/Scripts/Editor/VFXBuilder.cs`
+    *   **Função:** "Engine de VFX" portátil ativada no menu de topo `Tools -> VFX Builder`. Gera *Particle Systems* complexos prontos para Canvas UI com apenas um clique. Possui 6 *presets* base (Fogo, Fumaça, Luz, Água, etc.) e permite afinação fina de Duração, Âncora de Espalhamento (Shape), Velocidade, Fades, Rastros e customização automática de Materiais arrastando arquivos `.png` crus pro painel.
 
 ### 2.3.7 Debug In-Game (`InGameDebugConsole.cs`)
 Painel invisível, configurado como `DontDestroyOnLoad`, que coleta logs durante builds compiladas.

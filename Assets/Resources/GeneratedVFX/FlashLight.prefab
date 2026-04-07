@@ -1,0 +1,112 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7934084230685897111
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1353731822944775532}
+  - component: {fileID: 1825867225527238949}
+  - component: {fileID: 97935629736200741}
+  - component: {fileID: 1944022718720342351}
+  m_Layer: 0
+  m_Name: FlashLight
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1353731822944775532
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7934084230685897111}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 120, y: 120}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &1825867225527238949
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7934084230685897111}
+  m_CullTransparentMesh: 1
+--- !u!114 &97935629736200741
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7934084230685897111}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1944022718720342351
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7934084230685897111}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d486ccd6fdb6694cae94ea90c3b5cdb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIAnimatedEffect
+  frames:
+  - {fileID: -5913738696227704600, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: 2547833562694337563, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: 6843794886158185354, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: -3387278339124063680, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: -8643305273727374985, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: 6436757333206841332, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: 64820285256434728, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: -8834050499266720652, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: 4412575289358642907, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: 3425613245530489712, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: -7499388828452178614, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: -347548747246129560, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: 2652013488926498905, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: -3416464719152510570, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: -8277718967371226774, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: 5574456035322008005, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: -4124319918798350610, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  - {fileID: -1280742268631485899, guid: d60b5d26925e79448847d6deef0f81be, type: 3}
+  framesPerSecond: 72
+  destroyOnEnd: 1
+  loop: 0

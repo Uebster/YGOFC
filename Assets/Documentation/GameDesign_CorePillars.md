@@ -56,7 +56,7 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **2.3.3** Aquisição e Scrapers (`download_cards_ultimate.py`, UI Flask, Multi-Task)
     *   **2.3.4** Geradores de Personagens e Bots (Temas, Cores, Dependências e Escalamento A/B/C, `generate_characters.py`, `generate_character_decks.py`, `generate_character_rewards.py`)
     *   **2.3.5** Validadores Externos (`test_card_viewer.py`, Pygame Viewer, `test_deck_system.py`, `generate_fields.py`)
-    *   **2.3.6** Ferramentas de Editor Unity (`HierarchyDumper.cs`)
+    *   **2.3.6** Ferramentas de Editor Unity (`HierarchyDumper.cs`, `InspectorDumper.cs`, `VFXOptimizer.cs`)
     *   **2.3.7** Debug In-Game (`InGameDebugConsole.cs`, Ctrl+Shift+D)
     *   **2.3.8** Analisador Estático de Scripts Lua (`cardslua_analyzer.py`)
 *   **2.4.** Sistema de Save e Carregamento (Persistência)
@@ -183,13 +183,13 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **9.3.4** Biblioteca de Decks (`Panel_LibDecks`, `DeckLibraryManager.cs`, Grind de Variantes A/B/C)
     *   **9.3.5** Biblioteca de Arenas (`Panel_LibArenas`, `ArenaLibraryManager.cs`)
 *   **9.4.** Mecânica Efêmera da Tag "NEW" (Lógica de Persistência, `SaveLoadSystem.MarkCardAsUsed`)
-*   **9.5.** Sistemas de Teste, Debug e UI Dinâmica (`DamagePopupManager.cs`, `MouseTooltipUI.cs`, `FullTestManager.cs`, Toggles, Dev Card Menu, `InGameDebugConsole.cs`)
+*   **9.5.** Sistemas de Teste, Debug e UI Dinâmica (`DamagePopupManager.cs`, `MouseTooltipUI.cs`, `FullTestManager.cs`, `EffectTestManager.cs`, Toggles, Dev Card Menu, `InGameDebugConsole.cs`)
 *   **9.6.** Simulador de Caos (`SimulationManager.cs`, Bypass de UI, Visual Mode 1.5x, Fast Mode 50x)
 *   **9.7.** Sistema de Temas de Duelo (`DuelThemeManager.cs`, `DuelTheme`)
     *   **9.7.1** Arquitetura de Temas (Console e Cartuchos)
-    *   **9.7.2** Configurando o Relógio de Turnos (`TurnClockUI`, Camadas e Pivot)
+*       **9.7.2** Configurando o Relógio de Turnos (`TurnClockUI`, Rotação Dinâmica, Camadas e Pivot)
     *   **9.7.3** Minigames Dinâmicos (Moeda e Dados)
-*   **9.8.** Efeitos Visuais e Sonoros (`DuelFXManager.cs`, Tabela de VFX de Cartas/Batalha, Música Dinâmica/BGM)
+*   **9.8.** Efeitos Visuais e Sonoros (`DuelFXManager.cs`, `UIAnimatedEffect.cs`, Temas de Magia de Campo, Auras Coloridas, Spin 2D, Música Dinâmica)
 
 ---
 

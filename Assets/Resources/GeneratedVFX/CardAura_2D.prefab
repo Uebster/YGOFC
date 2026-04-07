@@ -1,0 +1,116 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5732867552576158396
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5316658663330817424}
+  - component: {fileID: 2128573340579496187}
+  - component: {fileID: 9104398188860211476}
+  - component: {fileID: 2904365434545221971}
+  m_Layer: 0
+  m_Name: CardAura_2D
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &5316658663330817424
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5732867552576158396}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 1.0120239, y: 0}
+  m_SizeDelta: {x: 115, y: 120}
+  m_Pivot: {x: 0.511, y: 0.5}
+--- !u!222 &2128573340579496187
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5732867552576158396}
+  m_CullTransparentMesh: 1
+--- !u!114 &9104398188860211476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5732867552576158396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 2100000, guid: 1ab439c8929ae2c4d969647b9140a029, type: 2}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &2904365434545221971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5732867552576158396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d486ccd6fdb6694cae94ea90c3b5cdb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIAnimatedEffect
+  frames:
+  - {fileID: -5100022986352662232, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: -361539168, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: 975935226, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: -128589647, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: -1669559958, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: -99211046, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: -1559670120, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: 1382085137, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: 1907297170, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: 2020178770, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: -487074814, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: -2001024571, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: 795505452, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: -1024857035, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: -1651903966, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: 353055690, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: -1154985673, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: 14661422, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: 1638872568, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  - {fileID: 467354723, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
+  framesPerSecond: 60
+  destroyOnEnd: 1
+  loop: 0
+  spin: 0
+  spinSpeed: -360

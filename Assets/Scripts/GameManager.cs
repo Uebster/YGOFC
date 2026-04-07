@@ -2852,9 +2852,12 @@ public void ShuffleDeck(bool isPlayer)
                         DuelFXManager.Instance.PlayTributeSummonEffect(display);
                     else
                         DuelFXManager.Instance.PlaySummonEffect(display);
-                    DuelFXManager.Instance.PlaySummonAura(display);
                 }
                 else if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayFlipEffect(display); // Poeirinha ao setar monstro
+            
+                // Sempre toca a Aura de Pouso ao colocar na mesa, independente da posição
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayPlacementAura(display);
+
                 // Dispara gatilho síncrono
                 if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnSummon(display);
             }
@@ -3180,7 +3183,11 @@ public void ShuffleDeck(bool isPlayer)
                 // Spells/Traps setadas ficam verticais (não rotacionam como monstros em defesa)
                 cardGO.transform.localRotation = Quaternion.Euler(0, 0, zRotation);
                 
-                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayFlipEffect(display); // Toca "poeirinha" ao baixar
+                if (DuelFXManager.Instance != null)
+                {
+                    DuelFXManager.Instance.PlayFlipEffect(display); // Toca "poeirinha" ao baixar
+                    DuelFXManager.Instance.PlayPlacementAura(display); // Toca a Aura visual por trás da magia setada
+                }            
             }
             else
             {
