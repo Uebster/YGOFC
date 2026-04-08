@@ -18676,7 +18676,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0003984231}
+  m_AnchoredPosition: {x: 0, y: 0.0009347796}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &250963708
@@ -42157,10 +42157,6 @@ MonoBehaviour:
   enablePhaseHoverEffect: 1
   phaseHoverColorPlayer: {r: 0, g: 1, b: 0, a: 1}
   phaseHoverColorOpponent: {r: 0.5803922, g: 0, b: 0.8274511, a: 1}
-  enableAttackSelectionVisual: 1
-  attackSelectionColor: {r: 0.7924528, g: 0.018689923, b: 0.018689923, a: 0.62352943}
-  targetAvatarOnDirectAttack: 1
-  enableAttackAnimation: 1
   enableTributeSummonAnimation: 1
   enableSummonCinematics: 1
   enableFusionCinematic: 1
@@ -46286,13 +46282,13 @@ MonoBehaviour:
   spellActivateVFX: {fileID: 5624116892997801917, guid: c0c6aa01b8b4e2b498d502803c544057, type: 3}
   trapActivateVFX: {fileID: 8711922310275536041, guid: aaad7c6bcfad79340985c593ddd6f3e2, type: 3}
   summonVFX: {fileID: 2242834916028318832, guid: 7012e4e82f2152e42b7ecad929301607, type: 3}
-  tokenSummonVFX: {fileID: 0}
+  tokenSummonVFX: {fileID: 1251889212189677203, guid: 74c562f5dd573af47b58c4510c7e9eff, type: 3}
   tributeSummonVFX: {fileID: 7255544249031024263, guid: 414b68294c1846e4b9986ab4c5d2f836, type: 3}
   fusionVFX: {fileID: 7173987355294210737, guid: 241545851c8443043b4dfa0bdef97fdd, type: 3}
   tributeVFX: {fileID: 7255544249031024263, guid: 414b68294c1846e4b9986ab4c5d2f836, type: 3}
   attackVFX: {fileID: 4021103657954561961, guid: 5c755f9bc5253ea418e919994537dcc7, type: 3}
   attackProjectileVFX: {fileID: 3529578519891653018, guid: d490548199143e244ae5720415bbca9b, type: 3}
-  explosionVFX: {fileID: 1251889212189677203, guid: c5fb1f8f923c2fa40aed3e3d49b6721c, type: 3}
+  explosionVFX: {fileID: 1251889212189677203, guid: 64f524b24a97f0041abd8098a957aefc, type: 3}
   reflectVFX: {fileID: 2910360440696493387, guid: b06b319fc39089a418a61724e5b42372, type: 3}
   banishVFX: {fileID: 5422162447097266557, guid: acd738edce10a2e40bf384730e09df84, type: 3}
   flipVFX: {fileID: 3761866745961580641, guid: 11d46fac4c81c8244952cdb92f9f6f21, type: 3}
@@ -46318,6 +46314,60 @@ MonoBehaviour:
   colorMonsterNormal: {r: 0.9, g: 0.9, b: 0.5, a: 1}
   colorFusion: {r: 0.6, g: 0.2, b: 0.9, a: 1}
   colorRitual: {r: 0.2, g: 0.5, b: 1, a: 1}
+  useActivationPulse: 1
+  activationPulseScale: 1.3
+  activationPulseDuration: 0.2
+  useActivationPrefab: 0
+  useEquipGhost: 1
+  equipGhostFlightDuration: 0.4
+  equipGhostFlightScale: 1.5
+  equipSqueezeScale: 0.9
+  equipSqueezeColor: {r: 0, g: 0, b: 0, a: 1}
+  useEquipPrefab: 0
+  useControlSwapRoutine: 1
+  controlSwapDuration: 1
+  controlSwapFlightScale: 1.5
+  useControlSwapOutline: 1
+  controlSwapOutlineColor: {r: 0.8, g: 0.2, b: 0.9, a: 1}
+  useControlSwapTrail: 1
+  controlSwapTrailColor: {r: 0.8, g: 0.2, b: 0.9, a: 0.5}
+  useControlSwapImpact: 1
+  controlSwapImpactColor: {r: 0.8, g: 0.2, b: 0.9, a: 1}
+  useControlSwapPrefab: 1
+  useShuffleRoutine: 1
+  shuffleAtCenter: 1
+  shuffleDuration: 0.8
+  useShufflePrefab: 0
+  useTokenSummonRoutine: 1
+  tokenSummonDuration: 1.2
+  tokenSummonFadeColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  useTokenSummonPrefab: 0
+  useDestructionRoutine: 1
+  destructionDuration: 0.8
+  useExplosionPrefab: 1
+  destructionShakeMagnitude: 3
+  destructionFadeAndDarken: 1
+  destructionFadeColor: {r: 0, g: 0, b: 0, a: 1}
+  destructionWaitHalfExplosion: 1
+  destructionShrink: 1
+  useTargetingSwordPrefab: 1
+  colorAttackReadyHover: {r: 1, g: 0.5, b: 0, a: 1}
+  colorAttackTargetHover: {r: 1, g: 0, b: 0, a: 1}
+  enableAttackSelectionVisual: 1
+  colorAttackSelection: {r: 1, g: 0, b: 0, a: 1}
+  targetAvatarOnDirectAttack: 1
+  useAttackHeadbutt: 0
+  useAttackSword: 0
+  attackSwordSprite: {fileID: 0}
+  attackSwordColor: {r: 1, g: 1, b: 1, a: 1}
+  attackSwordSize: {x: 60, y: 60}
+  attackSwordRotationOffset: -90
+  attackFlightDuration: 0.3
+  useAttackTrail: 1
+  attackTrailType: 0
+  attackTrailWidth: 15
+  attackTrailColor: {r: 1, g: 0, b: 0, a: 0.5}
+  useAttackImpactVFX: 1
   tributeIconSprite: {fileID: -4062675513596425979, guid: a7a8f9769ccf5f34c9aa54de6e5e02f6, type: 3}
   tributeFieldMarkerVFX: {fileID: 5593010221128478186, guid: 067028498bf2ec34b94a9d1eccc79fbb, type: 3}
   specialFieldMarkerVFX: {fileID: 8785413103711124661, guid: 61b81f5cb78fa6e4bb3970933c008028, type: 3}
@@ -103651,7 +103701,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.00095894834, y: 0.0008507452}
+  m_AnchoredPosition: {x: 0.00095894834, y: 0.00085818255}
   m_SizeDelta: {x: -0.00091553, y: 353.6}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1356954785
@@ -165877,7 +165927,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00045413987}
+  m_AnchoredPosition: {x: 0, y: 0.00094703404}
   m_SizeDelta: {x: 0, y: 650.88}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2123005588

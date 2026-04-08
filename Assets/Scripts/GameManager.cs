@@ -319,13 +319,6 @@ public class GameManager : MonoBehaviour
     public Color phaseHoverColorOpponent = new Color(1f, 0.92f, 0.016f, 0.5f); // Amarelo semitransparente
 
     [Header("Visual Feedback")]
-    [Tooltip("Habilita o efeito de escurecer a carta ao selecioná-la para atacar.")]
-    public bool enableAttackSelectionVisual = true;
-    public Color attackSelectionColor = new Color(0.6f, 0.6f, 0.6f, 1f);
-    [Tooltip("Se marcado, ataques diretos visam o avatar do oponente. Se desmarcado, visam o centro da mão/campo (estilo Power of Chaos).")]
-    public bool targetAvatarOnDirectAttack = true;
-    [Tooltip("Habilita a animação de projétil (espada) durante o ataque.")]
-    public bool enableAttackAnimation = true;
     [Tooltip("Habilita a animação visual ao realizar uma Invocação-Tributo.")]
     public bool enableTributeSummonAnimation = true;
     [Tooltip("Habilita a cinemática (tela escura e carta gigante) para invocações Especiais e de Tributo.")]
@@ -3197,8 +3190,6 @@ public void ShuffleDeck(bool isPlayer)
 
                 // Efeito de Ativação
                 bool isTrap = cardData.type.Contains("Trap");
-                if (DuelFXManager.Instance != null)
-                    DuelFXManager.Instance.PlayCardActivation(display, isTrap);
 
                 if (DuelScoreManager.Instance != null)
                 {

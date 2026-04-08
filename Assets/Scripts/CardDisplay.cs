@@ -617,6 +617,30 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // --- Efeito de Borda (Hover) ---
         if (shouldShowOutline)
         {
+            Color outlineColor = hoverColor;
+            
+            // Usa a cor do tema do GameManager (Player vs Opponent) se useSimpleHover for falso
+            if (!useSimpleHover && GameManager.Instance != null)
+            {
+                outlineColor = isPlayerCard ? GameManager.Instance.playerHoverColor : GameManager.Instance.opponentHoverColor;
+            }
+
+            // Override do Hover de Combate (Se não usar a Espada Prefab)
+            if (DuelFXManager.Instance != null && !DuelFXManager.Instance.useTargetingSwordPrefab && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle)
+            {
+                if (GameManager.Instance != null && GameManager.Instance.isPlayerTurn && isOnField)
+                {
+                    if (isPlayerCard && currentCardData != null && currentCardData.type.Contains("Monster") && position == BattlePosition.Attack && !hasAttackedThisTurn && !isAttackSelected)
+                    {
+                        outlineColor = DuelFXManager.Instance.colorAttackReadyHover;
+                    }
+                    else if (!isPlayerCard && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
+                    {
+                        outlineColor = DuelFXManager.Instance.colorAttackTargetHover;
+                    }
+                }
+            }
+
             if (useSimpleOutline)
             {
                 // Opção 1: Usa o componente Outline do Unity no PAI (gameObject)
@@ -624,15 +648,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 Outline outline = GetComponent<Outline>();
                 if (outline == null) outline = gameObject.AddComponent<Outline>();
 
-                // Usa a cor do tema se disponível, senão usa a cor local
-                if (useSimpleHover)
-                {
-                    outline.effectColor = hoverColor;
-                }
-                else
-                {
-                    outline.effectColor = (GameManager.Instance != null) ? (isPlayerCard ? GameManager.Instance.playerHoverColor : GameManager.Instance.opponentHoverColor) : hoverColor;
-                }
+                outline.effectColor = outlineColor;
                 outline.effectDistance = new Vector2(4, -4); // Espessura da borda
                 // FIX: Usa o alpha do gráfico (sprite arredondado) para desenhar a borda
                 outline.useGraphicAlpha = true;
@@ -641,7 +657,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             else if (outlineImage != null)
             {
                 // Opção 2: Usa a imagem separada (se useSimpleOutline for false)
-                outlineImage.color = (GameManager.Instance != null) ? (isPlayerCard ? GameManager.Instance.playerHoverColor : GameManager.Instance.opponentHoverColor) : hoverColor;
+                outlineImage.color = outlineColor;
                 outlineImage.gameObject.SetActive(true);
             }
         }
@@ -719,9 +735,12 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             if (GameManager.Instance.isPlayerTurn && isOnField && isPlayerCard && currentCardData != null && currentCardData.type.Contains("Monster") && position == BattlePosition.Attack && !hasAttackedThisTurn && !isAttackSelected)
             {
-                if (TargetingSwordUI.Instance != null)
+                if (DuelFXManager.Instance == null || DuelFXManager.Instance.useTargetingSwordPrefab)
                 {
-                    TargetingSwordUI.Instance.ShowHover(transform);
+                    if (TargetingSwordUI.Instance != null)
+                    {
+                        TargetingSwordUI.Instance.ShowHover(transform);
+                    }
                 }
             }
         }
@@ -887,7 +906,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         isAttackSelected = selected; // Atualiza o estado
 
         // Se o efeito estiver desabilitado, garante que a cor da carta esteja normal e sai.
-        if (GameManager.Instance == null || !GameManager.Instance.enableAttackSelectionVisual)
+        if (DuelFXManager.Instance == null || !DuelFXManager.Instance.enableAttackSelectionVisual)
         {
             if (cardImage != null) cardImage.color = Color.white;
             if (outlineImage != null) outlineImage.gameObject.SetActive(false);
@@ -905,6 +924,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             cardImage.color = Color.white;
         }
 
+        Color targetColor = (DuelFXManager.Instance != null) ? DuelFXManager.Instance.colorAttackSelection : attackColor;
+
         // Aplica o Outline Vermelho
         if (useSimpleOutline)
         {
@@ -916,7 +937,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 outline.enabled = selected;
                 if (selected)
                 {
-                    outline.effectColor = attackColor; // Vermelho
+                    outline.effectColor = targetColor;
                     outline.effectDistance = new Vector2(4, -4);
                     outline.useGraphicAlpha = true;
                 }
@@ -924,7 +945,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
         else if (outlineImage != null)
         {
-            outlineImage.color = attackColor;
+            outlineImage.color = targetColor;
             outlineImage.gameObject.SetActive(selected);
         }
     }

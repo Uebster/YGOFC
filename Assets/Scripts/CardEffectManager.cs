@@ -25,6 +25,7 @@ public class CardEffectManager : MonoBehaviour
     public DynValue activeLuaCoroutine = null;
     public bool isWaitingForLuaYield = false;
     public DynValue yieldReturnValue = null;
+    public bool lastCoroutineSuccess = true;
 
     // --- SISTEMA DE CORRENTE (CHAIN SYSTEM LIFO) ---
     public class ChainLink
@@ -1876,8 +1877,14 @@ public class CardEffectManager : MonoBehaviour
     {
         // FASE DE ATIVAÇÃO (Custo e Alvo) [chk=1]
         luaDuel.currentActivatingEffect = effect;
-        if (effect.costFunc != null) yield return StartCoroutine(RunLuaCoroutine(effect.costFunc, effect, tp, triggerArgs, 1));
-        if (effect.targetFunc != null) yield return StartCoroutine(RunLuaCoroutine(effect.targetFunc, effect, tp, triggerArgs, 1));
+        if (effect.costFunc != null) {
+            yield return StartCoroutine(RunLuaCoroutine(effect.costFunc, effect, tp, triggerArgs, 1));
+            if (!lastCoroutineSuccess) { onComplete?.Invoke(); yield break; }
+        }
+        if (effect.targetFunc != null) {
+            yield return StartCoroutine(RunLuaCoroutine(effect.targetFunc, effect, tp, triggerArgs, 1));
+            if (!lastCoroutineSuccess) { onComplete?.Invoke(); yield break; }
+        }
         luaDuel.currentActivatingEffect = null;
 
         // ADICIONA À CORRENTE LIFO
@@ -2009,6 +2016,8 @@ public class CardEffectManager : MonoBehaviour
 
     private IEnumerator RunLuaCoroutine(Closure func, LuaEffect effect, int tp, object triggerArgs, int chk)
     {
+        lastCoroutineSuccess = true;
+        
         object eg = WrapTriggerArgs(triggerArgs);
         bool isActionEffect = (effect.type & 0x07F8) != 0;
         object arg2 = isActionEffect ? (object)tp : (object)(effect.owner ?? new LuaCard(new CardData { id = "0000", name = "Dummy" }));
@@ -2027,6 +2036,7 @@ public class CardEffectManager : MonoBehaviour
         catch (System.Exception e)
         {
             Debug.LogError($"[API LUA CRASH] O efeito falhou graciosamente sem travar a engine: {e.Message}");
+            lastCoroutineSuccess = false;
             yield break; // Aborta apenas este efeito, o jogo continua!
         }
 
@@ -2045,6 +2055,7 @@ public class CardEffectManager : MonoBehaviour
             catch (System.Exception e)
             {
                 Debug.LogError($"[API LUA CRASH] Falha ao continuar o yield: {e.Message}");
+                lastCoroutineSuccess = false;
                 yield break;
             }
         }
@@ -2084,15 +2095,17 @@ public class CardEffectManager : MonoBehaviour
                 }
                 else if (yieldCmd == "PlayAttackAnimation")
                 {
-                    if (GameManager.Instance != null && GameManager.Instance.enableAttackAnimation)
+                    // Esconde a espada de "mira" exatamente na transição para a espada voadora
+                    if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
+                    
+                    if (DuelFXManager.Instance != null && DuelFXManager.Instance.enableAnimations)
                     {
                         bool animDone = false;
-                    if (DuelFXManager.Instance != null && storedAttacker != null && storedAttacker.unityCard != null)
+                        if (storedAttacker != null && storedAttacker.unityCard != null)
                         {
-                        DuelFXManager.Instance.PlayAttack(storedAttacker.unityCard, storedTarget?.unityCard, () => { animDone = true; });
-                        yield return new WaitUntil(() => animDone);
+                            DuelFXManager.Instance.PlayAttack(storedAttacker.unityCard, storedTarget?.unityCard, () => { animDone = true; });
+                            yield return new WaitUntil(() => animDone);
                         }
-                        else yield return new WaitForSeconds(0.4f); // Fallback caso o Manager esteja ausente
                     }
                 }
                 else if (yieldCmd == "RevealTarget")
@@ -2114,6 +2127,9 @@ public class CardEffectManager : MonoBehaviour
                 yield break;
             }
         }
+        
+        // Garante que a espada de mira suma se o ataque for abortado por uma Armadilha (ex: Mirror Force)
+        if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
     }
 
     public void TriggerLuaEvent(int eventCode, object triggerArgs)

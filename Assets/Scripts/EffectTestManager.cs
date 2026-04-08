@@ -95,7 +95,6 @@ public class EffectTestManager : MonoBehaviour
         
         TestAction("Ataque (Voo da Espada)", () => {
              EnsurePlayerMonster(); EnsureOpponentMonster();
-             if (GameManager.Instance != null) GameManager.Instance.enableAttackAnimation = true;
              DuelFXManager.Instance.PlayAttack(playerMonster, opponentMonster, null);
         });
         TestAction("Hit / Corte (VFX)", () => {

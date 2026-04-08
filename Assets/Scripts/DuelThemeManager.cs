@@ -183,13 +183,6 @@ public class DuelThemeManager : MonoBehaviour
             }
         }
 
-        // 3. Atualiza Cores Globais no GameManager (para CardDisplay usar)
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.playerHoverColor = theme.playerHoverColor;
-            GameManager.Instance.opponentHoverColor = theme.opponentHoverColor;
-        }
-
         // 4. Atualiza Phase Manager
         if (PhaseManager.Instance != null)
         {
