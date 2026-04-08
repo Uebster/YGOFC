@@ -69,13 +69,45 @@ public class DuelFXManager : MonoBehaviour
     public Color colorFusion = new Color(0.6f, 0.2f, 0.9f, 1f); // Roxo
     public Color colorRitual = new Color(0.2f, 0.5f, 1f, 1f); // Azul
 
+    [Header("Opções de Aura de Pouso (Placement)")]
+    [Tooltip("Faz o outline da carta pulsar suavemente na cor predefinida ao ser colocada no campo.")]
+    public bool usePlacementAuraRoutine = true;
+    public float placementAuraDuration = 1.2f;
+    public float placementAuraOutlineWidth = 10f;
+    [Tooltip("Instancia o prefab definido em 'Placement Aura VFX' atrás da carta.")]
+    public bool usePlacementAuraPrefab = true;
+
     [Header("Opções de Ativação de Magias/Armadilhas")]
     [Tooltip("Faz a carta crescer rapidamente e gerar o fantasma com Neon colorido.")]
     public bool useActivationPulse = true;
     public float activationPulseScale = 1.3f; // O quão gigante a carta fica ao ativar
     public float activationPulseDuration = 0.2f; // Tempo da animação (Padrão: 0.2s)
+    public float activationPulseOutlineWidth = 8f;
     [Tooltip("Instancia a partícula 3D/2D definida nos slots 'Spell Activate VFX' e 'Trap Activate VFX'.")]
     public bool useActivationPrefab = true;
+
+    [Header("Opções de Efeito de Monstro")]
+    [Tooltip("Faz a carta crescer rapidamente e gerar o fantasma com Neon colorido.")]
+    public bool useMonsterEffectPulse = true;
+    public float monsterEffectPulseScale = 1.3f; 
+    public float monsterEffectPulseDuration = 0.2f; 
+    public float monsterEffectPulseOutlineWidth = 8f;
+    [Tooltip("Instancia o prefab definido em 'Monster Effect VFX'.")]
+    public bool useMonsterEffectPrefab = true;
+
+    [Header("Opções de Corrente (Chain Link)")]
+    public bool useChainLinkRoutine = true;
+    public float chainLinkDuration = 1.0f;
+    public float chainLinkScale = 1.2f;
+    public Color chainLinkTextColor = new Color(1f, 0.8f, 0f, 1f); // Amarelo Dourado
+    public Color chainLinkShadowColor = Color.black;
+    [Tooltip("Sprite do elo vindo da esquerda.")]
+    public Sprite chainLinkLeftSprite; 
+    [Tooltip("Sprite do elo vindo da direita (se vazio, espelha o da esquerda).")]
+    public Sprite chainLinkRightSprite; 
+    [Tooltip("Sprite dos elos unidos após o impacto.")]
+    public Sprite chainLinkJoinedSprite; 
+    public bool useChainLinkPrefab = true;
 
     [Header("Opções de Equipamento")]
     [Tooltip("Usa a animação do fantasma da magia voando até o monstro e o impacto de encaixe (Outline).")]
@@ -98,9 +130,11 @@ public class DuelFXManager : MonoBehaviour
     [Tooltip("Deixa um rastro fantasma atrás da carta durante o voo.")]
     public bool useControlSwapTrail = true;
     public Color controlSwapTrailColor = new Color(0.8f, 0.2f, 0.9f, 0.5f);
-    [Tooltip("A carta dá um 'Pulse' (cresce e emite aura) ao aterrissar no novo lado.")]
+    [Tooltip("A carta faz um 'Squeeze' (amassa/impacta) ao aterrissar no novo lado.")]
     public bool useControlSwapImpact = true;
     public Color controlSwapImpactColor = new Color(0.8f, 0.2f, 0.9f, 1f);
+    public float controlSwapImpactScale = 1.4f;
+    public float controlSwapImpactOutlineWidth = 10f;
     [Tooltip("Instancia partículas padrões (Spell Activate no voo, Summon na aterrissagem).")]
     public bool useControlSwapPrefab = true;
 
@@ -156,6 +190,10 @@ public class DuelFXManager : MonoBehaviour
     public Sprite attackSwordSprite;
     public Color attackSwordColor = Color.white;
     public Vector2 attackSwordSize = new Vector2(60, 60);
+    [Tooltip("Material para a espadinha nativa (Use o VFX_Additive_UI para fundos pretos desaparecerem).")]
+    public Material attackSwordMaterial;
+    [Tooltip("Usa o Prefab de projétil caso não queira usar a rotina nativa da espada.")]
+    public bool useAttackProjectilePrefab = true;
     [Tooltip("Ajuste de rotação caso o seu Sprite de espada não aponte para cima (Ex: 0, 90, 180).")]
     public float attackSwordRotationOffset = -90f;
     public float attackFlightDuration = 0.3f; // Tempo de voo
@@ -363,7 +401,7 @@ public class DuelFXManager : MonoBehaviour
             
             Outline outline = ghost.GetComponent<Outline>();
             outline.effectColor = isTrap ? colorTrap : colorSpell;
-            outline.effectDistance = new Vector2(8f, -8f);
+            outline.effectDistance = new Vector2(activationPulseOutlineWidth, -activationPulseOutlineWidth);
 
             float t = 0;
             float halfDuration = activationPulseDuration / (animationSpeed > 0 ? animationSpeed : 1f);
@@ -523,6 +561,8 @@ public class DuelFXManager : MonoBehaviour
             if (attackSwordSprite != null) img.sprite = attackSwordSprite;
             else img.color = Color.clear; // Esconde o quadrado branco se esquecer a imagem!
             
+            if (attackSwordMaterial != null) img.material = attackSwordMaterial;
+
             Vector3 dir = targetPos - startPos;
             float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
             rt.rotation = Quaternion.Euler(0, 0, angle + attackSwordRotationOffset); 
@@ -533,26 +573,27 @@ public class DuelFXManager : MonoBehaviour
                 lineObj.transform.SetParent(proj.transform.parent, true);
                 lineObj.transform.SetSiblingIndex(proj.transform.GetSiblingIndex());
                 lineRT = lineObj.GetComponent<RectTransform>();
-                lineRT.pivot = new Vector2(0, 0.5f); // Anchor at start
+                lineRT.pivot = new Vector2(0, 0.5f); 
                 lineRT.position = startPos;
                 lineImg = lineObj.GetComponent<Image>(); lineImg.color = attackTrailColor;
+                if (attackSwordMaterial != null) lineImg.material = attackSwordMaterial;
             }
-            
+
             float duration = attackFlightDuration / animSpeed; float t = 0; float spawnTrailTimer = 0;
             
             while (t < 1f) {
                 t += Time.deltaTime / duration;
                 Vector3 currentPos = Vector3.Lerp(startPos, targetPos, t);
                 rt.position = currentPos;
-
+                
                 if (useAttackTrail) {
                     if (attackTrailType == AttackTrailType.Shadows && attackSwordSprite != null) {
-                    spawnTrailTimer -= Time.deltaTime;
-                    if (spawnTrailTimer <= 0) {
-                        spawnTrailTimer = 0.015f; // Rastro mais denso e macio
-                        SpawnSwordGhost(rt, img.sprite);
-                    }
-                } else if (attackTrailType == AttackTrailType.ContinuousLine && lineObj != null) {
+                        spawnTrailTimer -= Time.deltaTime;
+                        if (spawnTrailTimer <= 0) {
+                            spawnTrailTimer = 0.015f; 
+                            SpawnSwordGhost(rt, img.sprite, attackSwordMaterial);
+                        }
+                    } else if (attackTrailType == AttackTrailType.ContinuousLine && lineObj != null) {
                         Vector3 dirToCurrent = currentPos - startPos;
                         float dist = dirToCurrent.magnitude;
                         float canvasScale = lineObj.transform.lossyScale.x;
@@ -565,7 +606,7 @@ public class DuelFXManager : MonoBehaviour
             if (lineObj != null) StartCoroutine(FadeAndDestroyLine(lineObj, lineImg, 0.2f));
             Destroy(proj);
         }
-        else if (attackProjectileVFX != null)
+        else if (useAttackProjectilePrefab && attackProjectileVFX != null)
         {
             PlaySound(attackTravelSound);
             GameObject proj = SpawnVFXPublic(attackProjectileVFX, startPos);
@@ -579,42 +620,22 @@ public class DuelFXManager : MonoBehaviour
                     rt.rotation = Quaternion.Euler(0, 0, angle + attackSwordRotationOffset); 
                 }
 
-                GameObject lineObj = null; RectTransform lineRT = null; Image lineImg = null;
-                if (useAttackTrail && attackTrailType == AttackTrailType.ContinuousLine) {
-                    lineObj = new GameObject("AttackLineTrail", typeof(RectTransform), typeof(Image));
-                    lineObj.transform.SetParent(proj.transform.parent, true);
-                    lineObj.transform.SetSiblingIndex(proj.transform.GetSiblingIndex());
-                    lineRT = lineObj.GetComponent<RectTransform>();
-                    lineRT.pivot = new Vector2(0, 0.5f); lineRT.position = startPos;
-                    lineImg = lineObj.GetComponent<Image>(); lineImg.color = attackTrailColor;
-                }
-                
-                float duration = attackFlightDuration / animSpeed; float t = 0; float spawnTrailTimer = 0;
+                float duration = 0.3f / animSpeed; float t = 0; float spawnTrailTimer = 0;
                 while (t < 1f) {
                     t += Time.deltaTime / duration;
-                    Vector3 currentPos = Vector3.Lerp(startPos, targetPos, t);
                     
-                    if (rt != null) rt.position = currentPos;
-                    else proj.transform.position = currentPos;
+                    if (rt != null) rt.position = Vector3.Lerp(startPos, targetPos, t);
+                    else proj.transform.position = Vector3.Lerp(startPos, targetPos, t);
                     
-                    if (useAttackTrail) {
-                        if (attackTrailType == AttackTrailType.Shadows && rt != null && img != null && img.sprite != null) {
-                            spawnTrailTimer -= Time.deltaTime;
-                            if (spawnTrailTimer <= 0) {
-                                spawnTrailTimer = 0.015f;
-                                SpawnSwordGhost(rt, img.sprite);
-                        }
-                        } else if (attackTrailType == AttackTrailType.ContinuousLine && lineObj != null) {
-                            Vector3 dirToCurrent = currentPos - startPos;
-                            float dist = dirToCurrent.magnitude;
-                            float canvasScale = lineObj.transform.lossyScale.x;
-                            if (canvasScale > 0) lineRT.sizeDelta = new Vector2(dist / canvasScale, attackTrailWidth);
-                            lineRT.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(dirToCurrent.y, dirToCurrent.x) * Mathf.Rad2Deg);
+                    if (useAttackTrail && rt != null && img != null && img.sprite != null) {
+                        spawnTrailTimer -= Time.deltaTime;
+                        if (spawnTrailTimer <= 0) {
+                            spawnTrailTimer = 0.015f;
+                            SpawnSwordGhost(rt, img.sprite);
                         }
                     }
                     yield return null;
                 }
-                if (lineObj != null) StartCoroutine(FadeAndDestroyLine(lineObj, lineImg, 0.2f));
                 Destroy(proj);
             }
         }
@@ -633,7 +654,7 @@ public class DuelFXManager : MonoBehaviour
         onHit?.Invoke();
     }
 
-    private void SpawnSwordGhost(RectTransform sourceRT, Sprite sprite)
+    private void SpawnSwordGhost(RectTransform sourceRT, Sprite sprite, Material mat = null)
     {
         GameObject ghost = new GameObject("SwordGhost", typeof(RectTransform), typeof(Image));
         ghost.transform.SetParent(sourceRT.parent, true);
@@ -645,6 +666,7 @@ public class DuelFXManager : MonoBehaviour
         
         Image img = ghost.GetComponent<Image>();
         img.sprite = sprite; img.color = attackTrailColor;
+        if (mat != null) img.material = mat;
         
         StartCoroutine(FadeAndDestroyGhost(ghost, img, 0.2f));
     }
@@ -952,26 +974,160 @@ public class DuelFXManager : MonoBehaviour
     {
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayChainLinkEffect | Alvo: {card?.CurrentCardData?.name} | Link: {linkNumber} | Momento: Efeito engatilhado em resposta.");
         
-        // A corrente visual (e seu som) só deve aparecer quando é uma RESPOSTA (Link 2 em diante).
-        // O Link 1 já tem sua própria cinemática e som via PlayCardActivation ou PlayMonsterEffect.
-        if (linkNumber <= 1) return;
+        if (linkNumber <= 1 || !enableAnimations) return;
 
-        // Toca o som de magia/armadilha ativando na corrente
         PlaySound(card.CurrentCardData.type.Contains("Trap") ? trapSound : spellSound);
         
-        // Se tivermos um prefab de texto subindo, nós o instanciamos
-        if (chainLinkVFX != null)
+        if (useChainLinkPrefab && chainLinkVFX != null)
         {
             GameObject vfx = SpawnVFXPublic(chainLinkVFX, card.transform.position);
             
-            var animScript = vfx.GetComponent<ChainLinkVFX>();
-            if (animScript != null) animScript.Setup(linkNumber);
-            else
+            MonoBehaviour[] scripts = vfx.GetComponents<MonoBehaviour>();
+            bool setupCalled = false;
+            foreach(var script in scripts) {
+                var method = script.GetType().GetMethod("Setup");
+                if (method != null) { method.Invoke(script, new object[] { linkNumber }); setupCalled = true; break; }
+            }
+            if (!setupCalled)
             {
                 TMPro.TextMeshProUGUI txt = vfx.GetComponentInChildren<TMPro.TextMeshProUGUI>();
                 if (txt != null) txt.text = $"Link {linkNumber}";
             }
         }
+
+        if (useChainLinkRoutine && card != null)
+        {
+            StartCoroutine(ChainLinkRoutine(card, linkNumber));
+        }
+    }
+
+    private IEnumerator ChainLinkRoutine(CardDisplay card, int linkNumber)
+    {
+        Transform uiParent = GetUIParent();
+        if (uiParent == null) yield break;
+
+        GameObject chainObj = new GameObject("ChainLink_Visual", typeof(RectTransform));
+        chainObj.transform.SetParent(uiParent, false);
+        
+        RectTransform chainRT = chainObj.GetComponent<RectTransform>();
+        chainRT.position = card.transform.position;
+        chainObj.transform.SetAsLastSibling();
+
+        GameObject textContainer = new GameObject("TextContainer", typeof(RectTransform));
+        textContainer.transform.SetParent(chainObj.transform, false);
+        RectTransform textContainerRT = textContainer.GetComponent<RectTransform>();
+        textContainerRT.anchoredPosition = new Vector2(0, -25);
+        textContainerRT.localScale = Vector3.zero;
+
+        GameObject textObj = new GameObject("Text", typeof(RectTransform), typeof(TMPro.TextMeshProUGUI));
+        textObj.transform.SetParent(textContainer.transform, false);
+        TMPro.TextMeshProUGUI txt = textObj.GetComponent<TMPro.TextMeshProUGUI>();
+        txt.text = $"Link {linkNumber}";
+        txt.fontSize = 40;
+        txt.fontStyle = TMPro.FontStyles.Bold | TMPro.FontStyles.Italic;
+        txt.color = chainLinkTextColor;
+        txt.alignment = TMPro.TextAlignmentOptions.Center;
+        txt.overflowMode = TMPro.TextOverflowModes.Overflow;
+        
+        GameObject shadowObj = Instantiate(textObj, textContainer.transform);
+        shadowObj.name = "Shadow";
+        shadowObj.transform.SetAsFirstSibling();
+        TMPro.TextMeshProUGUI shadowTxt = shadowObj.GetComponent<TMPro.TextMeshProUGUI>();
+        shadowTxt.color = chainLinkShadowColor;
+        shadowTxt.rectTransform.anchoredPosition = new Vector2(4, -4);
+
+        Image leftImg = null, rightImg = null, joinedImg = null;
+        RectTransform leftRT = null, rightRT = null;
+
+        if (chainLinkLeftSprite != null)
+        {
+            GameObject leftObj = new GameObject("LeftLink", typeof(RectTransform), typeof(Image));
+            leftObj.transform.SetParent(chainObj.transform, false);
+            leftRT = leftObj.GetComponent<RectTransform>();
+            leftRT.sizeDelta = new Vector2(60, 60);
+            leftRT.anchoredPosition = new Vector2(-100, 25);
+            leftImg = leftObj.GetComponent<Image>();
+            leftImg.sprite = chainLinkLeftSprite;
+
+            GameObject rightObj = new GameObject("RightLink", typeof(RectTransform), typeof(Image));
+            rightObj.transform.SetParent(chainObj.transform, false);
+            rightRT = rightObj.GetComponent<RectTransform>();
+            rightRT.sizeDelta = new Vector2(60, 60);
+            rightRT.anchoredPosition = new Vector2(100, 25);
+            rightImg = rightObj.GetComponent<Image>();
+            
+            if (chainLinkRightSprite != null) rightImg.sprite = chainLinkRightSprite;
+            else { rightImg.sprite = chainLinkLeftSprite; rightRT.localScale = new Vector3(-1, 1, 1); }
+
+            if (chainLinkJoinedSprite != null)
+            {
+                GameObject joinedObj = new GameObject("JoinedLink", typeof(RectTransform), typeof(Image));
+                joinedObj.transform.SetParent(chainObj.transform, false);
+                RectTransform joinedRT = joinedObj.GetComponent<RectTransform>();
+                joinedRT.sizeDelta = new Vector2(90, 60);
+                joinedRT.anchoredPosition = new Vector2(0, 25);
+                joinedImg = joinedObj.GetComponent<Image>();
+                joinedImg.sprite = chainLinkJoinedSprite;
+                joinedImg.enabled = false;
+            }
+        }
+
+        float duration = chainLinkDuration / (animationSpeed > 0 ? animationSpeed : 1f);
+        float t = 0;
+        Vector2 startAnchored = chainRT.anchoredPosition;
+        Vector2 endAnchored = startAnchored + new Vector2(0, 120f); 
+        
+        bool isClashed = false;
+
+        while (t < 1f)
+        {
+            if (chainObj == null) break;
+            t += Time.deltaTime / duration;
+            float smooth = Mathf.SmoothStep(0, 1, t);
+            
+            chainRT.anchoredPosition = Vector2.Lerp(startAnchored, endAnchored, smooth);
+            
+            if (t < 0.2f)
+            {
+                float clashT = t / 0.2f;
+                if (leftRT != null) leftRT.anchoredPosition = Vector2.Lerp(new Vector2(-100, 25), new Vector2(-15, 25), clashT);
+                if (rightRT != null) rightRT.anchoredPosition = Vector2.Lerp(new Vector2(100, 25), new Vector2(15, 25), clashT);
+            }
+            else if (!isClashed)
+            {
+                isClashed = true;
+                if (leftImg != null) leftImg.enabled = false;
+                if (rightImg != null) rightImg.enabled = false;
+                if (joinedImg != null) joinedImg.enabled = true;
+            }
+
+            if (t >= 0.2f && t < 0.4f)
+            {
+                float popT = (t - 0.2f) / 0.2f;
+                float overshootScale = 1f + Mathf.Sin(popT * Mathf.PI) * 0.3f;
+                textContainerRT.localScale = Vector3.one * (chainLinkScale * overshootScale);
+                if (joinedImg != null) joinedImg.rectTransform.localScale = Vector3.one * overshootScale;
+            }
+            else if (t >= 0.4f)
+            {
+                textContainerRT.localScale = Vector3.one * chainLinkScale;
+                if (joinedImg != null) joinedImg.rectTransform.localScale = Vector3.one;
+            }
+
+            if (t > 0.7f)
+            {
+                float alpha = 1f - ((t - 0.7f) / 0.3f);
+                txt.color = new Color(chainLinkTextColor.r, chainLinkTextColor.g, chainLinkTextColor.b, alpha);
+                shadowTxt.color = new Color(chainLinkShadowColor.r, chainLinkShadowColor.g, chainLinkShadowColor.b, alpha);
+                if (joinedImg != null) joinedImg.color = new Color(1, 1, 1, alpha);
+                if (leftImg != null) leftImg.color = new Color(1, 1, 1, alpha);
+                if (rightImg != null) rightImg.color = new Color(1, 1, 1, alpha);
+            }
+
+            yield return null;
+        }
+
+        if (chainObj != null) Destroy(chainObj);
     }
 
     public void PlayAttackDeclare()
@@ -985,7 +1141,58 @@ public class DuelFXManager : MonoBehaviour
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayMonsterEffect (Brilho) | Alvo: {card?.CurrentCardData?.name} | Momento: Efeito de monstro ativado no campo.");
         if (!enableAnimations || card == null) return;
         PlaySound(monsterEffectSound);
-        SpawnVFXPublic(monsterEffectVFX, card.transform.position);
+        if (useMonsterEffectPrefab && monsterEffectVFX != null) SpawnVFXPublic(monsterEffectVFX, card.transform.position);
+        if (useMonsterEffectPulse) StartCoroutine(PulseGhostRoutine(card, monsterEffectPulseScale, monsterEffectPulseDuration, colorMonsterEffect, monsterEffectPulseOutlineWidth));
+    }
+
+    private IEnumerator PulseGhostRoutine(CardDisplay card, float targetScaleMult, float halfDuration, Color outlineColor, float outlineWidth)
+    {
+        if (card == null) yield break;
+
+        Vector3 originalScale = card.transform.localScale;
+        Vector3 peakScale = originalScale * targetScaleMult;
+        Transform originalParent = card.transform.parent;
+        int originalIndex = card.transform.GetSiblingIndex();
+
+        card.transform.SetAsLastSibling(); 
+
+        GameObject ghost = new GameObject("PulseGhost", typeof(RectTransform), typeof(RawImage), typeof(Outline));
+        if (originalParent != null) {
+            ghost.transform.SetParent(originalParent, false);
+            ghost.transform.SetSiblingIndex(card.transform.GetSiblingIndex()); 
+        }
+
+        RectTransform rt = ghost.GetComponent<RectTransform>();
+        RectTransform cardRt = card.GetComponent<RectTransform>();
+        rt.anchorMin = cardRt.anchorMin; rt.anchorMax = cardRt.anchorMax; rt.pivot = cardRt.pivot;
+        rt.sizeDelta = cardRt.sizeDelta; rt.anchoredPosition = cardRt.anchoredPosition;
+        rt.localRotation = cardRt.localRotation; rt.localScale = cardRt.localScale;
+
+        RawImage ri = ghost.GetComponent<RawImage>();
+        ri.texture = card.GetFrontTexture() != null ? card.GetFrontTexture() : card.cardImage.texture; 
+        ri.color = new Color(1f, 1f, 1f, 0.8f);
+        
+        Outline outline = ghost.GetComponent<Outline>();
+        outline.effectColor = outlineColor;
+        outline.effectDistance = new Vector2(outlineWidth, -outlineWidth);
+
+        float durationActual = halfDuration / (animationSpeed > 0 ? animationSpeed : 1f);
+        float t = 0;
+        while (t < 1f) {
+            if (card == null) break;
+            t += Time.deltaTime / durationActual; float smooth = Mathf.SmoothStep(0, 1, t);
+            card.transform.localScale = Vector3.Lerp(originalScale, peakScale, smooth);
+            if (ghost != null) { ghost.transform.localScale = Vector3.Lerp(originalScale, peakScale * 1.15f, smooth); ri.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.8f, 0f, smooth)); }
+            yield return null;
+        }
+        if (ghost != null) Destroy(ghost);
+
+        t = 0;
+        while (t < 1f) {
+            if (card == null) break; t += Time.deltaTime / durationActual; float smooth = Mathf.SmoothStep(0, 1, t);
+            card.transform.localScale = Vector3.Lerp(peakScale, originalScale, smooth); yield return null;
+        }
+        if (card != null) { card.transform.localScale = originalScale; if (originalParent != null) { card.transform.SetParent(originalParent, true); card.transform.SetSiblingIndex(originalIndex); } }
     }
 
     // Wrapper de retrocompatibilidade
@@ -994,30 +1201,49 @@ public class DuelFXManager : MonoBehaviour
     public void PlayPlacementAura(CardDisplay card)
     {
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayPlacementAura | Alvo: {card?.CurrentCardData?.name} | Momento: Carta foi posicionada fisicamente na mesa (Set/Summon/Activate).");
-        if (!enableAnimations || card == null || placementAuraVFX == null) 
+        if (!enableAnimations || card == null) return;
+
+        Color targetColor = GetAuraColor(card);
+
+        if (usePlacementAuraRoutine)
         {
-            if (placementAuraVFX == null) Debug.LogWarning($"[VFX] ⚠ PlayPlacementAura ABORTADO: Prefab 'placementAuraVFX' não assinalado no Inspector!");
-            return;
+            StartCoroutine(PlacementAuraRoutine(card, targetColor));
         }
+
+        if (!usePlacementAuraPrefab || placementAuraVFX == null) return;
         
         GameObject vfx = Instantiate(placementAuraVFX);
         
-        // Se for interface 2D, prende no Canvas. Se for Partícula 3D, mantém no World Space para não encolher!
-        if (vfx.GetComponent<RectTransform>() != null)
+        Transform originalParent = card.transform.parent;
+        if (originalParent != null)
         {
-            Transform uiParent = GetUIParent();
-            if (uiParent != null) vfx.transform.SetParent(uiParent, true);
+            vfx.transform.SetParent(originalParent, false);
+            vfx.transform.SetSiblingIndex(card.transform.GetSiblingIndex()); // ATRÁS da carta
+            
+            RectTransform rt = vfx.GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                rt.anchoredPosition = Vector2.zero;
+                rt.localRotation = card.transform.localRotation; // Acompanha 90º
+            }
+            else
+            {
+                vfx.transform.localPosition = Vector3.zero;
+                vfx.transform.localRotation = card.transform.localRotation;
+            }
         }
-        
-        vfx.transform.position = card.transform.position;
-        
-        // FIX CRÍTICO: Força Sistemas de Partículas 3D (como Holy-Light) a renderizarem na frente do tabuleiro escuro
+        else
+        {
+            vfx.transform.position = card.transform.position;
+            vfx.transform.rotation = card.transform.rotation;
+        }
+
         ParticleSystemRenderer[] renderers = vfx.GetComponentsInChildren<ParticleSystemRenderer>(true);
         if (renderers.Length > 0)
         {
             Canvas rootCanvas = card.GetComponentInParent<Canvas>();
             string targetLayer = rootCanvas != null ? rootCanvas.sortingLayerName : "Default";
-            int targetOrder = rootCanvas != null ? rootCanvas.sortingOrder + 10 : 10; // Fica acima do fundo, mas atrás dos impactos principais (30000)
+            int targetOrder = rootCanvas != null ? rootCanvas.sortingOrder - 1 : -1; // Atrás da carta 2D
             
             foreach (var r in renderers)
             {
@@ -1026,24 +1252,13 @@ public class DuelFXManager : MonoBehaviour
             }
         }
 
-        // SISTEMA DE COR PERSONALIZADA BASEADA NO TIPO DE CARTA
-        if (colorizeAuraByType && card != null && card.CurrentCardData != null)
+        if (colorizeAuraByType)
         {
-            Color targetColor = colorMonsterNormal; // Default
-            if (card.isFlipped) targetColor = colorFaceDown;
-            else if (card.CurrentCardData.type.Contains("Spell")) targetColor = colorSpell;
-            else if (card.CurrentCardData.type.Contains("Trap")) targetColor = colorTrap;
-            else if (card.CurrentCardData.type.Contains("Fusion")) targetColor = colorFusion;
-            else if (card.CurrentCardData.type.Contains("Ritual")) targetColor = colorRitual;
-            else if (card.CurrentCardData.type.Contains("Effect")) targetColor = colorMonsterEffect;
-
-            // Pinta Partículas 3D
             foreach (var r in renderers)
             {
                 var psSystem = r.GetComponent<ParticleSystem>();
                 if (psSystem != null) { var main = psSystem.main; main.startColor = targetColor; }
             }
-            // Pinta Imagens 2D (UIAnimatedEffect)
             Image[] images = vfx.GetComponentsInChildren<Image>(true);
             foreach (var img in images)
             {
@@ -1051,12 +1266,68 @@ public class DuelFXManager : MonoBehaviour
             }
         }
 
-        // Auto-destruição lê o tempo de vida real da partícula em vez do engessado 3.0f
         ParticleSystem ps = vfx.GetComponent<ParticleSystem>();
         float destroyTime = ps != null ? (ps.main.duration + ps.main.startLifetime.constantMax + 0.5f) : 3.0f;
         Destroy(vfx, destroyTime);
         
         Debug.Log($"[VFX] ✔ [AURA INSTANCIADA] '{placementAuraVFX.name}' renderizada atrás da carta. Vida: {destroyTime}s.");
+    }
+
+    private Color GetAuraColor(CardDisplay card)
+    {
+        if (!colorizeAuraByType || card == null || card.CurrentCardData == null) return colorMonsterNormal;
+        if (card.isFlipped) return colorFaceDown;
+        if (card.CurrentCardData.type.Contains("Spell")) return colorSpell;
+        if (card.CurrentCardData.type.Contains("Trap")) return colorTrap;
+        if (card.CurrentCardData.type.Contains("Fusion")) return colorFusion;
+        if (card.CurrentCardData.type.Contains("Ritual")) return colorRitual;
+        if (card.CurrentCardData.type.Contains("Effect")) return colorMonsterEffect;
+        return colorMonsterNormal;
+    }
+
+    private IEnumerator PlacementAuraRoutine(CardDisplay card, Color outlineColor)
+    {
+        if (card == null) yield break;
+
+        Transform originalParent = card.transform.parent;
+
+        GameObject ghost = new GameObject("PlacementAuraGhost", typeof(RectTransform), typeof(RawImage), typeof(Outline));
+        if (originalParent != null) {
+            ghost.transform.SetParent(originalParent, false);
+            ghost.transform.SetSiblingIndex(card.transform.GetSiblingIndex()); // Nasce ATRÁS da carta real!
+        }
+
+        RectTransform rt = ghost.GetComponent<RectTransform>();
+        RectTransform cardRt = card.GetComponent<RectTransform>();
+        rt.anchorMin = cardRt.anchorMin; rt.anchorMax = cardRt.anchorMax; rt.pivot = cardRt.pivot;
+        rt.sizeDelta = cardRt.sizeDelta; rt.anchoredPosition = cardRt.anchoredPosition;
+        rt.localRotation = cardRt.localRotation; rt.localScale = cardRt.localScale;
+
+        RawImage ri = ghost.GetComponent<RawImage>();
+        ri.texture = card.GetFrontTexture() != null ? card.GetFrontTexture() : card.cardImage.texture; 
+        
+        Outline outline = ghost.GetComponent<Outline>();
+        outline.effectColor = outlineColor;
+        outline.effectDistance = new Vector2(placementAuraOutlineWidth, -placementAuraOutlineWidth);
+
+        float durationActual = placementAuraDuration / (animationSpeed > 0 ? animationSpeed : 1f);
+        float t = 0;
+        
+        while (t < 1f) {
+            if (card == null || ghost == null) break;
+            t += Time.deltaTime / durationActual; 
+            float smooth = Mathf.SmoothStep(0, 1, t);
+            
+            // Curva Perfeita: Invisível (0) -> Fica forte (1) -> Invisível (0)
+            float alpha = Mathf.Sin(smooth * Mathf.PI); 
+            
+            Color c = outlineColor; c.a = alpha;
+            ri.color = c; 
+            outline.effectColor = c;
+            
+            yield return null;
+        }
+        if (ghost != null) Destroy(ghost);
     }
 
     public void PlayEquipEffect(CardDisplay source, CardDisplay target)
@@ -1806,36 +2077,32 @@ public class DuelFXManager : MonoBehaviour
 
     private IEnumerator ControlSwapImpactRoutine(CardDisplay card)
     {
-        Vector3 originalScale = card.transform.localScale;
-        Vector3 peakScale = originalScale * 1.3f;
+        GameObject squeezeObj = new GameObject("ControlSwapSqueeze", typeof(RectTransform), typeof(RawImage), typeof(Outline));
         
-        Transform originalParent = card.transform.parent;
-        int originalIndex = card.transform.GetSiblingIndex();
+        Transform parentToUse = card.transform.parent;
+        squeezeObj.transform.SetParent(parentToUse, false);
+        squeezeObj.transform.SetSiblingIndex(card.transform.GetSiblingIndex()); 
 
-        card.transform.SetAsLastSibling(); 
-
-        GameObject ghost = new GameObject("SwapImpactGhost", typeof(RectTransform), typeof(RawImage), typeof(Outline));
-        if (originalParent != null) {
-            ghost.transform.SetParent(originalParent, false);
-            ghost.transform.SetSiblingIndex(card.transform.GetSiblingIndex()); 
-        }
-
-        RectTransform rt = ghost.GetComponent<RectTransform>();
-        RectTransform cardRt = card.GetComponent<RectTransform>();
-        rt.anchorMin = cardRt.anchorMin; rt.anchorMax = cardRt.anchorMax; rt.pivot = cardRt.pivot;
-        rt.sizeDelta = cardRt.sizeDelta; rt.anchoredPosition = cardRt.anchoredPosition;
-        rt.localRotation = cardRt.localRotation; rt.localScale = cardRt.localScale;
-
-        RawImage ri = ghost.GetComponent<RawImage>();
-        ri.texture = card.GetFrontTexture() != null ? card.GetFrontTexture() : card.cardImage.texture; 
-        ri.color = new Color(1f, 1f, 1f, 0.8f);
+        RectTransform rt = squeezeObj.GetComponent<RectTransform>();
+        RectTransform targetRT = card.GetComponent<RectTransform>();
         
-        Outline outline = ghost.GetComponent<Outline>();
+        rt.position = targetRT.position;
+        rt.sizeDelta = targetRT.sizeDelta;
+        rt.rotation = targetRT.rotation;
+        rt.pivot = targetRT.pivot;
+
+        RawImage ri = squeezeObj.GetComponent<RawImage>();
+        ri.texture = card.GetFrontTexture() != null ? card.GetFrontTexture() : card.cardImage.texture;
+        ri.color = controlSwapImpactColor; 
+        
+        Outline outline = squeezeObj.GetComponent<Outline>();
         outline.effectColor = controlSwapImpactColor;
-        outline.effectDistance = new Vector2(8f, -8f);
+        outline.effectDistance = new Vector2(controlSwapImpactOutlineWidth, -controlSwapImpactOutlineWidth);
 
         float halfDuration = 0.2f / (animationSpeed > 0 ? animationSpeed : 1f);
         float t = 0;
+        Vector3 startScale = card.transform.localScale * controlSwapImpactScale;
+        Vector3 endScale = card.transform.localScale;
 
         while (t < 1f)
         {
@@ -1843,31 +2110,23 @@ public class DuelFXManager : MonoBehaviour
             t += Time.deltaTime / halfDuration;
             float smooth = Mathf.SmoothStep(0, 1, t);
             
-            card.transform.localScale = Vector3.Lerp(originalScale, peakScale, smooth);
-            if (ghost != null)
+            rt.position = targetRT.position; 
+            rt.localScale = Vector3.Lerp(startScale, endScale, smooth);
+            
+            if (smooth > 0.7f)
             {
-                ghost.transform.localScale = Vector3.Lerp(originalScale, peakScale * 1.15f, smooth);
-                ri.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.8f, 0f, smooth)); 
+                float fadeT = (smooth - 0.7f) / 0.3f;
+                Color currentImgColor = controlSwapImpactColor;
+                currentImgColor.a = (1f - fadeT) * controlSwapImpactColor.a;
+                ri.color = currentImgColor;
+                
+                Color outlineColor = controlSwapImpactColor;
+                outlineColor.a = (1f - fadeT) * controlSwapImpactColor.a;
+                outline.effectColor = outlineColor;
             }
             yield return null;
         }
 
-        if (ghost != null) Destroy(ghost);
-
-        t = 0;
-        while (t < 1f)
-        {
-            if (card == null) break;
-            t += Time.deltaTime / halfDuration;
-            float smooth = Mathf.SmoothStep(0, 1, t);
-            card.transform.localScale = Vector3.Lerp(peakScale, originalScale, smooth);
-            yield return null;
-        }
-
-        if (card != null)
-        {
-            card.transform.localScale = originalScale;
-            if (originalParent != null) { card.transform.SetParent(originalParent, true); card.transform.SetSiblingIndex(originalIndex); }
-        }
+        if (squeezeObj != null) Destroy(squeezeObj);
     }
 }

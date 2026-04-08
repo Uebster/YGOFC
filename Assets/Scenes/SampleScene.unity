@@ -18676,7 +18676,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009347796}
+  m_AnchoredPosition: {x: 0, y: 0.0003294195}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &250963708
@@ -46341,7 +46341,7 @@ MonoBehaviour:
   useTokenSummonRoutine: 1
   tokenSummonDuration: 1.2
   tokenSummonFadeColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  useTokenSummonPrefab: 0
+  useTokenSummonPrefab: 1
   useDestructionRoutine: 1
   destructionDuration: 0.8
   useExplosionPrefab: 1
@@ -46358,9 +46358,10 @@ MonoBehaviour:
   targetAvatarOnDirectAttack: 1
   useAttackHeadbutt: 0
   useAttackSword: 0
-  attackSwordSprite: {fileID: 0}
-  attackSwordColor: {r: 1, g: 1, b: 1, a: 1}
+  attackSwordSprite: {fileID: 3781665898625333168, guid: b388c01dfe4b42c459f5202bc76db457, type: 3}
+  attackSwordColor: {r: 1, g: 0, b: 0, a: 1}
   attackSwordSize: {x: 60, y: 60}
+  attackSwordMaterial: {fileID: 2100000, guid: 1ab439c8929ae2c4d969647b9140a029, type: 2}
   attackSwordRotationOffset: -90
   attackFlightDuration: 0.3
   useAttackTrail: 1
@@ -52378,7 +52379,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1701951476}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.9999869
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -82404,7 +82405,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 82258834}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.9999632
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -103701,7 +103702,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.00095894834, y: 0.00085818255}
+  m_AnchoredPosition: {x: 0.00095894834, y: 0.00094917783}
   m_SizeDelta: {x: -0.00091553, y: 353.6}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1356954785
@@ -118544,7 +118545,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 2087538613}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.9999969
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -165927,7 +165928,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00094703404}
+  m_AnchoredPosition: {x: 0, y: 0.00085015537}
   m_SizeDelta: {x: 0, y: 650.88}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2123005588
