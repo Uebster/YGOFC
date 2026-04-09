@@ -15,6 +15,81 @@ public class FieldSpellTheme
 public enum AttackTrailType { Shadows, ContinuousLine }
 public enum ControlSwapImpactType { Squeeze, Pulse }
 
+[System.Serializable]
+public class SelectionIconSettings
+{
+    public bool useIcon = true;
+    public bool usePrefab = false;
+    public GameObject prefab;
+    public bool useNative = true;
+    public Sprite sprite;
+    public Material material;
+    public Color availableColor = new Color(1f, 0.5f, 0f, 1f);
+    public Color selectedColor = Color.red;
+    public float size = 80f;
+    public bool showAvailableState = true;
+    public float blinkFrequency = 5f;
+    public bool spin = false;
+    public float spinSpeed = 90f;
+    public float selectedOutlineWidth = 5f;
+}
+
+[System.Serializable]
+public class FieldMarkerSettings
+{
+    public bool useMarker = true;
+    public bool usePrefab = false;
+    public GameObject prefab;
+    public bool useNative = true;
+    public Color color = new Color(0.8f, 0.2f, 1f, 0.5f);
+    public float duration = 1.0f;
+    public float startSize = 0.1f;
+    public float endSize = 2.0f;
+}
+
+[System.Serializable]
+public class SummonImpactSettings
+{
+    public bool useImpact = true;
+    public bool usePrefab = true;
+    public GameObject prefab;
+    public bool useNativePulse = false;
+    public Color pulseColor = Color.white;
+    public float pulseScale = 1.2f;
+    public float pulseDuration = 0.2f;
+    public float pulseOutlineWidth = 8f;
+}
+
+[System.Serializable]
+public class CinematicSettings
+{
+    public bool useCinematic = true;
+    public bool usePrefab = false;
+    public GameObject flashPrefab;
+    public bool useNative = true;
+    public Sprite backgroundSymbol;
+}
+
+[System.Serializable]
+public class SummonVFXPackage
+{
+    [Header("Ícone de Seleção")]
+    public SelectionIconSettings selectionIcon;
+    [Header("Marcador de Chão (Pouso)")]
+    public FieldMarkerSettings fieldMarker;
+    [Header("Impacto de Invocação")]
+    public SummonImpactSettings impact;
+    [Header("Cinemática")]
+    public CinematicSettings cinematic;
+}
+
+[System.Serializable]
+public class NormalSummonVFXPackage
+{
+    [Header("Impacto de Invocação")]
+    public SummonImpactSettings impact;
+}
+
 public class DuelFXManager : MonoBehaviour
 {
     public static DuelFXManager Instance;
@@ -96,6 +171,60 @@ public class DuelFXManager : MonoBehaviour
     [Tooltip("Instancia o prefab definido em 'Monster Effect VFX'.")]
     public bool useMonsterEffectPrefab = true;
 
+    [Header("--- ESTRUTURAS DE INVOCAÇÃO (NOVAS) ---")]
+    public NormalSummonVFXPackage normalSummonSettings = new NormalSummonVFXPackage();
+    public SummonVFXPackage specialSummonSettings = new SummonVFXPackage();
+    public SummonVFXPackage tributeSummonSettings = new SummonVFXPackage();
+    public SummonVFXPackage ritualSummonSettings = new SummonVFXPackage();
+    public SummonVFXPackage fusionSummonSettings = new SummonVFXPackage();
+
+    [Header("Opções de Invocação: Simples")]
+    public bool useSummonRoutine = false;
+    public bool useSummonPrefab = true;
+    public float summonPulseScale = 1.2f;
+    public float summonPulseDuration = 0.2f;
+    public Color summonPulseColor = Color.white;
+
+    [Header("Opções de Invocação: Tributo")]
+    public bool useTributeMarkerRoutine = true;
+    public bool useTributeMarkerPrefab = true;
+    public Color tributeMarkerColor = new Color(0.8f, 0.2f, 1f, 0.5f);
+    public bool useTributeSummonRoutine = false;
+    public bool useTributeSummonPrefab = true;
+    public Color tributeSummonColor = Color.white;
+    public bool useTributeCinematicRoutine = true;
+    public bool useTributeCinematicPrefab = false;
+
+    [Header("Opções de Invocação: Special")]
+    public bool useSpecialMarkerRoutine = true;
+    public bool useSpecialMarkerPrefab = true;
+    public Color specialMarkerColor = new Color(0.2f, 0.8f, 1f, 0.5f);
+    public bool useSpecialSummonRoutine = false;
+    public bool useSpecialSummonPrefab = true;
+    public Color specialSummonColor = Color.white;
+    public bool useSpecialCinematicRoutine = true;
+    public bool useSpecialCinematicPrefab = false;
+
+    [Header("Opções de Invocação: Fusão")]
+    public bool useFusionMarkerRoutine = true;
+    public bool useFusionMarkerPrefab = true;
+    public Color fusionMarkerColor = new Color(0.6f, 0.1f, 0.9f, 0.5f);
+    public bool useFusionSummonRoutine = false;
+    public bool useFusionSummonPrefab = true;
+    public Color fusionSummonColor = Color.white;
+    public bool useFusionCinematicRoutine = true;
+    public bool useFusionCinematicPrefab = false;
+
+    [Header("Opções de Invocação: Ritual")]
+    public bool useRitualMarkerRoutine = true;
+    public bool useRitualMarkerPrefab = true;
+    public Color ritualMarkerColor = new Color(0.1f, 0.3f, 1f, 0.5f);
+    public bool useRitualSummonRoutine = false;
+    public bool useRitualSummonPrefab = true;
+    public Color ritualSummonColor = Color.white;
+    public bool useRitualCinematicRoutine = true;
+    public bool useRitualCinematicPrefab = false;
+
     [Header("Opções de Corrente (Chain Link)")]
     public bool useChainLinkRoutine = true;
     public float chainLinkDuration = 1.0f;
@@ -108,6 +237,7 @@ public class DuelFXManager : MonoBehaviour
     public Sprite chainLinkRightSprite; 
     [Tooltip("Sprite dos elos unidos após o impacto.")]
     public Sprite chainLinkJoinedSprite; 
+    public Color chainLinkSpriteColor = Color.white;
     [Tooltip("Material Aditivo para ignorar o fundo preto dos sprites.")]
     public Material chainLinkMaterial;
     public bool useChainLinkPrefab = true;
@@ -150,6 +280,8 @@ public class DuelFXManager : MonoBehaviour
     [Tooltip("Move as cartas para o centro da tela durante o embaralhamento.")]
     public bool shuffleAtCenter = false;
     public float shuffleDuration = 0.8f; // Tempo total da animação
+    [Tooltip("Número de vezes que a animação de embaralhar se repete no mesmo gatilho.")]
+    public int shuffleLoopCount = 1;
     [Tooltip("Instancia o prefab definido em 'Shuffle VFX'. Útil para usar sua Sprite Sheet Animada.")]
     public bool useShufflePrefab = true;
 
@@ -179,6 +311,12 @@ public class DuelFXManager : MonoBehaviour
     [Tooltip("A carta encolhe conforme é destruída.")]
     public bool destructionShrink = true;
 
+    [Header("Opções de Banimento (Banish)")]
+    public bool useBanishRoutine = true;
+    public bool useBanishPrefab = true;
+    public float banishSpinSpeed = 720f;
+    public float banishShrinkDuration = 0.5f;
+
     [Header("Opções de Flip (Revelação)")]
     [Tooltip("Usa a rotina nativa para adicionar um Pulse ao final do Flip.")]
     public bool useFlipRoutine = true;
@@ -190,6 +328,44 @@ public class DuelFXManager : MonoBehaviour
     public Color flipPulseColor = Color.white;
     [Tooltip("Instancia o Prefab de Flip definido nos Slots visuais.")]
     public bool useFlipPrefab = true;
+
+    [Header("Opções de Dano Direto (Life Points)")]
+    public bool useDamageScreenShake = true;
+    public float screenShakeDuration = 0.4f;
+    public float screenShakeMagnitude = 20f;
+    public bool useDamagePrefab = true;
+    public Color damagePrefabColor = Color.white;
+
+    [Header("Opções de Ricochete (Reflect / Attack Fail)")]
+    [Tooltip("Se ativo, o atacante apenas sofre o tremor de ataque normal em vez da implosão.")]
+    public bool useReflectAsStandardDamage = false;
+    public bool useReflectRoutine = true;
+    public float reflectPulseScale = 1.0f; // Padrão 1.0 = Não infla, apenas gera o brilho
+    public float reflectPulseDuration = 0.3f;
+    public Color reflectPulseColor = new Color(0.2f, 0.8f, 1f, 1f);
+    public float reflectPulseOutlineWidth = 12f;
+    public float reflectShakeDuration = 0.4f;
+    public float reflectShakeMagnitude = 20f;
+    public bool useReflectPrefab = true;
+    public Color reflectPrefabColor = Color.white;
+
+    [Header("Opções de Hit / Corte (Impacto)")]
+    public bool useAttackImpactRoutine = false;
+    public bool useAttackImpactPrefab = true;
+    public float attackImpactPulseScale = 1.2f;
+    public float attackImpactPulseDuration = 0.2f;
+    public Color attackImpactPulseColor = Color.red;
+
+    [Header("Opções de Defesa com Sucesso (Defense Block)")]
+    public bool useDefenseRoutine = true;
+    public float defensePulseScale = 1.1f;
+    public float defensePulseDuration = 0.3f;
+    public Color defensePulseColor = new Color(0.8f, 0.9f, 1f, 1f);
+    public float defensePulseOutlineWidth = 15f;
+    public float defenseShakeDuration = 0.2f;
+    public float defenseShakeMagnitude = 10f;
+    public bool useDefensePrefab = true;
+    public Color defensePrefabColor = Color.white;
 
     [Header("Opções de Ataque (Combate)")]
     [Tooltip("Usa o prefab 'TargetingSwordUI' para mirar ataques. Se desmarcado, usa cores de outline (Hover).")]
@@ -222,6 +398,10 @@ public class DuelFXManager : MonoBehaviour
     public Color attackTrailColor = new Color(1f, 0f, 0f, 0.5f);
     [Tooltip("Instancia o Prefab 'Attack VFX' ao acertar o alvo.")]
     public bool useAttackImpactVFX = true;
+    [Tooltip("Rotação no eixo Z aplicada ao Prefab de impacto de ataque (ex: 90 para vertical).")]
+    public float attackImpactRotationOffset = 0f;
+    public float attackHitShakeDuration = 0.3f;
+    public float attackHitShakeMagnitude = 15f;
 
     [Header("Opções de Ícone de Tributo (Tribute Icon)")]
     public bool useTributeIcon = true;
@@ -241,9 +421,6 @@ public class DuelFXManager : MonoBehaviour
     [Header("Opções de Field Markers (Marcadores de Campo)")]
     public bool useFieldMarkers = true;
     public bool useNativeFieldMarker = true;
-    public Color specialMarkerColor = new Color(0.8f, 0.2f, 1f, 0.5f);
-    public Color fusionMarkerColor = new Color(0.6f, 0.1f, 0.9f, 0.5f);
-    public Color ritualMarkerColor = new Color(0.1f, 0.3f, 1f, 0.5f);
     public float markerDuration = 1.0f;
     public float markerStartSize = 0.1f;
     public float markerEndSize = 2.0f;
@@ -688,9 +865,16 @@ public class DuelFXManager : MonoBehaviour
 
         // 3. Impacto no Alvo
         PlaySound(attackImpactSound);
-        if (useAttackImpactVFX && attackVFX != null) SpawnVFXPublic(attackVFX, targetPos);
+        if (useAttackImpactVFX && attackVFX != null)
+        {
+            GameObject impact = SpawnVFXPublic(attackVFX, targetPos);
+            if (impact != null && attackImpactRotationOffset != 0f)
+            {
+                impact.transform.Rotate(0, 0, attackImpactRotationOffset);
+            }
+        }
         
-        if (target != null) PlayCardShake(target);
+        if (target != null) StartCoroutine(ShakeRoutine(target.transform, attackHitShakeDuration, attackHitShakeMagnitude));
         
         yield return null; 
         Debug.Log($"[VFX] ✔ [ROUTINE CONCLUÍDA] AttackRoutine finalizada.");
@@ -753,13 +937,6 @@ public class DuelFXManager : MonoBehaviour
         // Instancia o VFX por ÚLTIMO para garantir que a explosão cubra a carta no Canvas 2D
         if (useExplosionPrefab && explosionVFX != null)
             SpawnVFXPublic(explosionVFX, card.transform.position);
-    }
-
-    public void PlayAttackFail(CardDisplay attacker)
-    {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayAttackFail | Alvo (Atacante): {attacker?.CurrentCardData?.name} | Momento: ATK <= DEF do alvo (Ricochete).");
-        PlaySound(reflectSound);
-        SpawnVFXPublic(reflectVFX, attacker.transform.position);
     }
 
     // --- INVOCAÇÃO / TRIBUTO ---
@@ -1020,30 +1197,66 @@ public class DuelFXManager : MonoBehaviour
     public void PlayDamageEffect(Vector3 position)
     {
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayDamageEffect (Tremor de Tela) | Momento: Redução nos Life Points confirmada.");
+        if (!enableAnimations) return;
         PlaySound(damageSound);
-        SpawnVFXPublic(damageVFX, position);
+        
+        if (useDamagePrefab && damageVFX != null)
+            SpawnVFXPublic(damageVFX, position, damagePrefabColor != Color.white, damagePrefabColor);
+
+        if (useDamageScreenShake)
+        {
+            Transform canvas = GetUIParent();
+            if (canvas != null) StartCoroutine(ShakeRoutine(canvas, screenShakeDuration, screenShakeMagnitude));
+        }
+    }
+
+    public void PlayAttackFail(CardDisplay attacker)
+    {
+        Debug.Log($"[VFX] ➔ [CHAMADA] PlayAttackFail | Alvo (Atacante): {attacker?.CurrentCardData?.name} | Momento: ATK <= DEF do alvo (Ricochete).");
+        if (!enableAnimations || attacker == null) return;
+        PlaySound(reflectSound);
+        
+        if (useReflectPrefab && reflectVFX != null)
+            SpawnVFXPublic(reflectVFX, attacker.transform.position, reflectPrefabColor != Color.white, reflectPrefabColor);
+
+        if (useReflectAsStandardDamage)
+        {
+            StartCoroutine(ShakeRoutine(attacker.transform, reflectShakeDuration, reflectShakeMagnitude));
+        }
+        else if (useReflectRoutine)
+        {
+            StartCoroutine(PulseGhostRoutine(attacker, reflectPulseScale, reflectPulseDuration, reflectPulseColor, reflectPulseOutlineWidth));
+            StartCoroutine(ShakeRoutine(attacker.transform, reflectShakeDuration, reflectShakeMagnitude));
+        }
     }
 
     public void PlayDefenseSuccessEffect(CardDisplay card)
     {
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayDefenseSuccessEffect (Escudo) | Alvo (Defensor): {card?.CurrentCardData?.name} | Momento: Sobreviveu ao ataque.");
+        if (!enableAnimations || card == null) return;
         PlaySound(defenseSound);
-        SpawnVFXPublic(defenseSuccessVFX, card.transform.position);
+        
+        if (useDefensePrefab && defenseSuccessVFX != null)
+            SpawnVFXPublic(defenseSuccessVFX, card.transform.position, defensePrefabColor != Color.white, defensePrefabColor);
+
+        if (useDefenseRoutine)
+        {
+            StartCoroutine(PulseGhostRoutine(card, defensePulseScale, defensePulseDuration, defensePulseColor, defensePulseOutlineWidth));
+            StartCoroutine(ShakeRoutine(card.transform, defenseShakeDuration, defenseShakeMagnitude));
+        }
     }
 
     public void PlayCardShake(CardDisplay card)
     {
         if (!enableAnimations || card == null) return;
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayCardShake | Alvo: {card.CurrentCardData?.name} | Momento: Tremedeira de impacto físico.");
-        StartCoroutine(ShakeRoutine(card.transform));
+        StartCoroutine(ShakeRoutine(card.transform, attackHitShakeDuration, attackHitShakeMagnitude));
     }
 
-    private IEnumerator ShakeRoutine(Transform target)
+    private IEnumerator ShakeRoutine(Transform target, float duration, float magnitude)
     {
         Vector3 originalPos = target.position;
         float elapsed = 0f;
-        float duration = 0.3f; // Tremedeira super rápida
-        float magnitude = 15f; // Intensidade (pixels de deslocamento)
 
         while (elapsed < duration)
         {
@@ -1135,6 +1348,7 @@ public class DuelFXManager : MonoBehaviour
             leftRT.anchoredPosition = new Vector2(-100, 25);
             leftImg = leftObj.GetComponent<Image>();
             leftImg.sprite = chainLinkLeftSprite;
+            leftImg.color = chainLinkSpriteColor;
             if (chainLinkMaterial != null) leftImg.material = chainLinkMaterial;
 
             GameObject rightObj = new GameObject("RightLink", typeof(RectTransform), typeof(Image));
@@ -1146,6 +1360,7 @@ public class DuelFXManager : MonoBehaviour
             
             if (chainLinkRightSprite != null) rightImg.sprite = chainLinkRightSprite;
             else { rightImg.sprite = chainLinkLeftSprite; rightRT.localScale = new Vector3(-1, 1, 1); }
+            rightImg.color = chainLinkSpriteColor;
             if (chainLinkMaterial != null) rightImg.material = chainLinkMaterial;
 
             if (chainLinkJoinedSprite != null)
@@ -1157,6 +1372,7 @@ public class DuelFXManager : MonoBehaviour
                 joinedRT.anchoredPosition = new Vector2(0, 25);
                 joinedImg = joinedObj.GetComponent<Image>();
                 joinedImg.sprite = chainLinkJoinedSprite;
+                joinedImg.color = chainLinkSpriteColor;
                 if (chainLinkMaterial != null) joinedImg.material = chainLinkMaterial;
                 joinedImg.enabled = false;
             }
@@ -1209,9 +1425,9 @@ public class DuelFXManager : MonoBehaviour
                 float alpha = 1f - ((t - 0.7f) / 0.3f);
                 txt.color = new Color(chainLinkTextColor.r, chainLinkTextColor.g, chainLinkTextColor.b, alpha);
                 shadowTxt.color = new Color(chainLinkShadowColor.r, chainLinkShadowColor.g, chainLinkShadowColor.b, alpha);
-                if (joinedImg != null) joinedImg.color = new Color(1, 1, 1, alpha);
-                if (leftImg != null) leftImg.color = new Color(1, 1, 1, alpha);
-                if (rightImg != null) rightImg.color = new Color(1, 1, 1, alpha);
+                if (joinedImg != null) joinedImg.color = new Color(chainLinkSpriteColor.r, chainLinkSpriteColor.g, chainLinkSpriteColor.b, alpha);
+                if (leftImg != null) leftImg.color = new Color(chainLinkSpriteColor.r, chainLinkSpriteColor.g, chainLinkSpriteColor.b, alpha);
+                if (rightImg != null) rightImg.color = new Color(chainLinkSpriteColor.r, chainLinkSpriteColor.g, chainLinkSpriteColor.b, alpha);
             }
 
             yield return null;
@@ -1578,13 +1794,7 @@ public class DuelFXManager : MonoBehaviour
         if (!enableAnimations || pileTransform == null) return;
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayShuffleEffect | Momento: Embaralhamento engatilhado na pilha {pileTransform.name}.");
         
-        if (useShufflePrefab && shuffleVFX != null)
-        {
-            Vector3 spawnPos = shuffleAtCenter && boardCenter != null ? boardCenter.position : pileTransform.position;
-            SpawnVFXPublic(shuffleVFX, spawnPos);
-        }
-
-        if (useShuffleRoutine)
+        if (useShuffleRoutine || useShufflePrefab)
         {
             StartCoroutine(ShuffleRoutine(pileTransform));
         }
@@ -1596,112 +1806,116 @@ public class DuelFXManager : MonoBehaviour
 
     private IEnumerator ShuffleRoutine(Transform pileTransform)
     {
-        PlaySound(shuffleSound);
-
         Transform uiParent = GetUIParent();
-        if (uiParent == null) yield break;
+        if (uiParent == null && useShuffleRoutine) yield break;
 
-        int deckSize = 6; // Cria 6 cartas fakes para criar o volume do baralho
-        List<GameObject> fakeCards = new List<GameObject>();
-        
         Vector3 startPos = pileTransform.position;
         Vector3 centerPos = shuffleAtCenter && boardCenter != null ? boardCenter.position : startPos;
-        
-        // Tenta capturar o tamanho e escala do slot do baralho original
         RectTransform pileRT = pileTransform.GetComponent<RectTransform>();
 
-        for (int i = 0; i < deckSize; i++)
-        {
-            GameObject card = new GameObject($"FakeCard_{i}", typeof(RectTransform), typeof(RawImage));
-            
-            // Herda âncoras primeiro para não distorcer a escala
-            if (pileRT != null && pileRT.parent != null)
-            {
-                card.transform.SetParent(pileRT.parent, false);
-                RectTransform rt = card.GetComponent<RectTransform>();
-                rt.anchorMin = pileRT.anchorMin; rt.anchorMax = pileRT.anchorMax; rt.pivot = pileRT.pivot;
-                rt.sizeDelta = pileRT.sizeDelta; rt.localRotation = pileRT.localRotation; rt.localScale = pileRT.localScale;
-            }
-
-            card.transform.SetParent(uiParent, true); // Joga pro Canvas Master mantendo o tamanho World Space
-            card.transform.SetAsLastSibling();
-
-            RawImage ri = card.GetComponent<RawImage>();
-            ri.texture = GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null;
-
-            fakeCards.Add(card);
-        }
-
         float halfDuration = (shuffleDuration / 2f) / (animationSpeed > 0 ? animationSpeed : 1f);
-        float t = 0;
+        int loops = Mathf.Max(1, shuffleLoopCount);
 
-        // Fase 1: Levanta e Divide o Baralho em Leque
-        while (t < 1f)
+        for (int loopIndex = 0; loopIndex < loops; loopIndex++)
         {
-            t += Time.deltaTime / halfDuration;
-            float smooth = Mathf.SmoothStep(0, 1, t);
-            
-            Vector3 currentBasePos = Vector3.Lerp(startPos, centerPos, smooth);
+            PlaySound(shuffleSound);
 
-            for (int i = 0; i < deckSize; i++)
+            if (useShufflePrefab && shuffleVFX != null)
             {
-                if (fakeCards[i] == null) continue;
-                
-                // Metade das cartas vai pra esquerda, metade pra direita
-                float xTargetOffset = (i % 2 == 0) ? -60f : 60f;
-                float yTargetOffset = Mathf.Sin(smooth * Mathf.PI) * 40f; // Efeito de parábola subindo
-                
-                // Adiciona um leque (espelhamento)
-                float rotationZ = (i % 2 == 0) ? Mathf.Lerp(0, 20f, smooth) : Mathf.Lerp(0, -20f, smooth);
-                
-                fakeCards[i].transform.position = currentBasePos + new Vector3(xTargetOffset * smooth, yTargetOffset * smooth, 0);
-                fakeCards[i].transform.rotation = Quaternion.Euler(0, 0, pileTransform.eulerAngles.z + rotationZ);
-
-                if (shuffleAtCenter)
-                {
-                    float scaleMult = 1f + (smooth * 0.5f); // Cresce 50% no centro
-                    fakeCards[i].transform.localScale = (GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one) * scaleMult;
-                }
+                Vector3 spawnPos = shuffleAtCenter && boardCenter != null ? boardCenter.position : startPos;
+                SpawnVFXPublic(shuffleVFX, spawnPos);
             }
-            yield return null;
-        }
 
-        PlaySound(shuffleSound); // Barulho de mesclar as cartas
-
-        // Fase 2: Une as metades entrelaçando e desce
-        t = 0;
-        while (t < 1f)
-        {
-            t += Time.deltaTime / halfDuration;
-            float smooth = Mathf.SmoothStep(0, 1, t);
-            
-            Vector3 currentBasePos = Vector3.Lerp(centerPos, startPos, smooth);
-
-            for (int i = 0; i < deckSize; i++)
+            if (useShuffleRoutine && uiParent != null)
             {
-                if (fakeCards[i] == null) continue;
-                
-                float xStartOffset = (i % 2 == 0) ? -60f : 60f;
-                float currentXOffset = Mathf.Lerp(xStartOffset, 0, smooth);
-                float rotationZ = (i % 2 == 0) ? Mathf.Lerp(20f, 0f, smooth) : Mathf.Lerp(-20f, 0f, smooth);
-                
-                // Mistura as camadas alternando a hierarquia (Zipper effect)
-                int siblingTarget = fakeCards[i].transform.parent.childCount - (i % 2 == 0 ? i : deckSize - i);
-                fakeCards[i].transform.SetSiblingIndex(siblingTarget);
+                int deckSize = 6; 
+                List<GameObject> fakeCards = new List<GameObject>();
 
-                fakeCards[i].transform.position = currentBasePos + new Vector3(currentXOffset, 0, 0);
-                fakeCards[i].transform.rotation = Quaternion.Euler(0, 0, pileTransform.eulerAngles.z + rotationZ);
-
-                if (shuffleAtCenter)
+                for (int i = 0; i < deckSize; i++)
                 {
-                    float scaleMult = 1f + ((1f - smooth) * 0.5f); // Encolhe de volta
-                    fakeCards[i].transform.localScale = (GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one) * scaleMult;
-                }
-            }
-            yield return null;
-        }
+                    GameObject card = new GameObject($"FakeCard_{i}", typeof(RectTransform), typeof(RawImage));
+                    if (pileRT != null && pileRT.parent != null)
+                    {
+                        card.transform.SetParent(pileRT.parent, false);
+                        RectTransform rt = card.GetComponent<RectTransform>();
+                        rt.anchorMin = pileRT.anchorMin; rt.anchorMax = pileRT.anchorMax; rt.pivot = pileRT.pivot;
+                        rt.sizeDelta = pileRT.sizeDelta; rt.localRotation = pileRT.localRotation; rt.localScale = pileRT.localScale;
+                    }
+                    card.transform.SetParent(uiParent, true); 
+                    card.transform.SetAsLastSibling();
 
-        foreach (var c in fakeCards) Destroy(c);
+                    RawImage ri = card.GetComponent<RawImage>();
+                    ri.texture = GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null;
+                    fakeCards.Add(card);
+                }
+
+            float t = 0;
+
+                // Fase 1: Levanta e Divide o Baralho em Leque
+                while (t < 1f)
+                {
+                    t += Time.deltaTime / halfDuration;
+                    float smooth = Mathf.SmoothStep(0, 1, t);
+                    Vector3 currentBasePos = Vector3.Lerp(startPos, centerPos, smooth);
+
+                    for (int i = 0; i < deckSize; i++)
+                    {
+                        if (fakeCards[i] == null) continue;
+                        float xTargetOffset = (i % 2 == 0) ? -60f : 60f;
+                        float yTargetOffset = Mathf.Sin(smooth * Mathf.PI) * 40f; 
+                        float rotationZ = (i % 2 == 0) ? Mathf.Lerp(0, 20f, smooth) : Mathf.Lerp(0, -20f, smooth);
+                        
+                        fakeCards[i].transform.position = currentBasePos + new Vector3(xTargetOffset * smooth, yTargetOffset * smooth, 0);
+                        fakeCards[i].transform.rotation = Quaternion.Euler(0, 0, pileTransform.eulerAngles.z + rotationZ);
+
+                        if (shuffleAtCenter)
+                        {
+                            float scaleMult = 1f + (smooth * 0.5f); 
+                            fakeCards[i].transform.localScale = (GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one) * scaleMult;
+                        }
+                    }
+                    yield return null;
+                }
+
+                PlaySound(shuffleSound); 
+
+                // Fase 2: Une as metades entrelaçando e desce
+                t = 0;
+                while (t < 1f)
+                {
+                    t += Time.deltaTime / halfDuration;
+                    float smooth = Mathf.SmoothStep(0, 1, t);
+                    Vector3 currentBasePos = Vector3.Lerp(centerPos, startPos, smooth);
+
+                    for (int i = 0; i < deckSize; i++)
+                    {
+                        if (fakeCards[i] == null) continue;
+                        float xStartOffset = (i % 2 == 0) ? -60f : 60f;
+                        float currentXOffset = Mathf.Lerp(xStartOffset, 0, smooth);
+                        float rotationZ = (i % 2 == 0) ? Mathf.Lerp(20f, 0f, smooth) : Mathf.Lerp(-20f, 0f, smooth);
+                        
+                        int siblingTarget = fakeCards[i].transform.parent.childCount - (i % 2 == 0 ? i : deckSize - i);
+                        fakeCards[i].transform.SetSiblingIndex(siblingTarget);
+
+                        fakeCards[i].transform.position = currentBasePos + new Vector3(currentXOffset, 0, 0);
+                        fakeCards[i].transform.rotation = Quaternion.Euler(0, 0, pileTransform.eulerAngles.z + rotationZ);
+
+                        if (shuffleAtCenter)
+                        {
+                            float scaleMult = 1f + ((1f - smooth) * 0.5f); 
+                            fakeCards[i].transform.localScale = (GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one) * scaleMult;
+                        }
+                    }
+                    yield return null;
+                }
+
+                foreach (var c in fakeCards) Destroy(c);
+            }
+            else
+            {
+                yield return new WaitForSeconds(halfDuration * 2f);
+            }
+        }
     }
 
     public void PlaySummonCinematic(CardDisplay card, bool isTribute, bool isSpecial, System.Action onComplete)
@@ -1994,7 +2208,7 @@ public class DuelFXManager : MonoBehaviour
         }
     }
 
-    public GameObject SpawnVFXPublic(GameObject prefab, Vector3 position)
+    public GameObject SpawnVFXPublic(GameObject prefab, Vector3 position, bool applyTint = false, Color tintColor = default)
     {
         if (prefab != null)
         {
@@ -2031,6 +2245,17 @@ public class DuelFXManager : MonoBehaviour
                 r.sortingOrder = targetOrder;
             }
             
+            if (applyTint)
+            {
+                foreach (var img in instance.GetComponentsInChildren<Image>(true)) img.color = tintColor;
+                foreach (var ri in instance.GetComponentsInChildren<RawImage>(true)) ri.color = tintColor;
+                foreach (var sr in instance.GetComponentsInChildren<SpriteRenderer>(true)) sr.color = tintColor;
+                foreach (var pSys in instance.GetComponentsInChildren<ParticleSystem>(true)) {
+                    var main = pSys.main; 
+                    main.startColor = tintColor;
+                }
+            }
+
             // FIX: Lê a duração real do próprio sistema de partículas para a destruição
             ParticleSystem ps = instance.GetComponent<ParticleSystem>();
             if (ps != null)

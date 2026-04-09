@@ -1,5 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 public class EffectTestManager : MonoBehaviour
 {
@@ -17,8 +20,18 @@ public class EffectTestManager : MonoBehaviour
 
     void Update()
     {
-        // Abre ou fecha o painel de testes de VFX ao pressionar Ctrl + E
+        bool toggleMenu = false;
+
+#if ENABLE_INPUT_SYSTEM
+        if (Keyboard.current != null && (Keyboard.current.leftCtrlKey.isPressed || Keyboard.current.rightCtrlKey.isPressed) && Keyboard.current.eKey.wasPressedThisFrame)
+            toggleMenu = true;
+#else
         if (Input.GetKeyDown(KeyCode.E) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
+            toggleMenu = true;
+#endif
+
+        // Abre ou fecha o painel de testes de VFX ao pressionar Ctrl + E
+        if (toggleMenu)
         {
             if (GameManager.Instance != null)
             {
@@ -80,41 +93,115 @@ public class EffectTestManager : MonoBehaviour
         TestAction("Aura: Carta Baixada (Cinza)", () => TestColoredAura("Monster (Normal)", true));
 
         GUILayout.Space(5);
-        GUILayout.Label("<color=cyan><b>POUSO E INVOCAÇÕES</b></color>");
+        GUILayout.Label("<color=cyan><b>INVOCAÇÃO: NORMAL</b></color>");
         
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Impacto Simples (Nativo)", btnStyle)) { 
+            Debug.Log("Teste de Impacto Normal Nativo (Aguardando lógica)");
+        }
+        if (GUILayout.Button("Impacto Simples (Prefab)", btnStyle)) { 
+            Debug.Log("Teste de Impacto Normal Prefab (Aguardando lógica)");
+        }
+        GUILayout.EndHorizontal();
+        
+        GUILayout.Space(5);
+        GUILayout.Label("<color=cyan><b>INVOCAÇÃO: SPECIAL</b></color>");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Selection Icon (Nativo)", btnStyle)) { Debug.Log("Special Selection Nativo"); }
+        if (GUILayout.Button("Selection Icon (Prefab)", btnStyle)) { Debug.Log("Special Selection Prefab"); }
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Field Marker (Nativo)", btnStyle)) { Debug.Log("Special Marker Nativo"); }
+        if (GUILayout.Button("Field Marker (Prefab)", btnStyle)) { Debug.Log("Special Marker Prefab"); }
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Impacto (Nativo)", btnStyle)) { Debug.Log("Special Impacto Nativo"); }
+        if (GUILayout.Button("Impacto (Prefab)", btnStyle)) { Debug.Log("Special Impacto Prefab"); }
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Cinemática (Nativa)", btnStyle)) { Debug.Log("Special Cinematic Nativa"); }
+        if (GUILayout.Button("Cinemática (Prefab)", btnStyle)) { Debug.Log("Special Cinematic Prefab"); }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+        GUILayout.Label("<color=cyan><b>INVOCAÇÃO: TRIBUTO</b></color>");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Selection Icon (Nativo)", btnStyle)) { Debug.Log("Tributo Selection Nativo"); }
+        if (GUILayout.Button("Selection Icon (Prefab)", btnStyle)) { Debug.Log("Tributo Selection Prefab"); }
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Field Marker (Nativo)", btnStyle)) { Debug.Log("Tributo Marker Nativo"); }
+        if (GUILayout.Button("Field Marker (Prefab)", btnStyle)) { Debug.Log("Tributo Marker Prefab"); }
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Impacto (Nativo)", btnStyle)) { Debug.Log("Tributo Impacto Nativo"); }
+        if (GUILayout.Button("Impacto (Prefab)", btnStyle)) { Debug.Log("Tributo Impacto Prefab"); }
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Cinemática (Nativa)", btnStyle)) { Debug.Log("Tributo Cinematic Nativa"); }
+        if (GUILayout.Button("Cinemática (Prefab)", btnStyle)) { Debug.Log("Tributo Cinematic Prefab"); }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+        GUILayout.Label("<color=cyan><b>INVOCAÇÃO: RITUAL</b></color>");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Selection Icon (Nativo)", btnStyle)) { Debug.Log("Ritual Selection Nativo"); }
+        if (GUILayout.Button("Selection Icon (Prefab)", btnStyle)) { Debug.Log("Ritual Selection Prefab"); }
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Field Marker (Nativo)", btnStyle)) { Debug.Log("Ritual Marker Nativo"); }
+        if (GUILayout.Button("Field Marker (Prefab)", btnStyle)) { Debug.Log("Ritual Marker Prefab"); }
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Impacto (Nativo)", btnStyle)) { Debug.Log("Ritual Impacto Nativo"); }
+        if (GUILayout.Button("Impacto (Prefab)", btnStyle)) { Debug.Log("Ritual Impacto Prefab"); }
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Cinemática (Nativa)", btnStyle)) { Debug.Log("Ritual Cinematic Nativa"); }
+        if (GUILayout.Button("Cinemática (Prefab)", btnStyle)) { Debug.Log("Ritual Cinematic Prefab"); }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+        GUILayout.Label("<color=cyan><b>INVOCAÇÃO: FUSÃO</b></color>");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Selection Icon (Nativo)", btnStyle)) { Debug.Log("Fusion Selection Nativo"); }
+        if (GUILayout.Button("Selection Icon (Prefab)", btnStyle)) { Debug.Log("Fusion Selection Prefab"); }
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Field Marker (Nativo)", btnStyle)) { Debug.Log("Fusion Marker Nativo"); }
+        if (GUILayout.Button("Field Marker (Prefab)", btnStyle)) { Debug.Log("Fusion Marker Prefab"); }
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Impacto (Nativo)", btnStyle)) { Debug.Log("Fusion Impacto Nativo"); }
+        if (GUILayout.Button("Impacto (Prefab)", btnStyle)) { Debug.Log("Fusion Impacto Prefab"); }
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Cinemática (Nativa)", btnStyle)) { Debug.Log("Fusion Cinematic Nativa"); }
+        if (GUILayout.Button("Cinemática (Prefab)", btnStyle)) { Debug.Log("Fusion Cinematic Prefab"); }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+        GUILayout.Label("<color=cyan><b>TOKEN E AURAS</b></color>");
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Aura Pouso (Nativo)", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            DuelFXManager.Instance.usePlacementAuraRoutine = true; 
-            DuelFXManager.Instance.usePlacementAuraPrefab = false; 
-            DuelFXManager.Instance.PlayPlacementAura(playerMonster); 
+            ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.usePlacementAuraRoutine = true; DuelFXManager.Instance.usePlacementAuraPrefab = false; DuelFXManager.Instance.PlayPlacementAura(playerMonster); 
         }
         if (GUILayout.Button("Aura Pouso (Prefab)", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            DuelFXManager.Instance.usePlacementAuraRoutine = false; 
-            DuelFXManager.Instance.usePlacementAuraPrefab = true; 
-            DuelFXManager.Instance.PlayPlacementAura(playerMonster); 
+            ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.usePlacementAuraRoutine = false; DuelFXManager.Instance.usePlacementAuraPrefab = true; DuelFXManager.Instance.PlayPlacementAura(playerMonster); 
         }
         GUILayout.EndHorizontal();
-
-        TestAction("Impacto de Invocação (Monstros)", () => { EnsurePlayerMonster(); DuelFXManager.Instance.PlaySummonEffect(playerMonster); });
-        
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Token (Nativo)", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            DuelFXManager.Instance.useTokenSummonRoutine = true; 
-            DuelFXManager.Instance.useTokenSummonPrefab = false; 
-            DuelFXManager.Instance.PlayTokenSummonEffect(playerMonster); 
+            ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.useTokenSummonRoutine = true; DuelFXManager.Instance.useTokenSummonPrefab = false; DuelFXManager.Instance.PlayTokenSummonEffect(playerMonster); 
         }
         if (GUILayout.Button("Token (Prefab)", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            DuelFXManager.Instance.useTokenSummonRoutine = false; 
-            DuelFXManager.Instance.useTokenSummonPrefab = true; 
-            DuelFXManager.Instance.PlayTokenSummonEffect(playerMonster); 
+            ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.useTokenSummonRoutine = false; DuelFXManager.Instance.useTokenSummonPrefab = true; DuelFXManager.Instance.PlayTokenSummonEffect(playerMonster); 
         }
         GUILayout.EndHorizontal();
 
-        TestAction("Tribute Summon", () => { EnsurePlayerMonster(); DuelFXManager.Instance.PlayTributeSummonEffect(playerMonster); });
+        // --- OUTRAS AÇÕES ---
+        GUILayout.Space(5);
+        GUILayout.Label("<color=cyan><b>AÇÕES DE CARTA</b></color>");
         
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Flip (Nativo Pulse)", btnStyle)) { 
@@ -246,51 +333,50 @@ public class EffectTestManager : MonoBehaviour
         }
         GUILayout.EndHorizontal();
 
-        TestAction("Hit / Corte (VFX)", () => {
-            EnsureOpponentMonster();
-            DuelFXManager.Instance.SpawnVFXPublic(DuelFXManager.Instance.attackVFX, opponentMonster.transform.position);
-            DuelFXManager.Instance.PlayCardShake(opponentMonster);
-        });
-        TestAction("Defesa / Bloqueio (VFX)", () => {
-            EnsurePlayerMonster(); EnsureOpponentMonster();
-            DuelFXManager.Instance.PlayAttackFail(playerMonster);
-            DuelFXManager.Instance.PlayDefenseSuccessEffect(opponentMonster);
-        });
-        TestAction("Destruição (Explosão VFX)", () => {
-            EnsureOpponentMonster();
-            DuelFXManager.Instance.PlayDestruction(opponentMonster);
-        });
-        TestAction("Apenas Banir (Vórtice)", () => { EnsureOpponentMonster(); DuelFXManager.Instance.PlayBanishEffect(opponentMonster); });
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Hit/Corte (Nativo)", btnStyle)) { 
+            ClearFieldForTesting(); EnsureOpponentMonster(); DuelFXManager.Instance.useAttackImpactRoutine = true; DuelFXManager.Instance.useAttackImpactPrefab = false; DuelFXManager.Instance.PlayCardShake(opponentMonster); 
+        }
+        if (GUILayout.Button("Hit/Corte (Prefab)", btnStyle)) { 
+            ClearFieldForTesting(); EnsureOpponentMonster(); DuelFXManager.Instance.useAttackImpactRoutine = false; DuelFXManager.Instance.useAttackImpactPrefab = true; DuelFXManager.Instance.PlayCardShake(opponentMonster); 
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Defesa/Block (Nativo)", btnStyle)) { 
+            ClearFieldForTesting(); EnsureOpponentMonster(); DuelFXManager.Instance.useDefenseRoutine = true; DuelFXManager.Instance.useDefensePrefab = false; DuelFXManager.Instance.PlayDefenseSuccessEffect(opponentMonster); 
+        }
+        if (GUILayout.Button("Defesa/Block (Prefab)", btnStyle)) { 
+            ClearFieldForTesting(); EnsureOpponentMonster(); DuelFXManager.Instance.useDefenseRoutine = false; DuelFXManager.Instance.useDefensePrefab = true; DuelFXManager.Instance.PlayDefenseSuccessEffect(opponentMonster); 
+        }
+        GUILayout.EndHorizontal();
 
         
         GUILayout.Space(5);
-        GUILayout.Label("<color=cyan><b>GLOBAIS</b></color>");
+        GUILayout.Label("<color=cyan><b>DESTRUIÇÃO E REMOÇÃO</b></color>");
         
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Field Marker (Nativo)", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            DuelFXManager.Instance.useNativeFieldMarker = true; 
-            DuelFXManager.Instance.useFieldMarkerPrefabs = false; 
-            DuelFXManager.Instance.PlaySummonCinematic(playerMonster, false, true, null); 
+        if (GUILayout.Button("Explosão (Nativo)", btnStyle)) { 
+            ClearFieldForTesting(); EnsureOpponentMonster(); DuelFXManager.Instance.useDestructionRoutine = true; DuelFXManager.Instance.useExplosionPrefab = false; DuelFXManager.Instance.PlayDestruction(opponentMonster); 
         }
-        if (GUILayout.Button("Field Marker (Prefab)", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            DuelFXManager.Instance.useNativeFieldMarker = false; 
-            DuelFXManager.Instance.useFieldMarkerPrefabs = true; 
-            DuelFXManager.Instance.PlaySummonCinematic(playerMonster, false, true, null); 
+        if (GUILayout.Button("Explosão (Prefab)", btnStyle)) { 
+            ClearFieldForTesting(); EnsureOpponentMonster(); DuelFXManager.Instance.useDestructionRoutine = false; DuelFXManager.Instance.useExplosionPrefab = true; DuelFXManager.Instance.PlayDestruction(opponentMonster); 
         }
         GUILayout.EndHorizontal();
         
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Banish (Nativo)", btnStyle)) { 
+            ClearFieldForTesting(); EnsureOpponentMonster(); DuelFXManager.Instance.useBanishRoutine = true; DuelFXManager.Instance.useBanishPrefab = false; DuelFXManager.Instance.PlayBanishEffect(opponentMonster); 
+        }
+        if (GUILayout.Button("Banish (Prefab)", btnStyle)) { 
+            ClearFieldForTesting(); EnsureOpponentMonster(); DuelFXManager.Instance.useBanishRoutine = false; DuelFXManager.Instance.useBanishPrefab = true; DuelFXManager.Instance.PlayBanishEffect(opponentMonster); 
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+        GUILayout.Label("<color=cyan><b>GLOBAIS</b></color>");
+
         TestAction("Tremor de Dano na Tela", () => DuelFXManager.Instance.PlayDamageEffect(Vector3.zero));
-        TestAction("Teste: Cinemática de Ritual", () => {
-             EnsurePlayerMonster(); EnsurePlayerSpell();
-             DuelFXManager.Instance.PlayRitualCinematic(playerMonster, playerSpell.CurrentCardData, null);
-        });
-        TestAction("Teste: Cinemática de Fusão", () => {
-             EnsurePlayerMonster(); EnsureOpponentMonster(); EnsurePlayerSpell();
-             List<CardData> mats = new List<CardData> { playerMonster.CurrentCardData, opponentMonster.CurrentCardData };
-             DuelFXManager.Instance.PlayFusionCinematic(playerMonster, mats, playerSpell.CurrentCardData, null);
-        });
         
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Shuffle (Nativo)", btnStyle)) { 
