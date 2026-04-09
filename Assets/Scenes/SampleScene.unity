@@ -7221,7 +7221,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1555180853}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.99999994
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -18676,7 +18676,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0003294195}
+  m_AnchoredPosition: {x: 0, y: 0.0010023261}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &250963708
@@ -30674,8 +30674,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 256254598}
   m_HandleRect: {fileID: 256254597}
   m_Direction: 2
-  m_Value: 0.9999998
-  m_Size: 0.4666666
+  m_Value: 1
+  m_Size: 0.46666667
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -46314,10 +46314,29 @@ MonoBehaviour:
   colorMonsterNormal: {r: 0.9, g: 0.9, b: 0.5, a: 1}
   colorFusion: {r: 0.6, g: 0.2, b: 0.9, a: 1}
   colorRitual: {r: 0.2, g: 0.5, b: 1, a: 1}
+  usePlacementAuraRoutine: 1
+  placementAuraDuration: 1.2
+  placementAuraOutlineWidth: 10
+  usePlacementAuraPrefab: 1
   useActivationPulse: 1
   activationPulseScale: 1.3
   activationPulseDuration: 0.2
+  activationPulseOutlineWidth: 8
   useActivationPrefab: 0
+  useMonsterEffectPulse: 1
+  monsterEffectPulseScale: 1.3
+  monsterEffectPulseDuration: 0.2
+  monsterEffectPulseOutlineWidth: 8
+  useMonsterEffectPrefab: 1
+  useChainLinkRoutine: 1
+  chainLinkDuration: 1
+  chainLinkScale: 1.2
+  chainLinkTextColor: {r: 1, g: 0.8, b: 0, a: 1}
+  chainLinkShadowColor: {r: 0, g: 0, b: 0, a: 1}
+  chainLinkLeftSprite: {fileID: 0}
+  chainLinkRightSprite: {fileID: 0}
+  chainLinkJoinedSprite: {fileID: 0}
+  useChainLinkPrefab: 1
   useEquipGhost: 1
   equipGhostFlightDuration: 0.4
   equipGhostFlightScale: 1.5
@@ -46330,9 +46349,14 @@ MonoBehaviour:
   useControlSwapOutline: 1
   controlSwapOutlineColor: {r: 0.8, g: 0.2, b: 0.9, a: 1}
   useControlSwapTrail: 1
+  controlSwapTrailType: 0
+  controlSwapTrailWidth: 15
   controlSwapTrailColor: {r: 0.8, g: 0.2, b: 0.9, a: 0.5}
   useControlSwapImpact: 1
+  controlSwapImpactType: 0
   controlSwapImpactColor: {r: 0.8, g: 0.2, b: 0.9, a: 1}
+  controlSwapImpactScale: 1.4
+  controlSwapImpactOutlineWidth: 10
   useControlSwapPrefab: 1
   useShuffleRoutine: 1
   shuffleAtCenter: 1
@@ -46350,6 +46374,14 @@ MonoBehaviour:
   destructionFadeColor: {r: 0, g: 0, b: 0, a: 1}
   destructionWaitHalfExplosion: 1
   destructionShrink: 1
+  useFlipRoutine: 1
+  flipVfxDuration: 0.3
+  useFlipPulse: 1
+  flipPulseScale: 1.2
+  flipPulseDuration: 0.2
+  flipPulseOutlineWidth: 8
+  flipPulseColor: {r: 1, g: 1, b: 1, a: 1}
+  useFlipPrefab: 1
   useTargetingSwordPrefab: 1
   colorAttackReadyHover: {r: 1, g: 0.5, b: 0, a: 1}
   colorAttackTargetHover: {r: 1, g: 0, b: 0, a: 1}
@@ -46362,6 +46394,7 @@ MonoBehaviour:
   attackSwordColor: {r: 1, g: 0, b: 0, a: 1}
   attackSwordSize: {x: 60, y: 60}
   attackSwordMaterial: {fileID: 2100000, guid: 1ab439c8929ae2c4d969647b9140a029, type: 2}
+  useAttackProjectilePrefab: 1
   attackSwordRotationOffset: -90
   attackFlightDuration: 0.3
   useAttackTrail: 1
@@ -46369,9 +46402,25 @@ MonoBehaviour:
   attackTrailWidth: 15
   attackTrailColor: {r: 1, g: 0, b: 0, a: 0.5}
   useAttackImpactVFX: 1
+  useTributeIcon: 1
+  useNativeTributeIcon: 1
+  tributeIconColor: {r: 1, g: 0.5, b: 0, a: 1}
+  tributeIconBlinkFrequency: 5
+  tributeIconSize: 80
+  tributeIconDuration: 1
+  useTributeIconPrefab: 1
   tributeIconSprite: {fileID: -4062675513596425979, guid: a7a8f9769ccf5f34c9aa54de6e5e02f6, type: 3}
   tributeFieldMarkerVFX: {fileID: 5593010221128478186, guid: 067028498bf2ec34b94a9d1eccc79fbb, type: 3}
   specialFieldMarkerVFX: {fileID: 8785413103711124661, guid: 61b81f5cb78fa6e4bb3970933c008028, type: 3}
+  useFieldMarkers: 1
+  useNativeFieldMarker: 1
+  specialMarkerColor: {r: 0.8, g: 0.2, b: 1, a: 0.5}
+  fusionMarkerColor: {r: 0.6, g: 0.1, b: 0.9, a: 0.5}
+  ritualMarkerColor: {r: 0.1, g: 0.3, b: 1, a: 0.5}
+  markerDuration: 1
+  markerStartSize: 0.1
+  markerEndSize: 2
+  useFieldMarkerPrefabs: 1
   fusionFlashVFX: {fileID: 4783769991002294843, guid: 042e571eb14d1784281a4973f5fcc8f5, type: 3}
   fusionBackgroundSymbol: {fileID: 809355531832133225, guid: b5685d25b7d3f524c845f3d1b4b85a2c, type: 3}
   ritualBackgroundSymbol: {fileID: 7543808486263190842, guid: 8a9e3f8841031cc46b26635aee4a0dee, type: 3}
@@ -52379,7 +52428,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1701951476}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999869
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -63846,7 +63895,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 38.25
+  m_fontSize: 38.2
   m_fontSizeBase: 14
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -79011,7 +79060,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 508102954}
   m_HandleRect: {fileID: 508102953}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0.9999985
   m_Size: 0.8635333
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -81096,7 +81145,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 38.25
+  m_fontSize: 38.2
   m_fontSizeBase: 14
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -82405,7 +82454,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 82258834}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999632
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -82696,7 +82745,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 595497764}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.99999994
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -90156,7 +90205,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1995952713}
   m_HandleRect: {fileID: 1995952712}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -103702,7 +103751,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.00095894834, y: 0.00094917783}
+  m_AnchoredPosition: {x: 0.00095894834, y: 0.0000068969825}
   m_SizeDelta: {x: -0.00091553, y: 353.6}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1356954785
@@ -118545,7 +118594,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 2087538613}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999969
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -135422,7 +135471,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1074066182}
   m_Direction: 0
   m_Value: 0
-  m_Size: 0.9999997
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -135910,7 +135959,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1170065776}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.99999994
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -154364,7 +154413,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1408806411}
   m_HandleRect: {fileID: 1408806410}
   m_Direction: 0
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -160002,7 +160051,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 620101988}
   m_HandleRect: {fileID: 620101987}
   m_Direction: 0
-  m_Value: 1.0000259
+  m_Value: 1.000026
   m_Size: 0
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -165928,7 +165977,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00085015537}
+  m_AnchoredPosition: {x: 0, y: 0.0009987524}
   m_SizeDelta: {x: 0, y: 650.88}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2123005588

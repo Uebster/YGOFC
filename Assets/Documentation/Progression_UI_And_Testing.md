@@ -170,6 +170,13 @@ A ferramenta de QA suprema, ativada no Inspector (`fullTestMode`) ou por **Ctrl 
 
 ---
 
+### 9.5.5 Menu de Teste de Efeitos (`EffectTestManager.cs`)
+A bancada de testes dedicada para rodar e comparar efeitos visuais (VFX) e sonoros (SFX) em tempo real, lado a lado (Nativo vs Prefab).
+*   **Atalho:** Pressione **Ctrl + E** no teclado em qualquer momento durante a partida para abrir ou fechar o painel.
+*   **Funcionalidades:** Permite testar auras, correntes, mudança de controle, ataques (espadinha vs projétil), invocações e cinemáticas com um único clique, gerando cartas falsas dinamicamente no tabuleiro sem precisar de um duelo real.
+
+---
+
 ## 9.6 Simulador de Caos (`SimulationManager.cs`)
 
 Ferramenta de automação para testes de estresse, balanço de deck e procura por soft-locks na engine. Fica ativa com `GameManager.isSimulating = true`.

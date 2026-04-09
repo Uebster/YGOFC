@@ -13,6 +13,7 @@ public class FieldSpellTheme
 }
 
 public enum AttackTrailType { Shadows, ContinuousLine }
+public enum ControlSwapImpactType { Squeeze, Pulse }
 
 public class DuelFXManager : MonoBehaviour
 {
@@ -107,6 +108,8 @@ public class DuelFXManager : MonoBehaviour
     public Sprite chainLinkRightSprite; 
     [Tooltip("Sprite dos elos unidos após o impacto.")]
     public Sprite chainLinkJoinedSprite; 
+    [Tooltip("Material Aditivo para ignorar o fundo preto dos sprites.")]
+    public Material chainLinkMaterial;
     public bool useChainLinkPrefab = true;
 
     [Header("Opções de Equipamento")]
@@ -129,9 +132,12 @@ public class DuelFXManager : MonoBehaviour
     public Color controlSwapOutlineColor = new Color(0.8f, 0.2f, 0.9f, 1f); // Roxo
     [Tooltip("Deixa um rastro fantasma atrás da carta durante o voo.")]
     public bool useControlSwapTrail = true;
+    public AttackTrailType controlSwapTrailType = AttackTrailType.Shadows;
+    public float controlSwapTrailWidth = 15f;
     public Color controlSwapTrailColor = new Color(0.8f, 0.2f, 0.9f, 0.5f);
     [Tooltip("A carta faz um 'Squeeze' (amassa/impacta) ao aterrissar no novo lado.")]
     public bool useControlSwapImpact = true;
+    public ControlSwapImpactType controlSwapImpactType = ControlSwapImpactType.Squeeze;
     public Color controlSwapImpactColor = new Color(0.8f, 0.2f, 0.9f, 1f);
     public float controlSwapImpactScale = 1.4f;
     public float controlSwapImpactOutlineWidth = 10f;
@@ -173,6 +179,18 @@ public class DuelFXManager : MonoBehaviour
     [Tooltip("A carta encolhe conforme é destruída.")]
     public bool destructionShrink = true;
 
+    [Header("Opções de Flip (Revelação)")]
+    [Tooltip("Usa a rotina nativa para adicionar um Pulse ao final do Flip.")]
+    public bool useFlipRoutine = true;
+    public float flipVfxDuration = 0.3f;
+    public bool useFlipPulse = true;
+    public float flipPulseScale = 1.2f;
+    public float flipPulseDuration = 0.2f;
+    public float flipPulseOutlineWidth = 8f;
+    public Color flipPulseColor = Color.white;
+    [Tooltip("Instancia o Prefab de Flip definido nos Slots visuais.")]
+    public bool useFlipPrefab = true;
+
     [Header("Opções de Ataque (Combate)")]
     [Tooltip("Usa o prefab 'TargetingSwordUI' para mirar ataques. Se desmarcado, usa cores de outline (Hover).")]
     public bool useTargetingSwordPrefab = true;
@@ -205,11 +223,31 @@ public class DuelFXManager : MonoBehaviour
     [Tooltip("Instancia o Prefab 'Attack VFX' ao acertar o alvo.")]
     public bool useAttackImpactVFX = true;
 
+    [Header("Opções de Ícone de Tributo (Tribute Icon)")]
+    public bool useTributeIcon = true;
+    public bool useNativeTributeIcon = true;
+    public Color tributeIconColor = new Color(1f, 0.5f, 0f, 1f);
+    public float tributeIconBlinkFrequency = 5f;
+    public float tributeIconSize = 80f;
+    public float tributeIconDuration = 1.0f;
+    public bool useTributeIconPrefab = true;
+
     [Header("Cinemáticas de Invocação (Etapa 2)")]
     [Tooltip("Ícone de fogo/alma que fica sobre os monstros selecionados para sacrifício.")]
     public Sprite tributeIconSprite;
     public GameObject tributeFieldMarkerVFX; // Marcação que surge no campo no Tribute Summon
     public GameObject specialFieldMarkerVFX; // Marcação (Ritual, Fusão, etc) no campo
+
+    [Header("Opções de Field Markers (Marcadores de Campo)")]
+    public bool useFieldMarkers = true;
+    public bool useNativeFieldMarker = true;
+    public Color specialMarkerColor = new Color(0.8f, 0.2f, 1f, 0.5f);
+    public Color fusionMarkerColor = new Color(0.6f, 0.1f, 0.9f, 0.5f);
+    public Color ritualMarkerColor = new Color(0.1f, 0.3f, 1f, 0.5f);
+    public float markerDuration = 1.0f;
+    public float markerStartSize = 0.1f;
+    public float markerEndSize = 2.0f;
+    public bool useFieldMarkerPrefabs = true;
 
     [Header("Cinemáticas de Invocação (Etapa 3 - Fusão e Ritual)")]
     public GameObject fusionFlashVFX; // Clarão branco com raios amarelos
@@ -523,6 +561,7 @@ public class DuelFXManager : MonoBehaviour
             
             float t = 0;
             while (t < 1f) {
+                if (attacker == null) break;
                 t += (Time.deltaTime / 0.15f) * animSpeed;
                 attacker.transform.position = Vector3.Lerp(startPos, anticipationPos, Mathf.SmoothStep(0, 1, t));
                 yield return null;
@@ -530,6 +569,7 @@ public class DuelFXManager : MonoBehaviour
             
             t = 0;
             while (t < 1f) {
+                if (attacker == null) break;
                 t += (Time.deltaTime / 0.1f) * animSpeed;
                 attacker.transform.position = Vector3.Lerp(anticipationPos, startPos + dir * 30f, t);
                 yield return null;
@@ -537,11 +577,12 @@ public class DuelFXManager : MonoBehaviour
             
             t = 0;
             while (t < 1f) {
+                if (attacker == null) break;
                 t += (Time.deltaTime / 0.1f) * animSpeed;
                 attacker.transform.position = Vector3.Lerp(startPos + dir * 30f, startPos, Mathf.SmoothStep(0, 1, t));
                 yield return null;
             }
-            attacker.transform.position = startPos;
+            if (attacker != null) attacker.transform.position = startPos;
         }
 
         // 2. Viagem da Espada ou Projétil
@@ -582,6 +623,7 @@ public class DuelFXManager : MonoBehaviour
             float duration = attackFlightDuration / animSpeed; float t = 0; float spawnTrailTimer = 0;
             
             while (t < 1f) {
+                if (proj == null || rt == null) break;
                 t += Time.deltaTime / duration;
                 Vector3 currentPos = Vector3.Lerp(startPos, targetPos, t);
                 rt.position = currentPos;
@@ -622,6 +664,7 @@ public class DuelFXManager : MonoBehaviour
 
                 float duration = 0.3f / animSpeed; float t = 0; float spawnTrailTimer = 0;
                 while (t < 1f) {
+                    if (proj == null) break;
                     t += Time.deltaTime / duration;
                     
                     if (rt != null) rt.position = Vector3.Lerp(startPos, targetPos, t);
@@ -676,23 +719,26 @@ public class DuelFXManager : MonoBehaviour
         float t = 0; Color startColor = img.color;
         Vector3 startScale = obj.transform.localScale;
         while (t < 1f) {
+            if (obj == null || img == null) break;
             t += Time.deltaTime / duration;
             img.color = new Color(startColor.r, startColor.g, startColor.b, Mathf.Lerp(startColor.a, 0f, t));
             // Afina o rastro para criar o efeito "Swoosh" de golpe de espada!
             obj.transform.localScale = Vector3.Lerp(startScale, startScale * 0.1f, t);
             yield return null;
-        } Destroy(obj);
+        }
+        if (obj != null) Destroy(obj);
     }
 
     private IEnumerator FadeAndDestroyLine(GameObject obj, Image img, float duration)
     {
         float t = 0; Color startColor = img.color;
         while (t < 1f) {
+            if (obj == null || img == null) break;
             t += Time.deltaTime / duration;
             img.color = new Color(startColor.r, startColor.g, startColor.b, Mathf.Lerp(startColor.a, 0f, t));
             yield return null;
-        } 
-        Destroy(obj);
+        }
+        if (obj != null) Destroy(obj);
     }
 
     public void PlayDestruction(CardDisplay card)
@@ -798,14 +844,45 @@ public class DuelFXManager : MonoBehaviour
     public void PlayTributeEffect(CardDisplay card)
     {
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayTributeEffect (Alma) | Alvo (Sacrifício): {card?.CurrentCardData?.name} | Momento: Selecionado/Enviado ao GY como custo de Tributo.");
+        if (!enableAnimations || card == null) return;
         PlaySound(tributeSound);
-        // Instancia o efeito de portal na carta e o torna filho dela para seguir se mover
-        GameObject vfx = SpawnVFXPublic(tributeVFX, card.transform.position);
-        if (vfx != null)
+        
+        if (useTributeIcon)
         {
-            vfx.transform.SetParent(card.transform);
-            // O VFX deve ter um script de auto-destruição ou ser destruído quando a carta for
+            if (useTributeIconPrefab && tributeVFX != null)
+            {
+                GameObject vfx = SpawnVFXPublic(tributeVFX, card.transform.position);
+                if (vfx != null) vfx.transform.SetParent(card.transform);
+            }
+            if (useNativeTributeIcon && tributeIconSprite != null)
+            {
+                StartCoroutine(NativeTributeIconRoutine(card));
+            }
         }
+    }
+
+    private IEnumerator NativeTributeIconRoutine(CardDisplay card)
+    {
+        GameObject iconObj = new GameObject("NativeTributeIcon", typeof(RectTransform), typeof(Image));
+        iconObj.transform.SetParent(card.transform, false);
+        RectTransform rt = iconObj.GetComponent<RectTransform>();
+        rt.anchoredPosition = Vector2.zero;
+        rt.sizeDelta = new Vector2(tributeIconSize, tributeIconSize);
+        
+        Image img = iconObj.GetComponent<Image>();
+        img.sprite = tributeIconSprite;
+        img.color = tributeIconColor;
+        
+        float t = 0; float duration = tributeIconDuration / (animationSpeed > 0 ? animationSpeed : 1f);
+        
+        while (t < 1f) {
+            if (card == null || iconObj == null) break;
+            t += Time.deltaTime / duration;
+            float alpha = Mathf.Abs(Mathf.Sin(t * Mathf.PI * tributeIconBlinkFrequency));
+            Color c = tributeIconColor; c.a = alpha * tributeIconColor.a; img.color = c;
+            yield return null;
+        }
+        if (iconObj != null) Destroy(iconObj);
     }
 
     // --- NOVOS EFEITOS DE BATALHA E JOGO ---
@@ -926,8 +1003,18 @@ public class DuelFXManager : MonoBehaviour
     public void PlayFlipEffect(CardDisplay card)
     {
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayFlipEffect | Alvo: {card?.CurrentCardData?.name} | Momento: Carta virada para cima ou setada (Face-Down).");
+        if (!enableAnimations || card == null) return;
         PlaySound(flipSound);
-        SpawnVFXPublic(flipVFX, card.transform.position);
+        if (useFlipPrefab && flipVFX != null) SpawnVFXPublic(flipVFX, card.transform.position);
+        if (useFlipRoutine) StartCoroutine(FlipVFXRoutine(card));
+    }
+
+    private IEnumerator FlipVFXRoutine(CardDisplay card)
+    {
+        yield return new WaitForSeconds(flipVfxDuration / (animationSpeed > 0 ? animationSpeed : 1f));
+        if (useFlipPulse && card != null) {
+            StartCoroutine(PulseGhostRoutine(card, flipPulseScale, flipPulseDuration, flipPulseColor, flipPulseOutlineWidth));
+        }
     }
 
     public void PlayDamageEffect(Vector3 position)
@@ -1048,6 +1135,7 @@ public class DuelFXManager : MonoBehaviour
             leftRT.anchoredPosition = new Vector2(-100, 25);
             leftImg = leftObj.GetComponent<Image>();
             leftImg.sprite = chainLinkLeftSprite;
+            if (chainLinkMaterial != null) leftImg.material = chainLinkMaterial;
 
             GameObject rightObj = new GameObject("RightLink", typeof(RectTransform), typeof(Image));
             rightObj.transform.SetParent(chainObj.transform, false);
@@ -1058,6 +1146,7 @@ public class DuelFXManager : MonoBehaviour
             
             if (chainLinkRightSprite != null) rightImg.sprite = chainLinkRightSprite;
             else { rightImg.sprite = chainLinkLeftSprite; rightRT.localScale = new Vector3(-1, 1, 1); }
+            if (chainLinkMaterial != null) rightImg.material = chainLinkMaterial;
 
             if (chainLinkJoinedSprite != null)
             {
@@ -1068,6 +1157,7 @@ public class DuelFXManager : MonoBehaviour
                 joinedRT.anchoredPosition = new Vector2(0, 25);
                 joinedImg = joinedObj.GetComponent<Image>();
                 joinedImg.sprite = chainLinkJoinedSprite;
+                if (chainLinkMaterial != null) joinedImg.material = chainLinkMaterial;
                 joinedImg.enabled = false;
             }
         }
@@ -1621,6 +1711,38 @@ public class DuelFXManager : MonoBehaviour
         StartCoroutine(SummonCinematicRoutine(card, isTribute, isSpecial, onComplete));
     }
 
+    private void SpawnFieldMarker(Vector3 targetPos, Color markerColor, GameObject prefabMarker)
+    {
+        if (!useFieldMarkers) return;
+        if (useFieldMarkerPrefabs && prefabMarker != null) SpawnVFXPublic(prefabMarker, targetPos);
+        if (useNativeFieldMarker) StartCoroutine(NativeFieldMarkerRoutine(targetPos, markerColor));
+    }
+
+    private IEnumerator NativeFieldMarkerRoutine(Vector3 pos, Color color)
+    {
+        Transform uiParent = GetUIParent();
+        GameObject marker = new GameObject("NativeFieldMarker", typeof(RectTransform), typeof(Image));
+        if (uiParent != null) marker.transform.SetParent(uiParent, true);
+        
+        RectTransform rt = marker.GetComponent<RectTransform>();
+        rt.position = pos; rt.sizeDelta = new Vector2(200, 200); 
+        
+        Image img = marker.GetComponent<Image>();
+        img.color = new Color(color.r, color.g, color.b, 0f);
+        Outline outline = marker.AddComponent<Outline>();
+        outline.effectColor = color; outline.effectDistance = new Vector2(5f, -5f);
+        
+        float t = 0; float duration = markerDuration / (animationSpeed > 0 ? animationSpeed : 1f);
+        while (t < 1f) {
+            if (marker == null) break;
+            t += Time.deltaTime / duration; float smooth = Mathf.SmoothStep(0, 1, t);
+            rt.localScale = Vector3.Lerp(Vector3.one * markerStartSize, Vector3.one * markerEndSize, smooth);
+            Color c = color; c.a = Mathf.Lerp(color.a, 0f, smooth); outline.effectColor = c;
+            yield return null;
+        } 
+        if (marker != null) Destroy(marker);
+    }
+
     private IEnumerator SummonCinematicRoutine(CardDisplay card, bool isTribute, bool isSpecial, System.Action onComplete)
     {
         Transform uiParent = GetUIParent();
@@ -1664,12 +1786,12 @@ public class DuelFXManager : MonoBehaviour
             if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.7f, p));
             yield return null; }
 
+        Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
+        SpawnFieldMarker(targetPos, isTribute ? specialMarkerColor : specialMarkerColor, isTribute ? tributeFieldMarkerVFX : specialFieldMarkerVFX);
+
         yield return new WaitForSeconds(0.6f / animSpeed); // SUSPENSE
 
         // 3. Marca no Chão e Pouso
-        GameObject markerPrefab = isTribute ? tributeFieldMarkerVFX : specialFieldMarkerVFX;
-        Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
-        GameObject marker = SpawnVFXPublic(markerPrefab, targetPos);
         PlaySound(attackTravelSound);
 
         Vector3 startPos = rt.position; 
@@ -1684,7 +1806,7 @@ public class DuelFXManager : MonoBehaviour
             if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0.7f, 0f, p));
             yield return null; }
 
-        Destroy(cinCard); if (darkOverlay != null) Destroy(darkOverlay); if (marker != null) Destroy(marker, 0.3f);
+        Destroy(cinCard); if (darkOverlay != null) Destroy(darkOverlay);
         onComplete?.Invoke();
     }
 
@@ -1779,11 +1901,11 @@ public class DuelFXManager : MonoBehaviour
             if (symbolObj != null) symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0.6f, 0f, p)); 
             yield return null; }
         
+        Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
+        SpawnFieldMarker(targetPos, fusionMarkerColor, fusionFieldMarkerVFX != null ? fusionFieldMarkerVFX : specialFieldMarkerVFX);
+
         yield return new WaitForSeconds(0.6f / animSpeed);
 
-        GameObject markerPrefab = fusionFieldMarkerVFX != null ? fusionFieldMarkerVFX : specialFieldMarkerVFX;
-        Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
-        GameObject marker = SpawnVFXPublic(markerPrefab, targetPos); PlaySound(attackTravelSound);
         Vector3 startPos = rt.position; Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
         Quaternion startRot = Quaternion.identity; Quaternion targetRot = card.transform.rotation;
 
@@ -1792,7 +1914,7 @@ public class DuelFXManager : MonoBehaviour
             rt.position = Vector3.Lerp(startPos, targetPos, p); rt.localScale = Vector3.Lerp(Vector3.one * 1.5f, targetScale, p); rt.rotation = Quaternion.Slerp(startRot, targetRot, p); 
             if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0.8f, 0f, p)); yield return null; }
 
-        Destroy(cinCard); if (darkOverlay != null) Destroy(darkOverlay); if (marker != null) Destroy(marker, 0.3f); if (symbolObj != null) Destroy(symbolObj);
+        Destroy(cinCard); if (darkOverlay != null) Destroy(darkOverlay); if (symbolObj != null) Destroy(symbolObj);
         onComplete?.Invoke();
     }
 
@@ -1844,13 +1966,13 @@ public class DuelFXManager : MonoBehaviour
         while (t < 0.3f) { t += Time.deltaTime * animSpeed; float p = Mathf.Clamp01(t / 0.3f); rt.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * 1.5f, p);
             if (symbolObj != null) symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0.6f, 0f, p)); yield return null; }
 
+        Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
+        SpawnFieldMarker(targetPos, ritualMarkerColor, ritualFieldMarkerVFX != null ? ritualFieldMarkerVFX : specialFieldMarkerVFX);
+
         if (symbolObj != null) Destroy(symbolObj); 
         
         yield return new WaitForSeconds(0.6f / animSpeed);
 
-        GameObject markerPrefab = ritualFieldMarkerVFX != null ? ritualFieldMarkerVFX : specialFieldMarkerVFX;
-        Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
-        GameObject marker = SpawnVFXPublic(markerPrefab, targetPos); PlaySound(attackTravelSound);
         Vector3 startPos = rt.position; Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
         Quaternion startRot = Quaternion.identity; Quaternion targetRot = card.transform.rotation;
 
@@ -1858,7 +1980,7 @@ public class DuelFXManager : MonoBehaviour
         while (t < 0.25f) { t += Time.deltaTime * animSpeed; float p = Mathf.SmoothStep(0, 1, Mathf.Clamp01(t / 0.25f)); rt.position = Vector3.Lerp(startPos, targetPos, p); rt.localScale = Vector3.Lerp(Vector3.one * 1.5f, targetScale, p);
             rt.rotation = Quaternion.Slerp(startRot, targetRot, p); if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0.8f, 0f, p)); yield return null; }
 
-        Destroy(cinCard); if (darkOverlay != null) Destroy(darkOverlay); if (marker != null) Destroy(marker, 0.3f);
+        Destroy(cinCard); if (darkOverlay != null) Destroy(darkOverlay);
         onComplete?.Invoke();
     }
 
@@ -1978,6 +2100,16 @@ public class DuelFXManager : MonoBehaviour
         Vector3 endPos = targetZone.position;
         Quaternion endRot = Quaternion.Euler(0, 0, targetZRot);
         
+        GameObject lineObj = null; RectTransform lineRT = null; Image lineImg = null;
+        if (useControlSwapTrail && controlSwapTrailType == AttackTrailType.ContinuousLine) {
+            lineObj = new GameObject("SwapLineTrail", typeof(RectTransform), typeof(Image));
+            lineObj.transform.SetParent(card.transform.parent, true);
+            lineObj.transform.SetSiblingIndex(card.transform.GetSiblingIndex());
+            lineRT = lineObj.GetComponent<RectTransform>();
+            lineRT.pivot = new Vector2(0, 0.5f); lineRT.position = startPos;
+            lineImg = lineObj.GetComponent<Image>(); lineImg.color = controlSwapTrailColor;
+        }
+
         GameObject outlineGhost = null;
         if (useControlSwapOutline) {
             outlineGhost = new GameObject("SwapOutline", typeof(RectTransform), typeof(RawImage), typeof(Outline));
@@ -2014,10 +2146,13 @@ public class DuelFXManager : MonoBehaviour
                 card.transform.localScale = flightScale * scaleMultiplier;
 
                 if (useControlSwapTrail) {
-                    spawnTrailTimer -= Time.deltaTime;
-                    if (spawnTrailTimer <= 0) {
-                        spawnTrailTimer = 0.03f;
-                        SpawnCardTrailGhost(card.GetComponent<RectTransform>(), card.GetFrontTexture() != null ? card.GetFrontTexture() : card.cardImage.texture, controlSwapTrailColor);
+                    if (controlSwapTrailType == AttackTrailType.Shadows) {
+                        spawnTrailTimer -= Time.deltaTime; if (spawnTrailTimer <= 0) { spawnTrailTimer = 0.03f; SpawnCardTrailGhost(card.GetComponent<RectTransform>(), card.GetFrontTexture() != null ? card.GetFrontTexture() : card.cardImage.texture, controlSwapTrailColor); }
+                    } else if (controlSwapTrailType == AttackTrailType.ContinuousLine && lineObj != null) {
+                        Vector3 currentPos = card.transform.position; Vector3 dirToCurrent = currentPos - startPos;
+                        float dist = dirToCurrent.magnitude; float canvasScale = lineObj.transform.lossyScale.x;
+                        if (canvasScale > 0) lineRT.sizeDelta = new Vector2(dist / canvasScale, controlSwapTrailWidth);
+                        lineRT.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(dirToCurrent.y, dirToCurrent.x) * Mathf.Rad2Deg);
                     }
                 }
 
@@ -2029,6 +2164,7 @@ public class DuelFXManager : MonoBehaviour
             yield return new WaitForSeconds(0.6f / (animationSpeed > 0 ? animationSpeed : 1f));
         }
 
+        if (lineObj != null) StartCoroutine(FadeAndDestroyLine(lineObj, lineImg, 0.2f));
         if (outlineGhost != null) Destroy(outlineGhost);
 
         if (card != null) { 
@@ -2041,7 +2177,13 @@ public class DuelFXManager : MonoBehaviour
             if (useControlSwapPrefab && summonVFX != null) SpawnVFXPublic(summonVFX, endPos); 
             PlaySound(summonSound); 
             
-            if (useControlSwapImpact) StartCoroutine(ControlSwapImpactRoutine(card));
+            if (useControlSwapImpact) 
+            {
+                if (controlSwapImpactType == ControlSwapImpactType.Squeeze)
+                    StartCoroutine(ControlSwapImpactRoutine(card));
+                else
+                    StartCoroutine(PulseGhostRoutine(card, controlSwapImpactScale, 0.2f, controlSwapImpactColor, controlSwapImpactOutlineWidth));
+            }
         }
         onComplete?.Invoke();
     }
@@ -2068,11 +2210,13 @@ public class DuelFXManager : MonoBehaviour
         float t = 0; Color startColor = img.color;
         Vector3 startScale = obj.transform.localScale;
         while (t < 1f) {
+            if (obj == null || img == null) break;
             t += Time.deltaTime / duration;
             img.color = new Color(startColor.r, startColor.g, startColor.b, Mathf.Lerp(startColor.a, 0f, t));
             obj.transform.localScale = Vector3.Lerp(startScale, startScale * 0.7f, t);
             yield return null;
-        } Destroy(obj);
+        }
+        if (obj != null) Destroy(obj);
     }
 
     private IEnumerator ControlSwapImpactRoutine(CardDisplay card)

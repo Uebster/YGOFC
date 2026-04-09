@@ -151,10 +151,10 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **6.2.3** Sistema de 3 Decks (Variantes A, B, C)
 
 ### 7. 🗺️ `Campaign_And_Story.md` (Campanha e História)
-*   **7.1.** Lógica do Mapa e Progressão (`CampaignManager.cs`)
-*   **7.2.** Sistema de Diálogos (Visual Novel)
-*   **7.3.** Lista de Atos e Oponentes Oficiais
-*   **7.4.** Roteiro Completo da Campanha (Visual Novel Scripts)
+*   **7.1.** Lógica do Mapa e Progressão (`CampaignManager.cs`, Nós Home/Arena/Act)
+*   **7.2.** Sistema de Diálogos (Visual Novel e Tags Faciais)
+*   **7.3.** Lista de Atos e Oponentes Oficiais (10 Atos, 100 Duelos)
+*   **7.4.** Roteiro Completo da Campanha (Visual Novel Scripts, Atos 1 ao 10)
 
 ### 8. 🃏 `Deck_Management_System.md` (Construção e Gestão de Baralhos)
 *   **8.1.** Sistema de Construção de Decks
@@ -182,14 +182,20 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **9.3.3** Biblioteca de Cartas (`Panel_LibCards`, `CardLibraryManager.cs`, Cartas não obtidas e Visor)
     *   **9.3.4** Biblioteca de Decks (`Panel_LibDecks`, `DeckLibraryManager.cs`, Grind de Variantes A/B/C)
     *   **9.3.5** Biblioteca de Arenas (`Panel_LibArenas`, `ArenaLibraryManager.cs`)
+    *   **9.3.6** Scripts de Dados (`LibraryDataTypes.cs`)
 *   **9.4.** Mecânica Efêmera da Tag "NEW" (Lógica de Persistência, `SaveLoadSystem.MarkCardAsUsed`)
-*   **9.5.** Sistemas de Teste, Debug e UI Dinâmica (`DamagePopupManager.cs`, `MouseTooltipUI.cs`, `FullTestManager.cs`, `EffectTestManager.cs`, Toggles, Dev Card Menu, `InGameDebugConsole.cs`)
+*   **9.5.** Sistemas de Teste, Debug e UI Dinâmica
+    *   **9.5.1** Popup de Dano (`DamagePopupManager.cs`)
+    *   **9.5.2** Tooltip de Mouse Dinâmico (`MouseTooltipUI.cs`)
+    *   **9.5.3** Painel de Desenvolvedor (`FullTestManager.cs`, Toggles, Dev Card Menu, Ctrl+T)
+    *   **9.5.4** In-Game Debug Console (`InGameDebugConsole.cs`, Ctrl+Shift+D)
+    *   **9.5.5** Menu de Teste de Efeitos (`EffectTestManager.cs`, Ctrl+E)
 *   **9.6.** Simulador de Caos (`SimulationManager.cs`, Bypass de UI, Visual Mode 1.5x, Fast Mode 50x)
 *   **9.7.** Sistema de Temas de Duelo (`DuelThemeManager.cs`, `DuelTheme`)
     *   **9.7.1** Arquitetura de Temas (Console e Cartuchos)
-*       **9.7.2** Configurando o Relógio de Turnos (`TurnClockUI`, Rotação Dinâmica, Camadas e Pivot)
+    *   **9.7.2** Configurando o Relógio de Turnos (`TurnClockUI`, Rotação Dinâmica, Camadas e Pivot)
     *   **9.7.3** Minigames Dinâmicos (Moeda e Dados)
-*   **9.8.** Efeitos Visuais e Sonoros (`DuelFXManager.cs`, `UIAnimatedEffect.cs`, Temas de Magia de Campo, Auras Coloridas, Spin 2D, Música Dinâmica)
+*   **9.8.** Efeitos Visuais e Sonoros (`DuelFXManager.cs`, Ações de Carta, Efeitos de Combate e BGM Dinâmico)
 
 ---
 
