@@ -111,6 +111,6 @@ MonoBehaviour:
   - {fileID: 467354723, guid: 4b0db27578bf4a24e81f934b38d1ba61, type: 3}
   framesPerSecond: 60
   destroyOnEnd: 1
-  loop: 0
+  loop: 1
   spin: 0
   spinSpeed: -360

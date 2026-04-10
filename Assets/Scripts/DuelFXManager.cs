@@ -14,6 +14,9 @@ public class FieldSpellTheme
 
 public enum AttackTrailType { Shadows, ContinuousLine }
 public enum ControlSwapImpactType { Squeeze, Pulse }
+public enum SummonVFXType { Normal, Special, Tribute, Fusion, Ritual }
+public enum SelectionState { None, Available, Selected }
+public enum PlacementAuraRenderMode { Behind, Above }
 
 [System.Serializable]
 public class SelectionIconSettings
@@ -31,6 +34,9 @@ public class SelectionIconSettings
     public float blinkFrequency = 5f;
     public bool spin = false;
     public float spinSpeed = 90f;
+    public bool useOutline = false;
+    public Color outlineColor = new Color(1f, 1f, 1f, 0.5f);
+    public float outlineWidth = 5f;
     public float selectedOutlineWidth = 5f;
 }
 
@@ -74,20 +80,20 @@ public class CinematicSettings
 public class SummonVFXPackage
 {
     [Header("Ícone de Seleção")]
-    public SelectionIconSettings selectionIcon;
+    public SelectionIconSettings selectionIcon = new SelectionIconSettings();
     [Header("Marcador de Chão (Pouso)")]
-    public FieldMarkerSettings fieldMarker;
+    public FieldMarkerSettings fieldMarker = new FieldMarkerSettings();
     [Header("Impacto de Invocação")]
-    public SummonImpactSettings impact;
+    public SummonImpactSettings impact = new SummonImpactSettings();
     [Header("Cinemática")]
-    public CinematicSettings cinematic;
+    public CinematicSettings cinematic = new CinematicSettings();
 }
 
 [System.Serializable]
 public class NormalSummonVFXPackage
 {
     [Header("Impacto de Invocação")]
-    public SummonImpactSettings impact;
+    public SummonImpactSettings impact = new SummonImpactSettings();
 }
 
 public class DuelFXManager : MonoBehaviour
@@ -135,6 +141,8 @@ public class DuelFXManager : MonoBehaviour
     public List<FieldSpellTheme> fieldSpellThemes = new List<FieldSpellTheme>();
 
     [Header("Colorização Automática de Auras")]
+    [Tooltip("Colore a Aura de Pouso baseado no dono da carta (Cores de Hover do GameManager). Tem prioridade sobre o tipo.")]
+    public bool colorizeAuraByPlayer = false;
     [Tooltip("Colore a Aura de Pouso baseado no tipo da carta automaticamente.")]
     public bool colorizeAuraByType = true;
     public Color colorFaceDown = new Color(0.7f, 0.7f, 0.7f, 1f); // Neutro/Cinza
@@ -152,6 +160,11 @@ public class DuelFXManager : MonoBehaviour
     public float placementAuraOutlineWidth = 10f;
     [Tooltip("Instancia o prefab definido em 'Placement Aura VFX' atrás da carta.")]
     public bool usePlacementAuraPrefab = true;
+    public float placementAuraPrefabScale = 1.0f;
+    public PlacementAuraRenderMode placementAuraRenderMode = PlacementAuraRenderMode.Behind;
+    [Tooltip("Se ativado, sobrescreve o tempo de vida do Prefab instanciado.")]
+    public bool overridePlacementAuraPrefabDuration = false;
+    public float placementAuraPrefabDuration = 3.0f;
 
     [Header("Opções de Ativação de Magias/Armadilhas")]
     [Tooltip("Faz a carta crescer rapidamente e gerar o fantasma com Neon colorido.")]
@@ -177,53 +190,6 @@ public class DuelFXManager : MonoBehaviour
     public SummonVFXPackage tributeSummonSettings = new SummonVFXPackage();
     public SummonVFXPackage ritualSummonSettings = new SummonVFXPackage();
     public SummonVFXPackage fusionSummonSettings = new SummonVFXPackage();
-
-    [Header("Opções de Invocação: Simples")]
-    public bool useSummonRoutine = false;
-    public bool useSummonPrefab = true;
-    public float summonPulseScale = 1.2f;
-    public float summonPulseDuration = 0.2f;
-    public Color summonPulseColor = Color.white;
-
-    [Header("Opções de Invocação: Tributo")]
-    public bool useTributeMarkerRoutine = true;
-    public bool useTributeMarkerPrefab = true;
-    public Color tributeMarkerColor = new Color(0.8f, 0.2f, 1f, 0.5f);
-    public bool useTributeSummonRoutine = false;
-    public bool useTributeSummonPrefab = true;
-    public Color tributeSummonColor = Color.white;
-    public bool useTributeCinematicRoutine = true;
-    public bool useTributeCinematicPrefab = false;
-
-    [Header("Opções de Invocação: Special")]
-    public bool useSpecialMarkerRoutine = true;
-    public bool useSpecialMarkerPrefab = true;
-    public Color specialMarkerColor = new Color(0.2f, 0.8f, 1f, 0.5f);
-    public bool useSpecialSummonRoutine = false;
-    public bool useSpecialSummonPrefab = true;
-    public Color specialSummonColor = Color.white;
-    public bool useSpecialCinematicRoutine = true;
-    public bool useSpecialCinematicPrefab = false;
-
-    [Header("Opções de Invocação: Fusão")]
-    public bool useFusionMarkerRoutine = true;
-    public bool useFusionMarkerPrefab = true;
-    public Color fusionMarkerColor = new Color(0.6f, 0.1f, 0.9f, 0.5f);
-    public bool useFusionSummonRoutine = false;
-    public bool useFusionSummonPrefab = true;
-    public Color fusionSummonColor = Color.white;
-    public bool useFusionCinematicRoutine = true;
-    public bool useFusionCinematicPrefab = false;
-
-    [Header("Opções de Invocação: Ritual")]
-    public bool useRitualMarkerRoutine = true;
-    public bool useRitualMarkerPrefab = true;
-    public Color ritualMarkerColor = new Color(0.1f, 0.3f, 1f, 0.5f);
-    public bool useRitualSummonRoutine = false;
-    public bool useRitualSummonPrefab = true;
-    public Color ritualSummonColor = Color.white;
-    public bool useRitualCinematicRoutine = true;
-    public bool useRitualCinematicPrefab = false;
 
     [Header("Opções de Corrente (Chain Link)")]
     public bool useChainLinkRoutine = true;
@@ -284,15 +250,28 @@ public class DuelFXManager : MonoBehaviour
     public int shuffleLoopCount = 1;
     [Tooltip("Instancia o prefab definido em 'Shuffle VFX'. Útil para usar sua Sprite Sheet Animada.")]
     public bool useShufflePrefab = true;
+    [Tooltip("Tempo extra (segundos) ANTES do baralho reaparecer (após o loop/fumaça acabar).")]
+    public float shuffleDeckAppearDelay = 0.0f;
+    [Tooltip("Tempo extra (segundos) DEPOIS do baralho reaparecer, antes do GameManager iniciar a compra de cartas.")]
+    public float shufflePostDelay = 0.3f;
 
     [Header("Opções de Invocação de Ficha (Token)")]
-    [Tooltip("A carta da Ficha (Token) treme e faz um Fade In ao surgir.")]
+    [Tooltip("A carta da Ficha (Token) treme, surge do tamanho 0 e faz um Fade In.")]
     public bool useTokenSummonRoutine = true;
-    public float tokenSummonDuration = 0.8f; // Sincronizado com a Sprite Sheet de fumaça
     [Tooltip("A cor inicial da carta enquanto ela faz o Fade In (Padrão: Cinza/Escuro).")]
     public Color tokenSummonFadeColor = Color.gray; 
     [Tooltip("Instancia o prefab definido em 'Token Summon VFX'. Ideal para usar com a fumaça 2D.")]
     public bool useTokenSummonPrefab = true;
+
+    [Header("Aparição da Ficha (Tempos e Escalas)")]
+    [Tooltip("Tempo que a carta fica invisível esperando a fumaça/animação subir.")]
+    public float tokenAppearDelay = 0.2f;
+    [Tooltip("Duração do Fade In e do Crescimento da carta.")]
+    public float tokenAppearDuration = 0.5f;
+    [Tooltip("Escala inicial (0 = nasce do nada, 1 = tamanho normal).")]
+    public float tokenStartScaleMult = 0.0f;
+    [Tooltip("Escala final (1 = 100% do tamanho de campo).")]
+    public float tokenEndScaleMult = 1.0f;
 
     [Header("Opções de Destruição (Explosão)")]
     [Tooltip("Cria um fantasma da carta para animar a destruição.")]
@@ -318,9 +297,12 @@ public class DuelFXManager : MonoBehaviour
     public float banishShrinkDuration = 0.5f;
 
     [Header("Opções de Flip (Revelação)")]
+    [Tooltip("Tempo (segundos) que a carta leva para se espremer e esticar, simulando o giro 3D.")]
+    public float flipAnimationDuration = 0.3f;
     [Tooltip("Usa a rotina nativa para adicionar um Pulse ao final do Flip.")]
     public bool useFlipRoutine = true;
-    public float flipVfxDuration = 0.3f;
+    [Tooltip("Tempo de espera APÓS a carta virar, antes do brilho do Pulse acontecer.")]
+    public float flipVfxDuration = 0.1f;
     public bool useFlipPulse = true;
     public float flipPulseScale = 1.2f;
     public float flipPulseDuration = 0.2f;
@@ -355,6 +337,8 @@ public class DuelFXManager : MonoBehaviour
     public float attackImpactPulseScale = 1.2f;
     public float attackImpactPulseDuration = 0.2f;
     public Color attackImpactPulseColor = Color.red;
+    public float hitShakeDuration = 0.3f;
+    public float hitShakeMagnitude = 15f;
 
     [Header("Opções de Defesa com Sucesso (Defense Block)")]
     public bool useDefenseRoutine = true;
@@ -400,39 +384,6 @@ public class DuelFXManager : MonoBehaviour
     public bool useAttackImpactVFX = true;
     [Tooltip("Rotação no eixo Z aplicada ao Prefab de impacto de ataque (ex: 90 para vertical).")]
     public float attackImpactRotationOffset = 0f;
-    public float attackHitShakeDuration = 0.3f;
-    public float attackHitShakeMagnitude = 15f;
-
-    [Header("Opções de Ícone de Tributo (Tribute Icon)")]
-    public bool useTributeIcon = true;
-    public bool useNativeTributeIcon = true;
-    public Color tributeIconColor = new Color(1f, 0.5f, 0f, 1f);
-    public float tributeIconBlinkFrequency = 5f;
-    public float tributeIconSize = 80f;
-    public float tributeIconDuration = 1.0f;
-    public bool useTributeIconPrefab = true;
-
-    [Header("Cinemáticas de Invocação (Etapa 2)")]
-    [Tooltip("Ícone de fogo/alma que fica sobre os monstros selecionados para sacrifício.")]
-    public Sprite tributeIconSprite;
-    public GameObject tributeFieldMarkerVFX; // Marcação que surge no campo no Tribute Summon
-    public GameObject specialFieldMarkerVFX; // Marcação (Ritual, Fusão, etc) no campo
-
-    [Header("Opções de Field Markers (Marcadores de Campo)")]
-    public bool useFieldMarkers = true;
-    public bool useNativeFieldMarker = true;
-    public float markerDuration = 1.0f;
-    public float markerStartSize = 0.1f;
-    public float markerEndSize = 2.0f;
-    public bool useFieldMarkerPrefabs = true;
-
-    [Header("Cinemáticas de Invocação (Etapa 3 - Fusão e Ritual)")]
-    public GameObject fusionFlashVFX; // Clarão branco com raios amarelos
-    public Sprite fusionBackgroundSymbol; // Símbolo da fusão (Imagem de fundo)
-    public Sprite ritualBackgroundSymbol; // Símbolo do ritual (Imagem de fundo)
-    public GameObject ritualFlashVFX; // Clarão do ritual
-    public GameObject fusionFieldMarkerVFX; // Marcação no campo (pouso da fusão)
-    public GameObject ritualFieldMarkerVFX; // Marcação no campo (pouso do ritual)
 
     [Header("Efeitos de Magia (Field & Equip)")]
     public GameObject equipImpactVFX;   // Efeito quando o fantasma entra no alvo
@@ -505,6 +456,119 @@ public class DuelFXManager : MonoBehaviour
         foreach (Canvas c in allCanvases) if (c.isRootCanvas) return c.transform;
             
         return null;
+    }
+
+    // --- ROTEADORES DE PACOTE DE INVOCAÇÃO ---
+
+    public SummonVFXPackage GetSummonPackage(SummonVFXType type)
+    {
+        switch(type) {
+            case SummonVFXType.Special: return specialSummonSettings;
+            case SummonVFXType.Tribute: return tributeSummonSettings;
+            case SummonVFXType.Fusion: return fusionSummonSettings;
+            case SummonVFXType.Ritual: return ritualSummonSettings;
+            default: return null;
+        }
+    }
+
+    public SummonImpactSettings GetImpactSettings(SummonVFXType type)
+    {
+        if (type == SummonVFXType.Normal) return normalSummonSettings.impact;
+        return GetSummonPackage(type)?.impact;
+    }
+
+    // --- ÍCONE DE SELEÇÃO E TRIBUTO ---
+
+    private Dictionary<CardDisplay, GameObject> activeSelectionIcons = new Dictionary<CardDisplay, GameObject>();
+
+    public void SetSelectionIcon(CardDisplay card, SummonVFXType type, SelectionState state)
+    {
+        if (card == null || !enableAnimations) return;
+
+        SummonVFXPackage package = GetSummonPackage(type);
+        if (package == null || !package.selectionIcon.useIcon) return;
+        SelectionIconSettings settings = package.selectionIcon;
+
+        if (activeSelectionIcons.TryGetValue(card, out GameObject existingIcon))
+        {
+            if (existingIcon != null) Destroy(existingIcon);
+            activeSelectionIcons.Remove(card);
+        }
+
+        if (state == SelectionState.None) return;
+        if (state == SelectionState.Available && !settings.showAvailableState) return;
+
+        if (settings.usePrefab && settings.prefab != null)
+        {
+            GameObject prefabInstance = SpawnVFXPublic(settings.prefab, card.transform.position);
+            if (prefabInstance != null) {
+                prefabInstance.transform.SetParent(card.transform, true);
+                activeSelectionIcons[card] = prefabInstance;
+            }
+        }
+
+        if (settings.useNative && settings.sprite != null)
+        {
+            GameObject iconObj = new GameObject("SelectionIcon", typeof(RectTransform), typeof(Image));
+            iconObj.transform.SetParent(card.transform, false);
+            iconObj.transform.SetAsLastSibling();
+            
+            RectTransform rt = iconObj.GetComponent<RectTransform>();
+            rt.anchoredPosition = Vector2.zero;
+            
+            Image img = iconObj.GetComponent<Image>();
+            img.sprite = settings.sprite;
+            if (settings.material != null) img.material = settings.material;
+
+            activeSelectionIcons[card] = iconObj;
+
+            if (state == SelectionState.Available)
+            {
+                rt.sizeDelta = new Vector2(settings.size, settings.size);
+                img.color = settings.availableColor;
+
+                if (settings.useOutline)
+                {
+                    Outline outline = iconObj.AddComponent<Outline>();
+                    outline.effectColor = settings.outlineColor;
+                    outline.effectDistance = new Vector2(settings.outlineWidth, -settings.outlineWidth);
+                }
+
+                StartCoroutine(AnimateSelectionIcon(iconObj, img, rt, settings, true));
+            }
+            else if (state == SelectionState.Selected)
+            {
+                rt.sizeDelta = new Vector2(settings.size, settings.size);
+                img.color = settings.selectedColor;
+                
+                Outline outline = iconObj.AddComponent<Outline>();
+                outline.effectColor = settings.useOutline ? settings.outlineColor : settings.selectedColor;
+                outline.effectDistance = new Vector2(settings.selectedOutlineWidth, -settings.selectedOutlineWidth);
+                
+                StartCoroutine(AnimateSelectionIcon(iconObj, img, rt, settings, false));
+            }
+        }
+    }
+
+    private IEnumerator AnimateSelectionIcon(GameObject iconObj, Image img, RectTransform rt, SelectionIconSettings settings, bool isAvailableState)
+    {
+        float t = 0; Color baseColor = img.color;
+        Outline outline = iconObj.GetComponent<Outline>();
+        Color baseOutlineColor = outline != null ? outline.effectColor : Color.clear;
+
+        while (iconObj != null)
+        {
+            if (isAvailableState) {
+                t += Time.deltaTime;
+                float alpha = Mathf.Abs(Mathf.Sin(t * Mathf.PI * settings.blinkFrequency));
+                Color c = baseColor; c.a = alpha * baseColor.a; img.color = c;
+                if (outline != null) {
+                    Color oc = baseOutlineColor; oc.a = alpha * baseOutlineColor.a; outline.effectColor = oc;
+                }
+            }
+            if (settings.spin) rt.Rotate(0, 0, settings.spinSpeed * Time.deltaTime);
+            yield return null;
+        }
     }
 
     public void UpdateThemeFX(DuelTheme theme)
@@ -593,6 +657,10 @@ public class DuelFXManager : MonoBehaviour
         if (useActivationPulse && card != null)
         {
             Vector3 originalScale = card.transform.localScale;
+            if (GameManager.Instance != null)
+            {
+                originalScale = card.isOnField ? GameManager.Instance.fieldCardScale : GameManager.Instance.handCardScale;
+            }
             Vector3 peakScale = originalScale * activationPulseScale;
             Transform originalParent = card.transform.parent;
             int originalIndex = card.transform.GetSiblingIndex();
@@ -865,16 +933,7 @@ public class DuelFXManager : MonoBehaviour
 
         // 3. Impacto no Alvo
         PlaySound(attackImpactSound);
-        if (useAttackImpactVFX && attackVFX != null)
-        {
-            GameObject impact = SpawnVFXPublic(attackVFX, targetPos);
-            if (impact != null && attackImpactRotationOffset != 0f)
-            {
-                impact.transform.Rotate(0, 0, attackImpactRotationOffset);
-            }
-        }
-        
-        if (target != null) StartCoroutine(ShakeRoutine(target.transform, attackHitShakeDuration, attackHitShakeMagnitude));
+        PlayHitEffect(target);
         
         yield return null; 
         Debug.Log($"[VFX] ✔ [ROUTINE CONCLUÍDA] AttackRoutine finalizada.");
@@ -941,12 +1000,47 @@ public class DuelFXManager : MonoBehaviour
 
     // --- INVOCAÇÃO / TRIBUTO ---
 
-    public void PlaySummonEffect(CardDisplay card)
+    public void PlaySummonImpact(CardDisplay card, SummonVFXType type = SummonVFXType.Normal)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlaySummonEffect (Impacto) | Alvo: {card?.CurrentCardData?.name} | Momento: Monstro acaba de ser invocado com sucesso.");
-        PlaySound(summonSound);
-        SpawnVFXPublic(summonVFX, card.transform.position);
+        if (!enableAnimations || card == null) return;
+        StartCoroutine(SummonImpactRoutine(card, type));
     }
+
+    private IEnumerator SummonImpactRoutine(CardDisplay card, SummonVFXType type)
+    {
+        SummonVFXPackage package = GetSummonPackage(type);
+        bool hasMarker = package != null && package.fieldMarker.useMarker;
+        
+        CanvasGroup cg = card.GetComponent<CanvasGroup>();
+        if (cg == null) cg = card.gameObject.AddComponent<CanvasGroup>();
+
+        if (hasMarker)
+        {
+            cg.alpha = 0f;
+            Transform zone = card.transform.parent != null ? card.transform.parent : card.transform;
+            SpawnFieldMarker(zone, type);
+            
+            yield return new WaitForSeconds(0.3f / (animationSpeed > 0 ? animationSpeed : 1f));
+            cg.alpha = 1f;
+        }
+
+        PlaySound(summonSound); 
+        
+        SummonImpactSettings settings = GetImpactSettings(type);
+        if (settings != null && settings.useImpact)
+        {
+            GameObject prefabToUse = settings.prefab != null ? settings.prefab : summonVFX; 
+
+            if (settings.usePrefab && prefabToUse != null)
+                SpawnVFXPublic(prefabToUse, card.transform.position);
+
+            if (settings.useNativePulse)
+                StartCoroutine(PulseGhostRoutine(card, settings.pulseScale, settings.pulseDuration, settings.pulseColor, settings.pulseOutlineWidth));
+        }
+    }
+
+    // Wrapper de compatibilidade retroativa
+    public void PlaySummonEffect(CardDisplay card) => PlaySummonImpact(card, SummonVFXType.Normal);
 
     public void PlayTokenSummonEffect(CardDisplay card)
     {
@@ -962,7 +1056,12 @@ public class DuelFXManager : MonoBehaviour
         CanvasGroup cg = card.GetComponent<CanvasGroup>();
         if (cg == null) cg = card.gameObject.AddComponent<CanvasGroup>();
 
-        if (useTokenSummonRoutine) cg.alpha = 0f; // Esconde a carta inicialmente
+        Vector3 originalPos = card.transform.position;
+        Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
+
+        // Sempre esconde e encolhe inicialmente, não importa se é nativo ou prefab
+        cg.alpha = 0f;
+        card.transform.localScale = targetScale * tokenStartScaleMult;
 
         // Instancia a sua fumaça (Dust_2D)
         if (useTokenSummonPrefab)
@@ -971,51 +1070,53 @@ public class DuelFXManager : MonoBehaviour
             if (prefab != null) SpawnVFXPublic(prefab, card.transform.position);
         }
 
-        if (useTokenSummonRoutine)
-        {
-            float duration = tokenSummonDuration / (animationSpeed > 0 ? animationSpeed : 1f);
-            float t = 0;
-            Vector3 originalPos = card.transform.position;
-            
-            // Controle de cor para evitar o "Flash Branco" e materializar suavemente das sombras
-            RawImage ri = card.cardImage;
-            Color targetColor = Color.white;
-            if (ri != null) { targetColor = ri.color; ri.color = tokenSummonFadeColor; }
+        // Animação de Surgimento (Controlada pelo Inspector)
+        float delay = tokenAppearDelay / (animationSpeed > 0 ? animationSpeed : 1f);
+        if (delay > 0) yield return new WaitForSeconds(delay);
 
-            while (t < 1f)
+        float duration = tokenAppearDuration / (animationSpeed > 0 ? animationSpeed : 1f);
+        float t = 0;
+        
+        // Controle de cor para evitar o "Flash Branco" e materializar suavemente das sombras
+        RawImage ri = card.cardImage;
+        Color targetColor = Color.white;
+        if (ri != null) { targetColor = ri.color; ri.color = tokenSummonFadeColor; }
+
+        while (t < 1f)
+        {
+            if (card == null) yield break;
+            t += Time.deltaTime / duration;
+            float p = Mathf.SmoothStep(0, 1, t);
+            
+            // Apenas treme se o Nativo estiver ativado
+            if (useTokenSummonRoutine)
             {
-                if (card == null) yield break;
-                t += Time.deltaTime / duration;
-                
-                float shake = Mathf.Lerp(6f, 0f, t); // Tremor violento que vai enfraquecendo
+                float shake = Mathf.Lerp(6f, 0f, p); 
                 card.transform.position = originalPos + new Vector3(Random.Range(-shake, shake), Random.Range(-shake, shake), 0);
-                
-                if (t > 0.4f) 
-                {
-                    float p = (t - 0.4f) / 0.6f;
-                    cg.alpha = Mathf.Lerp(0f, 1f, p); // Fade In apenas após 40% da fumaça
-                    if (ri != null) ri.color = Color.Lerp(tokenSummonFadeColor, targetColor, p);
-                }
-                yield return null;
             }
-            if (card != null) { card.transform.position = originalPos; cg.alpha = 1f; if (ri != null) ri.color = targetColor; }
+            
+            cg.alpha = p; 
+            card.transform.localScale = Vector3.Lerp(targetScale * tokenStartScaleMult, targetScale * tokenEndScaleMult, p);
+            if (ri != null) ri.color = Color.Lerp(tokenSummonFadeColor, targetColor, p);
+            
+            yield return null;
+        }
+        if (card != null) { 
+            card.transform.position = originalPos; 
+            card.transform.localScale = targetScale * tokenEndScaleMult;
+            cg.alpha = 1f; 
+            if (ri != null) ri.color = targetColor; 
         }
     }
 
     public void PlayTributeSummonEffect(CardDisplay card)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayTributeSummonEffect | Alvo: {card?.CurrentCardData?.name} | Momento: Invocação por Tributo aterrissou no campo.");
-        PlaySound(summonSound); // Pode ter um som específico se quiser
-        // Usa o prefab específico se existir, senão usa o padrão do GameManager, senão o de summon comum
-        GameObject prefab = tributeSummonVFX != null ? tributeSummonVFX : summonVFX;
-        SpawnVFXPublic(prefab, card.transform.position);
+        PlaySummonImpact(card, SummonVFXType.Tribute);
     }
 
     public void PlayFusionEffect(CardDisplay card)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayFusionEffect | Alvo: {card?.CurrentCardData?.name} | Momento: Fusão instanciada visualmente.");
-        PlaySound(fusionSound);
-        SpawnVFXPublic(fusionVFX, card.transform.position);
+        PlaySummonImpact(card, SummonVFXType.Fusion);
     }
 
     public void PlayTributeEffect(CardDisplay card)
@@ -1023,43 +1124,8 @@ public class DuelFXManager : MonoBehaviour
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayTributeEffect (Alma) | Alvo (Sacrifício): {card?.CurrentCardData?.name} | Momento: Selecionado/Enviado ao GY como custo de Tributo.");
         if (!enableAnimations || card == null) return;
         PlaySound(tributeSound);
-        
-        if (useTributeIcon)
-        {
-            if (useTributeIconPrefab && tributeVFX != null)
-            {
-                GameObject vfx = SpawnVFXPublic(tributeVFX, card.transform.position);
-                if (vfx != null) vfx.transform.SetParent(card.transform);
-            }
-            if (useNativeTributeIcon && tributeIconSprite != null)
-            {
-                StartCoroutine(NativeTributeIconRoutine(card));
-            }
-        }
-    }
-
-    private IEnumerator NativeTributeIconRoutine(CardDisplay card)
-    {
-        GameObject iconObj = new GameObject("NativeTributeIcon", typeof(RectTransform), typeof(Image));
-        iconObj.transform.SetParent(card.transform, false);
-        RectTransform rt = iconObj.GetComponent<RectTransform>();
-        rt.anchoredPosition = Vector2.zero;
-        rt.sizeDelta = new Vector2(tributeIconSize, tributeIconSize);
-        
-        Image img = iconObj.GetComponent<Image>();
-        img.sprite = tributeIconSprite;
-        img.color = tributeIconColor;
-        
-        float t = 0; float duration = tributeIconDuration / (animationSpeed > 0 ? animationSpeed : 1f);
-        
-        while (t < 1f) {
-            if (card == null || iconObj == null) break;
-            t += Time.deltaTime / duration;
-            float alpha = Mathf.Abs(Mathf.Sin(t * Mathf.PI * tributeIconBlinkFrequency));
-            Color c = tributeIconColor; c.a = alpha * tributeIconColor.a; img.color = c;
-            yield return null;
-        }
-        if (iconObj != null) Destroy(iconObj);
+        SetSelectionIcon(card, SummonVFXType.Tribute, SelectionState.Selected);
+        if (tributeVFX != null) { GameObject vfx = SpawnVFXPublic(tributeVFX, card.transform.position); if (vfx != null) vfx.transform.SetParent(card.transform); }
     }
 
     // --- NOVOS EFEITOS DE BATALHA E JOGO ---
@@ -1069,9 +1135,10 @@ public class DuelFXManager : MonoBehaviour
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayBanishEffect | Alvo: {card?.CurrentCardData?.name} | Momento: Carta Removida de Jogo (Banida).");
         if (!enableAnimations || card == null) return;
         PlaySound(banishSound);
-        AnimateCardDeath(card, true); // Morte por Sugador (Fantasmas)
-        // Instancia o VFX por ÚLTIMO para garantir que o Vórtice cubra a carta no Canvas 2D
-        SpawnVFXPublic(banishVFX, card.transform.position);
+        
+        if (useBanishRoutine) AnimateCardDeath(card, true); // Morte por Sugador (Fantasmas)
+        if (useBanishPrefab && banishVFX != null)
+            SpawnVFXPublic(banishVFX, card.transform.position);
     }
 
     private void AnimateCardDeath(CardDisplay card, bool isBanish)
@@ -1110,13 +1177,16 @@ public class DuelFXManager : MonoBehaviour
 
     private IEnumerator BanishGhostRoutine(GameObject ghost)
     {
-        float t = 0; Vector3 startScale = ghost.transform.localScale; RawImage ri = ghost.GetComponent<RawImage>();
+        float duration = banishShrinkDuration / (animationSpeed > 0 ? animationSpeed : 1f);
+        float t = 0; 
+        Vector3 startScale = ghost.transform.localScale; 
+        RawImage ri = ghost.GetComponent<RawImage>();
         while(t < 1f) {
             if (ghost == null) yield break;
-            t += Time.deltaTime * 2.5f; // Rápido!
-            ghost.transform.Rotate(0, 0, 720f * Time.deltaTime); // Gira violentamente para o centro
+            t += Time.deltaTime / duration;
+            ghost.transform.Rotate(0, 0, banishSpinSpeed * Time.deltaTime); // Lê do Inspector
             ghost.transform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
-            ri.color = new Color(0.5f, 0.5f, 0.5f, 1f - t); // Fica cinza e esmaece
+            if (ri != null) ri.color = new Color(0.5f, 0.5f, 0.5f, 1f - t); 
             yield return null;
         } Destroy(ghost);
     }
@@ -1230,6 +1300,27 @@ public class DuelFXManager : MonoBehaviour
         }
     }
 
+    public void PlayHitEffect(CardDisplay target)
+    {
+        if (target == null || !enableAnimations) return;
+        
+        if (useAttackImpactPrefab && attackVFX != null)
+        {
+            GameObject impact = SpawnVFXPublic(attackVFX, target.transform.position);
+            if (impact != null && attackImpactRotationOffset != 0f)
+            {
+                impact.transform.Rotate(0, 0, attackImpactRotationOffset);
+            }
+        }
+
+        if (useAttackImpactRoutine)
+        {
+            StartCoroutine(PulseGhostRoutine(target, attackImpactPulseScale, attackImpactPulseDuration, attackImpactPulseColor, 8f));
+        }
+
+        StartCoroutine(ShakeRoutine(target.transform, hitShakeDuration, hitShakeMagnitude));
+    }
+
     public void PlayDefenseSuccessEffect(CardDisplay card)
     {
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayDefenseSuccessEffect (Escudo) | Alvo (Defensor): {card?.CurrentCardData?.name} | Momento: Sobreviveu ao ataque.");
@@ -1250,7 +1341,7 @@ public class DuelFXManager : MonoBehaviour
     {
         if (!enableAnimations || card == null) return;
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayCardShake | Alvo: {card.CurrentCardData?.name} | Momento: Tremedeira de impacto físico.");
-        StartCoroutine(ShakeRoutine(card.transform, attackHitShakeDuration, attackHitShakeMagnitude));
+        StartCoroutine(ShakeRoutine(card.transform, hitShakeDuration, hitShakeMagnitude));
     }
 
     private IEnumerator ShakeRoutine(Transform target, float duration, float magnitude)
@@ -1456,6 +1547,10 @@ public class DuelFXManager : MonoBehaviour
         if (card == null) yield break;
 
         Vector3 originalScale = card.transform.localScale;
+        if (GameManager.Instance != null)
+        {
+            originalScale = card.isOnField ? GameManager.Instance.fieldCardScale : GameManager.Instance.handCardScale;
+        }
         Vector3 peakScale = originalScale * targetScaleMult;
         Transform originalParent = card.transform.parent;
         int originalIndex = card.transform.GetSiblingIndex();
@@ -1475,7 +1570,7 @@ public class DuelFXManager : MonoBehaviour
         rt.localRotation = cardRt.localRotation; rt.localScale = cardRt.localScale;
 
         RawImage ri = ghost.GetComponent<RawImage>();
-        ri.texture = card.GetFrontTexture() != null ? card.GetFrontTexture() : card.cardImage.texture; 
+        ri.texture = card.cardImage.texture; 
         ri.color = new Color(1f, 1f, 1f, 0.8f);
         
         Outline outline = ghost.GetComponent<Outline>();
@@ -1509,6 +1604,17 @@ public class DuelFXManager : MonoBehaviour
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayPlacementAura | Alvo: {card?.CurrentCardData?.name} | Momento: Carta foi posicionada fisicamente na mesa (Set/Summon/Activate).");
         if (!enableAnimations || card == null) return;
 
+        StartCoroutine(PlacementAuraWrapper(card));
+    }
+
+    private IEnumerator PlacementAuraWrapper(CardDisplay card)
+    {
+        CanvasGroup cg = card.GetComponent<CanvasGroup>();
+        if (cg != null)
+        {
+            while (cg.alpha < 0.5f) yield return null;
+        }
+
         Color targetColor = GetAuraColor(card);
 
         if (usePlacementAuraRoutine)
@@ -1516,7 +1622,7 @@ public class DuelFXManager : MonoBehaviour
             StartCoroutine(PlacementAuraRoutine(card, targetColor));
         }
 
-        if (!usePlacementAuraPrefab || placementAuraVFX == null) return;
+        if (!usePlacementAuraPrefab || placementAuraVFX == null) yield break;
         
         GameObject vfx = Instantiate(placementAuraVFX);
         
@@ -1524,24 +1630,31 @@ public class DuelFXManager : MonoBehaviour
         if (originalParent != null)
         {
             vfx.transform.SetParent(originalParent, false);
-            vfx.transform.SetSiblingIndex(card.transform.GetSiblingIndex()); // ATRÁS da carta
+            
+            if (placementAuraRenderMode == PlacementAuraRenderMode.Behind)
+                vfx.transform.SetSiblingIndex(card.transform.GetSiblingIndex()); // ATRÁS da carta
+            else
+                vfx.transform.SetSiblingIndex(card.transform.GetSiblingIndex() + 1); // NA FRENTE da carta
             
             RectTransform rt = vfx.GetComponent<RectTransform>();
             if (rt != null)
             {
                 rt.anchoredPosition = Vector2.zero;
                 rt.localRotation = card.transform.localRotation; // Acompanha 90º
+                rt.localScale = Vector3.one * placementAuraPrefabScale;
             }
             else
             {
                 vfx.transform.localPosition = Vector3.zero;
                 vfx.transform.localRotation = card.transform.localRotation;
+                vfx.transform.localScale = Vector3.one * placementAuraPrefabScale;
             }
         }
         else
         {
             vfx.transform.position = card.transform.position;
             vfx.transform.rotation = card.transform.rotation;
+            vfx.transform.localScale = Vector3.one * placementAuraPrefabScale;
         }
 
         ParticleSystemRenderer[] renderers = vfx.GetComponentsInChildren<ParticleSystemRenderer>(true);
@@ -1549,7 +1662,10 @@ public class DuelFXManager : MonoBehaviour
         {
             Canvas rootCanvas = card.GetComponentInParent<Canvas>();
             string targetLayer = rootCanvas != null ? rootCanvas.sortingLayerName : "Default";
-            int targetOrder = rootCanvas != null ? rootCanvas.sortingOrder - 1 : -1; // Atrás da carta 2D
+            int targetOrder = rootCanvas != null ? rootCanvas.sortingOrder + 1 : 1;
+            
+            if (placementAuraRenderMode == PlacementAuraRenderMode.Above)
+                targetOrder += 10; // Coloca bem na frente da carta
             
             foreach (var r in renderers)
             {
@@ -1558,7 +1674,7 @@ public class DuelFXManager : MonoBehaviour
             }
         }
 
-        if (colorizeAuraByType)
+        if (colorizeAuraByType || colorizeAuraByPlayer)
         {
             foreach (var r in renderers)
             {
@@ -1572,8 +1688,16 @@ public class DuelFXManager : MonoBehaviour
             }
         }
 
-        ParticleSystem ps = vfx.GetComponent<ParticleSystem>();
-        float destroyTime = ps != null ? (ps.main.duration + ps.main.startLifetime.constantMax + 0.5f) : 3.0f;
+        float destroyTime = 3.0f;
+        if (overridePlacementAuraPrefabDuration)
+        {
+            destroyTime = placementAuraPrefabDuration;
+        }
+        else
+        {
+            ParticleSystem ps = vfx.GetComponent<ParticleSystem>();
+            destroyTime = ps != null ? (ps.main.duration + ps.main.startLifetime.constantMax + 0.5f) : 3.0f;
+        }
         Destroy(vfx, destroyTime);
         
         Debug.Log($"[VFX] ✔ [AURA INSTANCIADA] '{placementAuraVFX.name}' renderizada atrás da carta. Vida: {destroyTime}s.");
@@ -1581,7 +1705,14 @@ public class DuelFXManager : MonoBehaviour
 
     private Color GetAuraColor(CardDisplay card)
     {
-        if (!colorizeAuraByType || card == null || card.CurrentCardData == null) return colorMonsterNormal;
+        if (card == null || card.CurrentCardData == null) return colorMonsterNormal;
+        
+        if (colorizeAuraByPlayer && GameManager.Instance != null)
+        {
+            return card.isPlayerCard ? GameManager.Instance.playerHoverColor : GameManager.Instance.opponentHoverColor;
+        }
+
+        if (!colorizeAuraByType) return colorMonsterNormal;
         if (card.isFlipped) return colorFaceDown;
         if (card.CurrentCardData.type.Contains("Spell")) return colorSpell;
         if (card.CurrentCardData.type.Contains("Trap")) return colorTrap;
@@ -1610,7 +1741,7 @@ public class DuelFXManager : MonoBehaviour
         rt.localRotation = cardRt.localRotation; rt.localScale = cardRt.localScale;
 
         RawImage ri = ghost.GetComponent<RawImage>();
-        ri.texture = card.GetFrontTexture() != null ? card.GetFrontTexture() : card.cardImage.texture; 
+        ri.texture = card.cardImage.texture; 
         
         Outline outline = ghost.GetComponent<Outline>();
         outline.effectColor = outlineColor;
@@ -1671,7 +1802,7 @@ public class DuelFXManager : MonoBehaviour
         rt.localRotation = sourceRT.localRotation; rt.localScale = sourceRT.localScale;
 
         RawImage ri = ghost.GetComponent<RawImage>();
-        ri.texture = source.GetFrontTexture() != null ? source.GetFrontTexture() : source.cardImage.texture; 
+        ri.texture = source.cardImage.texture; 
         ri.color = new Color(1f, 1f, 1f, 0.8f); // Fantasma semitransparente
 
         // Movemos para o Canvas raiz usando worldPositionStays=true para voar por cima de tudo preservando as proporções
@@ -1747,7 +1878,7 @@ public class DuelFXManager : MonoBehaviour
         rt.pivot = targetRT.pivot;
 
         RawImage ri = squeezeObj.GetComponent<RawImage>();
-        ri.texture = target.GetFrontTexture() != null ? target.GetFrontTexture() : target.cardImage.texture;
+        ri.texture = target.cardImage.texture;
         ri.color = equipSqueezeColor; // Sombra customizada
 
         Outline outline = squeezeObj.GetComponent<Outline>();
@@ -1804,6 +1935,24 @@ public class DuelFXManager : MonoBehaviour
         }
     }
 
+    // Usado pelo GameManager para saber EXATAMENTE quando liberar as compras
+    public float GetShuffleTotalDuration()
+    {
+        float timePerLoop = shuffleDuration / (animationSpeed > 0 ? animationSpeed : 1f);
+        float extraFadeOutTime = 0f;
+
+        if (useShufflePrefab && shuffleVFX != null)
+        {
+            ParticleSystem ps = shuffleVFX.GetComponent<ParticleSystem>();
+            if (ps != null)
+            {
+                if (ps.main.duration > timePerLoop) timePerLoop = ps.main.duration;
+                extraFadeOutTime = ps.main.startLifetime.constantMax;
+            }
+        }
+        return (timePerLoop * Mathf.Max(1, shuffleLoopCount)) + extraFadeOutTime + shuffleDeckAppearDelay + shufflePostDelay;
+    }
+
     private IEnumerator ShuffleRoutine(Transform pileTransform)
     {
         Transform uiParent = GetUIParent();
@@ -1813,17 +1962,37 @@ public class DuelFXManager : MonoBehaviour
         Vector3 centerPos = shuffleAtCenter && boardCenter != null ? boardCenter.position : startPos;
         RectTransform pileRT = pileTransform.GetComponent<RectTransform>();
 
-        float halfDuration = (shuffleDuration / 2f) / (animationSpeed > 0 ? animationSpeed : 1f);
+        // Ocultar o deck real temporariamente para evitar z-fighting e tremeliques com o VFX
+        CanvasGroup pileCG = pileTransform.GetComponent<CanvasGroup>();
+        bool addedCG = false;
+        if (pileCG == null) { pileCG = pileTransform.gameObject.AddComponent<CanvasGroup>(); addedCG = true; }
+        float originalAlpha = pileCG.alpha;
+        pileCG.alpha = 0f;
+
+        float routineDuration = shuffleDuration / (animationSpeed > 0 ? animationSpeed : 1f);
+        float halfDuration = routineDuration / 2f;
+        float extraFadeOutTime = 0f;
         int loops = Mathf.Max(1, shuffleLoopCount);
 
         for (int loopIndex = 0; loopIndex < loops; loopIndex++)
         {
             PlaySound(shuffleSound);
+            float loopWaitTime = routineDuration;
+            float timeSpent = 0f;
 
             if (useShufflePrefab && shuffleVFX != null)
             {
                 Vector3 spawnPos = shuffleAtCenter && boardCenter != null ? boardCenter.position : startPos;
-                SpawnVFXPublic(shuffleVFX, spawnPos);
+                GameObject vfx = SpawnVFXPublic(shuffleVFX, spawnPos);
+                if (vfx != null)
+                {
+                    ParticleSystem ps = vfx.GetComponent<ParticleSystem>();
+                    if (ps != null)
+                    {
+                        if (ps.main.duration > loopWaitTime) loopWaitTime = ps.main.duration;
+                        extraFadeOutTime = ps.main.startLifetime.constantMax; // Guarda a dissipação para o fim
+                    }
+                }
             }
 
             if (useShuffleRoutine && uiParent != null)
@@ -1849,7 +2018,7 @@ public class DuelFXManager : MonoBehaviour
                     fakeCards.Add(card);
                 }
 
-            float t = 0;
+                float t = 0;
 
                 // Fase 1: Levanta e Divide o Baralho em Leque
                 while (t < 1f)
@@ -1876,8 +2045,17 @@ public class DuelFXManager : MonoBehaviour
                     }
                     yield return null;
                 }
+                timeSpent += halfDuration;
 
                 PlaySound(shuffleSound); 
+
+                // FIX: Seta a ordem do Sibling UMA VEZ antes da animação descer para evitar tremeliques (Rebuild de Layout)!
+                for (int i = 0; i < deckSize; i++)
+                {
+                    if (fakeCards[i] == null) continue;
+                    int siblingTarget = fakeCards[i].transform.parent.childCount - (i % 2 == 0 ? i : deckSize - i);
+                    fakeCards[i].transform.SetSiblingIndex(siblingTarget);
+                }
 
                 // Fase 2: Une as metades entrelaçando e desce
                 t = 0;
@@ -1894,9 +2072,6 @@ public class DuelFXManager : MonoBehaviour
                         float currentXOffset = Mathf.Lerp(xStartOffset, 0, smooth);
                         float rotationZ = (i % 2 == 0) ? Mathf.Lerp(20f, 0f, smooth) : Mathf.Lerp(-20f, 0f, smooth);
                         
-                        int siblingTarget = fakeCards[i].transform.parent.childCount - (i % 2 == 0 ? i : deckSize - i);
-                        fakeCards[i].transform.SetSiblingIndex(siblingTarget);
-
                         fakeCards[i].transform.position = currentBasePos + new Vector3(currentXOffset, 0, 0);
                         fakeCards[i].transform.rotation = Quaternion.Euler(0, 0, pileTransform.eulerAngles.z + rotationZ);
 
@@ -1908,56 +2083,120 @@ public class DuelFXManager : MonoBehaviour
                     }
                     yield return null;
                 }
+                timeSpent += halfDuration;
 
                 foreach (var c in fakeCards) Destroy(c);
             }
-            else
+            
+            // Aguarda o tempo restante caso o Prefab (SpriteSheet) seja mais longo que a Rotina 3D (Sync Perfeito)
+            if (timeSpent < loopWaitTime)
             {
-                yield return new WaitForSeconds(halfDuration * 2f);
+                yield return new WaitForSeconds(loopWaitTime - timeSpent);
             }
+        }
+
+        // Aguarda a fumaça/partículas dissiparem apenas no final de todos os ciclos
+        if (extraFadeOutTime > 0) yield return new WaitForSeconds(extraFadeOutTime);
+
+        if (shuffleDeckAppearDelay > 0) yield return new WaitForSeconds(shuffleDeckAppearDelay);
+
+        // Restaura a visibilidade do Deck real
+        if (pileCG != null)
+        {
+            pileCG.alpha = originalAlpha;
+            if (addedCG) Destroy(pileCG);
         }
     }
 
+    // Wrappers de Compatibilidade Retroativa para as Cinemáticas
     public void PlaySummonCinematic(CardDisplay card, bool isTribute, bool isSpecial, System.Action onComplete)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlaySummonCinematic | Alvo: {card?.CurrentCardData?.name} | Momento: Invocação Maior aterrissando na mesa.");
+        SummonVFXType type = isTribute ? SummonVFXType.Tribute : (isSpecial ? SummonVFXType.Special : SummonVFXType.Normal);
+        PlaySummonCinematic(card, type, onComplete);
+    }
+
+    public void PlaySummonCinematic(CardDisplay card, SummonVFXType type, System.Action onComplete)
+    {
         if (!enableAnimations || card == null) { onComplete?.Invoke(); return; }
-        StartCoroutine(SummonCinematicRoutine(card, isTribute, isSpecial, onComplete));
+        StartCoroutine(SummonCinematicRoutine(card, type, onComplete));
     }
 
-    private void SpawnFieldMarker(Vector3 targetPos, Color markerColor, GameObject prefabMarker)
+    public void SpawnFieldMarker(Transform targetZone, SummonVFXType type)
     {
-        if (!useFieldMarkers) return;
-        if (useFieldMarkerPrefabs && prefabMarker != null) SpawnVFXPublic(prefabMarker, targetPos);
-        if (useNativeFieldMarker) StartCoroutine(NativeFieldMarkerRoutine(targetPos, markerColor));
+        SummonVFXPackage package = GetSummonPackage(type);
+        if (package == null || !package.fieldMarker.useMarker) return;
+        FieldMarkerSettings settings = package.fieldMarker;
+
+        if (settings.usePrefab && settings.prefab != null)
+        {
+            GameObject vfx = SpawnVFXPublic(settings.prefab, targetZone.position, true, settings.color);
+            if (vfx != null) 
+            {
+                // Retorna ao falso para não herdar distorções de tela/canvas
+                vfx.transform.SetParent(targetZone, false);
+                
+                // Restaura o tamanho e as âncoras exatas do Prefab original que a Unity distorceu
+                RectTransform rt = vfx.GetComponent<RectTransform>();
+                RectTransform prefabRt = settings.prefab.GetComponent<RectTransform>();
+                if (rt != null && prefabRt != null)
+                {
+                    rt.anchorMin = prefabRt.anchorMin; rt.anchorMax = prefabRt.anchorMax;
+                    rt.pivot = prefabRt.pivot; rt.sizeDelta = prefabRt.sizeDelta;
+                    rt.anchoredPosition = Vector2.zero;
+                }
+                else { vfx.transform.localPosition = Vector3.zero; }
+                
+                vfx.transform.SetAsFirstSibling();
+                // Injeta a escala original do Prefab para a matemática não enlouquecer
+                StartCoroutine(PrefabFieldMarkerRoutine(vfx, settings.prefab.transform.localScale, settings));
+            }
+        }
+        if (settings.useNative) StartCoroutine(NativeFieldMarkerRoutine(targetZone, settings));
     }
 
-    private IEnumerator NativeFieldMarkerRoutine(Vector3 pos, Color color)
+    private IEnumerator PrefabFieldMarkerRoutine(GameObject vfx, Vector3 baseScale, FieldMarkerSettings settings)
     {
-        Transform uiParent = GetUIParent();
+        float t = 0; 
+        float duration = settings.duration / (animationSpeed > 0 ? animationSpeed : 1f);
+
+        while (t < 1f) {
+            if (vfx == null) break;
+            t += Time.deltaTime / duration; 
+            float smooth = Mathf.SmoothStep(0, 1, t);
+            
+            float currentMultiplier = Mathf.Lerp(settings.startSize, settings.endSize, smooth);
+            vfx.transform.localScale = baseScale * currentMultiplier;
+            yield return null;
+        } 
+        if (vfx != null) Destroy(vfx); // Retorna a destruição manual para objetos 2D!
+    }
+
+    private IEnumerator NativeFieldMarkerRoutine(Transform targetZone, FieldMarkerSettings settings)
+    {
         GameObject marker = new GameObject("NativeFieldMarker", typeof(RectTransform), typeof(Image));
-        if (uiParent != null) marker.transform.SetParent(uiParent, true);
+        marker.transform.SetParent(targetZone, false);
+        marker.transform.SetAsFirstSibling();
         
         RectTransform rt = marker.GetComponent<RectTransform>();
-        rt.position = pos; rt.sizeDelta = new Vector2(200, 200); 
+        rt.anchoredPosition = Vector2.zero; rt.sizeDelta = new Vector2(200, 200); 
         
         Image img = marker.GetComponent<Image>();
-        img.color = new Color(color.r, color.g, color.b, 0f);
+        img.color = new Color(settings.color.r, settings.color.g, settings.color.b, 0f);
         Outline outline = marker.AddComponent<Outline>();
-        outline.effectColor = color; outline.effectDistance = new Vector2(5f, -5f);
+        outline.effectColor = settings.color; outline.effectDistance = new Vector2(5f, -5f);
         
-        float t = 0; float duration = markerDuration / (animationSpeed > 0 ? animationSpeed : 1f);
+        float t = 0; float duration = settings.duration / (animationSpeed > 0 ? animationSpeed : 1f);
         while (t < 1f) {
             if (marker == null) break;
             t += Time.deltaTime / duration; float smooth = Mathf.SmoothStep(0, 1, t);
-            rt.localScale = Vector3.Lerp(Vector3.one * markerStartSize, Vector3.one * markerEndSize, smooth);
-            Color c = color; c.a = Mathf.Lerp(color.a, 0f, smooth); outline.effectColor = c;
+            rt.localScale = Vector3.Lerp(Vector3.one * settings.startSize, Vector3.one * settings.endSize, smooth);
+            Color c = settings.color; c.a = Mathf.Lerp(settings.color.a, 0f, smooth); outline.effectColor = c;
             yield return null;
         } 
         if (marker != null) Destroy(marker);
     }
 
-    private IEnumerator SummonCinematicRoutine(CardDisplay card, bool isTribute, bool isSpecial, System.Action onComplete)
+    private IEnumerator SummonCinematicRoutine(CardDisplay card, SummonVFXType type, System.Action onComplete)
     {
         Transform uiParent = GetUIParent();
         if (uiParent == null) { onComplete?.Invoke(); yield break; }
@@ -2001,7 +2240,8 @@ public class DuelFXManager : MonoBehaviour
             yield return null; }
 
         Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
-        SpawnFieldMarker(targetPos, isTribute ? specialMarkerColor : specialMarkerColor, isTribute ? tributeFieldMarkerVFX : specialFieldMarkerVFX);
+        Transform targetZone = card.transform.parent != null ? card.transform.parent : card.transform;
+        SpawnFieldMarker(targetZone, type);
 
         yield return new WaitForSeconds(0.6f / animSpeed); // SUSPENSE
 
@@ -2026,12 +2266,16 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayFusionCinematic(CardDisplay card, List<CardData> materials, CardData polyCard, System.Action onComplete)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayFusionCinematic | Alvo: {card?.CurrentCardData?.name} | Momento: Materiais enviados pro GY, Magia de Fusão resolvida.");
-        if (!enableAnimations || card == null) { onComplete?.Invoke(); return; }
-        StartCoroutine(FusionCinematicRoutine(card, materials, polyCard, onComplete));
+        PlayFusionCinematic(card, materials, SummonVFXType.Fusion, onComplete);
     }
 
-    private IEnumerator FusionCinematicRoutine(CardDisplay card, List<CardData> materials, CardData polyCard, System.Action onComplete)
+    public void PlayFusionCinematic(CardDisplay card, List<CardData> materials, SummonVFXType type, System.Action onComplete)
+    {
+        if (!enableAnimations || card == null) { onComplete?.Invoke(); return; }
+        StartCoroutine(FusionCinematicRoutine(card, materials, type, onComplete));
+    }
+
+    private IEnumerator FusionCinematicRoutine(CardDisplay card, List<CardData> materials, SummonVFXType type, System.Action onComplete)
     {
         Transform uiParent = GetUIParent();
         if (uiParent == null) { onComplete?.Invoke(); yield break; }
@@ -2049,14 +2293,15 @@ public class DuelFXManager : MonoBehaviour
         float animSpeed = animationSpeed > 0 ? animationSpeed : 1.5f; float t = 0;
         while (t < 0.3f) { t += Time.deltaTime * animSpeed; if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.8f, t / 0.3f)); yield return null; }
 
+        SummonVFXPackage package = GetSummonPackage(type);
         GameObject symbolObj = null;
-        if (fusionBackgroundSymbol != null) { 
+        if (package != null && package.cinematic.backgroundSymbol != null) { 
             symbolObj = new GameObject("FusionSymbol", typeof(RectTransform), typeof(Image)); 
             symbolObj.transform.SetParent(uiParent, false);
             RectTransform rtSym = symbolObj.GetComponent<RectTransform>(); 
             rtSym.anchorMin = new Vector2(0.5f, 0.5f); rtSym.anchorMax = new Vector2(0.5f, 0.5f);
             rtSym.anchoredPosition = Vector2.zero; rtSym.sizeDelta = new Vector2(400f, 400f);
-            Image imgSym = symbolObj.GetComponent<Image>(); imgSym.sprite = fusionBackgroundSymbol; imgSym.color = new Color(1, 1, 1, 0); 
+            Image imgSym = symbolObj.GetComponent<Image>(); imgSym.sprite = package.cinematic.backgroundSymbol; imgSym.color = new Color(1, 1, 1, 0); 
         }
 
         List<RectTransform> matRects = new List<RectTransform>();
@@ -2099,7 +2344,7 @@ public class DuelFXManager : MonoBehaviour
         foreach (var m in matRects) Destroy(m.gameObject);
         PlaySound(fusionSound);
         Vector3 worldCenter = symbolObj != null ? symbolObj.transform.position : uiParent.position;
-        if (fusionFlashVFX != null) SpawnVFXPublic(fusionFlashVFX, worldCenter);
+        if (package != null && package.cinematic.flashPrefab != null) SpawnVFXPublic(package.cinematic.flashPrefab, worldCenter);
 
         GameObject cinCard = new GameObject("CinematicFusion", typeof(RectTransform), typeof(RawImage));
         cinCard.transform.SetParent(uiParent, false);
@@ -2116,7 +2361,8 @@ public class DuelFXManager : MonoBehaviour
             yield return null; }
         
         Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
-        SpawnFieldMarker(targetPos, fusionMarkerColor, fusionFieldMarkerVFX != null ? fusionFieldMarkerVFX : specialFieldMarkerVFX);
+        Transform targetZone = card.transform.parent != null ? card.transform.parent : card.transform;
+        SpawnFieldMarker(targetZone, type);
 
         yield return new WaitForSeconds(0.6f / animSpeed);
 
@@ -2134,12 +2380,16 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayRitualCinematic(CardDisplay card, CardData ritualSpell, System.Action onComplete)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayRitualCinematic | Alvo: {card?.CurrentCardData?.name} | Momento: Tributos enviados, Magia de Ritual resolvida.");
-        if (!enableAnimations || card == null) { onComplete?.Invoke(); return; }
-        StartCoroutine(RitualCinematicRoutine(card, ritualSpell, onComplete));
+        PlayRitualCinematic(card, SummonVFXType.Ritual, onComplete);
     }
 
-    private IEnumerator RitualCinematicRoutine(CardDisplay card, CardData ritualSpell, System.Action onComplete)
+    public void PlayRitualCinematic(CardDisplay card, SummonVFXType type, System.Action onComplete)
+    {
+        if (!enableAnimations || card == null) { onComplete?.Invoke(); return; }
+        StartCoroutine(RitualCinematicRoutine(card, type, onComplete));
+    }
+
+    private IEnumerator RitualCinematicRoutine(CardDisplay card, SummonVFXType type, System.Action onComplete)
     {
         Transform uiParent = GetUIParent();
         if (uiParent == null) { onComplete?.Invoke(); yield break; }
@@ -2154,12 +2404,13 @@ public class DuelFXManager : MonoBehaviour
         float animSpeed = animationSpeed > 0 ? animationSpeed : 1.5f; float t = 0;
         while (t < 0.3f) { t += Time.deltaTime * animSpeed; if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.8f, t / 0.3f)); yield return null; }
 
+        SummonVFXPackage package = GetSummonPackage(type);
         GameObject symbolObj = null;
-        if (ritualBackgroundSymbol != null) { symbolObj = new GameObject("RitualSymbol", typeof(RectTransform), typeof(Image)); symbolObj.transform.SetParent(uiParent, false);
+        if (package != null && package.cinematic.backgroundSymbol != null) { symbolObj = new GameObject("RitualSymbol", typeof(RectTransform), typeof(Image)); symbolObj.transform.SetParent(uiParent, false);
             RectTransform rtSym = symbolObj.GetComponent<RectTransform>(); 
             rtSym.anchorMin = new Vector2(0.5f, 0.5f); rtSym.anchorMax = new Vector2(0.5f, 0.5f);
             rtSym.anchoredPosition = Vector2.zero; rtSym.sizeDelta = new Vector2(400f, 400f);
-            Image imgSym = symbolObj.GetComponent<Image>(); imgSym.sprite = ritualBackgroundSymbol; imgSym.color = new Color(1, 1, 1, 0); }
+            Image imgSym = symbolObj.GetComponent<Image>(); imgSym.sprite = package.cinematic.backgroundSymbol; imgSym.color = new Color(1, 1, 1, 0); }
 
         PlaySound(spellSound); t = 0;
         while (t < 1.0f) { t += Time.deltaTime * animSpeed; if (symbolObj != null) {
@@ -2167,7 +2418,7 @@ public class DuelFXManager : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f); PlaySound(fusionSound); 
         Vector3 worldCenter = symbolObj != null ? symbolObj.transform.position : uiParent.position;
-        if (ritualFlashVFX != null) SpawnVFXPublic(ritualFlashVFX, worldCenter); else if (fusionFlashVFX != null) SpawnVFXPublic(fusionFlashVFX, worldCenter); 
+        if (package != null && package.cinematic.flashPrefab != null) SpawnVFXPublic(package.cinematic.flashPrefab, worldCenter);
 
         GameObject cinCard = new GameObject("CinematicRitual", typeof(RectTransform), typeof(RawImage));
         cinCard.transform.SetParent(uiParent, false); cinCard.transform.SetAsLastSibling();
@@ -2181,7 +2432,8 @@ public class DuelFXManager : MonoBehaviour
             if (symbolObj != null) symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0.6f, 0f, p)); yield return null; }
 
         Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
-        SpawnFieldMarker(targetPos, ritualMarkerColor, ritualFieldMarkerVFX != null ? ritualFieldMarkerVFX : specialFieldMarkerVFX);
+        Transform targetZone = card.transform.parent != null ? card.transform.parent : card.transform;
+        SpawnFieldMarker(targetZone, type);
 
         if (symbolObj != null) Destroy(symbolObj); 
         
@@ -2346,7 +2598,7 @@ public class DuelFXManager : MonoBehaviour
             rt.sizeDelta = Vector2.zero; rt.anchoredPosition = Vector2.zero;
             
             RawImage ri = outlineGhost.GetComponent<RawImage>();
-            ri.texture = card.GetFrontTexture() != null ? card.GetFrontTexture() : card.cardImage.texture;
+            ri.texture = card.cardImage.texture;
             ri.color = controlSwapOutlineColor; 
             
             Outline outl = outlineGhost.GetComponent<Outline>();
@@ -2372,7 +2624,7 @@ public class DuelFXManager : MonoBehaviour
 
                 if (useControlSwapTrail) {
                     if (controlSwapTrailType == AttackTrailType.Shadows) {
-                        spawnTrailTimer -= Time.deltaTime; if (spawnTrailTimer <= 0) { spawnTrailTimer = 0.03f; SpawnCardTrailGhost(card.GetComponent<RectTransform>(), card.GetFrontTexture() != null ? card.GetFrontTexture() : card.cardImage.texture, controlSwapTrailColor); }
+                        spawnTrailTimer -= Time.deltaTime; if (spawnTrailTimer <= 0) { spawnTrailTimer = 0.03f; SpawnCardTrailGhost(card.GetComponent<RectTransform>(), card.cardImage.texture, controlSwapTrailColor); }
                     } else if (controlSwapTrailType == AttackTrailType.ContinuousLine && lineObj != null) {
                         Vector3 currentPos = card.transform.position; Vector3 dirToCurrent = currentPos - startPos;
                         float dist = dirToCurrent.magnitude; float canvasScale = lineObj.transform.lossyScale.x;
@@ -2461,7 +2713,7 @@ public class DuelFXManager : MonoBehaviour
         rt.pivot = targetRT.pivot;
 
         RawImage ri = squeezeObj.GetComponent<RawImage>();
-        ri.texture = card.GetFrontTexture() != null ? card.GetFrontTexture() : card.cardImage.texture;
+        ri.texture = card.cardImage.texture;
         ri.color = controlSwapImpactColor; 
         
         Outline outline = squeezeObj.GetComponent<Outline>();

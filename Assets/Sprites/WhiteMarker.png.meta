@@ -1,0 +1,710 @@
+fileFormatVersion: 2
+guid: 4eccb18c85a78b1419a5670bad2ff9ee
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 8595500812082641526
+    second: WhiteMarker_0
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: WhiteMarker_0
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 1638
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 67a74ca927a594770800000000000000
+      internalID: 8595500812082641526
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_1
+      rect:
+        serializedVersion: 2
+        x: 410
+        y: 1638
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 746322de7f106a84da78184c02efdb67
+      internalID: 2125792445
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_2
+      rect:
+        serializedVersion: 2
+        x: 819
+        y: 1638
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: febfdeb77d82342408dd4b9dec890fae
+      internalID: -303930150
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_3
+      rect:
+        serializedVersion: 2
+        x: 1228
+        y: 1638
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 10b728b8ef48fa940a3ac04f6a9577e5
+      internalID: -452748883
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_4
+      rect:
+        serializedVersion: 2
+        x: 1637
+        y: 1638
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c05f4f33eb17a5e41a92371c23258059
+      internalID: 266520301
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_5
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 1229
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ca5fed609efbe3b46a5b8ffac307e28b
+      internalID: -1031904585
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_6
+      rect:
+        serializedVersion: 2
+        x: 410
+        y: 1229
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: eb91db7fbcffab74daa5521cf4c01c39
+      internalID: -316340965
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_7
+      rect:
+        serializedVersion: 2
+        x: 819
+        y: 1229
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c6b9b532dc1c6044aa7d3c7f131be248
+      internalID: 1864420954
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_8
+      rect:
+        serializedVersion: 2
+        x: 1228
+        y: 1229
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c023a61d64c6ed8459662466f8e62b5a
+      internalID: -115340332
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_9
+      rect:
+        serializedVersion: 2
+        x: 1637
+        y: 1229
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 03370ef8ac3b4134f978f665f3ad42cd
+      internalID: -768294218
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_10
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 820
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 96ab943a06ff1ce4296f8efbb87c4c4b
+      internalID: -677661492
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_11
+      rect:
+        serializedVersion: 2
+        x: 410
+        y: 820
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7d1263c65d078004996b99473207c1e7
+      internalID: 1766954896
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_12
+      rect:
+        serializedVersion: 2
+        x: 819
+        y: 820
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 23dae4a5443d2374ba2b802d95913e5a
+      internalID: 1021295072
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_13
+      rect:
+        serializedVersion: 2
+        x: 1228
+        y: 820
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cdac14af8bae9824bb1a1faab5c47efc
+      internalID: -842909464
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_14
+      rect:
+        serializedVersion: 2
+        x: 1637
+        y: 820
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 55ef47b4518fc1e4ea62e7d9966aedbe
+      internalID: -1338700805
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_15
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 411
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c82c07512772feb408d35a630e79e070
+      internalID: 2036338430
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_16
+      rect:
+        serializedVersion: 2
+        x: 410
+        y: 411
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4aadf6349e7eafc4db4de80f9c53a412
+      internalID: -167336035
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_17
+      rect:
+        serializedVersion: 2
+        x: 819
+        y: 411
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 80a74fd3a6a64ce40b5fa2fd67f49fd4
+      internalID: -1166844204
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_18
+      rect:
+        serializedVersion: 2
+        x: 1228
+        y: 411
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4a631802b799f4e4ca8c83adea5b0307
+      internalID: -816754131
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_19
+      rect:
+        serializedVersion: 2
+        x: 1637
+        y: 411
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5642b0239b51c154e91421119662b25c
+      internalID: 634157575
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_20
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 2
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 92f05a7ff0004d9448b3a7b1bf4f5435
+      internalID: 1596450981
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_21
+      rect:
+        serializedVersion: 2
+        x: 410
+        y: 2
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6ed69545fcec90542abdc371b4f63381
+      internalID: 1301241928
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_22
+      rect:
+        serializedVersion: 2
+        x: 819
+        y: 2
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 428f96fe82988584ba55dd34580da097
+      internalID: 237878334
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_23
+      rect:
+        serializedVersion: 2
+        x: 1228
+        y: 2
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: eb4a56bd385c2de47b0aa2709192ef0c
+      internalID: 1556844231
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WhiteMarker_24
+      rect:
+        serializedVersion: 2
+        x: 1637
+        y: 2
+        width: 409
+        height: 409
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dd1841940501f1d4bbad61cae3889b7d
+      internalID: -1195291864
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 50c717df19971c7448c83c967780bb19
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":5.0,"y":5.0},"gridSpriteSize":{"x":409.0,"y":409.0},"gridSpriteOffset":{"x":1.0,"y":1.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.0,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":4,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      WhiteMarker_0: 8595500812082641526
+      WhiteMarker_1: 2125792445
+      WhiteMarker_10: -677661492
+      WhiteMarker_11: 1766954896
+      WhiteMarker_12: 1021295072
+      WhiteMarker_13: -842909464
+      WhiteMarker_14: -1338700805
+      WhiteMarker_15: 2036338430
+      WhiteMarker_16: -167336035
+      WhiteMarker_17: -1166844204
+      WhiteMarker_18: -816754131
+      WhiteMarker_19: 634157575
+      WhiteMarker_2: -303930150
+      WhiteMarker_20: 1596450981
+      WhiteMarker_21: 1301241928
+      WhiteMarker_22: 237878334
+      WhiteMarker_23: 1556844231
+      WhiteMarker_24: -1195291864
+      WhiteMarker_3: -452748883
+      WhiteMarker_4: 266520301
+      WhiteMarker_5: -1031904585
+      WhiteMarker_6: -316340965
+      WhiteMarker_7: 1864420954
+      WhiteMarker_8: -115340332
+      WhiteMarker_9: -768294218
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

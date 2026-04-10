@@ -376,13 +376,17 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     // Animação fluida de Flip 2D (esmagando e esticando o eixo X)
     private IEnumerator DoFlipAnimation(Texture2D targetTexture)
     {
-        float duration = 0.15f;
+        float baseDuration = 0.3f;
+        if (DuelFXManager.Instance != null) baseDuration = DuelFXManager.Instance.flipAnimationDuration;
+        float totalDuration = baseDuration / (DuelFXManager.Instance != null && DuelFXManager.Instance.animationSpeed > 0 ? DuelFXManager.Instance.animationSpeed : 1f);
+        float halfDuration = totalDuration / 2f;
+        
         float elapsed = 0f;
         Vector3 startScale = transform.localScale;
         
-        while (elapsed < duration)
+        while (elapsed < halfDuration)
         {
-            float t = elapsed / duration;
+            float t = elapsed / halfDuration;
             transform.localScale = new Vector3(Mathf.Lerp(startScale.x, 0f, t), startScale.y, startScale.z);
             elapsed += Time.deltaTime;
             yield return null;
@@ -391,15 +395,18 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (cardImage != null) cardImage.texture = targetTexture;
         
         elapsed = 0f;
-        while (elapsed < duration)
+        while (elapsed < halfDuration)
         {
-            float t = elapsed / duration;
+            float t = elapsed / halfDuration;
             transform.localScale = new Vector3(Mathf.Lerp(0f, startScale.x, t), startScale.y, startScale.z);
             elapsed += Time.deltaTime;
             yield return null;
         }
         
         transform.localScale = startScale;
+
+        // O Efeito/Pulse acontece estritamente APÓS a carta terminar de desvirar
+        if (DuelFXManager.Instance != null && DuelFXManager.Instance.enableAnimations) DuelFXManager.Instance.PlayFlipEffect(this);
     }
 
     private void TriggerTextureChange(Texture2D newTexture, bool isRevealing, bool allowAnimation = true)
@@ -426,8 +433,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             if (flipCoroutine != null) StopCoroutine(flipCoroutine);
             flipCoroutine = StartCoroutine(DoFlipAnimation(newTexture));
-            
-            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayFlipEffect(this);
         }
         else if (cardImage != null)
         {
@@ -813,8 +818,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
                 Image img = tributeIconObj.GetComponent<Image>();
                 img.color = new Color(1f, 1f, 1f, 0.9f);
-                if (DuelFXManager.Instance != null && DuelFXManager.Instance.tributeIconSprite != null)
-                    img.sprite = DuelFXManager.Instance.tributeIconSprite;
+                if (DuelFXManager.Instance != null && DuelFXManager.Instance.tributeSummonSettings.selectionIcon.sprite != null)
+                    img.sprite = DuelFXManager.Instance.tributeSummonSettings.selectionIcon.sprite;
                 else
                     img.color = new Color(1f, 0.5f, 0f, 0.8f); // Fallback laranja
                 

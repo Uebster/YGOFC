@@ -18676,7 +18676,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0010023261}
+  m_AnchoredPosition: {x: 0, y: 0.00044488552}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &250963708
@@ -46297,7 +46297,7 @@ MonoBehaviour:
   chainLinkVFX: {fileID: 4554727184471751013, guid: 828d3521e1decec4ebff4ceaffe624c5, type: 3}
   monsterEffectVFX: {fileID: 1118113375338931295, guid: 7bed05d729177c149b8823a9d97aa30d, type: 3}
   placementAuraVFX: {fileID: 5732867552576158396, guid: 784bc442653b27a448ea238e183604ec, type: 3}
-  shuffleVFX: {fileID: 3958962744745436999, guid: 53e750ec04447b8428070b75859beea6, type: 3}
+  shuffleVFX: {fileID: 4167448508448227333, guid: a6e0b0505661112498c1e4e39cba70d5, type: 3}
   boardBackgroundImage: {fileID: 1396565531}
   defaultBoardColor: {r: 0.49411768, g: 0.49411768, b: 0.49411768, a: 1}
   colorizeBoardByFieldSpell: 0
@@ -46306,7 +46306,8 @@ MonoBehaviour:
     keywords: []
     overlayColor: {r: 0, g: 0, b: 0, a: 0}
     intensity: 0
-  colorizeAuraByType: 1
+  colorizeAuraByPlayer: 1
+  colorizeAuraByType: 0
   colorFaceDown: {r: 0.7, g: 0.7, b: 0.7, a: 1}
   colorSpell: {r: 0.2, g: 0.9, b: 0.4, a: 1}
   colorTrap: {r: 0.9, g: 0.2, b: 0.7, a: 1}
@@ -46314,10 +46315,14 @@ MonoBehaviour:
   colorMonsterNormal: {r: 0.9, g: 0.9, b: 0.5, a: 1}
   colorFusion: {r: 0.6, g: 0.2, b: 0.9, a: 1}
   colorRitual: {r: 0.2, g: 0.5, b: 1, a: 1}
-  usePlacementAuraRoutine: 1
+  usePlacementAuraRoutine: 0
   placementAuraDuration: 1.2
   placementAuraOutlineWidth: 10
   usePlacementAuraPrefab: 1
+  placementAuraPrefabScale: 1.8
+  placementAuraRenderMode: 0
+  overridePlacementAuraPrefabDuration: 1
+  placementAuraPrefabDuration: 0.2
   useActivationPulse: 1
   activationPulseScale: 1.3
   activationPulseDuration: 0.2
@@ -46327,7 +46332,189 @@ MonoBehaviour:
   monsterEffectPulseScale: 1.3
   monsterEffectPulseDuration: 0.2
   monsterEffectPulseOutlineWidth: 8
-  useMonsterEffectPrefab: 1
+  useMonsterEffectPrefab: 0
+  normalSummonSettings:
+    impact:
+      useImpact: 1
+      usePrefab: 0
+      prefab: {fileID: 0}
+      useNativePulse: 0
+      pulseColor: {r: 1, g: 1, b: 1, a: 1}
+      pulseScale: 1
+      pulseDuration: 0.4
+      pulseOutlineWidth: 8
+  specialSummonSettings:
+    selectionIcon:
+      useIcon: 1
+      usePrefab: 0
+      prefab: {fileID: 0}
+      useNative: 1
+      sprite: {fileID: 7839789681770354753, guid: 1211910bae5b41f40aaffa1a47282958, type: 3}
+      material: {fileID: 0}
+      availableColor: {r: 0.8, g: 0.8, b: 0.8, a: 1}
+      selectedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+      size: 120
+      showAvailableState: 1
+      blinkFrequency: 1
+      spin: 0
+      spinSpeed: 90
+      useOutline: 1
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineWidth: 1
+      selectedOutlineWidth: 5
+    fieldMarker:
+      useMarker: 1
+      usePrefab: 1
+      prefab: {fileID: 1277553626024606036, guid: 69f84643a0555304f94fe2a8ee2c939c, type: 3}
+      useNative: 0
+      color: {r: 0.6, g: 0.6, b: 0.6, a: 1}
+      duration: 1.5
+      startSize: 0.6
+      endSize: 1
+    impact:
+      useImpact: 1
+      usePrefab: 1
+      prefab: {fileID: 0}
+      useNativePulse: 0
+      pulseColor: {r: 1, g: 1, b: 1, a: 1}
+      pulseScale: 1.2
+      pulseDuration: 0.2
+      pulseOutlineWidth: 8
+    cinematic:
+      useCinematic: 1
+      usePrefab: 0
+      flashPrefab: {fileID: 0}
+      useNative: 1
+      backgroundSymbol: {fileID: 0}
+  tributeSummonSettings:
+    selectionIcon:
+      useIcon: 1
+      usePrefab: 0
+      prefab: {fileID: 0}
+      useNative: 1
+      sprite: {fileID: -2064151561538560689, guid: 4e6773eef0a4b8b4881b77112dc3985b, type: 3}
+      material: {fileID: 0}
+      availableColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+      selectedColor: {r: 1, g: 0.5490196, b: 0, a: 1}
+      size: 120
+      showAvailableState: 1
+      blinkFrequency: 1
+      spin: 0
+      spinSpeed: 90
+      useOutline: 1
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineWidth: 1
+      selectedOutlineWidth: 5
+    fieldMarker:
+      useMarker: 1
+      usePrefab: 1
+      prefab: {fileID: 1277553626024606036, guid: 69f84643a0555304f94fe2a8ee2c939c, type: 3}
+      useNative: 0
+      color: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+      duration: 2
+      startSize: 0.6
+      endSize: 1
+    impact:
+      useImpact: 1
+      usePrefab: 1
+      prefab: {fileID: 0}
+      useNativePulse: 0
+      pulseColor: {r: 1, g: 1, b: 1, a: 1}
+      pulseScale: 1.2
+      pulseDuration: 0.2
+      pulseOutlineWidth: 8
+    cinematic:
+      useCinematic: 1
+      usePrefab: 0
+      flashPrefab: {fileID: 0}
+      useNative: 1
+      backgroundSymbol: {fileID: 0}
+  ritualSummonSettings:
+    selectionIcon:
+      useIcon: 1
+      usePrefab: 0
+      prefab: {fileID: 0}
+      useNative: 1
+      sprite: {fileID: -5996441210955510872, guid: c50c026f056898c4e9fbdfc6e8e1e993, type: 3}
+      material: {fileID: 0}
+      availableColor: {r: 0, g: 0, b: 0.8039216, a: 1}
+      selectedColor: {r: 0.09803922, g: 0.09803922, b: 0.4392157, a: 1}
+      size: 120
+      showAvailableState: 1
+      blinkFrequency: 1
+      spin: 0
+      spinSpeed: 90
+      useOutline: 1
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineWidth: 1
+      selectedOutlineWidth: 5
+    fieldMarker:
+      useMarker: 1
+      usePrefab: 1
+      prefab: {fileID: 1277553626024606036, guid: 69f84643a0555304f94fe2a8ee2c939c, type: 3}
+      useNative: 0
+      color: {r: 0, g: 0, b: 1, a: 1}
+      duration: 2
+      startSize: 0.6
+      endSize: 1
+    impact:
+      useImpact: 0
+      usePrefab: 1
+      prefab: {fileID: 0}
+      useNativePulse: 0
+      pulseColor: {r: 1, g: 1, b: 1, a: 1}
+      pulseScale: 1.2
+      pulseDuration: 0.2
+      pulseOutlineWidth: 8
+    cinematic:
+      useCinematic: 1
+      usePrefab: 0
+      flashPrefab: {fileID: 0}
+      useNative: 1
+      backgroundSymbol: {fileID: 0}
+  fusionSummonSettings:
+    selectionIcon:
+      useIcon: 1
+      usePrefab: 0
+      prefab: {fileID: 0}
+      useNative: 1
+      sprite: {fileID: -4802753821732972946, guid: d33f3c8ffc3c5e548a76718a9b416887, type: 3}
+      material: {fileID: 0}
+      availableColor: {r: 0.627451, g: 0.1254902, b: 0.9411765, a: 1}
+      selectedColor: {r: 0.2941177, g: 0, b: 0.509804, a: 1}
+      size: 120
+      showAvailableState: 1
+      blinkFrequency: 1
+      spin: 0
+      spinSpeed: 90
+      useOutline: 1
+      outlineColor: {r: 0, g: 0, b: 0, a: 1}
+      outlineWidth: 1
+      selectedOutlineWidth: 5
+    fieldMarker:
+      useMarker: 1
+      usePrefab: 0
+      prefab: {fileID: 1277553626024606036, guid: 69f84643a0555304f94fe2a8ee2c939c, type: 3}
+      useNative: 1
+      color: {r: 0.8, g: 0.2, b: 1, a: 0.5}
+      duration: 2
+      startSize: 0.6
+      endSize: 1
+    impact:
+      useImpact: 1
+      usePrefab: 1
+      prefab: {fileID: 0}
+      useNativePulse: 0
+      pulseColor: {r: 1, g: 1, b: 1, a: 1}
+      pulseScale: 1.2
+      pulseDuration: 0.2
+      pulseOutlineWidth: 8
+    cinematic:
+      useCinematic: 1
+      usePrefab: 0
+      flashPrefab: {fileID: 0}
+      useNative: 1
+      backgroundSymbol: {fileID: 0}
   useChainLinkRoutine: 1
   chainLinkDuration: 1
   chainLinkScale: 1.2
@@ -46336,6 +46523,8 @@ MonoBehaviour:
   chainLinkLeftSprite: {fileID: 0}
   chainLinkRightSprite: {fileID: 0}
   chainLinkJoinedSprite: {fileID: 0}
+  chainLinkSpriteColor: {r: 1, g: 1, b: 1, a: 1}
+  chainLinkMaterial: {fileID: 0}
   useChainLinkPrefab: 1
   useEquipGhost: 1
   equipGhostFlightDuration: 0.4
@@ -46358,14 +46547,20 @@ MonoBehaviour:
   controlSwapImpactScale: 1.4
   controlSwapImpactOutlineWidth: 10
   useControlSwapPrefab: 1
-  useShuffleRoutine: 1
+  useShuffleRoutine: 0
   shuffleAtCenter: 1
-  shuffleDuration: 0.8
-  useShufflePrefab: 0
-  useTokenSummonRoutine: 1
-  tokenSummonDuration: 1.2
+  shuffleDuration: 1.4
+  shuffleLoopCount: 1
+  useShufflePrefab: 1
+  shuffleDeckAppearDelay: 0.3
+  shufflePostDelay: 0.3
+  useTokenSummonRoutine: 0
   tokenSummonFadeColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   useTokenSummonPrefab: 1
+  tokenAppearDelay: 0.2
+  tokenAppearDuration: 0.5
+  tokenStartScaleMult: 0
+  tokenEndScaleMult: 1
   useDestructionRoutine: 1
   destructionDuration: 0.8
   useExplosionPrefab: 1
@@ -46374,14 +46569,50 @@ MonoBehaviour:
   destructionFadeColor: {r: 0, g: 0, b: 0, a: 1}
   destructionWaitHalfExplosion: 1
   destructionShrink: 1
+  useBanishRoutine: 1
+  useBanishPrefab: 1
+  banishSpinSpeed: 720
+  banishShrinkDuration: 0.5
+  flipAnimationDuration: 0.4
   useFlipRoutine: 1
-  flipVfxDuration: 0.3
+  flipVfxDuration: 0.1
   useFlipPulse: 1
-  flipPulseScale: 1.2
+  flipPulseScale: 1
   flipPulseDuration: 0.2
   flipPulseOutlineWidth: 8
   flipPulseColor: {r: 1, g: 1, b: 1, a: 1}
-  useFlipPrefab: 1
+  useFlipPrefab: 0
+  useDamageScreenShake: 1
+  screenShakeDuration: 0.4
+  screenShakeMagnitude: 20
+  useDamagePrefab: 1
+  damagePrefabColor: {r: 1, g: 1, b: 1, a: 1}
+  useReflectAsStandardDamage: 0
+  useReflectRoutine: 1
+  reflectPulseScale: 1
+  reflectPulseDuration: 0.3
+  reflectPulseColor: {r: 0.2, g: 0.8, b: 1, a: 1}
+  reflectPulseOutlineWidth: 12
+  reflectShakeDuration: 0.4
+  reflectShakeMagnitude: 20
+  useReflectPrefab: 1
+  reflectPrefabColor: {r: 1, g: 1, b: 1, a: 1}
+  useAttackImpactRoutine: 0
+  useAttackImpactPrefab: 1
+  attackImpactPulseScale: 1.2
+  attackImpactPulseDuration: 0.2
+  attackImpactPulseColor: {r: 1, g: 0, b: 0, a: 1}
+  hitShakeDuration: 0.3
+  hitShakeMagnitude: 15
+  useDefenseRoutine: 1
+  defensePulseScale: 1.1
+  defensePulseDuration: 0.3
+  defensePulseColor: {r: 0.8, g: 0.9, b: 1, a: 1}
+  defensePulseOutlineWidth: 15
+  defenseShakeDuration: 0.2
+  defenseShakeMagnitude: 10
+  useDefensePrefab: 1
+  defensePrefabColor: {r: 1, g: 1, b: 1, a: 1}
   useTargetingSwordPrefab: 1
   colorAttackReadyHover: {r: 1, g: 0.5, b: 0, a: 1}
   colorAttackTargetHover: {r: 1, g: 0, b: 0, a: 1}
@@ -46402,31 +46633,7 @@ MonoBehaviour:
   attackTrailWidth: 15
   attackTrailColor: {r: 1, g: 0, b: 0, a: 0.5}
   useAttackImpactVFX: 1
-  useTributeIcon: 1
-  useNativeTributeIcon: 1
-  tributeIconColor: {r: 1, g: 0.5, b: 0, a: 1}
-  tributeIconBlinkFrequency: 5
-  tributeIconSize: 80
-  tributeIconDuration: 1
-  useTributeIconPrefab: 1
-  tributeIconSprite: {fileID: -4062675513596425979, guid: a7a8f9769ccf5f34c9aa54de6e5e02f6, type: 3}
-  tributeFieldMarkerVFX: {fileID: 5593010221128478186, guid: 067028498bf2ec34b94a9d1eccc79fbb, type: 3}
-  specialFieldMarkerVFX: {fileID: 8785413103711124661, guid: 61b81f5cb78fa6e4bb3970933c008028, type: 3}
-  useFieldMarkers: 1
-  useNativeFieldMarker: 1
-  specialMarkerColor: {r: 0.8, g: 0.2, b: 1, a: 0.5}
-  fusionMarkerColor: {r: 0.6, g: 0.1, b: 0.9, a: 0.5}
-  ritualMarkerColor: {r: 0.1, g: 0.3, b: 1, a: 0.5}
-  markerDuration: 1
-  markerStartSize: 0.1
-  markerEndSize: 2
-  useFieldMarkerPrefabs: 1
-  fusionFlashVFX: {fileID: 4783769991002294843, guid: 042e571eb14d1784281a4973f5fcc8f5, type: 3}
-  fusionBackgroundSymbol: {fileID: 809355531832133225, guid: b5685d25b7d3f524c845f3d1b4b85a2c, type: 3}
-  ritualBackgroundSymbol: {fileID: 7543808486263190842, guid: 8a9e3f8841031cc46b26635aee4a0dee, type: 3}
-  ritualFlashVFX: {fileID: 4783769991002294843, guid: 042e571eb14d1784281a4973f5fcc8f5, type: 3}
-  fusionFieldMarkerVFX: {fileID: 2796587068913777182, guid: c23988431957eeb45a02bc0be3129cd9, type: 3}
-  ritualFieldMarkerVFX: {fileID: 1532991909144268670, guid: 3aff439fe92660d4d8648adfd94ef913, type: 3}
+  attackImpactRotationOffset: 0
   equipImpactVFX: {fileID: 1789789647255548136, guid: cc90356b6f5b5eb4f9166a261fc3bb92, type: 3}
   spellSound: {fileID: 0}
   trapSound: {fileID: 0}
@@ -52428,7 +52635,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1701951476}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.999997
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -62665,7 +62872,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.00005465966}
+  m_AnchoredPosition: {x: 0, y: 0.000041063016}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &821356746
@@ -80292,7 +80499,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1702899005}
   m_HandleRect: {fileID: 1702899004}
   m_Direction: 0
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -82453,7 +82660,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 82258835}
   m_HandleRect: {fileID: 82258834}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -90206,7 +90413,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1995952712}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.99999833
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -103751,7 +103958,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.00095894834, y: 0.0000068969825}
+  m_AnchoredPosition: {x: 0.00095894834, y: -0.000007643871}
   m_SizeDelta: {x: -0.00091553, y: 353.6}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1356954785
@@ -118593,7 +118800,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2087538614}
   m_HandleRect: {fileID: 2087538613}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -150969,7 +151176,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 376044519}
   m_HandleRect: {fileID: 376044518}
   m_Direction: 0
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -165977,7 +166184,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0009987524}
+  m_AnchoredPosition: {x: 0, y: -0.000047256483}
   m_SizeDelta: {x: 0, y: 650.88}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2123005588

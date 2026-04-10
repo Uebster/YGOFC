@@ -1,0 +1,1614 @@
+fileFormatVersion: 2
+guid: 29a3188225fba4248a254eb5813c4faa
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1449084966097542987
+    second: DeckShuffle_0
+  - first:
+      213: 1599925859317293657
+    second: DeckShuffle_1
+  - first:
+      213: -1077361684836000470
+    second: DeckShuffle_2
+  - first:
+      213: -6933771448670912809
+    second: DeckShuffle_3
+  - first:
+      213: -2878871752803021476
+    second: DeckShuffle_4
+  - first:
+      213: 2873342623019801467
+    second: DeckShuffle_5
+  - first:
+      213: -1917896951510598405
+    second: DeckShuffle_6
+  - first:
+      213: 527032109371735444
+    second: DeckShuffle_7
+  - first:
+      213: -665226937093830534
+    second: DeckShuffle_8
+  - first:
+      213: -3188658729472826042
+    second: DeckShuffle_9
+  - first:
+      213: 9060499852340242236
+    second: DeckShuffle_10
+  - first:
+      213: 1070573124648310538
+    second: DeckShuffle_11
+  - first:
+      213: 5976807164510002935
+    second: DeckShuffle_12
+  - first:
+      213: 5325118471302416943
+    second: DeckShuffle_13
+  - first:
+      213: 2261112689803829316
+    second: DeckShuffle_14
+  - first:
+      213: 8058517834885838377
+    second: DeckShuffle_15
+  - first:
+      213: 7774547894648173810
+    second: DeckShuffle_16
+  - first:
+      213: 8116945500899157170
+    second: DeckShuffle_17
+  - first:
+      213: -6986508326274554259
+    second: DeckShuffle_18
+  - first:
+      213: 966522369160025002
+    second: DeckShuffle_19
+  - first:
+      213: 7030490421074155784
+    second: DeckShuffle_20
+  - first:
+      213: 5099661043390465084
+    second: DeckShuffle_21
+  - first:
+      213: 4899253667328244545
+    second: DeckShuffle_22
+  - first:
+      213: 6233290629861598140
+    second: DeckShuffle_23
+  - first:
+      213: 5938456412862452446
+    second: DeckShuffle_24
+  - first:
+      213: 3356751501312140521
+    second: DeckShuffle_25
+  - first:
+      213: 3796396877665909537
+    second: DeckShuffle_26
+  - first:
+      213: 7161927194824371367
+    second: DeckShuffle_27
+  - first:
+      213: -7985748704199946867
+    second: DeckShuffle_28
+  - first:
+      213: -4022382836145152239
+    second: DeckShuffle_29
+  - first:
+      213: 5684661868687004144
+    second: DeckShuffle_30
+  - first:
+      213: -6262460405011366589
+    second: DeckShuffle_31
+  - first:
+      213: -7803463190161345887
+    second: DeckShuffle_32
+  - first:
+      213: -1184872379249645854
+    second: DeckShuffle_33
+  - first:
+      213: 2299240782735368641
+    second: DeckShuffle_34
+  - first:
+      213: -7727179860832753435
+    second: DeckShuffle_35
+  - first:
+      213: -5021624456662357879
+    second: DeckShuffle_36
+  - first:
+      213: 2395149269098656737
+    second: DeckShuffle_37
+  - first:
+      213: -4529615132805954835
+    second: DeckShuffle_38
+  - first:
+      213: -2430633119259797467
+    second: DeckShuffle_39
+  - first:
+      213: -8274241138132215757
+    second: DeckShuffle_40
+  - first:
+      213: 5310008281320729170
+    second: DeckShuffle_41
+  - first:
+      213: -976317616667030018
+    second: DeckShuffle_42
+  - first:
+      213: -8460180457579764485
+    second: DeckShuffle_43
+  - first:
+      213: -175585631055549336
+    second: DeckShuffle_44
+  - first:
+      213: -2081106946079953430
+    second: DeckShuffle_45
+  - first:
+      213: -1408945795324641716
+    second: DeckShuffle_46
+  - first:
+      213: 1415793594023936689
+    second: DeckShuffle_47
+  - first:
+      213: 5753900641607079573
+    second: DeckShuffle_48
+  - first:
+      213: -4646936553191039431
+    second: DeckShuffle_49
+  - first:
+      213: 7267965075242954616
+    second: DeckShuffle_50
+  - first:
+      213: -3329526798157406530
+    second: DeckShuffle_51
+  - first:
+      213: -4065218749210888744
+    second: DeckShuffle_52
+  - first:
+      213: -8585851354164188422
+    second: DeckShuffle_53
+  - first:
+      213: 4773788198508412369
+    second: DeckShuffle_54
+  - first:
+      213: 6541528688724005136
+    second: DeckShuffle_55
+  - first:
+      213: 2197611157333613063
+    second: DeckShuffle_56
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: DeckShuffle_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 2430
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4f5a9d591f2c1410800000000000000
+      internalID: 1449084966097542987
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_1
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 2430
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 952a19f9714143610800000000000000
+      internalID: 1599925859317293657
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_2
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 2430
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a2ddbb871417c01f0800000000000000
+      internalID: -1077361684836000470
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_3
+      rect:
+        serializedVersion: 2
+        x: 1440
+        y: 2430
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7de7938aa9b46cf90800000000000000
+      internalID: -6933771448670912809
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_4
+      rect:
+        serializedVersion: 2
+        x: 1920
+        y: 2430
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c5d054cc4613c08d0800000000000000
+      internalID: -2878871752803021476
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_5
+      rect:
+        serializedVersion: 2
+        x: 2400
+        y: 2430
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b7b951b54e920e720800000000000000
+      internalID: 2873342623019801467
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_6
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 2160
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bfcf76152e24265e0800000000000000
+      internalID: -1917896951510598405
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_7
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 2160
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 49db35049e4605700800000000000000
+      internalID: 527032109371735444
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_8
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 2160
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a78408f00a3a4c6f0800000000000000
+      internalID: -665226937093830534
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_9
+      rect:
+        serializedVersion: 2
+        x: 1440
+        y: 2160
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 645e2df97cb9fb3d0800000000000000
+      internalID: -3188658729472826042
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_10
+      rect:
+        serializedVersion: 2
+        x: 1920
+        y: 2160
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c3728327c9c5dbd70800000000000000
+      internalID: 9060499852340242236
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_11
+      rect:
+        serializedVersion: 2
+        x: 2400
+        y: 2160
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a071eb0b5907bde00800000000000000
+      internalID: 1070573124648310538
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_12
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1890
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7fed0ab1372e1f250800000000000000
+      internalID: 5976807164510002935
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_13
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 1890
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f2a0ad4390f96e940800000000000000
+      internalID: 5325118471302416943
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_14
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 1890
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 440a2e0f206116f10800000000000000
+      internalID: 2261112689803829316
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_15
+      rect:
+        serializedVersion: 2
+        x: 1440
+        y: 1890
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9263584664b95df60800000000000000
+      internalID: 8058517834885838377
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_16
+      rect:
+        serializedVersion: 2
+        x: 1920
+        y: 1890
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2f4f3cd6e1eb4eb60800000000000000
+      internalID: 7774547894648173810
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_17
+      rect:
+        serializedVersion: 2
+        x: 2400
+        y: 1890
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2b4ac4a7dee25a070800000000000000
+      internalID: 8116945500899157170
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_18
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1620
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d66a81081bfea0f90800000000000000
+      internalID: -6986508326274554259
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_19
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 1620
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aa3904159f6c96d00800000000000000
+      internalID: 966522369160025002
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_20
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 1620
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 80959e0f9c1519160800000000000000
+      internalID: 7030490421074155784
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_21
+      rect:
+        serializedVersion: 2
+        x: 1440
+        y: 1620
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c34cf2623b2a5c640800000000000000
+      internalID: 5099661043390465084
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_22
+      rect:
+        serializedVersion: 2
+        x: 1920
+        y: 1620
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 14b31a9c045adf340800000000000000
+      internalID: 4899253667328244545
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_23
+      rect:
+        serializedVersion: 2
+        x: 2400
+        y: 1620
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cb3ebae6dc8118650800000000000000
+      internalID: 6233290629861598140
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_24
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1350
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ed29ecae4a2a96250800000000000000
+      internalID: 5938456412862452446
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_25
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 1350
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9e428f2a4b3959e20800000000000000
+      internalID: 3356751501312140521
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_26
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 1350
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 12bbda798d28fa430800000000000000
+      internalID: 3796396877665909537
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_27
+      rect:
+        serializedVersion: 2
+        x: 1440
+        y: 1350
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7ac67b296d6446360800000000000000
+      internalID: 7161927194824371367
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_28
+      rect:
+        serializedVersion: 2
+        x: 1920
+        y: 1350
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d8d40a42ddbec2190800000000000000
+      internalID: -7985748704199946867
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_29
+      rect:
+        serializedVersion: 2
+        x: 2400
+        y: 1350
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11f90fc3f10ad28c0800000000000000
+      internalID: -4022382836145152239
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_30
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1080
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0f11c47d9d9f3ee40800000000000000
+      internalID: 5684661868687004144
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_31
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 1080
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 34d395b01754719a0800000000000000
+      internalID: -6262460405011366589
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_32
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 1080
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1a2b894b29784b390800000000000000
+      internalID: -7803463190161345887
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_33
+      rect:
+        serializedVersion: 2
+        x: 1440
+        y: 1080
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2e627aa49dc7e8fe0800000000000000
+      internalID: -1184872379249645854
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_34
+      rect:
+        serializedVersion: 2
+        x: 1920
+        y: 1080
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1c1680c5f4b88ef10800000000000000
+      internalID: 2299240782735368641
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_35
+      rect:
+        serializedVersion: 2
+        x: 2400
+        y: 1080
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5e8e28f5bda83c490800000000000000
+      internalID: -7727179860832753435
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_36
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 810
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 988e931992b9f4ab0800000000000000
+      internalID: -5021624456662357879
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_37
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 810
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e379a8f1974d3120800000000000000
+      internalID: 2395149269098656737
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_38
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 810
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de20edf19039321c0800000000000000
+      internalID: -4529615132805954835
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_39
+      rect:
+        serializedVersion: 2
+        x: 1440
+        y: 810
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 528583b5e08a44ed0800000000000000
+      internalID: -2430633119259797467
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_40
+      rect:
+        serializedVersion: 2
+        x: 1920
+        y: 810
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 33894bf068dfb2d80800000000000000
+      internalID: -8274241138132215757
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_41
+      rect:
+        serializedVersion: 2
+        x: 2400
+        y: 810
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 25a2182f560f0b940800000000000000
+      internalID: 5310008281320729170
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_42
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 540
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: efd0b96ec4c6372f0800000000000000
+      internalID: -976317616667030018
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_43
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 540
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf4a142a2b6679a80800000000000000
+      internalID: -8460180457579764485
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_44
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 540
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 86c65418cc1309df0800000000000000
+      internalID: -175585631055549336
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_45
+      rect:
+        serializedVersion: 2
+        x: 1440
+        y: 540
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aed6e4b324c6e13e0800000000000000
+      internalID: -2081106946079953430
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_46
+      rect:
+        serializedVersion: 2
+        x: 1920
+        y: 540
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c4ef4e9934b627ce0800000000000000
+      internalID: -1408945795324641716
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_47
+      rect:
+        serializedVersion: 2
+        x: 2400
+        y: 540
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1b20217c5c8e5a310800000000000000
+      internalID: 1415793594023936689
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_48
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 270
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 596d1e7e526f9df40800000000000000
+      internalID: 5753900641607079573
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_49
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 270
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 93e154d43d3c28fb0800000000000000
+      internalID: -4646936553191039431
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_50
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 270
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 87f2dc58abffcd460800000000000000
+      internalID: 7267965075242954616
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_51
+      rect:
+        serializedVersion: 2
+        x: 1440
+        y: 270
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ebe1fa584052bc1d0800000000000000
+      internalID: -3329526798157406530
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_52
+      rect:
+        serializedVersion: 2
+        x: 1920
+        y: 270
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8d5f60706117597c0800000000000000
+      internalID: -4065218749210888744
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_53
+      rect:
+        serializedVersion: 2
+        x: 2400
+        y: 270
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: afaacb4eeade8d880800000000000000
+      internalID: -8585851354164188422
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_54
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1ddbb0de217ef3240800000000000000
+      internalID: 4773788198508412369
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_55
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 0
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 011db631fad28ca50800000000000000
+      internalID: 6541528688724005136
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DeckShuffle_56
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 0
+        width: 480
+        height: 270
+      alignment: 3
+      pivot: {x: 1, y: 1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 70a1e4344bb7f7e10800000000000000
+      internalID: 2197611157333613063
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5a4acc87a41898d4396caba974a02e68
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":480.0,"y":270.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":1.0,"y":1.0},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":3,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      DeckShuffle_0: 1449084966097542987
+      DeckShuffle_1: 1599925859317293657
+      DeckShuffle_10: 9060499852340242236
+      DeckShuffle_11: 1070573124648310538
+      DeckShuffle_12: 5976807164510002935
+      DeckShuffle_13: 5325118471302416943
+      DeckShuffle_14: 2261112689803829316
+      DeckShuffle_15: 8058517834885838377
+      DeckShuffle_16: 7774547894648173810
+      DeckShuffle_17: 8116945500899157170
+      DeckShuffle_18: -6986508326274554259
+      DeckShuffle_19: 966522369160025002
+      DeckShuffle_2: -1077361684836000470
+      DeckShuffle_20: 7030490421074155784
+      DeckShuffle_21: 5099661043390465084
+      DeckShuffle_22: 4899253667328244545
+      DeckShuffle_23: 6233290629861598140
+      DeckShuffle_24: 5938456412862452446
+      DeckShuffle_25: 3356751501312140521
+      DeckShuffle_26: 3796396877665909537
+      DeckShuffle_27: 7161927194824371367
+      DeckShuffle_28: -7985748704199946867
+      DeckShuffle_29: -4022382836145152239
+      DeckShuffle_3: -6933771448670912809
+      DeckShuffle_30: 5684661868687004144
+      DeckShuffle_31: -6262460405011366589
+      DeckShuffle_32: -7803463190161345887
+      DeckShuffle_33: -1184872379249645854
+      DeckShuffle_34: 2299240782735368641
+      DeckShuffle_35: -7727179860832753435
+      DeckShuffle_36: -5021624456662357879
+      DeckShuffle_37: 2395149269098656737
+      DeckShuffle_38: -4529615132805954835
+      DeckShuffle_39: -2430633119259797467
+      DeckShuffle_4: -2878871752803021476
+      DeckShuffle_40: -8274241138132215757
+      DeckShuffle_41: 5310008281320729170
+      DeckShuffle_42: -976317616667030018
+      DeckShuffle_43: -8460180457579764485
+      DeckShuffle_44: -175585631055549336
+      DeckShuffle_45: -2081106946079953430
+      DeckShuffle_46: -1408945795324641716
+      DeckShuffle_47: 1415793594023936689
+      DeckShuffle_48: 5753900641607079573
+      DeckShuffle_49: -4646936553191039431
+      DeckShuffle_5: 2873342623019801467
+      DeckShuffle_50: 7267965075242954616
+      DeckShuffle_51: -3329526798157406530
+      DeckShuffle_52: -4065218749210888744
+      DeckShuffle_53: -8585851354164188422
+      DeckShuffle_54: 4773788198508412369
+      DeckShuffle_55: 6541528688724005136
+      DeckShuffle_56: 2197611157333613063
+      DeckShuffle_6: -1917896951510598405
+      DeckShuffle_7: 527032109371735444
+      DeckShuffle_8: -665226937093830534
+      DeckShuffle_9: -3188658729472826042
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

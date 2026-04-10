@@ -592,8 +592,14 @@ public class GameManager : MonoBehaviour
         {
             DeckManager.Instance.ShuffleDeck(true);
             DeckManager.Instance.ShuffleDeck(false);
-            // Aguarda a animação de shuffle terminar (dura 0.6s)
-            yield return new WaitForSeconds(0.8f);
+            
+            // Agora ele respeita rigorosamente o tempo total do SpriteSheet + Delays que você configurou no Inspector
+            float waitTime = 0.8f;
+            if (DuelFXManager.Instance != null)
+            {
+                waitTime = DuelFXManager.Instance.GetShuffleTotalDuration();
+            }
+            yield return new WaitForSeconds(waitTime);
         }
 
         yield return StartCoroutine(DrawInitialHandRoutine(5));
