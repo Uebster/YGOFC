@@ -64,6 +64,14 @@ public class FieldStatUI : MonoBehaviour
         }
         
         UpdateStats(); // Atualização inicial
+
+        // Sincroniza a transparência do texto com a da carta (útil durante Cinemáticas)
+        CanvasGroup cardCG = attachedCard.GetComponent<CanvasGroup>();
+        CanvasGroup myCG = GetComponent<CanvasGroup>();
+        if (cardCG != null && myCG != null)
+        {
+            myCG.alpha = cardCG.alpha;
+        }
     }
 
     public void UpdateStats()

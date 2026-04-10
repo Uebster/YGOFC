@@ -138,7 +138,7 @@ public class EffectTestManager : MonoBehaviour
         if (GUILayout.Button("Impacto (Prefab)", btnStyle)) { ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.specialSummonSettings.impact.useNativePulse = false; DuelFXManager.Instance.specialSummonSettings.impact.usePrefab = true; DuelFXManager.Instance.PlaySummonImpact(playerMonster, SummonVFXType.Special); }
         GUILayout.EndHorizontal();
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Cinemática Geral", btnStyle)) { ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.PlaySummonCinematic(playerMonster, SummonVFXType.Special, null); }
+        if (GUILayout.Button("Cinemática Geral", btnStyle)) { ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.PlaySummonCinematic(playerMonster, SummonVFXType.Special, () => DuelFXManager.Instance.PlayPlacementAura(playerMonster)); }
         GUILayout.EndHorizontal();
 
         GUILayout.Space(5);
@@ -156,7 +156,7 @@ public class EffectTestManager : MonoBehaviour
         if (GUILayout.Button("Impacto (Prefab)", btnStyle)) { ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.tributeSummonSettings.impact.useNativePulse = false; DuelFXManager.Instance.tributeSummonSettings.impact.usePrefab = true; DuelFXManager.Instance.PlaySummonImpact(playerMonster, SummonVFXType.Tribute); }
         GUILayout.EndHorizontal();
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Cinemática Geral", btnStyle)) { ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.PlaySummonCinematic(playerMonster, SummonVFXType.Tribute, null); }
+        if (GUILayout.Button("Cinemática Geral", btnStyle)) { ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.PlaySummonCinematic(playerMonster, SummonVFXType.Tribute, () => DuelFXManager.Instance.PlayPlacementAura(playerMonster)); }
         GUILayout.EndHorizontal();
 
         GUILayout.Space(5);
@@ -174,7 +174,7 @@ public class EffectTestManager : MonoBehaviour
         if (GUILayout.Button("Impacto (Prefab)", btnStyle)) { ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.ritualSummonSettings.impact.useNativePulse = false; DuelFXManager.Instance.ritualSummonSettings.impact.usePrefab = true; DuelFXManager.Instance.PlaySummonImpact(playerMonster, SummonVFXType.Ritual); }
         GUILayout.EndHorizontal();
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Cinemática Geral", btnStyle)) { ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.PlayRitualCinematic(playerMonster, SummonVFXType.Ritual, null); }
+        if (GUILayout.Button("Cinemática Geral", btnStyle)) { ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.PlayRitualCinematic(playerMonster, SummonVFXType.Ritual, () => DuelFXManager.Instance.PlayPlacementAura(playerMonster)); }
         GUILayout.EndHorizontal();
 
         GUILayout.Space(5);
@@ -192,10 +192,8 @@ public class EffectTestManager : MonoBehaviour
         if (GUILayout.Button("Impacto (Prefab)", btnStyle)) { ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.fusionSummonSettings.impact.useNativePulse = false; DuelFXManager.Instance.fusionSummonSettings.impact.usePrefab = true; DuelFXManager.Instance.PlaySummonImpact(playerMonster, SummonVFXType.Fusion); }
         GUILayout.EndHorizontal();
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Cinemática Geral", btnStyle)) { ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.PlayFusionCinematic(playerMonster, null, SummonVFXType.Fusion, null); }
+        if (GUILayout.Button("Cinemática Geral", btnStyle)) { ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.PlayFusionCinematic(playerMonster, GetFakeMaterials(), SummonVFXType.Fusion, () => DuelFXManager.Instance.PlayPlacementAura(playerMonster)); }
         GUILayout.EndHorizontal();
-
-        GUILayout.Space(5);
         GUILayout.Label("<color=cyan><b>TOKEN E INVOCAÇÕES EXTRAS</b></color>");
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Token (Nativo)", btnStyle)) { 
@@ -499,5 +497,18 @@ public class EffectTestManager : MonoBehaviour
         }
 
         return display;
+    }
+
+    // Helper para extrair 3 cartas do Banco de Dados e simular os Materiais no vórtice da Fusão
+    private List<CardData> GetFakeMaterials()
+    {
+        List<CardData> mats = new List<CardData>();
+        if (GameManager.Instance != null && GameManager.Instance.cardDatabase != null && GameManager.Instance.cardDatabase.cardDatabase.Count > 2)
+        {
+            mats.Add(GameManager.Instance.cardDatabase.cardDatabase[0]);
+            mats.Add(GameManager.Instance.cardDatabase.cardDatabase[1]);
+            mats.Add(GameManager.Instance.cardDatabase.cardDatabase[2]);
+        }
+        return mats;
     }
 }

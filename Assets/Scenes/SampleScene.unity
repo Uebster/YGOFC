@@ -18676,7 +18676,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00044488552}
+  m_AnchoredPosition: {x: 0, y: 0.0001320268}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &250963708
@@ -46286,7 +46286,7 @@ MonoBehaviour:
   tributeSummonVFX: {fileID: 7255544249031024263, guid: 414b68294c1846e4b9986ab4c5d2f836, type: 3}
   fusionVFX: {fileID: 7173987355294210737, guid: 241545851c8443043b4dfa0bdef97fdd, type: 3}
   tributeVFX: {fileID: 7255544249031024263, guid: 414b68294c1846e4b9986ab4c5d2f836, type: 3}
-  attackVFX: {fileID: 4021103657954561961, guid: 5c755f9bc5253ea418e919994537dcc7, type: 3}
+  attackVFX: {fileID: 7934084230685897111, guid: 46347a091ee56a342b9c9987cde999f6, type: 3}
   attackProjectileVFX: {fileID: 3529578519891653018, guid: d490548199143e244ae5720415bbca9b, type: 3}
   explosionVFX: {fileID: 1251889212189677203, guid: 64f524b24a97f0041abd8098a957aefc, type: 3}
   reflectVFX: {fileID: 2910360440696493387, guid: b06b319fc39089a418a61724e5b42372, type: 3}
@@ -46343,6 +46343,7 @@ MonoBehaviour:
       pulseScale: 1
       pulseDuration: 0.4
       pulseOutlineWidth: 8
+      delayBeforeImpact: 0.3
   specialSummonSettings:
     selectionIcon:
       useIcon: 1
@@ -46376,16 +46377,34 @@ MonoBehaviour:
       usePrefab: 1
       prefab: {fileID: 0}
       useNativePulse: 0
-      pulseColor: {r: 1, g: 1, b: 1, a: 1}
+      pulseColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
       pulseScale: 1.2
       pulseDuration: 0.2
       pulseOutlineWidth: 8
+      delayBeforeImpact: 0.3
     cinematic:
       useCinematic: 1
+      useNative: 1
+      backgroundSymbol: {fileID: -2412073469199655803, guid: a2a1b321e45d7ae478ecaf4c1bc5939b, type: 3}
+      backgroundMaterial: {fileID: 2100000, guid: 1ab439c8929ae2c4d969647b9140a029, type: 2}
+      preserveBackgroundAspect: 1
+      spinBackgroundSymbol: 0
+      backgroundSpinSpeed: -45
+      symbolScale: 600
+      showMaterialsFaceUp: 1
+      useDarkOverlay: 1
+      useWhiteFlash: 0
       usePrefab: 0
       flashPrefab: {fileID: 0}
-      useNative: 1
-      backgroundSymbol: {fileID: 0}
+      darkOverlayFadeDuration: 0.6
+      orbitDuration: 1.5
+      cardsOrbitSpeed: 1080
+      flashDuration: 0.6
+      giantCardAppearDuration: 0.5
+      giantCardHoldDuration: 1
+      delayBeforeMarker: 0.5
+      delayBeforeCardDrop: 0.5
+      giantCardScale: 1.2
   tributeSummonSettings:
     selectionIcon:
       useIcon: 1
@@ -46416,19 +46435,37 @@ MonoBehaviour:
       endSize: 1
     impact:
       useImpact: 1
-      usePrefab: 1
+      usePrefab: 0
       prefab: {fileID: 0}
       useNativePulse: 0
       pulseColor: {r: 1, g: 1, b: 1, a: 1}
-      pulseScale: 1.2
+      pulseScale: 1
       pulseDuration: 0.2
       pulseOutlineWidth: 8
+      delayBeforeImpact: 0.3
     cinematic:
       useCinematic: 1
+      useNative: 1
+      backgroundSymbol: {fileID: -3820156937398690004, guid: 2a98a2282f692734aa6cf4743d9dcee4, type: 3}
+      backgroundMaterial: {fileID: 2100000, guid: 1ab439c8929ae2c4d969647b9140a029, type: 2}
+      preserveBackgroundAspect: 1
+      spinBackgroundSymbol: 0
+      backgroundSpinSpeed: -45
+      symbolScale: 600
+      showMaterialsFaceUp: 1
+      useDarkOverlay: 1
+      useWhiteFlash: 0
       usePrefab: 0
       flashPrefab: {fileID: 0}
-      useNative: 1
-      backgroundSymbol: {fileID: 0}
+      darkOverlayFadeDuration: 0.6
+      orbitDuration: 1.5
+      cardsOrbitSpeed: 1080
+      flashDuration: 0.6
+      giantCardAppearDuration: 0.5
+      giantCardHoldDuration: 1
+      delayBeforeMarker: 0.5
+      delayBeforeCardDrop: 0.5
+      giantCardScale: 1.2
   ritualSummonSettings:
     selectionIcon:
       useIcon: 1
@@ -46458,20 +46495,38 @@ MonoBehaviour:
       startSize: 0.6
       endSize: 1
     impact:
-      useImpact: 0
-      usePrefab: 1
+      useImpact: 1
+      usePrefab: 0
       prefab: {fileID: 0}
       useNativePulse: 0
-      pulseColor: {r: 1, g: 1, b: 1, a: 1}
+      pulseColor: {r: 0, g: 0, b: 1, a: 1}
       pulseScale: 1.2
       pulseDuration: 0.2
       pulseOutlineWidth: 8
+      delayBeforeImpact: 0.3
     cinematic:
       useCinematic: 1
+      useNative: 1
+      backgroundSymbol: {fileID: 6778814826567982076, guid: 9992be17a6a44b042a30da4ede8bd06d, type: 3}
+      backgroundMaterial: {fileID: 2100000, guid: 1ab439c8929ae2c4d969647b9140a029, type: 2}
+      preserveBackgroundAspect: 1
+      spinBackgroundSymbol: 0
+      backgroundSpinSpeed: -45
+      symbolScale: 600
+      showMaterialsFaceUp: 1
+      useDarkOverlay: 1
+      useWhiteFlash: 0
       usePrefab: 0
       flashPrefab: {fileID: 0}
-      useNative: 1
-      backgroundSymbol: {fileID: 0}
+      darkOverlayFadeDuration: 0.6
+      orbitDuration: 1.5
+      cardsOrbitSpeed: 1080
+      flashDuration: 0.6
+      giantCardAppearDuration: 0.5
+      giantCardHoldDuration: 1
+      delayBeforeMarker: 0.5
+      delayBeforeCardDrop: 0.5
+      giantCardScale: 1.2
   fusionSummonSettings:
     selectionIcon:
       useIcon: 1
@@ -46509,23 +46564,49 @@ MonoBehaviour:
       pulseScale: 1.2
       pulseDuration: 0.2
       pulseOutlineWidth: 8
+      delayBeforeImpact: 0.3
     cinematic:
       useCinematic: 1
+      useNative: 1
+      backgroundSymbol: {fileID: -7531841986844796093, guid: d34f0c194901ca94284dbb1e0f0c420c, type: 3}
+      backgroundMaterial: {fileID: 2100000, guid: 1ab439c8929ae2c4d969647b9140a029, type: 2}
+      preserveBackgroundAspect: 1
+      spinBackgroundSymbol: 0
+      backgroundSpinSpeed: -45
+      symbolScale: 600
+      showMaterialsFaceUp: 1
+      useDarkOverlay: 1
+      useWhiteFlash: 0
       usePrefab: 0
       flashPrefab: {fileID: 0}
-      useNative: 1
-      backgroundSymbol: {fileID: 0}
+      darkOverlayFadeDuration: 0.6
+      orbitDuration: 2
+      cardsOrbitSpeed: 500
+      flashDuration: 0.6
+      giantCardAppearDuration: 0.5
+      giantCardHoldDuration: 1
+      delayBeforeMarker: 0.5
+      delayBeforeCardDrop: 0.5
+      giantCardScale: 1.2
   useChainLinkRoutine: 1
-  chainLinkDuration: 1
-  chainLinkScale: 1.2
-  chainLinkTextColor: {r: 1, g: 0.8, b: 0, a: 1}
+  chainLinkDuration: 1.5
+  chainLinkScale: 0.6
+  chainLinkTextColor: {r: 0.19737887, g: 1, b: 0, a: 1}
   chainLinkShadowColor: {r: 0, g: 0, b: 0, a: 1}
-  chainLinkLeftSprite: {fileID: 0}
-  chainLinkRightSprite: {fileID: 0}
-  chainLinkJoinedSprite: {fileID: 0}
+  chainLinkLeftSprite: {fileID: 1985355633916747671, guid: 414c223110270734b9b53d70dfd04b32, type: 3}
+  chainLinkRightSprite: {fileID: 1985355633916747671, guid: 414c223110270734b9b53d70dfd04b32, type: 3}
+  chainLinkJoinedSprite: {fileID: -8566028455312386561, guid: e2ff48987c366c24bbeb40f86ecbddbd, type: 3}
   chainLinkSpriteColor: {r: 1, g: 1, b: 1, a: 1}
-  chainLinkMaterial: {fileID: 0}
-  useChainLinkPrefab: 1
+  chainLinkMaterial: {fileID: 2100000, guid: 1ab439c8929ae2c4d969647b9140a029, type: 2}
+  useChainLinkPrefab: 0
+  chainLinkPreserveAspect: 1
+  chainLinkSideSize: {x: 50, y: 50}
+  chainLinkJoinedSize: {x: 60, y: 60}
+  chainLinkSlideUp: 0
+  chainLinkFlashOnImpact: 1
+  chainLinkFlashColor: {r: 1, g: 1, b: 1, a: 0.34117648}
+  chainLinkBaseOffset: {x: 0, y: -30}
+  chainLinkTextOffset: {x: 0, y: 55}
   useEquipGhost: 1
   equipGhostFlightDuration: 0.4
   equipGhostFlightScale: 1.5
@@ -46546,7 +46627,7 @@ MonoBehaviour:
   controlSwapImpactColor: {r: 0.8, g: 0.2, b: 0.9, a: 1}
   controlSwapImpactScale: 1.4
   controlSwapImpactOutlineWidth: 10
-  useControlSwapPrefab: 1
+  useControlSwapPrefab: 0
   useShuffleRoutine: 0
   shuffleAtCenter: 1
   shuffleDuration: 1.4
@@ -46599,11 +46680,17 @@ MonoBehaviour:
   reflectPrefabColor: {r: 1, g: 1, b: 1, a: 1}
   useAttackImpactRoutine: 0
   useAttackImpactPrefab: 1
-  attackImpactPulseScale: 1.2
-  attackImpactPulseDuration: 0.2
+  applyAttackImpactColor: 1
+  attackImpactPrefabColor: {r: 0.5019608, g: 0, b: 0, a: 1}
+  attackImpactPrefabScale: {x: 1, y: 200, z: 1}
+  attackImpactRotationOffset: 200
+  overrideAttackImpactDuration: 0
+  attackImpactPrefabDuration: 1
+  attackImpactPulseScale: 0
+  attackImpactPulseDuration: 0
   attackImpactPulseColor: {r: 1, g: 0, b: 0, a: 1}
-  hitShakeDuration: 0.3
-  hitShakeMagnitude: 15
+  hitShakeDuration: 0
+  hitShakeMagnitude: 0
   useDefenseRoutine: 1
   defensePulseScale: 1.1
   defensePulseDuration: 0.3
@@ -46620,20 +46707,19 @@ MonoBehaviour:
   colorAttackSelection: {r: 1, g: 0, b: 0, a: 1}
   targetAvatarOnDirectAttack: 1
   useAttackHeadbutt: 0
-  useAttackSword: 0
+  useAttackSword: 1
   attackSwordSprite: {fileID: 3781665898625333168, guid: b388c01dfe4b42c459f5202bc76db457, type: 3}
   attackSwordColor: {r: 1, g: 0, b: 0, a: 1}
   attackSwordSize: {x: 60, y: 60}
   attackSwordMaterial: {fileID: 2100000, guid: 1ab439c8929ae2c4d969647b9140a029, type: 2}
   useAttackProjectilePrefab: 1
   attackSwordRotationOffset: -90
-  attackFlightDuration: 0.3
+  attackFlightDuration: 0.5
   useAttackTrail: 1
-  attackTrailType: 0
+  attackTrailType: 1
   attackTrailWidth: 15
-  attackTrailColor: {r: 1, g: 0, b: 0, a: 0.5}
+  attackTrailColor: {r: 1, g: 0, b: 0, a: 0.6784314}
   useAttackImpactVFX: 1
-  attackImpactRotationOffset: 0
   equipImpactVFX: {fileID: 1789789647255548136, guid: cc90356b6f5b5eb4f9166a261fc3bb92, type: 3}
   spellSound: {fileID: 0}
   trapSound: {fileID: 0}
@@ -52635,7 +52721,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1701951476}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.999997
+  m_Size: 0.99620855
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -62872,7 +62958,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000041063016}
+  m_AnchoredPosition: {x: 0, y: 0.00039584236}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &821356746
@@ -90413,7 +90499,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1995952712}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99999833
+  m_Size: 0.9886257
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:

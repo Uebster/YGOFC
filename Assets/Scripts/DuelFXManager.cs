@@ -64,16 +64,49 @@ public class SummonImpactSettings
     public float pulseScale = 1.2f;
     public float pulseDuration = 0.2f;
     public float pulseOutlineWidth = 8f;
+    [Tooltip("Atraso entre a marca de chão e o impacto físico da carta (em segundos).")]
+    public float delayBeforeImpact = 0.3f;
 }
 
 [System.Serializable]
 public class CinematicSettings
 {
     public bool useCinematic = true;
+    public bool useNative = true;
+
+    [Header("Símbolo de Fundo")]
+    public Sprite backgroundSymbol;
+    [Tooltip("Material opcional (ex: Aditivo) para fazer o símbolo brilhar e ignorar fundos pretos.")]
+    public Material backgroundMaterial;
+    public bool preserveBackgroundAspect = true;
+    public bool spinBackgroundSymbol = true;
+    public float backgroundSpinSpeed = -45f;
+    public float symbolScale = 400f;
+
+    [Header("Materiais da Invocação")]
+    [Tooltip("Mostra a arte real das cartas sendo sacrificadas no vórtice (em vez do verso).")]
+    public bool showMaterialsFaceUp = true;
+
+    [Header("Transições Nativas")]
+    [Tooltip("Escurece a tela durante a animação.")]
+    public bool useDarkOverlay = true;
+    [Tooltip("Clarão branco nativo no clímax da animação.")]
+    public bool useWhiteFlash = true;
+
+    [Header("Partículas Extra")]
     public bool usePrefab = false;
     public GameObject flashPrefab;
-    public bool useNative = true;
-    public Sprite backgroundSymbol;
+
+    [Header("Timings & Coreografia")]
+    public float darkOverlayFadeDuration = 0.3f;
+    public float orbitDuration = 1.5f;
+    public float cardsOrbitSpeed = 1080f;
+    public float flashDuration = 0.4f;
+    public float giantCardAppearDuration = 0.3f;
+    public float giantCardHoldDuration = 0.6f;
+    public float delayBeforeMarker = 0f;
+    public float delayBeforeCardDrop = 0.3f;
+    public float giantCardScale = 1.5f;
 }
 
 [System.Serializable]
@@ -207,6 +240,18 @@ public class DuelFXManager : MonoBehaviour
     [Tooltip("Material Aditivo para ignorar o fundo preto dos sprites.")]
     public Material chainLinkMaterial;
     public bool useChainLinkPrefab = true;
+    
+    public bool chainLinkPreserveAspect = true;
+    public Vector2 chainLinkSideSize = new Vector2(60, 60);
+    public Vector2 chainLinkJoinedSize = new Vector2(90, 60);
+    [Tooltip("Se ativo, as correntes deslizam para cima. Se inativo, ficam paradas sobre a carta.")]
+    public bool chainLinkSlideUp = true;
+    public bool chainLinkFlashOnImpact = true;
+    public Color chainLinkFlashColor = Color.white;
+
+    [Header("Posicionamento (Chain Link)")]
+    public Vector2 chainLinkBaseOffset = Vector2.zero;
+    public Vector2 chainLinkTextOffset = new Vector2(0, -25);
 
     [Header("Opções de Equipamento")]
     [Tooltip("Usa a animação do fantasma da magia voando até o monstro e o impacto de encaixe (Outline).")]
@@ -334,6 +379,13 @@ public class DuelFXManager : MonoBehaviour
     [Header("Opções de Hit / Corte (Impacto)")]
     public bool useAttackImpactRoutine = false;
     public bool useAttackImpactPrefab = true;
+    public bool applyAttackImpactColor = false;
+    public Color attackImpactPrefabColor = Color.white;
+    public Vector3 attackImpactPrefabScale = Vector3.one;
+    [Tooltip("Rotação (Ângulo) no eixo Z do impacto (ex: 15, 30 para cortes diagonais).")]
+    public float attackImpactRotationOffset = 0f;
+    public bool overrideAttackImpactDuration = false;
+    public float attackImpactPrefabDuration = 1.0f;
     public float attackImpactPulseScale = 1.2f;
     public float attackImpactPulseDuration = 0.2f;
     public Color attackImpactPulseColor = Color.red;
@@ -382,8 +434,6 @@ public class DuelFXManager : MonoBehaviour
     public Color attackTrailColor = new Color(1f, 0f, 0f, 0.5f);
     [Tooltip("Instancia o Prefab 'Attack VFX' ao acertar o alvo.")]
     public bool useAttackImpactVFX = true;
-    [Tooltip("Rotação no eixo Z aplicada ao Prefab de impacto de ataque (ex: 90 para vertical).")]
-    public float attackImpactRotationOffset = 0f;
 
     [Header("Efeitos de Magia (Field & Equip)")]
     public GameObject equipImpactVFX;   // Efeito quando o fantasma entra no alvo
@@ -1010,6 +1060,7 @@ public class DuelFXManager : MonoBehaviour
     {
         SummonVFXPackage package = GetSummonPackage(type);
         bool hasMarker = package != null && package.fieldMarker.useMarker;
+        SummonImpactSettings settings = GetImpactSettings(type);
         
         CanvasGroup cg = card.GetComponent<CanvasGroup>();
         if (cg == null) cg = card.gameObject.AddComponent<CanvasGroup>();
@@ -1020,13 +1071,13 @@ public class DuelFXManager : MonoBehaviour
             Transform zone = card.transform.parent != null ? card.transform.parent : card.transform;
             SpawnFieldMarker(zone, type);
             
-            yield return new WaitForSeconds(0.3f / (animationSpeed > 0 ? animationSpeed : 1f));
+            float waitTime = settings != null ? settings.delayBeforeImpact : 0.3f;
+            yield return new WaitForSeconds(waitTime / (animationSpeed > 0 ? animationSpeed : 1f));
             cg.alpha = 1f;
         }
 
         PlaySound(summonSound); 
         
-        SummonImpactSettings settings = GetImpactSettings(type);
         if (settings != null && settings.useImpact)
         {
             GameObject prefabToUse = settings.prefab != null ? settings.prefab : summonVFX; 
@@ -1287,7 +1338,14 @@ public class DuelFXManager : MonoBehaviour
         PlaySound(reflectSound);
         
         if (useReflectPrefab && reflectVFX != null)
-            SpawnVFXPublic(reflectVFX, attacker.transform.position, reflectPrefabColor != Color.white, reflectPrefabColor);
+        {
+            GameObject vfx = SpawnVFXPublic(reflectVFX, attacker.transform.position, reflectPrefabColor != Color.white, reflectPrefabColor);
+            if (vfx != null)
+            {
+                vfx.transform.SetParent(attacker.transform, true);
+                vfx.transform.SetAsLastSibling();
+            }
+        }
 
         if (useReflectAsStandardDamage)
         {
@@ -1306,10 +1364,13 @@ public class DuelFXManager : MonoBehaviour
         
         if (useAttackImpactPrefab && attackVFX != null)
         {
-            GameObject impact = SpawnVFXPublic(attackVFX, target.transform.position);
-            if (impact != null && attackImpactRotationOffset != 0f)
+            GameObject impact = SpawnVFXPublic(attackVFX, target.transform.position, applyAttackImpactColor, attackImpactPrefabColor, overrideAttackImpactDuration ? attackImpactPrefabDuration : -1f);
+            if (impact != null)
             {
-                impact.transform.Rotate(0, 0, attackImpactRotationOffset);
+                if (attackImpactRotationOffset != 0f)
+                    impact.transform.Rotate(0, 0, attackImpactRotationOffset);
+                
+                impact.transform.localScale = attackImpactPrefabScale;
             }
         }
 
@@ -1328,7 +1389,14 @@ public class DuelFXManager : MonoBehaviour
         PlaySound(defenseSound);
         
         if (useDefensePrefab && defenseSuccessVFX != null)
-            SpawnVFXPublic(defenseSuccessVFX, card.transform.position, defensePrefabColor != Color.white, defensePrefabColor);
+        {
+            GameObject vfx = SpawnVFXPublic(defenseSuccessVFX, card.transform.position, defensePrefabColor != Color.white, defensePrefabColor);
+            if (vfx != null)
+            {
+                vfx.transform.SetParent(card.transform, true);
+                vfx.transform.SetAsLastSibling();
+            }
+        }
 
         if (useDefenseRoutine)
         {
@@ -1407,7 +1475,7 @@ public class DuelFXManager : MonoBehaviour
         GameObject textContainer = new GameObject("TextContainer", typeof(RectTransform));
         textContainer.transform.SetParent(chainObj.transform, false);
         RectTransform textContainerRT = textContainer.GetComponent<RectTransform>();
-        textContainerRT.anchoredPosition = new Vector2(0, -25);
+        textContainerRT.anchoredPosition = chainLinkTextOffset;
         textContainerRT.localScale = Vector3.zero;
 
         GameObject textObj = new GameObject("Text", typeof(RectTransform), typeof(TMPro.TextMeshProUGUI));
@@ -1435,22 +1503,24 @@ public class DuelFXManager : MonoBehaviour
             GameObject leftObj = new GameObject("LeftLink", typeof(RectTransform), typeof(Image));
             leftObj.transform.SetParent(chainObj.transform, false);
             leftRT = leftObj.GetComponent<RectTransform>();
-            leftRT.sizeDelta = new Vector2(60, 60);
+            leftRT.sizeDelta = chainLinkSideSize;
             leftRT.anchoredPosition = new Vector2(-100, 25);
             leftImg = leftObj.GetComponent<Image>();
             leftImg.sprite = chainLinkLeftSprite;
+            leftImg.preserveAspect = chainLinkPreserveAspect;
             leftImg.color = chainLinkSpriteColor;
             if (chainLinkMaterial != null) leftImg.material = chainLinkMaterial;
 
             GameObject rightObj = new GameObject("RightLink", typeof(RectTransform), typeof(Image));
             rightObj.transform.SetParent(chainObj.transform, false);
             rightRT = rightObj.GetComponent<RectTransform>();
-            rightRT.sizeDelta = new Vector2(60, 60);
+            rightRT.sizeDelta = chainLinkSideSize;
             rightRT.anchoredPosition = new Vector2(100, 25);
             rightImg = rightObj.GetComponent<Image>();
             
             if (chainLinkRightSprite != null) rightImg.sprite = chainLinkRightSprite;
             else { rightImg.sprite = chainLinkLeftSprite; rightRT.localScale = new Vector3(-1, 1, 1); }
+            rightImg.preserveAspect = chainLinkPreserveAspect;
             rightImg.color = chainLinkSpriteColor;
             if (chainLinkMaterial != null) rightImg.material = chainLinkMaterial;
 
@@ -1459,10 +1529,11 @@ public class DuelFXManager : MonoBehaviour
                 GameObject joinedObj = new GameObject("JoinedLink", typeof(RectTransform), typeof(Image));
                 joinedObj.transform.SetParent(chainObj.transform, false);
                 RectTransform joinedRT = joinedObj.GetComponent<RectTransform>();
-                joinedRT.sizeDelta = new Vector2(90, 60);
+                joinedRT.sizeDelta = chainLinkJoinedSize;
                 joinedRT.anchoredPosition = new Vector2(0, 25);
                 joinedImg = joinedObj.GetComponent<Image>();
                 joinedImg.sprite = chainLinkJoinedSprite;
+                joinedImg.preserveAspect = chainLinkPreserveAspect;
                 joinedImg.color = chainLinkSpriteColor;
                 if (chainLinkMaterial != null) joinedImg.material = chainLinkMaterial;
                 joinedImg.enabled = false;
@@ -1471,10 +1542,12 @@ public class DuelFXManager : MonoBehaviour
 
         float duration = chainLinkDuration / (animationSpeed > 0 ? animationSpeed : 1f);
         float t = 0;
-        Vector2 startAnchored = chainRT.anchoredPosition;
-        Vector2 endAnchored = startAnchored + new Vector2(0, 120f); 
+        Vector2 startAnchored = chainRT.anchoredPosition + chainLinkBaseOffset;
+        chainRT.anchoredPosition = startAnchored;
+        Vector2 endAnchored = chainLinkSlideUp ? startAnchored + new Vector2(0, 120f) : startAnchored; 
         
         bool isClashed = false;
+        GameObject flashObj = null; Image flashImg = null;
 
         while (t < 1f)
         {
@@ -1496,6 +1569,28 @@ public class DuelFXManager : MonoBehaviour
                 if (leftImg != null) leftImg.enabled = false;
                 if (rightImg != null) rightImg.enabled = false;
                 if (joinedImg != null) joinedImg.enabled = true;
+
+                if (chainLinkFlashOnImpact)
+                {
+                    flashObj = new GameObject("ClashFlash", typeof(RectTransform), typeof(Image));
+                    flashObj.transform.SetParent(chainObj.transform, false);
+                    RectTransform flashRT = flashObj.GetComponent<RectTransform>();
+                    flashRT.anchoredPosition = new Vector2(0, 25);
+                    flashRT.sizeDelta = chainLinkJoinedSize * 2f; 
+                    flashImg = flashObj.GetComponent<Image>();
+                    flashImg.color = chainLinkFlashColor;
+                }
+            }
+
+            if (flashObj != null)
+            {
+                float flashT = (t - 0.2f) / 0.15f;
+                if (flashT <= 1f) {
+                    flashImg.color = new Color(chainLinkFlashColor.r, chainLinkFlashColor.g, chainLinkFlashColor.b, Mathf.Lerp(chainLinkFlashColor.a, 0f, flashT));
+                    flashObj.transform.localScale = Vector3.Lerp(Vector3.one, Vector3.one * 1.5f, flashT);
+                } else if (flashObj.activeSelf) {
+                    flashObj.SetActive(false);
+                }
             }
 
             if (t >= 0.2f && t < 0.4f)
@@ -2201,20 +2296,64 @@ public class DuelFXManager : MonoBehaviour
         Transform uiParent = GetUIParent();
         if (uiParent == null) { onComplete?.Invoke(); yield break; }
 
-        GameObject darkOverlay = null;
-        Image darkImg = null;
-        
-        // 1. Fundo Escurecido
-        darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image));
-        darkOverlay.transform.SetParent(uiParent, false);
-        RectTransform rtDark = darkOverlay.GetComponent<RectTransform>();
-        rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; 
-        rtDark.offsetMin = Vector2.zero; rtDark.offsetMax = Vector2.zero;
-        darkImg = darkOverlay.GetComponent<Image>();
-        darkImg.color = new Color(0, 0, 0, 0f);
+        SummonVFXPackage package = GetSummonPackage(type);
+        bool useDark = package == null || package.cinematic.useDarkOverlay;
+        bool useWhiteFlash = package != null && package.cinematic.useWhiteFlash;
 
-        // 2. Carta Gigante Deslumbrante
-        GameObject cinCard = new GameObject("CinematicCard", typeof(RectTransform), typeof(RawImage));
+        float fadeDur = package != null ? package.cinematic.darkOverlayFadeDuration : 0.3f;
+        float flashDur = package != null ? package.cinematic.flashDuration : 0.4f;
+        float appearDur = package != null ? package.cinematic.giantCardAppearDuration : 0.3f;
+        float holdDur = package != null ? package.cinematic.giantCardHoldDuration : 0.6f;
+        float delayMarker = package != null ? package.cinematic.delayBeforeMarker : 0f;
+        float delayDrop = package != null ? package.cinematic.delayBeforeCardDrop : 0.3f;
+        float cardScale = package != null ? package.cinematic.giantCardScale : 1.5f;
+        float symScale = package != null ? package.cinematic.symbolScale : 400f;
+        bool preserveAspect = package == null || package.cinematic.preserveBackgroundAspect;
+
+        GameObject darkOverlay = null; Image darkImg = null;
+        GameObject symbolObj = null;
+        GameObject cinCard = null;
+        
+        System.Action Cleanup = () => {
+            if (darkOverlay) Destroy(darkOverlay);
+            if (symbolObj) Destroy(symbolObj);
+            if (cinCard) Destroy(cinCard);
+        };
+
+        if (useDark)
+        {
+            darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image));
+            darkOverlay.transform.SetParent(uiParent, false);
+            RectTransform rtDark = darkOverlay.GetComponent<RectTransform>();
+            rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; 
+            rtDark.offsetMin = Vector2.zero; rtDark.offsetMax = Vector2.zero;
+            darkImg = darkOverlay.GetComponent<Image>();
+            darkImg.color = new Color(0, 0, 0, 0f);
+        }
+
+        float animSpeed = animationSpeed > 0 ? animationSpeed : 1.5f; float t = 0;
+
+        while (t < fadeDur) { 
+            if (card == null) { Cleanup(); yield break; }
+            t += Time.deltaTime * animSpeed; 
+            if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.8f, t / fadeDur)); 
+            yield return null; 
+        }
+
+        if (package != null && package.cinematic.backgroundSymbol != null) { 
+            symbolObj = new GameObject("CinematicSymbol", typeof(RectTransform), typeof(Image)); 
+            symbolObj.transform.SetParent(uiParent, false);
+            RectTransform rtSym = symbolObj.GetComponent<RectTransform>(); 
+            rtSym.anchorMin = new Vector2(0.5f, 0.5f); rtSym.anchorMax = new Vector2(0.5f, 0.5f);
+            rtSym.anchoredPosition = Vector2.zero; rtSym.sizeDelta = new Vector2(symScale, symScale);
+            Image imgSym = symbolObj.GetComponent<Image>(); 
+            imgSym.sprite = package.cinematic.backgroundSymbol; 
+            imgSym.preserveAspect = preserveAspect;
+            imgSym.color = new Color(1, 1, 1, 0.6f); 
+            if (package.cinematic.backgroundMaterial != null) imgSym.material = package.cinematic.backgroundMaterial;
+        }
+
+        cinCard = new GameObject("CinematicCard", typeof(RectTransform), typeof(RawImage));
         cinCard.transform.SetParent(uiParent, false);
         cinCard.transform.SetAsLastSibling();
         
@@ -2225,27 +2364,51 @@ public class DuelFXManager : MonoBehaviour
         
         RawImage ri = cinCard.GetComponent<RawImage>();
         
-        // REGRA DE OURO: Se for oponente, NÃO DA SPOILER! Mostra o verso caindo!
         bool showBack = !card.isPlayerCard;
         if (showBack && GameManager.Instance != null) ri.texture = GameManager.Instance.GetCardBackTexture();
         else ri.texture = card.cardImage.texture;
 
         PlaySound(summonSound);
-        float t = 0; float animSpeed = animationSpeed > 0 ? animationSpeed : 1.5f;
+        t = 0;
 
-        // FADE IN
-        while (t < 0.3f) { t += Time.deltaTime * animSpeed; float p = Mathf.Clamp01(t / 0.3f);
-            rt.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * 1.5f, p);
-            if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.7f, p));
-            yield return null; }
+        while (t < appearDur) { 
+            if (card == null) { Cleanup(); yield break; }
+            t += Time.deltaTime * animSpeed; float p = Mathf.Clamp01(t / appearDur);
+            rt.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * cardScale, p);
+            if (symbolObj != null && package.cinematic.spinBackgroundSymbol)
+                symbolObj.transform.Rotate(0, 0, package.cinematic.backgroundSpinSpeed * Time.deltaTime * animSpeed);
+            yield return null; 
+        }
+
+        if (useWhiteFlash) StartCoroutine(NativeWhiteFlashRoutine(uiParent, animSpeed, flashDur));
+
+        float holdTimer = 0;
+        while (holdTimer < holdDur) {
+            if (card == null) { Cleanup(); yield break; }
+            holdTimer += Time.deltaTime * animSpeed;
+            if (symbolObj != null && package.cinematic.spinBackgroundSymbol)
+                symbolObj.transform.Rotate(0, 0, package.cinematic.backgroundSpinSpeed * Time.deltaTime * animSpeed);
+            yield return null;
+        }
+
+        float markerTimer = 0;
+        while (markerTimer < delayMarker) {
+            if (card == null) { Cleanup(); yield break; }
+            markerTimer += Time.deltaTime * animSpeed;
+            yield return null;
+        }
 
         Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
         Transform targetZone = card.transform.parent != null ? card.transform.parent : card.transform;
         SpawnFieldMarker(targetZone, type);
 
-        yield return new WaitForSeconds(0.6f / animSpeed); // SUSPENSE
+        float dropTimer = 0;
+        while (dropTimer < delayDrop) {
+            if (card == null) { Cleanup(); yield break; }
+            dropTimer += Time.deltaTime * animSpeed;
+            yield return null;
+        }
 
-        // 3. Marca no Chão e Pouso
         PlaySound(attackTravelSound);
 
         Vector3 startPos = rt.position; 
@@ -2253,14 +2416,21 @@ public class DuelFXManager : MonoBehaviour
         Quaternion startRot = Quaternion.identity; Quaternion targetRot = card.transform.rotation;
 
         t = 0;
-        while (t < 0.25f) { t += Time.deltaTime * animSpeed; float p = Mathf.SmoothStep(0, 1, Mathf.Clamp01(t / 0.25f));
+        while (t < 0.25f) { 
+            if (card == null) { Cleanup(); yield break; }
+            t += Time.deltaTime * animSpeed; float p = Mathf.SmoothStep(0, 1, Mathf.Clamp01(t / 0.25f));
             rt.position = Vector3.Lerp(startPos, targetPos, p);
-            rt.localScale = Vector3.Lerp(Vector3.one * 1.5f, targetScale, p);
-            rt.rotation = Quaternion.Slerp(startRot, targetRot, p); // Rotação final (ex: deitar p/ Defesa)
-            if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0.7f, 0f, p));
-            yield return null; }
+            rt.localScale = Vector3.Lerp(Vector3.one * cardScale, targetScale, p);
+            rt.rotation = Quaternion.Slerp(startRot, targetRot, p); 
+            if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0.8f, 0f, p));
+            if (symbolObj != null) {
+                Image imgSym = symbolObj.GetComponent<Image>();
+                imgSym.color = new Color(1, 1, 1, Mathf.Lerp(0.6f, 0f, p));
+            }
+            yield return null; 
+        }
 
-        Destroy(cinCard); if (darkOverlay != null) Destroy(darkOverlay);
+        Cleanup();
         onComplete?.Invoke();
     }
 
@@ -2280,41 +2450,92 @@ public class DuelFXManager : MonoBehaviour
         Transform uiParent = GetUIParent();
         if (uiParent == null) { onComplete?.Invoke(); yield break; }
 
+        SummonVFXPackage package = GetSummonPackage(type);
+        bool useDark = package == null || package.cinematic.useDarkOverlay;
+        bool useWhiteFlash = package != null && package.cinematic.useWhiteFlash;
+
+        float fadeDur = package != null ? package.cinematic.darkOverlayFadeDuration : 0.3f;
+        float orbitDur = package != null ? package.cinematic.orbitDuration : 1.5f;
+        float orbitSpeed = package != null ? package.cinematic.cardsOrbitSpeed : 1080f;
+        float flashDur = package != null ? package.cinematic.flashDuration : 0.4f;
+        float appearDur = package != null ? package.cinematic.giantCardAppearDuration : 0.3f;
+        float holdDur = package != null ? package.cinematic.giantCardHoldDuration : 0.6f;
+        float delayMarker = package != null ? package.cinematic.delayBeforeMarker : 0f;
+        float delayDrop = package != null ? package.cinematic.delayBeforeCardDrop : 0.3f;
+        float cardScale = package != null ? package.cinematic.giantCardScale : 1.5f;
+        float symScale = package != null ? package.cinematic.symbolScale : 400f;
+        bool preserveAspect = package == null || package.cinematic.preserveBackgroundAspect;
+
         GameObject darkOverlay = null; Image darkImg = null;
+
+        GameObject symbolObj = null;
+        GameObject cinCard = null;
+        List<RectTransform> matRects = new List<RectTransform>();
         
-        darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image));
-        darkOverlay.transform.SetParent(uiParent, false);
-        RectTransform rtDark = darkOverlay.GetComponent<RectTransform>();
-        rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; 
-        rtDark.offsetMin = Vector2.zero; rtDark.offsetMax = Vector2.zero;
-        darkImg = darkOverlay.GetComponent<Image>();
-        darkImg.color = new Color(0, 0, 0, 0f);
+        System.Action Cleanup = () => {
+            if (darkOverlay) Destroy(darkOverlay);
+            if (symbolObj) Destroy(symbolObj);
+            if (cinCard) Destroy(cinCard);
+            foreach (var m in matRects) { if (m) Destroy(m.gameObject); }
+        };
+        
+        if (useDark)
+        {
+            darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image));
+            darkOverlay.transform.SetParent(uiParent, false);
+            RectTransform rtDark = darkOverlay.GetComponent<RectTransform>();
+            rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; 
+            rtDark.offsetMin = Vector2.zero; rtDark.offsetMax = Vector2.zero;
+            darkImg = darkOverlay.GetComponent<Image>();
+            darkImg.color = new Color(0, 0, 0, 0f);
+        }
 
         float animSpeed = animationSpeed > 0 ? animationSpeed : 1.5f; float t = 0;
-        while (t < 0.3f) { t += Time.deltaTime * animSpeed; if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.8f, t / 0.3f)); yield return null; }
+        while (t < fadeDur) { 
+            if (card == null) { Cleanup(); yield break; }
+            t += Time.deltaTime * animSpeed; 
+            if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.8f, t / fadeDur)); 
+            yield return null; 
+        }
 
-        SummonVFXPackage package = GetSummonPackage(type);
-        GameObject symbolObj = null;
         if (package != null && package.cinematic.backgroundSymbol != null) { 
             symbolObj = new GameObject("FusionSymbol", typeof(RectTransform), typeof(Image)); 
             symbolObj.transform.SetParent(uiParent, false);
             RectTransform rtSym = symbolObj.GetComponent<RectTransform>(); 
             rtSym.anchorMin = new Vector2(0.5f, 0.5f); rtSym.anchorMax = new Vector2(0.5f, 0.5f);
-            rtSym.anchoredPosition = Vector2.zero; rtSym.sizeDelta = new Vector2(400f, 400f);
-            Image imgSym = symbolObj.GetComponent<Image>(); imgSym.sprite = package.cinematic.backgroundSymbol; imgSym.color = new Color(1, 1, 1, 0); 
+            rtSym.anchoredPosition = Vector2.zero; rtSym.sizeDelta = new Vector2(symScale, symScale);
+            Image imgSym = symbolObj.GetComponent<Image>(); 
+            imgSym.sprite = package.cinematic.backgroundSymbol; 
+            imgSym.preserveAspect = preserveAspect;
+            imgSym.color = new Color(1, 1, 1, 0);             
+            if (package.cinematic.backgroundMaterial != null) imgSym.material = package.cinematic.backgroundMaterial;
         }
 
-        List<RectTransform> matRects = new List<RectTransform>();
+        bool faceUpMats = package == null || package.cinematic.showMaterialsFaceUp;
+
         if (materials != null && materials.Count > 0 && GameManager.Instance != null)
         {
             foreach (var mat in materials)
             {
-                GameObject matObj = new GameObject("MatCard", typeof(RectTransform), typeof(RawImage));
-                matObj.transform.SetParent(uiParent, false);
+                GameObject matObj;
+                if (GameManager.Instance.cardPrefab != null)
+                {
+                    matObj = Instantiate(GameManager.Instance.cardPrefab, uiParent);
+                    CardDisplay cd = matObj.GetComponent<CardDisplay>();
+                    if (cd != null) { cd.SetCard(mat, GameManager.Instance.GetCardBackTexture(), faceUpMats); cd.isInteractable = false; }
+                    LayoutElement le = matObj.GetComponent<LayoutElement>(); if (le != null) Destroy(le);
+                }
+                else
+                {
+                    matObj = new GameObject("MatCard", typeof(RectTransform), typeof(RawImage));
+                    matObj.transform.SetParent(uiParent, false);
+                    matObj.GetComponent<RawImage>().texture = GameManager.Instance.GetCardBackTexture();
+                }
+
                 RectTransform rtMat = matObj.GetComponent<RectTransform>(); 
                 rtMat.anchorMin = new Vector2(0.5f, 0.5f); rtMat.anchorMax = new Vector2(0.5f, 0.5f);
                 rtMat.anchoredPosition = Vector2.zero; rtMat.sizeDelta = new Vector2(100f, 145f);
-                matObj.GetComponent<RawImage>().texture = GameManager.Instance.GetCardBackTexture();
+                rtMat.localScale = Vector3.one;
                 matRects.Add(rtMat);
             }
         }
@@ -2322,31 +2543,43 @@ public class DuelFXManager : MonoBehaviour
         if (matRects.Count > 0)
         {
             PlaySound(spellSound);
-            float orbitDuration = 1.5f; float orbitTime = 0f;
-            while (orbitTime < orbitDuration)
+            float orbitTime = 0f;
+            while (orbitTime < orbitDur)
             {
-                orbitTime += Time.deltaTime * animSpeed; float progress = orbitTime / orbitDuration;
-                float radius = Mathf.Lerp(300f, 0f, progress * progress); float angleSpeed = 360f * 3f;
+                if (card == null) { Cleanup(); yield break; }
+                orbitTime += Time.deltaTime * animSpeed; float progress = orbitTime / orbitDur;
+                float radius = Mathf.Lerp(300f, 0f, progress * progress); 
                 if (symbolObj != null) {
                     symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0f, 0.6f, progress)); 
-                    symbolObj.transform.Rotate(0, 0, -45f * Time.deltaTime * animSpeed); // Gira o universo!
+                    if (package != null && package.cinematic.spinBackgroundSymbol)
+                        symbolObj.transform.Rotate(0, 0, package.cinematic.backgroundSpinSpeed * Time.deltaTime * animSpeed); 
                 }
                 for (int i = 0; i < matRects.Count; i++) {
-                    float offsetAngle = (360f / matRects.Count) * i; float currentAngle = (orbitTime * angleSpeed) + offsetAngle;
+                    float offsetAngle = (360f / matRects.Count) * i; float currentAngle = (orbitTime * orbitSpeed) + offsetAngle;
                     float x = Mathf.Cos(currentAngle * Mathf.Deg2Rad) * radius; float y = Mathf.Sin(currentAngle * Mathf.Deg2Rad) * radius;
                     matRects[i].anchoredPosition = new Vector2(x, y); matRects[i].rotation = Quaternion.Euler(0, 0, currentAngle);
                 }
                 yield return null;
             }
         }
-        else yield return new WaitForSeconds(0.5f);
+        else {
+            float waitT = 0;
+            while (waitT < 0.5f) {
+                if (card == null) { Cleanup(); yield break; }
+                waitT += Time.deltaTime * animSpeed;
+                yield return null;
+            }
+        }
 
-        foreach (var m in matRects) Destroy(m.gameObject);
+        foreach (var m in matRects) if (m) Destroy(m.gameObject);
+        matRects.Clear();
+
         PlaySound(fusionSound);
         Vector3 worldCenter = symbolObj != null ? symbolObj.transform.position : uiParent.position;
-        if (package != null && package.cinematic.flashPrefab != null) SpawnVFXPublic(package.cinematic.flashPrefab, worldCenter);
+        if (package != null && package.cinematic.usePrefab && package.cinematic.flashPrefab != null) SpawnVFXPublic(package.cinematic.flashPrefab, worldCenter);
+        if (useWhiteFlash) StartCoroutine(NativeWhiteFlashRoutine(uiParent, animSpeed, flashDur));
 
-        GameObject cinCard = new GameObject("CinematicFusion", typeof(RectTransform), typeof(RawImage));
+        cinCard = new GameObject("CinematicFusion", typeof(RectTransform), typeof(RawImage));
         cinCard.transform.SetParent(uiParent, false);
         cinCard.transform.SetAsLastSibling();
         RectTransform rt = cinCard.GetComponent<RectTransform>(); 
@@ -2356,25 +2589,50 @@ public class DuelFXManager : MonoBehaviour
         ri.texture = !card.isPlayerCard ? (GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null) : card.cardImage.texture;
 
         t = 0;
-        while (t < 0.3f) { t += Time.deltaTime * animSpeed; float p = Mathf.Clamp01(t / 0.3f); rt.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * 1.5f, p); 
+        while (t < appearDur) { 
+            if (card == null) { Cleanup(); yield break; }
+            t += Time.deltaTime * animSpeed; float p = Mathf.Clamp01(t / appearDur); rt.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * cardScale, p); 
             if (symbolObj != null) symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0.6f, 0f, p)); 
-            yield return null; }
-        
+            yield return null; 
+        }
+
+        float holdTimer = 0;
+        while (holdTimer < holdDur) {
+            if (card == null) { Cleanup(); yield break; }
+            holdTimer += Time.deltaTime * animSpeed;
+            yield return null;
+        }
+
+        float markerTimer = 0;
+        while (markerTimer < delayMarker) {
+            if (card == null) { Cleanup(); yield break; }
+            markerTimer += Time.deltaTime * animSpeed;
+            yield return null;
+        }
+
         Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
         Transform targetZone = card.transform.parent != null ? card.transform.parent : card.transform;
         SpawnFieldMarker(targetZone, type);
 
-        yield return new WaitForSeconds(0.6f / animSpeed);
+        float dropTimer = 0;
+        while (dropTimer < delayDrop) {
+            if (card == null) { Cleanup(); yield break; }
+            dropTimer += Time.deltaTime * animSpeed;
+            yield return null;
+        }
 
         Vector3 startPos = rt.position; Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
         Quaternion startRot = Quaternion.identity; Quaternion targetRot = card.transform.rotation;
 
         t = 0;
-        while (t < 0.25f) { t += Time.deltaTime * animSpeed; float p = Mathf.SmoothStep(0, 1, Mathf.Clamp01(t / 0.25f));
-            rt.position = Vector3.Lerp(startPos, targetPos, p); rt.localScale = Vector3.Lerp(Vector3.one * 1.5f, targetScale, p); rt.rotation = Quaternion.Slerp(startRot, targetRot, p); 
-            if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0.8f, 0f, p)); yield return null; }
+        while (t < 0.25f) { 
+            if (card == null) { Cleanup(); yield break; }
+            t += Time.deltaTime * animSpeed; float p = Mathf.SmoothStep(0, 1, Mathf.Clamp01(t / 0.25f));
+            rt.position = Vector3.Lerp(startPos, targetPos, p); rt.localScale = Vector3.Lerp(Vector3.one * cardScale, targetScale, p); rt.rotation = Quaternion.Slerp(startRot, targetRot, p); 
+            if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0.8f, 0f, p)); yield return null; 
+        }
 
-        Destroy(cinCard); if (darkOverlay != null) Destroy(darkOverlay); if (symbolObj != null) Destroy(symbolObj);
+        Cleanup();       
         onComplete?.Invoke();
     }
 
@@ -2394,33 +2652,85 @@ public class DuelFXManager : MonoBehaviour
         Transform uiParent = GetUIParent();
         if (uiParent == null) { onComplete?.Invoke(); yield break; }
 
-        GameObject darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image)); 
-        darkOverlay.transform.SetParent(uiParent, false);
-        RectTransform rtDark = darkOverlay.GetComponent<RectTransform>(); 
-        rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; 
-        rtDark.offsetMin = Vector2.zero; rtDark.offsetMax = Vector2.zero;
-        Image darkImg = darkOverlay.GetComponent<Image>(); darkImg.color = new Color(0, 0, 0, 0f);
+        SummonVFXPackage package = GetSummonPackage(type);
+        bool useDark = package == null || package.cinematic.useDarkOverlay;
+        bool useWhiteFlash = package != null && package.cinematic.useWhiteFlash;
+
+        float fadeDur = package != null ? package.cinematic.darkOverlayFadeDuration : 0.3f;
+        float orbitDur = package != null ? package.cinematic.orbitDuration : 1.0f; // Usado para o tempo do símbolo na tela
+        float flashDur = package != null ? package.cinematic.flashDuration : 0.4f;
+        float appearDur = package != null ? package.cinematic.giantCardAppearDuration : 0.3f;
+        float holdDur = package != null ? package.cinematic.giantCardHoldDuration : 0.6f;
+        float delayMarker = package != null ? package.cinematic.delayBeforeMarker : 0f;
+        float delayDrop = package != null ? package.cinematic.delayBeforeCardDrop : 0.3f;
+        float cardScale = package != null ? package.cinematic.giantCardScale : 1.5f;
+        float symScale = package != null ? package.cinematic.symbolScale : 400f;
+        bool preserveAspect = package == null || package.cinematic.preserveBackgroundAspect;
+
+        GameObject darkOverlay = null; Image darkImg = null;
+        GameObject symbolObj = null;
+        GameObject cinCard = null;
+
+        System.Action Cleanup = () => {
+            if (darkOverlay) Destroy(darkOverlay);
+            if (symbolObj) Destroy(symbolObj);
+            if (cinCard) Destroy(cinCard);
+        };
+
+        if (useDark)
+        {
+            darkOverlay = new GameObject("CinematicOverlay", typeof(RectTransform), typeof(Image)); 
+            darkOverlay.transform.SetParent(uiParent, false);
+            RectTransform rtDark = darkOverlay.GetComponent<RectTransform>(); 
+            rtDark.anchorMin = Vector2.zero; rtDark.anchorMax = Vector2.one; 
+            rtDark.offsetMin = Vector2.zero; rtDark.offsetMax = Vector2.zero;
+            darkImg = darkOverlay.GetComponent<Image>(); darkImg.color = new Color(0, 0, 0, 0f);
+        }
 
         float animSpeed = animationSpeed > 0 ? animationSpeed : 1.5f; float t = 0;
-        while (t < 0.3f) { t += Time.deltaTime * animSpeed; if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.8f, t / 0.3f)); yield return null; }
+        while (t < fadeDur) { 
+            if (card == null) { Cleanup(); yield break; }
+            t += Time.deltaTime * animSpeed; 
+            if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0f, 0.8f, t / fadeDur)); 
+            yield return null; 
+        }
 
-        SummonVFXPackage package = GetSummonPackage(type);
-        GameObject symbolObj = null;
         if (package != null && package.cinematic.backgroundSymbol != null) { symbolObj = new GameObject("RitualSymbol", typeof(RectTransform), typeof(Image)); symbolObj.transform.SetParent(uiParent, false);
             RectTransform rtSym = symbolObj.GetComponent<RectTransform>(); 
             rtSym.anchorMin = new Vector2(0.5f, 0.5f); rtSym.anchorMax = new Vector2(0.5f, 0.5f);
-            rtSym.anchoredPosition = Vector2.zero; rtSym.sizeDelta = new Vector2(400f, 400f);
-            Image imgSym = symbolObj.GetComponent<Image>(); imgSym.sprite = package.cinematic.backgroundSymbol; imgSym.color = new Color(1, 1, 1, 0); }
+            rtSym.anchoredPosition = Vector2.zero; rtSym.sizeDelta = new Vector2(symScale, symScale);
+            Image imgSym = symbolObj.GetComponent<Image>(); 
+            imgSym.sprite = package.cinematic.backgroundSymbol; 
+            imgSym.preserveAspect = preserveAspect;
+            imgSym.color = new Color(1, 1, 1, 0); 
+            if (package.cinematic.backgroundMaterial != null) imgSym.material = package.cinematic.backgroundMaterial; 
+        }
 
         PlaySound(spellSound); t = 0;
-        while (t < 1.0f) { t += Time.deltaTime * animSpeed; if (symbolObj != null) {
-                symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0f, 0.6f, t)); symbolObj.transform.Rotate(0, 0, 45f * Time.deltaTime * animSpeed); } yield return null; }
+        while (t < orbitDur) { 
+            if (card == null) { Cleanup(); yield break; }
+            t += Time.deltaTime * animSpeed; 
+            if (symbolObj != null) {
+                symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0f, 0.6f, t / orbitDur)); 
+                if (package != null && package.cinematic.spinBackgroundSymbol)
+                    symbolObj.transform.Rotate(0, 0, package.cinematic.backgroundSpinSpeed * Time.deltaTime * animSpeed); 
+            } 
+            yield return null; 
+        }
 
-        yield return new WaitForSeconds(0.3f); PlaySound(fusionSound); 
+        float waitT = 0;
+        while (waitT < 0.3f) {
+            if (card == null) { Cleanup(); yield break; }
+            waitT += Time.deltaTime * animSpeed;
+            yield return null;
+        }
+
+        PlaySound(fusionSound); 
         Vector3 worldCenter = symbolObj != null ? symbolObj.transform.position : uiParent.position;
-        if (package != null && package.cinematic.flashPrefab != null) SpawnVFXPublic(package.cinematic.flashPrefab, worldCenter);
+        if (package != null && package.cinematic.usePrefab && package.cinematic.flashPrefab != null) SpawnVFXPublic(package.cinematic.flashPrefab, worldCenter);
+        if (useWhiteFlash) StartCoroutine(NativeWhiteFlashRoutine(uiParent, animSpeed, flashDur));
 
-        GameObject cinCard = new GameObject("CinematicRitual", typeof(RectTransform), typeof(RawImage));
+        cinCard = new GameObject("CinematicRitual", typeof(RectTransform), typeof(RawImage));
         cinCard.transform.SetParent(uiParent, false); cinCard.transform.SetAsLastSibling();
         RectTransform rt = cinCard.GetComponent<RectTransform>(); 
         rt.anchorMin = new Vector2(0.5f, 0.5f); rt.anchorMax = new Vector2(0.5f, 0.5f);
@@ -2428,26 +2738,72 @@ public class DuelFXManager : MonoBehaviour
         RawImage ri = cinCard.GetComponent<RawImage>(); ri.texture = !card.isPlayerCard ? (GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null) : card.cardImage.texture;
 
         t = 0;
-        while (t < 0.3f) { t += Time.deltaTime * animSpeed; float p = Mathf.Clamp01(t / 0.3f); rt.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * 1.5f, p);
-            if (symbolObj != null) symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0.6f, 0f, p)); yield return null; }
+        while (t < appearDur) { 
+            if (card == null) { Cleanup(); yield break; }
+            t += Time.deltaTime * animSpeed; float p = Mathf.Clamp01(t / appearDur); rt.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * cardScale, p);
+            if (symbolObj != null) symbolObj.GetComponent<Image>().color = new Color(1, 1, 1, Mathf.Lerp(0.6f, 0f, p)); 
+            yield return null; 
+        }
+
+        float holdTimer = 0;
+        while (holdTimer < holdDur) {
+            if (card == null) { Cleanup(); yield break; }
+            holdTimer += Time.deltaTime * animSpeed;
+            yield return null;
+        }
+
+        float markerTimer = 0;
+        while (markerTimer < delayMarker) {
+            if (card == null) { Cleanup(); yield break; }
+            markerTimer += Time.deltaTime * animSpeed;
+            yield return null;
+        }
 
         Vector3 targetPos = card.transform.parent != null ? card.transform.parent.position : card.transform.position;
         Transform targetZone = card.transform.parent != null ? card.transform.parent : card.transform;
         SpawnFieldMarker(targetZone, type);
 
-        if (symbolObj != null) Destroy(symbolObj); 
+        if (symbolObj != null) { Destroy(symbolObj); symbolObj = null; }
         
-        yield return new WaitForSeconds(0.6f / animSpeed);
+        float dropTimer = 0;
+        while (dropTimer < delayDrop) {
+            if (card == null) { Cleanup(); yield break; }
+            dropTimer += Time.deltaTime * animSpeed;
+            yield return null;
+        }
 
         Vector3 startPos = rt.position; Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one;
         Quaternion startRot = Quaternion.identity; Quaternion targetRot = card.transform.rotation;
 
         t = 0;
-        while (t < 0.25f) { t += Time.deltaTime * animSpeed; float p = Mathf.SmoothStep(0, 1, Mathf.Clamp01(t / 0.25f)); rt.position = Vector3.Lerp(startPos, targetPos, p); rt.localScale = Vector3.Lerp(Vector3.one * 1.5f, targetScale, p);
-            rt.rotation = Quaternion.Slerp(startRot, targetRot, p); if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0.8f, 0f, p)); yield return null; }
+        while (t < 0.25f) { 
+            if (card == null) { Cleanup(); yield break; }
+            t += Time.deltaTime * animSpeed; float p = Mathf.SmoothStep(0, 1, Mathf.Clamp01(t / 0.25f)); rt.position = Vector3.Lerp(startPos, targetPos, p); rt.localScale = Vector3.Lerp(Vector3.one * cardScale, targetScale, p);
+            rt.rotation = Quaternion.Slerp(startRot, targetRot, p); if (darkImg != null) darkImg.color = new Color(0, 0, 0, Mathf.Lerp(0.8f, 0f, p)); yield return null; 
+        }
 
-        Destroy(cinCard); if (darkOverlay != null) Destroy(darkOverlay);
+        Cleanup();
         onComplete?.Invoke();
+    }
+
+    private IEnumerator NativeWhiteFlashRoutine(Transform uiParent, float animSpeed, float baseDuration)
+    {
+        GameObject flashOverlay = new GameObject("WhiteFlashOverlay", typeof(RectTransform), typeof(Image));
+        flashOverlay.transform.SetParent(uiParent, false);
+        flashOverlay.transform.SetAsLastSibling(); 
+        
+        RectTransform rtFlash = flashOverlay.GetComponent<RectTransform>();
+        rtFlash.anchorMin = Vector2.zero; rtFlash.anchorMax = Vector2.one; 
+        rtFlash.offsetMin = Vector2.zero; rtFlash.offsetMax = Vector2.zero;
+        
+        Image flashImg = flashOverlay.GetComponent<Image>();
+        flashImg.color = new Color(1, 1, 1, 1f); 
+
+        float duration = baseDuration / animSpeed;
+        float t = 0;
+        while (t < duration) { t += Time.deltaTime; flashImg.color = new Color(1, 1, 1, Mathf.Lerp(1f, 0f, t / duration)); yield return null; }
+        
+        Destroy(flashOverlay);
     }
 
     // --- UTILITÁRIOS ---
@@ -2460,7 +2816,7 @@ public class DuelFXManager : MonoBehaviour
         }
     }
 
-    public GameObject SpawnVFXPublic(GameObject prefab, Vector3 position, bool applyTint = false, Color tintColor = default)
+    public GameObject SpawnVFXPublic(GameObject prefab, Vector3 position, bool applyTint = false, Color tintColor = default, float overrideDuration = -1f)
     {
         if (prefab != null)
         {
@@ -2510,7 +2866,11 @@ public class DuelFXManager : MonoBehaviour
 
             // FIX: Lê a duração real do próprio sistema de partículas para a destruição
             ParticleSystem ps = instance.GetComponent<ParticleSystem>();
-            if (ps != null)
+            if (overrideDuration > 0)
+            {
+                Destroy(instance, overrideDuration);
+            }
+            else if (ps != null)
             {
                 Destroy(instance, ps.main.duration + ps.main.startLifetime.constantMax + 0.5f);
             }
