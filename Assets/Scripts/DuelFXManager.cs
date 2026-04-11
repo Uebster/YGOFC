@@ -139,6 +139,8 @@ public class DuelFXManager : MonoBehaviour
 
     [Header("Referências da Cena")]
     public Transform boardCenter; // Arraste um objeto vazio no centro do campo
+    public Transform playerBoardCenter; // Centro da área do jogador
+    public Transform opponentBoardCenter; // Centro da área do oponente
     public AudioSource audioSource; // Fonte de áudio principal para SFX
     public AudioSource bgmSource;   // Fonte de áudio para Música de Fundo (Loop)
 
@@ -288,6 +290,10 @@ public class DuelFXManager : MonoBehaviour
     [Header("Opções de Embaralhamento (Shuffle)")]
     [Tooltip("Usa a animação matemática dividindo e misturando as cartas.")]
     public bool useShuffleRoutine = true;
+    [Tooltip("Usa o embaralhamento Custom (Hindu Shuffle) com inclinação 2D.")]
+    public bool useCustomHinduShuffle = false;
+    [Tooltip("Usa o novo estilo de embaralhamento 2D rápido lateral.")]
+    public bool useSimple2DShuffle = true;
     [Tooltip("Move as cartas para o centro da tela durante o embaralhamento.")]
     public bool shuffleAtCenter = false;
     public float shuffleDuration = 0.8f; // Tempo total da animação
@@ -299,6 +305,14 @@ public class DuelFXManager : MonoBehaviour
     public float shuffleDeckAppearDelay = 0.0f;
     [Tooltip("Tempo extra (segundos) DEPOIS do baralho reaparecer, antes do GameManager iniciar a compra de cartas.")]
     public float shufflePostDelay = 0.3f;
+    [Tooltip("Multiplicador de escala das cartas quando se movem para o centro.")]
+    public float shuffleScaleMultiplier = 1.5f;
+    [Tooltip("Deslocamento do embaralhamento 2D. X=Distância lateral, Y=Distância vertical.")]
+    public Vector2 shuffle2DOffset = new Vector2(-80f, 40f);
+    [Tooltip("Inclinação (ângulo Z) do baralho durante o Hindu Shuffle.")]
+    public float customShuffleTiltAngle = 15f;
+    [Tooltip("Rotaciona o baralho do oponente em 180º no embaralhamento para ficar virado para ele.")]
+    public bool shuffleOpponent180 = true;
 
     [Header("Opções de Invocação de Ficha (Token)")]
     [Tooltip("A carta da Ficha (Token) treme, surge do tamanho 0 e faz um Fade In.")]
@@ -402,6 +416,18 @@ public class DuelFXManager : MonoBehaviour
     public float defenseShakeMagnitude = 10f;
     public bool useDefensePrefab = true;
     public Color defensePrefabColor = Color.white;
+
+    [Header("Escudo de Defesa (Nativo)")]
+    public bool useNativeDefenseShield = false;
+    public Sprite defenseShieldSprite;
+    [Tooltip("Material Aditivo para ignorar o fundo preto da imagem.")]
+    public Material defenseShieldMaterial;
+    public Color defenseShieldColor = Color.white;
+    public Vector2 defenseShieldSize = new Vector2(150, 150);
+    public Vector2 defenseShieldOffset = Vector2.zero;
+    public bool defenseShieldFlip180 = false;
+    public float defenseShieldDuration = 0.5f;
+    public float defenseShieldPulseScale = 1.3f;
 
     [Header("Opções de Ataque (Combate)")]
     [Tooltip("Usa o prefab 'TargetingSwordUI' para mirar ataques. Se desmarcado, usa cores de outline (Hover).")]
@@ -1353,7 +1379,7 @@ public class DuelFXManager : MonoBehaviour
         }
         else if (useReflectRoutine)
         {
-            StartCoroutine(PulseGhostRoutine(attacker, reflectPulseScale, reflectPulseDuration, reflectPulseColor, reflectPulseOutlineWidth));
+            StartCoroutine(PulseGhostRoutine(attacker, reflectPulseScale, reflectPulseDuration, reflectPulseColor, reflectPulseOutlineWidth, true));
             StartCoroutine(ShakeRoutine(attacker.transform, reflectShakeDuration, reflectShakeMagnitude));
         }
     }
@@ -1398,11 +1424,59 @@ public class DuelFXManager : MonoBehaviour
             }
         }
 
+        if (useNativeDefenseShield && defenseShieldSprite != null)
+        {
+            StartCoroutine(NativeDefenseShieldRoutine(card));
+        }
+
         if (useDefenseRoutine)
         {
             StartCoroutine(PulseGhostRoutine(card, defensePulseScale, defensePulseDuration, defensePulseColor, defensePulseOutlineWidth));
             StartCoroutine(ShakeRoutine(card.transform, defenseShakeDuration, defenseShakeMagnitude));
         }
+    }
+
+    private IEnumerator NativeDefenseShieldRoutine(CardDisplay card)
+    {
+        GameObject shieldObj = new GameObject("DefenseShield_Native", typeof(RectTransform), typeof(Image));
+        shieldObj.transform.SetParent(card.transform, false);
+        shieldObj.transform.SetAsLastSibling(); // Por cima da carta
+
+        RectTransform rt = shieldObj.GetComponent<RectTransform>();
+        rt.anchoredPosition = defenseShieldOffset;
+        rt.sizeDelta = defenseShieldSize;
+        if (defenseShieldFlip180) rt.localRotation = Quaternion.Euler(0, 0, 180f);
+
+        Image img = shieldObj.GetComponent<Image>();
+        img.sprite = defenseShieldSprite;
+        img.color = new Color(defenseShieldColor.r, defenseShieldColor.g, defenseShieldColor.b, 0f);
+        if (defenseShieldMaterial != null) img.material = defenseShieldMaterial;
+
+        float duration = defenseShieldDuration / (animationSpeed > 0 ? animationSpeed : 1f);
+        float halfDuration = duration / 2f;
+        float t = 0;
+
+        Vector3 startScale = Vector3.one;
+        Vector3 peakScale = Vector3.one * defenseShieldPulseScale;
+
+        // Fase 1: Aparece e cresce
+        while (t < halfDuration) {
+            if (shieldObj == null || card == null) break;
+            t += Time.deltaTime; float p = Mathf.SmoothStep(0, 1, t / halfDuration);
+            rt.localScale = Vector3.Lerp(startScale, peakScale, p);
+            img.color = new Color(defenseShieldColor.r, defenseShieldColor.g, defenseShieldColor.b, Mathf.Lerp(0f, defenseShieldColor.a, p));
+            yield return null;
+        }
+        t = 0;
+        // Fase 2: Diminui e esmaece
+        while (t < halfDuration) {
+            if (shieldObj == null || card == null) break;
+            t += Time.deltaTime; float p = Mathf.SmoothStep(0, 1, t / halfDuration);
+            rt.localScale = Vector3.Lerp(peakScale, startScale, p);
+            img.color = new Color(defenseShieldColor.r, defenseShieldColor.g, defenseShieldColor.b, Mathf.Lerp(defenseShieldColor.a, 0f, p));
+            yield return null;
+        }
+        if (shieldObj != null) Destroy(shieldObj);
     }
 
     public void PlayCardShake(CardDisplay card)
@@ -1637,7 +1711,7 @@ public class DuelFXManager : MonoBehaviour
         if (useMonsterEffectPulse) StartCoroutine(PulseGhostRoutine(card, monsterEffectPulseScale, monsterEffectPulseDuration, colorMonsterEffect, monsterEffectPulseOutlineWidth));
     }
 
-    private IEnumerator PulseGhostRoutine(CardDisplay card, float targetScaleMult, float halfDuration, Color outlineColor, float outlineWidth)
+    private IEnumerator PulseGhostRoutine(CardDisplay card, float targetScaleMult, float halfDuration, Color outlineColor, float outlineWidth, bool tintGhost = false)
     {
         if (card == null) yield break;
 
@@ -1664,9 +1738,11 @@ public class DuelFXManager : MonoBehaviour
         rt.sizeDelta = cardRt.sizeDelta; rt.anchoredPosition = cardRt.anchoredPosition;
         rt.localRotation = cardRt.localRotation; rt.localScale = cardRt.localScale;
 
+        Color ghostColor = tintGhost ? new Color(outlineColor.r, outlineColor.g, outlineColor.b, 0.8f) : new Color(1f, 1f, 1f, 0.8f);
+
         RawImage ri = ghost.GetComponent<RawImage>();
         ri.texture = card.cardImage.texture; 
-        ri.color = new Color(1f, 1f, 1f, 0.8f);
+        ri.color = ghostColor;
         
         Outline outline = ghost.GetComponent<Outline>();
         outline.effectColor = outlineColor;
@@ -1678,7 +1754,7 @@ public class DuelFXManager : MonoBehaviour
             if (card == null) break;
             t += Time.deltaTime / durationActual; float smooth = Mathf.SmoothStep(0, 1, t);
             card.transform.localScale = Vector3.Lerp(originalScale, peakScale, smooth);
-            if (ghost != null) { ghost.transform.localScale = Vector3.Lerp(originalScale, peakScale * 1.15f, smooth); ri.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.8f, 0f, smooth)); }
+            if (ghost != null) { ghost.transform.localScale = Vector3.Lerp(originalScale, peakScale * 1.15f, smooth); ri.color = new Color(ghostColor.r, ghostColor.g, ghostColor.b, Mathf.Lerp(ghostColor.a, 0f, smooth)); }
             yield return null;
         }
         if (ghost != null) Destroy(ghost);
@@ -2020,7 +2096,7 @@ public class DuelFXManager : MonoBehaviour
         if (!enableAnimations || pileTransform == null) return;
         Debug.Log($"[VFX] ➔ [CHAMADA] PlayShuffleEffect | Momento: Embaralhamento engatilhado na pilha {pileTransform.name}.");
         
-        if (useShuffleRoutine || useShufflePrefab)
+        if (useShuffleRoutine || useCustomHinduShuffle || useSimple2DShuffle || useShufflePrefab)
         {
             StartCoroutine(ShuffleRoutine(pileTransform));
         }
@@ -2054,7 +2130,18 @@ public class DuelFXManager : MonoBehaviour
         if (uiParent == null && useShuffleRoutine) yield break;
 
         Vector3 startPos = pileTransform.position;
-        Vector3 centerPos = shuffleAtCenter && boardCenter != null ? boardCenter.position : startPos;
+        Vector3 centerPos = startPos;
+        if (shuffleAtCenter)
+        {
+            if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null)
+            {
+                bool isPlayerDeck = (pileTransform == GameManager.Instance.duelFieldUI.playerDeck);
+                if (isPlayerDeck && playerBoardCenter != null) centerPos = playerBoardCenter.position;
+                else if (!isPlayerDeck && opponentBoardCenter != null) centerPos = opponentBoardCenter.position;
+                else if (boardCenter != null) centerPos = boardCenter.position;
+            }
+            else if (boardCenter != null) centerPos = boardCenter.position;
+        }
         RectTransform pileRT = pileTransform.GetComponent<RectTransform>();
 
         // Ocultar o deck real temporariamente para evitar z-fighting e tremeliques com o VFX
@@ -2065,34 +2152,25 @@ public class DuelFXManager : MonoBehaviour
         pileCG.alpha = 0f;
 
         float routineDuration = shuffleDuration / (animationSpeed > 0 ? animationSpeed : 1f);
-        float halfDuration = routineDuration / 2f;
-        float extraFadeOutTime = 0f;
         int loops = Mathf.Max(1, shuffleLoopCount);
-
-        for (int loopIndex = 0; loopIndex < loops; loopIndex++)
-        {
-            PlaySound(shuffleSound);
-            float loopWaitTime = routineDuration;
-            float timeSpent = 0f;
+        float totalTime = routineDuration * loops;
+        float extraFadeOutTime = 0f;
 
             if (useShufflePrefab && shuffleVFX != null)
             {
-                Vector3 spawnPos = shuffleAtCenter && boardCenter != null ? boardCenter.position : startPos;
-                GameObject vfx = SpawnVFXPublic(shuffleVFX, spawnPos);
-                if (vfx != null)
-                {
-                    ParticleSystem ps = vfx.GetComponent<ParticleSystem>();
-                    if (ps != null)
-                    {
-                        if (ps.main.duration > loopWaitTime) loopWaitTime = ps.main.duration;
-                        extraFadeOutTime = ps.main.startLifetime.constantMax; // Guarda a dissipação para o fim
-                    }
-                }
+                ParticleSystem ps = shuffleVFX.GetComponent<ParticleSystem>();
+                if (ps != null) extraFadeOutTime = ps.main.startLifetime.constantMax;
             }
 
-            if (useShuffleRoutine && uiParent != null)
+        bool runRoutine = useShuffleRoutine || useCustomHinduShuffle || useSimple2DShuffle;
+
+        bool isOpponentDeck = (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null && pileTransform == GameManager.Instance.duelFieldUI.opponentDeck);
+        Quaternion basePileRot = pileTransform.rotation;
+        if (isOpponentDeck && shuffleOpponent180) basePileRot *= Quaternion.Euler(0, 0, 180f);
+
+        if (runRoutine && uiParent != null)
             {
-                int deckSize = 6; 
+                int deckSize = useCustomHinduShuffle ? 40 : (useSimple2DShuffle ? 5 : 6); 
                 List<GameObject> fakeCards = new List<GameObject>();
 
                 for (int i = 0; i < deckSize; i++)
@@ -2103,7 +2181,7 @@ public class DuelFXManager : MonoBehaviour
                         card.transform.SetParent(pileRT.parent, false);
                         RectTransform rt = card.GetComponent<RectTransform>();
                         rt.anchorMin = pileRT.anchorMin; rt.anchorMax = pileRT.anchorMax; rt.pivot = pileRT.pivot;
-                        rt.sizeDelta = pileRT.sizeDelta; rt.localRotation = pileRT.localRotation; rt.localScale = pileRT.localScale;
+                        rt.sizeDelta = pileRT.sizeDelta; rt.anchoredPosition = pileRT.anchoredPosition; rt.rotation = basePileRot; rt.localScale = pileRT.localScale;
                     }
                     card.transform.SetParent(uiParent, true); 
                     card.transform.SetAsLastSibling();
@@ -2113,86 +2191,264 @@ public class DuelFXManager : MonoBehaviour
                     fakeCards.Add(card);
                 }
 
-                float t = 0;
-
-                // Fase 1: Levanta e Divide o Baralho em Leque
-                while (t < 1f)
+                if (useCustomHinduShuffle)
                 {
-                    t += Time.deltaTime / halfDuration;
-                    float smooth = Mathf.SmoothStep(0, 1, t);
-                    Vector3 currentBasePos = Vector3.Lerp(startPos, centerPos, smooth);
+                    Vector3 basePos = centerPos;
+                float moveCenterTime = shuffleAtCenter ? 0.2f : 0f; 
+                Quaternion stackRot = basePileRot * Quaternion.Euler(0, 0, customShuffleTiltAngle);
+                    
+                    System.Func<Vector3, int, Vector3> GetStackPos = (center, index) => {
+                        Vector3 offset = stackRot * new Vector3(index * -0.4f, index * 0.8f, 0); 
+                        return center + offset;
+                    };
 
-                    for (int i = 0; i < deckSize; i++)
-                    {
-                        if (fakeCards[i] == null) continue;
-                        float xTargetOffset = (i % 2 == 0) ? -60f : 60f;
-                        float yTargetOffset = Mathf.Sin(smooth * Mathf.PI) * 40f; 
-                        float rotationZ = (i % 2 == 0) ? Mathf.Lerp(0, 20f, smooth) : Mathf.Lerp(0, -20f, smooth);
-                        
-                        fakeCards[i].transform.position = currentBasePos + new Vector3(xTargetOffset * smooth, yTargetOffset * smooth, 0);
-                        fakeCards[i].transform.rotation = Quaternion.Euler(0, 0, pileTransform.eulerAngles.z + rotationZ);
-
-                        if (shuffleAtCenter)
-                        {
-                            float scaleMult = 1f + (smooth * 0.5f); 
+                if (shuffleAtCenter)
+                {
+                    float moveT = 0;
+                    while (moveT < 1f) {
+                        moveT += Time.deltaTime / moveCenterTime;
+                        float smooth = Mathf.SmoothStep(0, 1, moveT);
+                        for (int i = 0; i < deckSize; i++) {
+                            fakeCards[i].transform.position = Vector3.Lerp(startPos, GetStackPos(basePos, i), smooth);
+                            fakeCards[i].transform.rotation = Quaternion.Lerp(basePileRot, stackRot, smooth);
+                            float scaleMult = 1f + (smooth * (shuffleScaleMultiplier - 1f));
                             fakeCards[i].transform.localScale = (GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one) * scaleMult;
                         }
+                        yield return null;
                     }
-                    yield return null;
                 }
-                timeSpent += halfDuration;
-
-                PlaySound(shuffleSound); 
-
-                // FIX: Seta a ordem do Sibling UMA VEZ antes da animação descer para evitar tremeliques (Rebuild de Layout)!
-                for (int i = 0; i < deckSize; i++)
+                else
                 {
-                    if (fakeCards[i] == null) continue;
-                    int siblingTarget = fakeCards[i].transform.parent.childCount - (i % 2 == 0 ? i : deckSize - i);
-                    fakeCards[i].transform.SetSiblingIndex(siblingTarget);
+                    basePos = startPos;
+                    for (int i = 0; i < deckSize; i++) {
+                        fakeCards[i].transform.position = GetStackPos(basePos, i);
+                        fakeCards[i].transform.rotation = stackRot; // Já está correto
+                    }
                 }
 
-                // Fase 2: Une as metades entrelaçando e desce
-                t = 0;
-                while (t < 1f)
-                {
-                    t += Time.deltaTime / halfDuration;
-                    float smooth = Mathf.SmoothStep(0, 1, t);
-                    Vector3 currentBasePos = Vector3.Lerp(centerPos, startPos, smooth);
+                int movesPerLoop = 5;
+                int totalMoves = movesPerLoop * loops;
+                float shufflePhaseTime = Mathf.Max(0.1f, totalTime - (moveCenterTime * 2f));
+                float moveDuration = shufflePhaseTime / totalMoves;
+                float stepDur = moveDuration / 3f;
+                Vector3 rightOffset = basePileRot * new Vector3(110f, 0, 0);
 
-                    for (int i = 0; i < deckSize; i++)
+                for (int m = 0; m < totalMoves; m++)
+                {
+                    if (m % movesPerLoop == 0)
                     {
-                        if (fakeCards[i] == null) continue;
-                        float xStartOffset = (i % 2 == 0) ? -60f : 60f;
-                        float currentXOffset = Mathf.Lerp(xStartOffset, 0, smooth);
-                        float rotationZ = (i % 2 == 0) ? Mathf.Lerp(20f, 0f, smooth) : Mathf.Lerp(-20f, 0f, smooth);
-                        
-                        fakeCards[i].transform.position = currentBasePos + new Vector3(currentXOffset, 0, 0);
-                        fakeCards[i].transform.rotation = Quaternion.Euler(0, 0, pileTransform.eulerAngles.z + rotationZ);
+                        if (useShufflePrefab && shuffleVFX != null) SpawnVFXPublic(shuffleVFX, centerPos);
+                    }
 
-                        if (shuffleAtCenter)
-                        {
-                            float scaleMult = 1f + ((1f - smooth) * 0.5f); 
-                            fakeCards[i].transform.localScale = (GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one) * scaleMult;
+                    int packetSize = 10;
+                    int extractIdx = 10 + (m % 2) * 5; 
+                    List<GameObject> packet = fakeCards.GetRange(extractIdx, packetSize);
+                    fakeCards.RemoveRange(extractIdx, packetSize);
+
+                        float t = 0;
+                        while (t < 1f) {
+                            t += Time.deltaTime / stepDur;
+                            float smooth = Mathf.SmoothStep(0, 1, t);
+                            for (int i = 0; i < packet.Count; i++) packet[i].transform.position = Vector3.Lerp(GetStackPos(basePos, extractIdx + i), GetStackPos(basePos, extractIdx + i) + rightOffset, smooth);
+                            yield return null;
+                        }
+
+                        for (int i = 0; i < packet.Count; i++) packet[i].transform.SetAsLastSibling();
+                        
+                        t = 0;
+                        while (t < 1f) {
+                            t += Time.deltaTime / stepDur;
+                            float smooth = Mathf.SmoothStep(0, 1, t);
+                            for (int i = 0; i < packet.Count; i++) packet[i].transform.position = Vector3.Lerp(GetStackPos(basePos, extractIdx + i) + rightOffset, GetStackPos(basePos, fakeCards.Count + i) + rightOffset, smooth);
+                            for (int i = extractIdx; i < fakeCards.Count; i++) fakeCards[i].transform.position = Vector3.Lerp(GetStackPos(basePos, i + packetSize), GetStackPos(basePos, i), smooth);
+                            yield return null;
+                        }
+
+                        fakeCards.AddRange(packet);
+                        t = 0;
+                        while (t < 1f) {
+                            t += Time.deltaTime / stepDur;
+                            float smooth = Mathf.SmoothStep(0, 1, t);
+                            for (int i = 0; i < packet.Count; i++) packet[i].transform.position = Vector3.Lerp(GetStackPos(basePos, fakeCards.Count - packetSize + i) + rightOffset, GetStackPos(basePos, fakeCards.Count - packetSize + i), smooth);
+                            yield return null;
                         }
                     }
-                    yield return null;
+                if (shuffleAtCenter)
+                {
+                    float moveT = 0;
+                    while (moveT < 1f) {
+                        moveT += Time.deltaTime / moveCenterTime;
+                        float smooth = Mathf.SmoothStep(0, 1, moveT);
+                        for (int i = 0; i < deckSize; i++) {
+                            fakeCards[i].transform.position = Vector3.Lerp(GetStackPos(basePos, i), startPos, smooth);
+                            fakeCards[i].transform.rotation = Quaternion.Lerp(stackRot, basePileRot, smooth);
+                            float scaleMult = 1f + ((1f - smooth) * (shuffleScaleMultiplier - 1f));
+                            fakeCards[i].transform.localScale = (GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one) * scaleMult;
+                        }
+                        yield return null;
+                    }
                 }
-                timeSpent += halfDuration;
-
-                foreach (var c in fakeCards) Destroy(c);
             }
-            
-            // Aguarda o tempo restante caso o Prefab (SpriteSheet) seja mais longo que a Rotina 3D (Sync Perfeito)
-            if (timeSpent < loopWaitTime)
+            else if (useSimple2DShuffle)
             {
-                yield return new WaitForSeconds(loopWaitTime - timeSpent);
+                Vector3 basePos = centerPos;
+                float moveCenterTime = shuffleAtCenter ? 0.2f : 0f;
+                
+                    if (shuffleAtCenter)
+                    {
+                        float moveT = 0;
+                        while (moveT < 1f) {
+                            moveT += Time.deltaTime / moveCenterTime;
+                            foreach(var c in fakeCards) {
+                                c.transform.position = Vector3.Lerp(startPos, basePos, Mathf.SmoothStep(0, 1, moveT));
+                                float scaleMult = 1f + (moveT * (shuffleScaleMultiplier - 1f));
+                                c.transform.localScale = (GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one) * scaleMult;
+                            }
+                            yield return null;
+                        }
+                }
+                else
+                {
+                    basePos = startPos;
+                }
+
+                int movesPerLoop = 6;
+                int totalMoves = movesPerLoop * loops;
+                float shufflePhaseTime = Mathf.Max(0.1f, totalTime - (moveCenterTime * 2f));
+                float moveDuration = shufflePhaseTime / totalMoves;
+                float halfMove = moveDuration / 2f;
+                
+                for (int m = 0; m < totalMoves; m++)
+                {
+                    if (m % movesPerLoop == 0)
+                    {
+                        if (useShufflePrefab && shuffleVFX != null) SpawnVFXPublic(shuffleVFX, centerPos);
+                    }
+
+                    GameObject movingCard = fakeCards[fakeCards.Count - 1];
+                    fakeCards.RemoveAt(fakeCards.Count - 1);
+                    
+                    float yOffset = (m % 2 == 0) ? shuffle2DOffset.y : -shuffle2DOffset.y;
+                    float xOffset = shuffle2DOffset.x;
+                    Vector3 peakPos = basePos + (basePileRot * new Vector3(xOffset, yOffset, 0f));
+                    
+                    PlaySound(shuffleSound);
+                    
+                    float t = 0;
+                    while(t < 1f) {
+                        t += Time.deltaTime / halfMove;
+                        movingCard.transform.position = Vector3.Lerp(basePos, peakPos, Mathf.SmoothStep(0, 1, t));
+                        yield return null;
+                    }
+                    
+                    movingCard.transform.SetSiblingIndex(fakeCards[0].transform.GetSiblingIndex());
+                    fakeCards.Insert(0, movingCard);
+                    
+                    t = 0;
+                    while(t < 1f) {
+                        t += Time.deltaTime / halfMove;
+                        movingCard.transform.position = Vector3.Lerp(peakPos, basePos, Mathf.SmoothStep(0, 1, t));
+                        yield return null;
+                    }
+                }
+
+                if (shuffleAtCenter)
+                {
+                    float moveT = 0;
+                    while (moveT < 1f) {
+                        moveT += Time.deltaTime / moveCenterTime;
+                        foreach(var c in fakeCards) {
+                            c.transform.position = Vector3.Lerp(basePos, startPos, Mathf.SmoothStep(0, 1, moveT));
+                            float scaleMult = 1f + ((1f - moveT) * (shuffleScaleMultiplier - 1f));
+                            c.transform.localScale = (GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one) * scaleMult;
+                        }
+                        yield return null;
+                    }
+                }
+            }
+            else
+            {
+                float timePerLoop = totalTime / loops;
+                float halfDuration = timePerLoop / 2f;
+
+                for (int loopIndex = 0; loopIndex < loops; loopIndex++)
+                {
+                    PlaySound(shuffleSound); 
+                    if (useShufflePrefab && shuffleVFX != null) SpawnVFXPublic(shuffleVFX, centerPos);
+
+                    float t = 0;
+                    while (t < 1f)
+                    {
+                        t += Time.deltaTime / halfDuration;
+                        float smooth = Mathf.SmoothStep(0, 1, t);
+                        Vector3 currentBasePos = Vector3.Lerp(startPos, centerPos, smooth);
+
+                        for (int i = 0; i < deckSize; i++)
+                        {
+                            if (fakeCards[i] == null) continue;
+                            float xTargetOffset = (i % 2 == 0) ? -60f : 60f;
+                            float yTargetOffset = Mathf.Sin(smooth * Mathf.PI) * 40f; 
+                            float rotationZ = (i % 2 == 0) ? Mathf.Lerp(0, 20f, smooth) : Mathf.Lerp(0, -20f, smooth);
+                            
+                            fakeCards[i].transform.position = currentBasePos + new Vector3(xTargetOffset * smooth, yTargetOffset * smooth, 0);
+                            fakeCards[i].transform.rotation = basePileRot * Quaternion.Euler(0, 0, rotationZ);
+
+                            if (shuffleAtCenter)
+                            {
+                                float scaleMult = 1f + (smooth * (shuffleScaleMultiplier - 1f)); 
+                                fakeCards[i].transform.localScale = (GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one) * scaleMult;
+                            }
+                        }
+                        yield return null;
+                    }
+                    for (int i = 0; i < deckSize; i++)
+                    {
+                        if (fakeCards[i] == null) continue;
+                        int siblingTarget = fakeCards[i].transform.parent.childCount - (i % 2 == 0 ? i : deckSize - i);
+                        fakeCards[i].transform.SetSiblingIndex(siblingTarget);
+                    }
+
+                    t = 0;
+                    while (t < 1f)
+                    {
+                        t += Time.deltaTime / halfDuration;
+                        float smooth = Mathf.SmoothStep(0, 1, t);
+                        Vector3 currentBasePos = Vector3.Lerp(centerPos, startPos, smooth);
+
+                        for (int i = 0; i < deckSize; i++)
+                        {
+                            if (fakeCards[i] == null) continue;
+                            float xStartOffset = (i % 2 == 0) ? -60f : 60f;
+                            float currentXOffset = Mathf.Lerp(xStartOffset, 0, smooth);
+                            float rotationZ = (i % 2 == 0) ? Mathf.Lerp(20f, 0f, smooth) : Mathf.Lerp(-20f, 0f, smooth);
+                            
+                            fakeCards[i].transform.position = currentBasePos + new Vector3(currentXOffset, 0, 0);
+                            fakeCards[i].transform.rotation = basePileRot * Quaternion.Euler(0, 0, rotationZ);
+
+                            if (shuffleAtCenter)
+                            {
+                                float scaleMult = 1f + ((1f - smooth) * (shuffleScaleMultiplier - 1f)); 
+                                fakeCards[i].transform.localScale = (GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one) * scaleMult;
+                            }
+                        }
+                        yield return null;
+                    }
+                }
+            }
+
+            foreach (var c in fakeCards) Destroy(c);
+        }
+        else
+        {
+            float timePerLoop = totalTime / loops;
+            for (int loopIndex = 0; loopIndex < loops; loopIndex++)
+            {
+                PlaySound(shuffleSound);
+                if (useShufflePrefab && shuffleVFX != null) SpawnVFXPublic(shuffleVFX, centerPos);
+                yield return new WaitForSeconds(timePerLoop);
             }
         }
-
-        // Aguarda a fumaça/partículas dissiparem apenas no final de todos os ciclos
         if (extraFadeOutTime > 0) yield return new WaitForSeconds(extraFadeOutTime);
-
         if (shuffleDeckAppearDelay > 0) yield return new WaitForSeconds(shuffleDeckAppearDelay);
 
         // Restaura a visibilidade do Deck real

@@ -37,6 +37,34 @@ public enum FlipAnimationMode
     NoAnimation      // Nunca anima, troca a textura instantaneamente
 }
 
+public enum AttackIndicatorMode { HoverOnly, AlwaysInBattlePhase }
+
+[System.Serializable]
+public class PhaseAnnouncementSettings
+{
+    public bool enableAnnouncements = true;
+    public float displayDuration = 1.2f;
+    public float fadeDuration = 0.3f;
+    public float slideDistance = 50f;
+    public Vector2 offset = Vector2.zero;
+    public float fontSize = 80f;
+    public Color textColor = new Color(1f, 0.8f, 0f, 1f); // Dourado
+    public bool useOutline = true;
+    public Color outlineColor = Color.black;
+    public Vector2 outlineThickness = new Vector2(4, -4);
+    
+    [Header("Text Customization")]
+    public string textStartDuel = "DUEL START!";
+    public string textPlayerTurn = "YOUR TURN";
+    public string textOpponentTurn = "OPPONENT'S TURN";
+    public string textDrawPhase = "DRAW PHASE";
+    public string textStandbyPhase = "STANDBY PHASE";
+    public string textMainPhase1 = "MAIN PHASE 1";
+    public string textBattlePhase = "BATTLE PHASE";
+    public string textMainPhase2 = "MAIN PHASE 2";
+    public string textEndPhase = "END PHASE";
+}
+
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
@@ -181,6 +209,15 @@ public class GameManager : MonoBehaviour
     public bool enableVFX = true;
     [Tooltip("Habilita ou desabilita todos os Efeitos Sonoros (SFX).")]
     public bool enableSFX = true;
+
+    [Header("Attack Indicators")]
+    public AttackIndicatorMode attackIndicatorMode = AttackIndicatorMode.HoverOnly;
+    public GameObject canAttackIndicatorPrefab;
+    public Vector2 attackIndicatorOffset = new Vector2(0, 60);
+    private Dictionary<CardDisplay, GameObject> attackIndicators = new Dictionary<CardDisplay, GameObject>();
+
+    [Header("Phase & Turn Announcements")]
+    public PhaseAnnouncementSettings phaseAnnouncements = new PhaseAnnouncementSettings();
  
     [Header("Turn Clock Visuals")]
     [Tooltip("Habilita o visual de relógio central para contagem de turnos.")]
@@ -609,6 +646,8 @@ public class GameManager : MonoBehaviour
 
         if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
         else Debug.LogError("PhaseManager não encontrado mesmo após tentativa de criação!");
+
+        AnnounceText(phaseAnnouncements.textStartDuel);
     }
 
     // Cria automaticamente os gerenciadores se eles não estiverem na cena
@@ -1775,6 +1814,9 @@ public void ShuffleDeck(bool isPlayer)
 
         if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
 
+        AnnounceText(isPlayerTurn ? phaseAnnouncements.textPlayerTurn : phaseAnnouncements.textOpponentTurn);
+        RefreshAttackIndicators();
+
         // Atualiza as cores de hover dos botões de fase para o turno atual
         if (PhaseManager.Instance != null)
         {
@@ -1847,6 +1889,8 @@ public void ShuffleDeck(bool isPlayer)
             if (!skipDraw) DrawOpponentCard();
             else Debug.Log("[GameManager] Regra Moderna: Turno 1 (Oponente). Nenhuma carta comprada.");
         }
+
+        AnnounceText(phaseAnnouncements.textDrawPhase);
     }
 
     // Chamado pelo PhaseManager quando entra na Standby Phase
@@ -1857,6 +1901,7 @@ public void ShuffleDeck(bool isPlayer)
         {
             CardEffectManager.Instance.CheckMaintenanceCosts();
         }
+        AnnounceText(phaseAnnouncements.textStandbyPhase);
     }
 
     // Chamado pelo PhaseManager quando entra na End Phase
@@ -1866,9 +1911,28 @@ public void ShuffleDeck(bool isPlayer)
         {
             CardEffectManager.Instance.OnPhaseStart(GamePhase.End);
         }
+        AnnounceText(phaseAnnouncements.textEndPhase);
 
         // Inicia verificação de Limite de Mão
         StartCoroutine(HandleHandLimitSequence());
+    }
+
+    public void OnMainPhase1Start()
+    {
+        AnnounceText(phaseAnnouncements.textMainPhase1);
+        RefreshAttackIndicators();
+    }
+
+    public void OnBattlePhaseStart()
+    {
+        AnnounceText(phaseAnnouncements.textBattlePhase);
+        RefreshAttackIndicators();
+    }
+
+    public void OnMainPhase2Start()
+    {
+        AnnounceText(phaseAnnouncements.textMainPhase2);
+        RefreshAttackIndicators();
     }
 
     private IEnumerator HandleHandLimitSequence()
@@ -2871,6 +2935,8 @@ public void ShuffleDeck(bool isPlayer)
 
         if (CardEffectManager.Instance != null)
             CardEffectManager.Instance.OnSummon(display);
+            
+        RefreshAttackIndicators();
     }
 
     public Transform GetFreeMonsterZone(bool isPlayer)
@@ -3810,6 +3876,7 @@ public void ShuffleDeck(bool isPlayer)
         {
             CardEffectManager.Instance.OnBattlePositionChanged(card);
         }
+        RefreshAttackIndicators();
     }
 
     // Ferramenta de DEV para trocar oponente
@@ -4060,5 +4127,183 @@ public void ShuffleDeck(bool isPlayer)
         playerMainDeck = new List<CardData>(main);
         playerSideDeck = new List<CardData>(side);
         playerExtraDeck = new List<CardData>(extra);
+    }
+
+    // --- SISTEMA DE INFORMATIVOS E ANÚNCIOS DE FASE ---
+
+    private GameObject currentAnnouncementObj;
+    private Coroutine currentAnnouncementRoutine;
+
+    public void AnnounceText(string text)
+    {
+        if (!phaseAnnouncements.enableAnnouncements || isSimulating) return;
+        
+        if (currentAnnouncementRoutine != null)
+        {
+            StopCoroutine(currentAnnouncementRoutine);
+            currentAnnouncementRoutine = null;
+        }
+        if (currentAnnouncementObj != null)
+        {
+            Destroy(currentAnnouncementObj);
+            currentAnnouncementObj = null;
+        }
+
+        currentAnnouncementRoutine = StartCoroutine(AnnouncementRoutine(text));
+    }
+
+    private IEnumerator AnnouncementRoutine(string text)
+    {
+        Transform uiParent = GetUIParent();
+        if (duelFieldUI != null) 
+        {
+            Transform fieldArea = duelFieldUI.transform.Find("FieldArea");
+            Transform fieldImg = duelFieldUI.transform.Find("FieldImg");
+            if (fieldArea != null) uiParent = fieldArea;
+            else if (fieldImg != null) uiParent = fieldImg;
+            else uiParent = duelFieldUI.transform;
+        }
+        if (uiParent == null) yield break;
+
+        GameObject announceObj = new GameObject("PhaseAnnouncement", typeof(RectTransform), typeof(CanvasGroup));
+        currentAnnouncementObj = announceObj;
+        announceObj.transform.SetParent(uiParent, false);
+        announceObj.transform.SetAsLastSibling();
+
+        RectTransform rt = announceObj.GetComponent<RectTransform>();
+        rt.anchoredPosition = phaseAnnouncements.offset + new Vector2(0, phaseAnnouncements.slideDistance);
+        rt.sizeDelta = new Vector2(1200, 200);
+
+        CanvasGroup cg = announceObj.GetComponent<CanvasGroup>();
+        cg.alpha = 0f;
+        cg.blocksRaycasts = false;
+
+        GameObject textObj = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        textObj.transform.SetParent(announceObj.transform, false);
+        
+        RectTransform txtRt = textObj.GetComponent<RectTransform>();
+        txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one;
+        txtRt.sizeDelta = Vector2.zero;
+        txtRt.anchoredPosition = Vector2.zero;
+
+        TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>();
+        tmp.text = text;
+        tmp.fontSize = phaseAnnouncements.fontSize;
+        tmp.color = phaseAnnouncements.textColor;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.fontStyle = FontStyles.Bold | FontStyles.Italic;
+
+        if (phaseAnnouncements.useOutline)
+        {
+            GameObject shadowObj = Instantiate(textObj, announceObj.transform);
+            shadowObj.name = "Shadow";
+            shadowObj.transform.SetAsFirstSibling();
+            TextMeshProUGUI shadowTmp = shadowObj.GetComponent<TextMeshProUGUI>();
+            shadowTmp.color = phaseAnnouncements.outlineColor;
+            shadowTmp.rectTransform.anchoredPosition = phaseAnnouncements.outlineThickness;
+        }
+
+        float fadeDur = phaseAnnouncements.fadeDuration;
+        float holdDur = phaseAnnouncements.displayDuration;
+        
+        float t = 0;
+        Vector2 startPos = rt.anchoredPosition;
+        Vector2 targetPos = phaseAnnouncements.offset;
+
+        // Animação de Entrada (Slide In e Fade In)
+        while (t < fadeDur)
+        {
+            t += Time.deltaTime;
+            float p = t / fadeDur;
+            cg.alpha = p;
+            rt.anchoredPosition = Vector2.Lerp(startPos, targetPos, Mathf.SmoothStep(0, 1, p));
+            yield return null;
+        }
+
+        // Segura o texto na tela
+        yield return new WaitForSeconds(holdDur);
+
+        // Animação de Saída (Slide Out e Fade Out)
+        t = 0;
+        startPos = rt.anchoredPosition;
+        targetPos = phaseAnnouncements.offset - new Vector2(0, phaseAnnouncements.slideDistance);
+
+        while (t < fadeDur)
+        {
+            t += Time.deltaTime;
+            float p = t / fadeDur;
+            cg.alpha = 1f - p;
+            rt.anchoredPosition = Vector2.Lerp(startPos, targetPos, Mathf.SmoothStep(0, 1, p));
+            yield return null;
+        }
+
+        Destroy(announceObj);
+    }
+
+    // --- INDICADOR DE ATAQUE DISPONÍVEL ---
+
+    /// <summary>
+    /// Deve ser chamado pelo CardDisplay no método OnPointerEnter/OnPointerExit.
+    /// Mostra a espadinha (indicador) apenas durante o Hover se o modo for HoverOnly.
+    /// </summary>
+    public void HandleAttackIndicatorHover(CardDisplay card, bool isHovering)
+    {
+        if (attackIndicatorMode != AttackIndicatorMode.HoverOnly) return;
+        
+        GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Main1;
+        bool canAttack = isPlayerTurn && currentPhase == GamePhase.Battle && card.position == CardDisplay.BattlePosition.Attack && !card.hasAttackedThisTurn && !card.isFlipped;
+
+        SetAttackIndicator(card, isHovering && canAttack);
+    }
+
+    private void SetAttackIndicator(CardDisplay card, bool show)
+    {
+        if (canAttackIndicatorPrefab == null || card == null) return;
+
+        if (show)
+        {
+            if (!attackIndicators.ContainsKey(card) || attackIndicators[card] == null)
+            {
+                GameObject indicator = Instantiate(canAttackIndicatorPrefab, card.transform);
+                RectTransform rt = indicator.GetComponent<RectTransform>();
+                if (rt != null) rt.anchoredPosition = attackIndicatorOffset;
+                attackIndicators[card] = indicator;
+            }
+        }
+        else
+        {
+            if (attackIndicators.ContainsKey(card) && attackIndicators[card] != null)
+            {
+                Destroy(attackIndicators[card]);
+                attackIndicators.Remove(card);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Atualiza permanentemente a espadinha sobre todos os monstros que podem atacar
+    /// se o modo AlwaysInBattlePhase estiver selecionado.
+    /// OBS: Deve ser chamado ao final da rotina de ataque no Lua (`Core.Attack`) para apagar a espada do monstro que acabou de atacar!
+    /// </summary>
+    public void RefreshAttackIndicators()
+    {
+        if (duelFieldUI == null || canAttackIndicatorPrefab == null) return;
+
+        GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Main1;
+        bool showIndicators = attackIndicatorMode == AttackIndicatorMode.AlwaysInBattlePhase && currentPhase == GamePhase.Battle && isPlayerTurn;
+
+        Transform[] zones = duelFieldUI.playerMonsterZones;
+        foreach (var zone in zones)
+        {
+            if (zone.childCount > 0)
+            {
+                CardDisplay card = zone.GetChild(0).GetComponent<CardDisplay>();
+                if (card != null)
+                {
+                    bool canAttack = showIndicators && card.position == CardDisplay.BattlePosition.Attack && !card.hasAttackedThisTurn && !card.isFlipped;
+                    SetAttackIndicator(card, canAttack);
+                }
+            }
+        }
     }
 }

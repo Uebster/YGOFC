@@ -127,10 +127,13 @@ public class PhaseManager : MonoBehaviour
                 {
                     GameManager.Instance.EnableHandInteraction();
                 }
+                if (GameManager.Instance != null) GameManager.Instance.OnMainPhase1Start();
                 break;
             case GamePhase.Battle:
+                if (GameManager.Instance != null) GameManager.Instance.OnBattlePhaseStart();
                 break;
             case GamePhase.Main2:
+                if (GameManager.Instance != null) GameManager.Instance.OnMainPhase2Start();
                 break;
             case GamePhase.End:
                 if (GameManager.Instance != null)

@@ -225,24 +225,63 @@ Centraliza todos os instanciadores de partículas (VFX) e áudios do duelo. Os a
 
 ### Efeitos de Ação de Carta
 | Ação | Descrição Visual |
-| :--- | :--- |
-| **Summon** | Partículas de luz/poeira na base da carta instanciada. |
-| **Set / Flip** | Som ríspido de papel e "poeira" sutil. |
-| **Activate Spell** | Brilho verde/mágico ascendente. |
-| **Activate Trap** | Brilho roxo/sinistro acompanhado de som metálico. |
-| **Tribute** | Efeito de "alma" ou feixe de luz azul saindo do monstro sacrificado em direção aos céus. |
-| **Fusion** | Espiral giratória (Polymerization style) unindo materiais e brilhando no centro. |
-| **Destruction** | Fumaça e explosão com som fragmentado (shatter). |
-| **Banish** | Vórtice negro ou fenda dimensional sugando o `CardDisplay`. |
+|:---|:---|
+| **Ativação (Magia/Armadilha/Monstro)** | A carta cresce e emite um "fantasma" com contorno neon colorido (Verde para Magia, Rosa para Armadilha, Laranja para Monstro). Totalmente customizável nas seções `Activation Pulse` e `Monster Effect Pulse`. |
+| **Aura de Pouso (Placement)** | Ao colocar qualquer carta no campo, uma aura pulsa na base. Pode ser um Prefab ou uma rotina nativa. A coloração pode ser ditada pelo **dono da carta** (`Colorize Aura By Player`) ou pelo **tipo** (`By Type`). Suporta renderização atrás (`Behind`) ou na frente (`Above`) da carta. |
+| **Corrente (Chain Link)** | Gera o texto "Link X" com ícones de correntes que se chocam. O tamanho, cor, posições (`Base Offset` e `Text Offset`), animação de subida (`Slide Up`) e o flash de impacto são 100% customizáveis na seção `Opções de Corrente`. |
+| **Embaralhamento (Shuffle)** | Animação do deck se dividindo e entrelaçando. Pode ser combinado com um Prefab de SpriteSheet para um efeito mais estilizado. |
+| **Destruição (Destruction)** | A carta treme, escurece e encolhe enquanto um Prefab de explosão (`Explosion VFX`) é instanciado por cima. |
+| **Banimento (Banish)** | A carta gira e encolhe até desaparecer, sendo sugada por um Prefab de vórtex (`Banish VFX`). |
+| **Flip (Virar)** | A carta executa a rotação 3D e pode emitir um pulso de luz (`Flip Pulse`) ao final. |
+| **Equipamento (Equip)** | O fantasma da carta de equipamento voa até o monstro alvo e um "Squeeze" (sombra de contorno) pulsa para sinalizar o encaixe. |
+| **Troca de Controle (Control Swap)** | A carta voa em parábola. Pode deixar um rastro customizável (`Shadows` para fantasmas ou `Continuous Line` para rastro sólido). Ao aterrissar, gera um impacto (`Squeeze` negro ou `Pulse` de luz). Tudo editável em `Mudança de Controle`. |
 
 ### Efeitos de Batalha
 | Ação | Descrição Visual |
-| :--- | :--- |
-| **Attack** | Animação Tween da carta recuando e avançando violentamente (Strike). |
-| **Impact** | Efeito de faíscas/corte aplicado na coordenada do alvo. |
-| **Reflect** | Barreira de escudo semi-esférica protegendo o defensor quando a DEF supera o ATK. |
-| **Damage** | Tremor de tela (Screen Shake) em câmera e baque pesado. |
-| **Direct Attack** | Animação do atacante voando em direção à UI do avatar do oponente. |
+|:---|:---|
+| **Ataque (Voo)** | A carta atacante dá um "bote" para frente. Um projétil voa em direção ao alvo. Permite configurar o tipo de rastro (`Attack Trail Type`: `Shadows` ou `Continuous Line`). |
+| **Impacto (Hit/Corte)** | Um Prefab de corte/faísca é instanciado garantidamente **sobre** o alvo (Z-Index alto). A cor, tamanho, duração e a **Angulação do Corte** (`Attack Impact Rotation Offset`, ex: 15º, 30º) são customizáveis na seção `Opções de Hit / Corte`. |
+| **Defesa (Block)** | Um escudo metálico (`DefenseSuccessVFX`) aparece **sobre** a carta defensora, que também emite um pulso de luz azulado. |
+| **Ricochete (Reflect)** | Uma barreira de energia (`ReflectVFX`) surge **sobre** o atacante, que treme e sofre um "glitch" visual. |
+| **Dano Direto (LP)** | A tela inteira treme (`Screen Shake`) e um Prefab de dano (`DamageVFX`) pode ser instanciado no centro. |
+
+### Estruturas de Invocação (A Timeline das Cinemáticas)
+O `DuelFXManager` agora possui um sistema de pacotes (`SummonVFXPackage`) para cada tipo de invocação (Special, Tribute, Fusion, Ritual), permitindo um controle granular sobre cada etapa do processo.
+
+#### 1. Ícone de Seleção (`SelectionIconSettings`)
+*   **O que é:** O marcador que aparece sobre uma carta para indicar que ela pode ser selecionada (ex: para um Tributo).
+*   **Customização:** Você pode usar um **Prefab** ou a **Rotina Nativa**, que permite customizar o sprite, cor, tamanho, velocidade de giro e efeito de piscar.
+
+#### 2. Marcador de Chão (`FieldMarkerSettings`)
+*   **O que é:** A marca que surge no chão da zona de monstro, sinalizando onde a carta gigante da cinemática vai pousar.
+*   **Customização:** Pode ser um **Prefab** ou a **Rotina Nativa** (um círculo de energia que expande). Você controla a cor, duração e a animação de tamanho (do início ao fim).
+
+#### 3. Impacto de Invocação (`SummonImpactSettings`)
+*   **O que é:** O efeito que ocorre no pouso da carta **sem cinemática** (ex: Normal Summon).
+*   **Customização:** Pode ser um **Prefab** de poeira/luz (`SummonVFX`) ou um **Pulso Nativo** (fantasma com outline).
+*   **`delayBeforeImpact`:** A nova variável que controla o tempo (em segundos) entre o Field Marker aparecer e a carta de fato "bater" no chão, permitindo um ajuste fino da sensação de peso.
+
+#### 4. Cinemática (`CinematicSettings`)
+Esta é a "Mesa de Diretor de Arte" para as invocações especiais.
+
+*   **Símbolo de Fundo:**
+    *   `backgroundSymbol`: O sprite que aparece no fundo (espiral de fusão, pentagrama de ritual).
+    *   `backgroundMaterial`: Permite aplicar materiais como **Aditivo** para o símbolo brilhar.
+    *   `preserveBackgroundAspect`: Impede que a imagem do símbolo fique esticada.
+    *   `spinBackgroundSymbol` / `backgroundSpinSpeed`: Controla se o símbolo gira e a sua velocidade.
+    *   `symbolScale`: O tamanho do símbolo na tela.
+*   **Materiais da Invocação:**
+    *   `showMaterialsFaceUp`: Se marcado, as cartas que giram no vórtex da Fusão/Ritual mostram a **arte real** delas. Se desmarcado, mostram o verso.
+*   **Transições Nativas:**
+    *   `useDarkOverlay` / `useWhiteFlash`: Controlam o escurecimento da tela e o clarão branco, com durações customizáveis (`darkOverlayFadeDuration`, `flashDuration`).
+*   **Timings & Coreografia (A Timeline):**
+    *   `orbitDuration`: Duração do vórtex de materiais ou do surgimento do símbolo.
+    *   `cardsOrbitSpeed`: **Velocidade de giro** das cartas no vórtex de Fusão/Ritual.
+    *   `giantCardAppearDuration`: Tempo que a carta gigante leva para surgir na tela.
+    *   `giantCardHoldDuration`: Tempo que a carta gigante fica parada no centro, para impacto dramático.
+    *   `delayBeforeMarker`: Pausa entre o clarão e o Field Marker aparecer no chão.
+    *   `delayBeforeCardDrop`: Pausa entre o Field Marker aparecer e a carta gigante começar a descer.
+    *   `giantCardScale`: O quão grande a carta fica no meio da tela.
 
 ### Música Dinâmica (BGM State Machine)
 A música do duelo flutua em tempo real lendo o método `UpdateBGM(playerLP, opponentLP)`.

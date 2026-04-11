@@ -195,7 +195,7 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **9.7.1** Arquitetura de Temas (Console e Cartuchos)
     *   **9.7.2** Configurando o Relógio de Turnos (`TurnClockUI`, Rotação Dinâmica, Camadas e Pivot)
     *   **9.7.3** Minigames Dinâmicos (Moeda e Dados)
-*   **9.8.** Efeitos Visuais e Sonoros (`DuelFXManager.cs`, Ações de Carta, Efeitos de Combate e BGM Dinâmico)
+*   **9.8.** Efeitos Visuais e Sonoros (`DuelFXManager.cs`, Guia Completo de Customização: Cinemáticas, Impactos, Auras, Correntes, Batalha e BGM Dinâmico)
 
 ---
 

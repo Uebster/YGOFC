@@ -347,10 +347,19 @@ public class EffectTestManager : MonoBehaviour
 
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Defesa/Block (Nativo)", btnStyle)) { 
-            ClearFieldForTesting(); EnsureOpponentMonster(); DuelFXManager.Instance.useDefenseRoutine = true; DuelFXManager.Instance.useDefensePrefab = false; DuelFXManager.Instance.PlayDefenseSuccessEffect(opponentMonster); 
+            ClearFieldForTesting(); EnsureOpponentMonster(); DuelFXManager.Instance.useDefenseRoutine = true; DuelFXManager.Instance.useNativeDefenseShield = true; DuelFXManager.Instance.useDefensePrefab = false; DuelFXManager.Instance.PlayDefenseSuccessEffect(opponentMonster); 
         }
         if (GUILayout.Button("Defesa/Block (Prefab)", btnStyle)) { 
             ClearFieldForTesting(); EnsureOpponentMonster(); DuelFXManager.Instance.useDefenseRoutine = false; DuelFXManager.Instance.useDefensePrefab = true; DuelFXManager.Instance.PlayDefenseSuccessEffect(opponentMonster); 
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Ricochete/Reflect (Nativo)", btnStyle)) { 
+            ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.useReflectAsStandardDamage = false; DuelFXManager.Instance.useReflectRoutine = true; DuelFXManager.Instance.useReflectPrefab = false; DuelFXManager.Instance.PlayAttackFail(playerMonster); 
+        }
+        if (GUILayout.Button("Ricochete/Reflect (Prefab)", btnStyle)) { 
+            ClearFieldForTesting(); EnsurePlayerMonster(); DuelFXManager.Instance.useReflectRoutine = false; DuelFXManager.Instance.useReflectPrefab = true; DuelFXManager.Instance.PlayAttackFail(playerMonster); 
         }
         GUILayout.EndHorizontal();
 
@@ -391,15 +400,45 @@ public class EffectTestManager : MonoBehaviour
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Shuffle (Nativo)", btnStyle)) { 
+        if (GUILayout.Button("Shuffle (3D Nativo)", btnStyle)) { 
             DuelFXManager.Instance.useShuffleRoutine = true; 
+            DuelFXManager.Instance.useSimple2DShuffle = false; 
+            DuelFXManager.Instance.useCustomHinduShuffle = false;
             DuelFXManager.Instance.useShufflePrefab = false; 
-            if (GameManager.Instance.duelFieldUI != null && GameManager.Instance.duelFieldUI.playerDeck != null) DuelFXManager.Instance.PlayShuffleEffect(GameManager.Instance.duelFieldUI.playerDeck);
+            if (GameManager.Instance.duelFieldUI != null) {
+                if (GameManager.Instance.duelFieldUI.playerDeck != null) DuelFXManager.Instance.PlayShuffleEffect(GameManager.Instance.duelFieldUI.playerDeck);
+                if (GameManager.Instance.duelFieldUI.opponentDeck != null) DuelFXManager.Instance.PlayShuffleEffect(GameManager.Instance.duelFieldUI.opponentDeck);
+            }
+        }
+        if (GUILayout.Button("Shuffle (2D Lateral)", btnStyle)) { 
+            DuelFXManager.Instance.useShuffleRoutine = true; 
+            DuelFXManager.Instance.useSimple2DShuffle = true; 
+            DuelFXManager.Instance.useCustomHinduShuffle = false;
+            DuelFXManager.Instance.useShufflePrefab = false; 
+            if (GameManager.Instance.duelFieldUI != null) {
+                if (GameManager.Instance.duelFieldUI.playerDeck != null) DuelFXManager.Instance.PlayShuffleEffect(GameManager.Instance.duelFieldUI.playerDeck);
+                if (GameManager.Instance.duelFieldUI.opponentDeck != null) DuelFXManager.Instance.PlayShuffleEffect(GameManager.Instance.duelFieldUI.opponentDeck);
+            }
+        }
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Shuffle (Hindu Custom)", btnStyle)) { 
+            DuelFXManager.Instance.useShuffleRoutine = true; 
+            DuelFXManager.Instance.useSimple2DShuffle = false; 
+            DuelFXManager.Instance.useCustomHinduShuffle = true;
+            DuelFXManager.Instance.useShufflePrefab = false; 
+            if (GameManager.Instance.duelFieldUI != null) {
+                if (GameManager.Instance.duelFieldUI.playerDeck != null) DuelFXManager.Instance.PlayShuffleEffect(GameManager.Instance.duelFieldUI.playerDeck);
+                if (GameManager.Instance.duelFieldUI.opponentDeck != null) DuelFXManager.Instance.PlayShuffleEffect(GameManager.Instance.duelFieldUI.opponentDeck);
+            }
         }
         if (GUILayout.Button("Shuffle (Prefab)", btnStyle)) { 
             DuelFXManager.Instance.useShuffleRoutine = false; 
             DuelFXManager.Instance.useShufflePrefab = true; 
-            if (GameManager.Instance.duelFieldUI != null && GameManager.Instance.duelFieldUI.playerDeck != null) DuelFXManager.Instance.PlayShuffleEffect(GameManager.Instance.duelFieldUI.playerDeck);
+            if (GameManager.Instance.duelFieldUI != null) {
+                if (GameManager.Instance.duelFieldUI.playerDeck != null) DuelFXManager.Instance.PlayShuffleEffect(GameManager.Instance.duelFieldUI.playerDeck);
+                if (GameManager.Instance.duelFieldUI.opponentDeck != null) DuelFXManager.Instance.PlayShuffleEffect(GameManager.Instance.duelFieldUI.opponentDeck);
+            }
         }
         GUILayout.EndHorizontal();
 

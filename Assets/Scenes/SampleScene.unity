@@ -18676,7 +18676,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0001320268}
+  m_AnchoredPosition: {x: 0, y: 0.00045403317}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &250963708
@@ -42082,6 +42082,29 @@ MonoBehaviour:
   disableAutoPhases: 0
   enableVFX: 1
   enableSFX: 1
+  attackIndicatorMode: 0
+  canAttackIndicatorPrefab: {fileID: 0}
+  attackIndicatorOffset: {x: 0, y: 60}
+  phaseAnnouncements:
+    enableAnnouncements: 1
+    displayDuration: 1.2
+    fadeDuration: 0.3
+    slideDistance: 50
+    offset: {x: 0, y: 0}
+    fontSize: 80
+    textColor: {r: 1, g: 0.8, b: 0, a: 1}
+    useOutline: 1
+    outlineColor: {r: 0, g: 0, b: 0, a: 1}
+    outlineThickness: {x: 4, y: -4}
+    textStartDuel: DUEL START!
+    textPlayerTurn: YOUR TURN
+    textOpponentTurn: OPPONENT'S TURN
+    textDrawPhase: DRAW PHASE
+    textStandbyPhase: STANDBY PHASE
+    textMainPhase1: MAIN PHASE 1
+    textBattlePhase: BATTLE PHASE
+    textMainPhase2: MAIN PHASE 2
+    textEndPhase: END PHASE
   enableTurnClockVisuals: 1
   turnClockUI: {fileID: 1515811978}
   enableHandLimit: 1
@@ -46276,26 +46299,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DuelFXManager
   enableAnimations: 1
   animationSpeed: 1.5
-  boardCenter: {fileID: 0}
+  boardCenter: {fileID: 1396565530}
+  playerBoardCenter: {fileID: 1870070646}
+  opponentBoardCenter: {fileID: 1544580639}
   audioSource: {fileID: 0}
   bgmSource: {fileID: 0}
-  spellActivateVFX: {fileID: 5624116892997801917, guid: c0c6aa01b8b4e2b498d502803c544057, type: 3}
-  trapActivateVFX: {fileID: 8711922310275536041, guid: aaad7c6bcfad79340985c593ddd6f3e2, type: 3}
-  summonVFX: {fileID: 2242834916028318832, guid: 7012e4e82f2152e42b7ecad929301607, type: 3}
+  spellActivateVFX: {fileID: 0}
+  trapActivateVFX: {fileID: 0}
+  summonVFX: {fileID: 0}
   tokenSummonVFX: {fileID: 1251889212189677203, guid: 74c562f5dd573af47b58c4510c7e9eff, type: 3}
-  tributeSummonVFX: {fileID: 7255544249031024263, guid: 414b68294c1846e4b9986ab4c5d2f836, type: 3}
-  fusionVFX: {fileID: 7173987355294210737, guid: 241545851c8443043b4dfa0bdef97fdd, type: 3}
-  tributeVFX: {fileID: 7255544249031024263, guid: 414b68294c1846e4b9986ab4c5d2f836, type: 3}
-  attackVFX: {fileID: 7934084230685897111, guid: 46347a091ee56a342b9c9987cde999f6, type: 3}
+  tributeSummonVFX: {fileID: 0}
+  fusionVFX: {fileID: 0}
+  tributeVFX: {fileID: 0}
+  attackVFX: {fileID: 1251889212189677203, guid: b48130966767f6244bdfdf32f067417b, type: 3}
   attackProjectileVFX: {fileID: 3529578519891653018, guid: d490548199143e244ae5720415bbca9b, type: 3}
   explosionVFX: {fileID: 1251889212189677203, guid: 64f524b24a97f0041abd8098a957aefc, type: 3}
-  reflectVFX: {fileID: 2910360440696493387, guid: b06b319fc39089a418a61724e5b42372, type: 3}
+  reflectVFX: {fileID: 0}
   banishVFX: {fileID: 5422162447097266557, guid: acd738edce10a2e40bf384730e09df84, type: 3}
-  flipVFX: {fileID: 3761866745961580641, guid: 11d46fac4c81c8244952cdb92f9f6f21, type: 3}
+  flipVFX: {fileID: 0}
   damageVFX: {fileID: 7934084230685897111, guid: 46347a091ee56a342b9c9987cde999f6, type: 3}
-  defenseSuccessVFX: {fileID: 7630478438581566550, guid: b7398fc67230dde46b7772034c9b953c, type: 3}
-  chainLinkVFX: {fileID: 4554727184471751013, guid: 828d3521e1decec4ebff4ceaffe624c5, type: 3}
-  monsterEffectVFX: {fileID: 1118113375338931295, guid: 7bed05d729177c149b8823a9d97aa30d, type: 3}
+  defenseSuccessVFX: {fileID: 0}
+  chainLinkVFX: {fileID: 0}
+  monsterEffectVFX: {fileID: 0}
   placementAuraVFX: {fileID: 5732867552576158396, guid: 784bc442653b27a448ea238e183604ec, type: 3}
   shuffleVFX: {fileID: 4167448508448227333, guid: a6e0b0505661112498c1e4e39cba70d5, type: 3}
   boardBackgroundImage: {fileID: 1396565531}
@@ -46629,12 +46654,17 @@ MonoBehaviour:
   controlSwapImpactOutlineWidth: 10
   useControlSwapPrefab: 0
   useShuffleRoutine: 0
+  useCustomHinduShuffle: 1
+  useSimple2DShuffle: 0
   shuffleAtCenter: 1
-  shuffleDuration: 1.4
-  shuffleLoopCount: 1
-  useShufflePrefab: 1
-  shuffleDeckAppearDelay: 0.3
+  shuffleDuration: 1.6
+  shuffleLoopCount: 2
+  useShufflePrefab: 0
+  shuffleDeckAppearDelay: 0
   shufflePostDelay: 0.3
+  shuffleScaleMultiplier: 1.5
+  shuffle2DOffset: {x: -80, y: 40}
+  customShuffleTiltAngle: 10
   useTokenSummonRoutine: 0
   tokenSummonFadeColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   useTokenSummonPrefab: 1
@@ -46668,29 +46698,29 @@ MonoBehaviour:
   screenShakeMagnitude: 20
   useDamagePrefab: 1
   damagePrefabColor: {r: 1, g: 1, b: 1, a: 1}
-  useReflectAsStandardDamage: 0
+  useReflectAsStandardDamage: 1
   useReflectRoutine: 1
   reflectPulseScale: 1
   reflectPulseDuration: 0.3
-  reflectPulseColor: {r: 0.2, g: 0.8, b: 1, a: 1}
+  reflectPulseColor: {r: 0.2, g: 0.8, b: 1, a: 0}
   reflectPulseOutlineWidth: 12
   reflectShakeDuration: 0.4
-  reflectShakeMagnitude: 20
-  useReflectPrefab: 1
+  reflectShakeMagnitude: 2
+  useReflectPrefab: 0
   reflectPrefabColor: {r: 1, g: 1, b: 1, a: 1}
   useAttackImpactRoutine: 0
   useAttackImpactPrefab: 1
   applyAttackImpactColor: 1
-  attackImpactPrefabColor: {r: 0.5019608, g: 0, b: 0, a: 1}
-  attackImpactPrefabScale: {x: 1, y: 200, z: 1}
+  attackImpactPrefabColor: {r: 1, g: 0.2705882, b: 0, a: 1}
+  attackImpactPrefabScale: {x: 0.7, y: 0.7, z: 1}
   attackImpactRotationOffset: 200
-  overrideAttackImpactDuration: 0
-  attackImpactPrefabDuration: 1
+  overrideAttackImpactDuration: 1
+  attackImpactPrefabDuration: 0.5
   attackImpactPulseScale: 0
   attackImpactPulseDuration: 0
   attackImpactPulseColor: {r: 1, g: 0, b: 0, a: 1}
-  hitShakeDuration: 0
-  hitShakeMagnitude: 0
+  hitShakeDuration: 0.3
+  hitShakeMagnitude: 1
   useDefenseRoutine: 1
   defensePulseScale: 1.1
   defensePulseDuration: 0.3
@@ -46700,6 +46730,15 @@ MonoBehaviour:
   defenseShakeMagnitude: 10
   useDefensePrefab: 1
   defensePrefabColor: {r: 1, g: 1, b: 1, a: 1}
+  useNativeDefenseShield: 1
+  defenseShieldSprite: {fileID: 7942429636070602384, guid: 7824cac9b0208e648bf6f078bf4838b3, type: 3}
+  defenseShieldMaterial: {fileID: 2100000, guid: 1ab439c8929ae2c4d969647b9140a029, type: 2}
+  defenseShieldColor: {r: 0.05490196, g: 1, b: 1, a: 1}
+  defenseShieldSize: {x: 80, y: 100}
+  defenseShieldOffset: {x: 0, y: 0}
+  defenseShieldFlip180: 0
+  defenseShieldDuration: 0.7
+  defenseShieldPulseScale: 1.2
   useTargetingSwordPrefab: 1
   colorAttackReadyHover: {r: 1, g: 0.5, b: 0, a: 1}
   colorAttackTargetHover: {r: 1, g: 0, b: 0, a: 1}
@@ -46710,14 +46749,14 @@ MonoBehaviour:
   useAttackSword: 1
   attackSwordSprite: {fileID: 3781665898625333168, guid: b388c01dfe4b42c459f5202bc76db457, type: 3}
   attackSwordColor: {r: 1, g: 0, b: 0, a: 1}
-  attackSwordSize: {x: 60, y: 60}
+  attackSwordSize: {x: 35, y: 60}
   attackSwordMaterial: {fileID: 2100000, guid: 1ab439c8929ae2c4d969647b9140a029, type: 2}
   useAttackProjectilePrefab: 1
   attackSwordRotationOffset: -90
   attackFlightDuration: 0.5
   useAttackTrail: 1
   attackTrailType: 1
-  attackTrailWidth: 15
+  attackTrailWidth: 8
   attackTrailColor: {r: 1, g: 0, b: 0, a: 0.6784314}
   useAttackImpactVFX: 1
   equipImpactVFX: {fileID: 1789789647255548136, guid: cc90356b6f5b5eb4f9166a261fc3bb92, type: 3}
@@ -52721,7 +52760,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1701951476}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99620855
+  m_Size: 0.99999833
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -62958,7 +62997,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00039584236}
+  m_AnchoredPosition: {x: 0, y: 0.00021260502}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &821356746
@@ -90499,7 +90538,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1995952712}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9886257
+  m_Size: 0.99999785
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:

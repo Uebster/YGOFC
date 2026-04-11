@@ -736,18 +736,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
 
         // --- Espadinha de Ataque no Hover ---
-        if (GameManager.Instance != null && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle && GameManager.Instance.turnCount > 1)
+        if (GameManager.Instance != null)
         {
-            if (GameManager.Instance.isPlayerTurn && isOnField && isPlayerCard && currentCardData != null && currentCardData.type.Contains("Monster") && position == BattlePosition.Attack && !hasAttackedThisTurn && !isAttackSelected)
-            {
-                if (DuelFXManager.Instance == null || DuelFXManager.Instance.useTargetingSwordPrefab)
-                {
-                    if (TargetingSwordUI.Instance != null)
-                    {
-                        TargetingSwordUI.Instance.ShowHover(transform);
-                    }
-                }
-            }
+            GameManager.Instance.HandleAttackIndicatorHover(this, true);
         }
 
         // FASE 4: Pulso Sincronizado para Equipamentos e Cartas Vínculadas
@@ -786,6 +777,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (TargetingSwordUI.Instance != null)
         {
             TargetingSwordUI.Instance.HideHover(transform);
+        }
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.HandleAttackIndicatorHover(this, false);
         }
 
         // FIX 4: NÃO limpamos o Card Viewer aqui para ele ficar "travado".
@@ -1277,6 +1273,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         
         // Marca que o atacante concluiu o ataque neste turno
         CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.hasAttackedThisTurn = true;
+        if (GameManager.Instance != null) GameManager.Instance.RefreshAttackIndicators();
 
         CardEffectManager.Instance.luaDuel.currentAttackTarget = new LuaCard(targetCard);
         CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.SetAttackSelectionVisual(false);

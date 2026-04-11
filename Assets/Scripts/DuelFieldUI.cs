@@ -173,6 +173,7 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
         if (CardEffectManager.Instance == null || CardEffectManager.Instance.luaDuel.currentAttacker == null) return;
 
         CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.hasAttackedThisTurn = true;
+        if (GameManager.Instance != null) GameManager.Instance.RefreshAttackIndicators();
 
         var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
         CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
