@@ -4278,8 +4278,9 @@ public void ShuffleDeck(bool isPlayer)
             }
         }
 
+        bool isMainPhase = currentPhase == GamePhase.Main1 || currentPhase == GamePhase.Main2;
         bool cannotChangePos = card.hasChangedPositionThisTurn || card.summonedTurnCount == turnCount || card.hasAttackedThisTurn;
-        if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCannotChangePosIndicator(card, isHovering && cannotChangePos);
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCannotChangePosIndicator(card, isHovering && cannotChangePos && isMainPhase);
     }
 
     /// <summary>
