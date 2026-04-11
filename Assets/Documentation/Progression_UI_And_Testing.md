@@ -171,9 +171,14 @@ A ferramenta de QA suprema, ativada no Inspector (`fullTestMode`) ou por **Ctrl 
 ---
 
 ### 9.5.5 Menu de Teste de Efeitos (`EffectTestManager.cs`)
-A bancada de testes dedicada para rodar e comparar efeitos visuais (VFX) e sonoros (SFX) em tempo real, lado a lado (Nativo vs Prefab).
+O "Laboratório Cirúrgico" para testar e comparar efeitos visuais (VFX) e sonoros (SFX) em tempo real. Essencial para homologação visual sem precisar jogar uma partida inteira.
 *   **Atalho:** Pressione **Ctrl + E** no teclado em qualquer momento durante a partida para abrir ou fechar o painel.
-*   **Funcionalidades:** Permite testar auras, correntes, mudança de controle, ataques (espadinha vs projétil), invocações e cinemáticas com um único clique, gerando cartas falsas dinamicamente no tabuleiro sem precisar de um duelo real.
+*   **Categorias de Teste:**
+    *   **Auras de Pouso:** Injeta cartas mockadas (Ex: Monstro de Fusão vs Normal) para validar a tintura de cor.
+    *   **Estruturas de Invocação:** Permite testar etapas individuais (Selection Icon, Field Marker, Impacto) ou a Cinemática Completa para Normal, Special, Fusion, Ritual e Tribute.
+    *   **Batalha e Remoção:** Crucial para testar a combinação do voo de ataque (Nativo vs Prefab) com os rastros (Shadows vs Continuous Line).
+    *   **Indicadores de Status:** Valida as UIs travadas no monstro (`CanAttack`, `CannotChangePos`) e a Mira de Alvo (`TargetingSword`).
+*   **Segurança de Clique (`DelaySetAttacker`):** Como os botões da GUI coexistem com o Raycast do tabuleiro, testes de Seleção de Ataque possuem uma Corrotina que espera 1 frame (`WaitForEndOfFrame`) antes de ativar a carta. Isso impede que o mesmo clique que ativou o teste também dispare um ataque real acidental no tabuleiro abaixo.
 
 ---
 
@@ -223,13 +228,15 @@ O Relógio Gigante é customizável via `DuelTheme`, permitindo adaptar qualquer
 
 Centraliza todos os instanciadores de partículas (VFX) e áudios do duelo. Os assets utilizados podem ser sobrescritos pelas configurações dinâmicas do `DuelTheme`.
 
+**Velocidade Global:** A propriedade `animationSpeed` do `DuelFXManager` atua como um multiplicador inverso para durações e direto para velocidades. (Ex: `1.5f` faz as animações nativas rodarem 50% mais rápido). Futuramente, isso poderá ser plugado em um slider no Menu de Opções do jogador.
+
 ### Efeitos de Ação de Carta
 | Ação | Descrição Visual |
 |:---|:---|
 | **Ativação (Magia/Armadilha/Monstro)** | A carta cresce e emite um "fantasma" com contorno neon colorido (Verde para Magia, Rosa para Armadilha, Laranja para Monstro). Totalmente customizável nas seções `Activation Pulse` e `Monster Effect Pulse`. |
 | **Aura de Pouso (Placement)** | Ao colocar qualquer carta no campo, uma aura pulsa na base. Pode ser um Prefab ou uma rotina nativa. A coloração pode ser ditada pelo **dono da carta** (`Colorize Aura By Player`) ou pelo **tipo** (`By Type`). Suporta renderização atrás (`Behind`) ou na frente (`Above`) da carta. |
-| **Corrente (Chain Link)** | Gera o texto "Link X" com ícones de correntes que se chocam. O tamanho, cor, posições (`Base Offset` e `Text Offset`), animação de subida (`Slide Up`) e o flash de impacto são 100% customizáveis na seção `Opções de Corrente`. |
-| **Embaralhamento (Shuffle)** | Animação do deck se dividindo e entrelaçando. Pode ser combinado com um Prefab de SpriteSheet para um efeito mais estilizado. |
+| **Corrente (Chain Link)** | Modular e 100% nativa. Utiliza as propriedades `chainLinkLeftSprite`, `chainLinkRightSprite` e `chainLinkJoinedSprite` para simular o choque físico dos elos. Suporta subir na tela (`Slide Up`) e Flash de Impacto. |
+| **Embaralhamento (Shuffle)** | Possui 3 rotinas matemáticas puras selecionáveis: **1. Clássico 3D** (Cartas levantam e se mesclam); **2. Custom Hindu** (Baralho se divide e se inclina a `customShuffleTiltAngle` graus); **3. Lateral 2D Rápido** (Apenas desliza no eixo XY). Suporta mover o deck para o centro (`shuffleAtCenter`) e tempos granulares de pausa pós-efeito (`shuffleDeckAppearDelay`, `shufflePostDelay`). |
 | **Destruição (Destruction)** | A carta treme, escurece e encolhe enquanto um Prefab de explosão (`Explosion VFX`) é instanciado por cima. |
 | **Banimento (Banish)** | A carta gira e encolhe até desaparecer, sendo sugada por um Prefab de vórtex (`Banish VFX`). |
 | **Flip (Virar)** | A carta executa a rotação 3D e pode emitir um pulso de luz (`Flip Pulse`) ao final. |
@@ -283,11 +290,34 @@ Esta é a "Mesa de Diretor de Arte" para as invocações especiais.
     *   `delayBeforeCardDrop`: Pausa entre o Field Marker aparecer e a carta gigante começar a descer.
     *   `giantCardScale`: O quão grande a carta fica no meio da tela.
 
+### A "Trindade das Espadas" e Indicadores (`StatusIndicatorSettings`)
+Para evitar poluição na Hierarchy e duplicação de lógicas, os indicadores sobre as cartas foram unificados sob a struct `StatusIndicatorSettings` no `DuelFXManager`.
+*   **Flexibilidade:** Permite ao Game Designer escolher instantaneamente entre instanciar um **Prefab 3D/Complexo** ou gerar um **Sprite Nativo (2D)** via código, com suporte a Preserve Aspect Ratio, Outline e Blink (piscar).
+*   **Os 3 Papéis em Combate:**
+    1.  **Indicador: Pode Atacar (`CanAttack` / `Block`):** Ícone estático que flutua sobre a carta no tabuleiro. O `GameManager` pode ser configurado para exibi-los apenas no *Hover* ou permanentemente durante a *Battle Phase*.
+    2.  **Mira de Alvo (`TargetingSwordUI.cs`):** **[AVISO CRÍTICO DE ARQUITETURA] NUNCA mova a lógica de seguir o mouse desta espada para o DuelFXManager.** O script `TargetingSwordUI.cs` é o único responsável pela matemática do Cursor. Ele lê as configurações de Sprite/Cor/Prefab do `DuelFXManager`, ancora-se perfeitamente no centro geométrico da carta atacante (`pivot = 0.5, 0.5`) e rotaciona no próprio eixo em direção ao mouse. Quando a caixa de Confirmação (`ShowConfirmation`) aparece, ele aciona a função `.LockOn(alvo)` parando de seguir o mouse e cravando a mira no monstro inimigo.
+    3.  **Voo de Ataque (`FlightSword`):** A espada projétil instanciada apenas na hora em que o ataque é deferido. Pode deixar rastro fantasma (`Shadows`) ou linha reta (`Continuous`).
+
 ### Música Dinâmica (BGM State Machine)
 A música do duelo flutua em tempo real lendo o método `UpdateBGM(playerLP, opponentLP)`.
 1.  **Normal:** BGM padrão do `DuelTheme`.
 2.  **Tense (Perigo):** Transição (Fade-Cross) se o Player possuir menos de 50% dos LPs do Oponente ou estiver com LP crítico absoluto.
 3.  **Winning (Vantagem):** Transição gloriosa se o Player possuir mais de 200% dos LPs do Oponente.
+
+---
+
+## 9.9 Personalização de UI e Preferências de Jogo
+O motor do `GameManager` foi projetado para expor configurações cruciais de *Quality of Life* (QoL), prontas para serem mapeadas para um futuro Menu de Opções dentro do jogo.
+
+### 1. Anúncios de Fases e Turnos (`PhaseAnnouncementSettings`)
+Gerencia as palavras que cruzam a tela ao iniciar uma fase. Suporta formatação completa via Inspector:
+*   **Timings:** `displayDuration` (Tempo na tela), `fadeDuration` (Tempo de transição transparente).
+*   **Visual:** `fontSize`, `textColor`, `useOutline`, `slideDistance` e `offset`.
+*   **Textos (Localização):** Strings expostas (`textStartDuel`, `textBattlePhase`, etc.) prontas para tradução dinâmica.
+
+### 2. Modos e Comportamentos (`AttackIndicatorMode` & `FlipAnimationMode`)
+*   **`AttackIndicatorMode`:** Permite escolher entre `HoverOnly` (A espadinha/ícone só aparece quando o mouse passa sobre o monstro) e `AlwaysInBattlePhase` (Todos os monstros aptos a atacar exibem o ícone permanentemente, apagando dinamicamente ao atacar).
+*   **`FlipAnimationMode`:** Define o peso visual de virar cartas na mesa. `AnimateOnReveal` (Anima apenas ao desvirar para cima, poupando tempo ao Setar), `AnimateAlways` (Animação de elástico em ambas as vias) ou `NoAnimation` (Troca de sprite instantânea).
 
 # Estrutura e Funcionalidades do Painel de Duelo (`Panel_Duel`)
 

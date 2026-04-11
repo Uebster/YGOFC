@@ -189,13 +189,14 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **9.5.2** Tooltip de Mouse Dinâmico (`MouseTooltipUI.cs`)
     *   **9.5.3** Painel de Desenvolvedor (`FullTestManager.cs`, Toggles, Dev Card Menu, Ctrl+T)
     *   **9.5.4** In-Game Debug Console (`InGameDebugConsole.cs`, Ctrl+Shift+D)
-    *   **9.5.5** Menu de Teste de Efeitos (`EffectTestManager.cs`, Ctrl+E)
+    *   **9.5.5** Laboratório de Teste de Efeitos (`EffectTestManager.cs`, Ctrl+E, Categorias de Teste, Delays de Clique)
 *   **9.6.** Simulador de Caos (`SimulationManager.cs`, Bypass de UI, Visual Mode 1.5x, Fast Mode 50x)
 *   **9.7.** Sistema de Temas de Duelo (`DuelThemeManager.cs`, `DuelTheme`)
     *   **9.7.1** Arquitetura de Temas (Console e Cartuchos)
     *   **9.7.2** Configurando o Relógio de Turnos (`TurnClockUI`, Rotação Dinâmica, Camadas e Pivot)
     *   **9.7.3** Minigames Dinâmicos (Moeda e Dados)
-*   **9.8.** Efeitos Visuais e Sonoros (`DuelFXManager.cs`, Guia Completo de Customização: Cinemáticas, Impactos, Auras, Correntes, Batalha e BGM Dinâmico)
+*   **9.8.** Efeitos Visuais e Sonoros (`DuelFXManager.cs`, `TargetingSwordUI.cs`, `StatusIndicatorSettings`: Cinemáticas, Impactos, Trindade das Espadas, BGM Dinâmico)
+*   **9.9.** Personalização de UI e Preferências de Jogo (`PhaseAnnouncementSettings`, Modos de Flip, Velocidade de Jogo)
 
 ---
 

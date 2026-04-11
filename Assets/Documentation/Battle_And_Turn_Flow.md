@@ -141,10 +141,15 @@ Um duelo termina imediatamente (nem a corrente termina de resolver) se:
 A engine lógica (LUA) e a engine visual (C#/Unity) rodam em paralelo. Para garantir que os cálculos não aconteçam invisivelmente de forma instantânea, a arquitetura utiliza o padrão de **Congelamento Assíncrono (Yields e Callbacks)**.
 
 ### 8.1 Invocação (Summoning Flow)
-1.  **Lógica:** O jogador/IA decide invocar. Validações matemáticas ocorrem.
-2.  **Visual:** Se for uma invocação tributo/especial, o C# esconde a carta no campo temporariamente e toca uma Cinemática (tela escurece, carta gigante aparece). O jogo "congela" aguardando o fim da animação.
-3.  **Impacto:** A miniatura aterrissa no tabuleiro, toca o VFX de Poeira/Aura na base (`DuelFXManager`).
-4.  **Resolução:** Apenas *após a poeira baixar*, o LUA dispara o `EVENT_SUMMON_SUCCESS`, abrindo a janela para o oponente ativar armadilhas como *Trap Hole*.
+1.  **Lógica:** O jogador/IA ativa a invocação.
+2.  **Visual & Transições:** Se houver uma Cinemática, o `DuelFXManager` respeita o pacote configurado (`SummonVFXPackage`). 
+    *   Um `FieldMarker` pode surgir com atraso (`delayBeforeMarker`).
+    *   A carta gigante aguarda na tela (`giantCardHoldDuration`).
+    *   Um atraso para o impacto (`delayBeforeImpact`) alinha o momento em que a carta bate no chão.
+3.  **Impacto:** A miniatura aterrissa, tocando o Pulso de Impacto ou Prefab de Poeira.
+4.  **Resolução:** Apenas *após a animação terminar*, o C# devolve o callback, permitindo ao LUA disparar o `EVENT_SUMMON_SUCCESS`.
+
+*(Nota de Velocidade: Todo o timing visual acima é inversamente proporcional à propriedade `animationSpeed` do `DuelFXManager`. Uma velocidade global de 2.0x cortará todos esses tempos pela metade).*
 
 ### 8.2 Batalha e Dano (Combat Visual Flow)
 A função `Core.Attack` no LUA orquestra os tempos visuais milimetricamente:
@@ -153,6 +158,7 @@ A função `Core.Attack` no LUA orquestra os tempos visuais milimetricamente:
 3.  **Revelação Dramática:** Se o alvo estiver virado para baixo (Set), o Lua emite `yield ('RevealTarget')`. O C# vira a carta lentamente e insere um Delay (0.8s) para o jogador ler o que era antes da matemática agir.
 4.  **Dano:** O cálculo ocorre. O C# treme a câmera (Screen Shake) e sobe os números de dano coloridos na tela.
 5.  **Destruição:** A carta alvo recebe o VFX de estilhaços (Shatter), som de vidro quebrando, e é fisicamente arremessada ao cemitério.
+*(Nota: Os rastros da espada voadora [Shadows vs ContinuousLine] e o tipo de ricochete em defesas falhas são customizáveis diretamente na UI).*
 
 ### 8.3 Resolução de Correntes (Chain Visuals)
 *   **Ativação:** Ao ser ativada, a carta brilha (Verde para Magia, Roxo para Trap) para indicar quem é a fonte do efeito atual.
@@ -203,7 +209,8 @@ A função `Core.Attack` no LUA orquestra os tempos visuais milimetricamente:
 ### 8.8 Manipulação de Deck e Mão (Card Flow VFX)
 *   **Embaralhamento (Deck Shuffle):**
     *   **Gatilho:** Resolução de efeitos de busca (Ex: *Sangan*, *Reinforcement of the Army*) ou retorno ao deck (*Pot of Avarice*). O LUA chama `Duel.ShuffleDeck`.
-    *   **Tempo/Visual:** A engine aciona `DeckManager.ShuffleDeck`. O modelo 3D do deck se divide, as cartas levantam e se misturam no ar. A lógica impõe um delay obrigatório de **≈ 0.8s** para a animação terminar antes de passar a prioridade ou sacar a próxima carta.
+    *   **Tempo/Visual:** A engine aciona `DeckManager.ShuffleDeck`. O motor interpreta qual das 3 rotinas o jogador escolheu (3D Clássico, Hindu Customizado ou 2D Lateral Rápido). 
+    *   **Timing Crítico:** Para o LUA saber quando liberar a partida, o método `GetShuffleTotalDuration()` calcula matematicamente o tempo de cada loop + a duração do Prefab de Partícula + a pausa pós-embaralhamento (`shufflePostDelay`). Se esse valor dessincronizar, cartas podem ser compradas com o deck ainda embaralhando.
 *   **Compra por Efeito (Draw) e Descarte (Discard):**
     *   **Gatilho:** Efeitos que compram ou descartam múltiplas cartas (Ex: *Pot of Greed*, *Graceful Charity*, *Card Destruction*).
     *   **Tempo/Visual:** O C# não teletransporta 5 cartas de uma vez. Uma corrotina aplica um micro-delay de **≈ 0.3s a 0.5s por carta**, criando uma cadência tátil (um por um) saindo do deck para a mão, ou da mão para o cemitério, permitindo que o cérebro do jogador processe a quantidade exata.
@@ -231,9 +238,9 @@ Para evitar bugs de "ciclo de vida" (como UIs sumindo instantaneamente, cliques 
     *   **Fluxo:** É um elemento visual passivo que segue o cursor em *overlay*. Ele não tem lógica de jogo, apenas lê o `PhaseManager` e as flags da carta para atualizar os textos de "Esquerdo/Direito".
     *   **Tempo:** Ele não pausa a engine. Seu desaparecimento ou instabilidade não afeta o duelo, pois o gatilho real sempre será retido no evento `OnPointerClick` do objeto físico da carta.
 *   **Seleção de Ataque e a "Espadinha" (Combat Targeting):**
-    *   **Gatilho/UI:** O jogador clica no atacante. O monstro escurece (Attack Selection Color). O jogo entra em estado local de "Aguardando Alvo".
-    *   **A Ação:** O jogador clica no alvo. A UI é bloqueada e a requisição viaja para o LUA (`Core.Attack`).
-    *   **Tempo/Visual:** O motor LUA não ataca instantaneamente. Ele obriga o `DuelFXManager` a instanciar um projétil (A "Espadinha" ou raio) que voa do atacante ao alvo (Tween de **≈ 0.4s**). O LUA emite um `yield` e **congela** até a espada bater no alvo. Somente após o impacto a janela de resposta (para ativar uma *Mirror Force*) é aberta, garantindo que o olho humano entenda o combate.
+    *   **Gatilho/UI:** O jogador clica no atacante. O `CardDisplay` chama `SetAttackSelectionVisual(true)` (Borda Vermelha/Escurecer). Para manter a tela limpa, o `GameManager` oculta todos os marcadores estáticos de `CanAttack` desse monstro no exato momento.
+    *   **Mira Física (`TargetingSwordUI`):** O script autônomo assume o controle, lendo a customização visual do `DuelFXManager`, ancorando-se no atacante e girando para seguir o mouse. Se um alvo for clicado e exigir confirmação de UI (Modal Sim/Não), a espada trava a mira (`LockOn`) diretamente sobre o monstro inimigo.
+    *   **A Ação e Voo:** Com o alvo confirmado, a UI da mira (`TargetingSwordUI.Hide()`) desaparece e a requisição viaja para o LUA (`Core.Attack`). O LUA emite `yield("PlayAttackAnimation")`, obrigando o `DuelFXManager` a instanciar o voo de ataque (A "Espadinha de Voo" ou Projétil). O motor congela por **≈ 0.4s**. Somente após o impacto do voo no inimigo, a janela de resposta (para ativar uma *Mirror Force*) é aberta.
 *   **Equipamentos e Vínculos Físicos (`CardLink`):**
     *   **Fluxo de Montagem:** A magia de equipamento resolve. A carta é enviada para a Zona de S/T. A Unity então cria um objeto fantasma chamado `CardLink` (A "algema" que une a magia ao monstro).
     *   **Tempo/Visual:** Um feixe de luz liga as duas cartas (**≈ 0.5s**).
@@ -241,4 +248,10 @@ Para evitar bugs de "ciclo de vida" (como UIs sumindo instantaneamente, cliques 
 *   **Fundos de Tabuleiro (Backgrounds / Field Spells):**
     *   **Fluxo:** Alterados via *Magias de Campo*. 
     *   **Tempo/Visual:** A transição do fundo 2D (Crossfade) roda em paralelo. Ela dura **≈ 0.8s** e **NÃO PAUSA** o motor LUA.
-    *   **Trava de Segurança:** Partículas como "bolhas de água" ou "cinzas" são vinculadas hierarquicamente ao Tabuleiro (Board), não à carta. Se um *Mystical Space Typhoon* destruir a Mágica de Campo no Elo 2 de uma corrente, a carta evapora, mas as partículas do campo dissolvem graciosamente, sem causar um *NullReferenceException* de destruição prematura.
+    *   **Trava de Segurança:** Partículas de campo dissolvem graciosamente, sem causar *NullReferenceException*.
+
+### 8.11 Anúncios de Fase e Fluxo de HUD
+Sempre que a máquina de estados (`PhaseManager`) transita para uma nova etapa, a partida é temporariamente interrompida para um informe visual em texto:
+*   **A Rotina (`PhaseAnnouncementSettings`):** O `GameManager` instancia um `TextMeshPro` dinâmico. O texto (ex: "BATTLE PHASE") desliza pela tela (`slideDistance`), permanece parado (`displayDuration`) e realiza um fade out (`fadeDuration`).
+*   **Sincronismo:** Essas mensagens NÃO travam as respostas do LUA, mas ajudam a balizar a mudança de contexto na mente do jogador (Ex: Escrevendo "YOUR TURN" na tela antes do saque inicial). Tudo é manipulável para facilitar a futura tradução de strings.
+*   **A "Espada" Indicadora:** Guiada por `AttackIndicatorMode`. Se configurada para `AlwaysInBattlePhase`, no exato frame em que o texto "BATTLE PHASE" some, o motor acende automaticamente a UI nativa de `CanAttack` e `Block` sobre todas as cartas relevantes, limpando o tabuleiro apenas quando o jogador sair da fase.
