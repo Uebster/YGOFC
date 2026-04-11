@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -296,28 +297,41 @@ public class EffectTestManager : MonoBehaviour
         
         GUILayout.Label("<size=12><i>Ataque (Voo da Espada):</i></size>");
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Espada + Shadows", btnStyle)) { 
+        if (GUILayout.Button("Voo Nativo + Shadows", btnStyle)) { 
             ClearFieldForTesting(); EnsurePlayerMonster(); EnsureOpponentMonster(); 
-            DuelFXManager.Instance.useAttackSword = true; 
-            DuelFXManager.Instance.useAttackProjectilePrefab = false; 
+            DuelFXManager.Instance.flightSwordIndicator.useNative = true; 
+            DuelFXManager.Instance.flightSwordIndicator.usePrefab = false; 
+            DuelFXManager.Instance.useAttackTrail = true;
             DuelFXManager.Instance.attackTrailType = AttackTrailType.Shadows; 
             DuelFXManager.Instance.PlayAttack(playerMonster, opponentMonster, null); 
         }
-        if (GUILayout.Button("Espada + Contínuo", btnStyle)) { 
+        if (GUILayout.Button("Voo Nativo + Contínuo", btnStyle)) { 
             ClearFieldForTesting(); EnsurePlayerMonster(); EnsureOpponentMonster(); 
-            DuelFXManager.Instance.useAttackSword = true; 
-            DuelFXManager.Instance.useAttackProjectilePrefab = false; 
+            DuelFXManager.Instance.flightSwordIndicator.useNative = true; 
+            DuelFXManager.Instance.flightSwordIndicator.usePrefab = false; 
+            DuelFXManager.Instance.useAttackTrail = true;
             DuelFXManager.Instance.attackTrailType = AttackTrailType.ContinuousLine; 
             DuelFXManager.Instance.PlayAttack(playerMonster, opponentMonster, null); 
         }
         GUILayout.EndHorizontal();
         
-        if (GUILayout.Button("Ataque (Projétil Prefab)", btnStyle)) { 
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Voo Prefab + Shadows", btnStyle)) { 
             ClearFieldForTesting(); EnsurePlayerMonster(); EnsureOpponentMonster(); 
-            DuelFXManager.Instance.useAttackSword = false; 
-            DuelFXManager.Instance.useAttackProjectilePrefab = true; 
+            DuelFXManager.Instance.flightSwordIndicator.useNative = false; 
+            DuelFXManager.Instance.flightSwordIndicator.usePrefab = true; 
+            DuelFXManager.Instance.useAttackTrail = true;
+            DuelFXManager.Instance.attackTrailType = AttackTrailType.Shadows; 
             DuelFXManager.Instance.PlayAttack(playerMonster, opponentMonster, null); 
         }
+        if (GUILayout.Button("Voo Prefab (Sem Rastro)", btnStyle)) { 
+            ClearFieldForTesting(); EnsurePlayerMonster(); EnsureOpponentMonster(); 
+            DuelFXManager.Instance.flightSwordIndicator.useNative = false; 
+            DuelFXManager.Instance.flightSwordIndicator.usePrefab = true; 
+            DuelFXManager.Instance.useAttackTrail = false;
+            DuelFXManager.Instance.PlayAttack(playerMonster, opponentMonster, null); 
+        }
+        GUILayout.EndHorizontal();
         
         GUILayout.Space(2);
         GUILayout.Label("<size=12><i>Troca de Controle (Change of Heart):</i></size>");
@@ -382,6 +396,59 @@ public class EffectTestManager : MonoBehaviour
         }
         if (GUILayout.Button("Banish (Prefab)", btnStyle)) { 
             ClearFieldForTesting(); EnsureOpponentMonster(); DuelFXManager.Instance.useBanishRoutine = false; DuelFXManager.Instance.useBanishPrefab = true; DuelFXManager.Instance.PlayBanishEffect(opponentMonster); 
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+        GUILayout.Label("<color=cyan><b>INDICADORES DE STATUS (UI)</b></color>");
+        
+        GUILayout.Label("<size=12><i>Pode Atacar (Can Attack):</i></size>");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Nativo", btnStyle)) { 
+            ClearFieldForTesting(); EnsurePlayerMonster(); 
+            DuelFXManager.Instance.canAttackIndicator.useNative = true;
+            DuelFXManager.Instance.canAttackIndicator.usePrefab = false;
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCanAttackIndicator(playerMonster, true);
+        }
+        if (GUILayout.Button("Prefab", btnStyle)) { 
+            ClearFieldForTesting(); EnsurePlayerMonster(); 
+            DuelFXManager.Instance.canAttackIndicator.useNative = false;
+            DuelFXManager.Instance.canAttackIndicator.usePrefab = true;
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCanAttackIndicator(playerMonster, true);
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Label("<size=12><i>Mira de Alvo (Targeting Sword):</i></size>");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Nativa", btnStyle)) { 
+            ClearFieldForTesting(); EnsurePlayerMonster(); EnsureOpponentMonster();
+            DuelFXManager.Instance.useTargetingSwordNative = true;
+            DuelFXManager.Instance.targetingSwordIndicator.useNative = true;
+            DuelFXManager.Instance.targetingSwordIndicator.usePrefab = false;
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCanAttackIndicator(playerMonster, true);
+            StartCoroutine(DelaySetAttacker(playerMonster));
+            if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.ShowAndFollowMouse(playerMonster.transform);
+        }
+        if (GUILayout.Button("Prefab", btnStyle)) { 
+            ClearFieldForTesting(); EnsurePlayerMonster(); EnsureOpponentMonster();
+            DuelFXManager.Instance.useTargetingSwordNative = true;
+            DuelFXManager.Instance.targetingSwordIndicator.useNative = false;
+            DuelFXManager.Instance.targetingSwordIndicator.usePrefab = true;
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCanAttackIndicator(playerMonster, true);
+            StartCoroutine(DelaySetAttacker(playerMonster));
+            if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.ShowAndFollowMouse(playerMonster.transform);
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Label("<size=12><i>Bloqueios (Blocks):</i></size>");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Cannot Attack", btnStyle)) { 
+            ClearFieldForTesting(); EnsurePlayerMonster(); 
+            DuelFXManager.Instance.SetCannotAttackIndicator(playerMonster, true); 
+        }
+        if (GUILayout.Button("Testar Cannot Change Pos", btnStyle)) { 
+            ClearFieldForTesting(); EnsurePlayerMonster(); 
+            DuelFXManager.Instance.SetCannotChangePosIndicator(playerMonster, true); 
         }
         GUILayout.EndHorizontal();
 
@@ -473,6 +540,12 @@ public class EffectTestManager : MonoBehaviour
 
     void ClearFieldForTesting()
     {
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null) {
+            CardEffectManager.Instance.luaDuel.currentAttacker = null;
+        }
+
+        if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
+
         // Destrói os GameObjects e anula as referências
         if (playerMonster != null && playerMonster.gameObject != null) Destroy(playerMonster.gameObject);
         if (opponentMonster != null && opponentMonster.gameObject != null) Destroy(opponentMonster.gameObject);
@@ -549,5 +622,16 @@ public class EffectTestManager : MonoBehaviour
             mats.Add(GameManager.Instance.cardDatabase.cardDatabase[2]);
         }
         return mats;
+    }
+
+    private IEnumerator DelaySetAttacker(CardDisplay attacker)
+    {
+        // Espera um frame para o clique do mouse não ativar o Tabuleiro e golpear na mesma hora
+        yield return new WaitForEndOfFrame();
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null) {
+            CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(attacker);
+            attacker.SetAttackSelectionVisual(true);
+            if (GameManager.Instance != null) { GameManager.Instance.RefreshAttackIndicators(); GameManager.Instance.HandleAttackIndicatorHover(attacker, true); }
+        }
     }
 }

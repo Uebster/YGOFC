@@ -630,8 +630,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 outlineColor = isPlayerCard ? GameManager.Instance.playerHoverColor : GameManager.Instance.opponentHoverColor;
             }
 
-            // Override do Hover de Combate (Se não usar a Espada Prefab)
-            if (DuelFXManager.Instance != null && !DuelFXManager.Instance.useTargetingSwordPrefab && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle)
+            // Override do Hover de Combate (Se não usar a Espada Nativa)
+            if (DuelFXManager.Instance != null && !DuelFXManager.Instance.useTargetingSwordNative && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle)
             {
                 if (GameManager.Instance != null && GameManager.Instance.isPlayerTurn && isOnField)
                 {
@@ -772,11 +772,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             canvas.overrideSorting = false;
             canvas.sortingOrder = 0;
             rectTransform.anchoredPosition -= new Vector2(0, hoverYOffset);
-        }
-
-        if (TargetingSwordUI.Instance != null)
-        {
-            TargetingSwordUI.Instance.HideHover(transform);
         }
 
         if (GameManager.Instance != null)
@@ -1089,14 +1084,16 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                             return;
                         }
                         CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(this);
-                        SetAttackSelectionVisual(true);
                         if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.ShowAndFollowMouse(transform);
+                        SetAttackSelectionVisual(true);
+                        if (GameManager.Instance != null) { GameManager.Instance.RefreshAttackIndicators(); GameManager.Instance.HandleAttackIndicatorHover(this, true); }
                     }
                     else if (eventData.button == PointerEventData.InputButton.Right)
                     {
                         CardEffectManager.Instance.luaDuel.currentAttacker = null;
                         SetAttackSelectionVisual(false);
                         if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
+                        if (GameManager.Instance != null) { GameManager.Instance.RefreshAttackIndicators(); GameManager.Instance.HandleAttackIndicatorHover(this, true); }
                     }
                     return;
                 }

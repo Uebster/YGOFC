@@ -22,6 +22,7 @@ public class TargetingSwordUI : MonoBehaviour
     [Header("References")]
     private RectTransform rectTransform;
     private Image img;
+    private GameObject customPrefabObj;
 
     [Header("Tracking")]
     private Transform attacker;
@@ -118,11 +119,65 @@ public class TargetingSwordUI : MonoBehaviour
     
     private void RotateTowards(Vector3 targetPosition)
     {
+        float offset = DuelFXManager.Instance != null ? DuelFXManager.Instance.targetingSwordRotationOffset : -90f;
         Vector3 dir = targetPosition - rectTransform.position;
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        rectTransform.rotation = Quaternion.Euler(0, 0, angle - 90f); // -90 because the sword sprite points up
+        rectTransform.rotation = Quaternion.Euler(0, 0, angle + offset);
     }
 
+    public void ApplyCustomization()
+    {
+        if (DuelFXManager.Instance == null) return;
+        var settings = DuelFXManager.Instance.targetingSwordIndicator;
+
+        // Aplica o tamanho e o pivot no contêiner principal para funcionar tanto no Prefab quanto Nativo
+        rectTransform.sizeDelta = settings.size;
+        rectTransform.pivot = new Vector2(0.5f, 0.5f); // Centro da espada para rodar perfeitamente
+
+        if (settings.usePrefab && settings.prefab != null)
+        {
+            if (img != null) img.enabled = false;
+            
+            // Se você trocar o Prefab no Inspector durante o teste, deleta o velho para não bugar!
+            if (customPrefabObj != null && customPrefabObj.name != settings.prefab.name + "(Clone)")
+            {
+                Destroy(customPrefabObj);
+                customPrefabObj = null;
+            }
+
+            if (customPrefabObj == null)
+            {
+                customPrefabObj = Instantiate(settings.prefab, transform);
+                customPrefabObj.transform.localPosition = Vector3.zero;
+                customPrefabObj.transform.localRotation = Quaternion.identity;
+                customPrefabObj.transform.localScale = Vector3.one; // Garante que não nasça invisível
+            }
+            customPrefabObj.SetActive(true);
+        }
+        else if (settings.useNative)
+        {
+            if (customPrefabObj != null) customPrefabObj.SetActive(false);
+            if (img != null)
+            {
+                img.sprite = settings.sprite;
+                img.color = settings.color;
+                img.preserveAspect = settings.preserveAspect;
+                if (settings.material != null) img.material = settings.material;
+                
+                Outline outline = GetComponent<Outline>();
+                if (settings.useOutline)
+                {
+                    if (outline == null) outline = gameObject.AddComponent<Outline>();
+                    outline.effectColor = settings.outlineColor;
+                    outline.effectDistance = new Vector2(settings.outlineWidth, -settings.outlineWidth);
+                    outline.enabled = true;
+                }
+                else if (outline != null) outline.enabled = false;
+
+                img.enabled = true;
+            }
+        }
+    }
 
     // --- PUBLIC API ---
 
@@ -132,7 +187,7 @@ public class TargetingSwordUI : MonoBehaviour
         
         attacker = hoverTransform;
         currentState = SwordState.Hovering;
-        if (img != null) img.enabled = true;
+        ApplyCustomization();
     }
 
     public void HideHover(Transform hoverTransform)
@@ -149,7 +204,7 @@ public class TargetingSwordUI : MonoBehaviour
         this.attacker = attackerTransform;
         this.lockedTarget = null;
         currentState = SwordState.FollowingMouse;
-        if (img != null) img.enabled = true;
+        ApplyCustomization();
     }
 
     public void LockOn(Transform targetTransform)
@@ -193,6 +248,7 @@ public class TargetingSwordUI : MonoBehaviour
         lockedTarget = null;
         currentState = SwordState.Hidden;
         if (img != null) img.enabled = false;
+        if (customPrefabObj != null) customPrefabObj.SetActive(false);
     }
 
     private IEnumerator TrailEffect()

@@ -110,6 +110,26 @@ public class CinematicSettings
 }
 
 [System.Serializable]
+public class StatusIndicatorSettings
+{
+    public bool useNative = true;
+    public Sprite sprite;
+    public Material material;
+    public Color color = Color.white;
+    public bool preserveAspect = true;
+    public Vector2 size = new Vector2(50, 50);
+    public Vector2 offset = Vector2.zero;
+    public float blinkSpeed = 2f;
+    public bool useOutline = true;
+    public Color outlineColor = Color.black;
+    public float outlineWidth = 3f;
+
+    [Header("Prefab Alternativo")]
+    public bool usePrefab = false;
+    public GameObject prefab;
+}
+
+[System.Serializable]
 public class SummonVFXPackage
 {
     [Header("Ícone de Seleção")]
@@ -218,6 +238,29 @@ public class DuelFXManager : MonoBehaviour
     public float monsterEffectPulseOutlineWidth = 8f;
     [Tooltip("Instancia o prefab definido em 'Monster Effect VFX'.")]
     public bool useMonsterEffectPrefab = true;
+
+    [Header("Indicador: Pode Atacar (Can Attack)")]
+    public StatusIndicatorSettings canAttackIndicator = new StatusIndicatorSettings();
+
+    [Header("Indicador: Não Pode Atacar (Block)")]
+    public StatusIndicatorSettings cannotAttackIndicator = new StatusIndicatorSettings();
+    [Tooltip("Mostra o ícone de bloqueio apenas se a carta estiver em modo de Ataque.")]
+    public bool showCannotAttackOnlyInAttackPos = false;
+
+    [Header("Indicador: Não Pode Mudar Posição")]
+    public StatusIndicatorSettings cannotChangePosIndicator = new StatusIndicatorSettings();
+
+    [Header("Indicador: Mira de Alvo (Targeting Sword)")]
+    [Tooltip("Usa a mira de alvo nativa que segue o mouse ao selecionar um atacante.")]
+    public bool useTargetingSwordNative = true;
+    public StatusIndicatorSettings targetingSwordIndicator = new StatusIndicatorSettings();
+    [Tooltip("Ajuste de rotação da mira de alvo.")]
+    public float targetingSwordRotationOffset = -90f;
+    [Tooltip("Velocidade de giro (Spin) da mira nativa.")]
+    public float targetingSwordSpinSpeed = -360f;
+
+    [Header("Indicador: Voo de Ataque (Flight Sword)")]
+    public StatusIndicatorSettings flightSwordIndicator = new StatusIndicatorSettings();
 
     [Header("--- ESTRUTURAS DE INVOCAÇÃO (NOVAS) ---")]
     public NormalSummonVFXPackage normalSummonSettings = new NormalSummonVFXPackage();
@@ -430,8 +473,6 @@ public class DuelFXManager : MonoBehaviour
     public float defenseShieldPulseScale = 1.3f;
 
     [Header("Opções de Ataque (Combate)")]
-    [Tooltip("Usa o prefab 'TargetingSwordUI' para mirar ataques. Se desmarcado, usa cores de outline (Hover).")]
-    public bool useTargetingSwordPrefab = true;
     public Color colorAttackReadyHover = new Color(1f, 0.5f, 0f, 1f); // Laranja (Pronto para Atacar)
     public Color colorAttackTargetHover = Color.red; // Vermelho (Alvo Inimigo)
     [Tooltip("Habilita o efeito de escurecer a carta ou pintar a borda ao selecioná-la para atacar.")]
@@ -441,15 +482,6 @@ public class DuelFXManager : MonoBehaviour
     public bool targetAvatarOnDirectAttack = true;
     [Tooltip("A carta dá um 'bote' (recua e avança) no momento do ataque.")]
     public bool useAttackHeadbutt = true;
-    [Tooltip("Gera a espada/projétil voador dinamicamente. Se desmarcado, usará o Prefab 'Attack Projectile VFX'.")]
-    public bool useAttackSword = true;
-    public Sprite attackSwordSprite;
-    public Color attackSwordColor = Color.white;
-    public Vector2 attackSwordSize = new Vector2(60, 60);
-    [Tooltip("Material para a espadinha nativa (Use o VFX_Additive_UI para fundos pretos desaparecerem).")]
-    public Material attackSwordMaterial;
-    [Tooltip("Usa o Prefab de projétil caso não queira usar a rotina nativa da espada.")]
-    public bool useAttackProjectilePrefab = true;
     [Tooltip("Ajuste de rotação caso o seu Sprite de espada não aponte para cima (Ex: 0, 90, 180).")]
     public float attackSwordRotationOffset = -90f;
     public float attackFlightDuration = 0.3f; // Tempo de voo
@@ -907,23 +939,29 @@ public class DuelFXManager : MonoBehaviour
         }
 
         // 2. Viagem da Espada ou Projétil
-        if (useAttackSword)
+        if (flightSwordIndicator.useNative && flightSwordIndicator.sprite != null)
         {
             PlaySound(attackTravelSound);
             
-            GameObject proj = new GameObject("AttackSword", typeof(RectTransform), typeof(Image));
+            GameObject proj = new GameObject("AttackFlightSword", typeof(RectTransform), typeof(Image));
             Transform uiParent = GetUIParent();
             if (uiParent != null) proj.transform.SetParent(uiParent, true);
             
             RectTransform rt = proj.GetComponent<RectTransform>();
-            rt.position = startPos; rt.sizeDelta = attackSwordSize;
+            rt.position = startPos; rt.sizeDelta = flightSwordIndicator.size;
             
             Image img = proj.GetComponent<Image>();
-            img.color = attackSwordColor;
-            if (attackSwordSprite != null) img.sprite = attackSwordSprite;
-            else img.color = Color.clear; // Esconde o quadrado branco se esquecer a imagem!
-            
-            if (attackSwordMaterial != null) img.material = attackSwordMaterial;
+            img.color = flightSwordIndicator.color;
+            img.sprite = flightSwordIndicator.sprite;
+            img.preserveAspect = flightSwordIndicator.preserveAspect;
+            if (flightSwordIndicator.material != null) img.material = flightSwordIndicator.material;
+
+            if (flightSwordIndicator.useOutline)
+            {
+                Outline outline = proj.AddComponent<Outline>();
+                outline.effectColor = flightSwordIndicator.outlineColor;
+                outline.effectDistance = new Vector2(flightSwordIndicator.outlineWidth, -flightSwordIndicator.outlineWidth);
+            }
 
             Vector3 dir = targetPos - startPos;
             float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
@@ -938,7 +976,7 @@ public class DuelFXManager : MonoBehaviour
                 lineRT.pivot = new Vector2(0, 0.5f); 
                 lineRT.position = startPos;
                 lineImg = lineObj.GetComponent<Image>(); lineImg.color = attackTrailColor;
-                if (attackSwordMaterial != null) lineImg.material = attackSwordMaterial;
+                if (flightSwordIndicator.material != null) lineImg.material = flightSwordIndicator.material;
             }
 
             float duration = attackFlightDuration / animSpeed; float t = 0; float spawnTrailTimer = 0;
@@ -950,11 +988,11 @@ public class DuelFXManager : MonoBehaviour
                 rt.position = currentPos;
                 
                 if (useAttackTrail) {
-                    if (attackTrailType == AttackTrailType.Shadows && attackSwordSprite != null) {
+                    if (attackTrailType == AttackTrailType.Shadows && flightSwordIndicator.sprite != null) {
                         spawnTrailTimer -= Time.deltaTime;
                         if (spawnTrailTimer <= 0) {
                             spawnTrailTimer = 0.015f; 
-                            SpawnSwordGhost(rt, img.sprite, attackSwordMaterial);
+                            SpawnSwordGhost(rt, img.sprite, flightSwordIndicator.preserveAspect, flightSwordIndicator.material);
                         }
                     } else if (attackTrailType == AttackTrailType.ContinuousLine && lineObj != null) {
                         Vector3 dirToCurrent = currentPos - startPos;
@@ -969,10 +1007,11 @@ public class DuelFXManager : MonoBehaviour
             if (lineObj != null) StartCoroutine(FadeAndDestroyLine(lineObj, lineImg, 0.2f));
             Destroy(proj);
         }
-        else if (useAttackProjectilePrefab && attackProjectileVFX != null)
+        else if (flightSwordIndicator.usePrefab && (flightSwordIndicator.prefab != null || attackProjectileVFX != null))
         {
             PlaySound(attackTravelSound);
-            GameObject proj = SpawnVFXPublic(attackProjectileVFX, startPos);
+            GameObject prefabToUse = flightSwordIndicator.prefab != null ? flightSwordIndicator.prefab : attackProjectileVFX;
+            GameObject proj = SpawnVFXPublic(prefabToUse, startPos);
             if (proj != null) {
                 RectTransform rt = proj.GetComponent<RectTransform>();
                 Image img = proj.GetComponentInChildren<Image>();
@@ -995,7 +1034,7 @@ public class DuelFXManager : MonoBehaviour
                         spawnTrailTimer -= Time.deltaTime;
                         if (spawnTrailTimer <= 0) {
                             spawnTrailTimer = 0.015f;
-                            SpawnSwordGhost(rt, img.sprite);
+                            SpawnSwordGhost(rt, img.sprite, img.preserveAspect);
                         }
                     }
                     yield return null;
@@ -1016,7 +1055,7 @@ public class DuelFXManager : MonoBehaviour
         onHit?.Invoke();
     }
 
-    private void SpawnSwordGhost(RectTransform sourceRT, Sprite sprite, Material mat = null)
+    private void SpawnSwordGhost(RectTransform sourceRT, Sprite sprite, bool preserveAspect, Material mat = null)
     {
         GameObject ghost = new GameObject("SwordGhost", typeof(RectTransform), typeof(Image));
         ghost.transform.SetParent(sourceRT.parent, true);
@@ -1028,6 +1067,7 @@ public class DuelFXManager : MonoBehaviour
         
         Image img = ghost.GetComponent<Image>();
         img.sprite = sprite; img.color = attackTrailColor;
+        img.preserveAspect = preserveAspect;
         if (mat != null) img.material = mat;
         
         StartCoroutine(FadeAndDestroyGhost(ghost, img, 0.2f));
@@ -1041,8 +1081,8 @@ public class DuelFXManager : MonoBehaviour
             if (obj == null || img == null) break;
             t += Time.deltaTime / duration;
             img.color = new Color(startColor.r, startColor.g, startColor.b, Mathf.Lerp(startColor.a, 0f, t));
-            // Afina o rastro para criar o efeito "Swoosh" de golpe de espada!
-            obj.transform.localScale = Vector3.Lerp(startScale, startScale * 0.1f, t);
+            // Afina o rastro levemente para criar o efeito "Swoosh" de golpe de espada!
+            obj.transform.localScale = Vector3.Lerp(startScale, startScale * 0.6f, t);
             yield return null;
         }
         if (obj != null) Destroy(obj);
@@ -3365,5 +3405,97 @@ public class DuelFXManager : MonoBehaviour
         }
 
         if (squeezeObj != null) Destroy(squeezeObj);
+    }
+
+    // --- INDICADORES DE STATUS (NATIVOS) ---
+    private Dictionary<CardDisplay, GameObject> activeCanAttackIcons = new Dictionary<CardDisplay, GameObject>();
+    private Dictionary<CardDisplay, GameObject> activeCannotAttackIcons = new Dictionary<CardDisplay, GameObject>();
+    private Dictionary<CardDisplay, GameObject> activeCannotChangePosIcons = new Dictionary<CardDisplay, GameObject>();
+
+    public void SetCanAttackIndicator(CardDisplay card, bool show)
+    {
+        SetStatusIndicator(card, show, canAttackIndicator, activeCanAttackIcons, "CanAttackIcon");
+    }
+
+    public void SetCannotAttackIndicator(CardDisplay card, bool show)
+    {
+        SetStatusIndicator(card, show, cannotAttackIndicator, activeCannotAttackIcons, "CannotAttackIcon");
+    }
+
+    public void SetCannotChangePosIndicator(CardDisplay card, bool show)
+    {
+        SetStatusIndicator(card, show, cannotChangePosIndicator, activeCannotChangePosIcons, "CannotChangePosIcon");
+    }
+
+    private void SetStatusIndicator(CardDisplay card, bool show, StatusIndicatorSettings settings, Dictionary<CardDisplay, GameObject> dict, string name)
+    {
+        if (card == null) return;
+
+        if (show)
+        {
+            if (!dict.ContainsKey(card) || dict[card] == null)
+            {
+                GameObject iconObj = null;
+                
+                if (settings.usePrefab && settings.prefab != null)
+                {
+                    iconObj = Instantiate(settings.prefab, card.transform);
+                    iconObj.name = name;
+                    iconObj.transform.SetAsLastSibling();
+                    RectTransform rt = iconObj.GetComponent<RectTransform>();
+                    if (rt != null) {
+                        rt.anchoredPosition = settings.offset;
+                        rt.localScale = Vector3.one;
+                        rt.localRotation = Quaternion.identity;
+                    } else {
+                        iconObj.transform.localPosition = new Vector3(settings.offset.x, settings.offset.y, 0);
+                        iconObj.transform.localScale = Vector3.one;
+                        iconObj.transform.localRotation = Quaternion.identity;
+                    }
+                }
+                else if (settings.useNative && settings.sprite != null)
+                {
+                    iconObj = new GameObject(name, typeof(RectTransform), typeof(Image));
+                    iconObj.transform.SetParent(card.transform, false);
+                    iconObj.transform.SetAsLastSibling();
+
+                    RectTransform rt = iconObj.GetComponent<RectTransform>();
+                    rt.anchoredPosition = settings.offset;
+                    rt.sizeDelta = settings.size;
+
+                    Image img = iconObj.GetComponent<Image>();
+                    img.sprite = settings.sprite;
+                    img.color = settings.color;
+                    img.preserveAspect = settings.preserveAspect;
+                    if (settings.material != null) img.material = settings.material;
+
+                    if (settings.useOutline)
+                    {
+                        Outline outline = iconObj.AddComponent<Outline>();
+                        outline.effectColor = settings.outlineColor;
+                        outline.effectDistance = new Vector2(settings.outlineWidth, -settings.outlineWidth);
+                    }
+
+                    if (settings.blinkSpeed > 0)
+                    {
+                        VfxAutoAnim anim = iconObj.AddComponent<VfxAutoAnim>();
+                        anim.duration = 9999f;
+                        anim.fadeType = VfxAutoAnim.FadeType.Blink;
+                        anim.blinkSpeed = settings.blinkSpeed;
+                        anim.scaleType = VfxAutoAnim.ScaleType.None;
+                    }
+                }
+
+                if (iconObj != null) dict[card] = iconObj;
+            }
+        }
+        else
+        {
+            if (dict.ContainsKey(card) && dict[card] != null)
+            {
+                Destroy(dict[card]);
+                dict.Remove(card);
+            }
+        }
     }
 }

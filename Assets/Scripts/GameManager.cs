@@ -212,9 +212,6 @@ public class GameManager : MonoBehaviour
 
     [Header("Attack Indicators")]
     public AttackIndicatorMode attackIndicatorMode = AttackIndicatorMode.HoverOnly;
-    public GameObject canAttackIndicatorPrefab;
-    public Vector2 attackIndicatorOffset = new Vector2(0, 60);
-    private Dictionary<CardDisplay, GameObject> attackIndicators = new Dictionary<CardDisplay, GameObject>();
 
     [Header("Phase & Turn Announcements")]
     public PhaseAnnouncementSettings phaseAnnouncements = new PhaseAnnouncementSettings();
@@ -624,6 +621,10 @@ public class GameManager : MonoBehaviour
     {
         yield return new WaitForSeconds(0.5f); // Delay inicial para a cena abrir e a UI estabilizar
 
+        // 1. ANÚNCIO DE INÍCIO E PAUSA
+        AnnounceText(phaseAnnouncements.textStartDuel);
+        yield return new WaitForSeconds(1.5f);
+
         // Embaralha os decks com animação visual ANTES de comprar as cartas
         if (!disableDeckShuffle && DeckManager.Instance != null)
         {
@@ -639,15 +640,17 @@ public class GameManager : MonoBehaviour
             yield return new WaitForSeconds(waitTime);
         }
 
+        // 2. ANÚNCIO DO TURNO E PAUSA
+        AnnounceText(isPlayerTurn ? phaseAnnouncements.textPlayerTurn : phaseAnnouncements.textOpponentTurn);
+        yield return new WaitForSeconds(1.5f);
+
         yield return StartCoroutine(DrawInitialHandRoutine(5));
         yield return new WaitForSeconds(0.5f);
         yield return StartCoroutine(DrawInitialOpponentHandRoutine(5));
-        yield return new WaitForSeconds(1.0f); // Pausa dramática antes de começar
+        yield return new WaitForSeconds(0.5f); 
 
         if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
         else Debug.LogError("PhaseManager não encontrado mesmo após tentativa de criação!");
-
-        AnnounceText(phaseAnnouncements.textStartDuel);
     }
 
     // Cria automaticamente os gerenciadores se eles não estiverem na cena
@@ -4248,36 +4251,35 @@ public void ShuffleDeck(bool isPlayer)
     /// </summary>
     public void HandleAttackIndicatorHover(CardDisplay card, bool isHovering)
     {
-        if (attackIndicatorMode != AttackIndicatorMode.HoverOnly) return;
+        if (!card.isOnField || !card.isPlayerCard || card.isFlipped) return; // Só exibe indicadores em cartas de face para cima do jogador
+        if (!card.CurrentCardData.type.Contains("Monster")) return;
         
         GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Main1;
-        bool canAttack = isPlayerTurn && currentPhase == GamePhase.Battle && card.position == CardDisplay.BattlePosition.Attack && !card.hasAttackedThisTurn && !card.isFlipped;
+        bool isBattlePhase = currentPhase == GamePhase.Battle;
 
-        SetAttackIndicator(card, isHovering && canAttack);
-    }
-
-    private void SetAttackIndicator(CardDisplay card, bool show)
-    {
-        if (canAttackIndicatorPrefab == null || card == null) return;
-
-        if (show)
+        if (attackIndicatorMode == AttackIndicatorMode.HoverOnly)
         {
-            if (!attackIndicators.ContainsKey(card) || attackIndicators[card] == null)
+            if (isBattlePhase)
             {
-                GameObject indicator = Instantiate(canAttackIndicatorPrefab, card.transform);
-                RectTransform rt = indicator.GetComponent<RectTransform>();
-                if (rt != null) rt.anchoredPosition = attackIndicatorOffset;
-                attackIndicators[card] = indicator;
+                bool isAttacker = CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null && CardEffectManager.Instance.luaDuel.currentAttacker.unityCard == card;
+                bool canAttack = isPlayerTurn && card.position == CardDisplay.BattlePosition.Attack && !card.hasAttackedThisTurn && !isAttacker;
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCanAttackIndicator(card, isHovering && canAttack);
+
+                bool cannotAttack = !canAttack;
+                if (DuelFXManager.Instance != null && DuelFXManager.Instance.showCannotAttackOnlyInAttackPos && card.position != CardDisplay.BattlePosition.Attack)
+                    cannotAttack = false;
+                if (isAttacker) cannotAttack = false;
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCannotAttackIndicator(card, isHovering && cannotAttack);
+            }
+            else
+            {
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCanAttackIndicator(card, false);
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCannotAttackIndicator(card, false);
             }
         }
-        else
-        {
-            if (attackIndicators.ContainsKey(card) && attackIndicators[card] != null)
-            {
-                Destroy(attackIndicators[card]);
-                attackIndicators.Remove(card);
-            }
-        }
+
+        bool cannotChangePos = card.hasChangedPositionThisTurn || card.summonedTurnCount == turnCount || card.hasAttackedThisTurn;
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCannotChangePosIndicator(card, isHovering && cannotChangePos);
     }
 
     /// <summary>
@@ -4287,7 +4289,7 @@ public void ShuffleDeck(bool isPlayer)
     /// </summary>
     public void RefreshAttackIndicators()
     {
-        if (duelFieldUI == null || canAttackIndicatorPrefab == null) return;
+        if (duelFieldUI == null) return;
 
         GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Main1;
         bool showIndicators = attackIndicatorMode == AttackIndicatorMode.AlwaysInBattlePhase && currentPhase == GamePhase.Battle && isPlayerTurn;
@@ -4298,10 +4300,37 @@ public void ShuffleDeck(bool isPlayer)
             if (zone.childCount > 0)
             {
                 CardDisplay card = zone.GetChild(0).GetComponent<CardDisplay>();
-                if (card != null)
+                if (card != null && !card.isFlipped && card.CurrentCardData.type.Contains("Monster"))
                 {
-                    bool canAttack = showIndicators && card.position == CardDisplay.BattlePosition.Attack && !card.hasAttackedThisTurn && !card.isFlipped;
-                    SetAttackIndicator(card, canAttack);
+                    if (showIndicators)
+                    {
+                        bool isBattlePhase = currentPhase == GamePhase.Battle;
+                        if (isBattlePhase)
+                        {
+                        bool isAttacker = CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null && CardEffectManager.Instance.luaDuel.currentAttacker.unityCard == card;
+                        bool canAttack = card.position == CardDisplay.BattlePosition.Attack && !card.hasAttackedThisTurn && !isAttacker;
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCanAttackIndicator(card, canAttack);
+
+                            bool cannotAttack = !canAttack;
+                            if (DuelFXManager.Instance != null && DuelFXManager.Instance.showCannotAttackOnlyInAttackPos && card.position != CardDisplay.BattlePosition.Attack)
+                                cannotAttack = false;
+                        if (isAttacker) cannotAttack = false;
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCannotAttackIndicator(card, cannotAttack);
+                        }
+                        else
+                        {
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCanAttackIndicator(card, false);
+                            if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCannotAttackIndicator(card, false);
+                        }
+                    }
+                    else
+                    {
+                        if (DuelFXManager.Instance != null)
+                        {
+                            DuelFXManager.Instance.SetCanAttackIndicator(card, false);
+                            DuelFXManager.Instance.SetCannotAttackIndicator(card, false);
+                        }
+                    }
                 }
             }
         }
