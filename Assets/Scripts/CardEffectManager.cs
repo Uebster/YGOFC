@@ -2475,10 +2475,23 @@ public class CardEffectManager : MonoBehaviour
                             // Se for ação, envia o Jogador (tp). Se for contínuo/campo, envia a Carta (c).
                             bool isActionEffect = (eff.type & 0x07F8) != 0; 
 
-                            if (eff.conditionFunc != null) luaEngine.Call(eff.conditionFunc, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0));
-                            if (eff.costFunc != null) luaEngine.Call(eff.costFunc, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0);
-                            // O '0' a mais aqui corrige o chk=0, impedindo ativações falsas explosivas!
-                            if (eff.targetFunc != null) luaEngine.Call(eff.targetFunc, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0, dummyChkc);
+                            System.Action<Closure, int> TestFunc = (func, chkArg) => {
+                                if (func == null) return;
+                                try {
+                                    if (chkArg == -1) luaEngine.Call(func, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0));
+                                    else if (chkArg == 0) luaEngine.Call(func, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0);
+                                    else if (chkArg == 1) luaEngine.Call(func, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0, dummyChkc);
+                                } catch {
+                                    // Fallback: Tenta inverter o arg2 (tp vs lc) caso a assinatura da carta fuja do padrão esperado (ex: EFFECT_TYPE_FIELD exigindo c em vez de tp)
+                                    if (chkArg == -1) luaEngine.Call(func, eff, !isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0));
+                                    else if (chkArg == 0) luaEngine.Call(func, eff, !isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0);
+                                    else if (chkArg == 1) luaEngine.Call(func, eff, !isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0, dummyChkc);
+                                }
+                            };
+
+                            TestFunc(eff.conditionFunc, -1);
+                            TestFunc(eff.costFunc, 0);
+                            TestFunc(eff.targetFunc, 1);
                         } catch (System.Exception ex) {
                             errorLogs.Add($"<color=orange>[RUNTIME] Falha na carta {card.name} ({card.id}): {ex.Message}</color>");
                             runtimeError = true;

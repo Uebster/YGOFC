@@ -180,6 +180,18 @@ O "Laboratório Cirúrgico" para testar e comparar efeitos visuais (VFX) e sonor
     *   **Indicadores de Status:** Valida as UIs travadas no monstro (`CanAttack`, `CannotChangePos`) e a Mira de Alvo (`TargetingSword`).
 *   **Segurança de Clique (`DelaySetAttacker`):** Como os botões da GUI coexistem com o Raycast do tabuleiro, testes de Seleção de Ataque possuem uma Corrotina que espera 1 frame (`WaitForEndOfFrame`) antes de ativar a carta. Isso impede que o mesmo clique que ativou o teste também dispare um ataque real acidental no tabuleiro abaixo.
 
+### 9.5.6 Gerador de Checklist QA LUA (`generate_qa_checklist.py`)
+Ferramenta independente em Python localizada na pasta `Assets/Tools/`.
+*   **Atalho:** Execute `python generate_qa_checklist.py` no seu terminal.
+*   **Funcionalidade:** Lê seu `cards.json` nativamente e injeta o arquivo `QA_Card_Checklist.md` na pasta segura `Assets/Support/` ignorada pelo Git.
+*   **Integração (QA Auto-Spawner):** Aliado ao script `QAAutoSpawner.cs`, permite que o botão do desenvolvedor leia a próxima carta vazia da lista `[ ]`, limpe a mesa, coloque inimigos para apanhar no campo e injete a carta na sua mão. Após aprovação, ele escreve o `[x]` diretamente no arquivo de texto sem sair da Unity.
+
+### 9.5.7 Bloco de Notas do Desenvolvedor (`NotepadWindow.cs`)
+Ferramenta de Editor localizada em `Assets/Scripts/Editor/`.
+*   **Atalho:** Pressione **Ctrl + G** (`%g`) no Unity Editor.
+*   **Funcionalidade:** Um mini-editor de texto flutuante dentro da Unity. Salva as anotações automaticamente a cada caractere digitado. Memoriza o último arquivo aberto utilizando `EditorPrefs`.
+*   **Ferramentas:** Possui uma *Toolbar* no topo que permite criar novos arquivos (`.md`, `.txt`) em qualquer pasta, além de botões rápidos que injetam tags Markdown (Negrito, Itálico, Listas) e cores de Unity Rich Text (`<color=red>`) diretamente onde o cursor estiver posicionado!
+
 ---
 
 ## 9.6 Simulador de Caos (`SimulationManager.cs`)

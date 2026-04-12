@@ -454,7 +454,7 @@ public class LuaDuel
 
     public LuaCard GetFirstTarget()
     {
-        return (currentTargetGroup != null && currentTargetGroup.GetFirst() != null) ? currentTargetGroup.GetFirst() : null;
+        return (currentTargetGroup != null && currentTargetGroup.GetFirst() != null) ? currentTargetGroup.GetFirst() : SafeDummyCard();
     }
 
     public LuaGroup GetTargetCards(object e)
@@ -625,12 +625,12 @@ public class LuaDuel
 
     public LuaCard GetAttacker()
     {
-        return currentAttacker;
+        return currentAttacker ?? SafeDummyCard();
     }
 
     public LuaCard GetAttackTarget()
     {
-        return currentAttackTarget;
+        return currentAttackTarget ?? SafeDummyCard();
     }
 
     public void CalculateDamage(object attackerObj, object defenderObj)
@@ -1179,9 +1179,9 @@ public class LuaCard
 
     // Novos Stubs Descobertos pelo Mass Validator
     public bool IsPreviousLocation(object loc) { return true; }
-    public LuaCard GetBattleTarget() { return null; }
+    public LuaCard GetBattleTarget() { return SafeDummyCard(); }
     public bool IsDiscardable(params object[] args) { return true; }
-    public LuaCard GetEquipTarget() { return null; }
+    public LuaCard GetEquipTarget() { return SafeDummyCard(); }
     public bool IsAbleToGraveAsCost() { return true; }
     public bool IsAbleToRemoveAsCost() { return true; }
     public bool IsAbleToDeck() { return true; }
@@ -1275,7 +1275,7 @@ public class LuaCard
     public bool IsCanChangePosition() { return true; }
     public int GetTurnID() { return 0; }
     public bool CanChainAttack() { return true; }
-    public LuaCard GetPreviousEquipTarget() { return null; }
+    public LuaCard GetPreviousEquipTarget() { return SafeDummyCard(); }
     public bool IsAbleToGrave() { return true; }
     public bool HasFlagEffect(object id) { return false; }
     public int GetTurnCounter() { return unityCard != null ? unityCard.turnCounter : 0; }
@@ -1336,7 +1336,7 @@ public class LuaCard
     public void RegisterFlagEffect(params object[] args) { }
     public void SetCardTarget(object tc) { }
     public bool IsStatus(object status) { return false; }
-    public LuaCard GetFirstCardTarget() { return null; }
+    public LuaCard GetFirstCardTarget() { return SafeDummyCard(); }
     public void SetTurnCounter(object ct) { }
     public int GetLabel() { return 0; }
     public void SetLabel(object ct) { }

@@ -190,6 +190,8 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **9.5.3** Painel de Desenvolvedor (`FullTestManager.cs`, Toggles, Dev Card Menu, Ctrl+T)
     *   **9.5.4** In-Game Debug Console (`InGameDebugConsole.cs`, Ctrl+Shift+D)
     *   **9.5.5** Laboratório de Teste de Efeitos (`EffectTestManager.cs`, Ctrl+E, Categorias de Teste, Delays de Clique)
+    *   **9.5.6** Gerador de Checklist QA (`generate_qa_checklist.py`, Python Tool)
+    *   **9.5.7** Bloco de Notas do Desenvolvedor (`NotepadWindow.cs`, Ctrl+G)
 *   **9.6.** Simulador de Caos (`SimulationManager.cs`, Bypass de UI, Visual Mode 1.5x, Fast Mode 50x)
 *   **9.7.** Sistema de Temas de Duelo (`DuelThemeManager.cs`, `DuelTheme`)
     *   **9.7.1** Arquitetura de Temas (Console e Cartuchos)
