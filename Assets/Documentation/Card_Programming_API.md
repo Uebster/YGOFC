@@ -12,14 +12,18 @@ Este documento é o guia absoluto e exaustivo para programar e interagir com os 
 O `CardEffectManager` é a Máquina Virtual central do jogo. Ele hospeda o interpretador Lua (MoonSharp) e atua como o regente da orquestra, delegando a inteligência da carta para o script de texto e executando os gráficos/status no C#.
 
 ### 5.1.1 Estrutura de Arquivos e Componentes
-*   **`CardEffectManager.cs` (A Máquina Virtual):** Singleton principal. Inicializa a `luaEngine`, injeta centenas de constantes e funções globais da API OCGCore, gerencia o cache de scripts (`activeLuaCards`) e comanda as Corrotinas que resolvem os efeitos e correntes.
-*   **`LuaAPI.cs` (A Ponte C# <-> LUA):** Expõe classes C# como `userdata` para o ambiente Lua, permitindo que scripts manipulem objetos da Unity de forma segura. As classes principais são:
-    *   `LuaDuel` (`Duel.`): Classe global para interagir com o estado do duelo (`Duel.Damage`, `Duel.Destroy`, `Duel.SelectTarget`).
-    *   `LuaCard` (`c:`): O invólucro do `CardDisplay` da Unity, provendo informações como `c:GetAttack()` para o script.
-    *   `LuaEffect` (`Effect.`): O contêiner lógico que estrutura a anatomia de uma habilidade (`Condition`, `Cost`, `Target`, `Operation`).
-    *   `LuaGroup` (`Group` ou `eg`): Tabelas de listas de cartas dinâmicas para aplicação em massa.
+*   **`CardEffectManager.cs` (O Singleton Hub):** Delega e une o motor Lua com as Corrotinas do Unity. Guarda o cache de `activeLuaCards` e despacha requisições entre a Lógica C# e os scripts de cartas.
+*   **`LuaScriptLoader.cs` (O Compilador):** Classe estática responsável por ler os arquivos `.lua` no disco e realizar o `SanitizeOCGScript`. É ele que transforma a sintaxe moderna de Lua 5.3 (YGOPro) em algo que o nosso interpretador MoonSharp consiga rodar sem travar.
+*   **`LuaEngineCore.cs` (A Fundação do Interpretador):** Responsável por carregar o MoonSharp, injetar as classes C# e registrar centenas de constantes LUA na memória (como IDs de eventos e zonas).
+*   **`ChainManager.cs` (O Motor de Pilhas LIFO):** Extensão modular instanciada pelo CardEffectManager. Cuida exclusivamente das Janelas de Corrente, orquestrando as validações, a limpeza de Mágicas/Traps após o fim da corrente e emitindo os Callbacks da interface gráfica para o oponente responder (`ResponseWindowRoutine`).
+*   **`LuaEventManager.cs` (Os Olhos e Ouvidos):** Extrai todos os gatilhos e escutas do motor. Funções como `OnSummon` e `OnCardLeavesField` moram aqui, vigiando o jogo e ativando as cartas que estavam escutando silenciosamente (`TriggerLuaEvent`).
+*   **Pasta `LuaAPI/` (A Ponte C# <-> LUA):** Diretório contendo os arquivos independentes que expõem as lógicas do C# para os scripts de cartas:
+    *   **`LuaDuel.cs`** (`Duel.`): Ações de tabuleiro (`Duel.Damage`, `Duel.SelectTarget`).
+    *   **`LuaCard.cs`** (`c:`): A representação física da carta (`c:GetAttack()`).
+    *   **`LuaEffect.cs`** (`Effect.`): Contêiner que monta a habilidade (`Condition`, `Cost`).
+    *   **`LuaGroup.cs`** (`Group` ou `eg`): Listas dinâmicas usadas em invocações e destruições em massa.
+    *   **`LuaProcsAndStubs.cs`**: Implementações simuladas (Stubs) de classes processuais como `Fusion`, `Synchro` e dependências exclusivas do analisador Python.
 *   **`Assets/Scripts/LuaScripts/`:** O diretório que contém os scripts de lógica para cada carta, nomeados por sua ID (ex: `c0618.lua` para o *Exodia*).
-*   **Sanitização de Scripts:** Como o MoonSharp usa uma versão mais antiga do Lua (5.2), o `CardEffectManager` possui um método `SanitizeOCGScript` que traduz em tempo de execução a sintaxe moderna do YGOPro (Lua 5.3+) para uma versão compatível, convertendo operadores bitwise (`&`, `|`, `~`) para chamadas de biblioteca `bit32`.
 
 ### 5.1.2 O Fluxo de Execução e o Sistema `chk`
 O jogo obedece rigorosamente às janelas de ativação de um simulador autêntico. A ação foi dividida entre o momento de pagar/escolher alvos (Ativação) e a explosão do efeito (Resolução na Corrente):

@@ -957,6 +957,12 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             return;
         }
 
+        if (GameManager.Instance != null && GameManager.Instance.pendingEffectDraws > 0 && !isInPile)
+        {
+            if (UIManager.Instance != null && !GameManager.Instance.isSimulating) UIManager.Instance.ShowMessage("Você precisa comprar cartas do deck pelo efeito primeiro!");
+            return;
+        }
+
         // --- SISTEMA FULL TEST (Menu de Desenvolvedor da Carta) ---
         bool isShiftPressed = false;
 #if ENABLE_INPUT_SYSTEM

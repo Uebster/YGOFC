@@ -129,6 +129,12 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
     // Detecta clique no fundo do tabuleiro (FieldArea)
     public void OnPointerClick(PointerEventData eventData)
     {
+        if (GameManager.Instance != null && GameManager.Instance.pendingEffectDraws > 0)
+        {
+            if (UIManager.Instance != null && !GameManager.Instance.isSimulating) UIManager.Instance.ShowMessage("Você precisa comprar cartas do deck pelo efeito primeiro!");
+            return;
+        }
+
         if (eventData.button == PointerEventData.InputButton.Right)
         {
             // Clique direito no vazio -> Sugerir mudança de fase/turno

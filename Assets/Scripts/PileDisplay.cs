@@ -230,7 +230,12 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
             if (isPlayerPile)
             {
                 // Player draws a card by clicking on the deck (if enabled)
-                if (GameManager.Instance.canPlayerDrawFromDeck)
+                if (GameManager.Instance.pendingEffectDraws > 0)
+                {
+                    GameManager.Instance.pendingEffectDraws--;
+                    GameManager.Instance.DrawCard(true); // ignoreLimit
+                }
+                else if (GameManager.Instance.canPlayerDrawFromDeck)
                     GameManager.Instance.DrawCard();
             }
             else if (GameManager.Instance.canOpponentDrawFromDeck)

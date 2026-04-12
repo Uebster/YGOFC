@@ -379,6 +379,8 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public int normalSummonsThisTurnPlayer = 0;
     [HideInInspector] public int normalSummonsThisTurnOpponent = 0;
 
+    [HideInInspector] public int pendingEffectDraws = 0;
+
     // --- ESTADO DE SELEÇÃO DE MÃO ---
     [HideInInspector] public bool isSelectingFromHand = false;
     private List<CardData> handSelectionCandidates;

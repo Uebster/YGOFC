@@ -887,7 +887,7 @@ public class OpponentAI : MonoBehaviour
         return scoredCards.FirstOrDefault()?.Display;
     }
 
-    public CardDisplay ChooseBestResponse(List<CardDisplay> validResponses, CardEffectManager.ChainLink triggerLink)
+    public CardDisplay ChooseBestResponse(List<CardDisplay> validResponses, ChainManager.ChainLink triggerLink)
     {
         if (validResponses == null || validResponses.Count == 0) return null;
 

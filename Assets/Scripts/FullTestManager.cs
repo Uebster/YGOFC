@@ -186,31 +186,6 @@ public class FullTestManager : MonoBehaviour
                 testPanel.SetActive(GameManager.Instance.fullTestMode);
             }
         }
-
-        // NOVA LÓGICA DE CLIQUE SHIFT + DIREITO AQUI
-        if (GameManager.Instance != null && GameManager.Instance.fullTestMode && shiftPressed && rightClicked)
-        {
-            if (UnityEngine.EventSystems.EventSystem.current != null)
-            {
-                UnityEngine.EventSystems.PointerEventData pointerData = new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current)
-                {
-                    position = mousePos
-                };
-
-                List<UnityEngine.EventSystems.RaycastResult> results = new List<UnityEngine.EventSystems.RaycastResult>();
-                UnityEngine.EventSystems.EventSystem.current.RaycastAll(pointerData, results);
-
-                foreach (var result in results)
-                {
-                    CardDisplay card = result.gameObject.GetComponentInParent<CardDisplay>();
-                    if (card != null && card.isOnField)
-                    {
-                        OpenDevCardMenu(card);
-                        break;
-                    }
-                }
-            }
-        }
     }
 
     public void ToggleAI(bool active)
@@ -524,7 +499,7 @@ public class FullTestManager : MonoBehaviour
         // Força a busca da UI caso ela comece desligada no Inspector
         if (MultipleChoiceUI.Instance == null)
         {
-            MultipleChoiceUI.Instance = Resources.FindObjectsOfTypeAll<MultipleChoiceUI>().FirstOrDefault();
+            MultipleChoiceUI.Instance = Resources.FindObjectsOfTypeAll<MultipleChoiceUI>().FirstOrDefault(x => x.gameObject.scene.IsValid());
         }
 
         if (MultipleChoiceUI.Instance != null)
@@ -535,7 +510,7 @@ public class FullTestManager : MonoBehaviour
                 string opt = selected[0];
                 if (opt.Contains("Cemitério")) {
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
-                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard, CardLocation.Field, SendReason.Effect);
                     Destroy(card.gameObject);
                 }
                 else if (opt.Contains("Banir")) {
