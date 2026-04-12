@@ -42,7 +42,9 @@ public class ChainManager
             if (!core.lastCoroutineSuccess) { onComplete?.Invoke(); yield break; }
         }
         if (effect.targetFunc != null) {
+            Debug.Log($"[Surgical Log] Chamando targetFunc (chk=1) para {luaCard.unityData.name}");
             yield return core.StartCoroutine(core.RunLuaCoroutine(effect.targetFunc, effect, tp, triggerArgs, 1));
+            Debug.Log($"[Surgical Log] Sucesso da targetFunc: {core.lastCoroutineSuccess}");
             if (!core.lastCoroutineSuccess) { onComplete?.Invoke(); yield break; }
         }
         core.luaDuel.currentActivatingEffect = null;
@@ -86,8 +88,10 @@ public class ChainManager
                 }
 
                 Debug.Log($"[Chain] Resolvendo Link {link.chainIndex}: {link.card.unityData.name}...");
-                if (link.effect.operationFunc != null) 
+                if (link.effect.operationFunc != null) {
+                    Debug.Log($"[Surgical Log] Chamando operationFunc para {link.card.unityData.name}");
                     yield return core.StartCoroutine(core.RunLuaCoroutine(link.effect.operationFunc, link.effect, link.player, link.triggerArgs, -1));
+                }
 
                 CleanupSpellTrapAfterResolution(link.card);
             }

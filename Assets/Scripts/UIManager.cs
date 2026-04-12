@@ -62,6 +62,7 @@ public class UIManager : MonoBehaviour
     public RitualUI ritualUI; // Novo modal para Ritual
     public GameObject destinyBoardWinPanel; // Arraste o Panel_DestinyBoardWin aqui
     public GameObject exodiaWinPanel; // Arraste o Panel_ExodiaWin aqui
+    public Jackpot7UI jackpot7UI; // Arraste o Panel_Card7 aqui!
     
     [Header("End Duel Assets")]
     public Sprite endDuelWinSprite;
@@ -189,6 +190,7 @@ public class UIManager : MonoBehaviour
         if (ritualUI != null) ritualUI.gameObject.SetActive(false);
         if (destinyBoardWinPanel != null) destinyBoardWinPanel.SetActive(false);
         if (exodiaWinPanel != null) exodiaWinPanel.SetActive(false);
+        if (jackpot7UI != null) jackpot7UI.gameObject.SetActive(false);
 
         // 2. Ativa apenas a tela desejada
         if (screenToShow != null)
@@ -666,5 +668,6 @@ public class UIManager : MonoBehaviour
         if (graveyardViewer != null) graveyardViewer.gameObject.SetActive(false);
         if (extraDeckViewer != null) extraDeckViewer.gameObject.SetActive(false);
         if (removedCardsViewer != null) removedCardsViewer.gameObject.SetActive(false);
+        if (jackpot7UI != null) jackpot7UI.gameObject.SetActive(false);
     }
 }

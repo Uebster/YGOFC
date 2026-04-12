@@ -42,8 +42,12 @@ public class LuaDuel
 
     public void Recover(object player, object amount, object reason)
     {
-        if (IsPlayer(player)) GameManager.Instance.GainLifePoints(true, ConvertToInt(amount));
-        else GameManager.Instance.GainLifePoints(false, ConvertToInt(amount));
+        Debug.Log($"[Surgical Log] Duel.Recover! Jogador_Raw: {player} | Amount_Raw: {amount}");
+        int pInt = ConvertToInt(player);
+        int aInt = ConvertToInt(amount);
+        Debug.Log($"[Surgical Log] Convertido para C# -> Jogador: {pInt} | Cura: {aInt}");
+        if (pInt == 0) GameManager.Instance.GainLifePoints(true, aInt);
+        else GameManager.Instance.GainLifePoints(false, aInt);
     }
 
     public DynValue Destroy(object target, object reason)
@@ -480,18 +484,27 @@ public class LuaDuel
 
     public void SetTargetParam(object p) { targetParam = ConvertToInt(p); }
     
-    public DynValue GetChainInfo(object chainc, params object[] args)
+    public DynValue GetChainInfo(object chainc, object arg1 = null, object arg2 = null, object arg3 = null, object arg4 = null)
     {
+         Debug.Log($"[Surgical Log] GetChainInfo invocado! arg1: {arg1}, arg2: {arg2}");
          List<DynValue> returns = new List<DynValue>();
-        foreach (object o in args)
+         List<object> argsList = new List<object>();
+         if (arg1 != null) argsList.Add(arg1);
+         if (arg2 != null) argsList.Add(arg2);
+         if (arg3 != null) argsList.Add(arg3);
+         if (arg4 != null) argsList.Add(arg4);
+
+        foreach (object o in argsList)
         {
             int arg = ConvertToInt(o);
             if (arg == 1) // CHAININFO_TARGET_PLAYER
             {
+                Debug.Log($"[Surgical Log] Retornando targetPlayer: {targetPlayer}");
                 returns.Add(DynValue.NewNumber(targetPlayer));
             }
             else if (arg == 2) // CHAININFO_TARGET_PARAM
             {
+                Debug.Log($"[Surgical Log] Retornando targetParam: {targetParam}");
                 returns.Add(DynValue.NewNumber(targetParam));
             }
             else if (arg == 16 || arg == 8388608) // CHAININFO_TARGET_CARDS (0x10)
@@ -517,6 +530,7 @@ public class LuaDuel
         }
         if (returns.Count == 0) return DynValue.NewTuple(DynValue.Nil, DynValue.Nil);
         if (returns.Count == 1) return returns[0];
+        Debug.Log($"[Surgical Log] GetChainInfo enviando um Tuple de volta ao LUA com {returns.Count} valores.");
         return DynValue.NewTuple(returns.ToArray());
     }
 

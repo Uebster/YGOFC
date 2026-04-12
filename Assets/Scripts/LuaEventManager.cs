@@ -88,12 +88,18 @@ public class LuaEventManager
         if (lc != null)
         {
             lc.previousLocation = fromLocation; // Memoriza de onde veio para o IsPreviousLocation do LUA!
-            int tp = isOwnerPlayer ? 0 : 1;
+            lc.ownerPlayerIndex = isOwnerPlayer ? 0 : 1;
+            int tp = lc.GetControler();
 
             var gyEffects = lc.registeredEffects.FindAll(e => e.code == 1014 && (e.type & 0x0001) != 0); // EVENT_TO_GRAVE
+            Debug.Log($"[Surgical Log] Carta '{card.name}' caiu no GY. Efeitos EVENT_TO_GRAVE (1014) encontrados: {gyEffects.Count}");
+            
             foreach(var e in gyEffects)
             {
-                if (core.CanActivateEffect(lc, e, tp, lc))
+                bool canAct = core.CanActivateEffect(lc, e, tp, lc);
+                Debug.Log($"[Surgical Log] CanActivateEffect para {card.name} (chk=0) retornou: {canAct}");
+                
+                if (canAct)
                     core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, lc, tp, null));
             }
         }

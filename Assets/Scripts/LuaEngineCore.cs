@@ -196,6 +196,14 @@ public class LuaEngineCore
         luaEngine.Globals["EFFECT_TYPE_QUICK_F"] = 0x0400;
         luaEngine.Globals["EFFECT_TYPE_CONTINUOUS"] = 0x0800;
 
+        // Constantes Vitais de Categoria e Corrente (Para cura, dano e destruição funcionarem)
+        luaEngine.Globals["CATEGORY_DRAW"] = 0x1;
+        luaEngine.Globals["CATEGORY_RECOVER"] = 0x100000;
+        luaEngine.Globals["CATEGORY_DESTROY"] = 0x20000;
+        luaEngine.Globals["REASON_EFFECT"] = 0x40;
+        luaEngine.Globals["CHAININFO_TARGET_PLAYER"] = 1;
+        luaEngine.Globals["CHAININFO_TARGET_PARAM"] = 2;
+
         // Metatable Global Segura
         luaEngine.DoString(@"
             local dummyFunc = function() return Effect.CreateEffect(nil) end

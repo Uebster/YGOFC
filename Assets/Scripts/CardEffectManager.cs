@@ -69,6 +69,30 @@ public class CardEffectManager : MonoBehaviour
 
     public void ActivateCard(CardDisplay card, object triggerArgs, System.Action onComplete)
     {
+        // HARDCODE EXCEÇÃO CARTA 7 (DM0004) - Sequência Cinemática de Jackpot
+        if (card.CurrentCardData.name == "7" || card.CurrentCardData.id == "DM0004" || card.CurrentCardData.id == "0004")
+        {
+            int count7 = 0;
+            List<CardDisplay> cards7 = new List<CardDisplay>();
+            
+            Transform[] zones = card.isPlayerCard ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+            foreach (var z in zones) {
+                if (z.childCount > 0) {
+                    var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                    if (cd != null && (cd.CurrentCardData.name == "7" || cd.CurrentCardData.id == "DM0004" || cd.CurrentCardData.id == "0004") && !cd.isFlipped) {
+                        count7++; cards7.Add(cd);
+                    }
+                }
+            }
+            
+            if (count7 >= 3)
+            {
+                StartCoroutine(Jackpot7Routine(cards7, card.isPlayerCard));
+                onComplete?.Invoke();
+                return; // Ignora o LUA e executa a nossa corrotina visual!
+            }
+        }
+
         LuaCard luaCard = EnsureCardScriptLoaded(card);
         if (luaCard == null) 
         {
@@ -190,7 +214,7 @@ public class CardEffectManager : MonoBehaviour
         catch (System.Exception ex)
         {
             if (GameManager.Instance == null || !GameManager.Instance.isSimulating)
-                Debug.LogWarning($"[API LUA] Erro silencioso (seguro) ao verificar condições de {luaCard.unityData.name}: {ex.Message}");
+                Debug.LogWarning($"[API LUA] Erro silencioso (seguro) ao verificar condições de {luaCard.unityData.name}: {ex.Message}\nStack: {ex.StackTrace}");
             return false;
         }
     }
@@ -363,45 +387,86 @@ public class CardEffectManager : MonoBehaviour
         }
     }
 
-    // --- HOOKS DA ENGINE (O LUA VAI SE INSCREVER NELES DEPOIS) ---
-    public void OnSummon(CardDisplay card) { 
-        LuaCard lc = EnsureCardScriptLoaded(card);
-        if (lc != null) {
-            var singleEffects = lc.registeredEffects.FindAll(e => e.code == 11 && (e.type & 0x0001) != 0); // EFFECT_TYPE_SINGLE
-            foreach(var e in singleEffects) 
+    private IEnumerator Jackpot7Routine(List<CardDisplay> cards, bool isPlayer)
+    {
+        Debug.Log("[Jackpot] Iniciando sequência especial da carta 7!");
+        
+        bool cinematicDone = false;
+
+        // Auto-atribuição caso o painel não tenha sido arrastado para o Inspector do UIManager
+        if (UIManager.Instance != null && UIManager.Instance.jackpot7UI == null)
+        {
+            UIManager.Instance.jackpot7UI = Resources.FindObjectsOfTypeAll<Jackpot7UI>().FirstOrDefault(x => x.gameObject.scene.IsValid());
+        }
+
+        if (UIManager.Instance != null && UIManager.Instance.jackpot7UI != null)
+        {
+            UIManager.Instance.jackpot7UI.ShowSequence(() => cinematicDone = true);
+            yield return new WaitUntil(() => cinematicDone);
+        }
+        else
+        {
+            if (DuelFXManager.Instance != null) foreach(var c in cards) if (c != null) DuelFXManager.Instance.PlayCardActivation(c, false);
+            yield return new WaitForSeconds(1.2f);
+        }
+        
+        // 1. Destruir as cartas uma a uma (O Lua vai interceptar o GY e curar 700 automaticamente!)
+        foreach (var c in cards)
+        {
+            if (c != null && c.isOnField)
             {
-                if (CanActivateEffect(lc, e, lc.GetControler(), null))
-                    StartCoroutine(chainManager.BuildAndResolveChainRoutine(lc, e, null, lc.GetControler(), null));
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(c);
+                GameManager.Instance.SendToGraveyard(c.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Effect);
+                Destroy(c.gameObject);
+                yield return new WaitForSeconds(0.8f); // Tempo da cura subir na tela
             }
         }
-        TriggerLuaEvent(11, lc); // EVENT_SUMMON_SUCCESS
-    }
-    public void OnSet(CardDisplay card) { }
-    public void OnBattlePositionChanged(CardDisplay card) { }
-    public void OnDamageDealt(CardDisplay attacker, CardDisplay target, int amount) { }
-    public void OnCounterTrapResolved(CardDisplay trap) { }
-    public void OnCardAddedToHand(CardDisplay card) { }
-    public void OnTribute(CardDisplay card) { }
-    public void OnCardDiscarded(CardDisplay card, bool causedByOpponent) { }
-    public void OnCardDrawn(CardData card, bool isPlayer) { }
-    public void OnSpecialSummon(CardDisplay card) { }
-    public void OnControlSwitched(CardDisplay card) { }
-    public void OnPhaseStart(GamePhase phase) { 
-        if (phase == GamePhase.End) CleanAllExpiredModifiers(); 
-        TriggerLuaEvent(4096, null); // EVENT_PHASE
-    }
-    public void OnPreDrawPhase(bool isPlayerTurn, System.Action onContinue) { onContinue?.Invoke(); }
-    public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, SendReason reason) { }
-    public void OnDamageTaken(bool isPlayer, int amount) { }
-    public void OnLifePointsGained(bool isPlayer, int amount) { }
-    public void OnCardEquipped(CardDisplay equip, CardDisplay target)
-    {
-        if (DuelFXManager.Instance != null)
-            DuelFXManager.Instance.PlayEquipEffect(equip, target);
 
-        RecalculateStats(target);
+        // 2. Após todas explodirem e curarem, iniciamos os saques manuais com bloqueio
+        yield return new WaitForSeconds(0.5f);
+        
+        if (isPlayer && GameManager.Instance != null && GameManager.Instance.canPlayerDrawFromDeck && !GameManager.Instance.isSimulating)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                int drawsLeft = 3 - i;
+                if (UIManager.Instance != null) UIManager.Instance.ShowMessage($"JACKPOT! Compre {drawsLeft} carta(s) do seu Deck.");
+                
+                GameManager.Instance.pendingEffectDraws = 1;
+                yield return new WaitWhile(() => GameManager.Instance.pendingEffectDraws > 0);
+                yield return new WaitForSeconds(0.2f);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                if (isPlayer) GameManager.Instance.DrawCard(true);
+                else GameManager.Instance.DrawOpponentCard();
+                yield return new WaitForSeconds(0.4f);
+            }
+        }
     }
-    public void OnSpellActivated(CardDisplay spell) { }
+
+    // --- HOOKS DA ENGINE (O LUA VAI SE INSCREVER NELES DEPOIS) ---
+    public void OnSummon(CardDisplay card) => eventManager.OnSummon(card);
+    public void OnSet(CardDisplay card) => eventManager.OnSet(card);
+    public void OnBattlePositionChanged(CardDisplay card) => eventManager.OnBattlePositionChanged(card);
+    public void OnDamageDealt(CardDisplay attacker, CardDisplay target, int amount) => eventManager.OnDamageDealt(attacker, target, amount);
+    public void OnCounterTrapResolved(CardDisplay trap) => eventManager.OnCounterTrapResolved(trap);
+    public void OnCardAddedToHand(CardDisplay card) => eventManager.OnCardAddedToHand(card);
+    public void OnTribute(CardDisplay card) => eventManager.OnTribute(card);
+    public void OnCardDiscarded(CardDisplay card, bool causedByOpponent) => eventManager.OnCardDiscarded(card, causedByOpponent);
+    public void OnCardDrawn(CardData card, bool isPlayer) => eventManager.OnCardDrawn(card, isPlayer);
+    public void OnSpecialSummon(CardDisplay card) => eventManager.OnSpecialSummon(card);
+    public void OnControlSwitched(CardDisplay card) => eventManager.OnControlSwitched(card);
+    public void OnPhaseStart(GamePhase phase) => eventManager.OnPhaseStart(phase);
+    public void OnPreDrawPhase(bool isPlayerTurn, System.Action onContinue) => eventManager.OnPreDrawPhase(isPlayerTurn, onContinue);
+    public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, SendReason reason) => eventManager.OnCardSentToGraveyard(card, isOwnerPlayer, fromLocation, reason);
+    public void OnDamageTaken(bool isPlayer, int amount) => eventManager.OnDamageTaken(isPlayer, amount);
+    public void OnLifePointsGained(bool isPlayer, int amount) => eventManager.OnLifePointsGained(isPlayer, amount);
+    public void OnCardEquipped(CardDisplay equip, CardDisplay target) => eventManager.OnCardEquipped(equip, target);
+    public void OnSpellActivated(CardDisplay spell) => eventManager.OnSpellActivated(spell);
 
     // Métodos (Stubs) mantidos para não quebrar a lógica hardcoded do GameManager
     public void CheckMaintenanceCosts() { }

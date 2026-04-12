@@ -35,10 +35,13 @@ public class LuaCard
     public int GetLevel() { return unityCard != null ? unityCard.CurrentCardData.level : (unityData != null ? unityData.level : 0); }
     public bool IsFaceup() { return unityCard != null ? !unityCard.isFlipped : false; }
     
+    public int ownerPlayerIndex = -1;
+
     public int GetControler()
     {
-        if (unityCard == null) return 0;
-        return unityCard.isPlayerCard ? 0 : 1;
+        if (unityCard != null) return unityCard.isPlayerCard ? 0 : 1;
+        if (ownerPlayerIndex != -1) return ownerPlayerIndex;
+        return 0;
     }
 
     public bool IsControler(object playerIndex)
