@@ -116,3 +116,4 @@ O controle de tempo da *Standby Phase* apresentou dois sintomas distintos que ma
 *   **A Solução:** O `DuelFXManager.cs` foi atualizado para gerenciar a destruição de forma inteligente, lendo as propriedades `duration` e `startLifetime` do próprio `ParticleSystem` (`Destroy(instance, ps.main.duration + ps.main.startLifetime.constantMax + 0.5f)`). O script avulso `DestroyOnParticleEnd` foi descartado para manter a arquitetura centralizada e limpa. A correção dos quadrados verdes deve ser feita reatribuindo o material nas propriedades dos prefabs no Inspector.
 
 ---
+

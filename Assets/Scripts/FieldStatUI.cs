@@ -89,17 +89,15 @@ public class FieldStatUI : MonoBehaviour
             return;
         }
 
-        string atkColorHex = ColorUtility.ToHtmlStringRGB(GetStatColor(attachedCard.currentAtk, attachedCard.originalAtk));
-        string defColorHex = ColorUtility.ToHtmlStringRGB(GetStatColor(attachedCard.currentDef, attachedCard.originalDef));
-        string inactiveColorHex = ColorUtility.ToHtmlStringRGB(gm.statInactiveColor);
+        // Aplica a ideia Genial de UI: Mostra a cor do buff (Verde/Vermelho), mas escurecida se estiver inativo!
+        Color finalAtkColor = GetStatColor(attachedCard.currentAtk, attachedCard.originalAtk);
+        if (attachedCard.position != CardDisplay.BattlePosition.Attack) finalAtkColor = Color.Lerp(finalAtkColor, Color.black, 0.6f); // Escurece 60%
 
-        string atkString = (attachedCard.position == CardDisplay.BattlePosition.Attack)
-            ? $"<color=#{atkColorHex}>ATK/{attachedCard.currentAtk}</color>"
-            : $"<color=#{inactiveColorHex}>ATK/{attachedCard.currentAtk}</color>";
+        Color finalDefColor = GetStatColor(attachedCard.currentDef, attachedCard.originalDef);
+        if (attachedCard.position != CardDisplay.BattlePosition.Defense) finalDefColor = Color.Lerp(finalDefColor, Color.black, 0.6f);
 
-        string defString = (attachedCard.position == CardDisplay.BattlePosition.Defense)
-            ? $"<color=#{defColorHex}>DEF/{attachedCard.currentDef}</color>"
-            : $"<color=#{inactiveColorHex}>DEF/{attachedCard.currentDef}</color>";
+        string atkString = $"<color=#{ColorUtility.ToHtmlStringRGB(finalAtkColor)}>ATK/{attachedCard.currentAtk}</color>";
+        string defString = $"<color=#{ColorUtility.ToHtmlStringRGB(finalDefColor)}>DEF/{attachedCard.currentDef}</color>";
 
         statText.text = $"{atkString}  {defString}";
 

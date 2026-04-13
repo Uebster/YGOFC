@@ -343,143 +343,183 @@ Abaixo está a estrutura exata dos GameObjects na cena, com seus principais comp
 *   **Panel_Duel** `[Image]`
     *   **Panel_CardViewer** `[Image, CardViewerUI]`
         *   **CardViewer** `[CardViewerUI]`
-            *   **Card2D** `[EventTrigger, CardDisplay, Mask, Image]`
-                *   **Art** `[RawImage]`
-            *   **CardStatsText** `[TextMeshProUGUI]`
-            *   **Panel_Description** `[Image]`
-                *   **CardNameText** `[TextMeshProUGUI]`
-                *   **CardInfoText** `[TextMeshProUGUI]`
-                *   **Scroll View** `[Image, ScrollRect]`
-                    *   **Viewport** `[Image, Mask]`
-                        *   **Content** `[]`
-                        *   **CardDescriptionText** `[TextMeshProUGUI, Scrollbar, ContentSizeFitter]`
-                    *   **Scrollbar Vertical** `[Image, Scrollbar]`
-                        *   **Sliding Area** `[]`
-                            *   **HandleDescription** `[Image]`
+        - Card2D [EventTrigger, CardDisplay, Mask, Image]
+          - Art [RawImage]
+        - CardStatsText [TextMeshProUGUI]
+        - Panel_Description [Image]
+          - CardNameText [TextMeshProUGUI]
+          - CardInfoText [TextMeshProUGUI]
+          - Scroll View [Image, ScrollRect]
+            - Viewport [Image, Mask]
+              - Content []
+              - CardDescriptionText [TextMeshProUGUI, Scrollbar, ContentSizeFitter]
+            - Scrollbar Vertical [Image, Scrollbar]
+              - Sliding Area []
+                - HandleDescription [Image]
     *   **DuelBoard** `[DuelFieldUI]`
-        *   **BoardBackground** `[Image]`
-        *   **FieldImg** `[Image]`
-        *   **FieldArea** `[Image]`
-        *   **OpponentArea** `[]`
-            *   **OpponentHand** `[HorizontalLayoutGroup]`
-            *   **RemovedCardsOpponent** `[Image, PileDisplay]`
-            *   **Field** `[]`
-                *   **SpellRow** `[HorizontalLayoutGroup]`
-                    *   **S_Zone_1** a **S_Zone_5** `[Image]`
-                *   **MonsterRow** `[HorizontalLayoutGroup]`
-                    *   **M_Zone_1** a **M_Zone_5** `[Image]`
-            *   **FieldSpell** `[Image]`
-            *   **OpponentExtraDeck** `[Image, PileDisplay]`
-            *   **OpponentGraveyard** `[Image, PileDisplay]`
-            *   **OpponentDeck** `[Image, PileDisplay]`
-        *   **PlayerArea** `[]`
-            *   **PlayerHand** `[HorizontalLayoutGroup]`
-            *   **RemovedCardsPlayer** `[Image, PileDisplay]`
-            *   **Field** `[]`
-                *   **MonsterRow** `[HorizontalLayoutGroup]`
-                    *   **M_Zone_1** a **M_Zone_5** `[Image]`
-                *   **SpellRow** `[HorizontalLayoutGroup]`
-                    *   **S_Zone_1** a **S_Zone_5** `[Image]`
-            *   **FieldSpell** `[Image]`
-            *   **PlayerExtraDeck** `[Image, PileDisplay]`
-            *   **PlayerGraveyard** `[Image, PileDisplay]`
-            *   **PlayerDeck** `[Image, PileDisplay]`
+      - BoardBackground [Image]
+      - FieldImg [Image]
+      - FieldArea [Image]
+      - OpponentArea []
+        - OpponentHand [HorizontalLayoutGroup]
+        - RemovedCardsOpponent [Image, PileDisplay]
+        - Field []
+          - SpellRow [HorizontalLayoutGroup]
+            - S_Zone_1 [Image]
+            - S_Zone_2 [Image]
+            - S_Zone_3 [Image]
+            - S_Zone_4 [Image]
+            - S_Zone_5 [Image]
+          - MonsterRow [HorizontalLayoutGroup]
+            - M_Zone_1 [Image]
+            - M_Zone_2 [Image]
+            - M_Zone_3 [Image]
+            - M_Zone_4 [Image]
+            - M_Zone_5 [Image]
+        - FieldSpell [Image]
+        - OpponentExtraDeck [Image, PileDisplay]
+        - OpponentGraveyard [Image, PileDisplay]
+        - OpponentDeck [Image, PileDisplay]
+      - PlayerArea []
+        - PlayerHand [HorizontalLayoutGroup]
+        - RemovedCardsPlayer [Image, PileDisplay]
+        - Field []
+          - MonsterRow [HorizontalLayoutGroup]
+            - M_Zone_1 [Image]
+            - M_Zone_2 [Image]
+            - M_Zone_3 [Image]
+            - M_Zone_4 [Image]
+            - M_Zone_5 [Image]
+          - SpellRow [HorizontalLayoutGroup]
+            - S_Zone_1 [Image]
+            - S_Zone_2 [Image]
+            - S_Zone_3 [Image]
+            - S_Zone_4 [Image]
+            - S_Zone_5 [Image]
+        - FieldSpell [Image]
+        - PlayerExtraDeck [Image, PileDisplay]
+        - PlayerGraveyard [Image, PileDisplay]
+        - PlayerDeck [Image, PileDisplay]
     *   **EffectsCards** `[]` (Container para VFX)
     *   **StatsArea** `[Image]`
-        *   **PhaseIndicator** `[Image]`
-            *   **Draw Phase** `[Image]`
-                *   **Btn_Draw** `[Image, Button]` -> **Text_Draw** `[TextMeshProUGUI]`
-            *   **Standby Phase** `[Image]`
-                *   **Btn_Standby** `[Image, Button]` -> **Text_Standby** `[TextMeshProUGUI]`
-            *   **Main Phase 1** `[Image]`
-                *   **Btn_Main1** `[Image, Button]` -> **Text_Main1** `[TextMeshProUGUI]`
-            *   **Battle Phase** `[Image]`
-                *   **Btn_Battle** `[Image, Button]` -> **Text_Battle** `[TextMeshProUGUI]`
-            *   **Main Phase 2** `[Image]`
-                *   **Btn_Main2** `[Image, Button]` -> **Text_Main2** `[TextMeshProUGUI]`
-            *   **End Phase** `[Image]`
-                *   **Btn_End** `[Image, Button]` -> **Text** `[TextMeshProUGUI]`
-        *   **PlayerProfile** `[]`
-            *   **Avatar** `[Image]`
-            *   **PanelPlayerProfile** `[Image]`
-            *   **Name** `[TextMeshProUGUI]`
-            *   **LP** `[TextMeshProUGUI]`
-        *   **OpponentProfile** `[]`
-            *   **Avatar** `[Image]`
-            *   **OpponentPlayerProfile** `[Image]`
-            *   **Name** `[TextMeshProUGUI]`
-            *   **LP** `[TextMeshProUGUI]`
+      - PhaseIndicator [Image]
+        - Draw Phase [Image]
+          - Btn_Draw [Image, Button]
+            - Text_Draw [TextMeshProUGUI]
+        - Standby Phase [Image]
+          - Btn_Standby [Image, Button]
+            - Text_Standby [TextMeshProUGUI]
+        - Main Phase 1 [Image]
+          - Btn_Main1 [Image, Button]
+            - Text_Main1 [TextMeshProUGUI]
+        - Battle Phase [Image]
+          - Btn_Battle [Image, Button]
+            - Text_Battle [TextMeshProUGUI]
+        - Main Phase 2 [Image]
+          - Btn_Main2 [Image, Button]
+            - Text_Main2 [TextMeshProUGUI]
+        - End Phase [Image]
+          - Btn_End [Image, Button]
+            - Text [TextMeshProUGUI]
+      - PlayerProfile []
+        - Avatar [Image]
+        - PanelPlayerProfile [Image]
+        - Name [TextMeshProUGUI]
+        - LP [TextMeshProUGUI]
+      - OpponentProfile []
+        - Avatar [Image]
+        - OpponentPlayerProfile [Image]
+        - Name [TextMeshProUGUI]
+        - LP [TextMeshProUGUI]
     *   **GraveyardViewerPanel** `[Image, GraveyardViewer]`
-        *   **Scroll View** `[Image, ScrollRect]`
-            *   **Viewport** `[Image, Mask]`
-                *   **Content** `[HorizontalLayoutGroup]`
-            *   **Scrollbar Horizontal** `[Image, Scrollbar]`
-                *   **Sliding Area** `[]`
-                    *   **Handle** `[Image]`
-        *   **CloseGraveyard** `[Image, Button]`
-            *   **Close** `[TextMeshProUGUI]`
+      - Scroll View [Image, ScrollRect]
+        - Viewport [Image, Mask]
+          - Content [HorizontalLayoutGroup]
+        - Scrollbar Horizontal [Image, Scrollbar]
+          - Sliding Area []
+            - Handle [Image]
+      - CloseGraveyard [Image, Button]
+        - Close [TextMeshProUGUI]
     *   **ExtraDeckViewerPanel** `[Image, GraveyardViewer]`
-        *   **Scroll View** `[Image, ScrollRect]`
-            *   **Viewport** `[Image, Mask]`
-                *   **Content** `[HorizontalLayoutGroup]`
-            *   **Scrollbar Horizontal** `[Image, Scrollbar]`
-                *   **Sliding Area** `[]`
-                    *   **Handle** `[Image]`
-        *   **CloseExtraDeck** `[Image, Button]`
-            *   **Close** `[TextMeshProUGUI]`
+      - Scroll View [Image, ScrollRect]
+        - Viewport [Image, Mask]
+          - Content [HorizontalLayoutGroup]
+        - Scrollbar Horizontal [Image, Scrollbar]
+          - Sliding Area []
+            - Handle [Image]
+      - CloseExtraDeck [Image, Button]
+        - Close [TextMeshProUGUI]
     *   **RemovedCardsViewerPanel** `[Image, GraveyardViewer]`
-        *   **Scroll View** `[Image, ScrollRect, GridLayoutGroup]`
-            *   **Viewport** `[Image, Mask]`
-                *   **Content** `[]`
-            *   **Scrollbar Horizontal** `[Image, Scrollbar]`
-                *   **Sliding Area** `[]`
-                    *   **HandleExtraDeck** `[Image]`
-            *   **Scrollbar Vertical** `[Image, Scrollbar]`
-                *   **Sliding Area** `[]`
-                    *   **Handle** `[Image]`
-        *   **CloseRemovedCards** `[Image, Button]`
-            *   **Close** `[TextMeshProUGUI]`
+      - Scroll View [Image, ScrollRect]
+        - Viewport [Image, Mask]
+          - Content [HorizontalLayoutGroup]
+        - Scrollbar Horizontal [Image, Scrollbar]
+          - Sliding Area []
+            - Handle [Image]
+      - CloseRemovedCards [Image, Button]
+        - Close [TextMeshProUGUI]
     *   **DeckCardsViewerPanel** `[Image, GraveyardViewer]`
-        *   **Scroll View** `[Image, ScrollRect, GridLayoutGroup]`
-            *   **Viewport** `[Image, Mask]`
-                *   **Content** `[]`
-            *   **Scrollbar Horizontal** `[Image, Scrollbar]`
-                *   **Sliding Area** `[]`
-                    *   **HandleExtraDeck** `[Image]`
-            *   **Scrollbar Vertical** `[Image, Scrollbar]`
-                *   **Sliding Area** `[]`
-                    *   **Handle** `[Image]`
-        *   **CloseDeckCards** `[Image, Button]`
-            *   **Close** `[TextMeshProUGUI]`
+      - Scroll View [Image, ScrollRect]
+        - Viewport [Image, Mask]
+          - Content [HorizontalLayoutGroup]
+        - Scrollbar Horizontal [Image, Scrollbar]
+          - Sliding Area []
+            - Handle [Image]
+      - CloseDeckCards [Image, Button]
+        - Close [TextMeshProUGUI]
     *   **Panel_ActionMenu** `[Image, VerticalLayoutGroup, DuelActionMenu]`
-        *   **Btn_Summon** `[Image, Button]`
-            *   **Summon** `[TextMeshProUGUI]`
-        *   **Btn_Set** `[Image, Button]`
-            *   **Set** `[TextMeshProUGUI]`
-        *   **Btn_Activate** `[Image, Button]`
-            *   **Activate** `[TextMeshProUGUI]`
-        *   **Btn_Cancel** `[Image, Button]`
-            *   **Cancel** `[TextMeshProUGUI]`
+      - Btn_Summon [Image, Button]
+        - Summon [TextMeshProUGUI]
+      - Btn_Set [Image, Button]
+        - Set [TextMeshProUGUI]
+      - Btn_Activate [Image, Button]
+        - Activate [TextMeshProUGUI]
+      - Btn_Cancel [Image, Button]
+        - Cancel [TextMeshProUGUI]
     *   **Panel_Confirmation** `[Image]`
-        *   **Text_Confirmation** `[TextMeshProUGUI]`
-        *   **Btn_Yes** `[Image, Button]`
-            *   **Text_Yes** `[TextMeshProUGUI]`
-        *   **Btn_No** `[Image, Button]`
-            *   **Text_No** `[TextMeshProUGUI]`
+      - Image [Image]
+        - Text_Confirmation [TextMeshProUGUI]
+      - Btn_Yes [Image, Button]
+        - Text_Yes [TextMeshProUGUI]
+      - Btn_No [Image, Button]
+        - Text_No [TextMeshProUGUI]
     *   **Panel_PositionSelection** `[Image, PositionSelectionUI]`
-        *   **Text_PositionAsk** `[TextMeshProUGUI]`
-        *   **Btn_SummonPosition** `[Image, Button]`
-            *   **SummonPosition** `[Image]`
-        *   **Btn_SetPosition** `[Image, Button]`
-            *   **SetPosition** `[Image]`
+      - Text_PositionAsk [TextMeshProUGUI]
+      - Btn_SummonPosition [Image, Button]
+        - SummonPosition [Image]
+      - Btn_SetPosition [Image, Button]
+        - SetPosition [Image]
+    *   **Panel_PositionChoice** `[Image, AttributeChoiceUI]`
+      - Text_PositionAsk [TextMeshProUGUI]
+      - Btn_AtkChoice [Image, Button]
+        - SummonPosition [Image]
+      - Btn_DefChoice [Image, Button]
+        - SetPosition [Image]
+      - AtkText [TextMeshProUGUI]
+      - DefText [TextMeshProUGUI]
     *   **Panel_CardSelection** `[Image, CardSelectionUI]`
-        *   **Scroll View** `[Image, ScrollRect]`
-            *   **Viewport** `[Image, Mask]`
-                *   **Content** `[HorizontalLayoutGroup]`
-            *   **Scrollbar Horizontal** `[Image, Scrollbar]`
-                *   **Sliding Area** `[]`
-                    *   **Handle** `[Image]`
-        *   **CloseDeckCards** `[Image, Button]`
+      - Scroll View   [Image, ScrollRect]
+        - Viewport [Image, Mask]
+          - Content [HorizontalLayoutGroup]
+        - Scrollbar Horizontal [Image, Scrollbar]
+          - Sliding Area []
+            - Handle [Image]
+      - CloseDeckCards [Image, Button]
+        - Text (TMP) [TextMeshProUGUI]
+    *   **InteractiveTargetingSword** `[Image, TargetingSwordUI]`
+  *   **Panel_MultipleChoice** `[Image, MultipleChoiceUI]`
+    - TitleText [TextMeshProUGUI]
+    - Scroll View [Image, ScrollRect]
+      - Viewport [Image, Mask]
+        - Content [VerticalLayoutGroup, ContentSizeFitter]
+      - Scrollbar Vertical [Image, Scrollbar]
+        - Sliding Area []
+          - Handle [Image]
+      - Buttons [Image]
+        - Btn_Close [Image, Button]
+          - Text (TMP) [TextMeshProUGUI]
+        - Btn_Confirm [Image, Button]
+          - Text (TMP) [TextMeshProUGUI]
 
 ## Descrição dos Componentes
 

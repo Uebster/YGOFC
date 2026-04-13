@@ -3,6 +3,7 @@ using MoonSharp.Interpreter;
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 
 // ==============================================================================
 // 1. CLASSE DUEL (Ações Globais e Tabuleiro)
@@ -21,10 +22,18 @@ public class LuaDuel
     private int ConvertToInt(object obj)
     {
         if (obj == null) return 0;
+        if (obj is MoonSharp.Interpreter.DynValue dv)
+        {
+            if (dv.Type == MoonSharp.Interpreter.DataType.Number) return (int)dv.Number;
+            if (dv.Type == MoonSharp.Interpreter.DataType.Boolean) return dv.Boolean ? 1 : 0;
+            if (dv.Type == MoonSharp.Interpreter.DataType.String && int.TryParse(dv.String, out int res)) return res;
+            return 0;
+        }
         if (obj is double d) return (int)d;
         if (obj is int i) return i;
         if (obj is long l) return (int)l;
         if (obj is bool b) return b ? 1 : 0;
+        if (obj is string s && int.TryParse(s, out int parsed)) return parsed;
         return 0;
     }
 
@@ -361,9 +370,84 @@ public class LuaDuel
             return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectOption") });
         }
 
-        // Placeholder genérico pois não temos UI de SelectOption pura, usamos o MultiSelection de cartas criando Dummies
-        CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(0);
-        CardEffectManager.Instance.isWaitingForLuaYield = false;
+        // --- NOVO: Interceptação Inteligente de ATK/DEF ---
+        int opt1 = options.Length > 0 ? ConvertToInt(options[0]) : 0;
+        int opt2 = options.Length > 1 ? ConvertToInt(options[1]) : 0;
+        bool isAtkDefChoice = options.Length == 2 && ((opt1 == 704 && opt2 == 705) || (opt1 == 96 && opt2 == 97));
+       
+        // Interceptação específica para a carta "7 Completed" (ID 86198326) que usa seus próprios IDs de String para ATK/DEF
+        if (!isAtkDefChoice && options.Length == 2 && opt1 > 10000 && opt2 > 10000)
+        {
+            int cId1 = opt1 / 16;
+            int sId1 = opt1 % 16;
+            int cId2 = opt2 / 16;
+            int sId2 = opt2 % 16;
+            if (cId1 == 86198326 && sId1 == 0 && cId2 == 86198326 && sId2 == 1)
+                isAtkDefChoice = true;
+        }
+       
+        if (isAtkDefChoice)
+        {
+            if (AttributeChoiceUI.Instance == null)
+                AttributeChoiceUI.Instance = Resources.FindObjectsOfTypeAll<AttributeChoiceUI>().FirstOrDefault(x => x.gameObject.scene.IsValid());
+            
+            if (AttributeChoiceUI.Instance != null)
+            {
+                AttributeChoiceUI.Instance.Show((selectedIndex) => {
+                    CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(selectedIndex);
+                    CardEffectManager.Instance.isWaitingForLuaYield = false;
+                });
+                return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectOption") });
+            }
+        }
+
+        // Encontra a UI na cena se ela começar desligada
+        if (MultipleChoiceUI.Instance == null)
+            MultipleChoiceUI.Instance = Resources.FindObjectsOfTypeAll<MultipleChoiceUI>().FirstOrDefault(x => x.gameObject.scene.IsValid());
+
+        if (MultipleChoiceUI.Instance != null)
+        {
+            List<string> optStrings = new List<string>();
+            foreach (var opt in options)
+            {
+                int optVal = ConvertToInt(opt);
+                // Tradução rápida dos IDs de String mais comuns do OCGCore (ATK/DEF)
+                if (optVal == 704 || optVal == 96) optStrings.Add("Ataque (ATK)");
+                else if (optVal == 705 || optVal == 97) optStrings.Add("Defesa (DEF)");
+                else if (optVal > 10000)
+                {
+                    int cardId = optVal / 16;
+                    int strIdx = optVal % 16;
+                    
+                    if (cardId == 24140059) // A Cat of Ill Omen
+                    {
+                        if (strIdx == 0) optStrings.Add("Colocar no Topo do Deck");
+                        else if (strIdx == 1) optStrings.Add("Adicionar para a Mão");
+                        else optStrings.Add($"Opção {strIdx}");
+                    }
+                    else
+                    {
+                        var cData = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.password == cardId.ToString());
+                        if (cData != null) optStrings.Add($"Efeito {strIdx + 1} ({cData.name})");
+                        else optStrings.Add($"Ação {strIdx + 1}");
+                    }
+                }
+                else 
+                    optStrings.Add($"Opção {optVal}");
+            }
+
+            MultipleChoiceUI.Instance.Show(optStrings, "Escolha um efeito:", 1, 1, (selected) => {
+                int selectedIndex = selected != null && selected.Count > 0 ? optStrings.IndexOf(selected[0]) : 0;
+                CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(Mathf.Max(0, selectedIndex));
+                CardEffectManager.Instance.isWaitingForLuaYield = false;
+            });
+        }
+        else
+        {
+            CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(0);
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+        }
+
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectOption") });
     }
 

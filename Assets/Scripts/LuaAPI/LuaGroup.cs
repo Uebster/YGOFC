@@ -120,10 +120,18 @@ public class LuaGroup
     private int ConvertToInt(object obj)
     {
         if (obj == null) return 0;
+        if (obj is MoonSharp.Interpreter.DynValue dv)
+        {
+            if (dv.Type == MoonSharp.Interpreter.DataType.Number) return (int)dv.Number;
+            if (dv.Type == MoonSharp.Interpreter.DataType.Boolean) return dv.Boolean ? 1 : 0;
+            if (dv.Type == MoonSharp.Interpreter.DataType.String && int.TryParse(dv.String, out int res)) return res;
+            return 0;
+        }
         if (obj is double d) return (int)d;
         if (obj is int i) return i;
         if (obj is long l) return (int)l;
         if (obj is bool b) return b ? 1 : 0;
+        if (obj is string s && int.TryParse(s, out int parsed)) return parsed;
         return 0;
     }
 

@@ -27,7 +27,6 @@ public class LuaEngineCore
         luaDuel = new LuaDuel();
         luaEngine.Globals["Duel"] = luaDuel;
         luaEngine.Globals["Effect"] = typeof(LuaEffect); // Permite chamar Effect.CreateEffect(c)
-        luaEngine.Globals["Card"] = typeof(LuaCard);
         luaEngine.Globals["Group"] = typeof(LuaGroup);
         luaEngine.Globals["Fusion"] = typeof(Fusion);        
         luaEngine.Globals["Synchro"] = typeof(Synchro);      
@@ -40,7 +39,7 @@ public class LuaEngineCore
         
         // Tabela Auxiliar Básica
         DynValue auxTable = DynValue.NewTable(luaEngine);
-        auxTable.Table.Set("Stringid", DynValue.FromObject(luaEngine, (System.Func<object, object, string>)((code, id) => $"{code}_{id}")));
+        auxTable.Table.Set("Stringid", luaEngine.DoString("return function(code, id) return (code * 16) + id end"));
         auxTable.Table.Set("GlobalCheck", DynValue.FromObject(luaEngine, (System.Action<object, Closure>)((s, func) => { func?.Call(); })));
         
         // Constantes lógicas (Closures nativas)
@@ -204,6 +203,44 @@ public class LuaEngineCore
         luaEngine.Globals["CHAININFO_TARGET_PLAYER"] = 1;
         luaEngine.Globals["CHAININFO_TARGET_PARAM"] = 2;
 
+        // Constantes de Raça e Atributo (Essenciais para Filtros funcionarem)
+        luaEngine.Globals["RACE_WARRIOR"] = 0x1;
+        luaEngine.Globals["RACE_SPELLCASTER"] = 0x2;
+        luaEngine.Globals["RACE_FAIRY"] = 0x4;
+        luaEngine.Globals["RACE_FIEND"] = 0x8;
+        luaEngine.Globals["RACE_ZOMBIE"] = 0x10;
+        luaEngine.Globals["RACE_MACHINE"] = 0x20;
+        luaEngine.Globals["RACE_AQUA"] = 0x40;
+        luaEngine.Globals["RACE_PYRO"] = 0x80;
+        luaEngine.Globals["RACE_ROCK"] = 0x100;
+        luaEngine.Globals["RACE_WINGED_BEAST"] = 0x200;
+        luaEngine.Globals["RACE_PLANT"] = 0x400;
+        luaEngine.Globals["RACE_INSECT"] = 0x800;
+        luaEngine.Globals["RACE_THUNDER"] = 0x1000;
+        luaEngine.Globals["RACE_DRAGON"] = 0x2000;
+        luaEngine.Globals["RACE_BEAST"] = 0x4000;
+        luaEngine.Globals["RACE_BEAST_WARRIOR"] = 0x8000;
+        luaEngine.Globals["RACE_DINOSAUR"] = 0x10000;
+        luaEngine.Globals["RACE_FISH"] = 0x20000;
+        luaEngine.Globals["RACE_SEA_SERPENT"] = 0x40000;
+        luaEngine.Globals["RACE_REPTILE"] = 0x80000;
+        luaEngine.Globals["ATTRIBUTE_EARTH"] = 0x01;
+        luaEngine.Globals["ATTRIBUTE_WATER"] = 0x02;
+        luaEngine.Globals["ATTRIBUTE_FIRE"] = 0x04;
+        luaEngine.Globals["ATTRIBUTE_WIND"] = 0x08;
+        luaEngine.Globals["ATTRIBUTE_DARK"] = 0x10;
+        luaEngine.Globals["ATTRIBUTE_LIGHT"] = 0x20;
+        luaEngine.Globals["ATTRIBUTE_DIVINE"] = 0x40;
+
+        // Constantes de Status Oficiais do OCGCore
+        luaEngine.Globals["EFFECT_UPDATE_ATTACK"] = 1;
+        luaEngine.Globals["EFFECT_SET_ATTACK"] = 2;
+        luaEngine.Globals["EFFECT_SET_ATTACK_FINAL"] = 3;
+        luaEngine.Globals["EFFECT_UPDATE_DEFENSE"] = 4;
+        luaEngine.Globals["EFFECT_SET_DEFENSE"] = 5;
+        luaEngine.Globals["EFFECT_SET_DEFENSE_FINAL"] = 6;
+        luaEngine.Globals["EFFECT_EQUIP_LIMIT"] = 147;
+
         // Metatable Global Segura
         luaEngine.DoString(@"
             local dummyFunc = function() return Effect.CreateEffect(nil) end
@@ -229,6 +266,21 @@ public class LuaEngineCore
                 gm.__iterator = function(grp) return grp:Iter() end
             end
             
+            Card = {}
+            setmetatable(Card, {
+                __index = function(t, k)
+                    return function(c, ...)
+                        if c and type(c) == 'userdata' then
+                            local func = c[k]
+                            if type(func) == 'function' then
+                                return func(...)
+                            end
+                        end
+                        return false
+                    end
+                end
+            })
+
             Core = {}
             function Core.Attack(attacker, target)
                 Duel.RaiseEvent(attacker, 1102, nil, 0, attacker:GetControler(), attacker:GetControler(), 0)

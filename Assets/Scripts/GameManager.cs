@@ -4256,6 +4256,22 @@ public void ShuffleDeck(bool isPlayer)
         if (!card.isOnField || !card.isPlayerCard || card.isFlipped) return; // Só exibe indicadores em cartas de face para cima do jogador
         if (!card.CurrentCardData.type.Contains("Monster")) return;
         
+        // --- NOVO: Trava de Bloqueio Visual ---
+        // Se estivermos selecionando alvo para um efeito, em uma corrente, ou selecionando algo na mão,
+        // silencia os indicadores táticos para manter a tela focada apenas no targeting.
+        bool isBusy = (CardEffectManager.Instance != null && (CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isChainResolving)) || isSelectingFromHand;
+        
+        if (isBusy)
+        {
+            if (DuelFXManager.Instance != null) 
+            {
+                DuelFXManager.Instance.SetCanAttackIndicator(card, false);
+                DuelFXManager.Instance.SetCannotAttackIndicator(card, false);
+                DuelFXManager.Instance.SetCannotChangePosIndicator(card, false);
+            }
+            return;
+        }
+
         GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Main1;
         bool isBattlePhase = currentPhase == GamePhase.Battle;
 
@@ -4293,9 +4309,11 @@ public void ShuffleDeck(bool isPlayer)
     public void RefreshAttackIndicators()
     {
         if (duelFieldUI == null) return;
+        
+        bool isBusy = (CardEffectManager.Instance != null && (CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isChainResolving)) || isSelectingFromHand;
 
         GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Main1;
-        bool showIndicators = attackIndicatorMode == AttackIndicatorMode.AlwaysInBattlePhase && currentPhase == GamePhase.Battle && isPlayerTurn;
+        bool showIndicators = !isBusy && attackIndicatorMode == AttackIndicatorMode.AlwaysInBattlePhase && currentPhase == GamePhase.Battle && isPlayerTurn;
 
         Transform[] zones = duelFieldUI.playerMonsterZones;
         foreach (var zone in zones)

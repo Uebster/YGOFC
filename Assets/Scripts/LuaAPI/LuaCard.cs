@@ -20,10 +20,19 @@ public class LuaCard
 
     private int ConvertToInt(object obj)
     {
+        if (obj == null) return 0;
+        if (obj is MoonSharp.Interpreter.DynValue dv)
+        {
+            if (dv.Type == MoonSharp.Interpreter.DataType.Number) return (int)dv.Number;
+            if (dv.Type == MoonSharp.Interpreter.DataType.Boolean) return dv.Boolean ? 1 : 0;
+            if (dv.Type == MoonSharp.Interpreter.DataType.String && int.TryParse(dv.String, out int res)) return res;
+            return 0;
+        }
         if (obj is double d) return (int)d;
         if (obj is int i) return i;
         if (obj is long l) return (int)l;
         if (obj is bool b) return b ? 1 : 0;
+        if (obj is string s && int.TryParse(s, out int parsed)) return parsed;
         return 0;
     }
     
@@ -91,40 +100,43 @@ public class LuaCard
 
     public new int GetType()
     {
-        if (unityData == null) return 0;
+        if (unityData == null || string.IsNullOrEmpty(unityData.type)) return 0;
         int t = 0;
-        if (unityData.type.Contains("Monster")) t |= 0x1;
-        if (unityData.type.Contains("Spell")) t |= 0x2;
-        if (unityData.type.Contains("Trap")) t |= 0x4;
-        if (unityData.type.Contains("Normal")) t |= 0x10;
-        if (unityData.type.Contains("Effect")) t |= 0x20;
-        if (unityData.type.Contains("Fusion")) t |= 0x40;
-        if (unityData.type.Contains("Ritual")) t |= 0x80;
-        if (unityData.type.Contains("Spirit")) t |= 0x200;
-        if (unityData.type.Contains("Union")) t |= 0x400;
-        if (unityData.type.Contains("Gemini")) t |= 0x800;
-        if (unityData.type.Contains("Token")) t |= 0x4000;
-        if (unityData.property == "Quick-Play") t |= 0x10000;
-        if (unityData.property == "Continuous") t |= 0x20000;
-        if (unityData.property == "Equip") t |= 0x40000;
-        if (unityData.property == "Field") t |= 0x80000;
-        if (unityData.property == "Counter") t |= 0x100000;
-        if (unityData.type.Contains("Toon")) t |= 0x400000;
+        string typeStr = unityData.type.Trim().ToUpperInvariant();
+        string propStr = unityData.property != null ? unityData.property.Trim().ToUpperInvariant() : "";
+
+        if (typeStr.Contains("MONSTER")) t |= 0x1;
+        if (typeStr.Contains("SPELL")) t |= 0x2;
+        if (typeStr.Contains("TRAP")) t |= 0x4;
+        if (typeStr.Contains("NORMAL")) t |= 0x10;
+        if (typeStr.Contains("EFFECT")) t |= 0x20;
+        if (typeStr.Contains("FUSION")) t |= 0x40;
+        if (typeStr.Contains("RITUAL")) t |= 0x80;
+        if (typeStr.Contains("SPIRIT")) t |= 0x200;
+        if (typeStr.Contains("UNION")) t |= 0x400;
+        if (typeStr.Contains("GEMINI")) t |= 0x800;
+        if (typeStr.Contains("TOKEN")) t |= 0x4000;
+        if (propStr == "QUICK-PLAY") t |= 0x10000;
+        if (propStr == "CONTINUOUS") t |= 0x20000;
+        if (propStr == "EQUIP") t |= 0x40000;
+        if (propStr == "FIELD") t |= 0x80000;
+        if (propStr == "COUNTER") t |= 0x100000;
+        if (typeStr.Contains("TOON")) t |= 0x400000;
         return t;
     }
 
     public int GetOriginalRace() { return GetRace(); }
     public int GetOriginalAttribute() { return GetAttribute(); }
     public int GetAttribute() { 
-        if (unityData == null) return 0;
-        string a = unityData.attribute;
-        if (a == "Earth") return 0x01;
-        if (a == "Water") return 0x02;
-        if (a == "Fire") return 0x04;
-        if (a == "Wind") return 0x08;
-        if (a == "Light") return 0x20;
-        if (a == "Dark") return 0x10;
-        if (a == "Divine") return 0x40;
+        if (unityData == null || string.IsNullOrEmpty(unityData.attribute)) return 0;
+        string a = unityData.attribute.Trim().ToUpperInvariant();
+        if (a.Contains("EARTH")) return 0x01;
+        if (a.Contains("WATER")) return 0x02;
+        if (a.Contains("FIRE")) return 0x04;
+        if (a.Contains("WIND")) return 0x08;
+        if (a.Contains("DARK")) return 0x10;
+        if (a.Contains("LIGHT")) return 0x20;
+        if (a.Contains("DIVINE")) return 0x40;
         return 0;
     }
     public int GetTextAttack() { return GetAttack(); }
@@ -190,28 +202,28 @@ public class LuaCard
     
     public int GetRace() 
     { 
-        if (unityData == null) return 0;
-        string r = unityData.race;
-        if (r == "Warrior") return 0x1;
-        if (r == "Spellcaster") return 0x2;
-        if (r == "Fairy") return 0x4;
-        if (r == "Fiend") return 0x8;
-        if (r == "Zombie") return 0x10;
-        if (r == "Machine") return 0x20;
-        if (r == "Aqua") return 0x40;
-        if (r == "Pyro") return 0x80;
-        if (r == "Rock") return 0x100;
-        if (r == "Winged Beast") return 0x200;
-        if (r == "Plant") return 0x400;
-        if (r == "Insect") return 0x800;
-        if (r == "Thunder") return 0x1000;
-        if (r == "Dragon") return 0x2000;
-        if (r == "Beast") return 0x4000;
-        if (r == "Beast-Warrior") return 0x8000;
-        if (r == "Dinosaur") return 0x10000;
-        if (r == "Fish") return 0x20000;
-        if (r == "Sea Serpent") return 0x40000;
-        if (r == "Reptile") return 0x80000;
+        if (unityData == null || string.IsNullOrEmpty(unityData.race)) return 0;
+        string r = unityData.race.Trim().ToUpperInvariant();
+        if (r.Contains("WARRIOR")) return 0x1;
+        if (r.Contains("SPELLCASTER")) return 0x2;
+        if (r.Contains("FAIRY")) return 0x4;
+        if (r.Contains("FIEND")) return 0x8;
+        if (r.Contains("ZOMBIE")) return 0x10;
+        if (r.Contains("MACHINE")) return 0x20;
+        if (r.Contains("AQUA")) return 0x40;
+        if (r.Contains("PYRO")) return 0x80;
+        if (r.Contains("ROCK")) return 0x100;
+        if (r.Contains("WINGED BEAST")) return 0x200;
+        if (r.Contains("PLANT")) return 0x400;
+        if (r.Contains("INSECT")) return 0x800;
+        if (r.Contains("THUNDER")) return 0x1000;
+        if (r.Contains("DRAGON")) return 0x2000;
+        if (r.Contains("BEAST-WARRIOR")) return 0x8000;
+        else if (r.Contains("BEAST")) return 0x4000;
+        if (r.Contains("DINOSAUR")) return 0x10000;
+        if (r.Contains("FISH")) return 0x20000;
+        if (r.Contains("SEA SERPENT")) return 0x40000;
+        if (r.Contains("REPTILE")) return 0x80000;
         return 0;
     }
     public int GetMaterialCount() { return 0; }
@@ -271,8 +283,8 @@ public class LuaCard
     public void DeleteGroup() { }
 
     // Stubs para compatibilidade da API Lua
-    public bool IsRace(object r) { return true; }
-    public bool IsAttribute(object attr) { return true; }
+    public bool IsRace(object r) { return (GetRace() & ConvertToInt(r)) != 0; }
+    public bool IsAttribute(object attr) { return (GetAttribute() & ConvertToInt(attr)) != 0; }
     public bool IsReason(object reason) { return true; }
     public bool IsRelateToEffect(object e) { return true; } // Evita crash no final de correntes (Chains)
     public bool IsAttackBelow(object atk) { return GetAttack() <= ConvertToInt(atk); }
@@ -332,8 +344,7 @@ public class LuaCard
     
     public bool IsCode(params object[] codes)
     {
-        int myId = 0;
-        if (unityData != null && !string.IsNullOrEmpty(unityData.password)) int.TryParse(unityData.password, out myId);
+        int myId = GetCode();
         foreach(var c in codes) if (myId == ConvertToInt(c)) return true;
         return false;
     }
@@ -358,7 +369,20 @@ public class LuaCard
     {
         if (e == null) return;
         registeredEffects.Add(e);
-        Debug.Log($"[Lua] Efeito tipo {e.type} registrado em {unityData?.name}.");
+        Debug.Log($"[Lua] Efeito tipo {e.type} (Code {e.code}) registrado em {unityData?.name}.");
+
+        // Se for um efeito de equipamento (0x4) e a carta já estiver no campo, avisa o alvo para recalcular!
+        if ((e.type & 0x0004) != 0 && unityCard != null && unityCard.isOnField && CardEffectManager.Instance != null)
+        {
+            CardLink[] links = UnityEngine.Object.FindObjectsByType<CardLink>(UnityEngine.FindObjectsSortMode.None);
+            foreach (var link in links)
+            {
+                if (link.source == unityCard && link.target != null)
+                {
+                    CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RecalculateStatsNextFrame(link.target));
+                }
+            }
+        }
     }
 
     public bool IsSetCard(params object[] setCodes) { return true; }

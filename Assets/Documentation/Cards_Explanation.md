@@ -15,3 +15,17 @@ A carta **"7"** é uma Carta Mágica Contínua clássica e possui um efeito divi
 ### 💡 O grande truque dessa carta:
 Esses dois efeitos combaram perfeitamente! Quando você atinge o Jackpot e as três cartas "7" são destruídas pelo próprio efeito, elas estão indo do campo para o cemitério. Isso significa que, além de comprar as 3 cartas, o segundo efeito vai engatilhar três vezes, curando um total de **2100 LP**!
 
+## 7 Completed (ID: DM0006)
+
+A carta **"7 Completed"** é uma Carta Mágica de Equipamento (Equip Spell) muito versátil, focada especificamente em fortalecer monstros mecânicos.
+
+> *"Activate this card by choosing ATK or DEF; equip only to a Machine monster. It gains 700 ATK or DEF, depending on the choice."*
+
+### Como ela funciona na prática:
+
+1. **Alvo Restrito:** Você só pode ativar e equipar esta carta em um monstro do Tipo Máquina (Machine-Type) que esteja virado para cima no campo.
+2. **O Poder da Escolha:** No momento em que você ativa a carta, você toma uma decisão tática permanente: escolher entre **Ataque (ATK)** ou **Defesa (DEF)**.
+3. **O Bônus:** O monstro equipado ganha **700 pontos** no atributo que você escolheu. O outro atributo permanece inalterado durante todo o tempo em que a carta estiver equipada.
+
+### 💡 O grande truque dessa carta:
+A sua flexibilidade é o seu ponto forte. Diferente de outros equipamentos que dão um bônus fixo, com a "7 Completed" você pode se adaptar ao estado do jogo. Precisa destruir um monstro forte do oponente? Coloque os 700 no ATK de um *Jinzo* ou *X-Head Cannon*. Está encurralado e precisa ganhar tempo? Equipe em um monstro setado virado para cima e coloque os 700 na DEF, criando uma barreira de metal quase impenetrável!

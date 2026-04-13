@@ -519,11 +519,12 @@ public class CardEffectManager : MonoBehaviour
                         }
                     }
 
-                    if (effect.code == 100) // EFFECT_UPDATE_ATTACK
+                    // OCGCore usa 1 para UPDATE_ATTACK e 4 para UPDATE_DEFENSE
+                    if (effect.code == 1 || effect.code == 100) 
                     {
                         newAtk += value;
                     }
-                    else if (effect.code == 104) // EFFECT_UPDATE_DEFENSE
+                    else if (effect.code == 4 || effect.code == 104) 
                     {
                         newDef += value;
                     }
