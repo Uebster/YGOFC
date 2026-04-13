@@ -6,6 +6,8 @@ using System.Linq;
 
 public class CardSelectionUI : MonoBehaviour
 {
+    public static CardSelectionUI Instance;
+
     [Header("UI References")]
     public TextMeshProUGUI titleText;
     public Transform contentArea; // Onde as cartas aparecem
@@ -19,6 +21,7 @@ public class CardSelectionUI : MonoBehaviour
     private int minSelection = 1;
     private int maxSelection = 1;
     private System.Action<List<CardData>> onConfirm;
+    private HighlightCategory currentCategory = HighlightCategory.GenericTarget;
 
     // Cache de objetos instanciados para performance
     private List<GameObject> spawnedObjects = new List<GameObject>();
@@ -26,6 +29,7 @@ public class CardSelectionUI : MonoBehaviour
 
     void Awake()
     {
+        Instance = this;
         // AUTO-CONFIGURAÇÃO: Tenta encontrar referências se não estiverem atribuídas
         if (contentArea == null)
         {
@@ -49,12 +53,13 @@ public class CardSelectionUI : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    public void Show(List<CardData> cards, string title, int min, int max, System.Action<List<CardData>> callback)
+    public void Show(List<CardData> cards, string title, int min, int max, System.Action<List<CardData>> callback, HighlightCategory category = HighlightCategory.GenericTarget)
     {
         sourceList = cards;
         minSelection = min;
         maxSelection = max;
         onConfirm = callback;
+        currentCategory = category;
         selectedCards.Clear();
 
         if (titleText) titleText.text = title;
@@ -67,12 +72,25 @@ public class CardSelectionUI : MonoBehaviour
         RefreshUI();
     }
 
-    void RefreshUI()
+    private void ClearSpawnedObjects()
     {
-        // Limpa visualização anterior
-        foreach (var obj in spawnedObjects) Destroy(obj);
+        foreach (var obj in spawnedObjects)
+        {
+            if (obj != null)
+            {
+                CardDisplay cd = obj.GetComponent<CardDisplay>();
+                if (cd != null && DuelFXManager.Instance != null)
+                    DuelFXManager.Instance.SetSelectionIcon(cd, currentCategory, SelectionState.None);
+                Destroy(obj);
+            }
+        }
         spawnedObjects.Clear();
         badges.Clear();
+    }
+
+    void RefreshUI()
+    {
+        ClearSpawnedObjects();
 
         if (sourceList == null || cardItemPrefab == null) return;
 
@@ -142,8 +160,12 @@ public class CardSelectionUI : MonoBehaviour
     void UpdateCardVisual(CardData card, CardDisplay display)
     {
         bool isSelected = selectedCards.Contains(card);
-        // Usa o efeito de "Tribute Highlight" (azul/ciano) para indicar seleção
-        display.SetTributeHighlight(isSelected);
+        
+        SelectionState state = isSelected ? SelectionState.Selected : SelectionState.Available;
+        if (DuelFXManager.Instance != null)
+            DuelFXManager.Instance.SetSelectionIcon(display, currentCategory, state);
+        else
+            display.SetHighlight(currentCategory, isSelected);
 
         // Lógica de Ordem Visual (Badges)
         if (isSelected && maxSelection > 1)
@@ -240,12 +262,14 @@ public class CardSelectionUI : MonoBehaviour
     void ConfirmSelection()
     {
         gameObject.SetActive(false);
+        ClearSpawnedObjects();
         onConfirm?.Invoke(selectedCards);
     }
 
     void CancelSelection()
     {
         gameObject.SetActive(false);
+        ClearSpawnedObjects();
         // Retorna nulo ou lista vazia para indicar cancelamento
         onConfirm?.Invoke(new List<CardData>());
     }

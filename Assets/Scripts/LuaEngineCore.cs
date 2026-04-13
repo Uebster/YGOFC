@@ -137,7 +137,17 @@ public class LuaEngineCore
         dummyClosureTrue = auxTable.Table.Get("TRUE").Function;
         luaEngine.Globals["aux"] = auxTable;
 
-        string[] procTables = { "Spirit", "Toon", "Union", "Gemini", "Pendulum", "Link", "Xyz", "Synchro", "Fusion", "Ritual" };
+        // Previne o crash "attempt to call a nil value" criando uma metatable de fallback na tabela 'aux'
+        // Caso um script Lua invoque uma função não implementada (ex: aux.AddRitualProcGreater), não haverá crash.
+        luaEngine.DoString(@"
+            local auxMt = getmetatable(aux) or {}
+            auxMt.__index = function(t, k)
+                return function(...) return true end
+            end
+            setmetatable(aux, auxMt)
+        ");
+
+        string[] procTables = { "Toon", "Union", "Gemini", "Pendulum", "Link" };
         foreach (var pName in procTables) luaEngine.Globals[pName] = DynValue.NewTable(luaEngine);
 
         InjectVitalConstants();
@@ -300,9 +310,8 @@ public class LuaEngineCore
                 if level >= 7 then tributes = 2 end
                 if Duel.GetActivityCount(player, 2) > 0 then return false end
                 if tributes > 0 then
-                    local g = Duel.GetMatchingGroup(Card.IsReleasable, player, LOCATION_MZONE, 0, nil)
-                    if g:GetCount() < tributes then return false end
-                    local sg = g:Select(player, tributes, tributes, nil)
+                    local sg = Duel.SelectReleaseGroup(player, Card.IsReleasable, tributes, tributes, nil)
+                    if not sg or sg:GetCount() < tributes then return false end
                     Duel.Release(sg, REASON_SUMMON)
                 end
                 if isSet then Duel.MSet(player, card, true, nil) else Duel.Summon(player, card, true, nil) end

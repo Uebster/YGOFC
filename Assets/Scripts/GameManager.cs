@@ -384,10 +384,12 @@ public class GameManager : MonoBehaviour
     // --- ESTADO DE SELEÇÃO DE MÃO ---
     [HideInInspector] public bool isSelectingFromHand = false;
     private List<CardData> handSelectionCandidates;
-    private List<CardData> currentHandSelection;
+
+    private List<GameObject> currentHandSelectionObjects;
     private int handSelectionCountRequired;
     private System.Action<List<CardData>> handSelectionCallback;
     private System.Func<List<CardData>, bool> customSelectionValidator;
+    private HighlightCategory currentSelectionHighlightCategory = HighlightCategory.GenericTarget;
 
     void Awake()
     {
@@ -3020,48 +3022,70 @@ public void ShuffleDeck(bool isPlayer)
         foreach (var zone in playerZones) {
             if (zone.childCount > 0) {
                 var cd = zone.GetChild(0).GetComponent<CardDisplay>();
-                if (cd != null && !cd.isFlipped) possibleTributes.Add(cd.CurrentCardData);
+                if (cd != null) possibleTributes.Add(cd.CurrentCardData);
             }
         }
 
-        // Passo 1: Seleção Tátil no Tabuleiro e Mão
-        System.Func<List<CardData>, bool> ritualValidator = (selectedTributes) => {
-            foreach (var r in possibleRituals) {
-                if (RitualManager.Instance.ValidateRitual(sourceCard.CurrentCardData, r, selectedTributes))
-                    return true;
+        // Passo 1: Selecionar o Monstro de Ritual PRIMEIRO
+        if (possibleRituals.Count == 1 && !alwaysConfirmSingleTarget)
+        {
+            SelectTributesForRitual(sourceCard, possibleRituals[0], possibleTributes);
+        }
+        else
+        {
+            if (useDirectHandSelection)
+            {
+                StartDirectSelection(possibleRituals, 1, 1, null, "Selecione o Monstro de Ritual", (rList) => {
+                    if (rList != null && rList.Count > 0)
+                    {
+                        SelectTributesForRitual(sourceCard, rList[0], possibleTributes);
+                    }
+                    else
+                    {
+                        SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+                        Destroy(sourceCard.gameObject);
+                    }
+                }, HighlightCategory.Ritual);
             }
-            return false;
+            else
+            {
+                UIManager.Instance.ShowCardSelection(possibleRituals, "Selecione o Monstro de Ritual", 1, 1, (rList) => {
+                    if (rList != null && rList.Count > 0)
+                    {
+                        SelectTributesForRitual(sourceCard, rList[0], possibleTributes);
+                    }
+                    else
+                    {
+                        SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+                        Destroy(sourceCard.gameObject);
+                    }
+                });
+            }
+        }
+    }
+
+    private void SelectTributesForRitual(CardDisplay sourceCard, CardData targetRitual, List<CardData> possibleTributes)
+    {
+        bool isPlayer = sourceCard.isPlayerCard;
+        
+        // Remove o próprio monstro de ritual escolhido da lista de possíveis tributos
+        List<CardData> validTributes = new List<CardData>(possibleTributes);
+        validTributes.Remove(targetRitual);
+
+        System.Func<List<CardData>, bool> tributeValidator = (selectedTributes) => {
+            return RitualManager.Instance.ValidateRitual(sourceCard.CurrentCardData, targetRitual, selectedTributes);
         };
 
-        StartDirectSelection(possibleTributes, 1, 5, ritualValidator, "Selecione os Tributos (Botão Direito cancela)", (selectedTributes) => {
-            if (selectedTributes == null || selectedTributes.Count == 0) {
+        StartDirectSelection(validTributes, 1, 5, tributeValidator, $"Selecione os Tributos para {targetRitual.name}", (selectedTributes) => {
+            if (selectedTributes == null || selectedTributes.Count == 0 || !tributeValidator(selectedTributes)) {
+                if (UIManager.Instance != null && !isSimulating) UIManager.Instance.ShowMessage("Tributos cancelados ou inválidos!");
                 SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
                 Destroy(sourceCard.gameObject);
                 return;
             }
 
-            // Verifica quais Monstros de Ritual da mão podem ser feitos com EXATAMENTE esses tributos
-            var validRituals = possibleRituals.Where(r => RitualManager.Instance.ValidateRitual(sourceCard.CurrentCardData, r, selectedTributes)).ToList();
-
-            if (validRituals.Count == 0) {
-                UIManager.Instance.ShowMessage("Tributos insuficientes ou inválidos!");
-                SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
-                Destroy(sourceCard.gameObject);
-                return;
-            }
-
-            // Passo 3: Executa direto (a posição será pedida durante a cinemática)
-            System.Action<CardData> onTargetSelected = (targetRitual) => {
-                PerformRitualSummon(sourceCard, targetRitual, selectedTributes, false);
-            };
-
-            // Passo 2: Dedução automática ou Desempate
-            if (validRituals.Count == 1) onTargetSelected(validRituals[0]);
-            else UIManager.Instance.ShowCardSelection(validRituals, "Selecione o Monstro de Ritual", 1, 1, (rList) => {
-                if (rList != null && rList.Count > 0) onTargetSelected(rList[0]);
-                else { SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule); Destroy(sourceCard.gameObject); }
-            });
-        });
+            PerformRitualSummon(sourceCard, targetRitual, selectedTributes, false);
+        }, HighlightCategory.Ritual);
     }
 
    public void PerformRitualSummon(CardDisplay sourceCard, CardData ritualMonster, List<CardData> tributes, bool isDefense)
@@ -3567,7 +3591,7 @@ public void ShuffleDeck(bool isPlayer)
     }
 
     // Método para Seleção Múltipla
-    public void OpenCardMultiSelection(List<CardData> sourceList, string title, int min, int max, System.Action<List<CardData>> onSelected)
+    public void OpenCardMultiSelection(List<CardData> sourceList, string title, int min, int max, System.Action<List<CardData>> onSelected, HighlightCategory category = HighlightCategory.GenericTarget)
     {
         if (isSimulating)
         {
@@ -3588,13 +3612,17 @@ public void ShuffleDeck(bool isPlayer)
 
         if (useDirectHandSelection && isHandOrFieldSubset && min == max && !isFusionOrRitual)
         {
-            StartDirectSelection(sourceList, min, max, null, title, onSelected);
+            StartDirectSelection(sourceList, min, max, null, title, onSelected, category);
             return;
         }
 
         if (sourceList.Count > 0)
         {
-            if (UIManager.Instance != null)
+            if (CardSelectionUI.Instance != null)
+            {
+                CardSelectionUI.Instance.Show(sourceList, title, min, max, onSelected, category);
+            }
+            else if (UIManager.Instance != null)
             {
                 UIManager.Instance.ShowCardSelection(sourceList, title, min, max, onSelected);
             }
@@ -3611,14 +3639,15 @@ public void ShuffleDeck(bool isPlayer)
 
     // --- LÓGICA DE SELEÇÃO DIRETA DA MÃO ---
 
-    private void StartDirectSelection(List<CardData> candidates, int min, int max, System.Func<List<CardData>, bool> validator, string title, System.Action<List<CardData>> callback)
+    private void StartDirectSelection(List<CardData> candidates, int min, int max, System.Func<List<CardData>, bool> validator, string title, System.Action<List<CardData>> callback, HighlightCategory category = HighlightCategory.GenericTarget)
     {
         isSelectingFromHand = true;
         handSelectionCandidates = candidates;
         handSelectionCountRequired = max;
         customSelectionValidator = validator;
         handSelectionCallback = callback;
-        currentHandSelection = new List<CardData>();
+        currentHandSelectionObjects = new List<GameObject>();
+        currentSelectionHighlightCategory = category;
 
         if (UIManager.Instance != null) UIManager.Instance.ShowMessage(title);
 
@@ -3636,7 +3665,10 @@ public void ShuffleDeck(bool isPlayer)
             var cd = go.GetComponent<CardDisplay>();
             if (cd != null && handSelectionCandidates.Contains(cd.CurrentCardData))
             {
-                cd.SetTributeHighlight(true); // Usa o destaque azul para indicar candidatos
+                if (DuelFXManager.Instance != null)
+                    DuelFXManager.Instance.SetSelectionIcon(cd, currentSelectionHighlightCategory, SelectionState.Available);
+                else
+                    cd.SetHighlight(currentSelectionHighlightCategory, true);
             }
         }
         Debug.Log($"[GameManager] Iniciando seleção tátil: {title}");
@@ -3647,59 +3679,60 @@ public void ShuffleDeck(bool isPlayer)
         if (!isSelectingFromHand) return;
         if (!handSelectionCandidates.Contains(card.CurrentCardData)) return;
 
-        if (currentHandSelection.Contains(card.CurrentCardData))
+        if (currentHandSelectionObjects.Contains(card.gameObject))
         {
             // Deselecionar
-            currentHandSelection.Remove(card.CurrentCardData);
+            currentHandSelectionObjects.Remove(card.gameObject);
             card.SetAttackSelectionVisual(false); // Remove destaque de seleção (Vermelho)
-            card.SetTributeHighlight(true); // Volta para destaque de candidato (Azul)
+            if (DuelFXManager.Instance != null)
+                DuelFXManager.Instance.SetSelectionIcon(card, currentSelectionHighlightCategory, SelectionState.Available);
+            else
+                card.SetHighlight(currentSelectionHighlightCategory, true);
         }
         else
         {
             // Selecionar
-            if (currentHandSelection.Count < handSelectionCountRequired)
+            if (currentHandSelectionObjects.Count < handSelectionCountRequired)
             {
-                currentHandSelection.Add(card.CurrentCardData);
-                card.SetTributeHighlight(false); // Remove destaque de candidato
-                card.SetAttackSelectionVisual(true); // Adiciona destaque de seleção (Vermelho)
+                currentHandSelectionObjects.Add(card.gameObject);
+                if (DuelFXManager.Instance != null)
+                    DuelFXManager.Instance.SetSelectionIcon(card, currentSelectionHighlightCategory, SelectionState.Selected);
+                else
+                {
+                    card.SetHighlight(currentSelectionHighlightCategory, false);
+                    card.SetAttackSelectionVisual(true); // Adiciona destaque de seleção (Vermelho)
+                }
             }
         }
+
+        List<CardData> currentDataSelection = currentHandSelectionObjects.Select(go => go.GetComponent<CardDisplay>().CurrentCardData).ToList();
 
         // Verifica se completou a seleção
         bool isValid = false;
         if (customSelectionValidator != null) {
-            isValid = customSelectionValidator(currentHandSelection);
+            isValid = customSelectionValidator(currentDataSelection);
         } else {
-            isValid = currentHandSelection.Count == handSelectionCountRequired;
+            isValid = currentHandSelectionObjects.Count == handSelectionCountRequired;
         }
 
         if (isValid)
         {
             if (confirmHandSelection)
             {
-                string msg = customSelectionValidator != null ? "Confirmar os materiais selecionados?" : (handSelectionCountRequired == 1 ? $"Selecionar {currentHandSelection[0].name}?" : "Confirmar seleção?");
+                string msg = customSelectionValidator != null ? "Confirmar os materiais selecionados?" : (handSelectionCountRequired == 1 ? $"Selecionar {currentDataSelection[0].name}?" : "Confirmar seleção?");
                 UIManager.Instance.ShowConfirmation(msg, () => FinishHandSelection(false), () => {
                     // Se cancelar, remove a última seleção para permitir trocar
-                    if (currentHandSelection.Count > 0)
+                    if (currentHandSelectionObjects.Count > 0)
                     {
-                        var last = currentHandSelection[currentHandSelection.Count - 1];
-                        currentHandSelection.RemoveAt(currentHandSelection.Count - 1);
+                        var lastObj = currentHandSelectionObjects[currentHandSelectionObjects.Count - 1];
+                        currentHandSelectionObjects.RemoveAt(currentHandSelectionObjects.Count - 1);
                         
-                        // Atualiza visual da carta cancelada
-                        List<GameObject> allCards = new List<GameObject>(playerHand);
-                        if (duelFieldUI != null) { 
-                            foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject); }
-                            foreach(var z in duelFieldUI.playerSpellZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
-                            foreach(var z in duelFieldUI.opponentMonsterZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
-                            foreach(var z in duelFieldUI.opponentSpellZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
-
-                        var go = allCards.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == last);
-                        if (go != null)
-                        {
-                            var cd = go.GetComponent<CardDisplay>();
-                            cd.SetAttackSelectionVisual(false);
-                            cd.SetTributeHighlight(true);
-                        }
+                        var cd = lastObj.GetComponent<CardDisplay>();
+                        cd.SetAttackSelectionVisual(false);
+                        if (DuelFXManager.Instance != null)
+                            DuelFXManager.Instance.SetSelectionIcon(cd, currentSelectionHighlightCategory, SelectionState.Available);
+                        else
+                            cd.SetHighlight(currentSelectionHighlightCategory, true);
                     }
                 });
             }
@@ -3726,13 +3759,17 @@ public void ShuffleDeck(bool isPlayer)
             var cd = go.GetComponent<CardDisplay>();
             if (cd != null)
             {
-                cd.SetTributeHighlight(false);
+                if (DuelFXManager.Instance != null)
+                    DuelFXManager.Instance.SetSelectionIcon(cd, currentSelectionHighlightCategory, SelectionState.None);
+                
+                cd.SetHighlight(currentSelectionHighlightCategory, false);
                 cd.SetAttackSelectionVisual(false);
             }
         }
 
+        List<CardData> finalData = currentHandSelectionObjects.Select(go => go.GetComponent<CardDisplay>().CurrentCardData).ToList();
         isSelectingFromHand = false;
-        handSelectionCallback?.Invoke(isCancel ? new List<CardData>() : currentHandSelection);
+        handSelectionCallback?.Invoke(isCancel ? new List<CardData>() : finalData);
     }
 
     // Invocação Especial direta por dados (para Monster Reborn, etc)
@@ -4001,7 +4038,7 @@ public void ShuffleDeck(bool isPlayer)
             if (zone != null && zone.childCount > 0)
             {
                 var cd = zone.GetChild(0).GetComponent<CardDisplay>();
-                if (cd != null && !cd.isFlipped) possibleMaterials.Add(cd.CurrentCardData);
+                if (cd != null) possibleMaterials.Add(cd.CurrentCardData);
             }
         }
 
@@ -4029,43 +4066,63 @@ public void ShuffleDeck(bool isPlayer)
             return;
         }
 
-       // Passo 1: Seleção Tátil de Fusão
-       System.Func<List<CardData>, bool> fusionValidator = (selectedMaterials) => {
-           foreach (var f in possibleFusions) {
-               if (FusionManager.Instance.ValidateFusion(f, selectedMaterials)) return true;
-           }
-           return false;
-       };
+        // Passo 1: Selecionar a Fusão PRIMEIRO
+        if (possibleFusions.Count == 1 && !alwaysConfirmSingleTarget)
+        {
+            SelectMaterialsForFusion(sourceCard, possibleFusions[0], possibleMaterials);
+        }
+        else
+        {
+            OpenCardMultiSelection(possibleFusions, "Selecione a Fusão do Extra Deck", 1, 1, (fList) => {
+                if (fList != null && fList.Count > 0)
+                {
+                    SelectMaterialsForFusion(sourceCard, fList[0], possibleMaterials);
+                }
+                else
+                {
+                    SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+                    Destroy(sourceCard.gameObject);
+                }
+            }, HighlightCategory.Fusion);
+        }
+    }
 
-       StartDirectSelection(possibleMaterials, 2, 5, fusionValidator, "Selecione os Materiais de Fusão (Botão Direito cancela)", (selectedMaterials) => {
-           if (selectedMaterials == null || selectedMaterials.Count < 2) {
-               SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
-               Destroy(sourceCard.gameObject);
-               return;
-           }
+    private void SelectMaterialsForFusion(CardDisplay sourceCard, CardData targetFusion, List<CardData> possibleMaterials)
+    {
+        bool isPlayer = sourceCard.isPlayerCard;
+        
+        // Filtra os materiais para mostrar APENAS os válidos para a fusão selecionada (incluindo substitutos universais)
+        List<CardData> validMaterials = new List<CardData>();
+        if (FusionManager.Instance != null)
+        {
+            List<string> requiredNames = FusionManager.Instance.GetMaterialsForFusion(targetFusion);
+            foreach (var mat in possibleMaterials)
+            {
+                if (requiredNames.Contains(mat.name) || FusionManager.Instance.IsSubstitute(mat))
+                {
+                    validMaterials.Add(mat);
+                }
+            }
+        }
+        else
+        {
+            validMaterials = possibleMaterials;
+        }
 
-           // Verifica quais Fusões do Extra Deck podem ser feitas com EXATAMENTE os materiais selecionados
-           var validFusions = possibleFusions.Where(f => FusionManager.Instance.ValidateFusion(f, selectedMaterials)).ToList();
+        System.Func<List<CardData>, bool> fusionValidator = (selectedMaterials) => {
+            return FusionManager.Instance.ValidateFusion(targetFusion, selectedMaterials);
+        };
 
-           if (validFusions.Count == 0) {
-               UIManager.Instance.ShowMessage("Materiais incompatíveis com o Extra Deck!");
-               SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
-               Destroy(sourceCard.gameObject);
-               return;
-           }
+        StartDirectSelection(validMaterials, 2, 5, fusionValidator, $"Selecione os Materiais para {targetFusion.name}", (selectedMaterials) => {
+            if (selectedMaterials == null || selectedMaterials.Count < 2 || !fusionValidator(selectedMaterials)) {
+                if (UIManager.Instance != null && !isSimulating) UIManager.Instance.ShowMessage("Materiais cancelados ou inválidos!");
+                SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+                Destroy(sourceCard.gameObject);
+                return;
+            }
 
-           // Passo 3: Executa direto (a posição será pedida durante a cinemática)
-           System.Action<CardData> onTargetSelected = (targetFusion) => {
-               FusionManager.Instance.PerformFusionSummon(sourceCard, targetFusion, selectedMaterials, false);
-           };
-
-           // Passo 2: Dedução automática ou Desempate
-           if (validFusions.Count == 1) onTargetSelected(validFusions[0]);
-           else UIManager.Instance.ShowCardSelection(validFusions, "Selecione a Fusão do Extra Deck", 1, 1, (fList) => {
-               if (fList != null && fList.Count > 0) onTargetSelected(fList[0]);
-               else { SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule); Destroy(sourceCard.gameObject); }
-           });
-       });
+            FusionManager.Instance.PerformFusionSummon(sourceCard, targetFusion, selectedMaterials, false);
+        }, HighlightCategory.Fusion);
     }
 
     // --- MÉTODOS ADICIONADOS PARA CORRIGIR ERROS DE COMPILAÇÃO ---
@@ -4284,8 +4341,8 @@ public void ShuffleDeck(bool isPlayer)
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCanAttackIndicator(card, isHovering && canAttack);
 
                 bool cannotAttack = !canAttack;
-                if (DuelFXManager.Instance != null && DuelFXManager.Instance.showCannotAttackOnlyInAttackPos && card.position != CardDisplay.BattlePosition.Attack)
-                    cannotAttack = false;
+                if (card.position != CardDisplay.BattlePosition.Attack) cannotAttack = false;
+                
                 if (isAttacker) cannotAttack = false;
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCannotAttackIndicator(card, isHovering && cannotAttack);
             }
@@ -4333,8 +4390,8 @@ public void ShuffleDeck(bool isPlayer)
                             if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCanAttackIndicator(card, canAttack);
 
                             bool cannotAttack = !canAttack;
-                            if (DuelFXManager.Instance != null && DuelFXManager.Instance.showCannotAttackOnlyInAttackPos && card.position != CardDisplay.BattlePosition.Attack)
-                                cannotAttack = false;
+                            if (card.position != CardDisplay.BattlePosition.Attack) cannotAttack = false;
+                            
                         if (isAttacker) cannotAttack = false;
                             if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCannotAttackIndicator(card, cannotAttack);
                         }

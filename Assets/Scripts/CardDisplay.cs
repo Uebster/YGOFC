@@ -784,45 +784,70 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (MouseTooltipUI.Instance != null) MouseTooltipUI.Instance.Hide();
     }
 
-    // Método para ativar o brilho de tributo (Luz Azul)
-    public void SetTributeHighlight(bool active)
+    public void SetHighlight(HighlightCategory category, bool active)
     {
+        Color glowColor = tributeColor;
+        SelectionIconSettings settings = null;
+
+        if (DuelFXManager.Instance != null)
+        {
+            settings = DuelFXManager.Instance.GetIconSettings(category);
+            if (settings != null) glowColor = settings.selectedColor;
+        }
+
         if (outlineImage != null)
         {
             outlineImage.gameObject.SetActive(active);
-            outlineImage.color = tributeColor;
+            outlineImage.color = glowColor;
         }
         
-        // Efeito da imagem de tributo (Cinemática)
         if (active)
         {
+            if (settings == null || !settings.useIcon) return;
+
             if (tributeIconObj == null)
             {
-                tributeIconObj = new GameObject("TributeIcon", typeof(RectTransform), typeof(Image));
+                tributeIconObj = new GameObject("HighlightIcon", typeof(RectTransform), typeof(Image));
                 tributeIconObj.transform.SetParent(transform, false);
-                
-                RectTransform rt = tributeIconObj.GetComponent<RectTransform>();
-                rt.anchorMin = new Vector2(0.5f, 0.5f);
-                rt.anchorMax = new Vector2(0.5f, 0.5f);
-                rt.sizeDelta = new Vector2(60f, 60f); // Tamanho do ícone no centro
-                rt.anchoredPosition = Vector2.zero;
-
-                Image img = tributeIconObj.GetComponent<Image>();
-                img.color = new Color(1f, 1f, 1f, 0.9f);
-                if (DuelFXManager.Instance != null && DuelFXManager.Instance.tributeSummonSettings.selectionIcon.sprite != null)
-                    img.sprite = DuelFXManager.Instance.tributeSummonSettings.selectionIcon.sprite;
-                else
-                    img.color = new Color(1f, 0.5f, 0f, 0.8f); // Fallback laranja
-                
-                // Pisca suavemente enquanto estiver selecionado
-                VfxAutoAnim anim = tributeIconObj.AddComponent<VfxAutoAnim>();
-                anim.duration = 1000f; // Infinito (some ao desativar)
-                anim.fadeType = VfxAutoAnim.FadeType.Blink;
-                anim.blinkSpeed = 5f;
-                anim.scaleType = VfxAutoAnim.ScaleType.None;
             }
+                
             tributeIconObj.SetActive(true);
             tributeIconObj.transform.SetAsLastSibling();
+
+            RectTransform rt = tributeIconObj.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(settings.size, settings.size);
+            rt.anchoredPosition = Vector2.zero;
+            rt.localRotation = Quaternion.identity;
+
+            Image img = tributeIconObj.GetComponent<Image>();
+            img.color = settings.selectedColor;
+            img.sprite = settings.sprite;
+            img.material = settings.material;
+                
+            if (settings.useOutline)
+            {
+                Outline outline = tributeIconObj.GetComponent<Outline>();
+                if (outline == null) outline = tributeIconObj.AddComponent<Outline>();
+                outline.effectColor = settings.outlineColor;
+                outline.effectDistance = new Vector2(settings.selectedOutlineWidth, -settings.selectedOutlineWidth);
+            }
+
+            VfxAutoAnim anim = tributeIconObj.GetComponent<VfxAutoAnim>();
+            if (anim == null) anim = tributeIconObj.AddComponent<VfxAutoAnim>();
+            
+            anim.duration = 10000f; // Tempo longo virtual
+            anim.fadeType = (settings.blinkFrequency > 0 && settings.blinkAvailable) ? VfxAutoAnim.FadeType.Blink : VfxAutoAnim.FadeType.None;
+            anim.blinkSpeed = settings.blinkFrequency;
+            
+            anim.baseColor = settings.selectedColor;
+            anim.scaleType = settings.pulseAvailable ? VfxAutoAnim.ScaleType.Pulse : VfxAutoAnim.ScaleType.None;
+            anim.startScale = 1f;
+            anim.endScale = settings.pulseScale;
+            
+            anim.spinEffect = settings.spinAvailable;
+            anim.spinSpeed = settings.spinSpeed;
         }
         else
         {
@@ -852,45 +877,63 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Pede para o alvo pulsar no mesmo ritmo (Brilho Ciano)
         foreach (var card in linkedCardsToHighlight)
         {
-            card.SetTributeHighlight(highlight);
+            card.SetHighlight(HighlightCategory.LinkedCard, highlight);
             
-            // Se estamos ativando o Hover, desenhamos a Linha de Energia Ciano
             if (highlight)
             {
-                GameObject lineObj = new GameObject("EquipConnectionLine", typeof(RectTransform), typeof(Image));
-                
-                // Coloca na raiz do Canvas para não ser cortado pela hierarquia das zonas
-                Canvas rootCanvas = GetComponentInParent<Canvas>();
-                if (rootCanvas != null) lineObj.transform.SetParent(rootCanvas.transform, false);
-                
-                RectTransform rt = lineObj.GetComponent<RectTransform>();
-                Image img = lineObj.GetComponent<Image>();
-                img.color = new Color(tributeColor.r, tributeColor.g, tributeColor.b, 0.7f); // Ciano translúcido
-                
-                // Matemática para desenhar uma linha reta entre a Carta A e Carta B
-                Vector3 startPos = this.transform.position;
-                Vector3 endPos = card.transform.position;
-                Vector3 dir = endPos - startPos;
-                
-                rt.position = startPos + (dir / 2f); // Centro do caminho
-                
-                float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-                rt.rotation = Quaternion.Euler(0, 0, angle); // Aponta pra carta
-                
-                float canvasScale = rootCanvas != null ? rootCanvas.transform.localScale.x : 1f;
-                rt.sizeDelta = new Vector2(dir.magnitude / canvasScale, 15f); // 15px de espessura de linha
-                
-                lineObj.transform.SetAsLastSibling(); // Fica por cima de tudo
-                
-                // Adiciona nosso canivete suíço para fazer a linha pulsar!
-                VfxAutoAnim anim = lineObj.AddComponent<VfxAutoAnim>();
-                anim.duration = 1000f; // Tempo infinito enquanto o mouse estiver sobre a carta
-                anim.fadeType = VfxAutoAnim.FadeType.Blink;
-                anim.blinkSpeed = 5f;
-                anim.scaleType = VfxAutoAnim.ScaleType.None;
-                
-                activeConnectionLines.Add(lineObj);
+                DrawConnectionLine(this, card);
             }
+        }
+    }
+
+    private void DrawConnectionLine(CardDisplay sourceCard, CardDisplay targetCard)
+    {
+        if (DuelFXManager.Instance == null) return;
+        ConnectionLineSettings lineSettings = DuelFXManager.Instance.linkedCardLine;
+        if (!lineSettings.drawLine) return;
+
+        GameObject lineObj = new GameObject("EquipConnectionLine", typeof(RectTransform), typeof(Image));
+        Canvas rootCanvas = GetComponentInParent<Canvas>();
+        if (rootCanvas != null) lineObj.transform.SetParent(rootCanvas.transform, false);
+        
+        RectTransform rt = lineObj.GetComponent<RectTransform>();
+        Image img = lineObj.GetComponent<Image>();
+        img.color = lineSettings.lineColor;
+        if (lineSettings.material != null) img.material = lineSettings.material;
+        
+        Vector3 startPos = GetAnchorPosition(sourceCard.GetComponent<RectTransform>(), lineSettings.sourceAnchor);
+        Vector3 endPos = GetAnchorPosition(targetCard.GetComponent<RectTransform>(), lineSettings.targetAnchor);
+        
+        Vector3 dir = endPos - startPos;
+        rt.position = startPos + (dir / 2f);
+        
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        rt.rotation = Quaternion.Euler(0, 0, angle);
+        
+        float canvasScale = rootCanvas != null ? rootCanvas.transform.localScale.x : 1f;
+        rt.sizeDelta = new Vector2(dir.magnitude / canvasScale, lineSettings.thickness);
+        
+        lineObj.transform.SetAsLastSibling();
+        
+        VfxAutoAnim anim = lineObj.AddComponent<VfxAutoAnim>();
+        anim.duration = 10000f;
+        if (lineSettings.blinkFrequency > 0) { anim.fadeType = VfxAutoAnim.FadeType.Blink; anim.blinkSpeed = lineSettings.blinkFrequency; }
+        if (lineSettings.usePulse) { anim.scaleType = VfxAutoAnim.ScaleType.PulseY; anim.startScale = 1f; anim.endScale = lineSettings.pulseThicknessMult; anim.blinkSpeed = lineSettings.blinkFrequency > 0 ? lineSettings.blinkFrequency : 5f; }
+        else { anim.scaleType = VfxAutoAnim.ScaleType.None; }
+        
+        activeConnectionLines.Add(lineObj);
+    }
+
+    private Vector3 GetAnchorPosition(RectTransform rt, LineAnchor anchor)
+    {
+        Vector3[] corners = new Vector3[4];
+        rt.GetWorldCorners(corners); // 0=BL, 1=TL, 2=TR, 3=BR
+        switch (anchor) {
+            case LineAnchor.Top: return (corners[1] + corners[2]) / 2f;
+            case LineAnchor.Bottom: return (corners[0] + corners[3]) / 2f;
+            case LineAnchor.Left: return (corners[0] + corners[1]) / 2f;
+            case LineAnchor.Right: return (corners[2] + corners[3]) / 2f;
+            case LineAnchor.Center: default: return rt.position;
         }
     }
 

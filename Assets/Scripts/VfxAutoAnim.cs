@@ -4,7 +4,7 @@ using UnityEngine.UI;
 public class VfxAutoAnim : MonoBehaviour
 {
     public enum FadeType { None, FadeIn, FadeOut, Blink }
-    public enum ScaleType { None, ScaleUp, ScaleDown, Pulse }
+    public enum ScaleType { None, ScaleUp, ScaleDown, Pulse, PulseY }
 
     [Header("Configurações Gerais")]
     public float duration = 0.3f;
@@ -22,7 +22,7 @@ public class VfxAutoAnim : MonoBehaviour
     public float endScale = 2.5f;
     private Image img;
     private float timer = 0f;
-    private Color baseColor;
+    public Color baseColor = Color.white;
 
     void Start()
     {
@@ -62,6 +62,11 @@ public class VfxAutoAnim : MonoBehaviour
         {
             float s = Mathf.Lerp(startScale, endScale, Mathf.PingPong(timer * blinkSpeed, 1f));
             transform.localScale = new Vector3(s, s, 1);
+        }
+        else if (scaleType == ScaleType.PulseY)
+        {
+            float sy = Mathf.Lerp(startScale, endScale, Mathf.PingPong(timer * blinkSpeed, 1f));
+            transform.localScale = new Vector3(1f, sy, 1f);
         }
 
         // Aplica a Transparência (Fade)

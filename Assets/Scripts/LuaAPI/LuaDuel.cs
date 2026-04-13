@@ -1107,6 +1107,11 @@ public class LuaDuel
 
     public DynValue SelectMatchingCard(object player, object filterFunc, object player2, object locSelf, object locOpp, object min, object max, object excluded, params object[] extraArgs)
     {
+        return InternalSelectMatchingCard(player, filterFunc, player2, locSelf, locOpp, min, max, excluded, HighlightCategory.GenericTarget, extraArgs);
+    }
+
+    private DynValue InternalSelectMatchingCard(object player, object filterFunc, object player2, object locSelf, object locOpp, object min, object max, object excluded, HighlightCategory category, params object[] extraArgs)
+    {
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
 
@@ -1144,7 +1149,7 @@ public class LuaDuel
                 CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
                 this.currentTargetGroup = selectedGroup; // Salva para o GetFirstTarget()
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
-            });
+            }, category);
         }
 
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectMatchingCard") });
@@ -1152,7 +1157,7 @@ public class LuaDuel
 
     public DynValue SelectReleaseGroup(object player, object filterFunc, object min, object max, object excluded, params object[] extraArgs)
     {
-        return SelectMatchingCard(player, filterFunc, player, 0x04, 0, ConvertToInt(min), ConvertToInt(max), excluded, extraArgs);
+        return InternalSelectMatchingCard(player, filterFunc, player, 0x04, 0, ConvertToInt(min), ConvertToInt(max), excluded, HighlightCategory.Tribute, extraArgs);
     }
 
     public int GetTargetPlayer() { return targetPlayer; }

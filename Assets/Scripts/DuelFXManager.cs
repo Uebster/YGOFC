@@ -17,6 +17,8 @@ public enum ControlSwapImpactType { Squeeze, Pulse }
 public enum SummonVFXType { Normal, Special, Tribute, Fusion, Ritual }
 public enum SelectionState { None, Available, Selected }
 public enum PlacementAuraRenderMode { Behind, Above }
+public enum HighlightCategory { Tribute, Fusion, Ritual, SpecialSummon, GenericTarget, LinkedCard }
+public enum LineAnchor { Center, Top, Bottom, Left, Right }
 
 [System.Serializable]
 public class SelectionIconSettings
@@ -31,9 +33,22 @@ public class SelectionIconSettings
     public Color selectedColor = Color.red;
     public float size = 80f;
     public bool showAvailableState = true;
-    public float blinkFrequency = 5f;
-    public bool spin = false;
+
+    [Header("Animation - General")]
     public float spinSpeed = 90f;
+    public float pulseScale = 1.1f;
+    public float blinkFrequency = 5f;
+
+    [Header("Animation - Available State")]
+    public bool blinkAvailable = true;
+    public bool pulseAvailable = false;
+    public bool spinAvailable = true;
+
+    [Header("Animation - Selected State")]
+    public bool blinkSelected = false;
+    public bool pulseSelected = false;
+    public bool spinSelected = true;
+
     public bool useOutline = false;
     public Color outlineColor = new Color(1f, 1f, 1f, 0.5f);
     public float outlineWidth = 5f;
@@ -147,6 +162,20 @@ public class NormalSummonVFXPackage
 {
     [Header("Impacto de Invocação")]
     public SummonImpactSettings impact = new SummonImpactSettings();
+}
+
+[System.Serializable]
+public class ConnectionLineSettings
+{
+    public bool drawLine = true;
+    public Color lineColor = new Color(0f, 0.6f, 1f, 0.7f);
+    public float thickness = 15f;
+    public Material material;
+    public LineAnchor sourceAnchor = LineAnchor.Center;
+    public LineAnchor targetAnchor = LineAnchor.Center;
+    public float blinkFrequency = 5f;
+    public bool usePulse = false;
+    public float pulseThicknessMult = 1.5f;
 }
 
 public class DuelFXManager : MonoBehaviour
@@ -268,6 +297,12 @@ public class DuelFXManager : MonoBehaviour
     public SummonVFXPackage tributeSummonSettings = new SummonVFXPackage();
     public SummonVFXPackage ritualSummonSettings = new SummonVFXPackage();
     public SummonVFXPackage fusionSummonSettings = new SummonVFXPackage();
+
+    [Header("--- GENERIC TARGET ---")]
+    public SelectionIconSettings genericTargetIcon = new SelectionIconSettings();
+    [Header("--- LINKED CARD (EQUIP/HOVER) ---")]
+    public SelectionIconSettings linkedCardIcon = new SelectionIconSettings();
+    public ConnectionLineSettings linkedCardLine = new ConnectionLineSettings();
 
     [Header("Opções de Corrente (Chain Link)")]
     public bool useChainLinkRoutine = true;
@@ -568,6 +603,19 @@ public class DuelFXManager : MonoBehaviour
 
     // --- ROTEADORES DE PACOTE DE INVOCAÇÃO ---
 
+    public SelectionIconSettings GetIconSettings(HighlightCategory category)
+    {
+        switch(category) {
+            case HighlightCategory.Tribute: return tributeSummonSettings.selectionIcon;
+            case HighlightCategory.Fusion: return fusionSummonSettings.selectionIcon;
+            case HighlightCategory.Ritual: return ritualSummonSettings.selectionIcon;
+            case HighlightCategory.SpecialSummon: return specialSummonSettings.selectionIcon;
+            case HighlightCategory.GenericTarget: return genericTargetIcon;
+            case HighlightCategory.LinkedCard: return linkedCardIcon;
+            default: return genericTargetIcon;
+        }
+    }
+
     public SummonVFXPackage GetSummonPackage(SummonVFXType type)
     {
         switch(type) {
@@ -597,6 +645,20 @@ public class DuelFXManager : MonoBehaviour
         if (package == null || !package.selectionIcon.useIcon) return;
         SelectionIconSettings settings = package.selectionIcon;
 
+        ApplySelectionIcon(card, settings, state);
+    }
+
+    public void SetSelectionIcon(CardDisplay card, HighlightCategory category, SelectionState state)
+    {
+        if (card == null || !enableAnimations) return;
+        SelectionIconSettings settings = GetIconSettings(category);
+        if (settings == null || !settings.useIcon) return;
+
+        ApplySelectionIcon(card, settings, state);
+    }
+
+    private void ApplySelectionIcon(CardDisplay card, SelectionIconSettings settings, SelectionState state)
+    {
         if (activeSelectionIcons.TryGetValue(card, out GameObject existingIcon))
         {
             if (existingIcon != null) Destroy(existingIcon);
@@ -660,21 +722,43 @@ public class DuelFXManager : MonoBehaviour
 
     private IEnumerator AnimateSelectionIcon(GameObject iconObj, Image img, RectTransform rt, SelectionIconSettings settings, bool isAvailableState)
     {
-        float t = 0; Color baseColor = img.color;
+        float t = 0;
+        Color baseColor = img.color;
         Outline outline = iconObj.GetComponent<Outline>();
         Color baseOutlineColor = outline != null ? outline.effectColor : Color.clear;
+        Vector3 baseScale = rt.localScale;
+
+        // Determina quais animações usar baseado no estado (Disponível vs Selecionado)
+        bool shouldBlink = isAvailableState ? settings.blinkAvailable : settings.blinkSelected;
+        bool shouldPulse = isAvailableState ? settings.pulseAvailable : settings.pulseSelected;
+        bool shouldSpin = isAvailableState ? settings.spinAvailable : settings.spinSelected;
 
         while (iconObj != null)
         {
-            if (isAvailableState) {
-                t += Time.deltaTime;
+            t += Time.deltaTime;
+
+            // Lógica de Piscar (Blink)
+            if (shouldBlink)
+            {
                 float alpha = Mathf.Abs(Mathf.Sin(t * Mathf.PI * settings.blinkFrequency));
-                Color c = baseColor; c.a = alpha * baseColor.a; img.color = c;
+                Color c = baseColor; c.a = alpha * baseColor.a;
+                img.color = c;
                 if (outline != null) {
-                    Color oc = baseOutlineColor; oc.a = alpha * baseOutlineColor.a; outline.effectColor = oc;
+                    Color oc = baseOutlineColor; oc.a = alpha * baseOutlineColor.a;
+                    outline.effectColor = oc;
                 }
             }
-            if (settings.spin) rt.Rotate(0, 0, settings.spinSpeed * Time.deltaTime);
+
+            // Lógica de Pulsar (Pulse)
+            if (shouldPulse)
+            {
+                float scaleMultiplier = 1f + (Mathf.Sin(t * Mathf.PI * settings.blinkFrequency) + 1f) / 2f * (settings.pulseScale - 1f);
+                rt.localScale = baseScale * scaleMultiplier;
+            }
+
+            // Lógica de Girar (Spin)
+            if (shouldSpin) rt.Rotate(0, 0, settings.spinSpeed * Time.deltaTime);
+
             yield return null;
         }
     }

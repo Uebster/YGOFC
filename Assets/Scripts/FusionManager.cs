@@ -108,7 +108,7 @@ public class FusionManager : MonoBehaviour
         return true;
     }
 
-    private bool IsSubstitute(CardData material)
+    public bool IsSubstitute(CardData material)
     {
         // se implementarmos substitutos via Lua depois, podemos descomentar isso
         // if (CardEffectManager.Instance != null) return CardEffectManager.Instance.IsFusionSubstitute(material.id);
@@ -187,8 +187,16 @@ public class FusionManager : MonoBehaviour
         if (TrophyManager.Instance != null) TrophyManager.Instance.TrackStat("fusion_summon", 1);
     }
 
+    public List<string> GetMaterialsForFusion(CardData fusionMonster)
+    {
+        if (fusionMonster.fusion_materials != null && fusionMonster.fusion_materials.Count > 0)
+            return new List<string>(fusionMonster.fusion_materials);
+        else
+            return GetMaterialsFromDescription(fusionMonster.description);
+    }
+
     // Este é um placeholder para um sistema de parsing mais robusto.
-    private List<string> GetMaterialsFromDescription(string description)
+    public List<string> GetMaterialsFromDescription(string description)
     {
         List<string> materials = new List<string>();
         if (string.IsNullOrEmpty(description) || !description.Contains("+")) return materials;

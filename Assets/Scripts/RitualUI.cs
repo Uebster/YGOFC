@@ -126,7 +126,7 @@ public class RitualUI : MonoBehaviour
             if (display != null)
             {
                 bool isSelected = (display.CurrentCardData == selectedRitualMonster) || selectedTributes.Contains(display.CurrentCardData);
-                display.SetTributeHighlight(isSelected);
+                display.SetHighlight(HighlightCategory.Ritual, isSelected);
             }
         }
     }

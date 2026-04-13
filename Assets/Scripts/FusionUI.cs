@@ -129,7 +129,7 @@ public class FusionUI : MonoBehaviour
             if (display != null)
             {
                 bool isSelected = (display.CurrentCardData == selectedFusionMonster) || selectedMaterials.Contains(display.CurrentCardData);
-                display.SetTributeHighlight(isSelected); // Reutilizando o destaque de tributo para seleção
+                display.SetHighlight(HighlightCategory.Fusion, isSelected);
             }
         }
     }

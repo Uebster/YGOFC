@@ -111,3 +111,14 @@ A Invocação Especial permite colocar monstros no campo sem usar a Invocação 
 *   **Ritual:** Via `BeginRitualSummon`.
 *   **Ressurreição:** Via `SpecialSummonFromData` (usado por efeitos que revivem do cemitério).
 *   **Invocação inerente:** Monstros que se invocam da mão (lógica dentro do script Lua da própria carta).
+
+## 4.6 Interfaces de Seleção (Direct Selection vs UI Panels)
+A Engine suporta múltiplos fluxos visuais para a seleção de alvos e invocações complexas.
+
+*   **Seleção Direta (Direct Hand/Field Selection):** Se a opção `GameManager.useDirectHandSelection` estiver ativada, a engine evita abrir painéis de interface (`ShowCardSelection`) sempre que os alvos estiverem visíveis no tabuleiro ou na mão. Em vez disso, as cartas elegíveis ficam piscando (`SelectionState.Available`), e ao clicar, ficam estáticas (`SelectionState.Selected`). A confirmação é feita via Popup (Sim/Não) se `confirmHandSelection` for verdadeiro.
+    *   **Ritual:** Usa Seleção Direta tanto para o Monstro de Ritual (na mão) quanto para os Tributos (mão/campo).
+    *   **Fusão:** Usa a Caixa de Seleção (`ShowCardSelection`) para escolher o Monstro de Fusão, pois ele reside no *Extra Deck* (que é uma pilha invisível, não clicável individualmente). Porém, os *Materiais* são selecionados via Seleção Direta no tabuleiro/mão.
+*   **Painéis Customizados (Custom UI):** As opções `useCustomFusionUI` e `useCustomRitualUI` desviam o fluxo para painéis específicos que mostram todas as etapas de uma vez (Ex: Monstro e Tributos na mesma janela).
+*   **Single Target Auto-Select:** Se houver apenas 1 alvo válido, a engine pula a seleção para poupar cliques. Isso pode ser desativado ativando `alwaysConfirmSingleTarget` no GameManager, forçando a seleção visual e confirmação mesmo para opções únicas.
+
+*(Nota: Os ícones visuais do estado de seleção são orquestrados pelo `DuelFXManager.SetSelectionIcon`, mapeando categorias como Tributo, Fusão ou Ritual para seus respectivos pacotes de partículas).*

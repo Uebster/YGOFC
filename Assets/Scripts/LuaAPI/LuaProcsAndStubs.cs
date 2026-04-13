@@ -7,10 +7,27 @@ using System;
 // ==============================================================================
 // 5. CLASSES DE PROCEDIMENTO (FUSÃO, SYNCHRO, ETC)
 // ==============================================================================
-[MoonSharpUserData] public class Fusion { public static void AddProcMix(params object[] args) { } }
+[MoonSharpUserData] public class Fusion { 
+    public static void AddProcMix(params object[] args) { } 
+    public static void AddProcMixN(params object[] args) { } 
+    public static void AddProcMixRep(params object[] args) { } 
+    public static void AddProcCode2(params object[] args) { } 
+    public static void AddProcCode3(params object[] args) { } 
+    public static void AddProcCode4(params object[] args) { } 
+    public static void AddProcCodeRep(params object[] args) { } 
+    public static void AddProcFunRep(params object[] args) { } 
+    public static void AddContactProc(params object[] args) { }
+    public static void RegisterSummonEff(params object[] args) { }
+}
 [MoonSharpUserData] public class Synchro { }
 [MoonSharpUserData] public class Spirit { }
-[MoonSharpUserData] public class Ritual { }
+[MoonSharpUserData] public class Ritual { 
+    public static void AddProcGreater(params object[] args) { }
+    public static void AddProcEqual(params object[] args) { }
+    public static void AddProcGreaterCode(params object[] args) { }
+    public static void AddProcEqualCode(params object[] args) { }
+    public static void RegisterSummonEff(params object[] args) { }
+}
 [MoonSharpUserData] public class Xyz { }
 
 // ==============================================================================
