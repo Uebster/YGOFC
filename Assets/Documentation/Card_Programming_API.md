@@ -242,3 +242,66 @@ O script processa todas as cartas com efeito do banco de dados em duas barreiras
    Após carregar, o validador executa um "Dry-Run" em todos os Efeitos registrados, chamando `condition`, `cost` e `target` com `chk = 0`. Isso força a carta a fazer perguntas à `LuaAPI` sem abrir UIs, revelando chamadas para funções que não existem ou que possuem a assinatura errada.
 
 O resultado é impresso no Console, com um resumo de sucessos/falhas e um log detalhado dos erros.
+
+---
+
+## 5.8 Casos de Estudo e Soluções Arquiteturais (Breakthroughs)
+Esta seção documenta como os desafios mais complexos de integração entre o C# e o LUA foram resolvidos, servindo como modelo para desenvolver novas mecânicas.
+
+### 5.8.1 A Integração Híbrida (Ex: Carta Mágica "7")
+Algumas cartas exigem UIs cinemáticas massivas na Unity que o LUA nativo não compreende.
+*   **O Problema:** A carta "7" precisava invocar a UI do "Caça-Níqueis" e, se bem sucedida, destruir a si mesma e curar o jogador.
+*   **A Solução Híbrida:** O C# possui um "Bypass" rígido na função `ActivateCard()`. Quando a carta "7" é ativada, a Unity "sequestra" a ação e toca a cinemática, destruindo as cartas. Como o C# manda essas cartas para o Cemitério usando `MoveCard`, o motor LUA global capta o `EVENT_TO_GRAVE` e a própria carta "7" roda a parte final do seu script Lua de forma autônoma para curar os 700 LP.
+
+### 5.8.2 A Visão do LUA sobre Rituais, Fusões e o "Extra Deck"
+O LUA do YGOPro geralmente invoca Fusões forçando uma interface fria. Nós queríamos que o jogador clicasse taticamente nos materiais no tabuleiro 3D.
+*   **O Problema:** O Extra Deck é uma pilha invisível, o jogador não pode clicar nela taticamente. E o LUA dava "crash" (`attempt to call a nil value`) se não recebesse a assinatura exata ao verificar monstros.
+*   **A Solução (Fusão/Ritual):** O `GameManager` intercepta a ativação da *Polymerization*. O C# abre a interface Clássica de Grade (`CardSelectionUI`) **apenas** mostrando o Extra Deck, permitindo ao jogador escolher o Monstro de Fusão primeiro. Depois de confirmado, o C# filtra a mão/campo e acende a *Seleção Tática Direta* nos materiais. 
+*   **A Ponte LUA:** Para o LUA confirmar que um monstro era "Invocável" do Extra Deck sem crachar, a função base `IsCanBeSpecialSummoned` no `LuaCard.cs` foi atualizada de forma agressiva utilizando o parâmetro C# `params object[] extraArgs`. Isso fez com que a Unity absorvesse qualquer quantidade infinita de parâmetros extras que o LUA resolvesse enviar, silenciando exceções.
+
+### 5.8.3 Memória de Turno, Preload e Efeitos Globais (Ex: "A Deal with Dark Ruler")
+Cartas que dependem de ações passadas no turno (Ex: "Se um Nível 8 morreu neste turno, invoque o Berserk Dragon") precisam estar constantemente vigiando a partida.
+*   **O Problema:** O Unity só carregava o script `.lua` da magia no momento em que o jogador clicava nela. Como ela estava inativa quando o dragão morreu, ela perdia o momento e recusava a ativação.
+*   **O Preload:** Foi introduzido o `PreloadScriptsForDecks()`. Assim que o duelo inicia, a Unity lê todas as cartas em ambos os decks e registra discretamente seus `EFFECT_TYPE_FIELD` (Efeitos Globais Invisíveis) em uma lista `globalEffects` no `LuaDuel`.
+*   **As Flags (`playerFlags`):** A API agora suporta `RegisterFlagEffect` e `GetFlagEffect`. O motor LUA carimba um "selo" temporário invisível no jogador (ex: "ID 6850209 ativado") assim que um Level 8 morre. Quando a magia é ativada, ela verifica a Flag e a encontra lá. A lista de Flags é zerada na `End Phase`!
+
+### 5.8.4 Monstros Normais e a Identidade "Dummy"
+Monstros Normais (como *Blue-Eyes White Dragon*) não possuem arquivo de script `.lua`.
+*   **O Problema:** Quando o Blue-Eyes morria, o `LuaEventManager` tentava carregar seu script, falhava e retornava `null`. O sistema ignorava o evento, e as *Flags Globais* do LUA não ficavam sabendo que um monstro Nível 8 morreu.
+*   **O Fallback de Identidade:** Agora, no `LuaEventManager.cs`, se um script não for encontrado, a Unity constrói e veste o monstro com um `new LuaCard(card)`. O monstro não tem efeito nenhum, mas ele adquire uma casca virtual contendo seu Level, ATK, e ID. Ele é submetido aos gatilhos (como `EVENT_TO_GRAVE`), permitindo que a engrenagem do LUA global rastreie mortes de cartas normais impecavelmente!
+
+### 5.8.5 Injeção Inteligente de Dependências (Quality Assurance)
+O motor precisa ser rápido de testar, sem o desenvolvedor precisar criar Decks de 40 cartas meticulosos.
+*   **O Problema:** No `FullTestManager`, ao forçarmos o *A Deal with Dark Ruler* na mão para testar, ele falhava silenciosamente porque a Unity abria o Deck do jogador e percebia que havia `0` *Berserk Dragons* lá dentro para invocar (bloqueando a ativação por respeito à regra).
+*   **Injeção Dinâmica (Regex):** O `FullTestManager` agora intercepta o evento de *Spawnar* cartas. Ele usa Expressões Regulares (`Regex`) para varrer a string `description` da carta em busca de nomes entre aspas duplas (Ex: `"Berserk Dragon"`). Se ele acha uma dependência declarada, o C# procura essa carta no Banco de Dados e adiciona discretamente 1 cópia dentro do Deck Principal ou Extra Deck do jogador, garantindo que os motores LUA tenham a peça exata necessária para a carta funcionar!
+
+### 5.8.6 Interceptação de UI Customizada pelo LUA (Ex: "7 Completed")
+Algumas cartas exigem escolhas de jogador (Ex: Escolher entre aplicar o buff em ATK ou DEF). O LUA nativo lida com isso chamando a função de listas de texto simples (`Duel.SelectOption`).
+*   **Filtragem do Tabuleiro:** Para garantir que "7 Completed" só seja equipada em Máquinas, o script `.lua` usa a rotina padrão `aux.AddEquipProcedure`, passando `c:IsRace(RACE_MACHINE)` como filtro. A Engine Unity cuida de acender o `Outline` e permitir o clique apenas em máquinas válidas no campo através da comunicação natural com `IsExistingTarget`.
+*   **O "Sequestro" da UI (`LuaDuel.cs`):** Quando o LUA tenta chamar `Duel.SelectOption` passando os IDs de string que representam as opções do "7 Completed" (usando a matemática do ID da carta `86198326`), o método C# identifica essa assinatura específica através de um `if (isAtkDefChoice)`.
+*   **O Painel Tático:** Ao invés de abrir a UI de múltipla escolha padrão (`MultipleChoiceUI`), a Unity intercepta a chamada e abre o nosso painel gráfico customizado `AttributeChoiceUI` (com os botões imensos de Espada e Escudo).
+*   **O Retorno LUA e a Aplicação do Buff:** O painel pausa a corrotina do LUA (`isWaitingForLuaYield = true`) e aguarda o clique. Quando o jogador escolhe, a Unity devolve `0` (ATK) ou `1` (DEF) via `yieldReturnValue`. O script LUA recebe esse número e registra, de fato, um `EFFECT_UPDATE_ATTACK` ou `EFFECT_UPDATE_DEFENSE` na carta alvo. Por debaixo dos panos, o evento dispara o método C# `CardEffectManager.RecalculateStats()`, que escaneia a carta, lê o novo modificador invisível do LUA e aplica os `+700` no número de Status flutuante do monstro 3D!
+
+### 5.8.8 O Desafio das Duplicatas (Seleção e Ativação Múltipla)
+Cartas como "A Deal with Dark Ruler" podem ser ativadas várias vezes no mesmo turno, mas o sistema apresentava dois bugs críticos com cópias múltiplas.
+*   **O Problema da Seleção:** Ao injetar 3 "Berserk Dragon" no deck, a UI de seleção (`CardSelectionUI`) mostrava apenas 1. Isso ocorria porque a UI usava uma lista de `CardData` e o método `Contains()` para verificar a seleção. Como as 3 cópias eram referências ao mesmo objeto `CardData` do banco de dados, o sistema as via como uma única entidade.
+*   **A Solução da Seleção:** A `CardSelectionUI` foi refatorada para usar uma lista de `CardDisplay` (as cartas visuais) em vez de `CardData`. Como cada carta na UI é um `GameObject` único, o sistema agora consegue diferenciar as cópias perfeitamente, exibindo todas as 3 na tela.
+*   **O Problema da Ativação:** A segunda e terceira cópia da magia falhavam. O `LuaScriptLoader` estava recarregando o script e resetando a "memória de turno" (`s[0]=false`) toda vez que uma nova cópia era puxada para a mão.
+*   **A Solução da Ativação (Cache LUA):** O `LuaScriptLoader` foi transformado em um sistema de Cache. Agora, ele verifica se o script (`cXXXXX.lua`) já foi carregado na memória do LUA. Se sim, ele reutiliza a tabela de funções existente em vez de recriá-la. Isso garante que todas as 3 cópias da magia compartilhem o mesmo "cérebro" e a mesma memória de turno, permitindo ativações múltiplas.
+
+### 5.8.9 O Problema de Identidade (IDs Customizados vs. Oficiais)
+O motor LUA depende estritamente dos IDs numéricos oficiais do YGOPro (ex: `85605684` para Berserk Dragon), enquanto nosso banco de dados usa IDs customizados (ex: `DM0165`).
+*   **O Problema:** A função `c:IsCode(85605684)` no LUA falhava porque a nossa implementação C# de `GetCode()` retornava o ID do nosso banco (`165`), e `165` não é igual a `85605684`.
+*   **A Solução (Mapeamento Reverso):** A função `IsCode()` no `LuaCard.cs` foi blindada. Agora, além de comparar os IDs numéricos, ela faz uma busca reversa: pega o código oficial (`85605684`), procura no `CardDatabase` qual carta possui essa `password`, pega o **nome** dessa carta ("Berserk Dragon") e compara com o nome da carta que está sendo avaliada no deck. Isso cria uma ponte universal e à prova de falhas entre nossos IDs e os do OCGCore.
+
+### 5.8.10 O Iterador Silencioso e a Limpeza de Memória (`aux.Next` e `aux.AddValuesReset`)
+O script de "A Deal with Dark Ruler" usa duas funções auxiliares (`aux`) cruciais que não estavam implementadas.
+*   **O Problema:** A função `checkop` do script usa um loop `for tc in aux.Next(eg) do` para verificar cada carta que foi para o cemitério. Nossa implementação de `aux.Next` era um *stub* vazio que retornava `nil`, fazendo o loop nunca executar. Consequentemente, a "flag" de que um Nível 8 morreu nunca era registrada.
+*   **A Solução do Iterador:** O método `aux.Next` em `LuaEngineCore.cs` foi implementado para retornar um iterador real (`g.Iter()`) compatível com o MoonSharp, permitindo que o LUA percorra os grupos de cartas corretamente.
+*   **O Problema da Limpeza:** O script também chama `aux.AddValuesReset` para registrar uma função que deve ser executada no final do turno (para resetar a flag `s[tp]=false`). Sem isso, a magia ficaria ativável para sempre após a primeira morte de um Nível 8.
+*   **A Solução da Limpeza:** Implementamos o `AddValuesReset` para adicionar a função LUA a uma lista `endTurnCallbacks` no `LuaDuel`. O `LuaEventManager`, no gancho `OnPhaseStart(GamePhase.End)`, agora percorre e executa todas as funções registradas nessa lista, garantindo que a memória de turno seja limpa corretamente.
+
+### 5.8.7 Stubs de Compatibilidade e Efeitos de Arquétipo (Ex: Monstros "Spirit")
+O motor OCGCore utiliza funções auxiliares para registrar efeitos comuns a um arquétipo (Ex: `Spirit.AddProcedure(c)` para o efeito de retornar à mão).
+*   **O Problema:** Durante o `PreloadScriptsForDecks`, o motor LUA tentava chamar `Spirit.AddProcedure` para cartas como "Inaba White Rabbit", mas a classe C# `Spirit` estava vazia, causando um crash de "método não encontrado".
+*   **A Solução (Stubs Funcionais):** Foi criado o arquivo `LuaProcsAndStubs.cs` para abrigar essas funções auxiliares. A função `Spirit.AddProcedure` agora existe e, em vez de conter a lógica de retorno (que já é tratada pelo C# no `PhaseManager`), ela simplesmente registra um efeito com um código customizado (`511002963`) na carta. Isso serve como um "carimbo" para que a engine C# saiba que aquela carta é um monstro Spirit e deve aplicar a regra de retorno na End Phase, prevenindo o crash e garantindo a funcionalidade correta.

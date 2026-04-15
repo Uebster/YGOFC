@@ -17,7 +17,7 @@ public class CardSelectionUI : MonoBehaviour
     public Button closeButton; // Para o botão CloseDeckCards da hierarquia
 
     private List<CardData> sourceList;
-    private List<CardData> selectedCards = new List<CardData>();
+    private List<CardDisplay> selectedDisplays = new List<CardDisplay>();
     private int minSelection = 1;
     private int maxSelection = 1;
     private System.Action<List<CardData>> onConfirm;
@@ -60,7 +60,7 @@ public class CardSelectionUI : MonoBehaviour
         maxSelection = max;
         onConfirm = callback;
         currentCategory = category;
-        selectedCards.Clear();
+        selectedDisplays.Clear();
 
         if (titleText) titleText.text = title;
         
@@ -115,32 +115,32 @@ public class CardSelectionUI : MonoBehaviour
             
             // Captura a variável para o closure
             CardData currentCard = card;
-            btn.onClick.AddListener(() => ToggleSelection(currentCard, display));
+            btn.onClick.AddListener(() => ToggleSelection(display));
 
             // Atualiza estado visual inicial
-            UpdateCardVisual(currentCard, display);
+            UpdateCardVisual(display);
         }
 
         UpdateConfirmButton();
     }
 
-    void ToggleSelection(CardData card, CardDisplay display)
+    void ToggleSelection(CardDisplay display)
     {
-        if (selectedCards.Contains(card))
+        if (selectedDisplays.Contains(display))
         {
-            selectedCards.Remove(card);
+            selectedDisplays.Remove(display);
         }
         else
         {
-            if (selectedCards.Count < maxSelection)
+            if (selectedDisplays.Count < maxSelection)
             {
-                selectedCards.Add(card);
+                selectedDisplays.Add(display);
             }
             else if (maxSelection == 1)
             {
                 // Se for seleção única, troca a seleção atual pela nova
-                selectedCards.Clear();
-                selectedCards.Add(card);
+                selectedDisplays.Clear();
+                selectedDisplays.Add(display);
                 // Precisamos atualizar visualmente todas as cartas para remover o destaque da anterior
                 // Para simplificar, chamamos RefreshVisuals em todas
                 RefreshAllVisuals();
@@ -152,14 +152,14 @@ public class CardSelectionUI : MonoBehaviour
         // Se a ordem importa (seleção múltipla), atualizamos todos para garantir que os números (1, 2, 3) fiquem corretos
         // Ex: Se desmarcar o 1, o 2 vira 1.
         if (maxSelection > 1) RefreshAllVisuals();
-        else UpdateCardVisual(card, display);
+        else UpdateCardVisual(display);
 
         UpdateConfirmButton();
     }
 
-    void UpdateCardVisual(CardData card, CardDisplay display)
+    void UpdateCardVisual(CardDisplay display)
     {
-        bool isSelected = selectedCards.Contains(card);
+        bool isSelected = selectedDisplays.Contains(display);
         
         SelectionState state = isSelected ? SelectionState.Selected : SelectionState.Available;
         if (DuelFXManager.Instance != null)
@@ -170,7 +170,7 @@ public class CardSelectionUI : MonoBehaviour
         // Lógica de Ordem Visual (Badges)
         if (isSelected && maxSelection > 1)
         {
-            int order = selectedCards.IndexOf(card) + 1;
+            int order = selectedDisplays.IndexOf(display) + 1;
             ShowSelectionBadge(display, order);
         }
         else
@@ -239,7 +239,7 @@ public class CardSelectionUI : MonoBehaviour
             CardDisplay display = go.GetComponent<CardDisplay>();
             if (display != null)
             {
-                UpdateCardVisual(display.CurrentCardData, display);
+                UpdateCardVisual(display);
             }
         }
     }
@@ -248,7 +248,7 @@ public class CardSelectionUI : MonoBehaviour
     {
         if (confirmButton)
         {
-            bool isValid = selectedCards.Count >= minSelection && selectedCards.Count <= maxSelection;
+            bool isValid = selectedDisplays.Count >= minSelection && selectedDisplays.Count <= maxSelection;
             confirmButton.interactable = isValid;
             
             if (confirmButtonText)
@@ -262,8 +262,9 @@ public class CardSelectionUI : MonoBehaviour
     void ConfirmSelection()
     {
         gameObject.SetActive(false);
+        List<CardData> result = selectedDisplays.Select(d => d.CurrentCardData).ToList();
         ClearSpawnedObjects();
-        onConfirm?.Invoke(selectedCards);
+        onConfirm?.Invoke(result);
     }
 
     void CancelSelection()

@@ -152,7 +152,7 @@ public class PhaseManager : MonoBehaviour
         // CRÍTICO: Não avança para a Main Phase se houver alguma corrente/efeito de Standby Phase sendo resolvida pela Engine LUA (Ex: Tomando dano de veneno).
         if (CardEffectManager.Instance != null)
         {
-            yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield);
+            yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen);
         }
 
         // Respeita a opção do painel DEV (Não avança sozinho se o jogador travou as fases automáticas)

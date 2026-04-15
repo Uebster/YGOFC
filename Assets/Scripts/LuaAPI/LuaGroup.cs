@@ -147,7 +147,7 @@ public class LuaGroup
                 if (excluded is LuaGroup excGroup && excGroup.cards.Contains(c)) continue;
             }
 
-            if (c.unityData != null && !selectableData.Contains(c.unityData)) selectableData.Add(c.unityData);
+            if (c.unityData != null) selectableData.Add(c.unityData);
         }
         
         // --- BYPASS DE INTELIGÊNCIA ARTIFICIAL ---
@@ -161,16 +161,17 @@ public class LuaGroup
         }
 
         if (GameManager.Instance != null && selectableData.Count > 0) {
+            bool forceModal = cards.Exists(c => !c.IsLocation(0x02 | 0x04 | 0x08));
             GameManager.Instance.OpenCardMultiSelection(selectableData, "Escolha um alvo do grupo", ConvertToInt(min), ConvertToInt(max), (selectedList) => {
                 LuaGroup selectedGroup = new LuaGroup();
                 foreach (var data in selectedList) {
-                    LuaCard match = cards.Find(lc => lc.unityData == data);
+                    LuaCard match = cards.Find(lc => lc.unityData == data && !selectedGroup.cards.Contains(lc));
                     if (match != null) selectedGroup.AddCard(match);
                 }
                 CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
                 CardEffectManager.Instance.luaDuel.currentTargetGroup = selectedGroup; 
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
-            });
+            }, HighlightCategory.GenericTarget, forceModal);
         } else {
             CardEffectManager.Instance.isWaitingForLuaYield = false;
             return UserData.Create(new LuaGroup());

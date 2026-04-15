@@ -13,6 +13,7 @@ public class ChainManager
         public object triggerArgs;
         public bool isNegated = false;
         public bool isActivationNegated = false;
+        public bool isDummy = false;
     }
 
     public List<ChainLink> currentChain = new List<ChainLink>();
@@ -25,7 +26,7 @@ public class ChainManager
         this.core = coreManager;
     }
 
-    public IEnumerator BuildAndResolveChainRoutine(LuaCard luaCard, LuaEffect effect, object triggerArgs, int tp, System.Action onComplete)
+    public IEnumerator BuildAndResolveChainRoutine(LuaCard luaCard, LuaEffect effect, object triggerArgs, int tp, System.Action onComplete, bool isDummy = false)
     {
         // NOVO: Se a corrente atual já está em resolução, os novos gatilhos (Ex: Destruição em Batalha, RaiseSingleEvent) 
         // devem aguardar para formarem uma NOVA corrente limpa logo em seguida (SEGOC Simplificado).
@@ -39,13 +40,13 @@ public class ChainManager
         core.luaDuel.currentActivatingEffect = effect;
         if (effect.costFunc != null) {
             yield return core.StartCoroutine(core.RunLuaCoroutine(effect.costFunc, effect, tp, triggerArgs, 1));
-            if (!core.lastCoroutineSuccess) { onComplete?.Invoke(); yield break; }
+            if (!core.lastCoroutineSuccess) { AbortActivation(luaCard); onComplete?.Invoke(); yield break; }
         }
         if (effect.targetFunc != null) {
             Debug.Log($"[Surgical Log] Chamando targetFunc (chk=1) para {luaCard.unityData.name}");
             yield return core.StartCoroutine(core.RunLuaCoroutine(effect.targetFunc, effect, tp, triggerArgs, 1));
             Debug.Log($"[Surgical Log] Sucesso da targetFunc: {core.lastCoroutineSuccess}");
-            if (!core.lastCoroutineSuccess) { onComplete?.Invoke(); yield break; }
+            if (!core.lastCoroutineSuccess) { AbortActivation(luaCard); onComplete?.Invoke(); yield break; }
         }
         core.luaDuel.currentActivatingEffect = null;
 
@@ -55,17 +56,33 @@ public class ChainManager
             effect = effect, 
             card = luaCard, 
             player = tp, 
-            triggerArgs = triggerArgs 
+            triggerArgs = triggerArgs,
+            isDummy = isDummy
         };
         currentChain.Add(newLink);
-        Debug.Log($"[Chain] Link {newLink.chainIndex}: {luaCard.unityData.name} adicionado à pilha.");
+        
+        int visualLinkNumber = newLink.chainIndex;
+        // Subtrai 1 se o Link 1 for um evento Dummy invisível (Gatilho da Engine)
+        if (currentChain.Count > 0 && currentChain[0].isDummy)
+        {
+            visualLinkNumber -= 1;
+        }
 
         // Feedback Visual de Corrente
-        if (DuelFXManager.Instance != null && luaCard.unityCard != null)
-            DuelFXManager.Instance.PlayChainLinkEffect(luaCard.unityCard, newLink.chainIndex);
+        if (visualLinkNumber > 0 && !isDummy && DuelFXManager.Instance != null && luaCard.unityCard != null)
+        {
+            Debug.Log($"[Chain] Link {visualLinkNumber}: {luaCard.unityData.name} adicionado à pilha.");
+            DuelFXManager.Instance.PlayChainLinkEffect(luaCard.unityCard, visualLinkNumber);
+        }
 
-        // JANELA DE RESPOSTA (Speed 2/3 - Pergunta ao Oponente)
-        yield return core.StartCoroutine(ResponseWindowRoutine(1 - tp, newLink));
+        // JANELA DE RESPOSTA (Speed 2/3 - Pergunta ao Oponente e depois ao Jogador)
+        bool someoneResponded = false;
+        yield return core.StartCoroutine(ResponseWindowRoutine(1 - tp, newLink, (res) => someoneResponded = res));
+
+        if (!someoneResponded)
+        {
+            yield return core.StartCoroutine(ResponseWindowRoutine(tp, newLink, (res) => someoneResponded = res));
+        }
 
         // RESOLUÇÃO LIFO (De trás pra frente) - Apenas o Link 1 comanda o desempilhamento!
         if (newLink.chainIndex == 1)
@@ -76,6 +93,8 @@ public class ChainManager
             for (int i = currentChain.Count - 1; i >= 0; i--)
             {
                 ChainLink link = currentChain[i];
+                if (link.isDummy) continue; // Pula a execução física do dummy (apenas ancora a corrente)
+
                 if (link.isActivationNegated)
                 {
                     Debug.Log($"[Chain] Link {link.chainIndex} ({link.card.unityData.name}): Ativação Negada.");
@@ -104,40 +123,81 @@ public class ChainManager
         onComplete?.Invoke();
     }
 
-    private IEnumerator ResponseWindowRoutine(int priorityPlayer, ChainLink triggerLink)
+    private IEnumerator ResponseWindowRoutine(int priorityPlayer, ChainLink triggerLink, System.Action<bool> onComplete)
     {
         bool isHuman = (priorityPlayer == 0); // 0 = Player, 1 = Opponent(IA)
         List<CardDisplay> validResponses = core.GetValidResponses(priorityPlayer, triggerLink);
 
-        if (validResponses.Count == 0) yield break; // Ninguém pode responder, a corrente avança
+        if (validResponses.Count == 0) { onComplete?.Invoke(false); yield break; }
 
         bool decisionMade = false;
         CardDisplay chosenCard = null;
 
         if (isHuman && UIManager.Instance != null && (!GameManager.Instance.isSimulating))
         {
-            UIManager.Instance.ShowResponseWindow(validResponses, (selectedCard) => {
-                chosenCard = selectedCard;
+            bool autoPass = false;
+            // Se o gatilho for uma carta do próprio jogador durante o turno dele, não perguntar se quer acorrentar (evita spam de janelas na Main Phase)
+            if (GameManager.Instance.isPlayerTurn && triggerLink != null && triggerLink.player == 0 && !triggerLink.isDummy)
+            {
+                autoPass = true;
+            }
+
+            if (autoPass)
+            {
                 decisionMade = true;
-            }, () => {
-                decisionMade = true; // Passou
-            });
+            }
+            else
+            {
+                UIManager.Instance.ShowResponseWindow(validResponses, (selectedCard) => {
+                    chosenCard = selectedCard;
+                    decisionMade = true;
+                }, () => {
+                    decisionMade = true;
+                });
+            }
             while (!decisionMade) yield return null;
         }
         else if (!isHuman && OpponentAI.Instance != null && (!GameManager.Instance.isSimulating))
         {
+            chosenCard = OpponentAI.Instance.ChooseBestResponse(validResponses, triggerLink);
             decisionMade = true;
         }
         else decisionMade = true;
 
         if (chosenCard != null)
         {
-            if (chosenCard.isFlipped == false && (chosenCard.CurrentCardData.type.Contains("Spell") || chosenCard.CurrentCardData.type.Contains("Trap")))
+            if (chosenCard.isOnField && chosenCard.isFlipped && (chosenCard.CurrentCardData.type.Contains("Spell") || chosenCard.CurrentCardData.type.Contains("Trap")))
+            {
                 chosenCard.ShowFront(); 
+            }
+            else if (!chosenCard.isOnField && (chosenCard.CurrentCardData.type.Contains("Spell") || chosenCard.CurrentCardData.type.Contains("Trap")))
+            {
+                // Move a Magia Rápida ou Armadilha da mão para o campo antes de ativar na corrente
+                Transform targetZone = GameManager.Instance.GetFreeSpellZone(chosenCard.isPlayerCard);
+                if (targetZone != null)
+                {
+                    if (chosenCard.isPlayerCard) GameManager.Instance.playerHand.Remove(chosenCard.gameObject);
+                    else GameManager.Instance.opponentHand.Remove(chosenCard.gameObject);
+
+                    chosenCard.transform.SetParent(targetZone);
+                    chosenCard.transform.localPosition = Vector3.zero;
+                    chosenCard.transform.localScale = GameManager.Instance.fieldCardScale;
+                    chosenCard.transform.localRotation = Quaternion.Euler(0, 0, chosenCard.isPlayerCard ? 0f : 180f);
+                    chosenCard.isOnField = true;
+                    chosenCard.isInteractable = false;
+                    chosenCard.ShowFront();
+                }
+            }
                 
             bool childChainEnded = false;
             core.ActivateCard(chosenCard, triggerLink.card, () => { childChainEnded = true; });
             while (!childChainEnded) yield return null;
+            
+            onComplete?.Invoke(true);
+        }
+        else
+        {
+            onComplete?.Invoke(false);
         }
     }
 
@@ -167,6 +227,19 @@ public class ChainManager
             Debug.Log($"[ChainManager] Limpando Mágica/Armadilha normal após uso: {luaCard.unityData.name}");
             GameManager.Instance.SendToGraveyard(luaCard.unityData, luaCard.unityCard.isPlayerCard, CardLocation.Field, SendReason.Rule);
             GameObject.Destroy(luaCard.unityCard.gameObject);
+        }
+    }
+
+    private void AbortActivation(LuaCard luaCard)
+    {
+        if (luaCard != null && luaCard.unityCard != null && luaCard.unityCard.isOnField)
+        {
+            if (luaCard.unityData.type.Contains("Spell") || luaCard.unityData.type.Contains("Trap"))
+            {
+                Debug.Log($"[ChainManager] Ativação cancelada/abortada. Destruindo carta mágica: {luaCard.unityData.name}");
+                GameManager.Instance.SendToGraveyard(luaCard.unityData, luaCard.unityCard.isPlayerCard, CardLocation.Field, SendReason.Rule);
+                GameObject.Destroy(luaCard.unityCard.gameObject);
+            }
         }
     }
 }

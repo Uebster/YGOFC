@@ -20,7 +20,23 @@ using System;
     public static void RegisterSummonEff(params object[] args) { }
 }
 [MoonSharpUserData] public class Synchro { }
-[MoonSharpUserData] public class Spirit { }
+[MoonSharpUserData] public class Spirit { 
+    // Emula a função Spirit.AddProcedure(c, ...) que os monstros Spirit usam.
+    // A lógica real de retornar para a mão é tratada no C# (PhaseManager),
+    // mas o script precisa que esta função exista para registrar o efeito.
+    public static void AddProcedure(LuaCard c, params object[] args)
+    {
+        if (c == null) return;
+
+        // Registra um efeito customizado para que a engine C# saiba que esta é uma carta Spirit.
+        LuaEffect e = LuaEffect.CreateEffect(c);
+        e.SetType(0x0001); // EFFECT_TYPE_SINGLE
+        e.SetCode(511002963); // Código customizado para "É um monstro Spirit"
+        e.SetProperty(32); // EFFECT_FLAG_CANNOT_DISABLE
+        e.SetReset(0x1000 | 0x200); // RESET_EVENT + PHASE_END
+        c.RegisterEffect(e, false);
+    }
+}
 [MoonSharpUserData] public class Ritual { 
     public static void AddProcGreater(params object[] args) { }
     public static void AddProcEqual(params object[] args) { }

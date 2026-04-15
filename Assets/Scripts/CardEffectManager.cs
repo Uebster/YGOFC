@@ -29,6 +29,7 @@ public class CardEffectManager : MonoBehaviour
     public bool isWaitingForLuaYield = false;
     public DynValue yieldReturnValue = null;
     public bool lastCoroutineSuccess = true;
+    public bool isFastEffectWindowOpen = false;
 
     // --- SUBSISTEMAS LÓGICOS ---
     public ChainManager chainManager;
@@ -52,6 +53,9 @@ public class CardEffectManager : MonoBehaviour
     // FASE 26: Properties for LuaAPI compatibility
     public UnityEngine.EventSystems.EventSystem eventSystem => UnityEngine.EventSystems.EventSystem.current;
     public CardDatabase cardDatabase => GameManager.Instance != null ? GameManager.Instance.cardDatabase : null;
+    
+    public class FastEffectRequest { public string name; public int eventCode; public object eventArg; }
+    private Queue<FastEffectRequest> fastEffectQueue = new Queue<FastEffectRequest>();
 
     void Awake()
     {
@@ -84,11 +88,13 @@ public class CardEffectManager : MonoBehaviour
                     }
                 }
             }
-            
-            if (count7 >= 3)
+
+            // A carta que está sendo ativada ainda não está no campo, então contamos ela também.
+            // Se já existem 2 no campo, esta será a 3ª.
+            if (count7 >= 2)
             {
-                StartCoroutine(Jackpot7Routine(cards7, card.isPlayerCard));
-                onComplete?.Invoke();
+                cards7.Add(card); // Adiciona a carta atual à lista para ser destruída
+                StartCoroutine(Jackpot7Routine(cards7, card.isPlayerCard));                onComplete?.Invoke();
                 return; // Ignora o LUA e executa a nossa corrotina visual!
             }
         }
@@ -189,8 +195,8 @@ public class CardEffectManager : MonoBehaviour
     public bool CanActivateEffect(LuaCard luaCard, LuaEffect effect, int tp, object triggerArgs)
     {
         object eg = WrapTriggerArgs(triggerArgs);
-        bool isActionEffect = (effect.type & 0x07F8) != 0;
-        object arg2 = isActionEffect ? (object)tp : (object)luaCard;
+        bool expectsCard = (effect.type == 1 || effect.type == 4); // EFFECT_TYPE_SINGLE or EFFECT_TYPE_EQUIP
+        object arg2 = expectsCard ? (object)luaCard : (object)tp;
 
         // Cria um Dummy 're' (Reason Effect) para evitar crashes se a carta tentar ler propriedades da corrente
         LuaEffect dummyRe = new LuaEffect { owner = luaCard };
@@ -199,15 +205,24 @@ public class CardEffectManager : MonoBehaviour
         {
             if (effect.conditionFunc != null) {
                 DynValue res = luaEngine.Call(effect.conditionFunc, effect, arg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0));
-                if (res.Type == DataType.Boolean && !res.Boolean) return false;
+                if (res.Type == DataType.Boolean && !res.Boolean) {
+                    Debug.Log($"[Lua Validation] Condition falhou para {luaCard.unityData.name}");
+                    return false;
+                }
             }
             if (effect.costFunc != null) {
                 DynValue res = luaEngine.Call(effect.costFunc, effect, arg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), DynValue.NewNumber(0)); // chk = 0
-                if (res.Type == DataType.Boolean && !res.Boolean) return false;
+                if (res.Type == DataType.Boolean && !res.Boolean) {
+                    Debug.Log($"[Lua Validation] Cost falhou para {luaCard.unityData.name}");
+                    return false;
+                }
             }
             if (effect.targetFunc != null) {
                 DynValue res = luaEngine.Call(effect.targetFunc, effect, arg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0, null); // chk = 0
-                if (res.Type == DataType.Boolean && !res.Boolean) return false;
+                if (res.Type == DataType.Boolean && !res.Boolean) {
+                    Debug.Log($"[Lua Validation] Target falhou para {luaCard.unityData.name}");
+                    return false;
+                }
             }
             return true;
         }
@@ -229,8 +244,8 @@ public class CardEffectManager : MonoBehaviour
         lastCoroutineSuccess = true;
         
         object eg = WrapTriggerArgs(triggerArgs);
-        bool isActionEffect = (effect.type & 0x07F8) != 0;
-        object arg2 = isActionEffect ? (object)tp : (object)(effect.owner ?? new LuaCard(new CardData { id = "0000", name = "Dummy" }));
+        bool expectsCard = (effect.type == 1 || effect.type == 4); // EFFECT_TYPE_SINGLE or EFFECT_TYPE_EQUIP
+        object arg2 = expectsCard ? (object)(effect.owner ?? new LuaCard(new CardData { id = "0000", name = "Dummy" })) : (object)tp;
         
         LuaEffect dummyRe = new LuaEffect { owner = effect.owner ?? new LuaCard(new CardData { id = "0000", name = "Dummy" }) };
 
@@ -303,6 +318,12 @@ public class CardEffectManager : MonoBehaviour
                 {
                     yield return new WaitWhile(() => isChainResolving);
                 }
+            else if (yieldCmd.StartsWith("FastEffectWindow"))
+            {
+                int eventCode = 0;
+                if (yieldCmd.Contains("_")) int.TryParse(yieldCmd.Split('_')[1], out eventCode);
+                yield return StartCoroutine(OpenFastEffectWindow("Evento (Batalha)", eventCode, storedAttacker));
+            }
                 else if (yieldCmd == "PlayAttackAnimation")
                 {
                     // Esconde a espada de "mira" exatamente na transição para a espada voadora
@@ -344,34 +365,114 @@ public class CardEffectManager : MonoBehaviour
 
     public void TriggerLuaEvent(int eventCode, object triggerArgs) => eventManager.TriggerLuaEvent(eventCode, triggerArgs);
 
-    public List<CardDisplay> GetValidResponses(int tp, ChainManager.ChainLink triggerLink)
+    public List<CardDisplay> GetValidResponses(int tp, ChainManager.ChainLink triggerLink, int currentEventCode = 0, object currentEventArg = null)
     {
         List<CardDisplay> responses = new List<CardDisplay>();
         if (GameManager.Instance == null) return responses;
         
-        Transform[] zones = tp == 0 ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
-        foreach (var z in zones)
-        {
-            if (z.childCount > 0)
+        object argsToPass = currentEventArg ?? triggerLink?.triggerArgs ?? triggerLink?.card;
+
+        System.Action<CardDisplay, LuaCard> CheckAndAdd = (cd, lc) => {
+            if (lc == null) return;
+
+            // Regra de Traps e Quick-Plays: Não podem ser ativados no turno em que foram setados
+            if (cd.isOnField && cd.isFlipped)
             {
-                CardDisplay cd = z.GetChild(0).GetComponent<CardDisplay>();
-                if (cd != null && cd.isFlipped) // Apenas cartas Setadas 
+                if (cd.CurrentCardData.type.Contains("Trap") && cd.summonedTurnCount == GameManager.Instance.turnCount) return;
+                if (cd.CurrentCardData.property == "Quick-Play" && cd.summonedTurnCount == GameManager.Instance.turnCount) return;
+            }
+
+            foreach (var eff in lc.registeredEffects)
+            {
+                // Filtra para Efeitos Manuais (Ativação de S/T, Quick Effects e Trigger Opcionais)
+                if (eff.type == 0x0010 || eff.type == 0x0100 || eff.type == 0x0080) 
                 {
-                    LuaCard lc = EnsureCardScriptLoaded(cd);
-                    if (lc != null)
+                    // O Efeito deve reagir ao gatilho atual (ex: 1102) ou ser Corrente Livre (0 - EVENT_FREE_CHAIN)
+                    if (eff.code == 0 || eff.code == currentEventCode)
                     {
-                        // Efeitos Rápidos (Quick-Play) ou Armadilhas (Activate / Quick_O)
-                        LuaEffect eff = lc.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0100 || e.type == 0x0080);
-                        // A carta LUA recebe 'chk=0' para saber se pode se ativar em resposta àquele elo específico!
-                        if (eff != null && CanActivateEffect(lc, eff, tp, triggerLink.card))
+                        if (CanActivateEffect(lc, eff, tp, argsToPass))
                         {
-                            responses.Add(cd);
+                            if (!responses.Contains(cd)) responses.Add(cd);
                         }
                     }
                 }
             }
+        };
+
+        // 1. Cartas Setadas (Spell/Trap Zones)
+        Transform[] sZones = tp == 0 ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+        foreach (var z in sZones)
+        {
+            if (z.childCount > 0)
+            {
+                CardDisplay cd = z.GetChild(0).GetComponent<CardDisplay>();
+                if (cd != null && cd.isFlipped) CheckAndAdd(cd, EnsureCardScriptLoaded(cd));
+            }
         }
+
+        // 2. Monstros no Campo (Efeitos Rápidos / Quick Effects)
+        Transform[] mZones = tp == 0 ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+        foreach (var z in mZones)
+        {
+            if (z.childCount > 0)
+            {
+                CardDisplay cd = z.GetChild(0).GetComponent<CardDisplay>();
+                if (cd != null && !cd.isFlipped) CheckAndAdd(cd, EnsureCardScriptLoaded(cd));
+            }
+        }
+
+        // 3. Cartas na Mão (Hand Traps, Kuriboh, ou Quick-Plays no próprio turno)
+        List<GameObject> hand = tp == 0 ? GameManager.Instance.playerHand : GameManager.Instance.opponentHand;
+        bool isMyTurn = (tp == 0 && GameManager.Instance.isPlayerTurn) || (tp == 1 && !GameManager.Instance.isPlayerTurn);
+
+        foreach (var go in hand)
+        {
+            CardDisplay cd = go.GetComponent<CardDisplay>();
+            if (cd != null)
+            {
+                LuaCard lc = EnsureCardScriptLoaded(cd);
+                if (lc != null)
+                {
+                    // Quick Effects de Monstro na mão sempre funcionam
+                    if (cd.CurrentCardData.type.Contains("Monster")) CheckAndAdd(cd, lc);
+                    // Quick-Play Spells na mão SÓ podem ser ativados no próprio turno
+                    else if (isMyTurn && cd.CurrentCardData.property == "Quick-Play") CheckAndAdd(cd, lc);
+                }
+            }
+        }
+
         return responses;
+    }
+
+    // Abre uma janela de interrupção manualmente para cartas "Free Chain" (Armadilhas, Magias Rápidas)
+    public IEnumerator OpenFastEffectWindow(string windowName, int eventCode = 0, object eventArg = null)
+    {
+        fastEffectQueue.Enqueue(new FastEffectRequest { name = windowName, eventCode = eventCode, eventArg = eventArg });
+        if (fastEffectQueue.Count > 1) yield break; // A rotina já está lidando com a fila
+
+        while (fastEffectQueue.Count > 0)
+        {
+            var req = fastEffectQueue.Peek();
+            
+            yield return new WaitWhile(() => isChainResolving || currentChain.Count > 0);
+            isFastEffectWindowOpen = true;
+            
+            // Aguarda a Unity limpar os GameObjects destruídos do tabuleiro para liberar espaço
+            yield return new WaitForEndOfFrame();
+
+            List<CardDisplay> pResponses = GetValidResponses(0, null, req.eventCode, req.eventArg);
+            List<CardDisplay> oResponses = GetValidResponses(1, null, req.eventCode, req.eventArg);
+
+            if (pResponses.Count > 0 || oResponses.Count > 0)
+            {
+                LuaCard dummyCard = new LuaCard(new CardData { id = "0000", name = $"[Evento] {req.name}", type = "Spell", property = "Normal" });
+                LuaEffect dummyEff = new LuaEffect { owner = dummyCard, type = 0x0010, conditionFunc = dummyClosureTrue, costFunc = dummyClosureTrue, targetFunc = dummyClosureTrue, operationFunc = dummyClosureTrue };
+                yield return StartCoroutine(chainManager.BuildAndResolveChainRoutine(dummyCard, dummyEff, null, 1, null, true));
+            }
+            
+            isFastEffectWindowOpen = false;
+            fastEffectQueue.Dequeue();
+        }
     }
 
     private void CollectCards(Transform[] zones, List<CardDisplay> list)
@@ -389,6 +490,7 @@ public class CardEffectManager : MonoBehaviour
 
     private IEnumerator Jackpot7Routine(List<CardDisplay> cards, bool isPlayer)
     {
+        Debug.Log($"[Jackpot] Iniciando sequência para {(isPlayer ? "JOGADOR" : "OPONENTE")}.");
         Debug.Log("[Jackpot] Iniciando sequência especial da carta 7!");
         
         bool cinematicDone = false;
@@ -609,6 +711,21 @@ public class CardEffectManager : MonoBehaviour
     // =========================================================================
     // FERRAMENTA DE DEV: VALIDADOR DE SCRIPTS EM MASSA
     // =========================================================================
+    
+    public void PreloadScriptsForDecks(IEnumerable<CardData> pMain, IEnumerable<CardData> pExtra, IEnumerable<CardData> oMain, IEnumerable<CardData> oExtra)
+    {
+        HashSet<string> uniqueIds = new HashSet<string>();
+        foreach (var c in pMain.Concat(pExtra).Concat(oMain).Concat(oExtra))
+        {
+            if (c != null && !uniqueIds.Contains(c.id))
+            {
+                uniqueIds.Add(c.id);
+                LuaScriptLoader.LoadScriptForData(c, luaEngine);
+            }
+        }
+        Debug.Log($"[API LUA] Preloaded scripts for {uniqueIds.Count} unique cards to register global effects.");
+    }
+    
     [ContextMenu("DEV: Validar Todos os Scripts LUA")]
     public void DevValidateAllScripts()
     {
@@ -647,21 +764,21 @@ public class CardEffectManager : MonoBehaviour
                             LuaEffect dummyRe = new LuaEffect { owner = lc };
                             LuaCard dummyChkc = new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 });
 
-                            // Efeitos de Ação/Gatilho (0x07F8 cobre do 0x0008 ao 0x0400: Activate, Flip, Ignition, Quick, Trigger_F, etc)
-                            // Se for ação, envia o Jogador (tp). Se for contínuo/campo, envia a Carta (c).
-                            bool isActionEffect = (eff.type & 0x07F8) != 0; 
+                            bool expectsCard = (eff.type == 1 || eff.type == 4); // EFFECT_TYPE_SINGLE or EFFECT_TYPE_EQUIP
+                            object arg2 = expectsCard ? (object)lc : (object)lc.GetControler();
 
                             System.Action<Closure, int> TestFunc = (func, chkArg) => {
                                 if (func == null) return;
                                 try {
-                                    if (chkArg == -1) luaEngine.Call(func, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0));
-                                    else if (chkArg == 0) luaEngine.Call(func, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0);
-                                    else if (chkArg == 1) luaEngine.Call(func, eff, isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0, dummyChkc);
+                                    if (chkArg == -1) luaEngine.Call(func, eff, arg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0));
+                                    else if (chkArg == 0) luaEngine.Call(func, eff, arg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0);
+                                    else if (chkArg == 1) luaEngine.Call(func, eff, arg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0, dummyChkc);
                                 } catch {
                                     // Fallback: Tenta inverter o arg2 (tp vs lc) caso a assinatura da carta fuja do padrão esperado (ex: EFFECT_TYPE_FIELD exigindo c em vez de tp)
-                                    if (chkArg == -1) luaEngine.Call(func, eff, !isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0));
-                                    else if (chkArg == 0) luaEngine.Call(func, eff, !isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0);
-                                    else if (chkArg == 1) luaEngine.Call(func, eff, !isActionEffect ? (object)lc.GetControler() : (object)lc, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0, dummyChkc);
+                                    object fallbackArg2 = expectsCard ? (object)lc.GetControler() : (object)lc;
+                                    if (chkArg == -1) luaEngine.Call(func, eff, fallbackArg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0));
+                                    else if (chkArg == 0) luaEngine.Call(func, eff, fallbackArg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0);
+                                    else if (chkArg == 1) luaEngine.Call(func, eff, fallbackArg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0, dummyChkc);
                                 }
                             };
 

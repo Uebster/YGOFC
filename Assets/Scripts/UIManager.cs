@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine.UI;
 using TMPro;
 using System.Linq;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 public class UIManager : MonoBehaviour
 {
@@ -125,6 +128,37 @@ public class UIManager : MonoBehaviour
 
         // DICA: Se quiser que a abertura passe sozinha após 3 segundos, descomente a linha abaixo:
         // Invoke("FinishOpening", 3f);
+    }
+
+    void Update()
+    {
+        // Atalhos de teclado para o Modal de Confirmação Global
+        if (confirmationModal != null && confirmationModal.activeInHierarchy)
+        {
+            bool confirm = false;
+            bool cancel = false;
+
+#if ENABLE_INPUT_SYSTEM
+            if (Keyboard.current != null)
+            {
+                if (Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.numpadEnterKey.wasPressedThisFrame) confirm = true;
+                else if (Keyboard.current.escapeKey.wasPressedThisFrame) cancel = true;
+            }
+            if (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame) cancel = true;
+#else
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) confirm = true;
+            else if (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1)) cancel = true;
+#endif
+
+            if (confirm && confirmationYesButton != null && confirmationYesButton.interactable)
+            {
+                confirmationYesButton.onClick.Invoke();
+            }
+            else if (cancel && confirmationNoButton != null && confirmationNoButton.interactable)
+            {
+                confirmationNoButton.onClick.Invoke();
+            }
+        }
     }
 
     System.Collections.IEnumerator StartDuelDelayed()
@@ -379,28 +413,12 @@ public class UIManager : MonoBehaviour
             return;
         }
 
-        if (cardSelectionModal != null)
-        {
-            List<CardData> cardDataList = responseCards.Select(c => c.CurrentCardData).ToList();
-            
-            // Reutiliza o modal de seleção de cartas. O botão "cancelar" funcionará como "passar".
-            cardSelectionModal.Show(cardDataList, "Ativar em resposta?", 1, 1, (selected) => {
-                if (selected != null && selected.Count > 0)
-                {
-                    // Jogador escolheu uma carta para ativar
-                    var cardToActivate = responseCards.Find(c => c.CurrentCardData.id == selected[0].id);
-                    if (cardToActivate != null) onResponse?.Invoke(cardToActivate);
-                    else onPass?.Invoke();
-                }
-                else { onPass?.Invoke(); } // Jogador cancelou/passou
-            });
-        }
-        else
-        {
-            // FIX: Se não houver modal atribuído, passa automaticamente para evitar travamento no ChainManager
-            Debug.LogWarning("UIManager: CardSelectionModal não atribuído! Passando resposta automaticamente.");
+        ShowConfirmation("Deseja ativar uma carta em resposta?", () => {
+            if (GameManager.Instance != null)
+                GameManager.Instance.StartResponseSelection(responseCards, onResponse, onPass);
+        }, () => {
             onPass?.Invoke();
-        }
+        });
     }
 
     // Chamado pelo botão de Importar no DeckBuilder

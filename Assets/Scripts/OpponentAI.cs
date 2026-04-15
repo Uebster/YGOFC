@@ -58,6 +58,8 @@ public class OpponentAI : MonoBehaviour
         float timeout = 0f;
         while (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Main1 && timeout < 3f)
         {
+            if (CardEffectManager.Instance != null && (CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isFastEffectWindowOpen || CardEffectManager.Instance.isWaitingForLuaYield))
+                timeout = 0f; // Reseta timeout se tiver cadeia rolando
             timeout += Time.deltaTime;
             yield return null;
         }
@@ -74,6 +76,7 @@ public class OpponentAI : MonoBehaviour
         if (CanEnterBattlePhase() && HasAttackCapableMonsters())
         {
             PhaseManager.Instance.ChangePhase(GamePhase.Battle);
+            if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen);
             
             if (!useSimulationFastMode)
                 yield return new WaitForSeconds(actionDelay);
@@ -83,12 +86,15 @@ public class OpponentAI : MonoBehaviour
 
         // --- MAIN PHASE 2 ---
         PhaseManager.Instance.ChangePhase(GamePhase.Main2);
+        if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen);
+
         yield return StartCoroutine(ExecuteMainPhaseLogic()); 
 
         EvaluateBoardState(); 
 
         // --- END PHASE ---
         PhaseManager.Instance.ChangePhase(GamePhase.End);
+        if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen);
         
         if (!useSimulationFastMode)
             yield return new WaitForSeconds(actionDelay);
@@ -162,7 +168,7 @@ public class OpponentAI : MonoBehaviour
             // Garante que a IA espere correntes resolverem antes de pensar na próxima ação!
             if (CardEffectManager.Instance != null)
             {
-                yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield);
+                yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen);
             }
 
             // Espera apenas se não estiver em simulação rápida
@@ -703,7 +709,8 @@ public class OpponentAI : MonoBehaviour
 
             if (didAttack)
             {
-                yield return new WaitForSeconds(actionDelay + 1.0f);
+                if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen);
+                if (!useSimulationFastMode) yield return new WaitForSeconds(actionDelay + 1.0f);
             }
         }
     }

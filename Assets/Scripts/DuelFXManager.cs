@@ -17,7 +17,7 @@ public enum ControlSwapImpactType { Squeeze, Pulse }
 public enum SummonVFXType { Normal, Special, Tribute, Fusion, Ritual }
 public enum SelectionState { None, Available, Selected }
 public enum PlacementAuraRenderMode { Behind, Above }
-public enum HighlightCategory { Tribute, Fusion, Ritual, SpecialSummon, GenericTarget, LinkedCard }
+public enum HighlightCategory { Tribute, Fusion, Ritual, SpecialSummon, GenericTarget, LinkedCard, ChainResponse, EffectActivation }
 public enum LineAnchor { Center, Top, Bottom, Left, Right }
 
 [System.Serializable]
@@ -302,6 +302,12 @@ public class DuelFXManager : MonoBehaviour
     public SelectionIconSettings genericTargetIcon = new SelectionIconSettings();
     [Header("--- LINKED CARD (EQUIP/HOVER) ---")]
     public SelectionIconSettings linkedCardIcon = new SelectionIconSettings();
+    [Header("--- CHAIN RESPONSE (ACTIVATE) ---")]
+    [Tooltip("Opções visuais para as cartas que podem ser ativadas. Desligue 'useIcon' para usar apenas aura.")]
+    public SelectionIconSettings chainActivationIcon = new SelectionIconSettings { useIcon = true, usePrefab = true, useNative = true, useOutline = true, outlineColor = Color.cyan, availableColor = new Color(0,1,1,0.5f), selectedColor = Color.cyan };
+    [Header("--- EFFECT ACTIVATION (HOVER) ---")]
+    [Tooltip("Opções visuais para cartas no campo que podem ativar efeito com 1 clique (Prefab de balão).")]
+    public SelectionIconSettings effectActivationIcon = new SelectionIconSettings { useIcon = true, usePrefab = true, useNative = true, useOutline = false, availableColor = Color.green, selectedColor = Color.green, blinkAvailable = false, pulseAvailable = false, spinAvailable = false };
     public ConnectionLineSettings linkedCardLine = new ConnectionLineSettings();
 
     [Header("Opções de Corrente (Chain Link)")]
@@ -612,6 +618,8 @@ public class DuelFXManager : MonoBehaviour
             case HighlightCategory.SpecialSummon: return specialSummonSettings.selectionIcon;
             case HighlightCategory.GenericTarget: return genericTargetIcon;
             case HighlightCategory.LinkedCard: return linkedCardIcon;
+            case HighlightCategory.ChainResponse: return chainActivationIcon;
+            case HighlightCategory.EffectActivation: return effectActivationIcon;
             default: return genericTargetIcon;
         }
     }
@@ -635,7 +643,7 @@ public class DuelFXManager : MonoBehaviour
 
     // --- ÍCONE DE SELEÇÃO E TRIBUTO ---
 
-    private Dictionary<CardDisplay, GameObject> activeSelectionIcons = new Dictionary<CardDisplay, GameObject>();
+    private Dictionary<CardDisplay, Dictionary<HighlightCategory, GameObject>> activeSelectionIcons = new Dictionary<CardDisplay, Dictionary<HighlightCategory, GameObject>>();
 
     public void SetSelectionIcon(CardDisplay card, SummonVFXType type, SelectionState state)
     {
@@ -645,7 +653,13 @@ public class DuelFXManager : MonoBehaviour
         if (package == null || !package.selectionIcon.useIcon) return;
         SelectionIconSettings settings = package.selectionIcon;
 
-        ApplySelectionIcon(card, settings, state);
+        HighlightCategory cat = HighlightCategory.GenericTarget;
+        if (type == SummonVFXType.Tribute) cat = HighlightCategory.Tribute;
+        else if (type == SummonVFXType.Fusion) cat = HighlightCategory.Fusion;
+        else if (type == SummonVFXType.Ritual) cat = HighlightCategory.Ritual;
+        else if (type == SummonVFXType.Special) cat = HighlightCategory.SpecialSummon;
+
+        ApplySelectionIcon(card, cat, settings, state);
     }
 
     public void SetSelectionIcon(CardDisplay card, HighlightCategory category, SelectionState state)
@@ -654,32 +668,36 @@ public class DuelFXManager : MonoBehaviour
         SelectionIconSettings settings = GetIconSettings(category);
         if (settings == null || !settings.useIcon) return;
 
-        ApplySelectionIcon(card, settings, state);
+        ApplySelectionIcon(card, category, settings, state);
     }
 
-    private void ApplySelectionIcon(CardDisplay card, SelectionIconSettings settings, SelectionState state)
+    private void ApplySelectionIcon(CardDisplay card, HighlightCategory category, SelectionIconSettings settings, SelectionState state)
     {
-        if (activeSelectionIcons.TryGetValue(card, out GameObject existingIcon))
+        if (!activeSelectionIcons.ContainsKey(card))
+            activeSelectionIcons[card] = new Dictionary<HighlightCategory, GameObject>();
+
+        if (activeSelectionIcons[card].TryGetValue(category, out GameObject existingIcon))
         {
             if (existingIcon != null) Destroy(existingIcon);
-            activeSelectionIcons.Remove(card);
+            activeSelectionIcons[card].Remove(category);
         }
 
         if (state == SelectionState.None) return;
         if (state == SelectionState.Available && !settings.showAvailableState) return;
+
+        GameObject newIcon = null;
 
         if (settings.usePrefab && settings.prefab != null)
         {
             GameObject prefabInstance = SpawnVFXPublic(settings.prefab, card.transform.position);
             if (prefabInstance != null) {
                 prefabInstance.transform.SetParent(card.transform, true);
-                activeSelectionIcons[card] = prefabInstance;
+                newIcon = prefabInstance;
             }
         }
-
-        if (settings.useNative && settings.sprite != null)
+        else if (settings.useNative && settings.sprite != null)
         {
-            GameObject iconObj = new GameObject("SelectionIcon", typeof(RectTransform), typeof(Image));
+            GameObject iconObj = new GameObject("SelectionIcon_" + category.ToString(), typeof(RectTransform), typeof(Image));
             iconObj.transform.SetParent(card.transform, false);
             iconObj.transform.SetAsLastSibling();
             
@@ -690,7 +708,7 @@ public class DuelFXManager : MonoBehaviour
             img.sprite = settings.sprite;
             if (settings.material != null) img.material = settings.material;
 
-            activeSelectionIcons[card] = iconObj;
+            newIcon = iconObj;
 
             if (state == SelectionState.Available)
             {
@@ -717,6 +735,11 @@ public class DuelFXManager : MonoBehaviour
                 
                 StartCoroutine(AnimateSelectionIcon(iconObj, img, rt, settings, false));
             }
+        }
+
+        if (newIcon != null)
+        {
+            activeSelectionIcons[card][category] = newIcon;
         }
     }
 

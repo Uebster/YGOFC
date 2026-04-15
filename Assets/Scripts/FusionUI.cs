@@ -169,6 +169,11 @@ public class FusionUI : MonoBehaviour
     private void OnCancel()
     {
         Debug.Log("Fusão Cancelada.");
+        if (sourceCard != null)
+        {
+            GameManager.Instance.SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard, CardLocation.Field, SendReason.Rule);
+            Destroy(sourceCard.gameObject);
+        }
         Close();
     }
 

@@ -28,12 +28,27 @@ public static class LuaScriptLoader
                 if (!string.IsNullOrEmpty(digits)) int.TryParse(digits, out numericId);
             }
             
-            luaEngine.Globals["self_table"] = selfTable;
-            luaEngine.Globals["self_code"] = numericId;
+            DynValue cachedTable = luaEngine.Globals.Get("c" + numericId);
+            bool alreadyLoaded = !cachedTable.IsNil() && cachedTable.Type == DataType.Table;
 
-            string scriptCode = System.IO.File.ReadAllText(scriptPath);
-            scriptCode = SanitizeOCGScript(scriptCode);
-            luaEngine.DoString(scriptCode);
+            if (!alreadyLoaded)
+            {
+                selfTable = DynValue.NewTable(luaEngine);
+                luaEngine.Globals["self_table"] = selfTable;
+                luaEngine.Globals["self_code"] = numericId;
+                luaEngine.Globals["c" + numericId] = selfTable;
+                luaEngine.Globals[cardId] = selfTable;
+
+                string scriptCode = System.IO.File.ReadAllText(scriptPath);
+                scriptCode = SanitizeOCGScript(scriptCode);
+                luaEngine.DoString(scriptCode);
+            }
+            else
+            {
+                selfTable = cachedTable;
+                luaEngine.Globals["self_table"] = selfTable;
+                luaEngine.Globals["self_code"] = numericId;
+            }
 
             DynValue initialEffect = selfTable.Table.Get("initial_effect");
             if (!initialEffect.IsNil())
@@ -72,12 +87,27 @@ public static class LuaScriptLoader
                 if (!string.IsNullOrEmpty(digits)) int.TryParse(digits, out numericId);
             }
             
-            luaEngine.Globals["self_table"] = selfTable;
-            luaEngine.Globals["self_code"] = numericId;
+            DynValue cachedTable = luaEngine.Globals.Get("c" + numericId);
+            bool alreadyLoaded = !cachedTable.IsNil() && cachedTable.Type == DataType.Table;
 
-            string scriptCode = System.IO.File.ReadAllText(scriptPath);
-            scriptCode = SanitizeOCGScript(scriptCode);
-            luaEngine.DoString(scriptCode);
+            if (!alreadyLoaded)
+            {
+                selfTable = DynValue.NewTable(luaEngine);
+                luaEngine.Globals["self_table"] = selfTable;
+                luaEngine.Globals["self_code"] = numericId;
+                luaEngine.Globals["c" + numericId] = selfTable;
+                luaEngine.Globals[cardId] = selfTable;
+
+                string scriptCode = System.IO.File.ReadAllText(scriptPath);
+                scriptCode = SanitizeOCGScript(scriptCode);
+                luaEngine.DoString(scriptCode);
+            }
+            else
+            {
+                selfTable = cachedTable;
+                luaEngine.Globals["self_table"] = selfTable;
+                luaEngine.Globals["self_code"] = numericId;
+            }
 
             DynValue initialEffect = selfTable.Table.Get("initial_effect");
             if (!initialEffect.IsNil())

@@ -48,3 +48,16 @@ Como os desenhos variam de formato, o código ajusta a posição ancorando a esp
 Assim como o relógio, o `CoinTossUI` e o `DiceRollUI` resgatam dinamicamente seus sprites baseados no `currentTheme`.
 *   Os dados suportam um Array de 6 faces (`diceFaceSprites`).
 *   Se a roleta for chamada e o tema não tiver as imagens definidas, a Unity exibirá blocos brancos, exigindo o preenchimento do Cartucho de Tema.
+
+---
+
+## 4. Ícones de Seleção e Feedback Visual (Selection Icons)
+O sistema `DuelFXManager` permite customizar o feedback visual tátil nas cartas de forma modular, sem depender apenas dos contornos (`Outlines`). Utilizando `HighlightCategory`, é possível usar Prefabs 3D ou Sprites 2D que piscam sobre as cartas em diferentes gatilhos do jogo.
+
+### 4.1 Resposta de Corrente (Chain Response)
+*   **Contexto:** Quando a Engine detecta que você tem "Quick Effects" ou "Trap Cards" para acorrentar a uma ação inimiga, o tabuleiro não exibe mais a "Mira Gigante" genérica.
+*   **Customização:** Em `DuelFXManager` -> `--- CHAIN RESPONSE (ACTIVATE) ---`, você pode definir um brilho/neon específico. Acompanhado do `MouseTooltipUI` indicando `L: Activate | R: Cancel`, ele cria a experiência de um eSports moderno.
+
+### 4.2 Ativação Preditiva 1-Click (Effect Activation Hover)
+*   **Contexto:** Ao ativar a opção `activateEffectsWithOneClick` no `GameManager`, o jogo desabilita a necessidade de abrir o submenu (`DuelActionMenu`) para ativar efeitos em campo.
+*   **Customização:** Para instruir visualmente o jogador sobre o que pode ser clicado, o `DuelFXManager` -> `--- EFFECT ACTIVATION (HOVER) ---` instanciará automaticamente o Prefab configurado (Ex: um balão pulsante com o texto "Activate") sempre que o cursor passar por cima de uma carta válida. O jogador clica com o botão esquerdo e o efeito explode em velocidade máxima.

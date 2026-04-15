@@ -44,6 +44,10 @@ O `ChainManager` foi absorvido pelo `CardEffectManager` para unificar a lógica 
     5.  **Recursão:** Se o oponente acorrenta um efeito, `BuildAndResolveChainRoutine` é chamado novamente para o Link 2, que por sua vez abre outra janela de resposta.
     6.  **Resolução:** Quando ambos os jogadores passam a vez, o `BuildAndResolveChainRoutine` do Link 1 (o que iniciou tudo) começa a resolver a pilha em ordem inversa (LIFO - Last-In, First-Out), executando o `operationFunc` de cada `ChainLink` do último para o primeiro.
     7.  **Limpeza:** `CleanupSpellTrapAfterResolution` envia Mágicas/Armadilhas normais para o cemitério após a resolução.
+*   **4.2.3.1 A Lógica de Confirmação (Warning de Corrente)**
+    *   Para garantir um fluxo fluído (UX), a janela global de confirmação *"Deseja responder?"* não interrompe o jogo ativamente durante a Main Phase do jogador se ele apenas ativou sua própria carta. A Engine usa uma regra de Auto-Pass.
+    *   **Aviso Apenas Quando Necessário:** O Warning só aparece quando o jogo precisa parar para permitir interrupções táticas (ex: Responder a um ataque inimigo, responder a uma mágica do oponente, ou durante uma janela "Fast Effect" de mudança de fase).
+    *   **Atalhos:** O aviso pode ser aceito instantaneamente com a tecla **ENTER**, habilitando o jogador a passar o mouse e ver os balões de ativação das cartas candidatas. Pressionar **ESC** recusa a resposta e o duelo continua.
 *   **4.2.4 Como as Negações Funcionam no Código**
     *   Cartas de negação (ex: *Magic Jammer*) simplesmente definem a flag `isActivationNegated = true` no `ChainLink` alvo. Durante a fase de resolução, qualquer link com essa flag ativada é simplesmente ignorado.
 
@@ -94,7 +98,10 @@ O método `OnPointerClick` é uma "estação de trem". Ele lê o contexto (Qual 
 1.  **Pilhas (Deck/Cemitério):** Chama `GameManager.ViewGraveyard()` ou `GameManager.DrawCard()`.
 2.  **Seleção de Alvo/Descarte:** Se `GameManager.isSelectingFromHand` for `true`, repassa o clique para `GameManager.HandleHandCardClick()`.
 3.  **Fase de Batalha:** Define `CardEffectManager.luaDuel.currentAttacker` ou chama a rotina de ataque.
-4.  **Fase Principal (Menu de Ação):** Chama `DuelActionMenu.Instance.ShowMenu(this)` para abrir o menu de Summon/Set/Activate.
+4.  **Fase Principal (Menu de Ação vs One-Click):** 
+    *   **Menu Clássico:** Se `GameManager.activateEffectsWithOneClick` for falso (ou para ações de invocação da mão), chama `DuelActionMenu.Instance.ShowMenu(this)` para abrir o clássico Submenu.
+    *   **One-Click Activate:** Se a opção for verdadeira, clicar com o Botão Esquerdo em uma carta virada para cima ou setada no campo que possua um efeito ativável irá dispará-la instantaneamente. O visual disso é auxiliado pelo *Hover Preditivo* (veja a documentação de UI).
+5.  **Correntes Múltiplas (Response Chain):** Durante janelas de resposta rápidas, o motor liga os brilhos diretamente nas cartas válidas (`isSelectingResponse`). O Botão Esquerdo engatilha o elo da Corrente (Link) instantaneamente, e o Botão Direito no espaço vazio atua como um atalho invisível de cancelamento para "Passar a Vez" e iniciar a Resolução (LIFO).
 ---
 
 ## 4.5 Sistema de Special Summon

@@ -163,6 +163,11 @@ public class RitualUI : MonoBehaviour
     private void OnCancel()
     {
         Debug.Log("Ritual Cancelado.");
+        if (sourceRitualSpell != null)
+        {
+            GameManager.Instance.SendToGraveyard(sourceRitualSpell.CurrentCardData, sourceRitualSpell.isPlayerCard, CardLocation.Field, SendReason.Rule);
+            Destroy(sourceRitualSpell.gameObject);
+        }
         Close();
     }
 

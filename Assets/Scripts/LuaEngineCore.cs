@@ -40,7 +40,21 @@ public class LuaEngineCore
         // Tabela Auxiliar Básica
         DynValue auxTable = DynValue.NewTable(luaEngine);
         auxTable.Table.Set("Stringid", luaEngine.DoString("return function(code, id) return (code * 16) + id end"));
-        auxTable.Table.Set("GlobalCheck", DynValue.FromObject(luaEngine, (System.Action<object, Closure>)((s, func) => { func?.Call(); })));
+        auxTable.Table.Set("GlobalCheck", DynValue.FromObject(luaEngine, (System.Action<object, Closure>)((s, func) => { 
+            Table luaTable = null;
+            if (s is Table t) luaTable = t;
+            else if (s is DynValue dv && dv.Type == DataType.Table) luaTable = dv.Table;
+            
+            if (luaTable != null) {
+                var check = luaTable.Get("global_check");
+                if (check.IsNil() || (check.Type == DataType.Boolean && !check.Boolean)) {
+                    luaTable.Set("global_check", DynValue.NewBoolean(true));
+                    func?.Call();
+                }
+            } else {
+                func?.Call();
+            }
+        })));
         
         // Constantes lógicas (Closures nativas)
         auxTable.Table.Set("TRUE", luaEngine.DoString("return function(...) return true end"));
@@ -116,9 +130,16 @@ public class LuaEngineCore
             })));
         
         auxTable.Table.Set("Next", DynValue.FromObject(luaEngine,
-            (System.Func<object, object>)(group => {
-                string luaCode = "return function() return nil end";
-                return luaEngine.DoString(luaCode);
+            (System.Func<object, DynValue>)(group => {
+                if (group is LuaGroup g) return g.Iter();
+                return DynValue.NewCallback((context, args) => DynValue.Nil);
+            })));
+
+        auxTable.Table.Set("AddValuesReset", DynValue.FromObject(luaEngine,
+            (System.Action<Closure>)(cb => {
+                if (cb != null && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null) {
+                    CardEffectManager.Instance.luaDuel.endTurnCallbacks.Add(cb);
+                }
             })));
         
         auxTable.Table.Set("NecroValleyFilter", DynValue.FromObject(luaEngine,
@@ -295,6 +316,7 @@ public class LuaEngineCore
             function Core.Attack(attacker, target)
                 Duel.RaiseEvent(attacker, 1102, nil, 0, attacker:GetControler(), attacker:GetControler(), 0)
                 coroutine.yield('WaitChain')
+                coroutine.yield('FastEffectWindow_1102')
                 if not attacker:IsOnField() then return false end
                 if target ~= nil and not target:IsOnField() then return false end
                 coroutine.yield('PlayAttackAnimation')

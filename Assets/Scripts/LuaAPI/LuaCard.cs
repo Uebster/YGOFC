@@ -292,7 +292,7 @@ public class LuaCard
     public bool IsDefenseAbove(object def) { return GetDefense() >= ConvertToInt(def); }
     public int GetAttackedCount() { return 0; }
     public bool IsCanTurnSet() { return true; }
-    public bool IsCanBeSpecialSummoned(object e, object sumtype, object sumplayer, object nocheck, object nolimit, object pos = null) { return true; }
+    public bool IsCanBeSpecialSummoned(object e, object sumtype, object sumplayer, object nocheck, object nolimit, params object[] extraArgs) { return true; }
     public bool IsReleasable() { return true; }
     public bool IsPreviousControler(object p) { return true; }
     public bool IsAbleToHand() { return true; }
@@ -315,7 +315,10 @@ public class LuaCard
     public bool HasLevel() { return GetLevel() > 0; }
 
     public int GetCode() {
-        if (unityData != null && !string.IsNullOrEmpty(unityData.password) && int.TryParse(unityData.password, out int code)) return code;
+        if (unityData == null) return 0;
+        if (!string.IsNullOrEmpty(unityData.password) && int.TryParse(unityData.password, out int code)) return code;
+        string digits = System.Text.RegularExpressions.Regex.Replace(unityData.id, @"\D", "");
+        if (!string.IsNullOrEmpty(digits) && int.TryParse(digits, out int fallbackCode)) return fallbackCode;
         return 0;
     }
     public int GetOriginalCode() { return GetCode(); }
@@ -345,7 +348,21 @@ public class LuaCard
     public bool IsCode(params object[] codes)
     {
         int myId = GetCode();
-        foreach(var c in codes) if (myId == ConvertToInt(c)) return true;
+        foreach(var c in codes) 
+        {
+            int targetCode = ConvertToInt(c);
+            if (myId == targetCode) return true;
+            
+            // Fallback Supremo: Busca no Banco de Dados se existe alguma carta com esse Password/ID
+            // e compara pelo NOME. Isso salva a pátria se o nosso ID customizado for "DM0001" 
+            // mas o script LUA estiver procurando "89631139" (Blue-Eyes oficial).
+            if (unityData != null && GameManager.Instance != null && GameManager.Instance.cardDatabase != null)
+            {
+                string targetStr = targetCode.ToString();
+                CardData dbCard = GameManager.Instance.cardDatabase.cardDatabase.Find(card => card.password == targetStr || card.id == targetStr || card.password == "0" + targetStr);
+                if (dbCard != null && dbCard.name == unityData.name) return true;
+            }
+        }
         return false;
     }
 

@@ -95,12 +95,16 @@ public class QAAutoSpawner : MonoBehaviour
 
             GUILayout.Space(5);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("⏮️ Anterior", btnStyle)) TestPreviousCard();
-            if (GUILayout.Button("⏭️ Próxima", btnStyle)) TestNextCard(true);
+            if (GUILayout.Button("⏮️ Ant.", btnStyle)) TestPreviousCard();
+            if (GUILayout.Button("🔄 Reiniciar", btnStyle)) RestartCurrentTest();
+            if (GUILayout.Button("Próx. ⏭️", btnStyle)) TestNextCard(true);
             GUILayout.EndHorizontal();
             
             GUILayout.Space(5);
+            GUILayout.BeginHorizontal();
             if (GUILayout.Button("➕ Adicionar Cópia", btnStyle)) SpawnCopyOfCurrentCard();
+            if (GUILayout.Button("🧹 Limpar Campo", btnStyle)) CleanFieldQA();
+            GUILayout.EndHorizontal();
             GUILayout.EndVertical();
         }
         
@@ -225,6 +229,20 @@ public class QAAutoSpawner : MonoBehaviour
         }
     }
 
+    public static void RestartCurrentTest()
+    {
+        if (!string.IsNullOrEmpty(currentTestCardId))
+            SetupQABoard(currentTestCardId);
+    }
+
+    public static void CleanFieldQA()
+    {
+        if (FullTestManager.Instance != null)
+            FullTestManager.Instance.TestCleanField();
+        else if (GameManager.Instance != null)
+            GameManager.Instance.ClearFieldZonesOnly();
+    }
+
     public static void MarkCurrentAs(string mark) // Aceita "x" ou "R"
     {
         if (string.IsNullOrEmpty(currentTestCardId)) return;
@@ -281,18 +299,28 @@ public class QAAutoSpawner : MonoBehaviour
         foreach (var go in GameManager.Instance.opponentHand) Destroy(go);
         GameManager.Instance.opponentHand.Clear();
 
+        GameManager.Instance.GetPlayerGraveyard().Clear();
+        GameManager.Instance.GetOpponentGraveyard().Clear();
+        GameManager.Instance.GetPlayerRemoved().Clear();
+        GameManager.Instance.GetOpponentRemoved().Clear();
+
         // 2. Injeta a carta a ser testada na mão do jogador
         CardData testCard = GameManager.Instance.cardDatabase.GetCardById(cardId);
         if (testCard != null) {
             GameManager.Instance.AddCardToHand(testCard, true);
             Debug.Log($"<color=cyan>🧪 [QA] Injetando {testCard.name} ({cardId}) para Homologação.</color>");
+            GameManager.Instance.Dev_InjectDependencies(testCard);
         } else Debug.LogError($"[QA] Carta {cardId} não encontrada no banco de dados!");
 
         // 3. Invoca os Sacos de Pancada (Inimigos)
         CardData dummyMonster = GameManager.Instance.cardDatabase.cardDatabase.FirstOrDefault(c => c.name.Contains("Blue-Eyes White Dragon") || (c.type.Contains("Monster") && c.atk >= 2500));
-        if (dummyMonster != null) GameManager.Instance.SpecialSummonFromData(dummyMonster, false, 2, true, false); // Coloca virado pra cima
+        if (dummyMonster != null) 
+        {
+            GameManager.Instance.SpecialSummonFromData(dummyMonster, false, 2, true, false); // Coloca pro Oponente
+            GameManager.Instance.SpecialSummonFromData(dummyMonster, true, 2, true, false);  // Coloca pro Jogador (Para poder destruir/tributar)
+        }
 
-        CardData dummySpell = GameManager.Instance.cardDatabase.cardDatabase.FirstOrDefault(c => c.type.Contains("Spell"));
+        CardData dummySpell = GameManager.Instance.cardDatabase.cardDatabase.FirstOrDefault(c => c.type.Contains("Spell") && !c.name.Contains("7") && c.id != "DM0004");
         if (dummySpell != null) GameManager.Instance.SetSpellTrapFromData(dummySpell, false, 2, true); // Coloca setada (face-down)
     }
 }

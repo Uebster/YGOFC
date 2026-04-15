@@ -157,16 +157,19 @@ public class DuelActionMenu : MonoBehaviour
         }
         else // No Campo
         {
+            bool isMyTurn = GameManager.Instance != null && GameManager.Instance.isPlayerTurn;
+            bool isMainPhase = PhaseManager.Instance != null && (PhaseManager.Instance.currentPhase == GamePhase.Main1 || PhaseManager.Instance.currentPhase == GamePhase.Main2);
+
             if (card.CurrentCardData.type.Contains("Monster") && card.CurrentCardData.type.Contains("Effect") && !card.isFlipped)
             {
-                activateBtn.gameObject.SetActive(true);
+                activateBtn.gameObject.SetActive(isMyTurn && isMainPhase);
             }
             else if ((card.CurrentCardData.type.Contains("Spell") || card.CurrentCardData.type.Contains("Trap")) && card.isFlipped)
             {
-                bool canActivate = true;
+                bool canActivate = isMyTurn && isMainPhase;
                 
                 // Dry-Run LUA (Testa a ativação no fundo antes de acender o botão)
-                if (CardEffectManager.Instance != null)
+                if (canActivate && CardEffectManager.Instance != null)
                 {
                     LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(card);
                     LuaEffect eff = lc?.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0080);

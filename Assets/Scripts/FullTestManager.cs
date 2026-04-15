@@ -64,7 +64,11 @@ public class FullTestManager : MonoBehaviour
         if (btnDestinyBoardWin == null) btnDestinyBoardWin = allButtons.FirstOrDefault(b => b.name.Contains("Destiny"));
         if (btnSimulateAttack == null) btnSimulateAttack = allButtons.FirstOrDefault(b => b.name.Contains("Attack"));
         if (btnSimulateTrap == null) btnSimulateTrap = allButtons.FirstOrDefault(b => b.name.Contains("Trap"));
-        if (btnCleanField == null) btnCleanField = allButtons.FirstOrDefault(b => b.name.Contains("Clean"));
+        
+        Button[] allSceneBtns = Resources.FindObjectsOfTypeAll<Button>();
+        var cleanBtns = allSceneBtns.Where(b => b.name.Contains("Clean") && b.gameObject.scene.IsValid()).ToList();
+        if (btnCleanField == null && cleanBtns.Count > 0) btnCleanField = cleanBtns[0];
+
         if (btnRestartDuel == null) btnRestartDuel = allButtons.FirstOrDefault(b => b.name.Contains("Restart"));
         if (btnSwitchTurn == null) btnSwitchTurn = allButtons.FirstOrDefault(b => b.name.Contains("Switch"));
         if (btnFusion == null) btnFusion = allButtons.FirstOrDefault(b => b.name.Contains("Fusion"));
@@ -147,7 +151,7 @@ public class FullTestManager : MonoBehaviour
         if (btnDestinyBoardWin) btnDestinyBoardWin.onClick.AddListener(TestDestinyBoardWin);
         if (btnSimulateAttack) btnSimulateAttack.onClick.AddListener(TestSimulateAttack);
         if (btnSimulateTrap) btnSimulateTrap.onClick.AddListener(TestSimulateTrap);
-        if (btnCleanField) btnCleanField.onClick.AddListener(TestCleanField);
+        foreach(var btn in cleanBtns) { btn.onClick.RemoveAllListeners(); btn.onClick.AddListener(TestCleanField); }
         if (btnRestartDuel) btnRestartDuel.onClick.AddListener(() => GameManager.Instance.StartDuel());
         if (btnFusion) btnFusion.onClick.AddListener(TestFusion);
         if (btnRitual) btnRitual.onClick.AddListener(TestRitual);
@@ -240,6 +244,9 @@ public class FullTestManager : MonoBehaviour
                 {
                     GameManager.Instance.AddCardToHand(data, true);
                     Debug.Log($"[TestMode] {data.name} adicionada à mão do jogador.");
+
+                    // INJEÇÃO INTELIGENTE DE DEPENDÊNCIAS:
+                    GameManager.Instance.Dev_InjectDependencies(data);
                 }
             });
         }
@@ -480,6 +487,16 @@ public class FullTestManager : MonoBehaviour
 
         if (CardEffectManager.Instance != null)
             CardEffectManager.Instance.blockedZonesByCard.Clear();
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.GetPlayerGraveyard().Clear();
+            GameManager.Instance.GetOpponentGraveyard().Clear();
+            GameManager.Instance.GetPlayerRemoved().Clear();
+            GameManager.Instance.GetOpponentRemoved().Clear();
+            if (GameManager.Instance.playerGraveyardDisplay != null) GameManager.Instance.playerGraveyardDisplay.UpdatePile(GameManager.Instance.GetPlayerGraveyard(), GameManager.Instance.GetCardBackTexture());
+            if (GameManager.Instance.opponentGraveyardDisplay != null) GameManager.Instance.opponentGraveyardDisplay.UpdatePile(GameManager.Instance.GetOpponentGraveyard(), GameManager.Instance.GetCardBackTexture());
+        }
     }
 
     // --- DEV ACTION MENU ---
@@ -493,7 +510,8 @@ public class FullTestManager : MonoBehaviour
             "4. Retornar ao Topo do Deck",
             "5. Mudar Posição",
             "6. Virar Face-Up/Down",
-            "7. Trocar Controle (Change of Heart)"
+            "7. Trocar Controle (Change of Heart)",
+            "8. Colocar no Campo (Forçar)"
         };
 
         // Força a busca da UI caso ela comece desligada no Inspector
@@ -510,17 +528,16 @@ public class FullTestManager : MonoBehaviour
                 string opt = selected[0];
                 if (opt.Contains("Cemitério")) {
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
-                    GameManager.Instance.SendToGraveyard(card.CurrentCardData, card.isPlayerCard, CardLocation.Field, SendReason.Effect);
-                    Destroy(card.gameObject);
+                    GameManager.Instance.MoveCard(card, CardLocation.Graveyard, SendReason.Effect);
                 }
                 else if (opt.Contains("Banir")) {
-                    GameManager.Instance.BanishCard(card);
+                    GameManager.Instance.MoveCard(card, CardLocation.Banished, SendReason.Effect);
                 }
                 else if (opt.Contains("Mão")) {
-                    GameManager.Instance.ReturnToHand(card);
+                    GameManager.Instance.MoveCard(card, CardLocation.Hand, SendReason.Effect);
                 }
                 else if (opt.Contains("Deck")) {
-                    GameManager.Instance.ReturnToDeck(card, true);
+                    GameManager.Instance.MoveCard(card, CardLocation.Deck, SendReason.Effect);
                 }
                 else if (opt.Contains("Posição")) {
                     card.ChangePosition();
@@ -531,6 +548,9 @@ public class FullTestManager : MonoBehaviour
                 }
                 else if (opt.Contains("Controle")) {
                     GameManager.Instance.SwitchControl(card);
+                }
+                else if (opt.Contains("Campo")) {
+                    GameManager.Instance.Dev_ForceCardToField(card);
                 }
             });
         }

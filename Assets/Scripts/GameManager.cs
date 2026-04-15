@@ -254,6 +254,8 @@ public class GameManager : MonoBehaviour
     public bool quickAttackDirectly = false;
     [Tooltip("Se ativado, usa atalhos de Esquerdo/Direito do mouse com Tooltip. Se desativado, usa o Menu de Ação clássico.")]
     public bool useMouseTooltipUI = true;
+    [Tooltip("Permite clicar em uma carta no campo para ativar seu efeito imediatamente (sem abrir o Action Menu).")]
+    public bool activateEffectsWithOneClick = true;
     [Tooltip("Habilita o painel visual pop-up de Dano/Cura saltando no campo.")]
     public bool enableDamagePopups = true;
     [Tooltip("Se marcado, usa o painel customizado Panel_Fusion. Se desmarcado, usa a seleção tática no tabuleiro.")]
@@ -391,6 +393,12 @@ public class GameManager : MonoBehaviour
     private System.Func<List<CardData>, bool> customSelectionValidator;
     private HighlightCategory currentSelectionHighlightCategory = HighlightCategory.GenericTarget;
 
+    // --- ESTADO DE SELEÇÃO DE RESPOSTA ---
+    [HideInInspector] public bool isSelectingResponse = false;
+    private List<CardDisplay> responseCandidates;
+    private System.Action<CardDisplay> responseCallback;
+    private System.Action responseCancelCallback;
+
     void Awake()
     {
         Instance = this;
@@ -422,6 +430,10 @@ public class GameManager : MonoBehaviour
         if (isSelectingFromHand && rightClick)
         {
             FinishHandSelection(true); // Cancela a seleção
+        }
+        else if (isSelectingResponse && rightClick)
+        {
+            CancelResponseSelection(); // Cancela a resposta
         }
         else if (enableRightClickPhaseMenu && isPlayerTurn && !isDuelOver && rightClick)
         {
@@ -570,6 +582,11 @@ public class GameManager : MonoBehaviour
         List<CardData> pDeck = InitializePlayerDeck();
         (List<CardData> oMain, List<CardData> oExtra) = InitializeOpponentDeck();
         DeckManager.Instance.SetupDecks(pDeck, playerExtraDeck, oMain, oExtra);
+
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.PreloadScriptsForDecks(pDeck, playerExtraDeck, oMain, oExtra);
+        }
 
         // Inicializa LP
         playerLP = 8000;
@@ -1442,6 +1459,42 @@ public void ShuffleDeck(bool isPlayer)
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardAddedToHand(newCardDisplay);
     }
 
+    // Ferramenta de DEV/QA: Lê a descrição de uma carta e injeta dependências mencionadas entre aspas no Deck
+    public void Dev_InjectDependencies(CardData data)
+    {
+        if (data == null || string.IsNullOrEmpty(data.description)) return;
+
+        var matches = System.Text.RegularExpressions.Regex.Matches(data.description, "\"([^\"]+)\"");
+        foreach (System.Text.RegularExpressions.Match match in matches)
+        {
+            string mentionedName = match.Groups[1].Value;
+            CardData dependency = cardDatabase.cardDatabase.Find(c => c.name == mentionedName);
+            if (dependency != null && dependency.name != data.name)
+            {
+                if (dependency.type.Contains("Fusion") || dependency.type.Contains("Synchro") || dependency.type.Contains("Xyz") || dependency.type.Contains("Link"))
+                {
+                    if (!playerExtraDeck.Contains(dependency)) playerExtraDeck.Add(dependency);
+                    Debug.Log($"<color=orange>🔗 [QA] Dependência detectada: Adicionada 1 cópia de '{dependency.name}' ao Extra Deck. (Novo tamanho do Extra Deck: {playerExtraDeck.Count})</color>");
+                }
+                else
+                {
+                    GetPlayerMainDeck().Add(dependency);
+                    GetPlayerMainDeck().Add(dependency);
+                    GetPlayerMainDeck().Add(dependency);
+                    Debug.Log($"<color=orange>🔗 [QA] Dependência detectada: Adicionadas 3 cópias de '{dependency.name}' ao Baralho Principal. (Novo tamanho do Deck: {GetPlayerMainDeck().Count})</color>");
+                }
+            }
+            else 
+            { 
+                // Ignora falsos positivos de Arquétipos comuns
+                if (!mentionedName.Contains("Archfiend") && !mentionedName.Contains("Toon") && !mentionedName.Contains("Gravekeeper's") && !mentionedName.Contains("Spirit Message"))
+                    Debug.LogWarning($"<color=yellow>⚠️ [QA] Dependência '{mentionedName}' solicitada, mas não encontrada no DB (Pode ser um Arquétipo).</color>"); 
+            }
+        }
+        
+        if (DeckManager.Instance != null) DeckManager.Instance.UpdateDeckVisuals();
+    }
+
     private IEnumerator AnimateCardToHand(GameObject realCard, bool isPlayer)
     {
         CardDisplay realCardDisplay = realCard.GetComponent<CardDisplay>();
@@ -1610,7 +1663,9 @@ public void ShuffleDeck(bool isPlayer)
         {
             case CardLocation.Graveyard:
                 Debug.Log($"{logPrefix} → Graveyard");
-                SendToGraveyard(data, isPlayer, CardLocation.Field, reason);
+                if (isPlayer) playerHand.Remove(card.gameObject);
+                else opponentHand.Remove(card.gameObject);
+                SendToGraveyard(data, isPlayer, card.isOnField ? CardLocation.Field : CardLocation.Hand, reason);
                 Destroy(card.gameObject);
                 break;
 
@@ -2642,6 +2697,10 @@ public void ShuffleDeck(bool isPlayer)
 
     public void CheckExodiaWin()
     {
+        // Remove cartas nulas da mão caso alguma tenha sido destruída sem ser removida da lista
+        playerHand.RemoveAll(go => go == null);
+        opponentHand.RemoveAll(go => go == null);
+
         // IDs das 5 partes do Exodia (Baseado no seu JSON)
         string[] exodiaParts = { "DM0595", "DM1490", "DM1030", "DM1491", "DM1031" };
         HashSet<string> handIds = new HashSet<string>();
@@ -2988,7 +3047,7 @@ public void ShuffleDeck(bool isPlayer)
         }
 
         // Bypass para a IA não travar a tela esperando clique
-        if (!isPlayer || isSimulating)
+        if (!isPlayer || isSimulating || (isPlayer && fullTestMode))
         {
             CardData chosenRitual = possibleRituals[0];
             List<CardData> tributes = new List<CardData>();
@@ -3269,6 +3328,7 @@ public void ShuffleDeck(bool isPlayer)
         {
             display.isInteractable = false;
             display.isOnField = true;
+            display.summonedTurnCount = turnCount; // Registra o turno de Set/Ativação
 
             if (isSet)
             {
@@ -3591,7 +3651,7 @@ public void ShuffleDeck(bool isPlayer)
     }
 
     // Método para Seleção Múltipla
-    public void OpenCardMultiSelection(List<CardData> sourceList, string title, int min, int max, System.Action<List<CardData>> onSelected, HighlightCategory category = HighlightCategory.GenericTarget)
+    public void OpenCardMultiSelection(List<CardData> sourceList, string title, int min, int max, System.Action<List<CardData>> onSelected, HighlightCategory category = HighlightCategory.GenericTarget, bool forceModal = false)
     {
         if (isSimulating)
         {
@@ -3610,7 +3670,7 @@ public void ShuffleDeck(bool isPlayer)
 
         bool isFusionOrRitual = title.Contains("Fusão") || title.Contains("Ritual") || title.Contains("Tributo");
 
-        if (useDirectHandSelection && isHandOrFieldSubset && min == max && !isFusionOrRitual)
+        if (useDirectHandSelection && !forceModal && isHandOrFieldSubset && min == max && !isFusionOrRitual)
         {
             StartDirectSelection(sourceList, min, max, null, title, onSelected, category);
             return;
@@ -3772,6 +3832,41 @@ public void ShuffleDeck(bool isPlayer)
         handSelectionCallback?.Invoke(isCancel ? new List<CardData>() : finalData);
     }
 
+    // --- LÓGICA DE SELEÇÃO DE RESPOSTA DIRETA ---
+    public void StartResponseSelection(List<CardDisplay> candidates, System.Action<CardDisplay> onSelect, System.Action onCancel)
+    {
+        isSelectingResponse = true;
+        responseCandidates = candidates;
+        responseCallback = onSelect;
+        responseCancelCallback = onCancel;
+
+        // Removido o brilho contínuo ("mira") das candidatas. 
+        // O jogador será guiado puramente pelo Hover Preditivo (balão) ao passar o mouse.
+    }
+
+    public void HandleResponseSelection(CardDisplay card)
+    {
+        if (!isSelectingResponse) return;
+        if (!responseCandidates.Contains(card)) return;
+
+        FinishResponseSelection(card);
+    }
+
+    public void CancelResponseSelection() { if (!isSelectingResponse) return; FinishResponseSelection(null); }
+
+    public bool IsResponseCandidate(CardDisplay card)
+    {
+        return isSelectingResponse && responseCandidates != null && responseCandidates.Contains(card);
+    }
+
+    private void FinishResponseSelection(CardDisplay selectedCard)
+    {
+        isSelectingResponse = false;
+
+        if (selectedCard != null) responseCallback?.Invoke(selectedCard);
+        else responseCancelCallback?.Invoke();
+    }
+
     // Invocação Especial direta por dados (para Monster Reborn, etc)
 
     private CardDisplay DefaultSpecialSummon(CardData data, bool forPlayer, bool faceUp = true, bool defense = false)
@@ -3919,6 +4014,25 @@ public void ShuffleDeck(bool isPlayer)
             CardEffectManager.Instance.OnBattlePositionChanged(card);
         }
         RefreshAttackIndicators();
+    }
+
+    // --- FERRAMENTAS DE DESENVOLVEDOR (SUPER MENU) ---
+
+    // Ferramenta de DEV para forçar a carta da mão direto pro campo ignorando regras
+    public void Dev_ForceCardToField(CardDisplay card)
+    {
+        if (card == null || card.isOnField) return;
+        
+        if (card.CurrentCardData.type.Contains("Monster"))
+        {
+            // Invoca em Ataque, Face-Up, ignorando tributos e limite de Normal Summon
+            FinalizeSummon(card.gameObject, card.CurrentCardData, false, card.isPlayerCard);
+        }
+        else
+        {
+            // Mágicas e Armadilhas: Força a "Setar" no campo para ignorar as validações da LUA
+            PlaySpellTrap(card.gameObject, card.CurrentCardData, true);
+        }
     }
 
     // Ferramenta de DEV para trocar oponente

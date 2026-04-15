@@ -440,6 +440,23 @@ public class EffectTestManager : MonoBehaviour
         }
         GUILayout.EndHorizontal();
 
+        GUILayout.Space(5);
+        GUILayout.Label("<color=cyan><b>FEEDBACK VISUAL TÁTIL</b></color>");
+        
+        GUILayout.Label("<size=12><i>Hover de Ativação (Main Phase e Corrente):</i></size>");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Configurar: Nativo (Sprite)", btnStyle)) { 
+            DuelFXManager.Instance.effectActivationIcon.useNative = true;
+            DuelFXManager.Instance.effectActivationIcon.usePrefab = false;
+            Debug.Log("[Teste] Configurado para Sprite Nativo. Passe o mouse sobre a carta para ver o balão.");
+        }
+        if (GUILayout.Button("Configurar: Prefab (Balão 3D)", btnStyle)) { 
+            DuelFXManager.Instance.effectActivationIcon.useNative = false;
+            DuelFXManager.Instance.effectActivationIcon.usePrefab = true;
+            Debug.Log("[Teste] Configurado para Prefab. Passe o mouse sobre a carta para ver o balão.");
+        }
+        GUILayout.EndHorizontal();
+
         GUILayout.Label("<size=12><i>Bloqueios (Blocks):</i></size>");
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Cannot Attack", btnStyle)) { 

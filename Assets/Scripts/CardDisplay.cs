@@ -45,7 +45,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     private Canvas canvas;
     private GraphicRaycaster graphicRaycaster;
     private Vector3 originalScale = Vector3.one;
-    private GameObject tributeIconObj; // Efeito 2D de Tributo
+    private Dictionary<HighlightCategory, GameObject> fallbackHighlightIcons = new Dictionary<HighlightCategory, GameObject>();
 
     [HideInInspector] public float hoverYOffset = 30f;
     [HideInInspector] public bool isInteractable = false; // Usado para habilitar hover apenas para cartas na mão
@@ -549,6 +549,55 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Aqui apenas atualizamos os detalhes da carta para mostrar o ícone pequeno de texto ⏳
         DisplayCardDetails();
     }
+    
+    public bool CanBeActivatedNow()
+    {
+        if (GameManager.Instance == null || !GameManager.Instance.isPlayerTurn) return false;
+        if (PhaseManager.Instance == null || (PhaseManager.Instance.currentPhase != GamePhase.Main1 && PhaseManager.Instance.currentPhase != GamePhase.Main2)) return false;
+        if (CardEffectManager.Instance != null && (CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isFastEffectWindowOpen)) return false;
+
+        if (isOnField && isPlayerCard)
+        {
+            if (CurrentCardData.type.Contains("Monster") && CurrentCardData.type.Contains("Effect") && !isFlipped)
+            {
+                if (CardEffectManager.Instance != null)
+                {
+                    LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(this);
+                    LuaEffect eff = lc?.registeredEffects.Find(e => e.type == 0x0040 || e.type == 0x0080);
+                    if (eff != null && CardEffectManager.Instance.CanActivateEffect(lc, eff, 0, null))
+                    {
+                        return true;
+                    }
+                }
+            }
+            else if ((CurrentCardData.type.Contains("Spell") || CurrentCardData.type.Contains("Trap")) && isFlipped)
+            {
+                // Regra de Traps: Não podem ser ativadas no turno em que foram setadas
+                if (CurrentCardData.type.Contains("Trap") && summonedTurnCount == GameManager.Instance.turnCount) return false;
+                // Quick-Play Spells também não podem ser ativadas no turno em que foram setadas
+                if (CurrentCardData.property == "Quick-Play" && summonedTurnCount == GameManager.Instance.turnCount) return false;
+
+                if (CardEffectManager.Instance != null)
+                {
+                    LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(this);
+                    LuaEffect eff = lc?.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0080);
+                    if (eff != null && CardEffectManager.Instance.CanActivateEffect(lc, eff, 0, null))
+                    {
+                        return true;
+                    }
+                    else if (eff == null)
+                    {
+                        // Fallback: Se não tem script LUA atrelado, assumimos que é uma magia básica C# ativável
+                        return true;
+                    }
+                    return false;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     public void OnPointerEnter(PointerEventData eventData)
     {
@@ -708,11 +757,36 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             GameManager.Instance.UpdateCardViewer(this, showFaceUp);
         }
 
+        // --- FEEDBACK VISUAL DE 1-CLICK ACTIVATE (HOVER) ---
+        bool showHoverActivate = false;
+        if (GameManager.Instance != null)
+        {
+            if (GameManager.Instance.isSelectingResponse)
+            {
+                if (GameManager.Instance.IsResponseCandidate(this)) showHoverActivate = true;
+            }
+            else if (GameManager.Instance.activateEffectsWithOneClick && CanBeActivatedNow())
+            {
+                showHoverActivate = true;
+            }
+        }
+
+        if (showHoverActivate)
+        {
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetSelectionIcon(this, HighlightCategory.EffectActivation, SelectionState.Available);
+            else SetHighlight(HighlightCategory.EffectActivation, true);
+        }
+
         // --- LÓGICA DO MOUSE TOOLTIP ---
         if (GameManager.Instance != null && GameManager.Instance.useMouseTooltipUI && isPlayerCard && MouseTooltipUI.Instance != null && currentCardData != null)
         {
             string left = "", right = "";
-            if (!isOnField) // NA MÃO
+            
+            if (GameManager.Instance.isSelectingResponse)
+            {
+                left = "Activate"; right = "Cancel";
+            }
+            else if (!isOnField) // NA MÃO
             {
                 if (currentCardData.type.Contains("Monster")) { left = "Summon"; right = "Set"; }
                 else { left = "Activate"; right = "Set"; }
@@ -721,8 +795,16 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             {
                 if (PhaseManager.Instance.currentPhase == GamePhase.Main1 || PhaseManager.Instance.currentPhase == GamePhase.Main2)
                 {
-                    if (currentCardData.type.Contains("Monster")) { left = "Activate"; right = "Change Pos"; }
-                    else { left = "Activate"; right = ""; }
+                    if (currentCardData.type.Contains("Monster")) { 
+                        if (GameManager.Instance.activateEffectsWithOneClick && CanBeActivatedNow()) left = "Activate";
+                        else if (!GameManager.Instance.activateEffectsWithOneClick) left = "Menu";
+                        right = "Change Pos"; 
+                    }
+                    else { 
+                        if (isFlipped && GameManager.Instance.activateEffectsWithOneClick && CanBeActivatedNow()) left = "Activate";
+                        else if (!GameManager.Instance.activateEffectsWithOneClick) left = "Menu";
+                        right = ""; 
+                    }
                 }
                 else if (PhaseManager.Instance.currentPhase == GamePhase.Battle)
                 {
@@ -760,6 +842,15 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (outlineImage != null && !isAttackSelected)
         {
             outlineImage.gameObject.SetActive(false);
+        }
+
+        // Desliga o Feedback Visual de 1-Click
+        if (GameManager.Instance != null)
+        {
+            if (DuelFXManager.Instance != null)
+                DuelFXManager.Instance.SetSelectionIcon(this, HighlightCategory.EffectActivation, SelectionState.None);
+            else
+                SetHighlight(HighlightCategory.EffectActivation, false);
         }
 
         // Desliga o Pulso
@@ -805,14 +896,17 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             if (settings == null || !settings.useIcon) return;
 
-            if (tributeIconObj == null)
+            if (!fallbackHighlightIcons.ContainsKey(category) || fallbackHighlightIcons[category] == null)
             {
-                tributeIconObj = new GameObject("HighlightIcon", typeof(RectTransform), typeof(Image));
-                tributeIconObj.transform.SetParent(transform, false);
+                GameObject iconObj = new GameObject("HighlightIcon_" + category.ToString(), typeof(RectTransform), typeof(Image));
+                iconObj.transform.SetParent(transform, false);
+                fallbackHighlightIcons[category] = iconObj;
             }
                 
+            GameObject tributeIconObj = fallbackHighlightIcons[category];
             tributeIconObj.SetActive(true);
             tributeIconObj.transform.SetAsLastSibling();
+
 
             RectTransform rt = tributeIconObj.GetComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.5f, 0.5f);
@@ -851,7 +945,10 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
         else
         {
-            if (tributeIconObj != null) tributeIconObj.SetActive(false);
+        if (fallbackHighlightIcons.ContainsKey(category) && fallbackHighlightIcons[category] != null)
+        {
+            fallbackHighlightIcons[category].SetActive(false);
+        }
         }
     }
 
@@ -1071,6 +1168,24 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             return;
         }
 
+        // Lógica de Seleção para Responder a uma Corrente
+        if (GameManager.Instance != null && GameManager.Instance.isSelectingResponse)
+        {
+            if (eventData.button == PointerEventData.InputButton.Left)
+            {
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetSelectionIcon(this, HighlightCategory.EffectActivation, SelectionState.None);
+                else SetHighlight(HighlightCategory.EffectActivation, false);
+                GameManager.Instance.HandleResponseSelection(this);
+            }
+            else if (eventData.button == PointerEventData.InputButton.Right)
+            {
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetSelectionIcon(this, HighlightCategory.EffectActivation, SelectionState.None);
+                else SetHighlight(HighlightCategory.EffectActivation, false);
+                GameManager.Instance.CancelResponseSelection();
+            }
+            return;
+        }
+
         // Clique Direito: Mudar Posição (se no campo)
         if (eventData.button == PointerEventData.InputButton.Right && isOnField && currentCardData.type.Contains("Monster"))
         {
@@ -1278,38 +1393,27 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             bool isLeftClick = eventData.button == PointerEventData.InputButton.Left;
 
-            if (GameManager.Instance.useMouseTooltipUI)
+            if (PhaseManager.Instance.currentPhase == GamePhase.Main1 || PhaseManager.Instance.currentPhase == GamePhase.Main2)
             {
-                if (PhaseManager.Instance.currentPhase == GamePhase.Main1 || PhaseManager.Instance.currentPhase == GamePhase.Main2)
-                {
-                    if (currentCardData.type.Contains("Monster")) {
-                        if (isLeftClick) CardEffectManager.Instance.ExecuteCardEffect(this);
-                    } else {
-                        if (isLeftClick && isFlipped) GameManager.Instance.ActivateFieldSpellTrap(gameObject);
+                if (currentCardData.type.Contains("Monster")) {
+                    if (isLeftClick) {
+                        if (GameManager.Instance.activateEffectsWithOneClick && CanBeActivatedNow()) {
+                            CardEffectManager.Instance.ExecuteCardEffect(this);
+                        } else if (!GameManager.Instance.activateEffectsWithOneClick) {
+                            if (DuelActionMenu.Instance != null) DuelActionMenu.Instance.ShowMenu(this);
+                        }
                     }
-                }
-                return;
-            }
-            else
-            {
-                if (isLeftClick)
-                {
-                    if (DuelActionMenu.Instance != null)
-                    {
-                        DuelActionMenu.Instance.ShowMenu(this);
-                    }
-                    else
-                    {
-                        // Fallback antigo
-                        if (isFlipped && (currentCardData.type.Contains("Spell") || currentCardData.type.Contains("Trap")))
-                        {
-                            bool canActivate = true;
-                            if (currentCardData.type.Contains("Spell") && currentCardData.property != "Quick-Play") canActivate = true;
-                            if (canActivate) UIManager.Instance.ShowConfirmation($"Ativar {currentCardData.name}?", () => GameManager.Instance.ActivateFieldSpellTrap(gameObject));
+                } else {
+                    if (isLeftClick && isFlipped) {
+                        if (GameManager.Instance.activateEffectsWithOneClick && CanBeActivatedNow()) {
+                            GameManager.Instance.ActivateFieldSpellTrap(gameObject);
+                        } else if (!GameManager.Instance.activateEffectsWithOneClick) {
+                            if (DuelActionMenu.Instance != null) DuelActionMenu.Instance.ShowMenu(this);
                         }
                     }
                 }
             }
+            return;
         }
     }
 

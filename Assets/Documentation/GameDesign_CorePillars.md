@@ -71,7 +71,7 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **3.2.1** Orquestração do Duelo e Gerenciamento de Estado (`StartDuel`, `EndDuel`, `SwitchTurn`, `OnDrawPhaseStart`, `IsCardActiveOnField`)
     *   **3.2.2** API de Ações de Jogo (`MoveCard` [Unificado], `TrySummonMonster`, `PlaySpellTrap`, `SpecialSummonFromData`, `ViewGraveyard`)
     *   **3.2.3** Modos de Jogo, Debug e Testes In-Game (`devMode`, Hierarquia de Pulos `testDuelDirectly`, `unlockAllCards`, `infiniteLP`, `disableBanlist`)
-    *   **3.2.4** Opções de Input, UX e Velocidade (`useMouseTooltipUI`, `quickSummonFromHand`, `playerDrawSpeed`)
+    *   **3.2.4** Opções de Input, UX e Velocidade (`useMouseTooltipUI`, `quickSummonFromHand`, `activateEffectsWithOneClick`, `playerDrawSpeed`)
 *   **3.3.** O Sistema de Fases e Turnos (`PhaseManager.cs`)
     *   **3.3.1** O Ciclo de Fases (`GamePhase` Enum, Hooks Automáticos e Manuais)
     *   **3.3.2** UI de Fases (Neon Effect e Avanço Manual)
@@ -97,7 +97,7 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **4.4.1** Ciclo de Vida Visual (Lazy Loading)
     *   **4.4.2** Motor de Status Dinâmico (`RecalculateStats`)
     *   **4.4.3** As Flags de Memória (Estados de Turno)
-    *   **4.4.4** Delegação de Cliques (Click Event Router)
+    *   **4.4.4** Delegação de Cliques (Click Event Router, Menu Clássico vs One-Click, Response Chain)
 *   **4.5.** Sistema de Special Summon
     *   **4.5.1** Fluxo de Código (`PerformSpecialSummon`, `PositionSelectionUI`, `FinalizeSummon`)
     *   **4.5.2** Tipos de Special Summon Suportados
@@ -197,7 +197,7 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **9.7.1** Arquitetura de Temas (Console e Cartuchos)
     *   **9.7.2** Configurando o Relógio de Turnos (`TurnClockUI`, Rotação Dinâmica, Camadas e Pivot)
     *   **9.7.3** Minigames Dinâmicos (Moeda e Dados)
-*   **9.8.** Efeitos Visuais e Sonoros (`DuelFXManager.cs`, `TargetingSwordUI.cs`, `StatusIndicatorSettings`: Cinemáticas, Impactos, Trindade das Espadas, BGM Dinâmico)
+*   **9.8.** Efeitos Visuais e Sonoros (`DuelFXManager.cs`, `TargetingSwordUI.cs`, `StatusIndicatorSettings`, `SelectionIconSettings`: Cinemáticas, Impactos, Trindade das Espadas, BGM Dinâmico, Chain Response, 1-Click Hover)
 *   **9.9.** Personalização de UI e Preferências de Jogo (`PhaseAnnouncementSettings`, Modos de Flip, Velocidade de Jogo)
 
 ---
