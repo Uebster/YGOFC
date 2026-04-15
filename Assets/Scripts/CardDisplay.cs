@@ -759,22 +759,29 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
         // --- FEEDBACK VISUAL DE 1-CLICK ACTIVATE (HOVER) ---
         bool showHoverActivate = false;
+        HighlightCategory hoverCategory = HighlightCategory.EffectActivation;
+
         if (GameManager.Instance != null)
         {
             if (GameManager.Instance.isSelectingResponse)
             {
-                if (GameManager.Instance.IsResponseCandidate(this)) showHoverActivate = true;
+                if (GameManager.Instance.IsResponseCandidate(this))
+                {
+                    showHoverActivate = true;
+                    hoverCategory = HighlightCategory.ChainResponse;
+                }
             }
             else if (GameManager.Instance.activateEffectsWithOneClick && CanBeActivatedNow())
             {
                 showHoverActivate = true;
+                hoverCategory = HighlightCategory.EffectActivation;
             }
         }
 
         if (showHoverActivate)
         {
-            if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetSelectionIcon(this, HighlightCategory.EffectActivation, SelectionState.Available);
-            else SetHighlight(HighlightCategory.EffectActivation, true);
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetSelectionIcon(this, hoverCategory, SelectionState.Available);
+            else SetHighlight(hoverCategory, true);
         }
 
         // --- LÓGICA DO MOUSE TOOLTIP ---
@@ -848,9 +855,15 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (GameManager.Instance != null)
         {
             if (DuelFXManager.Instance != null)
+            {
                 DuelFXManager.Instance.SetSelectionIcon(this, HighlightCategory.EffectActivation, SelectionState.None);
+                DuelFXManager.Instance.SetSelectionIcon(this, HighlightCategory.ChainResponse, SelectionState.None);
+            }
             else
+            {
                 SetHighlight(HighlightCategory.EffectActivation, false);
+                SetHighlight(HighlightCategory.ChainResponse, false);
+            }
         }
 
         // Desliga o Pulso
@@ -1173,14 +1186,24 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             if (eventData.button == PointerEventData.InputButton.Left)
             {
-                if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetSelectionIcon(this, HighlightCategory.EffectActivation, SelectionState.None);
-                else SetHighlight(HighlightCategory.EffectActivation, false);
+                if (DuelFXManager.Instance != null) {
+                    DuelFXManager.Instance.SetSelectionIcon(this, HighlightCategory.EffectActivation, SelectionState.None);
+                    DuelFXManager.Instance.SetSelectionIcon(this, HighlightCategory.ChainResponse, SelectionState.None);
+                } else {
+                    SetHighlight(HighlightCategory.EffectActivation, false);
+                    SetHighlight(HighlightCategory.ChainResponse, false);
+                }
                 GameManager.Instance.HandleResponseSelection(this);
             }
             else if (eventData.button == PointerEventData.InputButton.Right)
             {
-                if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetSelectionIcon(this, HighlightCategory.EffectActivation, SelectionState.None);
-                else SetHighlight(HighlightCategory.EffectActivation, false);
+                if (DuelFXManager.Instance != null) {
+                    DuelFXManager.Instance.SetSelectionIcon(this, HighlightCategory.EffectActivation, SelectionState.None);
+                    DuelFXManager.Instance.SetSelectionIcon(this, HighlightCategory.ChainResponse, SelectionState.None);
+                } else {
+                    SetHighlight(HighlightCategory.EffectActivation, false);
+                    SetHighlight(HighlightCategory.ChainResponse, false);
+                }
                 GameManager.Instance.CancelResponseSelection();
             }
             return;

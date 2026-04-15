@@ -69,3 +69,20 @@ Como o requisito é apenas que o monstro seja "enviado ao Cemitério", você pod
 *   Você ataca o oponente diretamente com o *Blue-Eyes White Dragon* (Nível 8).
 *   Na sua Main Phase 2, você usa a carta *Destruction Ring* no seu próprio *Blue-Eyes*, causando 3000 de dano de efeito ao oponente.
 *   Imediatamente depois, como o *Blue-Eyes* foi para o cemitério, você ativa **A Deal with Dark Ruler** da sua mão e invoca o *Berserk Dragon* (que tem 3500 de ATK e ataca todos os monstros do oponente) para garantir que não sobre nada do outro lado da mesa no próximo turno!
+
+## A Feather of the Phoenix (ID: 04914069)
+
+A carta **"A Feather of the Phoenix"** é uma Carta Mágica Normal (Normal Spell) que oferece uma troca de recursos valiosa para recuperar suas melhores cartas.
+
+> *"Discard 1 card. Select 1 card in your Graveyard and return it to the top of your Deck."*
+
+### Como ela funciona na prática:
+
+1. **O Custo (O Descarte):** Para ativar esta carta, você é obrigado a **descartar 1 carta da sua mão** para o Cemitério. Este é o custo de ativação, o que significa que se a magia for negada (por exemplo, por um *Magic Jammer*), a carta descartada *não* retorna para a sua mão.
+2. **O Alvo (A Recuperação):** Ao ativar, você deve escolher exatamente **1 carta no seu Cemitério** como alvo. Pode ser qualquer tipo de carta: Monstro, Magia ou Armadilha.
+3. **O Retorno:** Na resolução do efeito, a carta escolhida no Cemitério não vai para a sua mão; em vez disso, ela é colocada no **topo do seu Deck**.
+
+### 💡 O grande truque dessa carta:
+Apesar de parecer desvantajosa por "gastar" uma carta da mão e o seu próximo saque, a tática aqui é o planejamento perfeito e a construção de setups. 
+*   Você pode descartar um monstro que prefere ter no cemitério (como uma *Sinister Serpent* ou um monstro *Light/Dark* para preparar o custo do *Black Luster Soldier*) para recuperar uma magia ou armadilha devastadora que você já usou (como *Raigeki*, *Pot of Greed* ou *Mirror Force*).
+*   No turno seguinte (ou no mesmo turno, se você tiver um efeito de compra extra), você sacará a carta perfeita que acabou de recuperar. É o sacrifício de um recurso presente em prol de garantir a sua principal jogada futura!
