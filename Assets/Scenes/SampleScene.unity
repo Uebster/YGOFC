@@ -43957,6 +43957,7 @@ MonoBehaviour:
   enableDamagePopups: 1
   useCustomFusionUI: 0
   useCustomRitualUI: 0
+  enableReturnToDeckAnimation: 1
   alwaysConfirmSingleTarget: 1
   coinTossRequiresChoice: 1
   coinTossManualSpin: 1
@@ -48545,6 +48546,171 @@ MonoBehaviour:
       delayBeforeMarker: 0.5
       delayBeforeCardDrop: 0.5
       giantCardScale: 1.2
+  flightHandToField:
+    enableFlight: 1
+    duration: 0.3
+    flightScale: 1.3
+    useTrail: 1
+    trailType: 1
+    trailWidth: 15
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.5529412}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 1
+  flightHandToGraveyard:
+    enableFlight: 1
+    duration: 0.3
+    flightScale: 1.1
+    useTrail: 1
+    trailType: 0
+    trailWidth: 15
+    trailColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 1
+  flightFieldToHand:
+    enableFlight: 1
+    duration: 0.3
+    flightScale: 1.3
+    useTrail: 1
+    trailType: 0
+    trailWidth: 15
+    trailColor: {r: 0.5, g: 0.5, b: 1, a: 0.5}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 1
+  flightFieldToDeck:
+    enableFlight: 1
+    duration: 0.4
+    flightScale: 1.3
+    useTrail: 1
+    trailType: 0
+    trailWidth: 15
+    trailColor: {r: 0.2, g: 0.8, b: 1, a: 0.5}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 1
+  flightFieldToGraveyard:
+    enableFlight: 1
+    duration: 0.3
+    flightScale: 1.1
+    useTrail: 1
+    trailType: 0
+    trailWidth: 15
+    trailColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.5}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 1
+  flightDeckToHand:
+    enableFlight: 1
+    duration: 0.4
+    flightScale: 1.3
+    useTrail: 1
+    trailType: 1
+    trailWidth: 15
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.5529412}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 1
+  flightDeckToField:
+    enableFlight: 1
+    duration: 0.4
+    flightScale: 1.3
+    useTrail: 1
+    trailType: 0
+    trailWidth: 15
+    trailColor: {r: 0.2, g: 1, b: 0.8, a: 0.5}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 1
+  flightPileToHand:
+    enableFlight: 1
+    duration: 0.4
+    flightScale: 1.3
+    useTrail: 1
+    trailType: 0
+    trailWidth: 15
+    trailColor: {r: 1, g: 0.8, b: 0, a: 0.5}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 1
+  flightPileToDeck:
+    enableFlight: 1
+    duration: 0.4
+    flightScale: 1.3
+    useTrail: 1
+    trailType: 0
+    trailWidth: 15
+    trailColor: {r: 1, g: 0.5, b: 0, a: 0.5}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 1
+  flightPileToField:
+    enableFlight: 1
+    duration: 0.4
+    flightScale: 1.3
+    useTrail: 1
+    trailType: 0
+    trailWidth: 15
+    trailColor: {r: 0.8, g: 0.2, b: 1, a: 0.5}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 1
+  flightBanishedToAny:
+    enableFlight: 1
+    duration: 0.4
+    flightScale: 1.3
+    useTrail: 1
+    trailType: 1
+    trailWidth: 15
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.5529412}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0, g: 0, b: 0, a: 0.50980395}
+    impactScale: 1
+    impactOutlineWidth: 8
+    startScaleMult: 0.8
+    endScaleMult: 0.8
   genericTargetIcon:
     useIcon: 1
     usePrefab: 0
@@ -108414,7 +108580,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0.000006215479, y: 0.0008562302}
+  m_AnchoredPosition: {x: -0.000006215479, y: 0.00000034012712}
   m_SizeDelta: {x: -0.00091553, y: 353.6}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1356954785
@@ -124104,7 +124270,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 2087538613}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9999969
+  m_Size: 0.99967164
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:

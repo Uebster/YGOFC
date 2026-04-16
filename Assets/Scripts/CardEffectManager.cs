@@ -390,6 +390,18 @@ public class CardEffectManager : MonoBehaviour
                     // O Efeito deve reagir ao gatilho atual (ex: 1102) ou ser Corrente Livre (0 - EVENT_FREE_CHAIN)
                     if (eff.code == 0 || eff.code == currentEventCode)
                     {
+                    // NOVO FIX: Se for um efeito de Corrente Livre (código 0), ele DEVE ser de uma
+                    // carta com Velocidade de Magia 2 ou maior (Armadilhas, Magias Rápidas, Efeitos Rápidos de Monstros).
+                    // Isso impede que Magias Normais (Velocidade 1) sejam sugeridas como resposta.
+                    if (eff.code == 0)
+                    {
+                        string cardType = cd.CurrentCardData.type ?? "";
+                        string cardProperty = cd.CurrentCardData.property ?? "";
+                        bool isSpellSpeed1 = cardType.Contains("Spell") && !cardProperty.Contains("Quick-Play") && !cardType.Contains("Monster");
+                        if (isSpellSpeed1)
+                            continue; // Pula esta carta, pois é uma Magia Normal.
+                    }
+
                         if (CanActivateEffect(lc, eff, tp, argsToPass))
                         {
                             if (!responses.Contains(cd)) responses.Add(cd);
