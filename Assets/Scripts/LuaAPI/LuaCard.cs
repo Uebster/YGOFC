@@ -41,7 +41,8 @@ public class LuaCard
 
     public int GetAttack() { return unityCard != null ? unityCard.currentAtk : (unityData != null ? unityData.atk : 0); }
     public int GetDefense() { return unityCard != null ? unityCard.currentDef : (unityData != null ? unityData.def : 0); }
-    public int GetLevel() { return unityCard != null ? unityCard.CurrentCardData.level : (unityData != null ? unityData.level : 0); }
+    public int GetLevel() { return unityCard != null ? unityCard.currentLevel : (unityData != null ? unityData.level : 0); }
+    public int GetOriginalLevel() { return unityCard != null ? unityCard.originalLevel : (unityData != null ? unityData.level : 0); }
     public bool IsFaceup() { return unityCard != null ? !unityCard.isFlipped : false; }
     
     public int ownerPlayerIndex = -1;
@@ -142,8 +143,6 @@ public class LuaCard
     public int GetTextAttack() { return GetAttack(); }
     public int GetTextDefense() { return GetDefense(); }
 
-    public int GetOriginalType() { return GetType(); }
-
     public bool IsType(object t) { return (GetType() & ConvertToInt(t)) != 0; }
     
     public bool IsTrap() { return unityData != null && unityData.type.Contains("Trap"); }
@@ -229,7 +228,6 @@ public class LuaCard
     public int GetMaterialCount() { return 0; }
     public bool IsAbleToDeckAsCost() { return true; }
     public bool IsSummonPlayer(object player) { return true; }
-    public int GetOriginalLevel() { return GetLevel(); }
     public LuaGroup GetAttackableTarget() { return new LuaGroup(); }
     public bool IsAbleToChangeControler() { return true; }
     public bool IsSummonableCard() { return true; }
@@ -367,7 +365,7 @@ public class LuaCard
     }
 
     public bool IsContinuousTrap() { return IsTrap() && unityData != null && unityData.property == "Continuous"; }
-    public int GetEquipCount() { return CardEffectManager.Instance != null && unityCard != null ? CardEffectManager.Instance.GetEquippedCards(unityCard).Count : 0; }
+    public int GetEquipCount() { return (CardEffectManager.Instance != null && unityCard != null) ? CardEffectManager.Instance.GetEquippedCards(unityCard).Count : 0; }
     public bool IsOriginalType(object t) { return IsType(t); }
     public bool IsOriginalAttribute(object attr) { return IsAttribute(attr); }
     public bool IsOriginalRace(object race) { return IsRace(race); }

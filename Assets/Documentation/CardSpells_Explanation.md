@@ -86,3 +86,21 @@ A carta **"A Feather of the Phoenix"** é uma Carta Mágica Normal (Normal Spell
 Apesar de parecer desvantajosa por "gastar" uma carta da mão e o seu próximo saque, a tática aqui é o planejamento perfeito e a construção de setups. 
 *   Você pode descartar um monstro que prefere ter no cemitério (como uma *Sinister Serpent* ou um monstro *Light/Dark* para preparar o custo do *Black Luster Soldier*) para recuperar uma magia ou armadilha devastadora que você já usou (como *Raigeki*, *Pot of Greed* ou *Mirror Force*).
 *   No turno seguinte (ou no mesmo turno, se você tiver um efeito de compra extra), você sacará a carta perfeita que acabou de recuperar. É o sacrifício de um recurso presente em prol de garantir a sua principal jogada futura!
+
+## A Legendary Ocean (ID: 0013)
+
+A carta **"A Legendary Ocean"** é uma Carta Mágica de Campo (Field Spell) que redefiniu completamente como os decks do atributo Água (WATER) eram construídos na era clássica.
+
+> *"This card's name is treated as 'Umi'. Reduce the Level of all WATER monsters in both players' hands and on the field by 1. All WATER monsters gain 200 ATK/DEF."*
+
+### Como ela funciona na prática:
+
+1. **O Disfarce (Identidade como Umi):** A regra mais importante desta carta é que o nome dela é **sempre** tratado como "Umi". Isso tem duas consequências vitais: primeiro, ela serve como gatilho para qualquer carta que exija o "Umi" no campo (como *Tornado Wall* ou *The Legendary Fisherman*). Segundo, pelas regras de construção de deck, você só pode ter um máximo de 3 cópias combinadas de *Umi* e *A Legendary Ocean* no seu baralho.
+2. **A Redução de Nível:** Enquanto estiver ativada, todos os monstros do atributo ÁGUA na mão e no campo de ambos os jogadores perdem 1 Estrela (Nível). 
+3. **O Bônus de Status:** Como uma boa Magia de Campo clássica, ela fornece um impulso de 200 pontos de ATK e DEF contínuos para todos os monstros de ÁGUA em campo.
+
+### 💡 O grande truque dessa carta:
+O ganho de 200 de ATK é apenas a cereja do bolo; o verdadeiro poder desta carta está na **Redução de Nível** na mão do jogador!
+
+* **Quebrando a Regra de Tributos:** Monstros de ÁGUA de Nível 5 originalmente exigem que você sacrifique 1 monstro do campo para serem invocados. Com *A Legendary Ocean* ativa, os monstros Nível 5 na sua mão se tornam **Nível 4**! Isso significa que você pode invocar aberrações como *Giga Gagagigo* ou *The Legendary Fisherman* direto da mão para o campo, sem tributo nenhum, e eles ainda entram ganhando o bônus de ataque!
+* **Imunidade a Travas (Stall):** Cartas defensivas populares como *Gravity Bind* e *Level Limit - Area B* travam ou punem qualquer monstro de Nível 4 ou superior. Como *A Legendary Ocean* transforma seus monstros ÁGUA Nível 4 em **Nível 3**, seus monstros conseguem deslizar livremente por debaixo dessas defesas para atacar o oponente diretamente, enquanto os monstros dele (de outros atributos) continuam presos!

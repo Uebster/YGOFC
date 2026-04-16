@@ -20,7 +20,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [Header("UI Elements")]
     public RawImage cardImage;
     public TextMeshProUGUI cardNameText;
-    public TextMeshProUGUI cardInfoText;
+    public TextMeshProUGUI cardITypeText;
+    public TextMeshProUGUI cardIRaceText;
+    public TextMeshProUGUI cardILvlText;    
     public TextMeshProUGUI cardDescriptionText;
     public TextMeshProUGUI cardStatsText;
 
@@ -62,6 +64,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public int originalDef;
     [HideInInspector] public int currentAtk;
     [HideInInspector] public int currentDef;
+    [HideInInspector] public int originalLevel;
+    [HideInInspector] public int currentLevel;
 
     // Sistema de Contadores de Turno (para Swords of Revealing Light, etc)
     [SerializeField, HideInInspector] private int _turnCounter = 0;
@@ -117,7 +121,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 foreach (var t in allTexts)
                 {
                     if (t.name.Contains("Name")) cardNameText = t;
-                    if (t.name.Contains("Info")) cardInfoText = t;
+                    if (t.name.Contains("IType")) cardITypeText = t;
+                    if (t.name.Contains("IRace")) cardIRaceText = t;
+                    if (t.name.Contains("ILvl")) cardILvlText = t;
                     if (t.name.Contains("Description")) cardDescriptionText = t;
                     if (t.name.Contains("Stats")) cardStatsText = t;
                 }
@@ -245,6 +251,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         originalDef = card.def;
         currentAtk = card.atk;
         currentDef = card.def;
+        originalLevel = card.level;
+        currentLevel = card.level;
 
         turnCounter = 0; // Reseta contadores de turno
         maxTurnCounter = 0;
@@ -295,9 +303,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
         // Limpa os textos
         if (cardNameText != null) cardNameText.text = "";
-        if (cardInfoText != null) cardInfoText.text = "";
+        if (cardITypeText != null) cardITypeText.text = "";
         if (cardDescriptionText != null) cardDescriptionText.text = "";
         if (cardStatsText != null) cardStatsText.text = "";
+        if (cardIRaceText != null) cardIRaceText.text = "";
+        if (cardILvlText != null) cardILvlText.text = "";
     }
 
     private void DisplayCardDetails()
@@ -307,11 +317,25 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (cardNameText != null) cardNameText.text = currentCardData.name;
         if (cardDescriptionText != null) cardDescriptionText.text = currentCardData.description;
 
-        string info = $"[{currentCardData.type}]";
-        if (!string.IsNullOrEmpty(currentCardData.race)) info += $" / {currentCardData.race}";
-        if (currentCardData.level > 0) info += $" / LV: {currentCardData.level}";
-        if (_turnCounter > 0) info += $" / <color=yellow>⏳ {_turnCounter}</color>";
-        if (cardInfoText != null) cardInfoText.text = info;
+        if (cardITypeText != null) cardITypeText.text = $"[{currentCardData.type}]";
+        if (cardIRaceText != null) cardIRaceText.text = !string.IsNullOrEmpty(currentCardData.race) ? currentCardData.race : "";
+
+        if (cardILvlText != null)
+        {
+            if (currentCardData.level > 0)
+            {
+                string lvlColorTag = "";
+                if (GameManager.Instance != null) {
+                    // Verde para buff (redução), vermelho para debuff (aumento)
+                    if (currentLevel < originalLevel) lvlColorTag = $"<color=#{ColorUtility.ToHtmlStringRGB(GameManager.Instance.statBuffColor)}>";
+                    else if (currentLevel > originalLevel) lvlColorTag = $"<color=#{ColorUtility.ToHtmlStringRGB(GameManager.Instance.statDebuffColor)}>";
+                }
+                cardILvlText.text = $"LV: {lvlColorTag}{currentLevel}{(lvlColorTag != "" ? "</color>" : "")}";
+                if (_turnCounter > 0) cardILvlText.text += $" / <color=yellow>⏳ {_turnCounter}</color>";
+            } else {
+                cardILvlText.text = "";
+            }
+        }
 
         if (cardStatsText != null)
         {
@@ -320,6 +344,14 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             else
                 cardStatsText.text = "";
         }
+    }
+
+    public void ResetStatsToOriginal()
+    {
+        currentAtk = originalAtk;
+        currentDef = originalDef;
+        currentLevel = originalLevel;
+        DisplayCardDetails();
     }
 
     IEnumerator LoadCardFrontTexture(string imagePath)

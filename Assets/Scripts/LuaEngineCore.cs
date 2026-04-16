@@ -269,6 +269,7 @@ public class LuaEngineCore
         luaEngine.Globals["EFFECT_SET_ATTACK_FINAL"] = 3;
         luaEngine.Globals["EFFECT_UPDATE_DEFENSE"] = 4;
         luaEngine.Globals["EFFECT_SET_DEFENSE"] = 5;
+        luaEngine.Globals["EFFECT_UPDATE_LEVEL"] = 10;
         luaEngine.Globals["EFFECT_SET_DEFENSE_FINAL"] = 6;
         luaEngine.Globals["EFFECT_EQUIP_LIMIT"] = 147;
 

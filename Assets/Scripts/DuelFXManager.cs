@@ -172,6 +172,7 @@ public class CardFlightSettings
     public float flightScale = 1.3f;
     [Tooltip("Distância (X, Y) que a carta desliza da pilha antes de voar. Ex: (40, 15) desliza pro lado e um pouco pra cima.")]
     public Vector2 popOffset = new Vector2(40f, 15f);
+    public bool flipDuringFlight = false; // NOVO: Vira a carta no meio do voo
     public bool useTrail = true;
     public AttackTrailType trailType = AttackTrailType.Shadows;
     public float trailWidth = 15f;
@@ -321,6 +322,7 @@ public class DuelFXManager : MonoBehaviour
 
     [Header("--- MOVIMENTAÇÃO DE CARTAS (FLIGHT) ---")]
     public CardFlightSettings flightHandToField = new CardFlightSettings { enableFlight = true, duration = 0.3f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.5f, 1f, 0.5f, 0.5f) };
+    public CardFlightSettings flightHandToSpellZone = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.2f, useTrail = true, trailType = AttackTrailType.Shadows, trailColor = new Color(0.0f, 0.0f, 0.0f, 0.4f), useImpact = false, flipDuringFlight = true };
     public CardFlightSettings flightHandToGraveyard = new CardFlightSettings { enableFlight = true, duration = 0.3f, flightScale = 1.1f, useTrail = true, trailColor = new Color(0.5f, 0.5f, 0.5f, 0.5f) };
     public CardFlightSettings flightHandToDeck = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.SmoothShadows, trailColor = new Color(0f, 0f, 0f, 0.5f), useImpact = false };
     public CardFlightSettings flightHandToBanished = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.SmoothShadows, trailColor = new Color(0f, 0f, 0f, 0.5f), useImpact = false };
@@ -336,7 +338,9 @@ public class DuelFXManager : MonoBehaviour
     public CardFlightSettings flightPileToHand = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(1f, 0.8f, 0f, 0.5f) };
     public CardFlightSettings flightPileToDeck = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(1f, 0.5f, 0f, 0.5f) };
     public CardFlightSettings flightPileToField = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.8f, 0.2f, 1f, 0.5f) };
+    public CardFlightSettings flightBanishToField = new CardFlightSettings { enableFlight = true, duration = 0.5f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.Shadows, trailColor = new Color(0.1f, 0.1f, 0.1f, 0.5f), useImpact = false };
     public CardFlightSettings flightGraveyardToBanished = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.SmoothShadows, trailColor = new Color(0f, 0f, 0f, 0.5f), useImpact = false };
+    public CardFlightSettings flightBanishToDeck = new CardFlightSettings { enableFlight = true, duration = 0.5f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.Shadows, trailColor = new Color(0.0f, 0.0f, 0.0f, 0.4f), useImpact = false };
     public CardFlightSettings flightExtraToGraveyard = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.SmoothShadows, trailColor = new Color(0f, 0f, 0f, 0.5f), useImpact = false };
     public CardFlightSettings flightExtraToBanished = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.SmoothShadows, trailColor = new Color(0f, 0f, 0f, 0.5f), useImpact = false };    
     public CardFlightSettings flightBanishedToAny = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.2f, 0.2f, 0.2f, 0.8f) };
@@ -3262,10 +3266,10 @@ public class DuelFXManager : MonoBehaviour
         CardFlightSettings settings = sourceLoc == CardLocation.Field ? flightFieldToDeck : flightPileToDeck;
         bool pop = sourceLoc != CardLocation.Field && sourceLoc != CardLocation.Hand;
         
-        PlayCardFlight(data, GameManager.Instance.GetCardBackTexture(), true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, settings, pop, onComplete);
+        PlayCardFlight(data, GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, settings, pop, onComplete);
     }
 
-    public void PlayCardFlight(CardData data, Texture2D backTex, bool showFront, Vector3 startPos, Vector3 endPos, Vector3 startScale, Vector3 endScale, Quaternion startRot, Quaternion endRot, CardFlightSettings settings, bool popFromPile, System.Action onComplete)
+    public void PlayCardFlight(CardData data, Texture2D backTex, bool startFaceUp, bool endFaceUp, Vector3 startPos, Vector3 endPos, Vector3 startScale, Vector3 endScale, Quaternion startRot, Quaternion endRot, CardFlightSettings settings, bool popFromPile, System.Action onComplete)
     {
         if (!enableAnimations || settings == null || !settings.enableFlight) 
 
@@ -3273,17 +3277,17 @@ public class DuelFXManager : MonoBehaviour
             onComplete?.Invoke();
             return;
         }
-        StartCoroutine(CardFlightRoutine(data, backTex, showFront, startPos, endPos, startScale, endScale, startRot, endRot, settings, popFromPile, onComplete));
+        StartCoroutine(CardFlightRoutine(data, backTex, startFaceUp, endFaceUp, startPos, endPos, startScale, endScale, startRot, endRot, settings, popFromPile, onComplete));
     }
 
-    private IEnumerator CardFlightRoutine(CardData data, Texture2D backTex, bool showFront, Vector3 startPos, Vector3 endPos, Vector3 startScale, Vector3 endScale, Quaternion startRot, Quaternion endRot, CardFlightSettings settings, bool popFromPile, System.Action onComplete)
+    private IEnumerator CardFlightRoutine(CardData data, Texture2D backTex, bool startFaceUp, bool endFaceUp, Vector3 startPos, Vector3 endPos, Vector3 startScale, Vector3 endScale, Quaternion startRot, Quaternion endRot, CardFlightSettings settings, bool popFromPile, System.Action onComplete)
     {
         Transform uiParent = GetUIParent();
         if (uiParent == null) { onComplete?.Invoke(); yield break; }
 
         GameObject ghost = Instantiate(GameManager.Instance.cardPrefab, uiParent);
         CardDisplay ghostDisplay = ghost.GetComponent<CardDisplay>();
-        ghostDisplay.SetCard(data, backTex, showFront);
+        ghostDisplay.SetCard(data, backTex, startFaceUp);
         ghostDisplay.isInteractable = false;
         
         LayoutElement le = ghost.GetComponent<LayoutElement>();
@@ -3338,6 +3342,9 @@ public class DuelFXManager : MonoBehaviour
         Vector3 finalStartScale = startScale * settings.startScaleMult;
         Vector3 finalEndScale = endScale * settings.endScaleMult;
 
+        bool needsFlip = settings.flipDuringFlight && (startFaceUp != endFaceUp);
+        bool hasFlipped = false;
+
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
@@ -3348,6 +3355,25 @@ public class DuelFXManager : MonoBehaviour
             
             float scaleMultiplier = 1f + Mathf.Sin(t * Mathf.PI) * (settings.flightScale - 1f);
             ghost.transform.localScale = Vector3.Lerp(finalStartScale, finalEndScale, t) * scaleMultiplier;
+
+            // Lógica de Flip no meio do voo
+            if (needsFlip && !hasFlipped)
+            {
+                float flipStartT = 0.4f;
+                float flipEndT = 0.6f;
+                if (t >= flipStartT && t <= flipEndT)
+                {
+                    float flipProgress = (t - flipStartT) / (flipEndT - flipStartT);
+                    float scaleY = Mathf.Cos(flipProgress * Mathf.PI); // Vai de 1 a -1
+                    
+                    ghost.transform.localScale = new Vector3(ghost.transform.localScale.x, ghost.transform.localScale.y * Mathf.Abs(scaleY), ghost.transform.localScale.z);
+
+                    if (flipProgress >= 0.5f) {
+                        hasFlipped = true;
+                        ghostDisplay.ForceTexture(endFaceUp ? ghostDisplay.GetFrontTexture() : backTex);
+                    }
+                }
+            }
 
             if (settings.useTrail) {
                 if (settings.trailType == AttackTrailType.Shadows || settings.trailType == AttackTrailType.SmoothShadows) {

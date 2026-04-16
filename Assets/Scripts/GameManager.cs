@@ -899,15 +899,18 @@ public class GameManager : MonoBehaviour
 
         if (sourcePos.HasValue && DuelFXManager.Instance != null && !isSimulating)
         {
-            CardFlightSettings settings = sourceLoc == CardLocation.Hand ? DuelFXManager.Instance.flightHandToField : 
-                                          (sourceLoc == CardLocation.Banished ? DuelFXManager.Instance.flightBanishedToAny : DuelFXManager.Instance.flightPileToField);
+            CardFlightSettings settings = null;
+            if (sourceLoc == CardLocation.Hand) settings = DuelFXManager.Instance.flightHandToField;
+            else if (sourceLoc == CardLocation.Banished) settings = DuelFXManager.Instance.flightBanishToField;
+            else settings = DuelFXManager.Instance.flightPileToField;
+
             if (settings != null && settings.enableFlight)
             {
                 cardDisplay.SetVisibility(false);
                 bool pop = sourceLoc != CardLocation.Hand && sourceLoc != CardLocation.Field;
                 Quaternion startRot = (sourceLoc == CardLocation.Hand) ? Quaternion.Euler(0, isPlayer ? 0 : 180, 0) : Quaternion.identity;
                 Vector3 sScale = (sourceLoc == CardLocation.Hand) ? handCardScale : fieldCardScale;
-                DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, !faceDown, sourcePos.Value, cardGO.transform.position, 
+                DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, !faceDown, !faceDown, sourcePos.Value, cardGO.transform.position, 
                     sScale, fieldCardScale, startRot, cardGO.transform.rotation, settings, pop, () => {
                     cardDisplay.SetVisibility(true);
                     completeSummon();
@@ -1252,7 +1255,7 @@ public class GameManager : MonoBehaviour
         RemoveFromPlay(card.CurrentCardData, isPlayer);
 
         // Remove modificadores que esta carta gerou em outras
-        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
+        if (wasOnField && CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
 
         if (DuelFXManager.Instance != null && !isSimulating) 
         {
@@ -1264,7 +1267,7 @@ public class GameManager : MonoBehaviour
             if (flightSettings != null && flightSettings.enableFlight)
             {
                 Vector3 endPos = isPlayer ? playerRemovedDisplay.transform.position : opponentRemovedDisplay.transform.position;
-                DuelFXManager.Instance.PlayCardFlight(card.CurrentCardData, cardBackTexture, true, startPos, endPos, 
+                DuelFXManager.Instance.PlayCardFlight(card.CurrentCardData, cardBackTexture, true, true, startPos, endPos, 
                     wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
                     startRot, Quaternion.identity, flightSettings, false, () => {
                         if (DuelFXManager.Instance != null && DuelFXManager.Instance.useBanishPrefab && DuelFXManager.Instance.banishVFX != null) DuelFXManager.Instance.SpawnVFXPublic(DuelFXManager.Instance.banishVFX, endPos);
@@ -1311,7 +1314,7 @@ public void ShuffleDeck(bool isPlayer)
         {
             Vector3 endPos = card.isPlayerCard ? playerGraveyardDisplay.transform.position : opponentGraveyardDisplay.transform.position;
             Quaternion startRot = Quaternion.Euler(0, card.isPlayerCard ? 0 : 180f, 0);
-            DuelFXManager.Instance.PlayCardFlight(card.CurrentCardData, cardBackTexture, true, startPos, endPos, handCardScale, fieldCardScale, startRot, Quaternion.identity, DuelFXManager.Instance.flightHandToGraveyard, false, null);
+            DuelFXManager.Instance.PlayCardFlight(card.CurrentCardData, cardBackTexture, true, true, startPos, endPos, handCardScale, fieldCardScale, startRot, Quaternion.identity, DuelFXManager.Instance.flightHandToGraveyard, false, null);
         }
 
         Destroy(card.gameObject);
@@ -1366,7 +1369,7 @@ public void ShuffleDeck(bool isPlayer)
     public void ReturnHandToDeck(bool isPlayer)
     {
         List<GameObject> hand = isPlayer ? playerHand : opponentHand;
-        List<CardData> deck = isPlayer ? GetPlayerMainDeck() : GetOpponentMainDeck();
+        List<CardData> deck = isPlayer ? DeckManager.Instance.GetPlayerDeck() : DeckManager.Instance.GetOpponentDeck();
         
         foreach (GameObject cardGO in new List<GameObject>(hand))
         {
@@ -1379,7 +1382,7 @@ public void ShuffleDeck(bool isPlayer)
                     Vector3 startPos = cd.transform.position;
                     Vector3 endPos = isPlayer ? playerDeckDisplay.transform.position : opponentDeckDisplay.transform.position;
                     Quaternion startRot = Quaternion.Euler(0, isPlayer ? 0 : 180f, 0);
-                    DuelFXManager.Instance.PlayCardFlight(cd.CurrentCardData, cardBackTexture, true, startPos, endPos, handCardScale, fieldCardScale, startRot, Quaternion.identity, DuelFXManager.Instance.flightHandToDeck, false, null);
+                    DuelFXManager.Instance.PlayCardFlight(cd.CurrentCardData, cardBackTexture, true, true, startPos, endPos, handCardScale, fieldCardScale, startRot, Quaternion.identity, DuelFXManager.Instance.flightHandToDeck, false, null);
                 }
             }
             Destroy(cardGO);
@@ -1512,7 +1515,7 @@ public void ShuffleDeck(bool isPlayer)
             {
                 if (sourceLoc == CardLocation.Field) settings = DuelFXManager.Instance.flightFieldToHand;
                 else if (sourceLoc == CardLocation.Deck) settings = DuelFXManager.Instance.flightDeckToHand;
-                else if (sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.ExtraDeck) { settings = DuelFXManager.Instance.flightPileToHand; pop = true; }
+                else if (sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.ExtraDeck) { settings = DuelFXManager.Instance.flightPileToHand; pop = true; } // BanishToHand usa BanishedToAny
                 else if (sourceLoc == CardLocation.Banished) { settings = DuelFXManager.Instance.flightBanishedToAny; pop = true; }
             }
 
@@ -1595,7 +1598,7 @@ public void ShuffleDeck(bool isPlayer)
         if (settings != null && DuelFXManager.Instance != null && settings.enableFlight)
         {
             Vector3 sScale = (settings == DuelFXManager.Instance.flightFieldToHand) ? fieldCardScale : fieldCardScale;
-            DuelFXManager.Instance.PlayCardFlight(realCardDisplay.CurrentCardData, cardBackTexture, isPlayer || showOpponentHand, startPos, endPos, sScale, handCardScale, Quaternion.Euler(0,180,0), Quaternion.identity, settings, pop, onComplete);
+            DuelFXManager.Instance.PlayCardFlight(realCardDisplay.CurrentCardData, cardBackTexture, false, isPlayer || showOpponentHand, startPos, endPos, sScale, handCardScale, Quaternion.Euler(0,180,0), Quaternion.identity, settings, pop, onComplete);
         }
         else
         {
@@ -1745,7 +1748,7 @@ public void ShuffleDeck(bool isPlayer)
                     if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed && reason != SendReason.Battle && reason != SendReason.Tribute)
                     {
                         Vector3 endPos = isPlayer ? playerGraveyardDisplay.transform.position : opponentGraveyardDisplay.transform.position;
-                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, true, startPosGY, endPos, 
+                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, true, true, startPosGY, endPos, 
                             wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
                             startRotGY, Quaternion.identity, flightSettings, false, null);
                     }
@@ -1784,7 +1787,7 @@ public void ShuffleDeck(bool isPlayer)
                     if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed)
                     {
                         Vector3 endPos = isPlayer ? playerDeckDisplay.transform.position : opponentDeckDisplay.transform.position;
-                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, true, startPosDeck, endPos, 
+                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, true, true, startPosDeck, endPos, 
                             wasOnFieldDeck ? fieldCardScale : handCardScale, fieldCardScale, 
                             startRotDeck, Quaternion.identity, flightSettings, false, null);
                     }
@@ -1809,7 +1812,7 @@ public void ShuffleDeck(bool isPlayer)
                     if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed && reason != SendReason.Battle && reason != SendReason.Tribute)
                     {
                         Vector3 endPos = isPlayer ? playerRemovedDisplay.transform.position : opponentRemovedDisplay.transform.position;
-                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, true, startPosBanish, endPos, 
+                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, true, true, startPosBanish, endPos, 
                             wasOnFieldBanish ? fieldCardScale : handCardScale, fieldCardScale, 
                             startRotBanish, Quaternion.identity, flightSettings, false, () => {
                                 if (DuelFXManager.Instance != null && DuelFXManager.Instance.useBanishPrefab && DuelFXManager.Instance.banishVFX != null) DuelFXManager.Instance.SpawnVFXPublic(DuelFXManager.Instance.banishVFX, endPos);
@@ -1841,7 +1844,7 @@ public void ShuffleDeck(bool isPlayer)
                     if (flightSettings != null && flightSettings.enableFlight)
                     {
                         Vector3 endPos = isPlayer ? playerExtraDeckDisplay.transform.position : opponentExtraDeckDisplay.transform.position;
-                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, true, startPosExtra, endPos, 
+                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, true, true, startPosExtra, endPos, 
                             wasOnFieldExtra ? fieldCardScale : handCardScale, fieldCardScale, 
                             startRotExtra, Quaternion.identity, flightSettings, false, null);
                     }
@@ -1958,18 +1961,20 @@ public void ShuffleDeck(bool isPlayer)
 
         if (isFaceUp && hoveredCard != null && hoveredCard.CurrentCardData != null)
         {
-            cardViewerDisplay.SetCard(hoveredCard.CurrentCardData, cardBackTexture, true);
+            // Otimização: Só recarrega a carta inteira se for uma diferente
+            if (cardViewerDisplay.CurrentCardData == null || cardViewerDisplay.CurrentCardData.id != hoveredCard.CurrentCardData.id)
+            {
+                cardViewerDisplay.SetCard(hoveredCard.CurrentCardData, cardBackTexture, true);
+            }
             
-            // ATUALIZAÇÃO: Se for monstro, injeta os valores dinâmicos com cores (Verde = Buff, Vermelho = Debuff)
-            if (hoveredCard.CurrentCardData.type.Contains("Monster") && cardViewerDisplay.cardStatsText != null)
+            // ATUALIZAÇÃO: Injeta os valores dinâmicos (ATK/DEF/LVL) da carta sob o mouse para o viewer
+            if (hoveredCard.CurrentCardData.type.Contains("Monster"))
             {
                 cardViewerDisplay.currentAtk = hoveredCard.currentAtk;
                 cardViewerDisplay.currentDef = hoveredCard.currentDef;
-
-                string atkColor = hoveredCard.currentAtk > hoveredCard.originalAtk ? "<color=#00FF00>" : (hoveredCard.currentAtk < hoveredCard.originalAtk ? "<color=#FF4444>" : "");
-                string defColor = hoveredCard.currentDef > hoveredCard.originalDef ? "<color=#00FF00>" : (hoveredCard.currentDef < hoveredCard.originalDef ? "<color=#FF4444>" : "");
-                
-                cardViewerDisplay.cardStatsText.text = $"ATK/ {atkColor}{hoveredCard.currentAtk}{(atkColor != "" ? "</color>" : "")}  DEF/ {defColor}{hoveredCard.currentDef}{(defColor != "" ? "</color>" : "")}";
+                cardViewerDisplay.currentLevel = hoveredCard.currentLevel;
+                cardViewerDisplay.originalLevel = hoveredCard.originalLevel;
+                cardViewerDisplay.SendMessage("DisplayCardDetails", SendMessageOptions.DontRequireReceiver);
             }
         }
         else
@@ -3126,18 +3131,20 @@ public void ShuffleDeck(bool isPlayer)
             
             if (sourcePos.HasValue && DuelFXManager.Instance != null && !isSimulating)
             {
-                CardFlightSettings flightSettings = sourceLoc == CardLocation.Hand ? DuelFXManager.Instance.flightHandToField : 
-                                                    (sourceLoc == CardLocation.Banished ? DuelFXManager.Instance.flightBanishedToAny : DuelFXManager.Instance.flightPileToField);
-                                                    
-                if (flightSettings != null && flightSettings.enableFlight)
+                CardFlightSettings settings = null;
+                if (sourceLoc == CardLocation.Hand) settings = DuelFXManager.Instance.flightHandToField;
+                else if (sourceLoc == CardLocation.Banished) settings = DuelFXManager.Instance.flightBanishToField;
+                else settings = DuelFXManager.Instance.flightPileToField;              
+                
+                if (settings != null && settings.enableFlight)
                 {
                     display.SetVisibility(false);
                     bool popFromPile = sourceLoc != CardLocation.Hand && sourceLoc != CardLocation.Field;
                     Quaternion startRot = (sourceLoc == CardLocation.Hand) ? Quaternion.Euler(0, isPlayer ? 0 : 180, 0) : Quaternion.identity;
                     Vector3 sScale = (sourceLoc == CardLocation.Hand) ? handCardScale : fieldCardScale;
-                    DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, !isFaceDown, sourcePos.Value, endPos, 
+                    DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, !isFaceDown, !isFaceDown, sourcePos.Value, cardGO.transform.position, 
                         sScale, fieldCardScale, 
-                        startRot, endRot, flightSettings, popFromPile, playEffects);
+                        startRot, endRot, settings, popFromPile, playEffects);
                 }
                 else playEffects();
             }
@@ -3525,8 +3532,10 @@ public void ShuffleDeck(bool isPlayer)
 
             if (sourcePos.HasValue && DuelFXManager.Instance != null && !isSimulating)
             {
-                CardFlightSettings flightSettings = sourceLoc == CardLocation.Hand ? DuelFXManager.Instance.flightHandToField : 
-                                                    (sourceLoc == CardLocation.Banished ? DuelFXManager.Instance.flightBanishedToAny : DuelFXManager.Instance.flightPileToField);
+                CardFlightSettings flightSettings = null;
+                if (sourceLoc == CardLocation.Hand) flightSettings = isSet ? DuelFXManager.Instance.flightHandToSpellZone : DuelFXManager.Instance.flightHandToField;
+                else if (sourceLoc == CardLocation.Banished) flightSettings = DuelFXManager.Instance.flightBanishToField;
+                else flightSettings = DuelFXManager.Instance.flightPileToField;
                 
                 if (flightSettings != null && flightSettings.enableFlight)
                 {
@@ -3534,7 +3543,7 @@ public void ShuffleDeck(bool isPlayer)
                     bool popFromPile = sourceLoc != CardLocation.Hand && sourceLoc != CardLocation.Field;
                     Quaternion startRot = (sourceLoc == CardLocation.Hand) ? Quaternion.Euler(0, isPlayer ? 0 : 180, 0) : Quaternion.identity;
                     Vector3 sScale = (sourceLoc == CardLocation.Hand) ? handCardScale : fieldCardScale;
-                    DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, !isSet, sourcePos.Value, endPos, 
+                    DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, !isSet, !isSet, sourcePos.Value, endPos, 
                         sScale, fieldCardScale, 
                         startRot, endRot, flightSettings, popFromPile, onActivationCompleteCallback);
                 }

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public class LuaEventManager
 {
@@ -80,6 +81,12 @@ public class LuaEventManager
     public void OnSummon(CardDisplay card) { 
         LuaCard lc = core.EnsureCardScriptLoaded(card);
         if (lc == null) lc = new LuaCard(card);
+
+        // Adiciona efeitos contínuos ao entrar em campo
+        var fieldEffects = lc.registeredEffects.FindAll(e => (e.type & 0x0002) != 0);
+        core.continuousFieldEffects.AddRange(fieldEffects.Where(e => !core.continuousFieldEffects.Contains(e)));
+        if (fieldEffects.Count > 0)
+            core.ApplyAllContinuousEffects();
         
         var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1100 && (e.type & 0x0001) != 0); // EFFECT_TYPE_SINGLE
         foreach(var e in singleEffects) 
@@ -95,10 +102,16 @@ public class LuaEventManager
     public void OnDamageDealt(CardDisplay attacker, CardDisplay target, int amount) { }
     public void OnCounterTrapResolved(CardDisplay trap) { }
     public void OnCardAddedToHand(CardDisplay card) { 
-        core.EnsureCardScriptLoaded(card); 
+        core.EnsureCardScriptLoaded(card);
+        // Recalcula stats caso uma carta como A Legendary Ocean esteja em campo
+        core.ApplyAllContinuousEffects();
     }
     public void OnTribute(CardDisplay card) { }
-    public void OnCardDiscarded(CardDisplay card, bool causedByOpponent) { }
+    public void OnCardDiscarded(CardDisplay card, bool causedByOpponent)
+    {
+        // Recalcula stats caso uma carta na mão tenha sido descartada
+        core.ApplyAllContinuousEffects();
+    }
     public void OnCardDrawn(CardData card, bool isPlayer) { }
     public void OnSpecialSummon(CardDisplay card) { }
     public void OnControlSwitched(CardDisplay card) { }
@@ -163,6 +176,14 @@ public class LuaEventManager
 
     public void OnCardLeavesField(CardDisplay card) {
         CardLink[] allLinks = UnityEngine.Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+
+        // Remove efeitos contínuos
+        LuaCard lc = core.activeLuaCards.ContainsKey(card) ? core.activeLuaCards[card] : null;
+        if (lc != null && core.continuousFieldEffects.RemoveAll(e => e.owner == lc) > 0)
+        {
+            core.ApplyAllContinuousEffects();
+        }
+
         foreach (var link in allLinks) if (link.source == card && link.type == CardLink.LinkType.Equipment && link.target != null) core.StartCoroutine(core.RecalculateStatsNextFrame(link.target));
         if (core.activeLuaCards.ContainsKey(card)) core.activeLuaCards.Remove(card);
         foreach (var link in allLinks) if (link.target == card && link.type == CardLink.LinkType.Equipment && link.source != null && link.source.isOnField) {

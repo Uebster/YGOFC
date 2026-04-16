@@ -179,7 +179,7 @@ public class LuaDuel
                         {
                             Vector3 startPos = GetPilePosition(sourceLoc, wasPlayerPile);
                             Vector3 endPos = c.GetControler() == 0 ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position;
-                            DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
+                            DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
                         }
                     }
                     count++;
@@ -212,7 +212,7 @@ public class LuaDuel
                     {
                         Vector3 startPos = GetPilePosition(sourceLoc, wasPlayerPile);
                         Vector3 endPos = card.GetControler() == 0 ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position;
-                        DuelFXManager.Instance.PlayCardFlight(card.unityData, GameManager.Instance.GetCardBackTexture(), true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
+                        DuelFXManager.Instance.PlayCardFlight(card.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
                     }
                 }
                 count = 1;
@@ -244,7 +244,7 @@ public class LuaDuel
                         {
                             Vector3 startPos = GetPilePosition(sourceLoc, wasPlayerPile);
                             Vector3 endPos = c.GetControler() == 0 ? GameManager.Instance.playerRemovedDisplay.transform.position : GameManager.Instance.opponentRemovedDisplay.transform.position;
-                            DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
+                            DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
                         }
                     }
                     count++; 
@@ -277,7 +277,7 @@ public class LuaDuel
                     {
                         Vector3 startPos = GetPilePosition(sourceLoc, wasPlayerPile);
                         Vector3 endPos = card.GetControler() == 0 ? GameManager.Instance.playerRemovedDisplay.transform.position : GameManager.Instance.opponentRemovedDisplay.transform.position;
-                        DuelFXManager.Instance.PlayCardFlight(card.unityData, GameManager.Instance.GetCardBackTexture(), true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
+                        DuelFXManager.Instance.PlayCardFlight(card.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
                     }
                 }
                 count = 1;
