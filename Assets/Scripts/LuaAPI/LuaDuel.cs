@@ -1097,7 +1097,9 @@ public class LuaDuel
             if (IsPlayer(player)) GameManager.Instance.normalSummonsThisTurnPlayer++;
             else GameManager.Instance.normalSummonsThisTurnOpponent++;
             
-            GameManager.Instance.FinalizeSummon(c.unityCard.gameObject, c.unityData, false, IsPlayer(player), false, c.unityData.level >= 5, null);
+            Vector3 sourcePos = c.unityCard.transform.position;
+            CardLocation sourceLoc = c.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand;
+            GameManager.Instance.FinalizeSummon(c.unityCard.gameObject, c.unityData, false, IsPlayer(player), false, c.unityData.level >= 5, null, null, sourcePos, sourceLoc);
         }
     }
 
@@ -1108,7 +1110,9 @@ public class LuaDuel
             if (IsPlayer(player)) GameManager.Instance.normalSummonsThisTurnPlayer++;
             else GameManager.Instance.normalSummonsThisTurnOpponent++;
             
-            GameManager.Instance.FinalizeSummon(c.unityCard.gameObject, c.unityData, true, IsPlayer(player), true, c.unityData.level >= 5, null);
+            Vector3 sourcePos = c.unityCard.transform.position;
+            CardLocation sourceLoc = c.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand;
+            GameManager.Instance.FinalizeSummon(c.unityCard.gameObject, c.unityData, true, IsPlayer(player), true, c.unityData.level >= 5, null, null, sourcePos, sourceLoc);
         }
     }
 

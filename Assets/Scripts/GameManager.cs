@@ -1548,6 +1548,8 @@ public void ShuffleDeck(bool isPlayer)
 
         // Notifica adição à mão (Watapon) - Acontece aqui, pois a carta já está logicamente na mão
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardAddedToHand(newCardDisplay);
+        
+        RefreshAllCardsVisuals();
     }
 
     // Ferramenta de DEV/QA: Lê a descrição de uma carta e injeta dependências mencionadas entre aspas no Deck
@@ -1863,6 +1865,8 @@ public void ShuffleDeck(bool isPlayer)
                 Debug.LogWarning($"{logPrefix} → Destino desconhecido: {destination}");
                 break;
         }
+        
+        RefreshAllCardsVisuals();
     }
 
     // === CONSULTAS DE ESPAÇO LIVRE ===
@@ -1978,9 +1982,14 @@ public void ShuffleDeck(bool isPlayer)
             // ATUALIZAÇÃO: Injeta os valores dinâmicos (ATK/DEF/LVL) da carta sob o mouse para o viewer
             if (hoveredCard.CurrentCardData.type.Contains("Monster"))
             {
-                cardViewerDisplay.currentAtk = hoveredCard.currentAtk;
-                cardViewerDisplay.currentDef = hoveredCard.currentDef;
-                cardViewerDisplay.currentLevel = hoveredCard.currentLevel;
+                LuaCard lc = new LuaCard(hoveredCard);
+                int displayAtk = hoveredCard.originalAtk + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "ATK", CardLocation.Field);
+                int displayDef = hoveredCard.originalDef + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "DEF", CardLocation.Field);
+                int displayLvl = hoveredCard.originalLevel + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "LEVEL", CardLocation.Field);
+
+                cardViewerDisplay.currentAtk = displayAtk;
+                cardViewerDisplay.currentDef = displayDef;
+                cardViewerDisplay.currentLevel = displayLvl;
                 cardViewerDisplay.originalLevel = hoveredCard.originalLevel;
                 cardViewerDisplay.SendMessage("DisplayCardDetails", SendMessageOptions.DontRequireReceiver);
             }
@@ -2000,6 +2009,51 @@ public void ShuffleDeck(bool isPlayer)
     {
         if (cardViewerDisplay == null) return;
         cardViewerDisplay.SetCardBackOnly(cardBackTexture);
+    }
+
+    public void RefreshAllCardsVisuals()
+    {
+        List<GameObject> allCards = new List<GameObject>();
+        allCards.AddRange(playerHand);
+        allCards.AddRange(opponentHand);
+        if (duelFieldUI != null) {
+            if (duelFieldUI.playerMonsterZones != null) foreach (var z in duelFieldUI.playerMonsterZones) if (z != null && z.childCount > 0) allCards.Add(z.GetChild(0).gameObject);
+            if (duelFieldUI.opponentMonsterZones != null) foreach (var z in duelFieldUI.opponentMonsterZones) if (z != null && z.childCount > 0) allCards.Add(z.GetChild(0).gameObject);
+            if (duelFieldUI.playerSpellZones != null) foreach (var z in duelFieldUI.playerSpellZones) if (z != null && z.childCount > 0) allCards.Add(z.GetChild(0).gameObject);
+            if (duelFieldUI.opponentSpellZones != null) foreach (var z in duelFieldUI.opponentSpellZones) if (z != null && z.childCount > 0) allCards.Add(z.GetChild(0).gameObject);
+        }
+
+        foreach (var go in allCards)
+        {
+            if (go != null)
+            {
+                CardDisplay cd = go.GetComponent<CardDisplay>();
+                if (cd != null && cd.CurrentCardData != null)
+                {
+                    // 1. Reseta os valores para a base original
+                    cd.ResetStatsToOriginal();
+                    
+                    if (cd.CurrentCardData.type.Contains("Monster"))
+                    {
+                        // 2. Adiciona os bônus Globais (Auras / Field Spells)
+                        LuaCard lc = new LuaCard(cd);
+                        CardLocation loc = cd.isOnField ? CardLocation.Field : CardLocation.Hand;
+                        cd.currentAtk = cd.originalAtk + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "ATK", loc);
+                        cd.currentDef = cd.originalDef + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "DEF", loc);
+                        cd.currentLevel = cd.originalLevel + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "LEVEL", loc);
+
+                        // 3. Aplica os bônus de Equipamento por cima dos bônus globais
+                        if (CardEffectManager.Instance != null && cd.isOnField)
+                        {
+                            CardEffectManager.Instance.RecalculateStats(cd);
+                        }
+                    }
+                    
+                    // 4. Força a atualização dos textos na interface da carta
+                    cd.SendMessage("DisplayCardDetails", SendMessageOptions.DontRequireReceiver);
+                }
+            }
+        }
     }
 
     // Função de DEV para alternar visibilidade da mão do oponente
@@ -2950,6 +3004,8 @@ public void ShuffleDeck(bool isPlayer)
         CardDisplay display = cardGO.GetComponent<CardDisplay>();
         bool isPlayer = display != null ? display.isPlayerCard : true;
         string cardName = cardData?.name ?? "Unknown";
+        
+        int dynamicLevel = CardEffectManager.Instance.auraManager.GetStatModifier(new LuaCard(cardData), "LEVEL", CardLocation.Hand) + cardData.level;
 
         // 0.1 Validação de Limite de Invocação Normal (se não for ignorado por efeito)
         if (!ignoreLimit && !infiniteNormalSummons)
@@ -3005,7 +3061,7 @@ public void ShuffleDeck(bool isPlayer)
                 else normalSummonsThisTurnOpponent++;
             }
             Vector3 sourcePos = cardGO.transform.position;
-            FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, cardData.level >= 5, null, null, sourcePos, CardLocation.Hand);
+            FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, dynamicLevel >= 5, null, null, sourcePos, CardLocation.Hand);
         }
         
         return true;
@@ -3016,17 +3072,22 @@ public void ShuffleDeck(bool isPlayer)
     {
         if (isSimulating)
         {
-            FinalizeSummon(cardGO, cardData, false, true, false); // false = Face-Up
+            Vector3 sPosSim = cardGO.transform.position;
+            CardLocation sLocSim = cardGO.GetComponent<CardDisplay>().isOnField ? CardLocation.Field : CardLocation.Hand;
+            FinalizeSummon(cardGO, cardData, false, true, false, false, null, null, sPosSim, sLocSim); // false = Face-Up
             return;
         }
 
         if (UIManager.Instance != null)
         {
+            Vector3 sPos = cardGO.transform.position;
+            CardLocation sLoc = cardGO.GetComponent<CardDisplay>().isOnField ? CardLocation.Field : CardLocation.Hand;
+
             UIManager.Instance.ShowPositionSelection(cardData, (selectedPosition) =>
             {
                 bool isDefense = (selectedPosition == CardDisplay.BattlePosition.Defense);
                 // Special Summon geralmente é Face-Up, mesmo em defesa
-                FinalizeSummon(cardGO, cardData, isDefense, true, false); // false = Face-Up
+                FinalizeSummon(cardGO, cardData, isDefense, true, false, false, null, null, sPos, sLoc); // false = Face-Up
             });
         }
     }
@@ -3178,6 +3239,7 @@ public void ShuffleDeck(bool isPlayer)
             CardEffectManager.Instance.OnSummon(display);
             
         RefreshAttackIndicators();
+        RefreshAllCardsVisuals();
     }
 
     public Transform GetFreeMonsterZone(bool isPlayer)
@@ -3395,6 +3457,13 @@ public void ShuffleDeck(bool isPlayer)
         bool isPlayer = display != null ? display.isPlayerCard : true;
         string cardName = cardData?.name ?? "Unknown";
 
+        // CAPTURA A POSIÇÃO ANTES DE QUALQUER MOVIMENTO
+        if (!sourcePos.HasValue && cardGO != null)
+        {
+            sourcePos = cardGO.transform.position;
+            sourceLoc = (display != null && display.isOnField) ? CardLocation.Field : CardLocation.Hand;
+        }
+
         // 0.5 Validação de Armadilha
         if (!devMode && isPlayer && cardData.type.Contains("Trap") && !isSet)
         {
@@ -3536,11 +3605,15 @@ public void ShuffleDeck(bool isPlayer)
                         if (cardData.property == "Ritual") BeginRitualSummon(display);
                         else if (cardData.name == "Polymerization" || cardData.name.Contains("Fusion")) BeginFusionSummon(display);
                         else if (CardEffectManager.Instance != null) CardEffectManager.Instance.ActivateCard(display, null, null);
+                        
+                        RefreshAllCardsVisuals();
                     };
 
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayCardActivation(display, isTrap, onActivationComplete);
                     else onActivationComplete();
                 }
+                
+                if (isSet) RefreshAllCardsVisuals();
             };
             
             if (isSet) { cardGO.transform.localRotation = Quaternion.Euler(0, 0, isPlayer ? 0f : 180f); display.ShowBack(); }
@@ -3673,6 +3746,8 @@ public void ShuffleDeck(bool isPlayer)
             {
                 CardEffectManager.Instance.ActivateCard(display, null, null);
             }
+            
+            RefreshAllCardsVisuals();
         };
 
         if (DuelFXManager.Instance != null)
@@ -3707,10 +3782,12 @@ public void ShuffleDeck(bool isPlayer)
     {
         if (duelFieldUI == null) return false;
         
-        if (cardId == "2015" || cardId == "0013" || cardId == "Umi") {
-            if (IsCardActiveOnField("1142")) return true; // Maiden of the Aqua
-            if (IsCardActiveOnField("0013")) return true; // A Legendary Ocean
-            cardId = "2015"; // Força a busca pelo ID real do Umi Clássico abaixo
+        List<string> targetIds = new List<string> { cardId };
+        if (cardId == "2015" || cardId == "0013" || cardId == "Umi" || cardId == "1142") {
+            targetIds.Clear();
+            targetIds.Add("2015"); // Umi
+            targetIds.Add("0013"); // A Legendary Ocean
+            targetIds.Add("1142"); // Maiden of the Aqua
         }
 
         bool CheckZone(Transform[] zones)
@@ -3720,7 +3797,7 @@ public void ShuffleDeck(bool isPlayer)
                 if (z.childCount > 0)
                 {
                     var c = z.GetChild(0).GetComponent<CardDisplay>();
-                    if (c != null && c.isOnField && !c.isFlipped && c.CurrentCardData.id == cardId) return true;
+                    if (c != null && c.isOnField && !c.isFlipped && targetIds.Contains(c.CurrentCardData.id)) return true;
                 }
             }
             return false;
@@ -3735,12 +3812,12 @@ public void ShuffleDeck(bool isPlayer)
         if (duelFieldUI.playerFieldSpell.childCount > 0)
         {
             var c = duelFieldUI.playerFieldSpell.GetChild(0).GetComponent<CardDisplay>();
-            if (c != null && !c.isFlipped && c.CurrentCardData.id == cardId) return true;
+            if (c != null && !c.isFlipped && targetIds.Contains(c.CurrentCardData.id)) return true;
         }
         if (duelFieldUI.opponentFieldSpell.childCount > 0)
         {
             var c = duelFieldUI.opponentFieldSpell.GetChild(0).GetComponent<CardDisplay>();
-            if (c != null && !c.isFlipped && c.CurrentCardData.id == cardId) return true;
+            if (c != null && !c.isFlipped && targetIds.Contains(c.CurrentCardData.id)) return true;
         }
 
         return false;

@@ -21,6 +21,7 @@ public class CardEffectManager : MonoBehaviour
 
     public LuaEngineCore engineCore;
     public LuaEventManager eventManager;
+    public GlobalAuraManager auraManager;
     
     public Script luaEngine => engineCore.luaEngine;
     public LuaDuel luaDuel => engineCore.luaDuel;
@@ -65,6 +66,7 @@ public class CardEffectManager : MonoBehaviour
         engineCore.Initialize();
         chainManager = new ChainManager(this);
         eventManager = new LuaEventManager(this);
+        auraManager = gameObject.AddComponent<GlobalAuraManager>();
     }
 
     public LuaCard EnsureCardScriptLoaded(CardDisplay card)
@@ -610,69 +612,10 @@ public class CardEffectManager : MonoBehaviour
 
     public void ApplyAllContinuousEffects()
     {
-        if (GameManager.Instance == null) return;
-
-        List<CardDisplay> allMonsters = new List<CardDisplay>();
-        // Coleta todos os monstros no campo
-        if (GameManager.Instance.duelFieldUI != null)
+        if (GameManager.Instance != null)
         {
-            foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones) if (z != null && z.childCount > 0) allMonsters.Add(z.GetChild(0).GetComponent<CardDisplay>());
-            foreach (var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) if (z != null && z.childCount > 0) allMonsters.Add(z.GetChild(0).GetComponent<CardDisplay>());
+            GameManager.Instance.RefreshAllCardsVisuals();
         }
-        // Coleta todos os monstros na mão
-        foreach (var go in GameManager.Instance.playerHand) if (go != null) allMonsters.Add(go.GetComponent<CardDisplay>());
-        foreach (var go in GameManager.Instance.opponentHand) if (go != null) allMonsters.Add(go.GetComponent<CardDisplay>());
-
-        // 1. Reseta todos os stats para os valores originais
-        foreach (var monster in allMonsters)
-        {
-            if (monster != null) monster.ResetStatsToOriginal();
-        }
-
-        // 2. Aplica todos os efeitos contínuos de campo
-        foreach (var effect in continuousFieldEffects)
-        {
-            if (effect.owner == null || effect.owner.unityCard == null || !effect.owner.unityCard.isOnField || effect.owner.unityCard.isFlipped) continue;
-
-            foreach (var monster in allMonsters)
-            {
-                if (monster == null) continue;
-
-                // Verifica se o monstro é um alvo válido para o efeito
-                bool isTarget = false;
-                if (effect.targetFunc is Closure targetClosure)
-                {
-                    var res = luaEngine.Call(targetClosure, effect, effect.owner, new LuaGroup(), monster.isPlayerCard ? 0 : 1, 0, null, 0, 0, 0, new LuaCard(monster));
-                    if (res.Type == DataType.Boolean && res.Boolean) isTarget = true;
-                }
-
-                if (isTarget)
-                {
-                    int value = GetEffectValue(effect, monster);
-                    if (effect.code == 1) monster.currentAtk += value; // EFFECT_UPDATE_ATTACK
-                    else if (effect.code == 4) monster.currentDef += value; // EFFECT_UPDATE_DEFENSE
-                    else if (effect.code == 10) monster.currentLevel += value; // EFFECT_UPDATE_LEVEL
-                }
-            }
-        }
-
-        // 3. Re-aplica todos os efeitos de equipamento sobre os novos valores
-        foreach (var monster in allMonsters)
-        {
-            if (monster != null && monster.isOnField) RecalculateStats(monster);
-        }
-
-        // 4. Força a atualização visual de todas as cartas afetadas
-        foreach (var monster in allMonsters)
-        {
-            if (monster != null)
-            {
-                monster.SendMessage("DisplayCardDetails", SendMessageOptions.DontRequireReceiver);
-            }
-        }
-        // Atualiza o viewer também
-        if (GameManager.Instance.cardViewerDisplay != null && CardDisplay.HoveredCard != null)
-            GameManager.Instance.UpdateCardViewer(CardDisplay.HoveredCard, !CardDisplay.HoveredCard.isFlipped);
     }
     
     public void RecalculateStats(CardDisplay monster)

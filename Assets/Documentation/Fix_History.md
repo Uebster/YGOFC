@@ -117,3 +117,6 @@ O controle de tempo da *Standby Phase* apresentou dois sintomas distintos que ma
 
 ---
 
+[BUG FIX] Shuffle & Draw VFX Giant Scale (Loss of Reference)
+- CAUSA: O `DuelFXManager` perdeu as referências de centro de tabuleiro (`boardCenter`). Isso forçava as animações de VFX a caírem no Canvas Raiz. Ao aplicar `GameManager.fieldCardScale` (0.8) no Root Canvas, a Unity calculava o tamanho relativo ao monitor inteiro, não à zona de UI, deixando os fantasmas gigantes.
+- BLINDAGEM APLICADA: As animações (ex: `ShuffleRoutine`) não usam mais a escala hardcoded do GameManager. Em vez disso, o script instancia o fantasma dentro da zona física real do Deck, extrai a `localScale` dinâmica calculada pela Unity, e utiliza essa escala (baseFakeScale) como multiplicador absoluto. Além disso, foi adicionado um fallback (`uiParent.position`) para garantir que as cartas achem o centro da tela se as referências do tabuleiro forem deletadas acidentalmente.
