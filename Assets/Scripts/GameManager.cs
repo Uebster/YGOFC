@@ -3055,7 +3055,7 @@ public void ShuffleDeck(bool isPlayer)
 
             int tp = isPlayer ? 0 : 1;
             var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("NormalSummon").Function;
-            CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, tp, lc, isSet));
+                CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, tp, lc, isSet, dynamicLevel));
         }
         else
         {

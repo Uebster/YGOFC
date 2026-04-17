@@ -109,9 +109,17 @@ public class DuelActionMenu : MonoBehaviour
                 }
 
                 // Regra 2: Tributos Suficientes
+                int dynamicLevel = card.CurrentCardData.level;
+                if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null)
+                {
+                    // Verifica modificadores de Nível (como A Legendary Ocean) na mão
+                    LuaCard lc = new LuaCard(card.CurrentCardData);
+                    dynamicLevel += CardEffectManager.Instance.auraManager.GetStatModifier(lc, "LEVEL", CardLocation.Hand);
+                }
+
                 int tributes = 0;
-                if (card.CurrentCardData.level >= 5 && card.CurrentCardData.level <= 6) tributes = 1;
-                if (card.CurrentCardData.level >= 7) tributes = 2;
+                if (dynamicLevel >= 5 && dynamicLevel <= 6) tributes = 1;
+                if (dynamicLevel >= 7) tributes = 2;
 
                 if (GameManager.Instance != null && GameManager.Instance.GetMonsterCount(true) < tributes && !GameManager.Instance.disableTributeRequirements)
                 {

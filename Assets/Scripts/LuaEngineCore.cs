@@ -342,8 +342,8 @@ public class LuaEngineCore
                 return true
             end
 
-            function Core.NormalSummon(player, card, isSet)
-                local level = card:GetLevel()
+            function Core.NormalSummon(player, card, isSet, dynLevel)
+                local level = dynLevel or card:GetLevel()
                 local tributes = 0
                 if level >= 5 and level <= 6 then tributes = 1 end
                 if level >= 7 then tributes = 2 end
