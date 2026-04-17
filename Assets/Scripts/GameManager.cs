@@ -902,9 +902,11 @@ public class GameManager : MonoBehaviour
             CardFlightSettings settings = null;
             if (sourceLoc == CardLocation.Hand) settings = DuelFXManager.Instance.flightHandToField;
             else if (sourceLoc == CardLocation.Banished) settings = DuelFXManager.Instance.flightBanishToField;
-            else settings = DuelFXManager.Instance.flightPileToField;
+            else if (sourceLoc == CardLocation.Graveyard) settings = DuelFXManager.Instance.flightGraveyardToField;
+            else if (sourceLoc == CardLocation.ExtraDeck) settings = DuelFXManager.Instance.flightExtraToField;
+            else settings = DuelFXManager.Instance.flightGraveyardToField; // Fallback
 
-            if (settings != null && settings.enableFlight)
+            if (settings != null && !isSimulating && settings.enableFlight)
             {
                 cardDisplay.SetVisibility(false);
                 bool pop = sourceLoc != CardLocation.Hand && sourceLoc != CardLocation.Field;
@@ -1259,15 +1261,19 @@ public class GameManager : MonoBehaviour
 
         if (DuelFXManager.Instance != null && !isSimulating) 
         {
+            bool isFieldSpellZone = wasOnField && (card.transform.parent == duelFieldUI.playerFieldSpell || card.transform.parent == duelFieldUI.opponentFieldSpell);
+                    Quaternion startRotDeck = card.transform.rotation;
             CardFlightSettings flightSettings = null;
             if (prevLoc == CardLocation.Hand) flightSettings = DuelFXManager.Instance.flightHandToBanished;
-            else if (wasOnField) flightSettings = DuelFXManager.Instance.flightFieldToBanished;
-            else flightSettings = DuelFXManager.Instance.flightBanishedToAny;
+            else if (wasOnField) flightSettings = isFieldSpellZone ? DuelFXManager.Instance.flightFieldSpellZoneToBanished : DuelFXManager.Instance.flightFieldToBanished;
+            else if (prevLoc == CardLocation.Graveyard) flightSettings = DuelFXManager.Instance.flightGraveyardToBanished;
+            else if (prevLoc == CardLocation.ExtraDeck) flightSettings = DuelFXManager.Instance.flightExtraToBanished;
+            else flightSettings = DuelFXManager.Instance.flightGraveyardToBanished; // Fallback
 
             if (flightSettings != null && flightSettings.enableFlight)
             {
                 Vector3 endPos = isPlayer ? playerRemovedDisplay.transform.position : opponentRemovedDisplay.transform.position;
-                DuelFXManager.Instance.PlayCardFlight(card.CurrentCardData, cardBackTexture, true, true, startPos, endPos, 
+                DuelFXManager.Instance.PlayCardFlight(card.CurrentCardData, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
                     wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
                     startRot, Quaternion.identity, flightSettings, false, () => {
                         if (DuelFXManager.Instance != null && DuelFXManager.Instance.useBanishPrefab && DuelFXManager.Instance.banishVFX != null) DuelFXManager.Instance.SpawnVFXPublic(DuelFXManager.Instance.banishVFX, endPos);
@@ -1399,6 +1405,7 @@ public void ShuffleDeck(bool isPlayer)
         bool isPlayer = card.isPlayerCard;
         Vector3 startPos = card.transform.position;
         CardLocation prevLoc = card.CurrentLocation;
+        bool isFieldSpellZone = card.isOnField && (card.transform.parent == duelFieldUI.playerFieldSpell || card.transform.parent == duelFieldUI.opponentFieldSpell);
 
         // Remove modificadores
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
@@ -1407,7 +1414,7 @@ public void ShuffleDeck(bool isPlayer)
         Destroy(card.gameObject);
 
         // Adiciona à mão
-        AddCardToHand(data, isPlayer, startPos, prevLoc);
+        AddCardToHand(data, isPlayer, startPos, prevLoc, isFieldSpellZone);
         Debug.Log($"{data.name} retornada para a mão.");
 
         // 0343 - Criosphinx
@@ -1481,7 +1488,7 @@ public void ShuffleDeck(bool isPlayer)
     }
 
     // Helper para adicionar carta à mão visualmente (usado por ReturnToHand e Search)
-    public void AddCardToHand(CardData cardData, bool isPlayer, Vector3? customStartPos = null, CardLocation sourceLoc = CardLocation.Deck)
+    public void AddCardToHand(CardData cardData, bool isPlayer, Vector3? customStartPos = null, CardLocation sourceLoc = CardLocation.Deck, bool isFromFieldSpellZone = false)
     {
         // Tokens não podem existir na mão. Evaporam.
         if (cardData == null || cardData.id == "TOKEN") return;
@@ -1513,10 +1520,11 @@ public void ShuffleDeck(bool isPlayer)
             
             if (DuelFXManager.Instance != null)
             {
-                if (sourceLoc == CardLocation.Field) settings = DuelFXManager.Instance.flightFieldToHand;
+                if (sourceLoc == CardLocation.Field) settings = isFromFieldSpellZone ? DuelFXManager.Instance.flightFieldSpellZoneToHand : DuelFXManager.Instance.flightFieldToHand;
                 else if (sourceLoc == CardLocation.Deck) settings = DuelFXManager.Instance.flightDeckToHand;
-                else if (sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.ExtraDeck) { settings = DuelFXManager.Instance.flightPileToHand; pop = true; } // BanishToHand usa BanishedToAny
-                else if (sourceLoc == CardLocation.Banished) { settings = DuelFXManager.Instance.flightBanishedToAny; pop = true; }
+                else if (sourceLoc == CardLocation.Graveyard) { settings = DuelFXManager.Instance.flightGraveyardToHand; pop = true; }
+                else if (sourceLoc == CardLocation.Banished) { settings = DuelFXManager.Instance.flightBanishToHand; pop = true; }
+                else { settings = DuelFXManager.Instance.flightDeckToHand; } // Fallback
             }
 
             StartCoroutine(AnimateCardToHand(newCardGO, isPlayer, startPos, settings, pop));
@@ -1724,6 +1732,13 @@ public void ShuffleDeck(bool isPlayer)
         card.previousOwner = (isPlayer ? 0 : 1);
         Debug.Log($"{logPrefix} | Tracked history: from {card.previousLocation} (owner: {card.previousOwner})");
         
+        // Declaração unificada de variáveis para evitar erros de escopo
+        Vector3 startPos = card.transform.position;
+        Quaternion startRot = card.transform.rotation;
+        bool wasOnField = card.isOnField;
+        CardLocation prevLoc = card.previousLocation;
+        bool isFieldSpellZone = wasOnField && (card.transform.parent == duelFieldUI.playerFieldSpell || card.transform.parent == duelFieldUI.opponentFieldSpell);
+        
         // Remove modificadores antes de sair do campo
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
 
@@ -1733,10 +1748,6 @@ public void ShuffleDeck(bool isPlayer)
             case CardLocation.Graveyard:
                 Debug.Log($"{logPrefix} → Graveyard");
                 
-                Vector3 startPosGY = card.transform.position;
-                bool wasOnField = card.isOnField;
-                Quaternion startRotGY = card.transform.rotation;
-                
                 if (isPlayer) playerHand.Remove(card.gameObject);
                 else opponentHand.Remove(card.gameObject);
                 SendToGraveyard(data, isPlayer, card.isOnField ? CardLocation.Field : CardLocation.Hand, reason);
@@ -1744,35 +1755,31 @@ public void ShuffleDeck(bool isPlayer)
 
                 if (DuelFXManager.Instance != null && !isSimulating)
                 {
-                    CardFlightSettings flightSettings = wasOnField ? DuelFXManager.Instance.flightFieldToGraveyard : DuelFXManager.Instance.flightHandToGraveyard;
+                    CardFlightSettings flightSettings = wasOnField ? (isFieldSpellZone ? DuelFXManager.Instance.flightFieldSpellZoneToGraveyard : DuelFXManager.Instance.flightFieldToGraveyard) : DuelFXManager.Instance.flightHandToGraveyard;
                     if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed && reason != SendReason.Battle && reason != SendReason.Tribute)
                     {
                         Vector3 endPos = isPlayer ? playerGraveyardDisplay.transform.position : opponentGraveyardDisplay.transform.position;
-                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, true, true, startPosGY, endPos, 
+                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
                             wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
-                            startRotGY, Quaternion.identity, flightSettings, false, null);
+                            startRot, Quaternion.identity, flightSettings, false, null);
                     }
                 }
                 break;
 
             case CardLocation.Hand:
                 Debug.Log($"{logPrefix} → Hand");
+                
                 // Remove da mão se estava lá
                 if (isPlayer) playerHand.Remove(card.gameObject);
                 else opponentHand.Remove(card.gameObject);
                 // Destrói e retorna à mão
                 Destroy(card.gameObject);
-                AddCardToHand(data, isPlayer);
+                AddCardToHand(data, isPlayer, startPos, prevLoc, isFieldSpellZone);
                 break;
 
             case CardLocation.Deck:
                 Debug.Log($"{logPrefix} → Deck (Top)");
-                
-                Vector3 startPosDeck = card.transform.position;
-                bool wasOnFieldDeck = card.isOnField;
-                Quaternion startRotDeck = card.transform.rotation;
-                CardLocation sourceLocDeck = card.previousLocation;
-                
+
                 // Delega para DeckManager
                 if (DeckManager.Instance != null) 
                     DeckManager.Instance.ReturnToDeck(card, true);
@@ -1780,16 +1787,18 @@ public void ShuffleDeck(bool isPlayer)
                 if (DuelFXManager.Instance != null && !isSimulating)
                 {
                     CardFlightSettings flightSettings = null;
-                    if (sourceLocDeck == CardLocation.Hand) flightSettings = DuelFXManager.Instance.flightHandToDeck;
-                    else if (wasOnFieldDeck) flightSettings = DuelFXManager.Instance.flightFieldToDeck;
-                    else flightSettings = DuelFXManager.Instance.flightPileToDeck;
+                    if (prevLoc == CardLocation.Hand) flightSettings = DuelFXManager.Instance.flightHandToDeck;
+                    else if (wasOnField) flightSettings = isFieldSpellZone ? DuelFXManager.Instance.flightFieldSpellZoneToDeck : DuelFXManager.Instance.flightFieldToDeck;
+                    else if (prevLoc == CardLocation.Graveyard) flightSettings = DuelFXManager.Instance.flightGraveyardToDeck;
+                    else if (prevLoc == CardLocation.Banished) flightSettings = DuelFXManager.Instance.flightBanishToDeck;
+                    else flightSettings = DuelFXManager.Instance.flightGraveyardToDeck; // Fallback
 
                     if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed)
                     {
                         Vector3 endPos = isPlayer ? playerDeckDisplay.transform.position : opponentDeckDisplay.transform.position;
-                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, true, true, startPosDeck, endPos, 
-                            wasOnFieldDeck ? fieldCardScale : handCardScale, fieldCardScale, 
-                            startRotDeck, Quaternion.identity, flightSettings, false, null);
+                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
+                            wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
+                            startRot, Quaternion.identity, flightSettings, false, null);
                     }
                 }
                 break;
@@ -1797,24 +1806,21 @@ public void ShuffleDeck(bool isPlayer)
             case CardLocation.Banished:
                 Debug.Log($"{logPrefix} → Banished");
                 
-                Vector3 startPosBanish = card.transform.position;
-                bool wasOnFieldBanish = card.isOnField;
-                Quaternion startRotBanish = card.transform.rotation;
-                CardLocation sourceLocBanish = card.previousLocation;
-                
                 if (DuelFXManager.Instance != null && !isSimulating)
                 {
                     CardFlightSettings flightSettings = null;
-                    if (sourceLocBanish == CardLocation.Hand) flightSettings = DuelFXManager.Instance.flightHandToBanished;
-                    else if (wasOnFieldBanish) flightSettings = DuelFXManager.Instance.flightFieldToBanished;
-                    else flightSettings = DuelFXManager.Instance.flightBanishedToAny;
+                    if (prevLoc == CardLocation.Hand) flightSettings = DuelFXManager.Instance.flightHandToBanished;
+                    else if (wasOnField) flightSettings = isFieldSpellZone ? DuelFXManager.Instance.flightFieldSpellZoneToBanished : DuelFXManager.Instance.flightFieldToBanished;
+                    else if (prevLoc == CardLocation.Graveyard) flightSettings = DuelFXManager.Instance.flightGraveyardToBanished;
+                    else if (prevLoc == CardLocation.ExtraDeck) flightSettings = DuelFXManager.Instance.flightExtraToBanished;
+                    else flightSettings = DuelFXManager.Instance.flightGraveyardToBanished; // Fallback
 
                     if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed && reason != SendReason.Battle && reason != SendReason.Tribute)
                     {
                         Vector3 endPos = isPlayer ? playerRemovedDisplay.transform.position : opponentRemovedDisplay.transform.position;
-                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, true, true, startPosBanish, endPos, 
-                            wasOnFieldBanish ? fieldCardScale : handCardScale, fieldCardScale, 
-                            startRotBanish, Quaternion.identity, flightSettings, false, () => {
+                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
+                            wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
+                            startRot, Quaternion.identity, flightSettings, false, () => {
                                 if (DuelFXManager.Instance != null && DuelFXManager.Instance.useBanishPrefab && DuelFXManager.Instance.banishVFX != null) DuelFXManager.Instance.SpawnVFXPublic(DuelFXManager.Instance.banishVFX, endPos);
                             });
                     }
@@ -1830,23 +1836,19 @@ public void ShuffleDeck(bool isPlayer)
             case CardLocation.ExtraDeck:
                 Debug.Log($"{logPrefix} → Extra Deck");
                 
-                Vector3 startPosExtra = card.transform.position;
-                bool wasOnFieldExtra = card.isOnField;
-                Quaternion startRotExtra = card.transform.rotation;
-                
                 if (isPlayer) playerExtraDeck.Add(data);
                 else opponentExtraDeck.Add(data);
                 Destroy(card.gameObject);
 
                 if (DuelFXManager.Instance != null && !isSimulating)
                 {
-                    CardFlightSettings flightSettings = wasOnFieldExtra ? DuelFXManager.Instance.flightFieldToExtraDeck : DuelFXManager.Instance.flightPileToDeck;
+                    CardFlightSettings flightSettings = wasOnField ? DuelFXManager.Instance.flightFieldToExtraDeck : DuelFXManager.Instance.flightGraveyardToExtraDeck;
                     if (flightSettings != null && flightSettings.enableFlight)
                     {
                         Vector3 endPos = isPlayer ? playerExtraDeckDisplay.transform.position : opponentExtraDeckDisplay.transform.position;
-                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, true, true, startPosExtra, endPos, 
-                            wasOnFieldExtra ? fieldCardScale : handCardScale, fieldCardScale, 
-                            startRotExtra, Quaternion.identity, flightSettings, false, null);
+                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
+                            wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
+                            startRot, Quaternion.identity, flightSettings, false, null);
                     }
                 }
                 break;
@@ -3134,7 +3136,9 @@ public void ShuffleDeck(bool isPlayer)
                 CardFlightSettings settings = null;
                 if (sourceLoc == CardLocation.Hand) settings = DuelFXManager.Instance.flightHandToField;
                 else if (sourceLoc == CardLocation.Banished) settings = DuelFXManager.Instance.flightBanishToField;
-                else settings = DuelFXManager.Instance.flightPileToField;              
+                else if (sourceLoc == CardLocation.Graveyard) settings = DuelFXManager.Instance.flightGraveyardToField;
+                else if (sourceLoc == CardLocation.ExtraDeck) settings = DuelFXManager.Instance.flightExtraToField;
+                else settings = DuelFXManager.Instance.flightGraveyardToField; // Fallback              
                 
                 if (settings != null && settings.enableFlight)
                 {
@@ -3532,11 +3536,17 @@ public void ShuffleDeck(bool isPlayer)
 
             if (sourcePos.HasValue && DuelFXManager.Instance != null && !isSimulating)
             {
+                bool isFieldSpellZone = targetZone == duelFieldUI.playerFieldSpell || targetZone == duelFieldUI.opponentFieldSpell;
                 CardFlightSettings flightSettings = null;
-                if (sourceLoc == CardLocation.Hand) flightSettings = isSet ? DuelFXManager.Instance.flightHandToSpellZone : DuelFXManager.Instance.flightHandToField;
+                if (sourceLoc == CardLocation.Hand) 
+                {
+                    if (isFieldSpellZone) flightSettings = DuelFXManager.Instance.flightHandToFieldSpellZone;
+                    else flightSettings = DuelFXManager.Instance.flightHandToSpellZone; // Mágicas/Armadilhas na mão ativadas ou setadas
+                }
                 else if (sourceLoc == CardLocation.Banished) flightSettings = DuelFXManager.Instance.flightBanishToField;
-                else flightSettings = DuelFXManager.Instance.flightPileToField;
-                
+                else if (sourceLoc == CardLocation.Graveyard) flightSettings = DuelFXManager.Instance.flightGraveyardToField;
+                else flightSettings = DuelFXManager.Instance.flightGraveyardToField; // Fallback
+               
                 if (flightSettings != null && flightSettings.enableFlight)
                 {
                     display.SetVisibility(false);

@@ -20,6 +20,12 @@ public class EffectTestManager : MonoBehaviour
     private Vector2 scrollPos;
     private bool hideDummyCards = false;
 
+    private int selectedFlightIndex = 0;
+    private List<string> flightNames = new List<string>();
+    private List<System.Action> flightActions = new List<System.Action>();
+    private bool flightsInitialized = false;
+    private Rect windowRect = new Rect(20, 20, 360, 650); // Nova janela arrastável
+
     void Update()
     {
         bool toggleMenu = false;
@@ -70,15 +76,17 @@ public class EffectTestManager : MonoBehaviour
         if (GameManager.Instance == null || !GameManager.Instance.effectTestMode) return;
 
         InitStyles();
+        InitFlights();
 
-        // Área de fundo escuro (Aumentada para caber a barra de rolagem)
-        GUI.DrawTexture(new Rect(10, 10, 320, Screen.height - 20), darkTex);
+        windowRect.height = Screen.height - 40;
+        windowRect = GUI.Window(10102, windowRect, DrawEffectTestWindow, "--- TESTE DE EFEITOS VFX ---");
+    }
 
-        // Inicia o Layout
-        GUILayout.BeginArea(new Rect(20, 20, 300, Screen.height - 40));
-        
-        GUILayout.Label("--- TESTE DE EFEITOS VFX ---", titleStyle);
-        GUILayout.Space(10);
+    void DrawEffectTestWindow(int windowID)
+    {
+        // Fundo e Layout interno
+        GUI.DrawTexture(new Rect(0, 0, windowRect.width, windowRect.height), darkTex);
+        GUILayout.BeginArea(new Rect(10, 25, windowRect.width - 20, windowRect.height - 35));
 
         if (GUILayout.Button("LIMPAR CENA", btnStyle)) { ClearFieldForTesting(); }
 
@@ -198,162 +206,16 @@ public class EffectTestManager : MonoBehaviour
 
         GUILayout.Space(5);
         GUILayout.Label("<color=cyan><b>VOO DE CARTAS (FLIGHTS)</b></color>");
-
-        GUILayout.Label("<size=12><i>Hand -> Campo e Cemitério:</i></size>");
+        
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Hand -> Field (Atk)", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            Vector3 startPos = GameManager.Instance.playerHandLayoutGroup.position;
-            DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, playerMonster.transform.position, GameManager.Instance.handCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightHandToField, false, null);
-        }
-        if (GUILayout.Button("Hand -> Field (Set)", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            Vector3 startPos = GameManager.Instance.playerHandLayoutGroup.position;
-            DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), false, false, startPos, playerMonster.transform.position, GameManager.Instance.handCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.Euler(0,0,90), DuelFXManager.Instance.flightHandToField, false, null);
-        }
+        if (GUILayout.Button("<", btnStyle, GUILayout.Width(35))) { selectedFlightIndex--; if(selectedFlightIndex < 0) selectedFlightIndex = flightNames.Count - 1; }
+        GUILayout.Label(flightNames[selectedFlightIndex], titleStyle, GUILayout.Height(26));
+        if (GUILayout.Button(">", btnStyle, GUILayout.Width(35))) { selectedFlightIndex++; if(selectedFlightIndex >= flightNames.Count) selectedFlightIndex = 0; }
         GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Hand -> Deck", btnStyle)) { 
-            Vector3 startPos = GameManager.Instance.playerHandLayoutGroup.position;
-            Vector3 endPos = GameManager.Instance.playerDeckDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.handCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightHandToDeck, false, null);
+        
+        if (GUILayout.Button("► INICIAR ANIMAÇÃO", btnStyle)) { 
+            flightActions[selectedFlightIndex]?.Invoke(); 
         }
-        if (GUILayout.Button("Hand -> Banish", btnStyle)) { 
-            Vector3 startPos = GameManager.Instance.playerHandLayoutGroup.position;
-            Vector3 endPos = GameManager.Instance.playerRemovedDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.handCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightHandToBanished, false, null);
-        }
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Hand -> GY (Discard)", btnStyle)) { 
-            Vector3 startPos = GameManager.Instance.playerHandLayoutGroup.position;
-            Vector3 endPos = GameManager.Instance.playerGraveyardDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.handCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightHandToGraveyard, false, null);
-        }
-        GUILayout.EndHorizontal();
-
-        GUILayout.Label("<size=12><i>Deck e Extra Deck:</i></size>");
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Deck -> Hand (Draw)", btnStyle)) { 
-            Vector3 startPos = GameManager.Instance.playerDeckDisplay.transform.position;
-            Vector3 endPos = GameManager.Instance.playerHandLayoutGroup.position;
-            DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.handCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightDeckToHand, true, null);
-        }
-        if (GUILayout.Button("Deck -> Field", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            Vector3 startPos = GameManager.Instance.playerDeckDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, playerMonster.transform.position, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightDeckToField, true, null);
-        }
-        GUILayout.EndHorizontal();
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Deck -> GY", btnStyle)) { 
-            Vector3 startPos = GameManager.Instance.playerDeckDisplay.transform.position;
-            Vector3 endPos = GameManager.Instance.playerGraveyardDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightDeckToGraveyard, true, null);
-        }
-        if (GUILayout.Button("Deck -> Banish", btnStyle)) { 
-            Vector3 startPos = GameManager.Instance.playerDeckDisplay.transform.position;
-            Vector3 endPos = GameManager.Instance.playerRemovedDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightDeckToBanished, true, null);
-        }
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Extra -> Field", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            Vector3 startPos = GameManager.Instance.playerExtraDeckDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, playerMonster.transform.position, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightPileToField, true, null);
-        }
-        if (GUILayout.Button("Extra -> GY", btnStyle)) { 
-            Vector3 startPos = GameManager.Instance.playerExtraDeckDisplay.transform.position;
-            Vector3 endPos = GameManager.Instance.playerGraveyardDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightExtraToGraveyard, true, null);
-        }
-        GUILayout.EndHorizontal();
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Extra -> Banish", btnStyle)) { 
-            Vector3 startPos = GameManager.Instance.playerExtraDeckDisplay.transform.position;
-            Vector3 endPos = GameManager.Instance.playerRemovedDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightExtraToBanished, true, null);
-        }
-        GUILayout.EndHorizontal();
-
-        GUILayout.Label("<size=12><i>Cemitério (Graveyard):</i></size>");
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("GY -> Field (Reborn)", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            Vector3 startPos = GameManager.Instance.playerGraveyardDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, playerMonster.transform.position, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightPileToField, true, null);
-        }
-        if (GUILayout.Button("GY -> Hand", btnStyle)) { 
-            Vector3 startPos = GameManager.Instance.playerGraveyardDisplay.transform.position;
-            Vector3 endPos = GameManager.Instance.playerHandLayoutGroup.position;
-            DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.handCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightPileToHand, true, null);
-        }
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("GY -> Deck", btnStyle)) { 
-            Vector3 startPos = GameManager.Instance.playerGraveyardDisplay.transform.position;
-            Vector3 endPos = GameManager.Instance.playerDeckDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightPileToDeck, true, null);
-        }
-        if (GUILayout.Button("GY -> Banish", btnStyle)) { 
-            Vector3 startPos = GameManager.Instance.playerGraveyardDisplay.transform.position;
-            Vector3 endPos = GameManager.Instance.playerRemovedDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightGraveyardToBanished, true, null);
-        }
-        GUILayout.EndHorizontal();
-
-        GUILayout.Label("<size=12><i>Campo (Field) para Zonas:</i></size>");
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Field -> Hand (Bounce)", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            Vector3 endPos = GameManager.Instance.playerHandLayoutGroup.position;
-            DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, playerMonster.transform.position, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.handCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightFieldToHand, false, null);
-        }
-        if (GUILayout.Button("Field -> Deck (Spin)", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            Vector3 endPos = GameManager.Instance.playerDeckDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, playerMonster.transform.position, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightFieldToDeck, false, null);
-        }
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Field -> GY (Send)", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            Vector3 endPos = GameManager.Instance.playerGraveyardDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, playerMonster.transform.position, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightFieldToGraveyard, false, null);
-        }
-        if (GUILayout.Button("Field -> Banish", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            Vector3 endPos = GameManager.Instance.playerRemovedDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, playerMonster.transform.position, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightFieldToBanished, false, null);
-        }
-        GUILayout.EndHorizontal();
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Field -> Extra Deck", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            Vector3 endPos = GameManager.Instance.playerExtraDeckDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, playerMonster.transform.position, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightFieldToExtraDeck, false, null);
-        }
-        GUILayout.EndHorizontal();
-
-        GUILayout.Label("<size=12><i>Banido (Removed):</i></size>");
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Banish -> Field", btnStyle)) { 
-            ClearFieldForTesting(); EnsurePlayerMonster(); 
-            Vector3 startPos = GameManager.Instance.playerRemovedDisplay.transform.position;
-            DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, playerMonster.transform.position, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightBanishedToAny, true, null);
-        }
-        if (GUILayout.Button("Banish -> Hand", btnStyle)) { 
-            Vector3 startPos = GameManager.Instance.playerRemovedDisplay.transform.position;
-            Vector3 endPos = GameManager.Instance.playerHandLayoutGroup.position;
-            DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.handCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightBanishedToAny, true, null);
-        }
-        GUILayout.EndHorizontal();
 
         GUILayout.Label("<color=cyan><b>TOKEN E INVOCAÇÕES EXTRAS</b></color>");
         GUILayout.BeginHorizontal();
@@ -688,6 +550,8 @@ public class EffectTestManager : MonoBehaviour
 
         GUILayout.EndScrollView();
         GUILayout.EndArea();
+        
+        GUI.DragWindow(new Rect(0, 0, 10000, 30)); // Torna a janela arrastável pelo topo
     }
 
     // Wrapper para executar uma ação de teste, limpando o campo antes.
@@ -810,5 +674,58 @@ public class EffectTestManager : MonoBehaviour
             attacker.SetAttackSelectionVisual(true);
             if (GameManager.Instance != null) { GameManager.Instance.RefreshAttackIndicators(); GameManager.Instance.HandleAttackIndicatorHover(attacker, true); }
         }
+    }
+
+    private void InitFlights()
+    {
+        if (flightsInitialized) return;
+        
+        AddFlight("Hand -> Field (Attack)", () => { ClearFieldForTesting(); EnsurePlayerMonster(); Vector3 sPos = GameManager.Instance.playerHandLayoutGroup.position; DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, sPos, playerMonster.transform.position, GameManager.Instance.handCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightHandToField, false, null); });
+        AddFlight("Hand -> Field (Set)", () => { ClearFieldForTesting(); EnsurePlayerMonster(); Vector3 sPos = GameManager.Instance.playerHandLayoutGroup.position; DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), false, false, sPos, playerMonster.transform.position, GameManager.Instance.handCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.Euler(0,0,90), DuelFXManager.Instance.flightHandToField, false, null); });
+        AddFlight("Hand -> SpellZone", () => { ClearFieldForTesting(); EnsurePlayerSpell(); Vector3 sPos = GameManager.Instance.playerHandLayoutGroup.position; DuelFXManager.Instance.PlayCardFlight(playerSpell.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, sPos, playerSpell.transform.position, GameManager.Instance.handCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightHandToSpellZone, false, null); });
+        AddFlight("Hand -> FieldSpellZone", () => { ClearFieldForTesting(); EnsurePlayerField(); Vector3 sPos = GameManager.Instance.playerHandLayoutGroup.position; DuelFXManager.Instance.PlayCardFlight(playerField.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, sPos, playerField.transform.position, GameManager.Instance.handCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightHandToFieldSpellZone, false, null); });
+        AddFlight("Hand -> Deck", () => { Vector3 sPos = GameManager.Instance.playerHandLayoutGroup.position; Vector3 ePos = GameManager.Instance.playerDeckDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.handCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightHandToDeck, false, null); });
+        AddFlight("Hand -> GY (Discard)", () => { Vector3 sPos = GameManager.Instance.playerHandLayoutGroup.position; Vector3 ePos = GameManager.Instance.playerGraveyardDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.handCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightHandToGraveyard, false, null); });
+        AddFlight("Hand -> Banish", () => { Vector3 sPos = GameManager.Instance.playerHandLayoutGroup.position; Vector3 ePos = GameManager.Instance.playerRemovedDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.handCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightHandToBanished, false, null); });
+        
+        AddFlight("Field -> Hand (Bounce)", () => { ClearFieldForTesting(); EnsurePlayerMonster(); Vector3 ePos = GameManager.Instance.playerHandLayoutGroup.position; DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, playerMonster.transform.position, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.handCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightFieldToHand, false, null); });
+        AddFlight("Field -> Deck (Spin)", () => { ClearFieldForTesting(); EnsurePlayerMonster(); Vector3 ePos = GameManager.Instance.playerDeckDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, playerMonster.transform.position, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightFieldToDeck, false, null); });
+        AddFlight("Field -> GY (Destroy)", () => { ClearFieldForTesting(); EnsurePlayerMonster(); Vector3 ePos = GameManager.Instance.playerGraveyardDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, playerMonster.transform.position, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightFieldToGraveyard, false, null); });
+        AddFlight("Field -> Banish", () => { ClearFieldForTesting(); EnsurePlayerMonster(); Vector3 ePos = GameManager.Instance.playerRemovedDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, playerMonster.transform.position, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightFieldToBanished, false, null); });
+        AddFlight("Field -> Extra Deck", () => { ClearFieldForTesting(); EnsurePlayerMonster(); Vector3 ePos = GameManager.Instance.playerExtraDeckDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, playerMonster.transform.position, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightFieldToExtraDeck, false, null); });
+        
+        AddFlight("FieldSpellZone -> Hand", () => { ClearFieldForTesting(); EnsurePlayerField(); Vector3 ePos = GameManager.Instance.playerHandLayoutGroup.position; DuelFXManager.Instance.PlayCardFlight(playerField.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, playerField.transform.position, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.handCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightFieldSpellZoneToHand, false, null); });
+        AddFlight("FieldSpellZone -> Deck", () => { ClearFieldForTesting(); EnsurePlayerField(); Vector3 ePos = GameManager.Instance.playerDeckDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(playerField.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, playerField.transform.position, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightFieldSpellZoneToDeck, false, null); });
+        AddFlight("FieldSpellZone -> GY", () => { ClearFieldForTesting(); EnsurePlayerField(); Vector3 ePos = GameManager.Instance.playerGraveyardDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(playerField.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, playerField.transform.position, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightFieldSpellZoneToGraveyard, false, null); });
+        AddFlight("FieldSpellZone -> Banish", () => { ClearFieldForTesting(); EnsurePlayerField(); Vector3 ePos = GameManager.Instance.playerRemovedDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(playerField.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, playerField.transform.position, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightFieldSpellZoneToBanished, false, null); });
+
+        AddFlight("Deck -> Hand (Draw)", () => { Vector3 sPos = GameManager.Instance.playerDeckDisplay.transform.position; Vector3 ePos = GameManager.Instance.playerHandLayoutGroup.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.handCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightDeckToHand, true, null); });
+        AddFlight("Deck -> Field", () => { ClearFieldForTesting(); EnsurePlayerMonster(); Vector3 sPos = GameManager.Instance.playerDeckDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, sPos, playerMonster.transform.position, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightDeckToField, true, null); });
+        AddFlight("Deck -> GY (Mill)", () => { Vector3 sPos = GameManager.Instance.playerDeckDisplay.transform.position; Vector3 ePos = GameManager.Instance.playerGraveyardDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightDeckToGraveyard, true, null); });
+        AddFlight("Deck -> Banish", () => { Vector3 sPos = GameManager.Instance.playerDeckDisplay.transform.position; Vector3 ePos = GameManager.Instance.playerRemovedDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightDeckToBanished, true, null); });
+
+        AddFlight("GY -> Hand (Salvage)", () => { Vector3 sPos = GameManager.Instance.playerGraveyardDisplay.transform.position; Vector3 ePos = GameManager.Instance.playerHandLayoutGroup.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.handCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightGraveyardToHand, true, null); });
+        AddFlight("GY -> Field (Reborn)", () => { ClearFieldForTesting(); EnsurePlayerMonster(); Vector3 sPos = GameManager.Instance.playerGraveyardDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, sPos, playerMonster.transform.position, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightGraveyardToField, true, null); });
+        AddFlight("GY -> Deck (Avarice)", () => { Vector3 sPos = GameManager.Instance.playerGraveyardDisplay.transform.position; Vector3 ePos = GameManager.Instance.playerDeckDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightGraveyardToDeck, true, null); });
+        AddFlight("GY -> Extra Deck", () => { Vector3 sPos = GameManager.Instance.playerGraveyardDisplay.transform.position; Vector3 ePos = GameManager.Instance.playerExtraDeckDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightGraveyardToExtraDeck, true, null); });
+        AddFlight("GY -> Banish", () => { Vector3 sPos = GameManager.Instance.playerGraveyardDisplay.transform.position; Vector3 ePos = GameManager.Instance.playerRemovedDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightGraveyardToBanished, true, null); });
+
+        AddFlight("Extra -> Field", () => { ClearFieldForTesting(); EnsurePlayerMonster(); Vector3 sPos = GameManager.Instance.playerExtraDeckDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, sPos, playerMonster.transform.position, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightExtraToField, true, null); });
+        AddFlight("Extra -> GY", () => { Vector3 sPos = GameManager.Instance.playerExtraDeckDisplay.transform.position; Vector3 ePos = GameManager.Instance.playerGraveyardDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightExtraToGraveyard, true, null); });
+        AddFlight("Extra -> Banish", () => { Vector3 sPos = GameManager.Instance.playerExtraDeckDisplay.transform.position; Vector3 ePos = GameManager.Instance.playerRemovedDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightExtraToBanished, true, null); });
+
+        AddFlight("Banish -> Hand", () => { Vector3 sPos = GameManager.Instance.playerRemovedDisplay.transform.position; Vector3 ePos = GameManager.Instance.playerHandLayoutGroup.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.handCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightBanishToHand, true, null); });
+        AddFlight("Banish -> Field", () => { ClearFieldForTesting(); EnsurePlayerMonster(); Vector3 sPos = GameManager.Instance.playerRemovedDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(playerMonster.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, sPos, playerMonster.transform.position, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightBanishToField, true, null); });
+        AddFlight("Banish -> Deck", () => { Vector3 sPos = GameManager.Instance.playerRemovedDisplay.transform.position; Vector3 ePos = GameManager.Instance.playerDeckDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightBanishToDeck, true, null); });
+        AddFlight("Banish -> GY", () => { Vector3 sPos = GameManager.Instance.playerRemovedDisplay.transform.position; Vector3 ePos = GameManager.Instance.playerGraveyardDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightBanishToGraveyard, true, null); });
+        AddFlight("Banish -> Extra Deck", () => { Vector3 sPos = GameManager.Instance.playerRemovedDisplay.transform.position; Vector3 ePos = GameManager.Instance.playerExtraDeckDisplay.transform.position; DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightBanishToExtraDeck, true, null); });
+        
+        flightsInitialized = true;
+    }
+    
+    private void AddFlight(string name, System.Action action)
+    {
+        flightNames.Add(name);
+        flightActions.Add(action);
     }
 }

@@ -331,19 +331,30 @@ public class DuelFXManager : MonoBehaviour
     public CardFlightSettings flightFieldToGraveyard = new CardFlightSettings { enableFlight = true, duration = 0.3f, flightScale = 1.1f, useTrail = true, trailColor = new Color(0.3f, 0.3f, 0.3f, 0.5f) };
     public CardFlightSettings flightFieldToBanished = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.8f, 0.1f, 0.1f, 0.8f) };
     public CardFlightSettings flightFieldToExtraDeck = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.SmoothShadows, trailColor = new Color(0f, 0f, 0f, 0.5f), useImpact = false };
+    [Header("- Field Spell Zone Specific -")]
+    public CardFlightSettings flightHandToFieldSpellZone = new CardFlightSettings { enableFlight = true, duration = 0.6f, flightScale = 1.5f, useTrail = true, trailType = AttackTrailType.ContinuousLine, trailColor = new Color(0.1f, 0.8f, 0.7f, 0.6f), useImpact = true };
+    public CardFlightSettings flightFieldSpellZoneToGraveyard = new CardFlightSettings { enableFlight = true, duration = 0.5f, flightScale = 1.2f, useTrail = true, trailColor = new Color(0.1f, 0.5f, 0.4f, 0.5f) };
+    public CardFlightSettings flightFieldSpellZoneToHand = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.1f, 0.7f, 0.9f, 0.5f) };
+    public CardFlightSettings flightFieldSpellZoneToDeck = new CardFlightSettings { enableFlight = true, duration = 0.5f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.1f, 0.7f, 0.9f, 0.5f) };
+    public CardFlightSettings flightFieldSpellZoneToBanished = new CardFlightSettings { enableFlight = true, duration = 0.5f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.9f, 0.1f, 0.2f, 0.8f) };
+    [Header("- Deck, GY, Banish Piles -")]
     public CardFlightSettings flightDeckToHand = new CardFlightSettings { enableFlight = true, duration = 0.3f, flightScale = 1.3f, useTrail = true, trailColor = new Color(1f, 0.8f, 0.2f, 0.5f) };
     public CardFlightSettings flightDeckToField = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.2f, 1f, 0.8f, 0.5f) };
     public CardFlightSettings flightDeckToGraveyard = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.SmoothShadows, trailColor = new Color(0f, 0f, 0f, 0.5f), useImpact = false };
     public CardFlightSettings flightDeckToBanished = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.SmoothShadows, trailColor = new Color(0f, 0f, 0f, 0.5f), useImpact = false };
-    public CardFlightSettings flightPileToHand = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(1f, 0.8f, 0f, 0.5f) };
-    public CardFlightSettings flightPileToDeck = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(1f, 0.5f, 0f, 0.5f) };
-    public CardFlightSettings flightPileToField = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.8f, 0.2f, 1f, 0.5f) };
-    public CardFlightSettings flightBanishToField = new CardFlightSettings { enableFlight = true, duration = 0.5f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.Shadows, trailColor = new Color(0.1f, 0.1f, 0.1f, 0.5f), useImpact = false };
+    public CardFlightSettings flightGraveyardToHand = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(1f, 0.8f, 0f, 0.5f) };
+    public CardFlightSettings flightGraveyardToDeck = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(1f, 0.5f, 0f, 0.5f) };
+    public CardFlightSettings flightGraveyardToExtraDeck = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.SmoothShadows, trailColor = new Color(1f, 0.5f, 0f, 0.5f), useImpact = false };
+    public CardFlightSettings flightGraveyardToField = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.8f, 0.2f, 1f, 0.5f) };
     public CardFlightSettings flightGraveyardToBanished = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.SmoothShadows, trailColor = new Color(0f, 0f, 0f, 0.5f), useImpact = false };
-    public CardFlightSettings flightBanishToDeck = new CardFlightSettings { enableFlight = true, duration = 0.5f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.Shadows, trailColor = new Color(0.0f, 0.0f, 0.0f, 0.4f), useImpact = false };
+    public CardFlightSettings flightExtraToField = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.8f, 0.2f, 1f, 0.5f) };
     public CardFlightSettings flightExtraToGraveyard = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.SmoothShadows, trailColor = new Color(0f, 0f, 0f, 0.5f), useImpact = false };
     public CardFlightSettings flightExtraToBanished = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.SmoothShadows, trailColor = new Color(0f, 0f, 0f, 0.5f), useImpact = false };    
-    public CardFlightSettings flightBanishedToAny = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.2f, 0.2f, 0.2f, 0.8f) };
+    public CardFlightSettings flightBanishToHand = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.2f, 0.2f, 0.2f, 0.8f) };
+    public CardFlightSettings flightBanishToDeck = new CardFlightSettings { enableFlight = true, duration = 0.5f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.Shadows, trailColor = new Color(0.0f, 0.0f, 0.0f, 0.4f), useImpact = false };
+    public CardFlightSettings flightBanishToExtraDeck = new CardFlightSettings { enableFlight = true, duration = 0.5f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.Shadows, trailColor = new Color(0.0f, 0.0f, 0.0f, 0.4f), useImpact = false };
+    public CardFlightSettings flightBanishToGraveyard = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.2f, 0.2f, 0.2f, 0.8f) };
+    public CardFlightSettings flightBanishToField = new CardFlightSettings { enableFlight = true, duration = 0.5f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.Shadows, trailColor = new Color(0.1f, 0.1f, 0.1f, 0.5f), useImpact = false };
 
     [Header("--- GENERIC TARGET ---")]
     public SelectionIconSettings genericTargetIcon = new SelectionIconSettings();
@@ -3263,7 +3274,11 @@ public class DuelFXManager : MonoBehaviour
         Vector3 sPos = startPos ?? (isPlayer ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position);
         Vector3 ePos = isPlayer ? GameManager.Instance.playerDeckDisplay.transform.position : GameManager.Instance.opponentDeckDisplay.transform.position;
         
-        CardFlightSettings settings = sourceLoc == CardLocation.Field ? flightFieldToDeck : flightPileToDeck;
+        CardFlightSettings settings = null;
+        if (sourceLoc == CardLocation.Field) settings = flightFieldToDeck;
+        else if (sourceLoc == CardLocation.Graveyard) settings = flightGraveyardToDeck;
+        else if (sourceLoc == CardLocation.Banished) settings = flightBanishToDeck;
+        else settings = flightGraveyardToDeck;
         bool pop = sourceLoc != CardLocation.Field && sourceLoc != CardLocation.Hand;
         
         PlayCardFlight(data, GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, settings, pop, onComplete);

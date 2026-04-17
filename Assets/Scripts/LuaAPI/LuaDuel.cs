@@ -174,6 +174,7 @@ public class LuaDuel
                         CardFlightSettings flightSettings = null;
                         if (sourceLoc == CardLocation.Deck) flightSettings = DuelFXManager.Instance.flightDeckToGraveyard;
                         else if (sourceLoc == CardLocation.ExtraDeck) flightSettings = DuelFXManager.Instance.flightExtraToGraveyard;
+                        else if (sourceLoc == CardLocation.Banished) flightSettings = DuelFXManager.Instance.flightBanishToGraveyard;
 
                         if (flightSettings != null && flightSettings.enableFlight)
                         {
@@ -207,6 +208,7 @@ public class LuaDuel
                     CardFlightSettings flightSettings = null;
                     if (sourceLoc == CardLocation.Deck) flightSettings = DuelFXManager.Instance.flightDeckToGraveyard;
                     else if (sourceLoc == CardLocation.ExtraDeck) flightSettings = DuelFXManager.Instance.flightExtraToGraveyard;
+                    else if (sourceLoc == CardLocation.Banished) flightSettings = DuelFXManager.Instance.flightBanishToGraveyard;
 
                     if (flightSettings != null && flightSettings.enableFlight)
                     {
@@ -297,6 +299,8 @@ public class LuaDuel
         int count = 0;
         bool toTop = (ConvertToInt(seq) == 0);
         List<CardData> cardsToAnimate = new List<CardData>();
+        CardLocation capturedSourceLoc = CardLocation.Unknown;
+        Vector3? capturedStartPos = null;
 
         if (target is LuaGroup group)
         {
@@ -306,7 +310,13 @@ public class LuaDuel
 
                 // Lógica de dados original (executa imediatamente)
                 if (c.unityCard != null) { GameManager.Instance.ReturnToDeck(c.unityCard, toTop); count++; } 
-                else if (c.unityData != null) { bool pDummy; RemoveDataFromAllPiles(c.unityData, out pDummy); if(c.GetControler() == 0) GameManager.Instance.GetPlayerMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetPlayerMainDeck().Count, c.unityData); else GameManager.Instance.GetOpponentMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetOpponentMainDeck().Count, c.unityData); count++; }
+                else if (c.unityData != null) { 
+                    bool wasPlayerPile; 
+                    capturedSourceLoc = RemoveDataFromAllPiles(c.unityData, out wasPlayerPile); 
+                    capturedStartPos = GetPilePosition(capturedSourceLoc, wasPlayerPile);
+                    if(c.GetControler() == 0) GameManager.Instance.GetPlayerMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetPlayerMainDeck().Count, c.unityData); 
+                    else GameManager.Instance.GetOpponentMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetOpponentMainDeck().Count, c.unityData); count++; 
+                }
             }
             Debug.Log($"[Lua] Duel.SendtoDeck(Grupo com {count} cartas)");
         }
@@ -321,7 +331,9 @@ public class LuaDuel
             }
             else if (card.unityData != null)
             {
-                bool pDummy; RemoveDataFromAllPiles(card.unityData, out pDummy);
+                bool wasPlayerPile; 
+                capturedSourceLoc = RemoveDataFromAllPiles(card.unityData, out wasPlayerPile);
+                capturedStartPos = GetPilePosition(capturedSourceLoc, wasPlayerPile);
                 if (card.unityData != null) cardsToAnimate.Add(card.unityData);
                 if(card.GetControler() == 0) GameManager.Instance.GetPlayerMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetPlayerMainDeck().Count, card.unityData); 
                 else GameManager.Instance.GetOpponentMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetOpponentMainDeck().Count, card.unityData);
@@ -337,7 +349,7 @@ public class LuaDuel
             CardLocation sourceLoc = CardLocation.Unknown;
             Vector3? startPos = null;
             if (target is LuaCard tCard && tCard.unityCard != null) { sourceLoc = CardLocation.Field; startPos = tCard.unityCard.transform.position; }
-            else { sourceLoc = CardLocation.Graveyard; } // Assume-se Graveyard ou Banish para efeitos vindos de pilhas
+            else { sourceLoc = capturedSourceLoc; startPos = capturedStartPos; }
             
             if (DuelFXManager.Instance != null) {
                 DuelFXManager.Instance.PlayReturnToDeckAnimation(cardsToAnimate[0], IsPlayer(player), sourceLoc, startPos, () => animDone = true);
