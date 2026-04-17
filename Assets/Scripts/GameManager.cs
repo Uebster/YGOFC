@@ -1325,7 +1325,7 @@ public void ShuffleDeck(bool isPlayer)
         if (DuelFXManager.Instance != null && DuelFXManager.Instance.flightHandToGraveyard.enableFlight && !isSimulating)
         {
             Vector3 endPos = card.isPlayerCard ? playerGraveyardDisplay.transform.position : opponentGraveyardDisplay.transform.position;
-            Quaternion startRot = Quaternion.Euler(0, card.isPlayerCard ? 0 : 180f, 0);
+            Quaternion startRot = Quaternion.Euler(0, 0, card.isPlayerCard ? 0 : 180f);
             DuelFXManager.Instance.PlayCardFlight(card.CurrentCardData, cardBackTexture, true, true, startPos, endPos, handCardScale, fieldCardScale, startRot, Quaternion.identity, DuelFXManager.Instance.flightHandToGraveyard, false, null);
         }
 
@@ -1393,7 +1393,7 @@ public void ShuffleDeck(bool isPlayer)
                 {
                     Vector3 startPos = cd.transform.position;
                     Vector3 endPos = isPlayer ? playerDeckDisplay.transform.position : opponentDeckDisplay.transform.position;
-                    Quaternion startRot = Quaternion.Euler(0, isPlayer ? 0 : 180f, 0);
+                    Quaternion startRot = Quaternion.Euler(0, 0, isPlayer ? 0 : 180f);
                     DuelFXManager.Instance.PlayCardFlight(cd.CurrentCardData, cardBackTexture, true, true, startPos, endPos, handCardScale, fieldCardScale, startRot, Quaternion.identity, DuelFXManager.Instance.flightHandToDeck, false, null);
                 }
             }
@@ -3218,7 +3218,7 @@ public void ShuffleDeck(bool isPlayer)
                 {
                     display.SetVisibility(false);
                     bool popFromPile = sourceLoc != CardLocation.Hand && sourceLoc != CardLocation.Field;
-                    Quaternion startRot = (sourceLoc == CardLocation.Hand) ? Quaternion.Euler(0, isPlayer ? 0 : 180, 0) : Quaternion.identity;
+                    Quaternion startRot = (sourceLoc == CardLocation.Hand) ? Quaternion.Euler(0, 0, isPlayer ? 0 : 180) : Quaternion.identity;
                     Vector3 sScale = (sourceLoc == CardLocation.Hand) ? handCardScale : fieldCardScale;
                     
                     bool sFaceUp = !isFaceDown;
@@ -3643,7 +3643,7 @@ public void ShuffleDeck(bool isPlayer)
                 {
                     display.SetVisibility(false);
                     bool popFromPile = sourceLoc != CardLocation.Hand && sourceLoc != CardLocation.Field;
-                    Quaternion startRot = (sourceLoc == CardLocation.Hand) ? Quaternion.Euler(0, isPlayer ? 0 : 180, 0) : Quaternion.identity;
+                    Quaternion startRot = (sourceLoc == CardLocation.Hand) ? Quaternion.Euler(0, 0, isPlayer ? 0 : 180) : Quaternion.identity;
                     Vector3 sScale = (sourceLoc == CardLocation.Hand) ? handCardScale : fieldCardScale;
 
                     bool sFaceUp = !isSet;

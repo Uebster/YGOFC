@@ -120,3 +120,19 @@ O controle de tempo da *Standby Phase* apresentou dois sintomas distintos que ma
 [BUG FIX] Shuffle & Draw VFX Giant Scale (Loss of Reference)
 - CAUSA: O `DuelFXManager` perdeu as referências de centro de tabuleiro (`boardCenter`). Isso forçava as animações de VFX a caírem no Canvas Raiz. Ao aplicar `GameManager.fieldCardScale` (0.8) no Root Canvas, a Unity calculava o tamanho relativo ao monitor inteiro, não à zona de UI, deixando os fantasmas gigantes.
 - BLINDAGEM APLICADA: As animações (ex: `ShuffleRoutine`) não usam mais a escala hardcoded do GameManager. Em vez disso, o script instancia o fantasma dentro da zona física real do Deck, extrai a `localScale` dinâmica calculada pela Unity, e utiliza essa escala (baseFakeScale) como multiplicador absoluto. Além disso, foi adicionado um fallback (`uiParent.position`) para garantir que as cartas achem o centro da tela se as referências do tabuleiro forem deletadas acidentalmente.
+
+## [Data Atual] - Implementação de Auras Globais e Nível Dinâmico (A Legendary Ocean)
+
+**Nova Feature: Sistema de Auras Globais**
+* **`GlobalAuraManager` criado:** Implementado para gerenciar efeitos contínuos de campo que afetam todas as cartas simultaneamente (Ex: Magias de Campo, *Gravity Bind*).
+* **Filtros OCGCore no LUA:** Funções nativas como `aux.TargetBoolFunction` e `aux.FilterBoolFunction` foram injetadas no `LuaEngineCore` para permitir que o C# leia com precisão os filtros de quem deve ser afetado pelas Auras (Ex: Apenas monstros do atributo WATER).
+* **Fix de Assinatura YGOPro:** O `GlobalAuraManager` foi ajustado para passar `(sourceEffect, card)` durante a validação da Aura, corrigindo falhas de interpretação do LUA.
+
+**Correções Críticas de Engine (Bugs de Nível e Bitwise)**
+* **Conversão do `CardLocation` para Flags:** O Enum `CardLocation` foi transformado em `[System.Flags]`. Antes, `CardLocation.Hand` valia `0`, o que quebrava a matemática Bitwise `(location & affectedLocations)` e impedia que Auras afetassem cartas na Mão.
+* **Sincronia do Card Viewer:** Corrigido bug onde a carta grande na lateral (UI) exibia os stats como se a carta já estivesse no campo. Agora o visualizador consulta a localização real da carta (`Hand` ou `Field`) antes de pedir os bônus ao Aura Manager.
+* **Blindagem de Corrotinas LUA (Crash Yield):** Adicionado `(yieldReturnValue ?? DynValue.Nil)` na rotina `RunGenericLuaCoroutine` do `CardEffectManager`. Isso impede que a Engine inteira "crashe" com `NullReferenceException` se o jogador cancelar uma ação de UI (ex: fechar a caixa de Tributo) e devolver vazio para o motor.
+
+**Sincronização de UI e Invocação (Action Menu)**
+* **Nível Dinâmico no Menu:** O `DuelActionMenu` foi reescrito. Ele não lê mais o "nível duro" do JSON. Agora ele pergunta ao `GlobalAuraManager` o nível real. Se uma carta nível 5 virar nível 4 na mão, o menu percebe e **exibe os botões de Summon/Set** sem pedir tributo.
+* **Injeção de Nível LUA:** O `GameManager` foi instruído a enviar esse "Nível Dinâmico" mastigado direto como quarto argumento para a instrução `Core.NormalSummon` no OCGCore. Isso impede a máquina LUA de recalcular com os dados base e disparar exigências falsas de tributo.

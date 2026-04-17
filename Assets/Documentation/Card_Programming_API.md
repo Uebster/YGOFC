@@ -301,6 +301,14 @@ O script de "A Deal with Dark Ruler" usa duas funções auxiliares (`aux`) cruci
 *   **O Problema da Limpeza:** O script também chama `aux.AddValuesReset` para registrar uma função que deve ser executada no final do turno (para resetar a flag `s[tp]=false`). Sem isso, a magia ficaria ativável para sempre após a primeira morte de um Nível 8.
 *   **A Solução da Limpeza:** Implementamos o `AddValuesReset` para adicionar a função LUA a uma lista `endTurnCallbacks` no `LuaDuel`. O `LuaEventManager`, no gancho `OnPhaseStart(GamePhase.End)`, agora percorre e executa todas as funções registradas nessa lista, garantindo que a memória de turno seja limpa corretamente.
 
+### 5.8.11 O Desafio das Auras Globais e Nível Dinâmico (Ex: A Legendary Ocean)
+Magias de Campo e Efeitos Contínuos que afetam a Mão e o Campo simultaneamente traziam dessincronização entre UI e a Engine LUA.
+*   **O Problema do Nível e do Enum:** Cartas de Água na mão não recebiam a redução de Nível. O motivo era o `CardLocation.Hand` ter valor `0` no C#, o que quebrava a matemática Bitwise `(location & affectedLocation)`. Transformamos o Enum `CardLocation` em `[System.Flags]`, permitindo que as Auras localizassem cartas na mão perfeitamente.
+*   **A "Burrice" do Action Menu:** A interface de ações (`DuelActionMenu`) lia o Nível Base do banco de dados (5) em vez do Nível Dinâmico (4). Isso fazia a UI esconder o botão "Summon" para monstros que não precisavam mais de sacrifício. A UI foi atualizada para consultar o `GlobalAuraManager` antes de renderizar os botões.
+*   **Injeção do Nível no Lua:** Mesmo com a UI corrigida, a função `Core.NormalSummon` no Lua exigia tributo porque lia a propriedade dura da carta. O GameManager foi alterado para passar o `dynamicLevel` processado no C# como um argumento extra (injetado) direto para a função LUA, evitando dupla interpretação.
+*   **Filtros de Alvo Originais:** A magia usava funções auxiliares do YGOPro (`aux.TargetBoolFunction`) que não existiam no nosso `LuaEngineCore`. O C# foi atualizado com as Closures em texto dessas funções para permitir que os scripts LUA nativos executem a lógica de "Quem deve receber o buff".
+*   **A Sobrevivência da Corrente (Crash Yield):** Durante testes de tributo interrompidos (cancelamento da caixa), o C# devolvia `null` para o LUA, causando crash fatal de referência. Blindamos o `RunGenericLuaCoroutine` com `yieldReturnValue ?? DynValue.Nil` para garantir que um valor vazio caia suavemente no interpretador MoonSharp.
+
 ### 5.8.7 Stubs de Compatibilidade e Efeitos de Arquétipo (Ex: Monstros "Spirit")
 O motor OCGCore utiliza funções auxiliares para registrar efeitos comuns a um arquétipo (Ex: `Spirit.AddProcedure(c)` para o efeito de retornar à mão).
 *   **O Problema:** Durante o `PreloadScriptsForDecks`, o motor LUA tentava chamar `Spirit.AddProcedure` para cartas como "Inaba White Rabbit", mas a classe C# `Spirit` estava vazia, causando um crash de "método não encontrado".
