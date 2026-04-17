@@ -1983,9 +1983,10 @@ public void ShuffleDeck(bool isPlayer)
             if (hoveredCard.CurrentCardData.type.Contains("Monster"))
             {
                 LuaCard lc = new LuaCard(hoveredCard);
-                int displayAtk = hoveredCard.originalAtk + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "ATK", CardLocation.Field);
-                int displayDef = hoveredCard.originalDef + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "DEF", CardLocation.Field);
-                int displayLvl = hoveredCard.originalLevel + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "LEVEL", CardLocation.Field);
+                CardLocation loc = hoveredCard.isOnField ? CardLocation.Field : CardLocation.Hand;
+                int displayAtk = hoveredCard.originalAtk + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "ATK", loc);
+                int displayDef = hoveredCard.originalDef + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "DEF", loc);
+                int displayLvl = hoveredCard.originalLevel + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "LEVEL", loc);
 
                 cardViewerDisplay.currentAtk = displayAtk;
                 cardViewerDisplay.currentDef = displayDef;
@@ -3007,6 +3008,8 @@ public void ShuffleDeck(bool isPlayer)
         
         int dynamicLevel = CardEffectManager.Instance.auraManager.GetStatModifier(new LuaCard(cardData), "LEVEL", CardLocation.Hand) + cardData.level;
 
+        Debug.Log($"[Summon Check] Tentando invocar: {cardName} | Lvl Base: {cardData.level} | Lvl Dinâmico (Auras): {dynamicLevel}");
+
         // 0.1 Validação de Limite de Invocação Normal (se não for ignorado por efeito)
         if (!ignoreLimit && !infiniteNormalSummons)
         {
@@ -3103,6 +3106,10 @@ public void ShuffleDeck(bool isPlayer)
         if (targetZone == null)
         {
             Debug.LogWarning("Sem zonas de monstro livres!");
+            if (isPlayer && !isSimulating && UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowMessage("Não há Zonas de Monstros livres para invocar!");
+            }
             return;
         }
 

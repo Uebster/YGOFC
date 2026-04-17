@@ -40,8 +40,16 @@ public class GlobalAuraManager : MonoBehaviour
             sourceCard = sourceCard,
             sourceEffect = sourceEffect,
             filter = (card) => {
+                // Se o LUA não definiu um filtro (alvo específico), afeta todas as cartas!
+                if (filterFunc == null) return true; 
                 try {
-                    var result = filterFunc.Call(card);
+                    // YGOPro Target functions geralmente esperam (e, c)
+                    var result = filterFunc.Call(sourceEffect, card);
+                    
+                    // Fallback de segurança para filtros simples que esperam apenas (c)
+                    if (result.Type != MoonSharp.Interpreter.DataType.Boolean)
+                        result = filterFunc.Call(card);
+                        
                     return result.Type == MoonSharp.Interpreter.DataType.Boolean && result.Boolean;
                 } catch { return false; }
             },
@@ -79,6 +87,7 @@ public class GlobalAuraManager : MonoBehaviour
             {
                 if (aura.filter(card))
                 {
+                    Debug.Log($"[AuraManager] Aplicando Aura em {card.unityData.name} ({card.unityData.attribute}/{card.unityData.race}): {statType} {aura.value}");
                     total += aura.value;
                 }
             }

@@ -6,7 +6,8 @@ using MoonSharp.Interpreter;
 using System.Text.RegularExpressions;
 using System.Linq;
 
-public enum CardLocation { Hand, Deck, Field, ExtraDeck, Graveyard, Banished, Unknown }
+[System.Flags]
+public enum CardLocation { Hand = 1, Deck = 2, Field = 4, ExtraDeck = 8, Graveyard = 16, Banished = 32, Unknown = 64 }
 public enum SendReason { Battle, Effect, Cost, Tribute, Destroyed, Discarded, Mill, Return, Rule, Unknown }
 
 public class CardEffectManager : MonoBehaviour
@@ -302,8 +303,8 @@ public class CardEffectManager : MonoBehaviour
     public IEnumerator RunGenericLuaCoroutine(Closure func, params object[] args)
     {
         // Captura o atacante e o alvo antes que o C# os limpe do cache global
-        LuaCard storedAttacker = luaDuel.currentAttacker;
-        LuaCard storedTarget = luaDuel.currentAttackTarget;
+        LuaCard storedAttacker = luaDuel?.currentAttacker;
+        LuaCard storedTarget = luaDuel?.currentAttackTarget;
 
         activeLuaCoroutine = luaEngine.CreateCoroutine(func);
         DynValue result;
@@ -364,7 +365,8 @@ public class CardEffectManager : MonoBehaviour
             
             if (activeLuaCoroutine.Coroutine.State != CoroutineState.Suspended) break;
             
-            try { result = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue); }
+            // Passa um valor seguro caso o yieldReturnValue tenha sido consumido
+            try { result = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue ?? DynValue.Nil); }
             catch (System.Exception e)
             {
                 Debug.LogError($"[API LUA CRASH] Falha ao continuar o yield: {e.Message}");
@@ -612,6 +614,32 @@ public class CardEffectManager : MonoBehaviour
 
     public void ApplyAllContinuousEffects()
     {
+        if (auraManager != null)
+        {
+            auraManager.ClearAllAuras(); // Limpa as auras velhas
+
+            foreach (var effect in continuousFieldEffects)
+            {
+                // Só aplica o Aura se a carta geradora estiver ativa no campo e virada para cima!
+                if (effect.owner == null || effect.owner.unityCard == null || !effect.owner.unityCard.isOnField || effect.owner.unityCard.isFlipped) continue;
+
+                string modType = "";
+                if (effect.code == 1 || effect.code == 100) modType = "ATK";       // EFFECT_UPDATE_ATTACK
+                else if (effect.code == 4 || effect.code == 104) modType = "DEF";  // EFFECT_UPDATE_DEFENSE
+                else if (effect.code == 10) modType = "LEVEL";                     // EFFECT_UPDATE_LEVEL
+
+                if (!string.IsNullOrEmpty(modType))
+                {
+                    int val = 0;
+                    object valObj = effect.GetValue();
+                    if (valObj is double || valObj is long) val = System.Convert.ToInt32(valObj);
+                    
+                    // Registra a aura passando a função de alvo (filter) original do script LUA
+                    auraManager.RegisterAura(effect.owner, effect, effect.targetFunc, modType, val, CardLocation.Hand | CardLocation.Field);
+                }
+            }
+        }
+
         if (GameManager.Instance != null)
         {
             GameManager.Instance.RefreshAllCardsVisuals();

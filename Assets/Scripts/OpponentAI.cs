@@ -1035,7 +1035,7 @@ public class OpponentAI : MonoBehaviour
             else if (isMine && isField) 
             {
                 bool isEquipOrBuff = false;
-                if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentActivatingEffect != null)
+                if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null && CardEffectManager.Instance.luaDuel.currentActivatingEffect != null)
                 {
                     var eff = CardEffectManager.Instance.luaDuel.currentActivatingEffect;
                     if (eff.owner != null && eff.owner.unityData != null && eff.owner.unityData.property == "Equip") isEquipOrBuff = true;

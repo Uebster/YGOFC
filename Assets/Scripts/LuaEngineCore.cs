@@ -60,6 +60,22 @@ public class LuaEngineCore
         auxTable.Table.Set("TRUE", luaEngine.DoString("return function(...) return true end"));
         auxTable.Table.Set("FALSE", luaEngine.DoString("return function(...) return false end"));
 
+        auxTable.Table.Set("TargetBoolFunction", luaEngine.DoString(@"
+            return function(f, val1, val2, val3)
+                return function(e, target)
+                    local c = target or e
+                    if c == nil then return false end
+                    if type(f) == 'function' then
+                        if val3 ~= nil then return f(c, val1, val2, val3) end
+                        if val2 ~= nil then return f(c, val1, val2) end
+                        if val1 ~= nil then return f(c, val1) end
+                        return f(c)
+                    end
+                    return true
+                end
+            end
+        "));
+
         auxTable.Table.Set("FilterBoolFunction", luaEngine.DoString(@"
             return function(f, val1, val2, val3)
                 return function(target)
