@@ -3329,6 +3329,7 @@ public class DuelFXManager : MonoBehaviour
             
             while (tPop < 1f)
             {
+                if (ghost == null) { onComplete?.Invoke(); yield break; }
                 tPop += Time.deltaTime / popDuration;
                 float p = Mathf.SmoothStep(0, 1, tPop);
                 Vector3 pos = Vector3.Lerp(startPos, popTarget, p);
@@ -3362,6 +3363,13 @@ public class DuelFXManager : MonoBehaviour
 
         while (elapsed < duration)
         {
+            if (ghost == null) 
+            {
+                if (lineObj != null) Destroy(lineObj);
+                onComplete?.Invoke();
+                yield break;
+            }
+
             elapsed += Time.deltaTime;
             float t = Mathf.SmoothStep(0, 1, elapsed / duration);
 
@@ -3410,16 +3418,19 @@ public class DuelFXManager : MonoBehaviour
 
         if (lineObj != null) StartCoroutine(FadeAndDestroyLine(lineObj, lineImg, 0.2f));
 
-        ghost.transform.position = endPos;
-        ghost.transform.rotation = endRot;
-        ghost.transform.localScale = finalEndScale;
-
-        if (settings.useImpact) 
+        if (ghost != null)
         {
-            if (settings.impactType == ControlSwapImpactType.Squeeze) yield return StartCoroutine(FlightImpactSqueezeRoutine(ghost, settings));
-            else { StartCoroutine(PulseGhostRoutine(ghostDisplay, settings.impactScale, 0.2f, settings.impactColor, settings.impactOutlineWidth)); yield return new WaitForSeconds(0.2f); }
+            ghost.transform.position = endPos;
+            ghost.transform.rotation = endRot;
+            ghost.transform.localScale = finalEndScale;
+
+            if (settings.useImpact) 
+            {
+                if (settings.impactType == ControlSwapImpactType.Squeeze) yield return StartCoroutine(FlightImpactSqueezeRoutine(ghost, settings));
+                else { StartCoroutine(PulseGhostRoutine(ghostDisplay, settings.impactScale, 0.2f, settings.impactColor, settings.impactOutlineWidth)); yield return new WaitForSeconds(0.2f); }
+            }
+            Destroy(ghost);
         }
-        Destroy(ghost);
         onComplete?.Invoke();
     }
 

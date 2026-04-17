@@ -26017,7 +26017,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 282.41}
+  m_AnchoredPosition: {x: 0.0012127, y: 351}
   m_SizeDelta: {x: 319.3772, y: 50.0001}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &333084908
@@ -35038,8 +35038,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -166.1601, y: 30.082031}
-  m_SizeDelta: {x: -1462.2, y: -465.17}
+  m_AnchoredPosition: {x: 178, y: -13.112976}
+  m_SizeDelta: {x: -1450.1807, y: -326.0901}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &433702829
 MonoBehaviour:
@@ -45758,6 +45758,7 @@ MonoBehaviour:
   opponentMonster: {fileID: 0}
   playerSpell: {fileID: 0}
   playerField: {fileID: 0}
+  windowWidth: 420
 --- !u!4 &555079367
 Transform:
   m_ObjectHideFlags: 0
@@ -48134,9 +48135,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DuelFXManager
   enableAnimations: 1
   animationSpeed: 1.5
-  boardCenter: {fileID: 1396565530}
-  playerBoardCenter: {fileID: 1870070646}
-  opponentBoardCenter: {fileID: 1544580639}
+  boardCenter: {fileID: 0}
+  playerBoardCenter: {fileID: 0}
+  opponentBoardCenter: {fileID: 0}
   audioSource: {fileID: 0}
   bgmSource: {fileID: 0}
   spellActivateVFX: {fileID: 0}
@@ -48158,7 +48159,7 @@ MonoBehaviour:
   monsterEffectVFX: {fileID: 0}
   placementAuraVFX: {fileID: 5732867552576158396, guid: 784bc442653b27a448ea238e183604ec, type: 3}
   shuffleVFX: {fileID: 4167448508448227333, guid: a6e0b0505661112498c1e4e39cba70d5, type: 3}
-  boardBackgroundImage: {fileID: 1396565531}
+  boardBackgroundImage: {fileID: 0}
   defaultBoardColor: {r: 0.49411768, g: 0.49411768, b: 0.49411768, a: 1}
   colorizeBoardByFieldSpell: 0
   fieldSpellThemes:
@@ -48548,25 +48549,44 @@ MonoBehaviour:
       giantCardScale: 1.2
   flightHandToField:
     enableFlight: 1
-    duration: 0.3
+    duration: 0.5
     flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
     useTrail: 1
-    trailType: 1
+    trailType: 2
     trailWidth: 15
-    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.5529412}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1.4
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
+    endScaleMult: 0.8
+  flightHandToSpellZone:
+    enableFlight: 1
+    duration: 0.5
+    flightScale: 1.2
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
+    useTrail: 1
+    trailType: 2
+    trailWidth: 15
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 0.8
   flightHandToGraveyard:
     enableFlight: 1
     duration: 0.3
     flightScale: 1.1
     popOffset: {x: 40, y: 15}
+    flipDuringFlight: 0
     useTrail: 1
     trailType: 0
     trailWidth: 15
@@ -48580,109 +48600,201 @@ MonoBehaviour:
     endScaleMult: 1
   flightHandToDeck:
     enableFlight: 1
-    duration: 0.4
+    duration: 0.5
     flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
     useTrail: 1
     trailType: 2
     trailWidth: 15
-    trailColor: {r: 0, g: 0, b: 0, a: 0.5}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1.4
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
+    endScaleMult: 0.9
   flightHandToBanished:
     enableFlight: 1
-    duration: 0.4
+    duration: 0.5
     flightScale: 1.3
     popOffset: {x: 40, y: 15}
+    flipDuringFlight: 0
     useTrail: 1
     trailType: 2
     trailWidth: 15
-    trailColor: {r: 0, g: 0, b: 0, a: 0.5}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1.4
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
+    endScaleMult: 0.9
   flightFieldToHand:
     enableFlight: 1
-    duration: 0.3
-    flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    duration: 0.5
+    flightScale: 1
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 0
     useTrail: 1
-    trailType: 0
+    trailType: 2
     trailWidth: 15
-    trailColor: {r: 0.5, g: 0.5, b: 1, a: 0.5}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1.4
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
+    endScaleMult: 0.8
   flightFieldToDeck:
     enableFlight: 1
-    duration: 0.4
+    duration: 1
     flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
     useTrail: 1
-    trailType: 0
+    trailType: 2
     trailWidth: 15
-    trailColor: {r: 0.2, g: 0.8, b: 1, a: 0.5}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1.4
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
+    endScaleMult: 0.9
   flightFieldToGraveyard:
-    enableFlight: 1
-    duration: 0.3
-    flightScale: 1.1
-    popOffset: {x: 40, y: 15}
-    useTrail: 1
-    trailType: 0
-    trailWidth: 15
-    trailColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.5}
-    useImpact: 0
-    impactType: 1
-    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
-    impactScale: 1.4
-    impactOutlineWidth: 8
-    startScaleMult: 1
-    endScaleMult: 1
-  flightFieldToBanished:
-    enableFlight: 1
-    duration: 0.4
+    enableFlight: 0
+    duration: 0.5
     flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 0
     useTrail: 1
-    trailType: 0
+    trailType: 2
     trailWidth: 15
-    trailColor: {r: 0.8, g: 0.1, b: 0.1, a: 0.8}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1.4
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
+    endScaleMult: 0.8
+  flightFieldToBanished:
+    enableFlight: 0
+    duration: 0.5
+    flightScale: 1.3
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 0
+    useTrail: 1
+    trailType: 2
+    trailWidth: 15
+    trailColor: {r: 0.3962264, g: 0.3962264, b: 0.3962264, a: 0.54509807}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 0.8
   flightFieldToExtraDeck:
     enableFlight: 1
-    duration: 0.4
+    duration: 0.5
     flightScale: 1.3
     popOffset: {x: 40, y: 15}
+    flipDuringFlight: 1
     useTrail: 1
     trailType: 2
     trailWidth: 15
     trailColor: {r: 0, g: 0, b: 0, a: 0.5}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 0.8
+  flightHandToFieldSpellZone:
+    enableFlight: 1
+    duration: 0.5
+    flightScale: 1.3
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 0
+    useTrail: 1
+    trailType: 2
+    trailWidth: 15
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 0.8
+  flightFieldSpellZoneToGraveyard:
+    enableFlight: 1
+    duration: 0.5
+    flightScale: 1.2
+    popOffset: {x: 40, y: 15}
+    flipDuringFlight: 0
+    useTrail: 1
+    trailType: 0
+    trailWidth: 15
+    trailColor: {r: 0.1, g: 0.5, b: 0.4, a: 0.5}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 1
+  flightFieldSpellZoneToHand:
+    enableFlight: 1
+    duration: 0.5
+    flightScale: 1.3
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 0
+    useTrail: 1
+    trailType: 2
+    trailWidth: 15
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 0.9
+  flightFieldSpellZoneToDeck:
+    enableFlight: 1
+    duration: 0.5
+    flightScale: 1.3
+    popOffset: {x: 40, y: 15}
+    flipDuringFlight: 0
+    useTrail: 1
+    trailType: 0
+    trailWidth: 15
+    trailColor: {r: 0.1, g: 0.7, b: 0.9, a: 0.5}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 1
+  flightFieldSpellZoneToBanished:
+    enableFlight: 1
+    duration: 0.5
+    flightScale: 1.3
+    popOffset: {x: 40, y: 15}
+    flipDuringFlight: 0
+    useTrail: 1
+    trailType: 0
+    trailWidth: 15
+    trailColor: {r: 0.9, g: 0.1, b: 0.2, a: 0.8}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
@@ -48692,11 +48804,12 @@ MonoBehaviour:
     endScaleMult: 1
   flightDeckToHand:
     enableFlight: 1
-    duration: 0.4
-    flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    duration: 0.5
+    flightScale: 1
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
     useTrail: 1
-    trailType: 1
+    trailType: 2
     trailWidth: 15
     trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.5529412}
     useImpact: 0
@@ -48705,92 +48818,115 @@ MonoBehaviour:
     impactScale: 1
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
+    endScaleMult: 0.9
   flightDeckToField:
     enableFlight: 1
-    duration: 0.4
-    flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    duration: 0.5
+    flightScale: 1.4
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
     useTrail: 1
-    trailType: 0
+    trailType: 2
     trailWidth: 15
-    trailColor: {r: 0.2, g: 1, b: 0.8, a: 0.5}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1.4
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
+    endScaleMult: 0.8
   flightDeckToGraveyard:
     enableFlight: 1
-    duration: 0.4
+    duration: 0.5
     flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
     useTrail: 1
     trailType: 2
     trailWidth: 15
-    trailColor: {r: 0, g: 0, b: 0, a: 0.5}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1.4
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
+    endScaleMult: 0.8
   flightDeckToBanished:
     enableFlight: 1
-    duration: 0.4
-    flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    duration: 0.5
+    flightScale: 1.4
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
     useTrail: 1
     trailType: 2
     trailWidth: 15
-    trailColor: {r: 0, g: 0, b: 0, a: 0.5}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1.4
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
-  flightPileToHand:
+    endScaleMult: 0.8
+  flightGraveyardToHand:
     enableFlight: 1
-    duration: 0.4
-    flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    duration: 0.5
+    flightScale: 1
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 0
     useTrail: 1
-    trailType: 0
+    trailType: 2
     trailWidth: 15
-    trailColor: {r: 1, g: 0.8, b: 0, a: 0.5}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1.4
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
-  flightPileToDeck:
+    endScaleMult: 0.9
+  flightGraveyardToDeck:
     enableFlight: 1
-    duration: 0.4
+    duration: 0.5
     flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
     useTrail: 1
-    trailType: 0
+    trailType: 2
     trailWidth: 15
-    trailColor: {r: 1, g: 0.5, b: 0, a: 0.5}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1.4
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
-  flightPileToField:
+    endScaleMult: 0.8
+  flightGraveyardToExtraDeck:
     enableFlight: 1
-    duration: 0.4
+    duration: 0.5
+    flightScale: 1.4
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 0
+    useTrail: 1
+    trailType: 2
+    trailWidth: 15
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 0.8
+  flightGraveyardToField:
+    enableFlight: 0
+    duration: 0.5
     flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
     useTrail: 1
     trailType: 0
     trailWidth: 15
@@ -48804,67 +48940,156 @@ MonoBehaviour:
     endScaleMult: 1
   flightGraveyardToBanished:
     enableFlight: 1
-    duration: 0.4
-    flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    duration: 0.5
+    flightScale: 1.4
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 0
     useTrail: 1
     trailType: 2
     trailWidth: 15
-    trailColor: {r: 0, g: 0, b: 0, a: 0.5}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1.4
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
+    endScaleMult: 0.8
+  flightExtraToField:
+    enableFlight: 1
+    duration: 0.5
+    flightScale: 1.3
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
+    useTrail: 1
+    trailType: 0
+    trailWidth: 15
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 0.8
   flightExtraToGraveyard:
     enableFlight: 1
-    duration: 0.4
-    flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    duration: 0.5
+    flightScale: 1.4
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
     useTrail: 1
     trailType: 2
     trailWidth: 15
-    trailColor: {r: 0, g: 0, b: 0, a: 0.5}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1.4
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
+    endScaleMult: 0.8
   flightExtraToBanished:
     enableFlight: 1
     duration: 0.4
-    flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    flightScale: 1.2
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
     useTrail: 1
     trailType: 2
     trailWidth: 15
-    trailColor: {r: 0, g: 0, b: 0, a: 0.5}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1.4
     impactOutlineWidth: 8
     startScaleMult: 1
-    endScaleMult: 1
-  flightBanishedToAny:
+    endScaleMult: 0.8
+  flightBanishToHand:
     enableFlight: 1
-    duration: 0.4
-    flightScale: 1.3
-    popOffset: {x: 40, y: 15}
+    duration: 0.5
+    flightScale: 1
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 0
     useTrail: 1
-    trailType: 1
+    trailType: 0
     trailWidth: 15
-    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.5529412}
+    trailColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.8}
     useImpact: 0
     impactType: 1
-    impactColor: {r: 0, g: 0, b: 0, a: 0.50980395}
-    impactScale: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
     impactOutlineWidth: 8
-    startScaleMult: 0.8
+    startScaleMult: 1
+    endScaleMult: 0.9
+  flightBanishToDeck:
+    enableFlight: 1
+    duration: 0.5
+    flightScale: 1.4
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
+    useTrail: 1
+    trailType: 2
+    trailWidth: 15
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 0.8
+  flightBanishToExtraDeck:
+    enableFlight: 1
+    duration: 0.4
+    flightScale: 1.2
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 1
+    useTrail: 1
+    trailType: 2
+    trailWidth: 15
+    trailColor: {r: 0, g: 0, b: 0, a: 0.4}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 0.8
+  flightBanishToGraveyard:
+    enableFlight: 1
+    duration: 0.5
+    flightScale: 1.3
+    popOffset: {x: 40, y: 15}
+    flipDuringFlight: 0
+    useTrail: 1
+    trailType: 2
+    trailWidth: 15
+    trailColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.8}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
+    endScaleMult: 0.8
+  flightBanishToField:
+    enableFlight: 1
+    duration: 0.5
+    flightScale: 1.3
+    popOffset: {x: 0, y: 0}
+    flipDuringFlight: 0
+    useTrail: 1
+    trailType: 0
+    trailWidth: 15
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7882353}
+    useImpact: 0
+    impactType: 1
+    impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+    impactScale: 1.4
+    impactOutlineWidth: 8
+    startScaleMult: 1
     endScaleMult: 0.8
   genericTargetIcon:
     useIcon: 1
@@ -67761,7 +67986,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 156.72253, y: -43.561707}
+  m_AnchoredPosition: {x: 179.4, y: -48}
   m_SizeDelta: {x: 443.9107, y: 51.9856}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &841511886
@@ -116742,8 +116967,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.00018883, y: 10.7871}
-  m_SizeDelta: {x: 319.38, y: 474.7115}
+  m_AnchoredPosition: {x: 3.1836, y: 7.6052}
+  m_SizeDelta: {x: 367.108, y: 621.0775}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1439244458
 MonoBehaviour:
@@ -137625,7 +137850,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardDisplay
   cardImage: {fileID: 665872205}
   cardNameText: {fileID: 0}
-  cardInfoText: {fileID: 0}
+  cardITypeText: {fileID: 0}
+  cardIRaceText: {fileID: 0}
+  cardILvlText: {fileID: 0}
   cardDescriptionText: {fileID: 0}
   cardStatsText: {fileID: 0}
   outlineImage: {fileID: 0}
@@ -137648,6 +137875,8 @@ MonoBehaviour:
   originalDef: 0
   currentAtk: 0
   currentDef: 0
+  originalLevel: 0
+  currentLevel: 0
   _turnCounter: 0
   maxTurnCounter: 0
   previousLocation: 6
@@ -165554,7 +165783,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardDisplay
   cardImage: {fileID: 2077544891}
   cardNameText: {fileID: 0}
-  cardInfoText: {fileID: 0}
+  cardITypeText: {fileID: 0}
+  cardIRaceText: {fileID: 0}
+  cardILvlText: {fileID: 0}
   cardDescriptionText: {fileID: 0}
   cardStatsText: {fileID: 0}
   outlineImage: {fileID: 0}
@@ -165577,6 +165808,8 @@ MonoBehaviour:
   originalDef: 0
   currentAtk: 0
   currentDef: 0
+  originalLevel: 0
+  currentLevel: 0
   _turnCounter: 0
   maxTurnCounter: 0
   previousLocation: 6

@@ -912,7 +912,13 @@ public class GameManager : MonoBehaviour
                 bool pop = sourceLoc != CardLocation.Hand && sourceLoc != CardLocation.Field;
                 Quaternion startRot = (sourceLoc == CardLocation.Hand) ? Quaternion.Euler(0, isPlayer ? 0 : 180, 0) : Quaternion.identity;
                 Vector3 sScale = (sourceLoc == CardLocation.Hand) ? handCardScale : fieldCardScale;
-                DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, !faceDown, !faceDown, sourcePos.Value, cardGO.transform.position, 
+                
+                bool sFaceUp = !faceDown;
+                if (sourceLoc == CardLocation.Hand) sFaceUp = isPlayer || showOpponentHand;
+                else if (sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.Banished) sFaceUp = true;
+                else if (sourceLoc == CardLocation.Deck || sourceLoc == CardLocation.ExtraDeck) sFaceUp = false;
+
+                DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, sFaceUp, !faceDown, sourcePos.Value, cardGO.transform.position, 
                     sScale, fieldCardScale, startRot, cardGO.transform.rotation, settings, pop, () => {
                     cardDisplay.SetVisibility(true);
                     completeSummon();
@@ -3146,7 +3152,13 @@ public void ShuffleDeck(bool isPlayer)
                     bool popFromPile = sourceLoc != CardLocation.Hand && sourceLoc != CardLocation.Field;
                     Quaternion startRot = (sourceLoc == CardLocation.Hand) ? Quaternion.Euler(0, isPlayer ? 0 : 180, 0) : Quaternion.identity;
                     Vector3 sScale = (sourceLoc == CardLocation.Hand) ? handCardScale : fieldCardScale;
-                    DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, !isFaceDown, !isFaceDown, sourcePos.Value, cardGO.transform.position, 
+                    
+                    bool sFaceUp = !isFaceDown;
+                    if (sourceLoc == CardLocation.Hand) sFaceUp = isPlayer || showOpponentHand;
+                    else if (sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.Banished) sFaceUp = true;
+                    else if (sourceLoc == CardLocation.Deck || sourceLoc == CardLocation.ExtraDeck) sFaceUp = false;
+
+                    DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, sFaceUp, !isFaceDown, sourcePos.Value, cardGO.transform.position, 
                         sScale, fieldCardScale, 
                         startRot, endRot, settings, popFromPile, playEffects);
                 }
@@ -3553,7 +3565,13 @@ public void ShuffleDeck(bool isPlayer)
                     bool popFromPile = sourceLoc != CardLocation.Hand && sourceLoc != CardLocation.Field;
                     Quaternion startRot = (sourceLoc == CardLocation.Hand) ? Quaternion.Euler(0, isPlayer ? 0 : 180, 0) : Quaternion.identity;
                     Vector3 sScale = (sourceLoc == CardLocation.Hand) ? handCardScale : fieldCardScale;
-                    DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, !isSet, !isSet, sourcePos.Value, endPos, 
+
+                    bool sFaceUp = !isSet;
+                    if (sourceLoc == CardLocation.Hand) sFaceUp = isPlayer || showOpponentHand;
+                    else if (sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.Banished) sFaceUp = true;
+                    else if (sourceLoc == CardLocation.Deck || sourceLoc == CardLocation.ExtraDeck) sFaceUp = false;
+
+                    DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, sFaceUp, !isSet, sourcePos.Value, endPos, 
                         sScale, fieldCardScale, 
                         startRot, endRot, flightSettings, popFromPile, onActivationCompleteCallback);
                 }
