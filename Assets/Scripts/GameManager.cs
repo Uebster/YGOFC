@@ -584,6 +584,32 @@ public class GameManager : MonoBehaviour
         {
             playerHandCanvasGroup.interactable = true;
             Debug.Log("[GameManager] Interação com a mão do jogador ATIVADA.");
+
+            // Verificação Retroativa de Hover (Melhora de UX)
+            // Se o mouse já estiver sobre uma carta quando a mão se torna interativa, levanta-a.
+            Vector2 mousePos;
+#if ENABLE_INPUT_SYSTEM
+            mousePos = Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero;
+#else
+            mousePos = Input.mousePosition;
+#endif
+            PointerEventData pointerData = new PointerEventData(EventSystem.current) { position = mousePos };
+            List<RaycastResult> results = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(pointerData, results);
+
+            if (results.Count > 0)
+            {
+                foreach (var result in results)
+                {
+                    CardDisplay cardDisplay = result.gameObject.GetComponent<CardDisplay>();
+                    if (cardDisplay != null && cardDisplay.isInteractable)
+                    {
+                        // Encontrou uma carta sob o mouse, força o estado de hover.
+                        cardDisplay.ForceHover();
+                        break; // Para após encontrar a primeira carta.
+                    }
+                }
+            }
         }
     }
 

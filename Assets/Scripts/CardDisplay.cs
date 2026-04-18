@@ -105,6 +105,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public int summonedTurnCount = -1; // Rastreia o turno em que a carta foi invocada
     [HideInInspector] public bool hasChangedPositionThisTurn = false; // Rastreia se a posição foi alterada manualmente
     
+    private bool isHoveredUp = false;
+    private Coroutine hoverAnimation;
+    private Vector2 basePosition;
+    private bool basePositionSet = false;
+
     private List<CardDisplay> linkedCardsToHighlight = new List<CardDisplay>();
     private List<GameObject> activeConnectionLines = new List<GameObject>();
 
@@ -701,63 +706,12 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (isAttackSelected) shouldShowOutline = false;
 
         // --- Efeito de Borda (Hover) ---
-        if (shouldShowOutline)
-        {
-            Color outlineColor = hoverColor;
-            
-            // Usa a cor do tema do GameManager (Player vs Opponent) se useSimpleHover for falso
-            if (!useSimpleHover && GameManager.Instance != null)
-            {
-                outlineColor = isPlayerCard ? GameManager.Instance.playerHoverColor : GameManager.Instance.opponentHoverColor;
-            }
-
-            // Override do Hover de Combate (Se não usar a Espada Nativa)
-            if (DuelFXManager.Instance != null && !DuelFXManager.Instance.useTargetingSwordNative && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle)
-            {
-                if (GameManager.Instance != null && GameManager.Instance.isPlayerTurn && isOnField)
-                {
-                    if (isPlayerCard && currentCardData != null && currentCardData.type.Contains("Monster") && position == BattlePosition.Attack && !hasAttackedThisTurn && !isAttackSelected)
-                    {
-                        outlineColor = DuelFXManager.Instance.colorAttackReadyHover;
-                    }
-                    else if (!isPlayerCard && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
-                    {
-                        outlineColor = DuelFXManager.Instance.colorAttackTargetHover;
-                    }
-                }
-            }
-
-            if (useSimpleOutline)
-            {
-                // Opção 1: Usa o componente Outline do Unity no PAI (gameObject)
-                // Aplicar no pai garante que a máscara não corte o contorno externo
-                Outline outline = GetComponent<Outline>();
-                if (outline == null) outline = gameObject.AddComponent<Outline>();
-
-                outline.effectColor = outlineColor;
-                outline.effectDistance = new Vector2(4, -4); // Espessura da borda
-                // FIX: Usa o alpha do gráfico (sprite arredondado) para desenhar a borda
-                outline.useGraphicAlpha = true;
-                outline.enabled = true;
-            }
-            else if (outlineImage != null)
-            {
-                // Opção 2: Usa a imagem separada (se useSimpleOutline for false)
-                outlineImage.color = outlineColor;
-                outlineImage.gameObject.SetActive(true);
-            }
-        }
+        // A lógica do outline foi movida para dentro da corrotina de animação para melhor controle
 
         // --- Efeito de Subir (Apenas Mão) ---
-        // Verifica se é interativo E se o hover está habilitado no GameManager E não é hover simples (deck)
-        if (isInteractable && !useSimpleHover && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect && enableHoverLift)
+        if (isInteractable && !isHoveredUp && !useSimpleHover && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect && enableHoverLift)
         {
-            // FIX: Usa Canvas Sorting para trazer para frente visualmente sem recalcular o Layout
-            canvas.overrideSorting = true;
-            canvas.sortingOrder = 10; // Valor alto para ficar por cima de tudo
-
-            // Move para cima (Y) mantendo a escala original
-            rectTransform.anchoredPosition += new Vector2(0, hoverYOffset);
+            AnimateHover(true);
         }
 
         // Prioridade: Se o DeckBuilder estiver aberto, usa o visualizador dele
@@ -902,12 +856,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         HighlightLinkedCards(false);
 
         // --- Remove Efeito de Subir ---
-        if (isInteractable && !useSimpleHover && rectTransform != null && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect && enableHoverLift)
+        if (isInteractable && isHoveredUp && !useSimpleHover && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect && enableHoverLift)
         {
-            // FIX: Reseta o Canvas e a Escala
-            canvas.overrideSorting = false;
-            canvas.sortingOrder = 0;
-            rectTransform.anchoredPosition -= new Vector2(0, hoverYOffset);
+            AnimateHover(false);
         }
 
         if (GameManager.Instance != null)
@@ -918,6 +869,92 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // FIX 4: NÃO limpamos o Card Viewer aqui para ele ficar "travado".
         
         if (MouseTooltipUI.Instance != null) MouseTooltipUI.Instance.Hide();
+    }
+
+    public void ForceHover()
+    {
+        if (isInteractable && !isHoveredUp && !useSimpleHover && GameManager.Instance != null && GameManager.Instance.enableHandHoverEffect && enableHoverLift)
+        {
+            AnimateHover(true);
+        }
+    }
+
+    private void AnimateHover(bool isUp)
+    {
+        if (!basePositionSet)
+        {
+            basePosition = rectTransform.anchoredPosition;
+            basePositionSet = true;
+        }
+        if (hoverAnimation != null) StopCoroutine(hoverAnimation);
+        hoverAnimation = StartCoroutine(HoverAnimationRoutine(isUp));
+    }
+
+    private IEnumerator HoverAnimationRoutine(bool isUp)
+    {
+        isHoveredUp = isUp;
+
+        // Define a posição alvo apenas no eixo Y para não brigar com o LayoutGroup no eixo X
+        float startY = rectTransform.anchoredPosition.y;
+        float endY = isUp ? basePosition.y + hoverYOffset : basePosition.y;
+
+        // Lógica de Outline
+        Outline outline = GetComponent<Outline>();
+        if (useSimpleOutline && outline == null) outline = gameObject.AddComponent<Outline>();
+        
+        Color outlineColor = hoverColor;
+        if (!useSimpleHover && GameManager.Instance != null)
+        {
+            outlineColor = isPlayerCard ? GameManager.Instance.playerHoverColor : GameManager.Instance.opponentHoverColor;
+        }
+
+        bool shouldShowOutline = enableHoverOutline && isUp && !isAttackSelected;
+
+        if (useSimpleOutline && outline != null)
+        {
+            outline.enabled = shouldShowOutline;
+            if (shouldShowOutline)
+            {
+                outline.effectColor = outlineColor;
+                outline.effectDistance = new Vector2(4, -4);
+                outline.useGraphicAlpha = true;
+            }
+        }
+        else if (outlineImage != null)
+        {
+            outlineImage.gameObject.SetActive(shouldShowOutline);
+            if (shouldShowOutline) outlineImage.color = outlineColor;
+        }
+
+        // Lógica de Canvas Sorting
+        if (isUp)
+        {
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = 10;
+        }
+
+        float duration = 0.1f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            if (rectTransform == null) yield break; // Segurança se a carta for destruída
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.SmoothStep(0, 1, elapsed / duration);
+            
+            rectTransform.anchoredPosition = new Vector2(rectTransform.anchoredPosition.x, Mathf.Lerp(startY, endY, t));
+            yield return null;
+        }
+
+        if (rectTransform != null) rectTransform.anchoredPosition = new Vector2(rectTransform.anchoredPosition.x, endY);
+
+        if (!isUp)
+        {
+            canvas.overrideSorting = false;
+            canvas.sortingOrder = 0;
+        }
+
+        hoverAnimation = null;
     }
 
     public void SetHighlight(HighlightCategory category, bool active)
