@@ -22,6 +22,29 @@ public class RitualUI : MonoBehaviour
 
     private List<GameObject> spawnedItems = new List<GameObject>();
 
+    private float enableTime;
+    void OnEnable() { enableTime = Time.unscaledTime; }
+
+    void Update()
+    {
+        if (mainPanel != null && mainPanel.activeSelf && Time.unscaledTime - enableTime > 0.1f)
+        {
+            bool cancelPressed = false;
+#if ENABLE_INPUT_SYSTEM
+            if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame) cancelPressed = true;
+            if (UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.rightButton.wasPressedThisFrame) cancelPressed = true;
+#else
+            if (Input.GetKeyDown(KeyCode.Escape)) cancelPressed = true;
+            if (Input.GetMouseButtonDown(1)) cancelPressed = true;
+#endif
+            if (cancelPressed)
+            {
+                if (GameManager.Instance != null) GameManager.Instance.justCanceledSomething = true;
+                OnCancel();
+            }
+        }
+    }
+
     void Awake()
     {
         if (mainPanel == null) mainPanel = this.gameObject;

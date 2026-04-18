@@ -464,23 +464,15 @@ public class GameManager : MonoBehaviour
         }
         else if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null && (rightClick || escPressed))
         {
-            var attacker = CardEffectManager.Instance.luaDuel.currentAttacker.unityCard;
-            if (attacker != null) attacker.SetAttackSelectionVisual(false);
-            CardEffectManager.Instance.luaDuel.currentAttacker = null;
-            if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
-            RefreshAttackIndicators();
+            CancelAttackTargeting();
             justCanceledSomething = true;
         }
         
         // Trava de Segurança Final: Desfaz instantaneamente qualquer tentativa de ataque no Turno 1
         // Isso resolve a "travada" caso a carta inicie o fluxo de ataque internamente.
-        if (turnCount == 1 && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
+        if (turnCount == 1 && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
         {
-            var attacker = CardEffectManager.Instance.luaDuel.currentAttacker.unityCard;
-            if (attacker != null) attacker.SetAttackSelectionVisual(false);
-            CardEffectManager.Instance.luaDuel.currentAttacker = null;
-            if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
-            RefreshAttackIndicators();
+            CancelAttackTargeting();
         }
     }
 
@@ -1974,8 +1966,22 @@ public void ShuffleDeck(bool isPlayer)
         UpdatePileVisuals();
     }
 
+    public void CancelAttackTargeting()
+    {
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
+        {
+            var attacker = CardEffectManager.Instance.luaDuel.currentAttacker.unityCard;
+            if (attacker != null) attacker.SetAttackSelectionVisual(false);
+            CardEffectManager.Instance.luaDuel.currentAttacker = null;
+            if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
+            RefreshAttackIndicators();
+        }
+    }
+
     public void ViewGraveyard(bool isPlayer)
     {
+        CancelAttackTargeting();
+
         if (UIManager.Instance == null) return;
 
         List<CardData> graveyard = isPlayer ? playerGraveyard : opponentGraveyard;
@@ -1987,6 +1993,8 @@ public void ShuffleDeck(bool isPlayer)
 
     public void ViewExtraDeck(bool isPlayer)
     {
+        CancelAttackTargeting();
+
         if (UIManager.Instance == null) return;
 
         // Nota: Normalmente só se pode ver o próprio Extra Deck, a menos que um efeito permita
@@ -1998,6 +2006,8 @@ public void ShuffleDeck(bool isPlayer)
 
     public void ViewRemovedCards(bool isPlayer)
     {
+        CancelAttackTargeting();
+
         if (UIManager.Instance == null) return;
 
         List<CardData> removed = isPlayer ? playerRemoved : opponentRemoved;
@@ -4277,6 +4287,8 @@ public void ShuffleDeck(bool isPlayer)
     // Ferramenta de Dev: Visualizar Deck
     public void ViewDeck(bool isPlayer)
     {
+        CancelAttackTargeting();
+
         if (UIManager.Instance == null) return;
 
         // Se for oponente e não estiver em modo Dev, bloqueia (a menos que uma carta permita, mas aí seria via efeito específico)

@@ -72,7 +72,11 @@ public class DuelActionMenu : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.Escape)) escape = true;
 #endif
 
-            if (rightClick || escape) CloseMenu();
+            if (rightClick || escape)
+            {
+                if (GameManager.Instance != null) GameManager.Instance.justCanceledSomething = true;
+                CloseMenu();
+            }
         }
     }
 

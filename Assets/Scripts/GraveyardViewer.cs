@@ -9,6 +9,29 @@ public class GraveyardViewer : MonoBehaviour
     public Transform contentArea; // O painel com GridLayoutGroup onde as cartas serão colocadas
     public Button closeButton;
 
+    private float enableTime;
+    void OnEnable() { enableTime = Time.unscaledTime; }
+
+    void Update()
+    {
+        if (gameObject.activeSelf && Time.unscaledTime - enableTime > 0.1f)
+        {
+            bool cancelPressed = false;
+#if ENABLE_INPUT_SYSTEM
+            if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame) cancelPressed = true;
+            if (UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.rightButton.wasPressedThisFrame) cancelPressed = true;
+#else
+            if (Input.GetKeyDown(KeyCode.Escape)) cancelPressed = true;
+            if (Input.GetMouseButtonDown(1)) cancelPressed = true;
+#endif
+            if (cancelPressed)
+            {
+                if (GameManager.Instance != null) GameManager.Instance.justCanceledSomething = true;
+                Hide();
+            }
+        }
+    }
+
     void Start()
     {
         // Garante que o painel comece desativado

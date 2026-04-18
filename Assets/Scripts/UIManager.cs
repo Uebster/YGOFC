@@ -155,9 +155,19 @@ public class UIManager : MonoBehaviour
             {
                 confirmationYesButton.onClick.Invoke();
             }
-            else if (cancel && confirmationNoButton != null && confirmationNoButton.interactable)
+            else if (cancel)
             {
-                confirmationNoButton.onClick.Invoke();
+                if (GameManager.Instance != null) GameManager.Instance.justCanceledSomething = true;
+
+                if (confirmationNoButton != null && confirmationNoButton.interactable && confirmationNoButton.gameObject.activeInHierarchy)
+                {
+                    confirmationNoButton.onClick.Invoke();
+                }
+                else if (confirmationYesButton != null && confirmationYesButton.interactable)
+                {
+                    // Fallback para avisos (ShowMessage) que só possuem um botão "OK"
+                    confirmationYesButton.onClick.Invoke();
+                }
             }
         }
     }

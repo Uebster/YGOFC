@@ -29,6 +29,8 @@ public class NumericSelectionUI : MonoBehaviour
     private List<int> allowedDigits;
 
     private bool isVisible = false;
+    private float enableTime;
+    void OnEnable() { enableTime = Time.unscaledTime; }
 
     void Awake()
     {
@@ -105,9 +107,17 @@ public class NumericSelectionUI : MonoBehaviour
             if (confirmButton.interactable) OnConfirmClicked();
         }
 
-        // Cancelar (Esc)
-        if (Input.GetKeyDown(KeyCode.Escape))
+        bool cancelPressed = false;
+#if ENABLE_INPUT_SYSTEM
+        if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame) cancelPressed = true;
+        if (UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.rightButton.wasPressedThisFrame) cancelPressed = true;
+#else
+        if (Input.GetKeyDown(KeyCode.Escape)) cancelPressed = true;
+        if (Input.GetMouseButtonDown(1)) cancelPressed = true;
+#endif
+        if (cancelPressed && Time.unscaledTime - enableTime > 0.1f)
         {
+            if (GameManager.Instance != null) GameManager.Instance.justCanceledSomething = true;
             OnCancelClicked();
         }
     }

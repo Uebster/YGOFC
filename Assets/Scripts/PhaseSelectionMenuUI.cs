@@ -11,18 +11,24 @@ public class PhaseSelectionMenuUI : MonoBehaviour
     public Button main2Button;
     public Button endButton;
 
+    private float enableTime;
+    void OnEnable() { enableTime = Time.unscaledTime; }
+
     void Update()
     {
-        if (gameObject.activeSelf)
+        if (gameObject.activeSelf && Time.unscaledTime - enableTime > 0.1f)
         {
             bool escPressed = false;
 #if ENABLE_INPUT_SYSTEM
             if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame) escPressed = true;
+            if (UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.rightButton.wasPressedThisFrame) escPressed = true;
 #else
             if (Input.GetKeyDown(KeyCode.Escape)) escPressed = true;
+            if (Input.GetMouseButtonDown(1)) escPressed = true;
 #endif
             if (escPressed)
             {
+                if (GameManager.Instance != null) GameManager.Instance.justCanceledSomething = true;
                 gameObject.SetActive(false);
             }
         }

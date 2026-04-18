@@ -142,3 +142,11 @@ O controle de tempo da *Standby Phase* apresentou dois sintomas distintos que ma
 - **Correção Aplicada:** Introduzida a flag de persistência `justCanceledSomething` no `GameManager`. Ela sobrevive até a Unity concluir o disparo do `Mouse Up`, avisando a UI para "engolir" o evento e impedindo a abertura do `PhaseSelectionMenuUI`.
 - **Quality of Life:** O atalho `ESC` foi integrado globalmente. Agora ele espelha o comportamento do botão direito, cancelando miras, fechando modais de seleção, menus e correntes pendentes com segurança.
 - **Bloqueio de Turno 1 Refinado:** Ataques no primeiro turno foram bloqueados visual e logicamente no final do Frame de renderização (`WaitForEndOfFrame`), garantindo que o `CardDisplay` não fique travado com a seleção de Atacante (Highlight Vermelho) após a negação do Input.
+
+### O "Engasgo" do Card Viewer (Verso Preso)
+- **Bug Original:** Ao passar o mouse rapidamente de uma carta virada para baixo (Face-down) para uma carta idêntica virada para cima (Face-up), o CardViewer continuava mostrando o verso da carta, dando a sensação de "travada".
+- **Correção Aplicada:** A lógica de otimização de renderização do `GameManager` verificava apenas se o ID da carta sob o mouse era o mesmo da memória do painel. Criamos a flag `cardViewerShowingBack` para forçar o recarregamento instantâneo da textura frontal se a memória anterior estivesse presa no verso, matando o engasgo.
+
+### Fantasma de Clique no Turno 1 (Hover Preso)
+- **Bug Original:** Mesmo com o ataque bloqueado no Turno 1 e a `TargetingSwordUI` impedida de nascer, clicar em um monstro do jogador fazia ele acender a borda vermelha (Attack Selection) e ficar travado aguardando um alvo fantasma.
+- **Correção Aplicada:** A trava visual da espada no `TargetingSwordUI` foi movida para uma corrotina `WaitForEndOfFrame()`. Isso permite que a Unity processe a bagunça inteira do clique (EventSystem) e, no milissegundo final antes de desenhar a tela, a engine passa uma "borracha", forçando `SetAttackSelectionVisual(false)` e limpando o alvo do motor Lua.
