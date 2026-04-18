@@ -136,3 +136,9 @@ O controle de tempo da *Standby Phase* apresentou dois sintomas distintos que ma
 **Sincronização de UI e Invocação (Action Menu)**
 * **Nível Dinâmico no Menu:** O `DuelActionMenu` foi reescrito. Ele não lê mais o "nível duro" do JSON. Agora ele pergunta ao `GlobalAuraManager` o nível real. Se uma carta nível 5 virar nível 4 na mão, o menu percebe e **exibe os botões de Summon/Set** sem pedir tributo.
 * **Injeção de Nível LUA:** O `GameManager` foi instruído a enviar esse "Nível Dinâmico" mastigado direto como quarto argumento para a instrução `Core.NormalSummon` no OCGCore. Isso impede a máquina LUA de recalcular com os dados base e disparar exigências falsas de tributo.
+
+### Cancelamento e Navegação do Mouse Ajustados
+- **Bug Original:** Clicar com o botão direito para cancelar o *Targeting* da espada de ataque abria acidentalmente o Menu de Fases no campo, interrompendo a fluidez.
+- **Correção Aplicada:** Introduzida a flag de persistência `justCanceledSomething` no `GameManager`. Ela sobrevive até a Unity concluir o disparo do `Mouse Up`, avisando a UI para "engolir" o evento e impedindo a abertura do `PhaseSelectionMenuUI`.
+- **Quality of Life:** O atalho `ESC` foi integrado globalmente. Agora ele espelha o comportamento do botão direito, cancelando miras, fechando modais de seleção, menus e correntes pendentes com segurança.
+- **Bloqueio de Turno 1 Refinado:** Ataques no primeiro turno foram bloqueados visual e logicamente no final do Frame de renderização (`WaitForEndOfFrame`), garantindo que o `CardDisplay` não fique travado com a seleção de Atacante (Highlight Vermelho) após a negação do Input.

@@ -418,6 +418,7 @@ public class GameManager : MonoBehaviour
     private List<CardDisplay> responseCandidates;
     private System.Action<CardDisplay> responseCallback;
     private System.Action responseCancelCallback;
+    private bool cardViewerShowingBack = false;
 
     void Awake()
     {
@@ -2018,10 +2019,11 @@ public void ShuffleDeck(bool isPlayer)
 
         if (isFaceUp && hoveredCard != null && hoveredCard.CurrentCardData != null)
         {
-            // Otimização: Só recarrega a carta inteira se for uma diferente
-            if (cardViewerDisplay.CurrentCardData == null || cardViewerDisplay.CurrentCardData.id != hoveredCard.CurrentCardData.id)
+            // Otimização: Só recarrega a carta inteira se for uma diferente ou se estava mostrando o verso
+            if (cardViewerShowingBack || cardViewerDisplay.CurrentCardData == null || cardViewerDisplay.CurrentCardData.id != hoveredCard.CurrentCardData.id)
             {
                 cardViewerDisplay.SetCard(hoveredCard.CurrentCardData, cardBackTexture, true);
+                cardViewerShowingBack = false;
             }
             
             // ATUALIZAÇÃO: Injeta os valores dinâmicos (ATK/DEF/LVL) da carta sob o mouse para o viewer
@@ -2044,6 +2046,7 @@ public void ShuffleDeck(bool isPlayer)
         {
             // Se a carta estiver virada para baixo ou for do oponente, mostra o verso
             cardViewerDisplay.SetCardBackOnly(cardBackTexture);
+            cardViewerShowingBack = true;
         }
 
         // Força a atualização visual do Card Viewer para aplicar as configurações de borda/arredondamento
@@ -2055,6 +2058,7 @@ public void ShuffleDeck(bool isPlayer)
     {
         if (cardViewerDisplay == null) return;
         cardViewerDisplay.SetCardBackOnly(cardBackTexture);
+        cardViewerShowingBack = true;
     }
 
     public void RefreshAllCardsVisuals()

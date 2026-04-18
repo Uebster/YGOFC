@@ -204,14 +204,7 @@ public class TargetingSwordUI : MonoBehaviour
         if (GameManager.Instance != null && !GameManager.Instance.allowAttacks)
         {
             Debug.Log("[TargetingSword] Bloqueado: Ataques não são permitidos no primeiro turno.");
-            
-            // Reseta o estado do atacante para a carta não ficar congelada/esperando alvo
-            if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
-                CardEffectManager.Instance.luaDuel.currentAttacker = null;
-                
-            var attackerCard = attackerTransform.GetComponent<CardDisplay>();
-            if (attackerCard != null) attackerCard.SetAttackSelectionVisual(false);
-            
+            StartCoroutine(ResetAttackerNextFrame(attackerTransform));
             return;
         }
 
@@ -220,6 +213,20 @@ public class TargetingSwordUI : MonoBehaviour
         this.lockedTarget = null;
         currentState = SwordState.FollowingMouse;
         ApplyCustomization();
+    }
+
+    private IEnumerator ResetAttackerNextFrame(Transform attackerTransform)
+    {
+        // Espera o frame terminar para garantir que o CardDisplay já processou o clique e acendeu
+        yield return new WaitForEndOfFrame();
+        
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
+            CardEffectManager.Instance.luaDuel.currentAttacker = null;
+            
+        var attackerCard = attackerTransform.GetComponent<CardDisplay>();
+        if (attackerCard != null) attackerCard.SetAttackSelectionVisual(false);
+        
+        if (GameManager.Instance != null) GameManager.Instance.RefreshAttackIndicators();
     }
 
     public void LockOn(Transform targetTransform)
