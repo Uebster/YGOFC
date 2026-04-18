@@ -63,6 +63,7 @@ public class UIManager : MonoBehaviour
     public CardSelectionUI cardSelectionModal; // Novo modal de seleção múltipla
     public FusionUI fusionUI; // Novo modal para Fusão
     public RitualUI ritualUI; // Novo modal para Ritual
+    public PhaseSelectionMenuUI phaseSelectionMenu; // Novo painel para o menu de fases
     public GameObject destinyBoardWinPanel; // Arraste o Panel_DestinyBoardWin aqui
     public GameObject exodiaWinPanel; // Arraste o Panel_ExodiaWin aqui
     public Jackpot7UI jackpot7UI; // Arraste o Panel_Card7 aqui!
@@ -222,6 +223,7 @@ public class UIManager : MonoBehaviour
         if (cardSelectionModal != null) cardSelectionModal.gameObject.SetActive(false);
         if (fusionUI != null) fusionUI.gameObject.SetActive(false);
         if (ritualUI != null) ritualUI.gameObject.SetActive(false);
+        if (phaseSelectionMenu != null) phaseSelectionMenu.gameObject.SetActive(false);
         if (destinyBoardWinPanel != null) destinyBoardWinPanel.SetActive(false);
         if (exodiaWinPanel != null) exodiaWinPanel.SetActive(false);
         if (jackpot7UI != null) jackpot7UI.gameObject.SetActive(false);

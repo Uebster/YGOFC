@@ -200,6 +200,21 @@ public class TargetingSwordUI : MonoBehaviour
 
     public void ShowAndFollowMouse(Transform attackerTransform)
     {
+        // FIX: Impede que a mira de ataque seja iniciada no primeiro turno do duelo.
+        if (GameManager.Instance != null && !GameManager.Instance.allowAttacks)
+        {
+            Debug.Log("[TargetingSword] Bloqueado: Ataques não são permitidos no primeiro turno.");
+            
+            // Reseta o estado do atacante para a carta não ficar congelada/esperando alvo
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
+                CardEffectManager.Instance.luaDuel.currentAttacker = null;
+                
+            var attackerCard = attackerTransform.GetComponent<CardDisplay>();
+            if (attackerCard != null) attackerCard.SetAttackSelectionVisual(false);
+            
+            return;
+        }
+
         if (attackerTransform == null) return;
         this.attacker = attackerTransform;
         this.lockedTarget = null;

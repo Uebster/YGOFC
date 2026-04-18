@@ -148,6 +148,13 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
                 if (GameManager.Instance != null) GameManager.Instance.RefreshAttackIndicators();
                 return;
             }
+
+            // Clique direito no vazio -> Abre o Menu de Fases (desde que não tenha acabado de cancelar algo)
+            if (GameManager.Instance != null && !GameManager.Instance.justCanceledSomething && 
+                GameManager.Instance.enableRightClickPhaseMenu && GameManager.Instance.isPlayerTurn && !GameManager.Instance.isDuelOver)
+            {
+                GameManager.Instance.OpenPhaseSelectionMenu();
+            }
         }
         else if (eventData.button == PointerEventData.InputButton.Left)
         {
@@ -159,6 +166,11 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
                 if (GameManager.Instance != null && GameManager.Instance.GetMonsterCount(false) > 0)
                 {
                         if (GameManager.Instance.showInvalidDirectAttackWarning && UIManager.Instance != null) UIManager.Instance.ShowMessage("Você não pode atacar diretamente enquanto o oponente possuir monstros!");
+                    return;
+                }
+                if (GameManager.Instance != null && GameManager.Instance.turnCount == 1)
+                {
+                    if (GameManager.Instance.showInvalidDirectAttackWarning && UIManager.Instance != null) UIManager.Instance.ShowMessage("Você não pode atacar no primeiro turno do duelo!");
                     return;
                 }
 

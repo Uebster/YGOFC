@@ -398,9 +398,12 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public int normalSummonsThisTurnPlayer = 0;
     [HideInInspector] public int normalSummonsThisTurnOpponent = 0;
 
+    [HideInInspector] public bool allowAttacks => turnCount > 1;
+
     [HideInInspector] public int pendingEffectDraws = 0;
 
     // --- ESTADO DE SELEÇÃO DE MÃO ---
+    [HideInInspector] public bool justCanceledSomething = false;
     [HideInInspector] public bool isSelectingFromHand = false;
     private List<CardData> handSelectionCandidates;
 
@@ -442,13 +445,21 @@ public class GameManager : MonoBehaviour
             ToggleFullscreen();
         }
 
+        // Preserva a flag até o clique ser finalizado (Mouse Up) no DuelFieldUI
+        if (rightClick || escPressed)
+        {
+            justCanceledSomething = false;
+        }
+
         if (isSelectingFromHand && (rightClick || escPressed))
         {
             FinishHandSelection(true); // Cancela a seleção
+            justCanceledSomething = true;
         }
         else if (isSelectingResponse && (rightClick || escPressed))
         {
             CancelResponseSelection(); // Cancela a resposta
+            justCanceledSomething = true;
         }
         else if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null && (rightClick || escPressed))
         {
@@ -457,13 +468,18 @@ public class GameManager : MonoBehaviour
             CardEffectManager.Instance.luaDuel.currentAttacker = null;
             if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
             RefreshAttackIndicators();
+            justCanceledSomething = true;
         }
-        else if (enableRightClickPhaseMenu && isPlayerTurn && !isDuelOver && rightClick)
+        
+        // Trava de Segurança Final: Desfaz instantaneamente qualquer tentativa de ataque no Turno 1
+        // Isso resolve a "travada" caso a carta inicie o fluxo de ataque internamente.
+        if (turnCount == 1 && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
         {
-            if (UnityEngine.EventSystems.EventSystem.current != null && !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-            {
-                OpenPhaseSelectionMenu();
-            }
+            var attacker = CardEffectManager.Instance.luaDuel.currentAttacker.unityCard;
+            if (attacker != null) attacker.SetAttackSelectionVisual(false);
+            CardEffectManager.Instance.luaDuel.currentAttacker = null;
+            if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
+            RefreshAttackIndicators();
         }
     }
 
@@ -2475,63 +2491,13 @@ public void ShuffleDeck(bool isPlayer)
     // --- MENU DE SELEÇÃO DE FASE (Botão Direito) ---
     public void OpenPhaseSelectionMenu()
     {
-        if (PhaseManager.Instance == null) return;
-
-        GamePhase current = PhaseManager.Instance.currentPhase;
-        List<CardData> phaseOptions = new List<CardData>();
-
-        // Helper para criar "Cartas de Fase"
-        void AddPhaseOption(GamePhase phase, string desc)
+        if (UIManager.Instance != null && UIManager.Instance.phaseSelectionMenu != null)
         {
-            CardData p = new CardData();
-            p.id = "PHASE_" + phase.ToString();
-            p.name = phase.ToString().Replace("Main", "Main ").Replace("1", " 1").Replace("2", " 2"); // Ex: Main Phase 1
-            p.description = desc;
-            p.type = "Game Phase";
-            phaseOptions.Add(p);
-        }
-
-        // Lógica de Fases Possíveis
-        if (devMode)
-        {
-            // DevMode: Todas as fases
-            AddPhaseOption(GamePhase.Draw, "Ir para Draw Phase");
-            AddPhaseOption(GamePhase.Standby, "Ir para Standby Phase");
-            AddPhaseOption(GamePhase.Main1, "Ir para Main Phase 1");
-            AddPhaseOption(GamePhase.Battle, "Ir para Battle Phase");
-            AddPhaseOption(GamePhase.Main2, "Ir para Main Phase 2");
-            AddPhaseOption(GamePhase.End, "Ir para End Phase");
+            UIManager.Instance.phaseSelectionMenu.Show();
         }
         else
         {
-            // Fluxo Normal
-            if (current == GamePhase.Draw) AddPhaseOption(GamePhase.Standby, "Avançar para Standby Phase");
-            else if (current == GamePhase.Standby) AddPhaseOption(GamePhase.Main1, "Avançar para Main Phase 1");
-            else if (current == GamePhase.Main1)
-            {
-                AddPhaseOption(GamePhase.Battle, "Entrar na Battle Phase");
-                AddPhaseOption(GamePhase.End, "Encerrar Turno");
-            }
-            else if (current == GamePhase.Battle)
-            {
-                AddPhaseOption(GamePhase.Main2, "Ir para Main Phase 2");
-                AddPhaseOption(GamePhase.End, "Encerrar Turno");
-            }
-            else if (current == GamePhase.Main2) AddPhaseOption(GamePhase.End, "Encerrar Turno");
-        }
-
-        if (phaseOptions.Count > 0)
-        {
-            OpenCardMultiSelection(phaseOptions, "Selecionar Próxima Fase", 1, 1, (selected) => {
-                if (selected != null && selected.Count > 0)
-                {
-                    string phaseName = selected[0].id.Replace("PHASE_", "");
-                    if (System.Enum.TryParse(phaseName, out GamePhase nextPhase))
-                    {
-                        TryChangePhase(nextPhase);
-                    }
-                }
-            });
+            Debug.LogError("O novo Painel de Fases (PhaseSelectionMenu) não foi atribuído no UIManager!");
         }
     }
 
@@ -4803,10 +4769,11 @@ public void ShuffleDeck(bool isPlayer)
 
         GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Main1;
         bool isBattlePhase = currentPhase == GamePhase.Battle;
+        bool isFirstTurn = turnCount == 1;
 
         if (attackIndicatorMode == AttackIndicatorMode.HoverOnly)
         {
-            if (isBattlePhase)
+            if (isBattlePhase && !isFirstTurn)
             {
                 bool isAttacker = CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null && CardEffectManager.Instance.luaDuel.currentAttacker.unityCard == card;
                 bool canAttack = isPlayerTurn && card.position == CardDisplay.BattlePosition.Attack && !card.hasAttackedThisTurn && !isAttacker;
@@ -4842,7 +4809,8 @@ public void ShuffleDeck(bool isPlayer)
         bool isBusy = (CardEffectManager.Instance != null && (CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isChainResolving)) || isSelectingFromHand;
 
         GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Main1;
-        bool showIndicators = !isBusy && attackIndicatorMode == AttackIndicatorMode.AlwaysInBattlePhase && currentPhase == GamePhase.Battle && isPlayerTurn;
+        bool isFirstTurn = turnCount == 1;
+        bool showIndicators = !isBusy && attackIndicatorMode == AttackIndicatorMode.AlwaysInBattlePhase && currentPhase == GamePhase.Battle && isPlayerTurn && !isFirstTurn;
 
         Transform[] zones = duelFieldUI.playerMonsterZones;
         foreach (var zone in zones)
