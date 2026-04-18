@@ -151,10 +151,11 @@ public class PhaseManager : MonoBehaviour
         if (GameManager.Instance != null && GameManager.Instance.phaseAnnouncements != null)
         {
             waitTime = Mathf.Max(waitTime, GameManager.Instance.phaseAnnouncements.displayDuration);
+            waitTime *= GameManager.Instance.phaseAnnouncements.masterDelayMultiplier;
         }
         
         // Aguarda o tempo base garantindo que seja o suficiente para o texto ser lido
-        yield return new WaitForSeconds(waitTime);
+        if (waitTime > 0) yield return new WaitForSeconds(waitTime);
         
         // CRÍTICO: Não avança para a Main Phase se houver alguma corrente/efeito de Standby Phase sendo resolvida pela Engine LUA (Ex: Tomando dano de veneno).
         if (CardEffectManager.Instance != null)

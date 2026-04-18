@@ -138,7 +138,7 @@ public class DeckManager : MonoBehaviour
 
             if (!ignoreLimit && currentPhase == GamePhase.Draw && PhaseManager.Instance != null)
             {
-                StartCoroutine(DelayedPhaseChange(GamePhase.Standby, GameManager.Instance.phaseAnnouncements.drawToStandbyDelay));
+                StartCoroutine(DelayedPhaseChange(GamePhase.Standby, GameManager.Instance.phaseAnnouncements.drawToStandbyDelay * GameManager.Instance.phaseAnnouncements.masterDelayMultiplier));
             }
         }
         else
@@ -162,7 +162,7 @@ public class DeckManager : MonoBehaviour
                 
             if (!ignoreLimit && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Draw)
             {
-                StartCoroutine(DelayedPhaseChange(GamePhase.Standby, GameManager.Instance.phaseAnnouncements.drawToStandbyDelay));
+                StartCoroutine(DelayedPhaseChange(GamePhase.Standby, GameManager.Instance.phaseAnnouncements.drawToStandbyDelay * GameManager.Instance.phaseAnnouncements.masterDelayMultiplier));
             }
         }
     }

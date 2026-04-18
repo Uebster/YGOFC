@@ -148,17 +148,6 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
                 if (GameManager.Instance != null) GameManager.Instance.RefreshAttackIndicators();
                 return;
             }
-
-            // Clique direito no vazio -> Sugerir mudança de fase/turno
-            if (PhaseManager.Instance != null && UIManager.Instance != null)
-            {
-                // Lógica simples: Se estiver na Main1/2/Battle, sugere ir para End Phase
-                // Ou abre um menu de contexto rápido de fases
-                UIManager.Instance.ShowConfirmation("Deseja encerrar o turno?", () => {
-                    PhaseManager.Instance.ChangePhase(GamePhase.End);
-                    // E depois trocar o turno no GameManager
-                });
-            }
         }
         else if (eventData.button == PointerEventData.InputButton.Left)
         {
@@ -169,7 +158,7 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
             {
                 if (GameManager.Instance != null && GameManager.Instance.GetMonsterCount(false) > 0)
                 {
-                    if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Você não pode atacar diretamente enquanto o oponente possuir monstros!");
+                        if (GameManager.Instance.showInvalidDirectAttackWarning && UIManager.Instance != null) UIManager.Instance.ShowMessage("Você não pode atacar diretamente enquanto o oponente possuir monstros!");
                     return;
                 }
 

@@ -62,6 +62,10 @@ public class PhaseAnnouncementSettings
     [Tooltip("Tempo em segundos que o jogo aguarda após a Draw Phase para entrar na Standby (Ex: 1.5).")]
     public float drawToStandbyDelay = 1.5f;
     
+    [Tooltip("Multiplicador global para a velocidade de anúncios e pausas. (1.0 = Normal, 0.5 = 2x Rápido, 0.0 = Instantâneo).")]
+    [Range(0f, 3f)]
+    public float masterDelayMultiplier = 1.0f;
+
     [Header("Text Customization")]
     public string textStartDuel = "DUEL START!";
     public string textPlayerTurn = "YOUR TURN";
@@ -261,6 +265,8 @@ public class GameManager : MonoBehaviour
     public bool quickSpellTrapFromHand = false;
     [Tooltip("Se marcado, clicar no próprio monstro atacante quando o oponente não tem monstros realiza o ataque direto imediatamente.")]
     public bool quickAttackDirectly = false;
+    [Tooltip("Se marcado, exibe um aviso caso você tente atacar diretamente enquanto o inimigo possui monstros no campo.")]
+    public bool showInvalidDirectAttackWarning = true;
     [Tooltip("Se ativado, usa atalhos de Esquerdo/Direito do mouse com Tooltip. Se desativado, usa o Menu de Ação clássico.")]
     public bool useMouseTooltipUI = true;
     [Tooltip("Permite clicar em uma carta no campo para ativar seu efeito imediatamente (sem abrir o Action Menu).")]
@@ -419,10 +425,16 @@ public class GameManager : MonoBehaviour
     {
         // Atalho de Desenvolvedor para Fullscreen (F11)
         bool toggleFullscreen = false;
+        bool rightClick = false;
+        bool escPressed = false;
 #if ENABLE_INPUT_SYSTEM
         if (Keyboard.current != null && Keyboard.current.f11Key.wasPressedThisFrame) toggleFullscreen = true;
+        if (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame) rightClick = true;
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) escPressed = true;
 #else
         if (Input.GetKeyDown(KeyCode.F11)) toggleFullscreen = true;
+        if (Input.GetMouseButtonDown(1)) rightClick = true;
+        if (Input.GetKeyDown(KeyCode.Escape)) escPressed = true;
 #endif
 
         if (devMode && toggleFullscreen)
@@ -430,23 +442,15 @@ public class GameManager : MonoBehaviour
             ToggleFullscreen();
         }
 
-        // Menu de Fases com Botão Direito (se não estiver clicando em uma carta/UI)
-        bool rightClick = false;
-#if ENABLE_INPUT_SYSTEM
-        if (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame) rightClick = true;
-#else
-        if (Input.GetMouseButtonDown(1)) rightClick = true;
-#endif
-
-        if (isSelectingFromHand && rightClick)
+        if (isSelectingFromHand && (rightClick || escPressed))
         {
             FinishHandSelection(true); // Cancela a seleção
         }
-        else if (isSelectingResponse && rightClick)
+        else if (isSelectingResponse && (rightClick || escPressed))
         {
             CancelResponseSelection(); // Cancela a resposta
         }
-        else if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null && rightClick)
+        else if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null && (rightClick || escPressed))
         {
             var attacker = CardEffectManager.Instance.luaDuel.currentAttacker.unityCard;
             if (attacker != null) attacker.SetAttackSelectionVisual(false);
@@ -689,7 +693,7 @@ public class GameManager : MonoBehaviour
         // 2. ANÚNCIO DO TURNO
         AnnounceText(isPlayerTurn ? phaseAnnouncements.textPlayerTurn : phaseAnnouncements.textOpponentTurn);
         // Espera o texto do turno sumir perfeitamente para emendar na Draw Phase
-        yield return new WaitForSeconds(phaseAnnouncements.displayDuration + phaseAnnouncements.fadeDuration);
+        yield return new WaitForSeconds((phaseAnnouncements.displayDuration + phaseAnnouncements.fadeDuration) * phaseAnnouncements.masterDelayMultiplier);
 
         if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
         else Debug.LogError("PhaseManager não encontrado mesmo após tentativa de criação!");
@@ -2129,7 +2133,7 @@ public void ShuffleDeck(bool isPlayer)
         AnnounceText(isPlayerTurn ? phaseAnnouncements.textPlayerTurn : phaseAnnouncements.textOpponentTurn);
         
         // Espera o texto do turno sumir perfeitamente para emendar na Draw Phase
-        yield return new WaitForSeconds(phaseAnnouncements.displayDuration + phaseAnnouncements.fadeDuration);
+        yield return new WaitForSeconds((phaseAnnouncements.displayDuration + phaseAnnouncements.fadeDuration) * phaseAnnouncements.masterDelayMultiplier);
 
         if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
 
@@ -2191,7 +2195,7 @@ public void ShuffleDeck(bool isPlayer)
         AnnounceText(phaseAnnouncements.textDrawPhase);
         
         // 2. Espera o tempo configurado de leitura do texto para sacar a carta com calma
-        yield return new WaitForSeconds(phaseAnnouncements.displayDuration);
+        yield return new WaitForSeconds(phaseAnnouncements.displayDuration * phaseAnnouncements.masterDelayMultiplier);
 
         // Validação da Regra do Primeiro Turno
         bool skipDraw = (turnCount == 1 && applyModernFirstTurnDrawRule);
@@ -2206,7 +2210,7 @@ public void ShuffleDeck(bool isPlayer)
             else if (skipDraw) 
             {
                 Debug.Log("[GameManager] Regra Moderna: Turno 1. Nenhuma carta comprada.");
-                StartCoroutine(DelayedPhaseChange(GamePhase.Standby, phaseAnnouncements.drawToStandbyDelay));
+                StartCoroutine(DelayedPhaseChange(GamePhase.Standby, phaseAnnouncements.drawToStandbyDelay * phaseAnnouncements.masterDelayMultiplier));
             }
         }
         else
@@ -2215,7 +2219,7 @@ public void ShuffleDeck(bool isPlayer)
             else 
             {
                 Debug.Log("[GameManager] Regra Moderna: Turno 1 (Oponente). Nenhuma carta comprada.");
-                StartCoroutine(DelayedPhaseChange(GamePhase.Standby, phaseAnnouncements.drawToStandbyDelay));
+                StartCoroutine(DelayedPhaseChange(GamePhase.Standby, phaseAnnouncements.drawToStandbyDelay * phaseAnnouncements.masterDelayMultiplier));
             }
         }
     }
@@ -4717,38 +4721,54 @@ public void ShuffleDeck(bool isPlayer)
             shadowTmp.rectTransform.anchoredPosition = phaseAnnouncements.outlineThickness;
         }
 
-        float fadeDur = phaseAnnouncements.fadeDuration;
-        float holdDur = phaseAnnouncements.displayDuration;
+        float fadeDur = phaseAnnouncements.fadeDuration * phaseAnnouncements.masterDelayMultiplier;
+        float holdDur = phaseAnnouncements.displayDuration * phaseAnnouncements.masterDelayMultiplier;
         
         float t = 0;
         Vector2 startPos = rt.anchoredPosition;
         Vector2 targetPos = phaseAnnouncements.offset;
 
         // Animação de Entrada (Slide In e Fade In)
-        while (t < fadeDur)
+        if (fadeDur > 0)
         {
-            t += Time.deltaTime;
-            float p = t / fadeDur;
-            cg.alpha = p;
-            rt.anchoredPosition = Vector2.Lerp(startPos, targetPos, Mathf.SmoothStep(0, 1, p));
-            yield return null;
+            while (t < fadeDur)
+            {
+                t += Time.deltaTime;
+                float p = t / fadeDur;
+                cg.alpha = p;
+                rt.anchoredPosition = Vector2.Lerp(startPos, targetPos, Mathf.SmoothStep(0, 1, p));
+                yield return null;
+            }
+        }
+        else
+        {
+            cg.alpha = 1f;
+            rt.anchoredPosition = targetPos;
         }
 
         // Segura o texto na tela
-        yield return new WaitForSeconds(holdDur);
+        if (holdDur > 0) yield return new WaitForSeconds(holdDur);
 
         // Animação de Saída (Slide Out e Fade Out)
         t = 0;
         startPos = rt.anchoredPosition;
         targetPos = phaseAnnouncements.offset - new Vector2(0, phaseAnnouncements.slideDistance);
 
-        while (t < fadeDur)
+        if (fadeDur > 0)
         {
-            t += Time.deltaTime;
-            float p = t / fadeDur;
-            cg.alpha = 1f - p;
-            rt.anchoredPosition = Vector2.Lerp(startPos, targetPos, Mathf.SmoothStep(0, 1, p));
-            yield return null;
+            while (t < fadeDur)
+            {
+                t += Time.deltaTime;
+                float p = t / fadeDur;
+                cg.alpha = 1f - p;
+                rt.anchoredPosition = Vector2.Lerp(startPos, targetPos, Mathf.SmoothStep(0, 1, p));
+                yield return null;
+            }
+        }
+        else
+        {
+            cg.alpha = 0f;
+            rt.anchoredPosition = targetPos;
         }
 
         Destroy(announceObj);
