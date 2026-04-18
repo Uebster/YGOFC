@@ -5,9 +5,11 @@ Este documento detalha o fluxo exato de um duelo de Yu-Gi-Oh!, desde a inicializ
 ## 1. Inicialização do Jogo (Game Start)
 1.  **Setup de Jogadores:** Definir Life Points (Padrão: 8000).
 2.  **Preparação dos Decks:** Carregar e embaralhar Main Deck e Extra Deck.
-3.  **Compra Inicial:** Cada jogador compra 5 cartas.
-4.  **Definição de Turnos:** Cara ou coroa (ou pedra-papel-tesoura) define o jogador inicial.
-5.  **Regra do 1º Turno (Moderno):** O jogador inicial **NÃO** compra uma carta no seu primeiro turno e **NÃO** pode conduzir a Battle Phase.
+3.  **Sorteio de Turnos:** O sistema (ou minigame) define quem será o Jogador 1 e Jogador 2.
+4.  **Compra Inicial (Setup):** *Antes do primeiro turno começar*, ambos os jogadores sacam suas 5 cartas iniciais. Isso garante um fluxo cinematográfico onde a mão já está pronta quando a fase começa.
+5.  **Anúncio do Turno:** O jogo anuncia de quem é o turno ("YOUR TURN" ou "OPPONENT'S TURN") e aguarda o texto sumir da tela.
+6.  **Início do Duelo:** A `DRAW PHASE` é declarada.
+7.  **Regra do 1º Turno (Moderno):** O jogador inicial **NÃO** compra a 6ª carta no seu primeiro turno e **NÃO** pode conduzir a Battle Phase.
 
 ---
 
@@ -253,5 +255,5 @@ Para evitar bugs de "ciclo de vida" (como UIs sumindo instantaneamente, cliques 
 ### 8.11 Anúncios de Fase e Fluxo de HUD
 Sempre que a máquina de estados (`PhaseManager`) transita para uma nova etapa, a partida é temporariamente interrompida para um informe visual em texto:
 *   **A Rotina (`PhaseAnnouncementSettings`):** O `GameManager` instancia um `TextMeshPro` dinâmico. O texto (ex: "BATTLE PHASE") desliza pela tela (`slideDistance`), permanece parado (`displayDuration`) e realiza um fade out (`fadeDuration`).
-*   **Sincronismo:** Essas mensagens NÃO travam as respostas do LUA, mas ajudam a balizar a mudança de contexto na mente do jogador (Ex: Escrevendo "YOUR TURN" na tela antes do saque inicial). Tudo é manipulável para facilitar a futura tradução de strings.
+*   **Sincronismo Estrito:** Para evitar atropelos visuais (como o jogo sacar a carta antes de dar tempo de ler "DRAW PHASE"), as corrotinas principais do C# leem ativamente a variável `displayDuration`. A IA e o motor de compra de cartas **congelam** pelo tempo exato que o texto fica na tela, garantindo que o jogador consiga ler qual fase acabou de começar antes da ação estourar.
 *   **A "Espada" Indicadora:** Guiada por `AttackIndicatorMode`. Se configurada para `AlwaysInBattlePhase`, no exato frame em que o texto "BATTLE PHASE" some, o motor acende automaticamente a UI nativa de `CanAttack` e `Block` sobre todas as cartas relevantes, limpando o tabuleiro apenas quando o jogador sair da fase.

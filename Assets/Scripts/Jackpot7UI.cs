@@ -39,7 +39,7 @@ public class Jackpot7UI : MonoBehaviour
             if (GameManager.Instance != null)
             {
                 var pSettings = GameManager.Instance.phaseAnnouncements;
-                jackpotText.color = pSettings.textColor;
+                jackpotText.color = pSettings.neutralTextColor;
                 jackpotText.fontStyle = FontStyles.Bold | FontStyles.Italic;
                 
                 if (DuelThemeManager.Instance != null && DuelThemeManager.Instance.currentTheme != null && DuelThemeManager.Instance.currentTheme.globalFont != null)
@@ -104,7 +104,7 @@ public class Jackpot7UI : MonoBehaviour
             // Efeito de piscar neon
             for (int i = 0; i < 3; i++) {
                 jackpotText.color = Color.white; yield return new WaitForSeconds(0.05f);
-                if (GameManager.Instance != null) jackpotText.color = GameManager.Instance.phaseAnnouncements.textColor;
+                if (GameManager.Instance != null) jackpotText.color = GameManager.Instance.phaseAnnouncements.neutralTextColor;
                 else jackpotText.color = new Color(1f, 0.84f, 0f); 
                 yield return new WaitForSeconds(0.05f);
             }

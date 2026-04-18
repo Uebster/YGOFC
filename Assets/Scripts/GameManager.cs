@@ -48,10 +48,19 @@ public class PhaseAnnouncementSettings
     public float slideDistance = 50f;
     public Vector2 offset = Vector2.zero;
     public float fontSize = 80f;
-    public Color textColor = new Color(1f, 0.8f, 0f, 1f); // Dourado
+    
+    [Header("Colors")]
+    public Color playerTextColor = new Color(0.2f, 0.8f, 1f, 1f); // Ciano para Jogador
+    public Color opponentTextColor = new Color(1f, 0.3f, 0.3f, 1f); // Vermelho para Oponente
+    public Color neutralTextColor = new Color(1f, 0.8f, 0f, 1f); // Dourado (Start Duel)
+    
     public bool useOutline = true;
     public Color outlineColor = Color.black;
     public Vector2 outlineThickness = new Vector2(4, -4);
+    
+    [Header("Timings & Delays")]
+    [Tooltip("Tempo em segundos que o jogo aguarda após a Draw Phase para entrar na Standby (Ex: 1.5).")]
+    public float drawToStandbyDelay = 1.5f;
     
     [Header("Text Customization")]
     public string textStartDuel = "DUEL START!";
@@ -437,6 +446,14 @@ public class GameManager : MonoBehaviour
         {
             CancelResponseSelection(); // Cancela a resposta
         }
+        else if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null && rightClick)
+        {
+            var attacker = CardEffectManager.Instance.luaDuel.currentAttacker.unityCard;
+            if (attacker != null) attacker.SetAttackSelectionVisual(false);
+            CardEffectManager.Instance.luaDuel.currentAttacker = null;
+            if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
+            RefreshAttackIndicators();
+        }
         else if (enableRightClickPhaseMenu && isPlayerTurn && !isDuelOver && rightClick)
         {
             if (UnityEngine.EventSystems.EventSystem.current != null && !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
@@ -663,17 +680,25 @@ public class GameManager : MonoBehaviour
             yield return new WaitForSeconds(waitTime);
         }
 
-        // 2. ANÚNCIO DO TURNO E PAUSA
-        AnnounceText(isPlayerTurn ? phaseAnnouncements.textPlayerTurn : phaseAnnouncements.textOpponentTurn);
-        yield return new WaitForSeconds(1.5f);
-
+        // COMPRA AS CARTAS INICIAIS AQUI (Completando o Setup ANTES do turno começar)
         yield return StartCoroutine(DrawInitialHandRoutine(5));
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.2f);
         yield return StartCoroutine(DrawInitialOpponentHandRoutine(5));
         yield return new WaitForSeconds(0.5f); 
 
+        // 2. ANÚNCIO DO TURNO
+        AnnounceText(isPlayerTurn ? phaseAnnouncements.textPlayerTurn : phaseAnnouncements.textOpponentTurn);
+        // Espera o texto do turno sumir perfeitamente para emendar na Draw Phase
+        yield return new WaitForSeconds(phaseAnnouncements.displayDuration + phaseAnnouncements.fadeDuration);
+
         if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
         else Debug.LogError("PhaseManager não encontrado mesmo após tentativa de criação!");
+
+        // START AI TURN SE A IA COMEÇAR:
+        if (!isPlayerTurn && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
+        {
+            OpponentAI.Instance.StartAITurn(!isSimulating);
+        }
     }
 
     // Cria automaticamente os gerenciadores se eles não estiverem na cena
@@ -2088,9 +2113,6 @@ public void ShuffleDeck(bool isPlayer)
             lpPaidThisTurnOpponent = 0;
         }
 
-        if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
-
-        AnnounceText(isPlayerTurn ? phaseAnnouncements.textPlayerTurn : phaseAnnouncements.textOpponentTurn);
         RefreshAttackIndicators();
 
         // Atualiza as cores de hover dos botões de fase para o turno atual
@@ -2099,6 +2121,18 @@ public void ShuffleDeck(bool isPlayer)
             PhaseManager.Instance.UpdateHoverColors(isPlayerTurn);
         }
         
+        StartCoroutine(TurnTransitionRoutine());
+    }
+
+    private IEnumerator TurnTransitionRoutine()
+    {
+        AnnounceText(isPlayerTurn ? phaseAnnouncements.textPlayerTurn : phaseAnnouncements.textOpponentTurn);
+        
+        // Espera o texto do turno sumir perfeitamente para emendar na Draw Phase
+        yield return new WaitForSeconds(phaseAnnouncements.displayDuration + phaseAnnouncements.fadeDuration);
+
+        if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
+
         // Se for turno do oponente, inicia a IA
         if (!isPlayerTurn && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
         {
@@ -2148,6 +2182,17 @@ public void ShuffleDeck(bool isPlayer)
         turnCount++; // Incrementa o turno
         if (DeckManager.Instance != null) DeckManager.Instance.ResetTurnStats();
         
+        StartCoroutine(DrawPhaseRoutine());
+    }
+
+    private IEnumerator DrawPhaseRoutine()
+    {
+        // 1. Anuncia a fase PRIMEIRO
+        AnnounceText(phaseAnnouncements.textDrawPhase);
+        
+        // 2. Espera o tempo configurado de leitura do texto para sacar a carta com calma
+        yield return new WaitForSeconds(phaseAnnouncements.displayDuration);
+
         // Validação da Regra do Primeiro Turno
         bool skipDraw = (turnCount == 1 && applyModernFirstTurnDrawRule);
 
@@ -2158,15 +2203,21 @@ public void ShuffleDeck(bool isPlayer)
                 for (int i = 0; i < 1; i++)
                     DrawCard();
             }
-            else if (skipDraw) Debug.Log("[GameManager] Regra Moderna: Turno 1. Nenhuma carta comprada.");
+            else if (skipDraw) 
+            {
+                Debug.Log("[GameManager] Regra Moderna: Turno 1. Nenhuma carta comprada.");
+                StartCoroutine(DelayedPhaseChange(GamePhase.Standby, phaseAnnouncements.drawToStandbyDelay));
+            }
         }
         else
         {
             if (!skipDraw) DrawOpponentCard();
-            else Debug.Log("[GameManager] Regra Moderna: Turno 1 (Oponente). Nenhuma carta comprada.");
+            else 
+            {
+                Debug.Log("[GameManager] Regra Moderna: Turno 1 (Oponente). Nenhuma carta comprada.");
+                StartCoroutine(DelayedPhaseChange(GamePhase.Standby, phaseAnnouncements.drawToStandbyDelay));
+            }
         }
-
-        AnnounceText(phaseAnnouncements.textDrawPhase);
     }
 
     // Chamado pelo PhaseManager quando entra na Standby Phase
@@ -2289,6 +2340,12 @@ public void ShuffleDeck(bool isPlayer)
         });
 
         while (!done) yield return null;
+    }
+
+    private IEnumerator DelayedPhaseChange(GamePhase phase, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (PhaseManager.Instance != null) PhaseManager.Instance.ChangePhase(phase);
     }
 
     // --- SISTEMA DE MOEDAS ---
@@ -4641,7 +4698,12 @@ public void ShuffleDeck(bool isPlayer)
         TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>();
         tmp.text = text;
         tmp.fontSize = phaseAnnouncements.fontSize;
-        tmp.color = phaseAnnouncements.textColor;
+        
+        Color txtColor = phaseAnnouncements.neutralTextColor;
+        if (text != phaseAnnouncements.textStartDuel)
+            txtColor = isPlayerTurn ? phaseAnnouncements.playerTextColor : phaseAnnouncements.opponentTextColor;
+        
+        tmp.color = txtColor;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.fontStyle = FontStyles.Bold | FontStyles.Italic;
 

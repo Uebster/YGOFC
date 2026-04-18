@@ -38,10 +38,11 @@ O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente.
 
 ### 3.2.1 Orquestração do Duelo e Gerenciamento de Estado
 *   **Controle do Duelo:**
-    *   `StartDuel()`: Ponto de entrada para iniciar um duelo. Limpa o estado anterior, inicializa decks, LPs e chama a corrotina `DuelStartSequence` para a animação inicial.
+    *   `StartDuel()`: Ponto de entrada para iniciar um duelo. Limpa o estado anterior, inicializa decks, LPs e define de quem é o turno (`isPlayerTurn`). Em seguida, chama a corrotina `DuelStartSequence`.
+    *   `DuelStartSequence()`: A rotina cinematográfica que organiza o fluxo inicial: Embaralha os decks -> Saca as 5 cartas para ambos simultaneamente -> Anuncia "YOUR TURN" -> Aguarda o tempo exato do Fade Out do texto -> Dá o gatilho para o `PhaseManager.StartTurn()`.
     *   `StartDuel(opponent, duelIndex)`: Sobrecarga para iniciar um duelo de campanha contra um oponente específico.
     *   `EndDuel(bool playerWon, isDeckOut)`: Finaliza o duelo, chama o `DuelScoreManager` e exibe a tela de recompensas.
-    *   `SwitchTurn()`: Realiza a troca de turno, limpa contadores (`lpPaidThisTurn`), atualiza a UI de fase e invoca a IA se for o turno do oponente.
+    *   `SwitchTurn()` e `TurnTransitionRoutine()`: Preparam a mesa para o próximo jogador. Exibem a mensagem de "Turno", aguardam o tempo de leitura configurado no Inspector (`displayDuration`) e só então destravam a IA e passam para a próxima Draw Phase, evitando que a IA jogue cartas por cima dos textos da UI.
     *   `CleanupDuelState()`: Método de limpeza pesada que destrói todos os GameObjects de cartas, limpa todas as listas de dados (mão, campo, GY, etc.) e reseta a UI.
 *   **Gerenciamento de Vida (LP):**
     *   `DamagePlayer(int amount)` / `DamageOpponent(int amount)`: Reduz LP, exibe pop-up de dano, notifica o `CardEffectManager` e verifica condição de derrota.
@@ -129,7 +130,7 @@ O controle de tempo do duelo é gerenciado pelo `PhaseManager.cs`, que atua como
 1.  **Draw Phase:** O `PhaseManager` chama `GameManager.OnDrawPhaseStart()`. As flags restritivas de turno (`hasDrawnThisTurn`, `hasPerformedNormalSummon`) são limpas. 
     *   **Modo Automático (`canPlayerDrawFromDeck = false`):** O jogo saca 1 carta automaticamente e avança para a Standby Phase.
     *   **Modo Manual (`canPlayerDrawFromDeck = true`):** O jogo **pausa** na Draw Phase. O jogador deve clicar fisicamente no Deck para sacar e só então avança de fase.
-2.  **Standby Phase:** Fase de manutenção. Atualmente automática, serve para pagar custos ou disparar efeitos retroativos através de `CardEffectManager.CheckMaintenanceCosts()`.
+2.  **Standby Phase:** Fase de manutenção. O `PhaseManager` lê o `displayDuration` das configurações e assegura que a fase demore o tempo necessário para o jogador ler o texto na tela antes de pular para a Main Phase 1. Útil para pagar custos ou disparar efeitos retroativos.
 3.  **Main Phase 1:** Ações principais permitidas: Normal Summon / Set (1x), Special Summons (Ilimitados), Ativar/Setar Mágicas e Armadilhas, Mudar posições de batalha (1x por monstro, caso não tenha entrado neste turno).
 4.  **Battle Phase:** Acessível apenas se for o turno do jogador (e após o Turno 1). Subdividida em Start Step, Battle Step, Damage Step e End Step. Totalmente orquestrada pelo `BattleManager`.
 5.  **Main Phase 2:** Ações idênticas à MP1 para se preparar para o turno inimigo. Se o jogador entrou na Battle Phase, ele **deve** passar pela MP2 antes de encerrar.

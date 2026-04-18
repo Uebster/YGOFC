@@ -138,7 +138,7 @@ public class DeckManager : MonoBehaviour
 
             if (!ignoreLimit && currentPhase == GamePhase.Draw && PhaseManager.Instance != null)
             {
-                PhaseManager.Instance.ChangePhase(GamePhase.Standby);
+                StartCoroutine(DelayedPhaseChange(GamePhase.Standby, GameManager.Instance.phaseAnnouncements.drawToStandbyDelay));
             }
         }
         else
@@ -162,9 +162,15 @@ public class DeckManager : MonoBehaviour
                 
             if (!ignoreLimit && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Draw)
             {
-                PhaseManager.Instance.ChangePhase(GamePhase.Standby);
+                StartCoroutine(DelayedPhaseChange(GamePhase.Standby, GameManager.Instance.phaseAnnouncements.drawToStandbyDelay));
             }
         }
+    }
+
+    private System.Collections.IEnumerator DelayedPhaseChange(GamePhase phase, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (PhaseManager.Instance != null) PhaseManager.Instance.ChangePhase(phase);
     }
 
     public void MillCards(bool isPlayer, int amount)

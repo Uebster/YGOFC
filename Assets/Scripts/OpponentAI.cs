@@ -56,7 +56,7 @@ public class OpponentAI : MonoBehaviour
 
         // Sincroniza a IA com o avanço automático de fases visual (Draw -> Standby -> Main1)
         float timeout = 0f;
-        while (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Main1 && timeout < 3f)
+        while (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Main1 && timeout < 10f)
         {
             if (CardEffectManager.Instance != null && (CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isFastEffectWindowOpen || CardEffectManager.Instance.isWaitingForLuaYield))
                 timeout = 0f; // Reseta timeout se tiver cadeia rolando
