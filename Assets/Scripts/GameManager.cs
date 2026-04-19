@@ -836,11 +836,11 @@ public class GameManager : MonoBehaviour
         CollectCardsFromZones(duelFieldUI.opponentSpellZones);
         
         if (duelFieldUI.playerFieldSpell != null && duelFieldUI.playerFieldSpell.childCount > 0) {
-            CardDisplay cd = duelFieldUI.playerFieldSpell.GetChild(0).GetComponent<CardDisplay>();
+            CardDisplay cd = duelFieldUI.playerFieldSpell.GetComponentInChildren<CardDisplay>();
             if (cd != null) cardsToClear.Add(cd);
         }
         if (duelFieldUI.opponentFieldSpell != null && duelFieldUI.opponentFieldSpell.childCount > 0) {
-            CardDisplay cd = duelFieldUI.opponentFieldSpell.GetChild(0).GetComponent<CardDisplay>();
+            CardDisplay cd = duelFieldUI.opponentFieldSpell.GetComponentInChildren<CardDisplay>();
             if (cd != null) cardsToClear.Add(cd);
         }
 
@@ -854,6 +854,7 @@ public class GameManager : MonoBehaviour
                 
                 if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
                 
+                card.transform.SetParent(null);
                 Destroy(card.gameObject);
             }
         }
@@ -888,7 +889,7 @@ public class GameManager : MonoBehaviour
         cardDisplay.isOnField = true;
         
         cardDisplay.SetCard(cardData, cardBackTexture, faceUp);
-        cardGO.transform.localRotation = Quaternion.identity;
+        cardGO.transform.localRotation = Quaternion.Euler(0, 0, isPlayer ? 0f : 180f);
     }
 
     public CardDisplay SpecialSummonFromData(CardData cardData, bool isPlayer, int zoneIndex = -1, bool inAttackPosition = true, bool faceDown = false, Vector3? sourcePos = null, CardLocation sourceLoc = CardLocation.Graveyard)
@@ -1353,6 +1354,7 @@ public class GameManager : MonoBehaviour
         }
         else if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayBanishEffect(card);
 
+        card.transform.SetParent(null);
         // Destrói o objeto visual (Banish não vai pro GY, então não chama SendToGraveyard)
         Destroy(card.gameObject);
     }
@@ -1480,6 +1482,7 @@ public void ShuffleDeck(bool isPlayer)
         // Remove modificadores
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
 
+        card.transform.SetParent(null);
         // Destrói objeto do campo
         Destroy(card.gameObject);
 
@@ -1515,6 +1518,7 @@ public void ShuffleDeck(bool isPlayer)
         // Envia para o GY (Lógica de dados)
         SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
 
+        card.transform.SetParent(null);
         // Destrói o objeto visual
         Destroy(card.gameObject);
     }
@@ -1823,6 +1827,7 @@ public void ShuffleDeck(bool isPlayer)
                 if (isPlayer) playerHand.Remove(card.gameObject);
                 else opponentHand.Remove(card.gameObject);
                 SendToGraveyard(data, isPlayer, card.isOnField ? CardLocation.Field : CardLocation.Hand, reason);
+                card.transform.SetParent(null);
                 Destroy(card.gameObject);
 
                 if (DuelFXManager.Instance != null && !isSimulating)
@@ -1845,6 +1850,7 @@ public void ShuffleDeck(bool isPlayer)
                 if (isPlayer) playerHand.Remove(card.gameObject);
                 else opponentHand.Remove(card.gameObject);
                 // Destrói e retorna à mão
+                card.transform.SetParent(null);
                 Destroy(card.gameObject);
                 AddCardToHand(data, isPlayer, startPos, prevLoc, isFieldSpellZone);
                 break;
@@ -1902,6 +1908,7 @@ public void ShuffleDeck(bool isPlayer)
                 if (isPlayer) playerHand.Remove(card.gameObject);
                 else opponentHand.Remove(card.gameObject);
                 RemoveFromPlay(data, isPlayer);
+                card.transform.SetParent(null);
                 Destroy(card.gameObject);
                 break;
 
@@ -1910,6 +1917,7 @@ public void ShuffleDeck(bool isPlayer)
                 
                 if (isPlayer) playerExtraDeck.Add(data);
                 else opponentExtraDeck.Add(data);
+                card.transform.SetParent(null);
                 Destroy(card.gameObject);
 
                 if (DuelFXManager.Instance != null && !isSimulating)
@@ -2103,10 +2111,10 @@ public void ShuffleDeck(bool isPlayer)
         allCards.AddRange(playerHand);
         allCards.AddRange(opponentHand);
         if (duelFieldUI != null) {
-            if (duelFieldUI.playerMonsterZones != null) foreach (var z in duelFieldUI.playerMonsterZones) if (z != null && z.childCount > 0) allCards.Add(z.GetChild(0).gameObject);
-            if (duelFieldUI.opponentMonsterZones != null) foreach (var z in duelFieldUI.opponentMonsterZones) if (z != null && z.childCount > 0) allCards.Add(z.GetChild(0).gameObject);
-            if (duelFieldUI.playerSpellZones != null) foreach (var z in duelFieldUI.playerSpellZones) if (z != null && z.childCount > 0) allCards.Add(z.GetChild(0).gameObject);
-            if (duelFieldUI.opponentSpellZones != null) foreach (var z in duelFieldUI.opponentSpellZones) if (z != null && z.childCount > 0) allCards.Add(z.GetChild(0).gameObject);
+            if (duelFieldUI.playerMonsterZones != null) foreach (var z in duelFieldUI.playerMonsterZones) if (z != null && z.childCount > 0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+            if (duelFieldUI.opponentMonsterZones != null) foreach (var z in duelFieldUI.opponentMonsterZones) if (z != null && z.childCount > 0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+            if (duelFieldUI.playerSpellZones != null) foreach (var z in duelFieldUI.playerSpellZones) if (z != null && z.childCount > 0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+            if (duelFieldUI.opponentSpellZones != null) foreach (var z in duelFieldUI.opponentSpellZones) if (z != null && z.childCount > 0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
         }
 
         foreach (var go in allCards)
@@ -2215,7 +2223,7 @@ public void ShuffleDeck(bool isPlayer)
                 {
                     if (zone != null && zone.childCount > 0)
                     {
-                        var card = zone.GetChild(0).GetComponent<CardDisplay>();
+                        var card = zone.GetComponentInChildren<CardDisplay>();
                         if (card != null) {
                             card.hasAttackedThisTurn = false;
                             card.hasChangedPositionThisTurn = false;
@@ -2229,7 +2237,7 @@ public void ShuffleDeck(bool isPlayer)
                 {
                     if (zone != null && zone.childCount > 0)
                     {
-                        var card = zone.GetChild(0).GetComponent<CardDisplay>();
+                        var card = zone.GetComponentInChildren<CardDisplay>();
                         if (card != null) {
                             card.hasAttackedThisTurn = false;
                             card.hasChangedPositionThisTurn = false;
@@ -3115,14 +3123,53 @@ public void ShuffleDeck(bool isPlayer)
             return false;
         }
 
-        if (CardEffectManager.Instance != null)
-        {
-            LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(display);
-            if (lc == null) lc = new LuaCard(display);
+        int tributes = 0;
+        if (dynamicLevel >= 5 && dynamicLevel <= 6) tributes = 1;
+        if (dynamicLevel >= 7) tributes = 2;
+        if (disableTributeRequirements) tributes = 0;
 
-            int tp = isPlayer ? 0 : 1;
-            var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("NormalSummon").Function;
-                CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, tp, lc, isSet, dynamicLevel));
+        if (tributes > 0)
+        {
+            List<CardData> possibleTributes = new List<CardData>();
+            Transform[] playerZones = isPlayer ? duelFieldUI.playerMonsterZones : duelFieldUI.opponentMonsterZones;
+            foreach (var zone in playerZones) {
+                if (zone != null && zone.childCount > 0) {
+                    var cd = zone.GetComponentInChildren<CardDisplay>();
+                    // Cartas Face-down (Setadas) são alvos nativamente válidos!
+                    if (cd != null && cd.CurrentCardData != null && cd.CurrentCardData.type.Contains("Monster")) possibleTributes.Add(cd.CurrentCardData);
+                }
+            }
+
+            if (possibleTributes.Count < tributes)
+            {
+                if (isPlayer && !isSimulating && UIManager.Instance != null) 
+                    UIManager.Instance.ShowMessage($"Tributos insuficientes! Necessário: {tributes}.");
+                return false;
+            }
+
+            if (!isPlayer || isSimulating)
+            {
+                var chosen = possibleTributes.OrderBy(c => c.atk).Take(tributes).ToList();
+                PerformTributeSummon(cardGO, cardData, isSet, isPlayer, dynamicLevel, chosen);
+                return true;
+            }
+
+            if (useDirectHandSelection)
+            {
+                StartDirectSelection(possibleTributes, tributes, tributes, null, $"Selecione {tributes} Tributo(s) para {cardData.name}", (selected) => {
+                    if (selected != null && selected.Count == tributes) PerformTributeSummon(cardGO, cardData, isSet, isPlayer, dynamicLevel, selected);
+                }, HighlightCategory.Tribute);
+            }
+            else
+            {
+                if (UIManager.Instance != null)
+                {
+                    UIManager.Instance.ShowCardSelection(possibleTributes, $"Selecione {tributes} Tributo(s) para {cardData.name}", tributes, tributes, (selected) => {
+                        if (selected != null && selected.Count == tributes) PerformTributeSummon(cardGO, cardData, isSet, isPlayer, dynamicLevel, selected);
+                    });
+                }
+            }
+            return true;
         }
         else
         {
@@ -3131,10 +3178,35 @@ public void ShuffleDeck(bool isPlayer)
                 else normalSummonsThisTurnOpponent++;
             }
             Vector3 sourcePos = cardGO.transform.position;
-            FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, dynamicLevel >= 5, null, null, sourcePos, CardLocation.Hand);
+            FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, false, null, null, sourcePos, CardLocation.Hand);
+            return true;
         }
+    }
+
+    private void PerformTributeSummon(GameObject cardGO, CardData cardData, bool isSet, bool isPlayer, int dynamicLevel, List<CardData> tributes)
+    {
+        Transform firstTributeZone = null;
+
+        foreach (var tribute in tributes)
+        {
+            CardDisplay fieldObject = FindCardOnField(tribute.id, isPlayer);
+            if (fieldObject != null) 
+            {
+                // Salva a zona da primeira carta tributada para pousar nela (se a opção estiver ativa)
+                if (firstTributeZone == null) firstTributeZone = fieldObject.transform.parent;
+                TributeCard(fieldObject);
+            }
+        }
+
+        if (!infiniteNormalSummons) {
+            if (isPlayer) normalSummonsThisTurnPlayer++;
+            else normalSummonsThisTurnOpponent++;
+        }
+
+        Vector3 sourcePos = cardGO.transform.position;
+        Transform targetZone = placeTributeSummonInTributeZone ? firstTributeZone : null;
         
-        return true;
+        FinalizeSummon(cardGO, cardData, isSet, isPlayer, isSet, true, targetZone, null, sourcePos, CardLocation.Hand);
     }
 
     // Novo método para Special Summon que pede a posição
@@ -3391,7 +3463,7 @@ public void ShuffleDeck(bool isPlayer)
         Transform[] playerZones = duelFieldUI != null ? duelFieldUI.playerMonsterZones : new Transform[0];
         foreach (var zone in playerZones) {
             if (zone.childCount > 0) {
-                var cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                var cd = zone.GetComponentInChildren<CardDisplay>();
                 if (cd != null) possibleTributes.Add(cd.CurrentCardData);
             }
         }
@@ -3603,19 +3675,21 @@ public void ShuffleDeck(bool isPlayer)
             {
                 if (duelFieldUI.playerFieldSpell.childCount > 0)
                 {
-                    var oldField = duelFieldUI.playerFieldSpell.GetChild(0).GetComponent<CardDisplay>();
+                    var oldField = duelFieldUI.playerFieldSpell.GetComponentInChildren<CardDisplay>();
                     if (oldField != null) {
                         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(oldField);
                         SendToGraveyard(oldField.CurrentCardData, true, CardLocation.Field, SendReason.Rule);
+                        oldField.transform.SetParent(null);
                         Destroy(oldField.gameObject);
                     }
                 }
                 if (duelFieldUI.opponentFieldSpell.childCount > 0)
                 {
-                    var oldField = duelFieldUI.opponentFieldSpell.GetChild(0).GetComponent<CardDisplay>();
+                    var oldField = duelFieldUI.opponentFieldSpell.GetComponentInChildren<CardDisplay>();
                     if (oldField != null) {
                         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(oldField);
                         SendToGraveyard(oldField.CurrentCardData, false, CardLocation.Field, SendReason.Rule);
+                        oldField.transform.SetParent(null);
                         Destroy(oldField.gameObject);
                     }
                 }
@@ -3640,6 +3714,13 @@ public void ShuffleDeck(bool isPlayer)
         cardGO.transform.SetParent(targetZone);
         cardGO.transform.localPosition = Vector3.zero;
         cardGO.transform.localScale = fieldCardScale;
+        
+        if (display != null)
+        {
+            if (isSet) { cardGO.transform.localRotation = Quaternion.Euler(0, 0, isPlayer ? 0f : 180f); display.ShowBack(); }
+            else { cardGO.transform.localRotation = Quaternion.Euler(0, 0, isPlayer ? 0f : 180f); display.ShowFront(); }
+        }
+
         Vector3 endPos = cardGO.transform.position;
         Quaternion endRot = cardGO.transform.rotation;
 
@@ -3690,9 +3771,6 @@ public void ShuffleDeck(bool isPlayer)
                 if (isSet) RefreshAllCardsVisuals();
             };
             
-            if (isSet) { cardGO.transform.localRotation = Quaternion.Euler(0, 0, isPlayer ? 0f : 180f); display.ShowBack(); }
-            else { cardGO.transform.localRotation = Quaternion.Euler(0, 0, isPlayer ? 0f : 180f); display.ShowFront(); }
-
             if (sourcePos.HasValue && DuelFXManager.Instance != null && !isSimulating)
             {
                 bool isFieldSpellZone = targetZone == duelFieldUI.playerFieldSpell || targetZone == duelFieldUI.opponentFieldSpell;
@@ -3870,7 +3948,7 @@ public void ShuffleDeck(bool isPlayer)
             {
                 if (z.childCount > 0)
                 {
-                    var c = z.GetChild(0).GetComponent<CardDisplay>();
+                    var c = z.GetComponentInChildren<CardDisplay>();
                     if (c != null && c.isOnField && !c.isFlipped && targetIds.Contains(c.CurrentCardData.id)) return true;
                 }
             }
@@ -3885,12 +3963,12 @@ public void ShuffleDeck(bool isPlayer)
         // Checa Field Spells
         if (duelFieldUI.playerFieldSpell.childCount > 0)
         {
-            var c = duelFieldUI.playerFieldSpell.GetChild(0).GetComponent<CardDisplay>();
+            var c = duelFieldUI.playerFieldSpell.GetComponentInChildren<CardDisplay>();
             if (c != null && !c.isFlipped && targetIds.Contains(c.CurrentCardData.id)) return true;
         }
         if (duelFieldUI.opponentFieldSpell.childCount > 0)
         {
-            var c = duelFieldUI.opponentFieldSpell.GetChild(0).GetComponent<CardDisplay>();
+            var c = duelFieldUI.opponentFieldSpell.GetComponentInChildren<CardDisplay>();
             if (c != null && !c.isFlipped && targetIds.Contains(c.CurrentCardData.id)) return true;
         }
 
@@ -4057,10 +4135,10 @@ public void ShuffleDeck(bool isPlayer)
         // Destaca as cartas válidas na mão E no campo
         List<GameObject> allCards = new List<GameObject>(playerHand);
         if (duelFieldUI != null) {
-            foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
-            foreach(var z in duelFieldUI.playerSpellZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
-            foreach(var z in duelFieldUI.opponentMonsterZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
-            foreach(var z in duelFieldUI.opponentSpellZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
+            foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+            foreach(var z in duelFieldUI.playerSpellZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+            foreach(var z in duelFieldUI.opponentMonsterZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+            foreach(var z in duelFieldUI.opponentSpellZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
         }
 
         foreach (var go in allCards)
@@ -4151,10 +4229,10 @@ public void ShuffleDeck(bool isPlayer)
         // Limpa visuais (Mão e Campo)
         List<GameObject> allCards = new List<GameObject>(playerHand);
         if (duelFieldUI != null) {
-            foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
-            foreach(var z in duelFieldUI.playerSpellZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
-            foreach(var z in duelFieldUI.opponentMonsterZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
-            foreach(var z in duelFieldUI.opponentSpellZones) if(z.childCount>0) allCards.Add(z.GetChild(0).gameObject);
+            foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+            foreach(var z in duelFieldUI.playerSpellZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+            foreach(var z in duelFieldUI.opponentMonsterZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+            foreach(var z in duelFieldUI.opponentSpellZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
         }
 
         foreach (var go in allCards)
@@ -4287,7 +4365,7 @@ public void ShuffleDeck(bool isPlayer)
         {
             if (zone.childCount > 0)
             {
-                var display = zone.GetChild(0).GetComponent<CardDisplay>();
+                var display = zone.GetComponentInChildren<CardDisplay>();
                 if (display != null && display.CurrentCardData.id == cardId)
                 {
                     return display;
@@ -4300,7 +4378,7 @@ public void ShuffleDeck(bool isPlayer)
         {
             if (zone.childCount > 0)
             {
-                var display = zone.GetChild(0).GetComponent<CardDisplay>();
+                var display = zone.GetComponentInChildren<CardDisplay>();
                 if (display != null && display.CurrentCardData.id == cardId)
                 {
                     return display;
@@ -4496,7 +4574,7 @@ public void ShuffleDeck(bool isPlayer)
         {
             if (zone != null && zone.childCount > 0)
             {
-                var cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                var cd = zone.GetComponentInChildren<CardDisplay>();
                 if (cd != null) possibleMaterials.Add(cd.CurrentCardData);
             }
         }
@@ -4854,13 +4932,23 @@ public void ShuffleDeck(bool isPlayer)
         bool isFirstTurn = turnCount == 1;
         bool showIndicators = !isBusy && attackIndicatorMode == AttackIndicatorMode.AlwaysInBattlePhase && currentPhase == GamePhase.Battle && isPlayerTurn && !isFirstTurn;
 
+        Debug.Log($"[RefreshAttackIndicators] Iniciando Varredura. Fase: {currentPhase} | Deve Mostrar: {showIndicators}");
+
         Transform[] zones = duelFieldUI.playerMonsterZones;
-        foreach (var zone in zones)
+        for (int i = 0; i < zones.Length; i++)
         {
+            Transform zone = zones[i];
             if (zone.childCount > 0)
             {
-                CardDisplay card = zone.GetChild(0).GetComponent<CardDisplay>();
-                if (card != null && !card.isFlipped && card.CurrentCardData.type.Contains("Monster"))
+                // Double Check: Busca a carta em qualquer posição da zona (ignora Fantasmas que tomaram a Posição 0)
+                CardDisplay card = zone.GetComponentInChildren<CardDisplay>();
+                if (card == null)
+                {
+                    Debug.Log($"[RefreshAttackIndicators] Zona {i + 1} possui filhos, mas nenhum CardDisplay (Encontrado Fantasma: {zone.GetChild(0).name}).");
+                    continue;
+                }
+                
+                if (!card.isFlipped && card.CurrentCardData.type.Contains("Monster"))
                 {
                     if (showIndicators)
                     {
@@ -4869,6 +4957,9 @@ public void ShuffleDeck(bool isPlayer)
                         {
                         bool isAttacker = CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null && CardEffectManager.Instance.luaDuel.currentAttacker.unityCard == card;
                         bool canAttack = card.position == CardDisplay.BattlePosition.Attack && !card.hasAttackedThisTurn && !isAttacker;
+                            
+                            Debug.Log($"[RefreshAttackIndicators] {card.CurrentCardData.name} (Zona {i+1}) -> Em Ataque? {card.position == CardDisplay.BattlePosition.Attack} | Já atacou? {card.hasAttackedThisTurn} | Recebeu Espadinha? {canAttack}");
+                            
                             if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCanAttackIndicator(card, canAttack);
 
                             bool cannotAttack = !canAttack;

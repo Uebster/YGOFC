@@ -411,7 +411,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     private Coroutine flipCoroutine;
     
     // Animação fluida de Flip 2D (esmagando e esticando o eixo X)
-    private IEnumerator DoFlipAnimation(Texture2D targetTexture)
+    private IEnumerator DoFlipAnimation(Texture2D targetTexture, System.Action onComplete = null)
     {
         float baseDuration = 0.3f;
         if (DuelFXManager.Instance != null) baseDuration = DuelFXManager.Instance.flipAnimationDuration;
@@ -444,9 +444,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
         // O Efeito/Pulse acontece estritamente APÓS a carta terminar de desvirar
         if (DuelFXManager.Instance != null && DuelFXManager.Instance.enableAnimations) DuelFXManager.Instance.PlayFlipEffect(this);
+        
+        onComplete?.Invoke();
     }
 
-    private void TriggerTextureChange(Texture2D newTexture, bool isRevealing, bool allowAnimation = true)
+    private void TriggerTextureChange(Texture2D newTexture, bool isRevealing, bool allowAnimation = true, System.Action onComplete = null)
     {
         bool animate = false;
         // A animação só é permitida se o chamador permitir E o GameManager estiver configurado para isso
@@ -469,12 +471,14 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (animate && gameObject.activeInHierarchy && DuelFXManager.Instance != null && DuelFXManager.Instance.enableAnimations)
         {
             if (flipCoroutine != null) StopCoroutine(flipCoroutine);
-            flipCoroutine = StartCoroutine(DoFlipAnimation(newTexture));
+            flipCoroutine = StartCoroutine(DoFlipAnimation(newTexture, onComplete));
         }
         else if (cardImage != null)
         {
             cardImage.texture = newTexture;
+            onComplete?.Invoke();
         }
+        else { onComplete?.Invoke(); }
     }
 
     public void FlipCard()
@@ -487,14 +491,15 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         TriggerTextureChange(isFlipped ? backTexture : frontTexture, !isFlipped, true);
     }
 
-    public void ShowFront(bool animate = true)
+    public void ShowFront(bool animate = true, System.Action onComplete = null)
     {
-        if (cardImage == null || frontTexture == null) return;
+        if (cardImage == null || frontTexture == null) { onComplete?.Invoke(); return; }
         if (isFlipped)
         {
             isFlipped = false;
-            TriggerTextureChange(frontTexture, true, animate);
+            TriggerTextureChange(frontTexture, true, animate, onComplete);
         }
+        else { onComplete?.Invoke(); }
     }
 
     public Texture2D GetFrontTexture()
@@ -508,14 +513,15 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (cardImage != null && tex != null) cardImage.texture = tex;
     }
 
-    public void ShowBack(bool animate = true)
+    public void ShowBack(bool animate = true, System.Action onComplete = null)
     {
-        if (cardImage == null || backTexture == null) return;
+        if (cardImage == null || backTexture == null) { onComplete?.Invoke(); return; }
         if (!isFlipped)
         {
             isFlipped = true;
-            TriggerTextureChange(backTexture, false, animate);
+            TriggerTextureChange(backTexture, false, animate, onComplete);
         }
+        else { onComplete?.Invoke(); }
     }
 
     public void ChangePosition()
@@ -527,6 +533,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             transform.localRotation = Quaternion.Euler(0, 0, 90);
             // Se estava virado para cima, continua virado para cima (Defesa Face-Up)
             // Se estava virado para baixo (Set), continua virado para baixo (Defesa Face-Down)
+            if (GameManager.Instance != null) GameManager.Instance.OnBattlePositionChanged(this);
         }
         else
         {
@@ -537,21 +544,27 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             // Flip Summon: Se estava virado para baixo em defesa e muda para ataque, vira para cima
             if (isFlipped)
             {
-                RevealCard();
-                // Flip Summon conta como invocação? Em regras oficiais sim, mas aqui tratamos como mudança de posição.
-                // Efeitos de Flip seriam disparados aqui.
+                RevealCard(false, true, () => {
+                    if (GameManager.Instance != null) {
+                        GameManager.Instance.OnBattlePositionChanged(this);
+                        GameManager.Instance.OnSummon(this);
+                    }
+                });
             }
-            GameManager.Instance.OnBattlePositionChanged(this);
-            // Informa o EventManager da invocação
-            if (GameManager.Instance != null)
-                GameManager.Instance.OnSummon(this);
+            else
+            {
+                if (GameManager.Instance != null) {
+                    GameManager.Instance.OnBattlePositionChanged(this);
+                    GameManager.Instance.OnSummon(this);
+                }
+            }
         }
     }
 
     // Novo método para revelar carta (Flip) com verificação de exceções
-    public void RevealCard(bool isAttackTriggered = false, bool triggerEffects = true)
+    public void RevealCard(bool isAttackTriggered = false, bool triggerEffects = true, System.Action onComplete = null)
     {
-        if (!isFlipped) return; // Já está revelada
+        if (!isFlipped) { onComplete?.Invoke(); return; } // Já está revelada
 
         // Verifica exceções via SpellTrapManager ou efeitos de monstros
         // Por exemplo, "Light of Intervention" impede monstros de serem setados face-down, ou revela todos.
@@ -569,7 +582,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 CardEffectManager.Instance.ExecuteCardEffect(this);
         }
 
-        ShowFront();
+        ShowFront(true, onComplete);
 
         // Se for Spell/Trap, pode ser que precise ficar revelada ou ir pro GY dependendo do tipo (Continuous vs Normal)
         // Isso será tratado pelo GameManager/SpellTrapManager na resolução da chain.

@@ -72,7 +72,7 @@ public class LuaEventManager
         {
             if (z != null && z.childCount > 0)
             {
-                var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                var cd = z.GetComponentInChildren<CardDisplay>();
                 if (cd != null) list.Add(cd);
             }
         }

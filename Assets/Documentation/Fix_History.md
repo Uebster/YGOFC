@@ -150,3 +150,7 @@ O controle de tempo da *Standby Phase* apresentou dois sintomas distintos que ma
 ### Fantasma de Clique no Turno 1 (Hover Preso)
 - **Bug Original:** Mesmo com o ataque bloqueado no Turno 1 e a `TargetingSwordUI` impedida de nascer, clicar em um monstro do jogador fazia ele acender a borda vermelha (Attack Selection) e ficar travado aguardando um alvo fantasma.
 - **Correção Aplicada:** A trava visual da espada no `TargetingSwordUI` foi movida para uma corrotina `WaitForEndOfFrame()`. Isso permite que a Unity processe a bagunça inteira do clique (EventSystem) e, no milissegundo final antes de desenhar a tela, a engine passa uma "borracha", forçando `SetAttackSelectionVisual(false)` e limpando o alvo do motor Lua.
+
+### Conflito de Eixo X no Hover da Mão (Layout Group)
+- **Bug Original:** Ao manter o mouse sobre uma carta na mão enquanto uma nova carta era sacada (ou a mão reordenada), a carta sob o hover dava um "pulo" bizarro ou tremia para os lados, ficando fora de sincronia com as outras.
+- **Correção Aplicada:** O `HoverAnimationRoutine` no `CardDisplay` estava memorizando e forçando a posição absoluta nos eixos X e Y (`basePosition`). Como a Mão usa um *Horizontal Layout Group* (que controla o X dinamicamente), ocorria uma "briga" entre a animação e o Layout. A corrotina foi alterada para interpolar estritamente o eixo Y (`anchoredPosition.y`), deixando o eixo X livre para a Unity deslizar a carta suavemente para os lados durante o Hover.

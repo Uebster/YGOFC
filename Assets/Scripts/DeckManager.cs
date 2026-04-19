@@ -201,6 +201,7 @@ public class DeckManager : MonoBehaviour
 
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
 
+        card.transform.SetParent(null);
         Destroy(card.gameObject);
 
         // Se for um Token (ex: foi alvo de efeito que volta pro deck), ele evapora e não suja o deck.

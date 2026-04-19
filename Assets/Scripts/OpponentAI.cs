@@ -296,7 +296,7 @@ public class OpponentAI : MonoBehaviour
         {
             if (z.childCount > 0)
             {
-                var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                var cd = z.GetComponentInChildren<CardDisplay>();
                 if (cd != null && cd.isFlipped) fearScore++;
             }
         }
@@ -308,7 +308,7 @@ public class OpponentAI : MonoBehaviour
         {
             if (z.childCount > 0)
             {
-                var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                var cd = z.GetComponentInChildren<CardDisplay>();
                 if (cd != null) boardValue += Mathf.Max(cd.currentAtk, cd.currentDef);
             }
         }
@@ -316,7 +316,7 @@ public class OpponentAI : MonoBehaviour
         {
             if (z.childCount > 0)
             {
-                var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                var cd = z.GetComponentInChildren<CardDisplay>();
                 if (cd != null) boardValue -= Mathf.Max(cd.currentAtk, cd.currentDef);
             }
         }
@@ -729,7 +729,7 @@ public class OpponentAI : MonoBehaviour
         {
             if (zone.childCount > 0)
             {
-                var defender = zone.GetChild(0).GetComponent<CardDisplay>();
+                var defender = zone.GetComponentInChildren<CardDisplay>();
                 if (defender == null || defender.CurrentCardData == null) continue;
 
                 float score = 0;
@@ -962,7 +962,7 @@ public class OpponentAI : MonoBehaviour
                             int maxOtherPlayerAtk = 0;
                             foreach (var zone in GameManager.Instance.duelFieldUI.playerMonsterZones) {
                                 if (zone.childCount > 0) {
-                                    var m = zone.GetChild(0).GetComponent<CardDisplay>();
+                                    var m = zone.GetComponentInChildren<CardDisplay>();
                                     // Procura outras ameaças em posição de ataque
                                     if (m != null && m != triggerCard && !m.isFlipped && m.position == CardDisplay.BattlePosition.Attack) {
                                         if (m.currentAtk > maxOtherPlayerAtk) maxOtherPlayerAtk = m.currentAtk;
@@ -1106,7 +1106,7 @@ public class OpponentAI : MonoBehaviour
         {
             if (zone.childCount > 0)
             {
-                var cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                var cd = zone.GetComponentInChildren<CardDisplay>();
                 if (cd != null && !cd.isFlipped && cd.currentAtk > maxAtk)
                 {
                     maxAtk = cd.currentAtk;
@@ -1186,7 +1186,7 @@ public class OpponentAI : MonoBehaviour
         {
             if (zone.childCount > 0)
             {
-                var cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                var cd = zone.GetComponentInChildren<CardDisplay>();
                 if (cd != null) list.Add(cd);
             }
         }

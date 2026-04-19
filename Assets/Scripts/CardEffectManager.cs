@@ -86,7 +86,7 @@ public class CardEffectManager : MonoBehaviour
             Transform[] zones = card.isPlayerCard ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
             foreach (var z in zones) {
                 if (z.childCount > 0) {
-                    var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                    var cd = z.GetComponentInChildren<CardDisplay>();
                     if (cd != null && (cd.CurrentCardData.name == "7" || cd.CurrentCardData.id == "DM0004" || cd.CurrentCardData.id == "0004") && !cd.isFlipped) {
                         count7++; cards7.Add(cd);
                     }
@@ -432,7 +432,7 @@ public class CardEffectManager : MonoBehaviour
         {
             if (z.childCount > 0)
             {
-                CardDisplay cd = z.GetChild(0).GetComponent<CardDisplay>();
+                CardDisplay cd = z.GetComponentInChildren<CardDisplay>();
                 if (cd != null && cd.isFlipped) CheckAndAdd(cd, EnsureCardScriptLoaded(cd));
             }
         }
@@ -443,7 +443,7 @@ public class CardEffectManager : MonoBehaviour
         {
             if (z.childCount > 0)
             {
-                CardDisplay cd = z.GetChild(0).GetComponent<CardDisplay>();
+                CardDisplay cd = z.GetComponentInChildren<CardDisplay>();
                 if (cd != null && !cd.isFlipped) CheckAndAdd(cd, EnsureCardScriptLoaded(cd));
             }
         }
@@ -509,7 +509,7 @@ public class CardEffectManager : MonoBehaviour
         {
             if (z != null && z.childCount > 0)
             {
-                var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                var cd = z.GetComponentInChildren<CardDisplay>();
                 if (cd != null) list.Add(cd);
             }
         }

@@ -44601,7 +44601,7 @@ MonoBehaviour:
   useFieldCardsRounded: 1
   useHandCardsRounded: 1
   useCardViewerRounded: 1
-  devMode: 1
+  devMode: 0
   fullTestMode: 1
   testDuelDirectly: 1
   testDeckBuilderDirectly: 0
@@ -44749,6 +44749,7 @@ MonoBehaviour:
   normalSummonsThisTurnPlayer: 0
   normalSummonsThisTurnOpponent: 0
   pendingEffectDraws: 0
+  justCanceledSomething: 0
   isSelectingFromHand: 0
   isSelectingResponse: 0
 --- !u!114 &532839427

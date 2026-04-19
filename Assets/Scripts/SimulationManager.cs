@@ -304,7 +304,7 @@ public class SimulationManager : MonoBehaviour
         {
             if (zone.childCount > 0)
             {
-                CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                CardDisplay cd = zone.GetComponentInChildren<CardDisplay>();
                 if (cd != null && cd.isFlipped) // Se estiver setada
                 {
                     if (Random.value > 0.2f) // 80% de chance de tentar ativar
@@ -324,7 +324,7 @@ public class SimulationManager : MonoBehaviour
         {
             if (zone.childCount > 0)
             {
-                CardDisplay cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                CardDisplay cd = zone.GetComponentInChildren<CardDisplay>();
 
                 // Tenta estourar Efeitos de Monstros no campo
                 if (cd != null && !cd.isFlipped && cd.CurrentCardData.type.Contains("Effect") && !triedCards.Contains(cd.gameObject))
@@ -363,7 +363,7 @@ public class SimulationManager : MonoBehaviour
         {
             if (z.childCount > 0)
             {
-                var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                var cd = z.GetComponentInChildren<CardDisplay>();
                 if (cd != null && cd.position == CardDisplay.BattlePosition.Attack) 
                     potentialAttackers.Add(cd);
             }
@@ -374,7 +374,7 @@ public class SimulationManager : MonoBehaviour
             List<CardDisplay> targets = new List<CardDisplay>();
             foreach (var z in oppZones)
             {
-                if (z.childCount > 0) targets.Add(z.GetChild(0).GetComponent<CardDisplay>());
+                if (z.childCount > 0) targets.Add(z.GetComponentInChildren<CardDisplay>());
             }
 
             if (targets.Count > 0)

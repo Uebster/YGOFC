@@ -97,7 +97,7 @@ public class RitualUI : MonoBehaviour
         {
             if (zone.childCount > 0)
             {
-                var display = zone.GetChild(0).GetComponent<CardDisplay>();
+                var display = zone.GetComponentInChildren<CardDisplay>();
                 if (display != null && !display.isFlipped)
                 {
                     CreateCardItem(display.CurrentCardData, fieldTributesContent, () => ToggleTributeSelection(display.CurrentCardData));

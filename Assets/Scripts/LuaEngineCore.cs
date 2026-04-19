@@ -247,6 +247,8 @@ public class LuaEngineCore
         luaEngine.Globals["CATEGORY_RECOVER"] = 0x100000;
         luaEngine.Globals["CATEGORY_DESTROY"] = 0x20000;
         luaEngine.Globals["REASON_EFFECT"] = 0x40;
+        luaEngine.Globals["REASON_SUMMON"] = 0x20;
+        luaEngine.Globals["REASON_MATERIAL"] = 0x80;
         luaEngine.Globals["CHAININFO_TARGET_PLAYER"] = 1;
         luaEngine.Globals["CHAININFO_TARGET_PARAM"] = 2;
 
@@ -342,14 +344,14 @@ public class LuaEngineCore
                 return true
             end
 
-            function Core.NormalSummon(player, card, isSet, dynLevel)
+            function Core.NormalSummon(player, card, isSet, dynLevel, ignoreTributes)
                 local level = dynLevel or card:GetLevel()
                 local tributes = 0
                 if level >= 5 and level <= 6 then tributes = 1 end
                 if level >= 7 then tributes = 2 end
-                if Duel.GetActivityCount(player, 2) > 0 then return false end
+                if ignoreTributes then tributes = 0 end
                 if tributes > 0 then
-                    local sg = Duel.SelectReleaseGroup(player, Card.IsReleasable, tributes, tributes, nil)
+                    local sg = Duel.SelectReleaseGroup(player, aux.TRUE, tributes, tributes, nil)
                     if not sg or sg:GetCount() < tributes then return false end
                     Duel.Release(sg, REASON_SUMMON)
                 end

@@ -99,7 +99,7 @@ public class FusionUI : MonoBehaviour
         {
             if (zone.childCount > 0)
             {
-                var display = zone.GetChild(0).GetComponent<CardDisplay>();
+                var display = zone.GetComponentInChildren<CardDisplay>();
                 if (display != null)
                 {
                     CreateCardItem(display.CurrentCardData, fieldContent, () => ToggleMaterialSelection(display.CurrentCardData));

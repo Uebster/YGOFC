@@ -154,6 +154,7 @@ public class FusionManager : MonoBehaviour
                     if (banishMaterials) GameManager.Instance.BanishCard(fieldObj);
                     else {
                         GameManager.Instance.SendToGraveyard(mat, true, CardLocation.Field, SendReason.Effect);
+                        fieldObj.transform.SetParent(null);
                         Destroy(fieldObj.gameObject);
                     }
                 }

@@ -154,7 +154,7 @@ public class DuelActionMenu : MonoBehaviour
                     availableMats.AddRange(GameManager.Instance.GetPlayerHandData().Where(c => c.type.Contains("Monster")));
                     foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones) {
                         if (z.childCount > 0) {
-                            var cd = z.GetChild(0).GetComponent<CardDisplay>();
+                            var cd = z.GetComponentInChildren<CardDisplay>();
                             if (cd != null && !cd.isFlipped) availableMats.Add(cd.CurrentCardData);
                         }
                     }
