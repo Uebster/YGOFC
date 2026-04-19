@@ -1482,12 +1482,38 @@ public void ShuffleDeck(bool isPlayer)
         // Remove modificadores
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
 
-        card.transform.SetParent(null);
-        // Destrói objeto do campo
-        Destroy(card.gameObject);
+        // REAPROVEITAMENTO FÍSICO: Não destruímos o GameObject. Isso mantém as referências LUA vivas!
+        card.isOnField = false;
+        card.isInteractable = true;
+        card.hoverYOffset = isPlayer ? playerHandHoverYOffset : opponentHandHoverYOffset;
+        
+        Transform handTransform = isPlayer ? playerHandLayoutGroup : opponentHandLayoutGroup;
+        card.transform.SetParent(handTransform);
+        
+        if (isPlayer) { if (!playerHand.Contains(card.gameObject)) playerHand.Add(card.gameObject); }
+        else { if (!opponentHand.Contains(card.gameObject)) opponentHand.Add(card.gameObject); }
 
-        // Adiciona à mão
-        AddCardToHand(data, isPlayer, startPos, prevLoc, isFieldSpellZone);
+        card.transform.localScale = handCardScale;
+        
+        // Animação assíncrona reaproveitando a corrotina de voo
+        if (enableDrawAnimation && !isSimulating && gameObject.activeInHierarchy)
+        {
+            CardFlightSettings settings = null;
+            if (DuelFXManager.Instance != null)
+            {
+                if (prevLoc == CardLocation.Field) settings = isFieldSpellZone ? DuelFXManager.Instance.flightFieldSpellZoneToHand : DuelFXManager.Instance.flightFieldToHand;
+                else if (prevLoc == CardLocation.Graveyard) settings = DuelFXManager.Instance.flightGraveyardToHand;
+                else if (prevLoc == CardLocation.Banished) settings = DuelFXManager.Instance.flightBanishToHand;
+                else settings = DuelFXManager.Instance.flightDeckToHand;
+            }
+            StartCoroutine(AnimateCardToHand(card.gameObject, isPlayer, startPos, settings, prevLoc != CardLocation.Field && prevLoc != CardLocation.Hand));
+        }
+        else
+        {
+            if (isPlayer || showOpponentHand) card.ShowFront();
+            else { card.transform.localRotation = Quaternion.Euler(0, 0, 180f); card.ShowBack(); }
+        }
+
         Debug.Log($"{data.name} retornada para a mão.");
 
         // 0343 - Criosphinx
@@ -1846,13 +1872,7 @@ public void ShuffleDeck(bool isPlayer)
             case CardLocation.Hand:
                 Debug.Log($"{logPrefix} → Hand");
                 
-                // Remove da mão se estava lá
-                if (isPlayer) playerHand.Remove(card.gameObject);
-                else opponentHand.Remove(card.gameObject);
-                // Destrói e retorna à mão
-                card.transform.SetParent(null);
-                Destroy(card.gameObject);
-                AddCardToHand(data, isPlayer, startPos, prevLoc, isFieldSpellZone);
+                ReturnToHand(card);
                 break;
 
             case CardLocation.Deck:

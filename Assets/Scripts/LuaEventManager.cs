@@ -54,7 +54,8 @@ public class LuaEventManager
             if (lc_loop == null) continue;
 
             // Impede a Engine de auto-ativar cartas Manuais (Spells/Traps) ou Quick Effects. Eles devem ser ativados pelo jogador na Response Window!
-            var matchingEffects = lc_loop.registeredEffects.FindAll(e => e.code == eventCode && e.type != 0x0010 && e.type != 0x0100 && e.type != 0x0080);
+            // EXCLUI EFFECT_TYPE_SINGLE (0x0001) para impedir que gatilhos pessoais (ex: EVENT_TO_GRAVE) disparem falsamente quando outra carta morre.
+            var matchingEffects = lc_loop.registeredEffects.FindAll(e => e.code == eventCode && e.type != 0x0010 && e.type != 0x0100 && e.type != 0x0080 && (e.type & 0x0001) == 0);
             foreach(var effect in matchingEffects)
             {
                 if (core.CanActivateEffect(lc_loop, effect, lc_loop.GetControler(), triggerArgs))

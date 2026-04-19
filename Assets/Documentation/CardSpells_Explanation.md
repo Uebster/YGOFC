@@ -20,7 +20,7 @@ Antes de entrarmos nos detalhes específicos de cada carta, é vital entender as
 
 ---
 
-## 7 (ID: DM0004)
+## ID: DM0004 - 7 (Password: 23771716)
 
 A carta **"7"** é uma Carta Mágica Contínua clássica e possui um efeito dividido em duas partes muito interessantes.
 
@@ -37,7 +37,7 @@ A carta **"7"** é uma Carta Mágica Contínua clássica e possui um efeito divi
 ### 💡 O grande truque dessa carta:
 Esses dois efeitos combaram perfeitamente! Quando você atinge o Jackpot e as três cartas "7" são destruídas pelo próprio efeito, elas estão indo do campo para o cemitério. Isso significa que, além de comprar as 3 cartas, o segundo efeito vai engatilhar três vezes, curando um total de **2100 LP**!
 
-## 7 Completed (ID: DM0006)
+## ID: DM0006 - 7 Completed (Password: 86198326)
 
 A carta **"7 Completed"** é uma Carta Mágica de Equipamento (Equip Spell) muito versátil, focada especificamente em fortalecer monstros mecânicos.
 
@@ -52,7 +52,7 @@ A carta **"7 Completed"** é uma Carta Mágica de Equipamento (Equip Spell) muit
 ### 💡 O grande truque dessa carta:
 A sua flexibilidade é o seu ponto forte. Diferente de outros equipamentos que dão um bônus fixo, com a "7 Completed" você pode se adaptar ao estado do jogo. Precisa destruir um monstro forte do oponente? Coloque os 700 no ATK de um *Jinzo* ou *X-Head Cannon*. Está encurralado e precisa ganhar tempo? Equipe em um monstro setado virado para cima e coloque os 700 na DEF, criando uma barreira de metal quase impenetrável!
 
-## A Deal with Dark Ruler (ID: 06850209)
+## ID: DM0009 - A Deal with Dark Ruler (Password: 06850209)
 
 A carta **"A Deal with Dark Ruler"** é uma Carta Mágica Rápida (Quick-Play Spell) com um requisito de ativação muito específico que traz ao campo uma besta de puro poder destrutivo.
 
@@ -70,7 +70,7 @@ Como o requisito é apenas que o monstro seja "enviado ao Cemitério", você pod
 *   Na sua Main Phase 2, você usa a carta *Destruction Ring* no seu próprio *Blue-Eyes*, causando 3000 de dano de efeito ao oponente.
 *   Imediatamente depois, como o *Blue-Eyes* foi para o cemitério, você ativa **A Deal with Dark Ruler** da sua mão e invoca o *Berserk Dragon* (que tem 3500 de ATK e ataca todos os monstros do oponente) para garantir que não sobre nada do outro lado da mesa no próximo turno!
 
-## A Feather of the Phoenix (ID: 04914069)
+## ID: DM0010 - A Feather of the Phoenix (Password: 49140998)
 
 A carta **"A Feather of the Phoenix"** é uma Carta Mágica Normal (Normal Spell) que oferece uma troca de recursos valiosa para recuperar suas melhores cartas.
 
@@ -87,7 +87,7 @@ Apesar de parecer desvantajosa por "gastar" uma carta da mão e o seu próximo s
 *   Você pode descartar um monstro que prefere ter no cemitério (como uma *Sinister Serpent* ou um monstro *Light/Dark* para preparar o custo do *Black Luster Soldier*) para recuperar uma magia ou armadilha devastadora que você já usou (como *Raigeki*, *Pot of Greed* ou *Mirror Force*).
 *   No turno seguinte (ou no mesmo turno, se você tiver um efeito de compra extra), você sacará a carta perfeita que acabou de recuperar. É o sacrifício de um recurso presente em prol de garantir a sua principal jogada futura!
 
-## A Legendary Ocean (ID: 0013)
+## ID: DM0013 - A Legendary Ocean (Password: 00295517)
 
 A carta **"A Legendary Ocean"** é uma Carta Mágica de Campo (Field Spell) que redefiniu completamente como os decks do atributo Água (WATER) eram construídos na era clássica.
 
@@ -104,3 +104,55 @@ O ganho de 200 de ATK é apenas a cereja do bolo; o verdadeiro poder desta carta
 
 * **Quebrando a Regra de Tributos:** Monstros de ÁGUA de Nível 5 originalmente exigem que você sacrifique 1 monstro do campo para serem invocados. Com *A Legendary Ocean* ativa, os monstros Nível 5 na sua mão se tornam **Nível 4**! Isso significa que você pode invocar aberrações como *Giga Gagagigo* ou *The Legendary Fisherman* direto da mão para o campo, sem tributo nenhum, e eles ainda entram ganhando o bônus de ataque!
 * **Imunidade a Travas (Stall):** Cartas defensivas populares como *Gravity Bind* e *Level Limit - Area B* travam ou punem qualquer monstro de Nível 4 ou superior. Como *A Legendary Ocean* transforma seus monstros ÁGUA Nível 4 em **Nível 3**, seus monstros conseguem deslizar livremente por debaixo dessas defesas para atacar o oponente diretamente, enquanto os monstros dele (de outros atributos) continuam presos!
+
+## ID: DM0015 - A Wingbeat of Giant Dragon (Password: 28596933)
+
+A carta **"A Wingbeat of Giant Dragon"** (O Bater de Asas do Dragão Gigante) é uma Carta Mágica Normal (Normal Spell) que atua como uma remoção em massa devastadora exclusiva para decks focados em Dragões.
+
+> *"Return 1 Level 5 or higher Dragon-Type monster you control to the hand; destroy all Spell and Trap Cards on the field."*
+
+### Como ela funciona na prática:
+
+1. **O Custo (O Retorno):** Para ativar esta magia, você deve obrigatoriamente devolver 1 monstro do Tipo Dragão (Dragon-Type) de **Nível 5 ou maior** que você controla do campo para a sua mão. Este recolhimento é o "Custo de Ativação", o que significa que mesmo se o oponente negar a sua magia, o seu Dragão já terá voltado para a mão.
+2. **A Tempestade (A Destruição):** Após o seu Dragão recuar em segurança, o bater das asas dele cria um furacão que **destrói todas as Cartas de Magia e Armadilha** no campo (tanto as suas quanto as do oponente). Basicamente, é uma *Heavy Storm* (Tempestade Pesada) temática.
+
+### 💡 O grande truque dessa carta:
+Embora retornar um monstro forte (que provavelmente exigiu sacrifícios) para a mão pareça uma grande desvantagem de tempo (Tempo Loss), a tática aqui transforma esse custo em uma manobra de evasão perfeita!
+
+* **Combo de Ressurreição Segura:** Imagine que você reviveu o seu *Blue-Eyes White Dragon* usando a armadilha **Call of the Haunted** ou a magia **Premature Burial**. O monstro fica preso e dependente dessa carta (se a magia for destruída, o monstro morre junto). Se você ativar *A Wingbeat of Giant Dragon*, o seu *Blue-Eyes* volta para a sua mão são e salvo. O bater de asas vai destruir o *Call of the Haunted* no campo, mas como o dragão já voltou para a mão como custo, ele escapa da destruição e você limpa a própria sujeira!
+* **Limpeza Sem Medo (Bait and Clear):** Se você suspeita que o oponente encheu o campo de armadilhas letais (como *Mirror Force* ou *Torrential Tribute*), você invoca especialmente um Dragão "de graça" (usando o combo *Lord of D.* + *The Flute of Summoning Dragon*), imediatamente o devolve para a mão com esta magia e varre todas as armadilhas inimigas de uma vez só. Com o caminho 100% limpo e sem riscos, você pode invocar o Dragão novamente no mesmo turno e atacar direto nos Pontos de Vida do adversário!
+
+## ID: DM0021 - Abyssal Designator (Password: 89801755)
+
+A carta **"Abyssal Designator"** (Designador do Abismo) é uma Carta Mágica Normal (Normal Spell) cirúrgica, focada em arrancar peças fundamentais do deck ou da mão do oponente antes mesmo que elas sejam jogadas.
+
+> *"Pay 1000 Life Points. Declare 1 Monster Type and 1 Attribute; your opponent must send 1 monster with the declared Type and Attribute from their hand or Deck to the Graveyard."*
+
+### Como ela funciona na prática:
+
+1. **O Custo de Sangue:** Para ativá-la, você deve pagar **1000 Pontos de Vida (LP)**. Este é um custo obrigatório.
+2. **A Declaração Cruzada:** Ao ativar a carta, a engine abrirá janelas para você escolher exatamente um **Tipo** (ex: Spellcaster, Dragon, Machine) e um **Atributo** (ex: DARK, LIGHT, WATER). 
+3. **A Execução Obrigatória:** O oponente é forçado a vasculhar a própria mão e o baralho inteiro. Se ele possuir qualquer monstro que seja *exatamente* dessa combinação, ele **deve** enviá-lo imediatamente para o Cemitério.
+
+### 💡 O grande truque dessa carta:
+Esta carta não destrói o que está no campo; o verdadeiro poder dela é a **Prevenção Tática e Sabotagem (Disruption)**, exigindo que você conheça o baralho do oponente!
+
+* **Caça a Cartas-Chave (Snipe):** Se você sabe que o oponente baseia o jogo inteiro em um Boss Monster específico, você pode declarar a combinação exata dele. Por exemplo: se você suspeita que ele vai usar as peças de *Exodia* (que são Spellcaster / DARK), você declara essa combinação para forçá-lo a jogar uma perna do Exodia no cemitério direto do deck, arruinando a condição de vitória dele!
+* **Escavando a Mão Oculta:** O oponente é obrigado a mandar a carta da Mão ou do Deck. Muitas vezes, ele perderá uma carta poderosa que estava guardando na mão para o próximo turno, gerando uma perda terrível de *Card Advantage* para ele.
+* **Auditoria de Sistema:** No jogo físico, se o oponente afirmar que "não tem nenhum monstro com essa combinação no deck ou na mão", você ganha o direito de auditar/olhar o baralho inteiro dele para confirmar, o que te dá informações inestimáveis. (No nosso simulador, a engine C#/Lua faz essa verificação matemática instantânea, mas a perda do recurso inimigo é garantida se ele existir!).
+
+## ID: DM0853 - Heavy Storm (Password: 19613556)
+
+A carta **"Heavy Storm"** (Tempestade Pesada) é uma Carta Mágica Normal (Normal Spell) e é, historicamente, a "Rainha das Remoções" no formato Goat e em toda a era clássica do Yu-Gi-Oh!
+
+> *"Destroy all Spell and Trap Cards on the field."*
+
+### Como ela funciona na prática:
+Ao ativá-la, uma tempestade varre o tabuleiro inteiro, destruindo instantaneamente **todas as Cartas Mágicas e Armadilhas** em ambos os lados do campo. Isso inclui cartas viradas para baixo (Face-down), cartas viradas para cima (Face-up), Magias de Equipamento e Magias de Campo (Field Spells).
+
+### 💡 O grande truque dessa carta:
+O *Heavy Storm* define o ritmo do duelo. A simples existência dessa carta no seu deck impõe o que chamamos de "Regra do Overextension" (Avançar demais).
+
+* **A Punição da Ganância (Punishing Overextension):** Se o oponente baixar (Set) 3 ou 4 armadilhas na mesa para se sentir 100% seguro, um único *Heavy Storm* vai destruir todas elas de uma vez. O oponente perderá 4 cartas, e você apenas 1, criando uma vantagem de recursos (Card Advantage) absurda a seu favor. Por causa do *Heavy Storm*, duelistas de elite raramente baixam mais de 2 cartas por turno.
+* **Liberando a Zona de Combate (The OTK Enabler):** A tática mais comum é guardar o *Heavy Storm* na mão até você ter monstros suficientes para vencer a partida no mesmo turno. Você ativa a tempestade, garante que não há mais *Mirror Force* ou *Torrential Tribute* para te impedir, e ataca com todos os monstros de uma vez para zerar a vida do oponente (One-Turn Kill - OTK).
+* **Destruição Tática Própria:** Você também pode usar *Heavy Storm* para destruir suas próprias cartas que o estão prejudicando! Por exemplo, se você está perdendo vida por causa do seu próprio *Premature Burial* ou se os seus monstros de nível alto estão presos por conta da sua própria magia *Gravity Bind*, você pode usar a tempestade para limpar a mesa e destravar o seu próprio jogo!

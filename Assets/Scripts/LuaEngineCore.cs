@@ -34,6 +34,9 @@ public class LuaEngineCore
         luaEngine.Globals["Ritual"] = typeof(Ritual);        
         luaEngine.Globals["Xyz"] = typeof(Xyz);              
 
+        // Sistema de Log LUA Nativo
+        luaEngine.Globals["Log"] = DynValue.FromObject(luaEngine, (System.Action<string>)(msg => Debug.Log($"<color=cyan>[LUA ENGINE]</color> {msg}")));
+
         // 4. Funções Base OCGCore que os scripts chamam o tempo todo
         luaEngine.Globals["GetID"] = (System.Func<DynValue>)(() => DynValue.NewTuple(luaEngine.Globals.Get("self_table"), luaEngine.Globals.Get("self_code")));
         
@@ -201,7 +204,9 @@ public class LuaEngineCore
         luaEngine.Globals["LOCATION_REMOVED"] = 0x20;
         luaEngine.Globals["LOCATION_EXTRA"] = 0x40;
         luaEngine.Globals["LOCATION_OVERLAY"] = 0x80;
-        luaEngine.Globals["LOCATION_ONFIELD"] = 0x4 | 0x8; 
+        luaEngine.Globals["LOCATION_FZONE"] = 0x100;
+        luaEngine.Globals["LOCATION_PZONE"] = 0x200;
+        luaEngine.Globals["LOCATION_ONFIELD"] = 0x4 | 0x8 | 0x100; 
         luaEngine.Globals["LOCATION_PUBLIC"] = 0x4 | 0x8 | 0x10 | 0x20;  
         luaEngine.Globals["LOCATION_ALL"] = 0x3ff;
         luaEngine.Globals["TYPE_MONSTER"] = 0x1;
@@ -317,6 +322,19 @@ public class LuaEngineCore
             end
             
             Card = {}
+            
+            -- Implementação Limpa OCGCore: Resolve o problema de Face-Downs sem hackear o carregador!
+            -- No YGO, qualquer carta na zona S/T (8) ou Campo (256) é uma Magia/Armadilha.
+            Card.IsSpellTrap = function(c)
+                if c == nil then return false end
+                return c:IsLocation(8) or c:IsLocation(256) or c:IsType(TYPE_SPELL) or c:IsType(TYPE_TRAP)
+            end
+            
+            Card.IsMonster = function(c)
+                if c == nil then return false end
+                return c:IsLocation(4) or c:IsType(TYPE_MONSTER)
+            end
+
             setmetatable(Card, {
                 __index = function(t, k)
                     return function(c, ...)
@@ -325,6 +343,10 @@ public class LuaEngineCore
                             if type(func) == 'function' then
                                 return func(...)
                             end
+                            
+                            -- Fallbacks Vitais: Ensina a Engine C# a responder aos filtros clássicos do OCGCore
+                            if k == 'IsDestructable' or k == 'IsAbleToHand' or k == 'IsAbleToGrave' or k == 'IsAbleToRemove' or k == 'IsAbleToHandAsCost' then return true end
+                            if k == 'IsRelateToEffect' then return true end
                         end
                         return false
                     end

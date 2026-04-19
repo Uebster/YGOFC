@@ -164,6 +164,25 @@ public static class LuaScriptLoader
         // 7. Loop Direto sobre Userdata (Iterador)
         script = Regex.Replace(script, @"for\s+([a-zA-Z0-9_]+)\s+in\s+([a-zA-Z0-9_]+)\s+do", "for $1 in $2:Iter() do");
 
+        // 8. OCGCore Compatibility: Mathematical Type Sums & Methods
+        // O C# não entende a soma de bits (TYPE_SPELL + TYPE_TRAP). Redireciona para o LUA nativo inteligente.
+        if (script.Contains("TYPE_SPELL") || script.Contains("TYPE_TRAP") || script.Contains("IsSpellTrap"))
+        {
+            // Padrão 1: Soma Tradicional (O que já tínhamos)
+            script = Regex.Replace(script, @"([a-zA-Z0-9_]+):IsType\(\s*TYPE_SPELL\s*\+\s*TYPE_TRAP\s*\)", "Card.IsSpellTrap($1)");
+            script = Regex.Replace(script, @"([a-zA-Z0-9_]+):IsType\(\s*TYPE_TRAP\s*\+\s*TYPE_SPELL\s*\)", "Card.IsSpellTrap($1)");
+            
+            // Padrão 2: Soma Bitwise (Usado em cartas complexas)
+            script = Regex.Replace(script, @"([a-zA-Z0-9_]+):IsType\(\s*bit32\.bor\(\s*TYPE_SPELL\s*,\s*TYPE_TRAP\s*\)\s*\)", "Card.IsSpellTrap($1)");
+            script = Regex.Replace(script, @"([a-zA-Z0-9_]+):IsType\(\s*bit32\.bor\(\s*TYPE_TRAP\s*,\s*TYPE_SPELL\s*\)\s*\)", "Card.IsSpellTrap($1)");
+            
+            // Padrão 3: Lógica OR separada (O sotaque que causou o bug de hoje)
+            script = Regex.Replace(script, @"([a-zA-Z0-9_]+):IsType\(\s*TYPE_SPELL\s*\)\s*or\s*\1:IsType\(\s*TYPE_TRAP\s*\)", "Card.IsSpellTrap($1)");
+            script = Regex.Replace(script, @"([a-zA-Z0-9_]+):IsType\(\s*TYPE_TRAP\s*\)\s*or\s*\1:IsType\(\s*TYPE_SPELL\s*\)", "Card.IsSpellTrap($1)");
+            
+            script = Regex.Replace(script, @"([a-zA-Z0-9_]+):IsSpellTrap\(\)", "Card.IsSpellTrap($1)");
+        }
+
         return script;
     }
 }

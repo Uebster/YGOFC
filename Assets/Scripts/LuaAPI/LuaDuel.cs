@@ -159,8 +159,7 @@ public class LuaDuel
             {
                 if (c.unityCard != null)
                 {
-                    GameManager.Instance.SendToGraveyard(c.unityCard.CurrentCardData, c.unityCard.isPlayerCard, c.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand, SendReason.Effect);
-                    if (c.unityCard.gameObject != null) GameObject.Destroy(c.unityCard.gameObject);
+                    GameManager.Instance.MoveCard(c.unityCard, CardLocation.Graveyard, SendReason.Effect);
                     count++;
                 }
                 else if (c.unityData != null)
@@ -192,10 +191,9 @@ public class LuaDuel
         {
             if (card.unityCard != null)
             {
-                GameManager.Instance.SendToGraveyard(card.unityCard.CurrentCardData, card.unityCard.isPlayerCard, card.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand, SendReason.Effect);
-            if (card.unityCard.gameObject != null) GameObject.Destroy(card.unityCard.gameObject);
-            count = 1;
-            Debug.Log($"[Lua] Duel.SendtoGrave({card.unityCard.CurrentCardData.name})");
+                GameManager.Instance.MoveCard(card.unityCard, CardLocation.Graveyard, SendReason.Effect);
+                count = 1;
+                Debug.Log($"[Lua] Duel.SendtoGrave({card.unityCard.CurrentCardData.name})");
             }
             else if (card.unityData != null)
             {
@@ -1608,8 +1606,7 @@ public class LuaDuel
             if (c != null && c.isOnField)
             {
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(c);
-                GameManager.Instance.SendToGraveyard(c.CurrentCardData, c.isPlayerCard, CardLocation.Field, SendReason.Effect);
-                GameObject.Destroy(c.gameObject);
+                GameManager.Instance.MoveCard(c, CardLocation.Graveyard, SendReason.Destroyed);
                 count++;
                 
                 if (GameManager.Instance == null || !GameManager.Instance.isSimulating)
