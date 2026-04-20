@@ -341,3 +341,9 @@ Em simuladores digitais modernos (Master Duel, YGOPro), a Engine atua como um Ju
 *   **A Regra do Embaralhamento:** Sempre que um Deck é vasculhado, pesquisado ou tem uma carta extraída, ele DEVE ser embaralhado logo após a resolução.
 *   **A Solução (Gatilho de Baixo Nível):** Para não precisarmos alterar centenas de scripts `.lua` adicionando o comando de embaralhar manualmente, implementamos o **Auto-Shuffle** direto no núcleo do C# (`RemoveDataFromAllPiles` na `LuaDuel.cs`). Se qualquer `CardData` for removido de `GetPlayerDeck()` ou `GetOpponentDeck()`, a Engine dispara `GameManager.Instance.ShuffleDeck(isPlayer)` imediatamente após a extração.
 *   **O Impacto:** O jogo simula perfeitamente as regras rigorosas de integridade de torneios do TCG sem corromper a base de dados mundial dos scripts LUA originais do OCGCore.
+
+### 5.8.14 A Memória Interna dos Efeitos (SetLabel e GetLabel)
+Muitos scripts LUA precisam armazenar escolhas feitas pelo jogador (como declarar um Nível, Raça ou Atributo em uma janela da UI) para usá-las milissegundos depois dentro de uma função de filtro (`s.filter`).
+*   **O Problema (Amnésia):** Cartas como *Abyssal Designator* usavam `e:SetLabel(att)` para guardar o atributo escolhido. Como a implementação C# de `LuaEffect.cs` possuía apenas Stubs vazios para esses métodos, a variável era descartada, e o filtro recebia `0`, falhando silenciosamente na hora de procurar a carta no deck.
+*   **A Solução:** Implementação das propriedades internas `_label` e `_labelObject` no `LuaEffect.cs` e a correção do despachante `GetChainInfo` no `LuaDuel.cs` para transportar o `targetParam` e `targetPlayer` corretamente.
+*   **O Impacto:** A Engine tornou-se capaz de sustentar o "Contexto" (Context State) de uma carta, permitindo que a IA ou o jogador retenham escolhas arbitrárias na RAM e apliquem filtros precisos sem modificar a estrutura OCGCore original.

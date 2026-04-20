@@ -50,6 +50,8 @@ public class AnnounceSelectionUI : MonoBehaviour
     // E no campo que aparecer, você digita o valor correspondente (tabela abaixo)
     public void SelectValue(int value)
     {
+        Debug.Log($"<color=yellow>[UI] Seleção Visual (Announce) clicada! Valor enviado: {value}</color>");
+
         if (atkDefPanel != null) atkDefPanel.SetActive(false);
         if (attributePanel != null) attributePanel.SetActive(false);
         if (racePanel != null) racePanel.SetActive(false);

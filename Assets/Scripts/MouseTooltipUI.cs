@@ -27,9 +27,21 @@ public class MouseTooltipUI : MonoBehaviour
             if (canvas == null) canvas = tooltipContainer.AddComponent<Canvas>();
             canvas.overrideSorting = true;
             canvas.sortingOrder = 30000; // Valor bem alto
-            
+
             tooltipContainer.SetActive(false);
         }
+
+        // FIX SUPREMO: Aplica a "Trava Fantasma" na RAIZ do painel inteiro, engolindo o pai e todos os filhos!
+        Graphic[] allGraphics = GetComponentsInChildren<Graphic>(true);
+        foreach (Graphic g in allGraphics)
+        {
+            g.raycastTarget = false;
+        }
+
+        CanvasGroup cgRoot = GetComponent<CanvasGroup>();
+        if (cgRoot == null) cgRoot = gameObject.AddComponent<CanvasGroup>();
+        cgRoot.blocksRaycasts = false;
+        cgRoot.interactable = false;
     }
 
     void Update()

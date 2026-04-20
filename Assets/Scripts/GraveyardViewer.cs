@@ -47,6 +47,24 @@ public class GraveyardViewer : MonoBehaviour
         // 1. Limpa o conteúdo anterior
         ClearContent();
 
+        // 1.5 Fallbacks de segurança (Caso o painel tenha sido clonado e o Inspector esteja vazio)
+        if (cardPrefab == null && GameManager.Instance != null) 
+            cardPrefab = GameManager.Instance.cardPrefab;
+            
+        if (contentArea == null) 
+        {
+            Transform fallbackContent = transform.Find("Scroll View/Viewport/Content");
+            if (fallbackContent != null) contentArea = fallbackContent;
+        }
+
+        // 1.6 O Segredo do Scroll: Força o Content a esticar para os lados automaticamente!
+        if (contentArea != null)
+        {
+            ContentSizeFitter fitter = contentArea.GetComponent<ContentSizeFitter>();
+            if (fitter == null) fitter = contentArea.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        }
+
         // 2. Popula com as novas cartas
         if (cardPrefab != null && contentArea != null)
         {

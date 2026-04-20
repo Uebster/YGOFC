@@ -148,6 +148,7 @@ Uma carta deixa de ser "Nova" quando o jogador demonstra intenção de uso:
 *   Ativado via `GameManager.useMouseTooltipUI`. Segue o cursor usando o Input System.
 *   Substitui o Menu de Ação clássico informando ações de clique. Ex: Na mão -> (Esq: Summon, Dir: Set).
 *   **Pivot Inteligente:** Se o mouse for para o canto direito da tela, o Pivot X vira 1, projetando o balão para a esquerda para não cortar a interface.
+*   **A Trava Suprema (Anti-Raycast):** Durante o desenvolvimento, o painel invisível atuava como um "escudo de vidro", roubando cliques destinados aos botões do jogo. O script foi projetado para impor `CanvasGroup.blocksRaycasts = false` diretamente na raiz e varrer todos os seus elementos-filhos (Textos e Imagens), desligando o `raycastTarget` via código no `Awake()` para garantir 100% de intangibilidade.
 
 ### 9.5.3 Painel de Desenvolvedor (`FullTestManager.cs`)
 A ferramenta de QA suprema, ativada no Inspector (`fullTestMode`) ou por **Ctrl + T** in-game. É uma janela arrastável (`IDragHandler`).
@@ -191,6 +192,12 @@ Ferramenta de Editor localizada em `Assets/Scripts/Editor/`.
 *   **Atalho:** Pressione **Ctrl + G** (`%g`) no Unity Editor.
 *   **Funcionalidade:** Um mini-editor de texto flutuante dentro da Unity. Salva as anotações automaticamente a cada caractere digitado. Memoriza o último arquivo aberto utilizando `EditorPrefs`.
 *   **Ferramentas:** Possui uma *Toolbar* no topo que permite criar novos arquivos (`.md`, `.txt`) em qualquer pasta, além de botões rápidos que injetam tags Markdown (Negrito, Itálico, Listas) e cores de Unity Rich Text (`<color=red>`) diretamente onde o cursor estiver posicionado!
+
+### 9.5.8 Scanner de Raio-X de UI (`UIScanner.cs`)
+Ferramenta de diagnóstico vital criada para contornar a limitação de debug do `EventSystem` no Editor ao utilizar o Novo Sistema de Input da Unity.
+*   **O Problema (Ghost Clicks):** Cliques que falham silenciosamente em botões perfeitamente configurados devido a elementos invisíveis (textos, contêineres e painéis) com áreas muito grandes sobrepondo os botões (Raycast Blockers).
+*   **A Ferramenta:** Um script utilitário (`Assets/Scripts/DevTools/UIScanner.cs`) que roda na função `Update`. Ao detectar um clique de mouse, ele lê as coordenadas da tela e dispara um `EventSystem.current.RaycastAll`.
+*   **O Diagnóstico:** Ele imprime no Console uma lista colorida (Magenta/Cyan) com a ordem exata de todos os objetos sob o cursor. O primeiro item da lista `1º (Mais à frente)` é invariavelmente o "fantasma" que está roubando o clique, permitindo correção em segundos indo no Inspector e desmarcando a opção `Raycast Target` daquele objeto culpado.
 
 ---
 

@@ -18,6 +18,7 @@ Antes de entrarmos nos detalhes específicos de cada carta, é vital entender as
 *   **Regra de Uso:** Ao contrário das Magias, Armadilhas **nunca** podem ser ativadas diretamente da mão. Elas devem obrigatoriamente ser Setadas no campo.
 *   **⚠️ A Regra de Ouro do Set:** Assim como as Magias Rápidas, **Armadilhas NÃO PODEM ser ativadas no turno em que são baixadas**. Elas precisam passar por pelo menos 1 End Phase antes de ficarem "armadas" e prontas para uso.
 
+## ID: (ID do cards.json) - Nome da carta (Password: Password do cards.json)
 ---
 
 ## ID: DM0004 - 7 (Password: 23771716)
@@ -140,6 +141,23 @@ Esta carta não destrói o que está no campo; o verdadeiro poder dela é a **Pr
 * **Caça a Cartas-Chave (Snipe):** Se você sabe que o oponente baseia o jogo inteiro em um Boss Monster específico, você pode declarar a combinação exata dele. Por exemplo: se você suspeita que ele vai usar as peças de *Exodia* (que são Spellcaster / DARK), você declara essa combinação para forçá-lo a jogar uma perna do Exodia no cemitério direto do deck, arruinando a condição de vitória dele!
 * **Escavando a Mão Oculta:** O oponente é obrigado a mandar a carta da Mão ou do Deck. Muitas vezes, ele perderá uma carta poderosa que estava guardando na mão para o próximo turno, gerando uma perda terrível de *Card Advantage* para ele.
 * **Auditoria de Sistema:** No jogo físico, se o oponente afirmar que "não tem nenhum monstro com essa combinação no deck ou na mão", você ganha o direito de auditar/olhar o baralho inteiro dele para confirmar, o que te dá informações inestimáveis. (No nosso simulador, a engine C#/Lua faz essa verificação matemática instantânea, mas a perda do recurso inimigo é garantida se ele existir!).
+
+## ID: DM0023 - Acid Rain (Password: 21323861)
+
+A carta **"Acid Rain"** (Chuva Ácida) é uma Carta Mágica Normal (Normal Spell) extremamente agressiva, projetada para ser um "Board Wipe" (Limpador de Mesa) focado em aniquilar tecnologia.
+
+> *"Destroy all face-up Machine-Type monsters on the field."*
+
+### Como ela funciona na prática:
+
+1. **O Alvo Específico:** Ao ativá-la, uma tempestade corrosiva se forma sobre o tabuleiro. Ela varre **todos os monstros do Tipo Máquina (Machine)** que estejam virados para cima em ambos os lados do campo.
+2. **Ignora Posições Ocultas:** Apenas monstros revelados (Face-up) são destruídos. Monstros Máquina que estejam virados para baixo (Set) sobrevivem à corrosão da chuva ácida.
+
+### 💡 O grande truque dessa carta:
+Esta é a clássica carta de **Side Deck** (Baralho Auxiliar). Ela brilha contra oponentes específicos e pode virar um duelo sozinha.
+
+* **O Pesadelo de Bandit Keith:** Durante a campanha, oponentes como Bandit Keith e outros capangas da Kaiba Corp usam Baralhos inteiramente compostos por Máquinas de alto ataque (como *Barrel Dragon* e *Slot Machine*). Usar *Acid Rain* destrói o exército inteiro do oponente de uma só vez, sem custar nenhum Ponto de Vida a você.
+* **Atenção ao "Fogo Amigo":** Como a chuva atinge o campo inteiro, **seus próprios** monstros do Tipo Máquina também derreterão. É uma carta que exige precisão (ou que o seu deck seja composto por guerreiros, dragões ou magos para se aproveitar da tempestade sem sofrer as consequências).
 
 ## ID: DM0853 - Heavy Storm (Password: 19613556)
 

@@ -809,6 +809,7 @@ public class LuaDuel
         if (AnnounceSelectionUI.Instance != null)
         {
             AnnounceSelectionUI.Instance.ShowAttributeSelection((selectedValue) => {
+                Debug.Log($"<color=cyan>[LuaDuel] Atributo Declarado (AnnounceAttribute): {selectedValue}</color>");
                 CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(selectedValue);
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
             });
@@ -835,6 +836,7 @@ public class LuaDuel
         if (AnnounceSelectionUI.Instance != null)
         {
             AnnounceSelectionUI.Instance.ShowRaceSelection((selectedValue) => {
+                Debug.Log($"<color=cyan>[LuaDuel] Raça Declarada (AnnounceRace): {selectedValue}</color>");
                 CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(selectedValue);
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
             });
@@ -1421,6 +1423,12 @@ public class LuaDuel
                 
                 try {
                     DynValue result = closure.Call(callArgs.ToArray());
+                    
+                    // --- LOG DE DEBUG DO FILTRO ---
+                    string argsLog = extraArgs != null ? string.Join(", ", extraArgs) : "N/A";
+                    bool passed = result.Type == DataType.Boolean && result.Boolean;
+                    Debug.Log($"[Filtro LUA] Avaliando: {c.unityData?.name} | Args extras: [{argsLog}] | Aprovado: {passed}");
+                    
                     if (result.Type == DataType.Boolean && result.Boolean) {
                         group.AddCard(c);
                     }
@@ -1575,6 +1583,7 @@ public class LuaDuel
         if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
         {
             LuaGroup aiChoice = OpponentAI.Instance.SelectLuaTargets(candidates, ConvertToInt(min), ConvertToInt(max));
+            Debug.Log($"<color=orange>[LuaDuel] Bypass IA (SelectMatchingCard) -> Opções válidas: {candidates.cards.Count}, IA escolheu: {aiChoice.cards.Count}</color>");
             CardEffectManager.Instance.yieldReturnValue = UserData.Create(aiChoice);
             this.currentTargetGroup = aiChoice;
             CardEffectManager.Instance.isWaitingForLuaYield = false;

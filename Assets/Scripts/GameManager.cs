@@ -4545,6 +4545,9 @@ public void ShuffleDeck(bool isPlayer)
         if (!isPlayer && !devMode && !qaActive) return;
 
         List<CardData> deck = isPlayer ? GetPlayerMainDeck() : GetOpponentMainDeck();
+        
+        Debug.Log($"<color=cyan>[Deck Viewer]</color> Abrindo Deck do {(isPlayer ? "Jogador" : "Oponente")}. Total de Cartas na lista lógica: {deck?.Count ?? 0}");
+        
         UIManager.Instance.ShowDeck(deck, cardBackTexture);
     }
 
