@@ -353,6 +353,19 @@ public class LuaEngineCore
                 end
             })
 
+            Cost = {}
+            setmetatable(Cost, {
+                __index = function(t, k)
+                    return function(...) return function(e, tp, eg, ep, ev, re, r, rp, chk) if chk == 0 then return true end end end
+                end
+            })
+            function Cost.PayLP(amount)
+                return function(e, tp, eg, ep, ev, re, r, rp, chk)
+                    if chk == 0 then return Duel.CheckLPCost(tp, amount) end
+                    Duel.PayLPCost(tp, amount)
+                end
+            end
+
             Core = {}
             function Core.Attack(attacker, target)
                 Duel.RaiseEvent(attacker, 1102, nil, 0, attacker:GetControler(), attacker:GetControler(), 0)

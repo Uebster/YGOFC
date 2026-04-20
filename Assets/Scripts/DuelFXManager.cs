@@ -13,6 +13,7 @@ public class FieldSpellTheme
 }
 
 public enum AttackTrailType { Shadows, ContinuousLine, SmoothShadows }
+public enum HandShuffleType { CrossSwap, CollapseAndFan }
 public enum ControlSwapImpactType { Squeeze, Pulse }
 public enum SummonVFXType { Normal, Special, Tribute, Fusion, Ritual }
 public enum SelectionState { None, Available, Selected }
@@ -455,6 +456,16 @@ public class DuelFXManager : MonoBehaviour
     public float customShuffleTiltAngle = 15f;
     [Tooltip("Rotaciona o baralho do oponente em 180º no embaralhamento para ficar virado para ele.")]
     public bool shuffleOpponent180 = true;
+
+    [Header("Opções de Embaralhamento da Mão (Hand Shuffle)")]
+    public bool useHandShuffleAnimation = true;
+    public HandShuffleType handShuffleType = HandShuffleType.CrossSwap;
+    [Tooltip("Duração de CADA ciclo individual de embaralhamento.")]
+    public float handShuffleDuration = 0.3f;
+    [Tooltip("Número mínimo de vezes que as cartas vão se misturar.")]
+    public int handShuffleMinCycles = 1;
+    [Tooltip("Número máximo de vezes que as cartas vão se misturar.")]
+    public int handShuffleMaxCycles = 3;
 
     [Header("Opções de Invocação de Ficha (Token)")]
     [Tooltip("A carta da Ficha (Token) treme, surge do tamanho 0 e faz um Fade In.")]

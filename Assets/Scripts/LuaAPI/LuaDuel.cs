@@ -360,11 +360,16 @@ public class LuaDuel
         if (DeckManager.Instance != null) DeckManager.Instance.UpdateDeckVisuals();
     }
 
+    public void ShuffleDeck(object player)
+    {
+        if (GameManager.Instance != null)
+            GameManager.Instance.ShuffleDeck(IsPlayer(player));
+    }
+
     public void ShuffleHand(object player)
     {
-        // A Unity não precisa embaralhar visualmente a mão porque a ordem das cartas é controlada nativamente pela lista.
-        // Mas o LUA precisa desta função para não quebrar cartas como D.D. Designator ou Exchange.
-        Debug.Log($"[Lua] Duel.ShuffleHand({player})");
+        if (GameManager.Instance != null)
+            GameManager.Instance.ShuffleHand(IsPlayer(player));
     }
 
     public DynValue DiscardHand(object player, object filter, object min, object max, object reason, params object[] extraArgs)
@@ -676,12 +681,12 @@ public class LuaDuel
        
         if (isAtkDefChoice)
         {
-            if (AttributeChoiceUI.Instance == null)
-                AttributeChoiceUI.Instance = Resources.FindObjectsOfTypeAll<AttributeChoiceUI>().FirstOrDefault(x => x.gameObject.scene.IsValid());
+            if (AnnounceSelectionUI.Instance == null)
+                AnnounceSelectionUI.Instance = Resources.FindObjectsOfTypeAll<AnnounceSelectionUI>().FirstOrDefault(x => x.gameObject.scene.IsValid());
             
-            if (AttributeChoiceUI.Instance != null)
+            if (AnnounceSelectionUI.Instance != null)
             {
-                AttributeChoiceUI.Instance.Show((selectedIndex) => {
+                AnnounceSelectionUI.Instance.ShowAtkDefSelection((selectedIndex) => {
                     CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(selectedIndex);
                     CardEffectManager.Instance.isWaitingForLuaYield = false;
                 });
@@ -785,8 +790,59 @@ public class LuaDuel
 
     public int AnnounceNumber(object player, params object[] args) { return 1000; }
     public int AnnounceLevel(object player, params object[] args) { return 4; }
-    public int AnnounceAttribute(object player, object count, object avail) { return 1; }
-    public int AnnounceRace(object player, object count, object avail) { return 1; }
+    
+    public DynValue AnnounceAttribute(object player, object count, object avail)
+    {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+
+        if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
+        {
+            CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(1); // Default EARTH
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceAttribute") });
+        }
+
+        if (AnnounceSelectionUI.Instance == null)
+            AnnounceSelectionUI.Instance = Resources.FindObjectsOfTypeAll<AnnounceSelectionUI>().FirstOrDefault(x => x.gameObject.scene.IsValid());
+
+        if (AnnounceSelectionUI.Instance != null)
+        {
+            AnnounceSelectionUI.Instance.ShowAttributeSelection((selectedValue) => {
+                CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(selectedValue);
+                CardEffectManager.Instance.isWaitingForLuaYield = false;
+            });
+        }
+        else { CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(1); CardEffectManager.Instance.isWaitingForLuaYield = false; }
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceAttribute") });
+    }
+
+    public DynValue AnnounceRace(object player, object count, object avail)
+    {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+
+        if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
+        {
+            CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(1); // Default Warrior
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceRace") });
+        }
+
+        if (AnnounceSelectionUI.Instance == null)
+            AnnounceSelectionUI.Instance = Resources.FindObjectsOfTypeAll<AnnounceSelectionUI>().FirstOrDefault(x => x.gameObject.scene.IsValid());
+
+        if (AnnounceSelectionUI.Instance != null)
+        {
+            AnnounceSelectionUI.Instance.ShowRaceSelection((selectedValue) => {
+                CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(selectedValue);
+                CardEffectManager.Instance.isWaitingForLuaYield = false;
+            });
+        }
+        else { CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(1); CardEffectManager.Instance.isWaitingForLuaYield = false; }
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceRace") });
+    }
+
     public int AnnounceCard(object player, params object[] args) { return 0; }
     public bool IsChainNegatable(object chaincount) { return true; }
     public int GetOperationCount(object chainc) { return 0; }
@@ -954,11 +1010,23 @@ public class LuaDuel
         wasPlayerPile = true;
         if (GameManager.Instance == null) return CardLocation.Unknown;
         if (DeckManager.Instance != null) {
-            if (DeckManager.Instance.GetPlayerDeck().Contains(data)) { DeckManager.Instance.GetPlayerDeck().Remove(data); DeckManager.Instance.UpdateDeckVisuals(); wasPlayerPile = true; return CardLocation.Deck; }
-            if (DeckManager.Instance.GetOpponentDeck().Contains(data)) { DeckManager.Instance.GetOpponentDeck().Remove(data); DeckManager.Instance.UpdateDeckVisuals(); wasPlayerPile = false; return CardLocation.Deck; }
+            if (DeckManager.Instance.GetPlayerDeck().Contains(data)) { 
+                DeckManager.Instance.GetPlayerDeck().Remove(data); 
+                DeckManager.Instance.UpdateDeckVisuals(); 
+                GameManager.Instance.ShuffleDeck(true); // AUTO-SHUFFLE DO CORE
+                wasPlayerPile = true; return CardLocation.Deck; 
+            }
+            if (DeckManager.Instance.GetOpponentDeck().Contains(data)) { 
+                DeckManager.Instance.GetOpponentDeck().Remove(data); 
+                DeckManager.Instance.UpdateDeckVisuals(); 
+                GameManager.Instance.ShuffleDeck(false); // AUTO-SHUFFLE DO CORE
+                wasPlayerPile = false; return CardLocation.Deck; 
+            }
         }
-        if (GameManager.Instance.GetPlayerMainDeck().Contains(data)) { GameManager.Instance.GetPlayerMainDeck().Remove(data); wasPlayerPile = true; return CardLocation.Deck; }
-        if (GameManager.Instance.GetOpponentMainDeck().Contains(data)) { GameManager.Instance.GetOpponentMainDeck().Remove(data); wasPlayerPile = false; return CardLocation.Deck; }
+        // Fallbacks de Segurança
+        if (GameManager.Instance.GetPlayerMainDeck().Contains(data)) { GameManager.Instance.GetPlayerMainDeck().Remove(data); GameManager.Instance.ShuffleDeck(true); wasPlayerPile = true; return CardLocation.Deck; }
+        if (GameManager.Instance.GetOpponentMainDeck().Contains(data)) { GameManager.Instance.GetOpponentMainDeck().Remove(data); GameManager.Instance.ShuffleDeck(false); wasPlayerPile = false; return CardLocation.Deck; }
+        
         if (GameManager.Instance.GetPlayerExtraDeck().Contains(data)) { GameManager.Instance.GetPlayerExtraDeck().Remove(data); wasPlayerPile = true; return CardLocation.ExtraDeck; }
         if (GameManager.Instance.GetOpponentExtraDeck().Contains(data)) { GameManager.Instance.GetOpponentExtraDeck().Remove(data); wasPlayerPile = false; return CardLocation.ExtraDeck; }
         if (GameManager.Instance.GetPlayerGraveyard().Contains(data)) { GameManager.Instance.GetPlayerGraveyard().Remove(data); wasPlayerPile = true; return CardLocation.Graveyard; }
@@ -1283,42 +1351,43 @@ public class LuaDuel
 
     private void CollectCandidates(int loc, bool isPlayer, List<LuaCard> candidates, LuaCard excluded = null)
     {
+        int pIdx = isPlayer ? 0 : 1;
         if ((loc & 0x01) != 0) // DECK
         {
             var deck = isPlayer ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
-            foreach(var c in deck) { LuaCard lc = new LuaCard(c); if(excluded == null || lc.unityData != excluded.unityData) candidates.Add(lc); }
+            foreach(var c in deck) { LuaCard lc = new LuaCard(c); lc.ownerPlayerIndex = pIdx; if(excluded == null || lc.unityData != excluded.unityData) candidates.Add(lc); }
         }
         if ((loc & 0x02) != 0) // HAND
         {
             var handGOs = isPlayer ? GameManager.Instance.playerHand : GameManager.Instance.opponentHand;
-            foreach(var go in handGOs) { LuaCard lc = new LuaCard(go.GetComponent<CardDisplay>()); if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
+            foreach(var go in handGOs) { LuaCard lc = new LuaCard(go.GetComponent<CardDisplay>()); lc.ownerPlayerIndex = pIdx; if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
         }
         if ((loc & 0x04) != 0) // MZONE
         {
             Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
-            foreach (var z in zones) if (z.childCount > 0) { LuaCard lc = new LuaCard(z.GetChild(0).GetComponent<CardDisplay>()); if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
+            foreach (var z in zones) if (z.childCount > 0) { LuaCard lc = new LuaCard(z.GetChild(0).GetComponent<CardDisplay>()); lc.ownerPlayerIndex = pIdx; if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
         }
         if ((loc & 0x08) != 0) // SZONE
         {
             Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
-            foreach (var z in zones) if (z.childCount > 0) { LuaCard lc = new LuaCard(z.GetChild(0).GetComponent<CardDisplay>()); if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
+            foreach (var z in zones) if (z.childCount > 0) { LuaCard lc = new LuaCard(z.GetChild(0).GetComponent<CardDisplay>()); lc.ownerPlayerIndex = pIdx; if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
             Transform fz = isPlayer ? GameManager.Instance.duelFieldUI.playerFieldSpell : GameManager.Instance.duelFieldUI.opponentFieldSpell;
-            if (fz.childCount > 0) { LuaCard lc = new LuaCard(fz.GetChild(0).GetComponent<CardDisplay>()); if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
+            if (fz.childCount > 0) { LuaCard lc = new LuaCard(fz.GetChild(0).GetComponent<CardDisplay>()); lc.ownerPlayerIndex = pIdx; if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
         }
         if ((loc & 0x10) != 0) // GRAVE
         {
             var gy = isPlayer ? GameManager.Instance.GetPlayerGraveyard() : GameManager.Instance.GetOpponentGraveyard();
-            foreach(var c in gy) { LuaCard lc = new LuaCard(c); if(excluded == null || lc.unityData != excluded.unityData) candidates.Add(lc); }
+            foreach(var c in gy) { LuaCard lc = new LuaCard(c); lc.ownerPlayerIndex = pIdx; if(excluded == null || lc.unityData != excluded.unityData) candidates.Add(lc); }
         }
         if ((loc & 0x20) != 0) // REMOVED
         {
             var rm = isPlayer ? GameManager.Instance.GetPlayerRemoved() : GameManager.Instance.GetOpponentRemoved();
-            foreach(var c in rm) { LuaCard lc = new LuaCard(c); if(excluded == null || lc.unityData != excluded.unityData) candidates.Add(lc); }
+            foreach(var c in rm) { LuaCard lc = new LuaCard(c); lc.ownerPlayerIndex = pIdx; if(excluded == null || lc.unityData != excluded.unityData) candidates.Add(lc); }
         }
         if ((loc & 0x40) != 0) // EXTRA
         {
             var ex = isPlayer ? GameManager.Instance.GetPlayerExtraDeck() : GameManager.Instance.GetOpponentExtraDeck();
-            foreach(var c in ex) { LuaCard lc = new LuaCard(c); if(excluded == null || lc.unityData != excluded.unityData) candidates.Add(lc); }
+            foreach(var c in ex) { LuaCard lc = new LuaCard(c); lc.ownerPlayerIndex = pIdx; if(excluded == null || lc.unityData != excluded.unityData) candidates.Add(lc); }
         }
     }
 

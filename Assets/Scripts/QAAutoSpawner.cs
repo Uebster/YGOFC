@@ -16,7 +16,7 @@ public class QAAutoSpawner : MonoBehaviour
 
     // --- INTERFACE DRAGGABLE (IMGUI) ---
     private bool showWindow = false;
-    private Rect windowRect = new Rect(20, 20, 320, 220);
+    private Rect windowRect = new Rect(20, 20, 320, 260);
     private GUIStyle titleStyle;
     private GUIStyle btnStyle;
     private bool styleInitialized = false;
@@ -104,6 +104,12 @@ public class QAAutoSpawner : MonoBehaviour
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("➕ Adicionar Cópia", btnStyle)) SpawnCopyOfCurrentCard();
             if (GUILayout.Button("🧹 Limpar Campo", btnStyle)) CleanFieldQA();
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(5);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("👁️ Meu Deck", btnStyle)) { if (GameManager.Instance != null) GameManager.Instance.ViewDeck(true); }
+            if (GUILayout.Button("👁️ Deck Oponente", btnStyle)) { if (GameManager.Instance != null) GameManager.Instance.ViewDeck(false); }
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
         }
@@ -303,6 +309,35 @@ public class QAAutoSpawner : MonoBehaviour
         GameManager.Instance.GetOpponentGraveyard().Clear();
         GameManager.Instance.GetPlayerRemoved().Clear();
         GameManager.Instance.GetOpponentRemoved().Clear();
+
+        // 1.5. Preenchimento de Segurança de Decks para QA
+        // O GameManager pode ter um playerMainDeck criado no menu, mas o duelo físico (DeckManager) ainda não começou!
+        if (DeckManager.Instance != null && GameManager.Instance.cardDatabase != null)
+        {
+            var pDeck = DeckManager.Instance.GetPlayerDeck();
+            var oDeck = DeckManager.Instance.GetOpponentDeck();
+
+            if (pDeck == null || pDeck.Count == 0 || oDeck == null || oDeck.Count == 0)
+            {
+                var allCards = GameManager.Instance.cardDatabase.cardDatabase.Where(c => !c.type.Contains("Fusion") && !c.type.Contains("Synchro") && !c.type.Contains("Token")).ToList();
+                
+                if (GameManager.Instance.playerMainDeck == null || GameManager.Instance.playerMainDeck.Count == 0)
+                    GameManager.Instance.playerMainDeck = allCards.Take(40).ToList();
+                    
+                if (GameManager.Instance.opponentMainDeck == null || GameManager.Instance.opponentMainDeck.Count == 0)
+                    GameManager.Instance.opponentMainDeck = allCards.Skip(40).Take(40).ToList();
+
+                // Inicializa as pilhas do duelo oficialmente usando as listas criadas
+                DeckManager.Instance.SetupDecks(
+                    new System.Collections.Generic.List<CardData>(GameManager.Instance.playerMainDeck),
+                    new System.Collections.Generic.List<CardData>(),
+                    new System.Collections.Generic.List<CardData>(GameManager.Instance.opponentMainDeck),
+                    new System.Collections.Generic.List<CardData>()
+                );
+                
+                Debug.Log("<color=green>🔗 [QA] Decks físicos (DeckManager) injetados e embaralhados com sucesso!</color>");
+            }
+        }
 
         // 2. Injeta a carta a ser testada na mão do jogador
         CardData testCard = GameManager.Instance.cardDatabase.GetCardById(cardId);

@@ -216,12 +216,27 @@ O programador de cartas não precisa criar UIs. Ele chama funções Lua (`Duel.S
 *   **Digitação de Nome de Carta:** `GlobalCardSearchUI.Instance.Show(...)`
 *   **Textos e Escolhas Arbitrárias:** `MultipleChoiceUI.Instance.Show(...)`
 *   **Teclado Numérico Interativo (Numpad):** `NumericSelectionUI.Instance.Show(...)`
+*   **Painéis Visuais (Atributos, Raças, ATK/DEF):** `AnnounceSelectionUI.Instance.Show...(...)` (Substitui UIs genéricas por painéis iconográficos ricos).
 
 ### 5.6.3 O Bypass de IA e Simulação
 *   Se o jogador que precisa fazer uma escolha for a IA (`player == 1`) ou o jogo estiver em simulação (`isSimulating`), a `LuaAPI` não abre a UI. Em vez disso, ela chama um método da IA (`OpponentAI.Instance.SelectLuaTargets`) ou escolhe a primeira opção válida para que o duelo prossiga sem interrupção.
 
 ### 5.6.4 Minigames de Sorte e Controle Visual
 *   As chamadas Lua `Duel.TossCoin` e `Duel.RollDice` são mapeadas para os métodos do `GameManager`, que abrem as UIs interativas dos minigames.
+
+### 5.6.5 Tabela de Valores de Declaração (Announce)
+Quando o motor LUA utiliza funções como `Duel.AnnounceAttribute` ou `Duel.AnnounceRace`, a Unity abre o `AnnounceSelectionUI`. Os botões da interface não retornam strings, mas sim valores numéricos (potências de 2, lógicas Bitwise) que o LUA compreende perfeitamente.
+
+**Valores de Atributo (Attribute):**
+*   Terra (EARTH): `1` | Água (WATER): `2` | Fogo (FIRE): `4` | Vento (WIND): `8`
+*   Trevas (DARK): `16` | Luz (LIGHT): `32` | Divino (DIVINE): `64`
+
+**Valores de Raça / Tipo (Race):**
+*   Warrior: `1` | Spellcaster: `2` | Fairy: `4` | Fiend: `8`
+*   Zombie: `16` | Machine: `32` | Aqua: `64` | Pyro: `128`
+*   Rock: `256` | Winged Beast: `512` | Plant: `1024` | Insect: `2048`
+*   Thunder: `4096` | Dragon: `8192` | Beast: `16384` | Beast-Warrior: `32768`
+*   Dinosaur: `65536` | Fish: `131072` | Sea Serpent: `262144` | Reptile: `524288`
 
 ---
 
@@ -279,7 +294,7 @@ O motor precisa ser rápido de testar, sem o desenvolvedor precisar criar Decks 
 Algumas cartas exigem escolhas de jogador (Ex: Escolher entre aplicar o buff em ATK ou DEF). O LUA nativo lida com isso chamando a função de listas de texto simples (`Duel.SelectOption`).
 *   **Filtragem do Tabuleiro:** Para garantir que "7 Completed" só seja equipada em Máquinas, o script `.lua` usa a rotina padrão `aux.AddEquipProcedure`, passando `c:IsRace(RACE_MACHINE)` como filtro. A Engine Unity cuida de acender o `Outline` e permitir o clique apenas em máquinas válidas no campo através da comunicação natural com `IsExistingTarget`.
 *   **O "Sequestro" da UI (`LuaDuel.cs`):** Quando o LUA tenta chamar `Duel.SelectOption` passando os IDs de string que representam as opções do "7 Completed" (usando a matemática do ID da carta `86198326`), o método C# identifica essa assinatura específica através de um `if (isAtkDefChoice)`.
-*   **O Painel Tático:** Ao invés de abrir a UI de múltipla escolha padrão (`MultipleChoiceUI`), a Unity intercepta a chamada e abre o nosso painel gráfico customizado `AttributeChoiceUI` (com os botões imensos de Espada e Escudo).
+*   **O Painel Tático Unificado:** Ao invés de abrir a UI de múltipla escolha padrão (`MultipleChoiceUI`), a Unity intercepta a chamada e abre o nosso gerenciador universal `AnnounceSelectionUI` no modo ATK/DEF.
 *   **O Retorno LUA e a Aplicação do Buff:** O painel pausa a corrotina do LUA (`isWaitingForLuaYield = true`) e aguarda o clique. Quando o jogador escolhe, a Unity devolve `0` (ATK) ou `1` (DEF) via `yieldReturnValue`. O script LUA recebe esse número e registra, de fato, um `EFFECT_UPDATE_ATTACK` ou `EFFECT_UPDATE_DEFENSE` na carta alvo. Por debaixo dos panos, o evento dispara o método C# `CardEffectManager.RecalculateStats()`, que escaneia a carta, lê o novo modificador invisível do LUA e aplica os `+700` no número de Status flutuante do monstro 3D!
 
 ### 5.8.8 O Desafio das Duplicatas (Seleção e Ativação Múltipla)
@@ -319,3 +334,10 @@ Muitas cartas exigem devolver uma carta para a mão como custo e, *logo em segui
 *   **O Problema (O Clone Morto):** O script LUA possuía a condição exata `if tc:IsLocation(LOCATION_HAND) then`. Na arquitetura antiga, o método `ReturnToHand` no C# pegava a carta da mesa, disparava `Destroy(gameObject)` e instanciava um "clone" 3D idêntico na mão. Como o objeto original foi apagado da RAM, o LUA perdia a referência na memória (`tc` virava um ponteiro morto/nulo) e respondia `False` para a checagem, fazendo o furacão falhar silenciosamente.
 *   **A Solução (Reciclagem Física):** A arquitetura do `GameManager` foi revolucionada. Métodos como `ReturnToHand` (e o unificado `MoveCard`) pararam de destruir GameObjects. Agora, eles apenas alteram a árvore hierárquica (`SetParent`) da carta para o Layout da Mão, desligam a flag `isOnField` e acionam a corrotina de voo no *mesmo objeto físico*.
 *   **O Impacto:** Essa sacada genial preservou as referências vivas do motor LUA (`userdata`), garantindo que scripts complexos originais do OCGCore validem suas condições 100% corretamente. De bônus, reduziu drasticamente os picos de processamento (Garbage Collection) ao erradicar a necessidade de Instanciar/Destruir prefabs constantemente durante partidas longas.
+
+### 5.8.13 A Regra de Ouro do "Juiz Imparcial" e o Auto-Shuffle (Ex: Abyssal Designator, Reinforcement of the Army)
+Em simuladores digitais modernos (Master Duel, YGOPro), a Engine atua como um Juiz Imparcial inquestionável.
+*   **O Problema da Auditoria:** No jogo físico, ao procurar uma carta ou declarar um alvo no deck, o oponente tem o direito de "auditar" o baralho para garantir que não há trapaça. Nos videogames, a Engine vasculha a lista de cartas nas sombras (sem abrir UI). Cartas como *Abyssal Designator* forçam a IA a descartar alvos válidos passivamente e, se a IA não tiver a carta, a engine apenas encerra o efeito (pois o computador não mente).
+*   **A Regra do Embaralhamento:** Sempre que um Deck é vasculhado, pesquisado ou tem uma carta extraída, ele DEVE ser embaralhado logo após a resolução.
+*   **A Solução (Gatilho de Baixo Nível):** Para não precisarmos alterar centenas de scripts `.lua` adicionando o comando de embaralhar manualmente, implementamos o **Auto-Shuffle** direto no núcleo do C# (`RemoveDataFromAllPiles` na `LuaDuel.cs`). Se qualquer `CardData` for removido de `GetPlayerDeck()` ou `GetOpponentDeck()`, a Engine dispara `GameManager.Instance.ShuffleDeck(isPlayer)` imediatamente após a extração.
+*   **O Impacto:** O jogo simula perfeitamente as regras rigorosas de integridade de torneios do TCG sem corromper a base de dados mundial dos scripts LUA originais do OCGCore.

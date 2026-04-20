@@ -1368,6 +1368,125 @@ public void ShuffleDeck(bool isPlayer)
         if (DeckManager.Instance != null) DeckManager.Instance.ShuffleDeck(false);
     }
 
+    public void ShuffleHand(bool isPlayer)
+    {
+        List<GameObject> hand = isPlayer ? playerHand : opponentHand;
+        if (hand == null || hand.Count <= 1) return;
+
+        // 1. Salva as posições físicas originais antes de bagunçar a lista
+        List<Vector3> originalPositions = new List<Vector3>();
+        for (int i = 0; i < hand.Count; i++) originalPositions.Add(hand[i].transform.position);
+
+        // 2. Embaralha a lista lógica (Matemática: Fisher-Yates)
+        for (int i = 0; i < hand.Count; i++)
+        {
+            GameObject temp = hand[i];
+            int randomIndex = Random.Range(i, hand.Count);
+            hand[i] = hand[randomIndex];
+            hand[randomIndex] = temp;
+        }
+
+        // 3. Executa a Animação Visual ou Atualização Direta
+        if (DuelFXManager.Instance != null && DuelFXManager.Instance.useHandShuffleAnimation && !isSimulating)
+        {
+            StartCoroutine(HandShuffleRoutine(isPlayer, hand, originalPositions));
+        }
+        else
+        {
+            // Se não tiver animação, apenas ajusta os índices na hora
+            for (int i = 0; i < hand.Count; i++) hand[i].transform.SetSiblingIndex(i);
+        }
+    }
+
+    private IEnumerator HandShuffleRoutine(bool isPlayer, List<GameObject> hand, List<Vector3> targetPositions)
+    {
+        Transform layoutTransform = isPlayer ? playerHandLayoutGroup : opponentHandLayoutGroup;
+        HorizontalLayoutGroup layoutGroup = layoutTransform.GetComponent<HorizontalLayoutGroup>();
+        
+        // Desliga o LayoutGroup para que as cartas fiquem livres para voar
+        if (layoutGroup != null) layoutGroup.enabled = false;
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.shuffleSound);
+
+        int cycles = 1;
+        float cycleDuration = 0.3f;
+        if (DuelFXManager.Instance != null)
+        {
+            cycles = Random.Range(Mathf.Max(1, DuelFXManager.Instance.handShuffleMinCycles), Mathf.Max(1, DuelFXManager.Instance.handShuffleMaxCycles) + 1);
+            cycleDuration = DuelFXManager.Instance.handShuffleDuration;
+        }
+
+        for (int cycle = 0; cycle < cycles; cycle++)
+        {
+            List<Vector3> startPositions = new List<Vector3>();
+            foreach (var card in hand) startPositions.Add(card.transform.position);
+
+            List<Vector3> currentTargetPositions = new List<Vector3>(targetPositions);
+            if (cycle < cycles - 1)
+            {
+                // Embaralha as posições alvo temporárias para criar cruzamentos intermediários caóticos
+                for (int i = 0; i < currentTargetPositions.Count; i++)
+                {
+                    Vector3 temp = currentTargetPositions[i];
+                    int randomIndex = Random.Range(i, currentTargetPositions.Count);
+                    currentTargetPositions[i] = currentTargetPositions[randomIndex];
+                    currentTargetPositions[randomIndex] = temp;
+                }
+            }
+
+            float elapsed = 0f;
+
+            if (DuelFXManager.Instance != null && DuelFXManager.Instance.handShuffleType == HandShuffleType.CollapseAndFan)
+            {
+                Vector3 centerPos = layoutTransform.position;
+                float halfDuration = cycleDuration / 2f;
+                
+                while (elapsed < halfDuration)
+                {
+                    elapsed += Time.deltaTime;
+                    float t = Mathf.SmoothStep(0, 1, elapsed / halfDuration);
+                    for (int i = 0; i < hand.Count; i++) { if (hand[i] != null) hand[i].transform.position = Vector3.Lerp(startPositions[i], centerPos, t); }
+                    yield return null;
+                }
+                
+                if (cycle > 0 && DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.shuffleSound);
+                
+                elapsed = 0f;
+                while (elapsed < halfDuration)
+                {
+                    elapsed += Time.deltaTime;
+                    float t = Mathf.SmoothStep(0, 1, elapsed / halfDuration);
+                    for (int i = 0; i < hand.Count; i++) { if (hand[i] != null) hand[i].transform.position = Vector3.Lerp(centerPos, currentTargetPositions[i], t); }
+                    yield return null;
+                }
+            }
+            else
+            {
+                if (cycle > 0 && DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.shuffleSound);
+                
+                while (elapsed < cycleDuration)
+                {
+                    elapsed += Time.deltaTime;
+                    float t = Mathf.SmoothStep(0, 1, elapsed / cycleDuration);
+                    for (int i = 0; i < hand.Count; i++)
+                    {
+                        if (hand[i] == null) continue;
+                        Vector3 start = startPositions[i]; Vector3 end = currentTargetPositions[i];
+                        Vector3 currentPos = Vector3.Lerp(start, end, t);
+                        
+                        // A Parábola Cross-Swap
+                        float dirX = (end.x > start.x) ? 1f : ((end.x < start.x) ? -1f : 0f);
+                        currentPos.y += Mathf.Sin(t * Mathf.PI) * 30f * dirX; 
+                        hand[i].transform.position = currentPos;
+                    }
+                    yield return null;
+                }
+            }
+        }
+        // Restaura o controle absoluto para o LayoutGroup
+        for (int i = 0; i < hand.Count; i++) { if (hand[i] != null) hand[i].transform.SetSiblingIndex(i); }
+        if (layoutGroup != null) { layoutGroup.enabled = true; LayoutRebuilder.ForceRebuildLayoutImmediate(layoutTransform as RectTransform); }
+    }
+
     public void MillCards(bool isPlayer, int amount)
     {
         if (DeckManager.Instance != null) DeckManager.Instance.MillCards(isPlayer, amount);
@@ -1565,6 +1684,12 @@ public void ShuffleDeck(bool isPlayer)
 
         UpdateLPUI();
         Debug.Log($"{(isPlayer ? "Player" : "Oponente")} pagou {amount} LP.");
+
+        if (enableDamagePopups && DamagePopupManager.Instance != null && amount > 0)
+        {
+            DamagePopupManager.Instance.ShowPopup(amount, false, isPlayer);
+        }
+
         return true;
     }
 
@@ -2052,7 +2177,8 @@ public void ShuffleDeck(bool isPlayer)
         if (UIManager.Instance == null) return;
 
         // Nota: Normalmente só se pode ver o próprio Extra Deck, a menos que um efeito permita
-        if (!isPlayer && !devMode) return;
+        bool qaActive = fullTestMode || !string.IsNullOrEmpty(QAAutoSpawner.currentTestCardId);
+        if (!isPlayer && !devMode && !qaActive) return;
 
         List<CardData> extraDeck = isPlayer ? playerExtraDeck : opponentExtraDeck;
         UIManager.Instance.ShowExtraDeck(extraDeck, cardBackTexture);
@@ -4415,10 +4541,10 @@ public void ShuffleDeck(bool isPlayer)
 
         if (UIManager.Instance == null) return;
 
-        // Se for oponente e não estiver em modo Dev, bloqueia (a menos que uma carta permita, mas aí seria via efeito específico)
-        if (!isPlayer && !devMode) return;
+        bool qaActive = fullTestMode || !string.IsNullOrEmpty(QAAutoSpawner.currentTestCardId);
+        if (!isPlayer && !devMode && !qaActive) return;
 
-        List<CardData> deck = isPlayer ? DeckManager.Instance.GetPlayerDeck() : DeckManager.Instance.GetOpponentDeck();
+        List<CardData> deck = isPlayer ? GetPlayerMainDeck() : GetOpponentMainDeck();
         UIManager.Instance.ShowDeck(deck, cardBackTexture);
     }
 

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public class DeckManager : MonoBehaviour
 {
@@ -96,8 +97,19 @@ public class DeckManager : MonoBehaviour
         {
             if (playerDeck.Count == 0)
             {
-                Debug.LogWarning("Deck vazio! Não é possível comprar mais cartas.");
-                return;
+                bool qaActive = GameManager.Instance.devMode || GameManager.Instance.fullTestMode || !string.IsNullOrEmpty(QAAutoSpawner.currentTestCardId);
+                if (qaActive && GameManager.Instance.cardDatabase != null)
+                {
+                    var fillerCards = GameManager.Instance.cardDatabase.cardDatabase.Where(c => !c.type.Contains("Fusion") && !c.type.Contains("Synchro") && !c.type.Contains("Token")).ToList();
+                    playerDeck.AddRange(fillerCards.OrderBy(x => Random.value).Take(10));
+                    Debug.Log("<color=yellow>🔄 [QA/DEV] Deck do jogador reabastecido automaticamente (Deck Infinito)!</color>");
+                    UpdateDeckVisuals();
+                }
+                else
+                {
+                    Debug.LogWarning("Deck vazio! Não é possível comprar mais cartas.");
+                    return;
+                }
             }
 
             GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Draw;
@@ -145,8 +157,19 @@ public class DeckManager : MonoBehaviour
         {
             if (opponentDeck.Count == 0)
             {
-                Debug.LogWarning("Deck do oponente vazio! Não é possível comprar mais cartas.");
-                return;
+                bool qaActive = GameManager.Instance.devMode || GameManager.Instance.fullTestMode || !string.IsNullOrEmpty(QAAutoSpawner.currentTestCardId);
+                if (qaActive && GameManager.Instance.cardDatabase != null)
+                {
+                    var fillerCards = GameManager.Instance.cardDatabase.cardDatabase.Where(c => !c.type.Contains("Fusion") && !c.type.Contains("Synchro") && !c.type.Contains("Token")).ToList();
+                    opponentDeck.AddRange(fillerCards.OrderBy(x => Random.value).Take(10));
+                    Debug.Log("<color=yellow>🔄 [QA/DEV] Deck do oponente reabastecido automaticamente (Deck Infinito)!</color>");
+                    UpdateDeckVisuals();
+                }
+                else
+                {
+                    Debug.LogWarning("Deck do oponente vazio! Não é possível comprar mais cartas.");
+                    return;
+                }
             }
 
             CardData drawnCard = opponentDeck[0];

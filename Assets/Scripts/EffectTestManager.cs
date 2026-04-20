@@ -551,6 +551,21 @@ public class EffectTestManager : MonoBehaviour
             }
         }
         GUILayout.EndHorizontal();
+        
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Hand Shuffle (Cross)", btnStyle)) { 
+            EnsureHandCards();
+            DuelFXManager.Instance.useHandShuffleAnimation = true; 
+            DuelFXManager.Instance.handShuffleType = HandShuffleType.CrossSwap; 
+            GameManager.Instance.ShuffleHand(true); 
+        }
+        if (GUILayout.Button("Hand Shuffle (Collapse)", btnStyle)) { 
+            EnsureHandCards();
+            DuelFXManager.Instance.useHandShuffleAnimation = true; 
+            DuelFXManager.Instance.handShuffleType = HandShuffleType.CollapseAndFan; 
+            GameManager.Instance.ShuffleHand(true); 
+        }
+        GUILayout.EndHorizontal();
 
         GUILayout.EndScrollView();
         GUILayout.EndArea();
@@ -654,6 +669,17 @@ public class EffectTestManager : MonoBehaviour
         }
 
         return display;
+    }
+
+    void EnsureHandCards()
+    {
+        if (GameManager.Instance.playerHand.Count < 3)
+        {
+            for (int i = GameManager.Instance.playerHand.Count; i < 5; i++)
+            {
+                GameManager.Instance.AddCardToHand(GameManager.Instance.cardDatabase.cardDatabase[i], true);
+            }
+        }
     }
 
     // Helper para extrair 3 cartas do Banco de Dados e simular os Materiais no vórtice da Fusão
