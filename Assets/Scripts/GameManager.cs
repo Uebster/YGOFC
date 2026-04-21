@@ -583,7 +583,7 @@ public class GameManager : MonoBehaviour
         if (playerHandCanvasGroup != null)
         {
             playerHandCanvasGroup.interactable = true;
-            Debug.Log("[GameManager] Interação com a mão do jogador ATIVADA.");
+            // Debug.Log("[GameManager] Interação com a mão do jogador ATIVADA.");
 
             // Verificação Retroativa de Hover (Melhora de UX)
             // Se o mouse já estiver sobre uma carta quando a mão se torna interativa, levanta-a.
@@ -1601,6 +1601,14 @@ public void ShuffleDeck(bool isPlayer)
         // Remove modificadores
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
 
+        // Remove o FieldStatUI fantasma que ficaria preso na zona antiga
+        Transform oldZone = card.transform.parent;
+        if (oldZone != null)
+        {
+            FieldStatUI statUI = oldZone.GetComponentInChildren<FieldStatUI>();
+            if (statUI != null) Destroy(statUI.gameObject);
+        }
+
         // REAPROVEITAMENTO FÍSICO: Não destruímos o GameObject. Isso mantém as referências LUA vivas!
         card.isOnField = false;
         card.isInteractable = true;
@@ -1957,7 +1965,7 @@ public void ShuffleDeck(bool isPlayer)
         card.previousPreviousLocation = card.previousLocation;
         card.previousLocation = card.CurrentLocation;
         card.previousOwner = (isPlayer ? 0 : 1);
-        Debug.Log($"{logPrefix} | Tracked history: from {card.previousLocation} (owner: {card.previousOwner})");
+        // Debug.Log($"{logPrefix} | Tracked history: from {card.previousLocation} (owner: {card.previousOwner})");
         
         // Declaração unificada de variáveis para evitar erros de escopo
         Vector3 startPos = card.transform.position;
@@ -1973,7 +1981,7 @@ public void ShuffleDeck(bool isPlayer)
         switch (destination)
         {
             case CardLocation.Graveyard:
-                Debug.Log($"{logPrefix} → Graveyard");
+                // Debug.Log($"{logPrefix} -> Graveyard");
                 
                 if (isPlayer) playerHand.Remove(card.gameObject);
                 else opponentHand.Remove(card.gameObject);
@@ -1995,13 +2003,13 @@ public void ShuffleDeck(bool isPlayer)
                 break;
 
             case CardLocation.Hand:
-                Debug.Log($"{logPrefix} → Hand");
+                // Debug.Log($"{logPrefix} -> Hand");
                 
                 ReturnToHand(card);
                 break;
 
             case CardLocation.Deck:
-                Debug.Log($"{logPrefix} → Deck (Top)");
+                // Debug.Log($"{logPrefix} -> Deck (Top)");
 
                 // Delega para DeckManager
                 if (DeckManager.Instance != null) 
@@ -2027,7 +2035,7 @@ public void ShuffleDeck(bool isPlayer)
                 break;
 
             case CardLocation.Banished:
-                Debug.Log($"{logPrefix} → Banished");
+                // Debug.Log($"{logPrefix} -> Banished");
                 
                 if (DuelFXManager.Instance != null && !isSimulating)
                 {
@@ -2058,7 +2066,7 @@ public void ShuffleDeck(bool isPlayer)
                 break;
 
             case CardLocation.ExtraDeck:
-                Debug.Log($"{logPrefix} → Extra Deck");
+                // Debug.Log($"{logPrefix} -> Extra Deck");
                 
                 if (isPlayer) playerExtraDeck.Add(data);
                 else opponentExtraDeck.Add(data);
@@ -2079,7 +2087,7 @@ public void ShuffleDeck(bool isPlayer)
                 break;
 
             default:
-                Debug.LogWarning($"{logPrefix} → Destino desconhecido: {destination}");
+                // Debug.LogWarning($"{logPrefix} -> Destino desconhecido: {destination}");
                 break;
         }
         
@@ -2403,6 +2411,7 @@ public void ShuffleDeck(bool isPlayer)
     {
         // 1. Anuncia a fase PRIMEIRO
         AnnounceText(phaseAnnouncements.textDrawPhase);
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnPhaseStart(GamePhase.Draw);
         
         // 2. Espera o tempo configurado de leitura do texto para sacar a carta com calma
         yield return new WaitForSeconds(phaseAnnouncements.displayDuration * phaseAnnouncements.masterDelayMultiplier);
@@ -2462,18 +2471,21 @@ public void ShuffleDeck(bool isPlayer)
     {
         AnnounceText(phaseAnnouncements.textMainPhase1);
         RefreshAttackIndicators();
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnPhaseStart(GamePhase.Main1);
     }
 
     public void OnBattlePhaseStart()
     {
         AnnounceText(phaseAnnouncements.textBattlePhase);
         RefreshAttackIndicators();
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnPhaseStart(GamePhase.Battle);
     }
 
     public void OnMainPhase2Start()
     {
         AnnounceText(phaseAnnouncements.textMainPhase2);
         RefreshAttackIndicators();
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnPhaseStart(GamePhase.Main2);
     }
 
     private IEnumerator HandleHandLimitSequence()
@@ -4176,6 +4188,17 @@ public void ShuffleDeck(bool isPlayer)
             return;
         }
 
+        // Move o FieldStatUI (se existir) para a nova zona para não deixar um fantasma na mesa antiga
+        Transform oldZone = card.transform.parent;
+        if (oldZone != null)
+        {
+            FieldStatUI statUI = oldZone.GetComponentInChildren<FieldStatUI>();
+            if (statUI != null)
+            {
+                statUI.transform.SetParent(newZone, false);
+            }
+        }
+
         // Remove da lista da mão se por acaso estiver lá (segurança)
         if (card.isPlayerCard) playerHand.Remove(card.gameObject);
         else opponentHand.Remove(card.gameObject);
@@ -4185,23 +4208,39 @@ public void ShuffleDeck(bool isPlayer)
         if (card.position == CardDisplay.BattlePosition.Defense) targetZRot = newOwnerIsPlayer ? 90f : -90f;
         else targetZRot = newOwnerIsPlayer ? 0f : 180f;
 
+        System.Action finalizeControlSwap = () => {
+            card.isPlayerCard = newOwnerIsPlayer;
+            
+            // Reajusta a posição Y para não sobrepor os números com o lado invertido
+            if (monsterStatDisplayMode != StatDisplayMode.None && fieldStatDisplayPrefab != null)
+            {
+                float adjustment = (monsterStatDisplayMode == StatDisplayMode.AboveCard) ? -cardYAdjustmentForStats : cardYAdjustmentForStats;
+                if (statDisplayMatchCardRotation && !newOwnerIsPlayer) adjustment = -adjustment; 
+                card.transform.localPosition = new Vector3(0, adjustment, 0);
+            }
+
+            // Roda efeitos que reagem a troca de controle
+            if (CardEffectManager.Instance != null && (card.CurrentCardData.id == "0834" || card.CurrentCardData.id == "0050"))
+                CardEffectManager.Instance.ExecuteCardEffect(card);
+                
+            RefreshAllCardsVisuals();
+            RefreshAttackIndicators();
+            
+            // Garante que o PhaseManager libere os botões de Battle Phase 
+            if (PhaseManager.Instance != null) PhaseManager.Instance.UpdateHoverColors(isPlayerTurn);
+        };
+
         if (DuelFXManager.Instance != null && DuelFXManager.Instance.enableAnimations && !isSimulating)
         {
-            DuelFXManager.Instance.PlayControlSwap(card, newZone, targetZRot, newOwnerIsPlayer, () => {
-                card.isPlayerCard = newOwnerIsPlayer;
-                if (CardEffectManager.Instance != null && (card.CurrentCardData.id == "0834" || card.CurrentCardData.id == "0050"))
-                    CardEffectManager.Instance.ExecuteCardEffect(card);
-            });
+            DuelFXManager.Instance.PlayControlSwap(card, newZone, targetZRot, newOwnerIsPlayer, finalizeControlSwap);
         }
         else
         {
             card.transform.SetParent(newZone);
             card.transform.localPosition = Vector3.zero;
             card.transform.localRotation = Quaternion.Euler(0, 0, targetZRot);
-            card.isPlayerCard = newOwnerIsPlayer;
 
-            if (CardEffectManager.Instance != null && (card.CurrentCardData.id == "0834" || card.CurrentCardData.id == "0050"))
-                CardEffectManager.Instance.ExecuteCardEffect(card);
+            finalizeControlSwap();
         }
         Debug.Log($"Controle de {card.CurrentCardData.name} alterado.");
 
@@ -4670,6 +4709,14 @@ public void ShuffleDeck(bool isPlayer)
             return;
         }
 
+        // Remove o FieldStatUI fantasma da zona antiga (Monstros perdem os status ao virarem magias)
+        Transform oldZoneEquip = equipCard.transform.parent;
+        if (oldZoneEquip != null)
+        {
+            FieldStatUI statUI = oldZoneEquip.GetComponentInChildren<FieldStatUI>();
+            if (statUI != null) Destroy(statUI.gameObject);
+        }
+
         // Remove da zona de monstro/mão se necessário (SetParent cuida da hierarquia, mas listas precisam de update)
         if (equipCard.isPlayerCard && playerHand.Contains(equipCard.gameObject)) playerHand.Remove(equipCard.gameObject);
 
@@ -5081,7 +5128,7 @@ public void ShuffleDeck(bool isPlayer)
         bool isFirstTurn = turnCount == 1;
         bool showIndicators = !isBusy && attackIndicatorMode == AttackIndicatorMode.AlwaysInBattlePhase && currentPhase == GamePhase.Battle && isPlayerTurn && !isFirstTurn;
 
-        Debug.Log($"[RefreshAttackIndicators] Iniciando Varredura. Fase: {currentPhase} | Deve Mostrar: {showIndicators}");
+        // Debug.Log($"[RefreshAttackIndicators] Iniciando Varredura. Fase: {currentPhase} | Deve Mostrar: {showIndicators}");
 
         Transform[] zones = duelFieldUI.playerMonsterZones;
         for (int i = 0; i < zones.Length; i++)
@@ -5093,7 +5140,7 @@ public void ShuffleDeck(bool isPlayer)
                 CardDisplay card = zone.GetComponentInChildren<CardDisplay>();
                 if (card == null)
                 {
-                    Debug.Log($"[RefreshAttackIndicators] Zona {i + 1} possui filhos, mas nenhum CardDisplay (Encontrado Fantasma: {zone.GetChild(0).name}).");
+                    // Debug.Log($"[RefreshAttackIndicators] Zona {i + 1} possui filhos, mas nenhum CardDisplay (Encontrado Fantasma: {zone.GetChild(0).name}).");
                     continue;
                 }
                 
@@ -5107,7 +5154,7 @@ public void ShuffleDeck(bool isPlayer)
                         bool isAttacker = CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null && CardEffectManager.Instance.luaDuel.currentAttacker.unityCard == card;
                         bool canAttack = card.position == CardDisplay.BattlePosition.Attack && !card.hasAttackedThisTurn && !isAttacker;
                             
-                            Debug.Log($"[RefreshAttackIndicators] {card.CurrentCardData.name} (Zona {i+1}) -> Em Ataque? {card.position == CardDisplay.BattlePosition.Attack} | Já atacou? {card.hasAttackedThisTurn} | Recebeu Espadinha? {canAttack}");
+                            // Debug.Log($"[RefreshAttackIndicators] {card.CurrentCardData.name} (Zona {i+1}) -> Em Ataque? {card.position == CardDisplay.BattlePosition.Attack} | Já atacou? {card.hasAttackedThisTurn} | Recebeu Espadinha? {canAttack}");
                             
                             if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCanAttackIndicator(card, canAttack);
 

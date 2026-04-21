@@ -86,7 +86,7 @@ public class PhaseSelectionMenuUI : MonoBehaviour
             else if (current == GamePhase.Battle)
             {
                 main2Button?.gameObject.SetActive(true);
-                endButton?.gameObject.SetActive(true);
+                endButton?.gameObject.SetActive(true); // Atalho UX: O PhaseManager forçará a passagem pela MP2 invisivelmente
             }
             else if (current == GamePhase.Main2)
             {

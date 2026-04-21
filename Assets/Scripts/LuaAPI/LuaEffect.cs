@@ -19,6 +19,7 @@ public class LuaEffect
     public int category;
     private object _valueObject = 0;
     private int _label = 0;
+    private int _resetValue = 0;
     
     public Closure conditionFunc;
     public Closure costFunc;
@@ -65,7 +66,8 @@ public class LuaEffect
     public void SetCountLimit(params object[] args) { }
     public void SetHintTiming(params object[] args) { }
     public void SetTargetRange(params object[] args) { }
-    public void SetReset(params object[] args) { }
+    public void SetReset(params object[] args) { if (args != null && args.Length > 0) _resetValue = ConvertToInt(args[0]); }
+    public int GetReset() { return _resetValue; }
     public void SetValue(params object[] args) { if (args != null && args.Length > 0) _valueObject = args[0]; }
     public object GetValue() { return _valueObject; }
     public void SetRange(params object[] args) { }
@@ -110,7 +112,8 @@ public class LuaEffect
             targetFunc = this.targetFunc,
             operationFunc = this.operationFunc,
             _valueObject = this._valueObject,
-            _label = this._label
+            _label = this._label,
+            _resetValue = this._resetValue
         };
     }
 

@@ -206,7 +206,6 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
             null));
             
         CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.SetAttackSelectionVisual(false);
-        CardEffectManager.Instance.luaDuel.currentAttacker = null;
     }
 
     public void BlockZone(Transform zone)

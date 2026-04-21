@@ -147,7 +147,7 @@ public class SaveLoadMenu : MonoBehaviour
                 instantiatedSlots.Add(slot);
             }
         }
-        Debug.Log($"[SaveLoadMenu] Lista atualizada com {instantiatedSlots.Count} slots visuais.");
+        // Debug.Log($"[SaveLoadMenu] Lista atualizada com {instantiatedSlots.Count} slots visuais.");
     }
 
     void OnSlotClicked(SaveLoadSystem.GameSaveData data)

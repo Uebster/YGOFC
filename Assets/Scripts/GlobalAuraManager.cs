@@ -119,6 +119,6 @@ public class GlobalAuraManager : MonoBehaviour
     public void ClearAllAuras()
     {
         activeAuras.Clear();
-        Debug.Log("[AuraManager] Todas as auras globais foram limpas.");
+        // Debug.Log("[AuraManager] Todas as auras globais foram limpas.");
     }
 }

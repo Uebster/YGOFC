@@ -684,7 +684,6 @@ public class OpponentAI : MonoBehaviour
                     yield return StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
                         CardEffectManager.Instance.luaDuel.currentAttacker, 
                         CardEffectManager.Instance.luaDuel.currentAttackTarget));
-                    CardEffectManager.Instance.luaDuel.currentAttacker = null;
                 }
                 didAttack = true;
             }
@@ -698,7 +697,6 @@ public class OpponentAI : MonoBehaviour
                     yield return StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
                         CardEffectManager.Instance.luaDuel.currentAttacker, 
                         null));
-                    CardEffectManager.Instance.luaDuel.currentAttacker = null;
                 }
                 didAttack = true;
             }
@@ -916,7 +914,7 @@ public class OpponentAI : MonoBehaviour
                 int eventCode = triggerLink.effect != null ? triggerLink.effect.code : 0;
                 CardDisplay triggerCard = triggerLink.card.unityCard;
 
-                if (eventCode == 1102) // EVENT_ATTACK_ANNOUNCE
+                if (eventCode == 1130) // EVENT_ATTACK_ANNOUNCE
                 {
                     var attacker = CardEffectManager.Instance.luaDuel.currentAttacker?.unityCard;
                     var target = CardEffectManager.Instance.luaDuel.currentAttackTarget?.unityCard;

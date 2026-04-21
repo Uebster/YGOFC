@@ -17,11 +17,14 @@ public class LuaDuel
     public LuaGroup currentTargetGroup;
     public LuaCard currentAttacker;
     public LuaCard currentAttackTarget;
+    public LuaCard historicalAttacker; // Safety Net: Lembra quem lutou até o fim do turno
+    public LuaCard historicalAttackTarget;
     public LuaEffect currentActivatingEffect;
     public LuaGroup lastCostGroup; // Memória de curto prazo para custos pagos
 
     public List<LuaEffect> globalEffects = new List<LuaEffect>();
     public Dictionary<string, int> playerFlags = new Dictionary<string, int>();
+    public Dictionary<string, Dictionary<int, int>> cardFlags = new Dictionary<string, Dictionary<int, int>>();
     public List<Closure> endTurnCallbacks = new List<Closure>();
 
     private int ConvertToInt(object obj)
@@ -56,10 +59,10 @@ public class LuaDuel
 
     public void Recover(object player, object amount, object reason)
     {
-        Debug.Log($"[Surgical Log] Duel.Recover! Jogador_Raw: {player} | Amount_Raw: {amount}");
+        // Debug.Log($"[Surgical Log] Duel.Recover! Jogador_Raw: {player} | Amount_Raw: {amount}");
         int pInt = ConvertToInt(player);
         int aInt = ConvertToInt(amount);
-        Debug.Log($"[Surgical Log] Convertido para C# -> Jogador: {pInt} | Cura: {aInt}");
+        // Debug.Log($"[Surgical Log] Convertido para C# -> Jogador: {pInt} | Cura: {aInt}");
         if (pInt == 0) GameManager.Instance.GainLifePoints(true, aInt);
         else GameManager.Instance.GainLifePoints(false, aInt);
     }
@@ -74,12 +77,12 @@ public class LuaDuel
         if (target is LuaGroup group)
         {
             foreach (var c in group.cards) if (c.unityCard != null) toDestroy.Add(c.unityCard);
-            Debug.Log($"[Lua] Duel.Destroy(Grupo com {group.cards.Count} cartas)");
+            // Debug.Log($"[Lua] Duel.Destroy(Grupo com {group.cards.Count} cartas)");
         }
         else if (target is LuaCard card && card.unityCard != null)
         {
             toDestroy.Add(card.unityCard);
-            Debug.Log($"[Lua] Duel.Destroy({card.unityCard.CurrentCardData.name})");
+            // Debug.Log($"[Lua] Duel.Destroy({card.unityCard.CurrentCardData.name})");
         }
 
         CardEffectManager.Instance.StartCoroutine(DestroyCardsRoutine(toDestroy));
@@ -185,7 +188,7 @@ public class LuaDuel
                     count++;
                 }
             }
-            Debug.Log($"[Lua] Duel.SendtoGrave(Grupo com {count} cartas)");
+            // Debug.Log($"[Lua] Duel.SendtoGrave(Grupo com {count} cartas)");
         }
         else if (target is LuaCard card && card.unityCard != null)
         {
@@ -193,7 +196,7 @@ public class LuaDuel
             {
                 GameManager.Instance.MoveCard(card.unityCard, CardLocation.Graveyard, SendReason.Effect);
                 count = 1;
-                Debug.Log($"[Lua] Duel.SendtoGrave({card.unityCard.CurrentCardData.name})");
+                // Debug.Log($"[Lua] Duel.SendtoGrave({card.unityCard.CurrentCardData.name})");
             }
             else if (card.unityData != null)
             {
@@ -250,7 +253,7 @@ public class LuaDuel
                     count++; 
                 }
             }
-            Debug.Log($"[Lua] Duel.Remove(Grupo com {count} cartas)");
+            // Debug.Log($"[Lua] Duel.Remove(Grupo com {count} cartas)");
         }
         else if (target is LuaCard card)
         {
@@ -258,7 +261,7 @@ public class LuaDuel
             {
                 GameManager.Instance.BanishCard(card.unityCard);
                 count = 1;
-                Debug.Log($"[Lua] Duel.Remove({card.unityCard.CurrentCardData.name})");
+                // Debug.Log($"[Lua] Duel.Remove({card.unityCard.CurrentCardData.name})");
             }
             else if (card.unityData != null)
             {
@@ -316,7 +319,7 @@ public class LuaDuel
                     else GameManager.Instance.GetOpponentMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetOpponentMainDeck().Count, c.unityData); count++; 
                 }
             }
-            Debug.Log($"[Lua] Duel.SendtoDeck(Grupo com {count} cartas)");
+            // Debug.Log($"[Lua] Duel.SendtoDeck(Grupo com {count} cartas)");
         }
         else if (target is LuaCard card)
         {
@@ -325,7 +328,7 @@ public class LuaDuel
                 if (card.unityData != null) cardsToAnimate.Add(card.unityData);
                 GameManager.Instance.ReturnToDeck(card.unityCard, toTop);
                 count = 1;
-                Debug.Log($"[Lua] Duel.SendtoDeck({card.unityCard.CurrentCardData.name})");
+                // Debug.Log($"[Lua] Duel.SendtoDeck({card.unityCard.CurrentCardData.name})");
             }
             else if (card.unityData != null)
             {
@@ -488,7 +491,7 @@ public class LuaDuel
         if (loc == 0x08) // LOCATION_SZONE
             result = GameManager.Instance.GetFreeSpellTrapZones(isPlayer);
             
-        Debug.Log($"[LuaDuel] GetLocationCount consultado: Player {player}, Loc {loc} -> Result: {result}");
+        // Debug.Log($"[LuaDuel] GetLocationCount consultado: Player {player}, Loc {loc} -> Result: {result}");
         return result;
     }
 
@@ -575,14 +578,14 @@ public class LuaDuel
         string key = $"{ConvertToInt(player)}_{ConvertToInt(flag)}";
         if (playerFlags.ContainsKey(key)) playerFlags[key]++;
         else playerFlags[key] = 1;
-        Debug.Log($"[LuaDuel] Flag Effect Registrado: Jogador {player}, Flag {flag}");
+        // Debug.Log($"[LuaDuel] Flag Effect Registrado: Jogador {player}, Flag {flag}");
     }
 
     public int GetFlagEffect(object player, object flag)
     {
         string key = $"{ConvertToInt(player)}_{ConvertToInt(flag)}";
         int result = playerFlags.ContainsKey(key) ? playerFlags[key] : 0;
-        Debug.Log($"[LuaDuel] GetFlagEffect consultado: Jogador {player}, Flag {flag} -> Resultado: {result}");
+        // Debug.Log($"[LuaDuel] GetFlagEffect consultado: Jogador {player}, Flag {flag} -> Resultado: {result}");
         return result;
     }
 
@@ -590,7 +593,7 @@ public class LuaDuel
     { 
         string key = $"{ConvertToInt(player)}_{ConvertToInt(flag)}";
         bool result = playerFlags.ContainsKey(key) && playerFlags[key] > 0;
-        Debug.Log($"[LuaDuel] HasFlagEffect consultado: Jogador {player}, Flag {flag} -> Resultado: {result}");
+        // Debug.Log($"[LuaDuel] HasFlagEffect consultado: Jogador {player}, Flag {flag} -> Resultado: {result}");
         return result;
     }
 
@@ -809,7 +812,7 @@ public class LuaDuel
         if (AnnounceSelectionUI.Instance != null)
         {
             AnnounceSelectionUI.Instance.ShowAttributeSelection((selectedValue) => {
-                Debug.Log($"<color=cyan>[LuaDuel] Atributo Declarado (AnnounceAttribute): {selectedValue}</color>");
+                // Debug.Log($"<color=cyan>[LuaDuel] Atributo Declarado (AnnounceAttribute): {selectedValue}</color>");
                 CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(selectedValue);
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
             });
@@ -836,7 +839,7 @@ public class LuaDuel
         if (AnnounceSelectionUI.Instance != null)
         {
             AnnounceSelectionUI.Instance.ShowRaceSelection((selectedValue) => {
-                Debug.Log($"<color=cyan>[LuaDuel] Raça Declarada (AnnounceRace): {selectedValue}</color>");
+                // Debug.Log($"<color=cyan>[LuaDuel] Raça Declarada (AnnounceRace): {selectedValue}</color>");
                 CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(selectedValue);
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
             });
@@ -916,7 +919,7 @@ public class LuaDuel
     
     public DynValue GetChainInfo(object chainc, object arg1 = null, object arg2 = null, object arg3 = null, object arg4 = null)
     {
-         Debug.Log($"[Surgical Log] GetChainInfo invocado! arg1: {arg1}, arg2: {arg2}");
+         // Debug.Log($"[Surgical Log] GetChainInfo invocado! arg1: {arg1}, arg2: {arg2}");
          List<DynValue> returns = new List<DynValue>();
          List<object> argsList = new List<object>();
          if (arg1 != null) argsList.Add(arg1);
@@ -929,12 +932,12 @@ public class LuaDuel
             int arg = ConvertToInt(o);
             if (arg == 1) // CHAININFO_TARGET_PLAYER
             {
-                Debug.Log($"[Surgical Log] Retornando targetPlayer: {targetPlayer}");
+                // Debug.Log($"[Surgical Log] Retornando targetPlayer: {targetPlayer}");
                 returns.Add(DynValue.NewNumber(targetPlayer));
             }
             else if (arg == 2) // CHAININFO_TARGET_PARAM
             {
-                Debug.Log($"[Surgical Log] Retornando targetParam: {targetParam}");
+                // Debug.Log($"[Surgical Log] Retornando targetParam: {targetParam}");
                 returns.Add(DynValue.NewNumber(targetParam));
             }
             else if (arg == 16 || arg == 8388608) // CHAININFO_TARGET_CARDS (0x10)
@@ -960,7 +963,7 @@ public class LuaDuel
         }
         if (returns.Count == 0) return DynValue.NewTuple(DynValue.Nil, DynValue.Nil);
         if (returns.Count == 1) return returns[0];
-        Debug.Log($"[Surgical Log] GetChainInfo enviando um Tuple de volta ao LUA com {returns.Count} valores.");
+        // Debug.Log($"[Surgical Log] GetChainInfo enviando um Tuple de volta ao LUA com {returns.Count} valores.");
         return DynValue.NewTuple(returns.ToArray());
     }
 
@@ -987,7 +990,7 @@ public class LuaDuel
                 if (c.unityCard != null) { GameManager.Instance.ReturnToHand(c.unityCard); count++; }
                 else if (c.unityData != null) { bool pDummy; RemoveDataFromAllPiles(c.unityData, out pDummy); GameManager.Instance.AddCardToHand(c.unityData, c.GetControler() == 0); count++; }
             }
-            Debug.Log($"[Lua] Duel.SendtoHand(Grupo com {count} cartas)");
+            // Debug.Log($"[Lua] Duel.SendtoHand(Grupo com {count} cartas)");
         }
         else if (target is LuaCard card)
         {
@@ -995,7 +998,7 @@ public class LuaDuel
             {
                 GameManager.Instance.ReturnToHand(card.unityCard);
                 count = 1;
-                Debug.Log($"[Lua] Duel.SendtoHand({card.unityCard.CurrentCardData.name})");
+                // Debug.Log($"[Lua] Duel.SendtoHand({card.unityCard.CurrentCardData.name})");
             }
             else if (card.unityData != null)
             {
@@ -1066,7 +1069,7 @@ public class LuaDuel
                     GameManager.Instance.SpecialSummonFromData(c.unityData, isPlayerSummoning, -1, true, inDefense, null, CardLocation.Graveyard);
                 }
             }
-            Debug.Log($"[Lua] Duel.SpecialSummon(Grupo)");
+            // Debug.Log($"[Lua] Duel.SpecialSummon(Grupo)");
             return true;
         }
         else if (target is LuaCard card)
@@ -1082,14 +1085,14 @@ public class LuaDuel
                 
                 GameManager.Instance.SpecialSummonFromData(card.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc);
                 GameObject.Destroy(card.unityCard.gameObject);
-                Debug.Log($"[Lua] Duel.SpecialSummon({card.unityCard.CurrentCardData.name})");
+                // Debug.Log($"[Lua] Duel.SpecialSummon({card.unityCard.CurrentCardData.name})");
                 return true;
             }
             else if (card.unityData != null)
             {
                 bool pDummy; RemoveDataFromAllPiles(card.unityData, out pDummy);
                 GameManager.Instance.SpecialSummonFromData(card.unityData, isPlayerSummoning, -1, true, inDefense, null, CardLocation.Graveyard);
-                Debug.Log($"[Lua] Duel.SpecialSummon({card.unityData.name} - Token)");
+                // Debug.Log($"[Lua] Duel.SpecialSummon({card.unityData.name} - Token)");
                 return true;
             }
         }
@@ -1147,7 +1150,7 @@ public class LuaDuel
             else
                 GameManager.Instance.CreateCardLink(ec.unityCard, t.unityCard, CardLink.LinkType.Equipment);
             
-            Debug.Log($"[Lua] Duel.Equip({ec.unityData.name} em {t.unityData.name})");
+            // Debug.Log($"[Lua] Duel.Equip({ec.unityData.name} em {t.unityData.name})");
             return true;
         }
         return false;
@@ -1205,11 +1208,29 @@ public class LuaDuel
         return currentAttackTarget ?? SafeDummyCard();
     }
 
+    public LuaCard GetHistoricalAttacker()
+    {
+        return historicalAttacker ?? SafeDummyCard();
+    }
+
+    public LuaCard GetHistoricalAttackTarget()
+    {
+        return historicalAttackTarget ?? SafeDummyCard();
+    }
+    
     public void CalculateDamage(object attackerObj, object defenderObj)
     {
         LuaCard attacker = attackerObj as LuaCard;
         LuaCard defender = defenderObj as LuaCard;
         
+        // FIX: Preserva a memória do Atacante e Defensor para os eventos pós-dano (como After the Struggle)
+        this.currentAttacker = attacker;
+        this.currentAttackTarget = defender;
+        
+        // SAFETY NET: Histórico persistente até o fim do turno
+        this.historicalAttacker = attacker;
+        this.historicalAttackTarget = defender;
+
         if (attacker == null || attacker.unityCard == null) return;
 
         CardDisplay atkCard = attacker.unityCard;
@@ -1425,9 +1446,9 @@ public class LuaDuel
                     DynValue result = closure.Call(callArgs.ToArray());
                     
                     // --- LOG DE DEBUG DO FILTRO ---
-                    string argsLog = extraArgs != null ? string.Join(", ", extraArgs) : "N/A";
+                    // string argsLog = extraArgs != null ? string.Join(", ", extraArgs) : "N/A";
                     bool passed = result.Type == DataType.Boolean && result.Boolean;
-                    Debug.Log($"[Filtro LUA] Avaliando: {c.unityData?.name} | Args extras: [{argsLog}] | Aprovado: {passed}");
+                    // Debug.Log($"[Filtro LUA] Avaliando: {c.unityData?.name} | Args extras: [{argsLog}] | Aprovado: {passed}");
                     
                     if (result.Type == DataType.Boolean && result.Boolean) {
                         group.AddCard(c);
@@ -1448,7 +1469,7 @@ public class LuaDuel
     {
         LuaGroup group = GetMatchingGroup(filterFunc, player, locSelf, locOpp, excluded, extraArgs);
         bool res = group.GetCount() >= ConvertToInt(count);
-        Debug.Log($"[LuaDuel] IsExistingMatchingCard consultado -> Result: {res} (Encontrou {group.GetCount()} cartas)");
+        // Debug.Log($"[LuaDuel] IsExistingMatchingCard consultado -> Result: {res} (Encontrou {group.GetCount()} cartas)");
         return res;
     }
 
@@ -1583,7 +1604,7 @@ public class LuaDuel
         if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
         {
             LuaGroup aiChoice = OpponentAI.Instance.SelectLuaTargets(candidates, ConvertToInt(min), ConvertToInt(max));
-            Debug.Log($"<color=orange>[LuaDuel] Bypass IA (SelectMatchingCard) -> Opções válidas: {candidates.cards.Count}, IA escolheu: {aiChoice.cards.Count}</color>");
+            // Debug.Log($"<color=orange>[LuaDuel] Bypass IA (SelectMatchingCard) -> Opções válidas: {candidates.cards.Count}, IA escolheu: {aiChoice.cards.Count}</color>");
             CardEffectManager.Instance.yieldReturnValue = UserData.Create(aiChoice);
             this.currentTargetGroup = aiChoice;
             CardEffectManager.Instance.isWaitingForLuaYield = false;

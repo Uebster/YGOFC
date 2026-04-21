@@ -234,6 +234,11 @@ public class LuaEngineCore
         luaEngine.Globals["EVENT_LEAVE_FIELD"] = 1015;
         luaEngine.Globals["EVENT_TO_GRAVE"] = 1014;
         luaEngine.Globals["EVENT_BATTLE_DESTROYING"] = 1139;
+        luaEngine.Globals["EVENT_BATTLED"] = 1138;
+        luaEngine.Globals["EVENT_ATTACK_ANNOUNCE"] = 1130;
+        luaEngine.Globals["EVENT_BATTLE_START"] = 1132;
+        luaEngine.Globals["EVENT_BATTLE_DESTROYED"] = 1140;
+        luaEngine.Globals["EVENT_DAMAGE_STEP_END"] = 1141;
         luaEngine.Globals["EFFECT_TYPE_SINGLE"] = 0x0001;
         luaEngine.Globals["EFFECT_TYPE_FIELD"] = 0x0002;
         luaEngine.Globals["EFFECT_TYPE_EQUIP"] = 0x0004;
@@ -295,6 +300,23 @@ public class LuaEngineCore
         luaEngine.Globals["EFFECT_UPDATE_LEVEL"] = 10;
         luaEngine.Globals["EFFECT_SET_DEFENSE_FINAL"] = 6;
         luaEngine.Globals["EFFECT_EQUIP_LIMIT"] = 147;
+
+        // Constantes de Fases (Phases)
+        luaEngine.Globals["PHASE_DRAW"] = 0x01;
+        luaEngine.Globals["PHASE_STANDBY"] = 0x02;
+        luaEngine.Globals["PHASE_MAIN1"] = 0x04;
+        luaEngine.Globals["PHASE_BATTLE_START"] = 0x08;
+        luaEngine.Globals["PHASE_BATTLE_STEP"] = 0x10;
+        luaEngine.Globals["PHASE_DAMAGE"] = 0x20;
+        luaEngine.Globals["PHASE_DAMAGE_CAL"] = 0x40;
+        luaEngine.Globals["PHASE_BATTLE"] = 0x80;
+        luaEngine.Globals["PHASE_MAIN2"] = 0x100;
+        luaEngine.Globals["PHASE_END"] = 0x200;
+
+        // Constantes de Reset e Memória Temporária
+        luaEngine.Globals["RESET_EVENT"] = 0x1fe0000;
+        luaEngine.Globals["RESET_PHASE"] = 0x1000;
+        luaEngine.Globals["RESETS_STANDARD_PHASE_END"] = 0x1fe0000 | 0x1000 | 0x200;
 
         // Metatable Global Segura
         luaEngine.DoString(@"
@@ -368,14 +390,18 @@ public class LuaEngineCore
 
             Core = {}
             function Core.Attack(attacker, target)
-                Duel.RaiseEvent(attacker, 1102, nil, 0, attacker:GetControler(), attacker:GetControler(), 0)
+                Duel.RaiseEvent(attacker, 1130, nil, 0, attacker:GetControler(), attacker:GetControler(), 0)
                 coroutine.yield('WaitChain')
-                coroutine.yield('FastEffectWindow_1102')
+                coroutine.yield('FastEffectWindow_1130')
                 if not attacker:IsOnField() then return false end
                 if target ~= nil and not target:IsOnField() then return false end
                 coroutine.yield('PlayAttackAnimation')
                 if target ~= nil and target:IsFacedown() then coroutine.yield('RevealTarget') end
                 Duel.CalculateDamage(attacker, target)
+                
+                -- Dispara o gatilho de Pós-Dano para efeitos contínuos e memórias de campo (EVENT_BATTLED = 1138)
+                Duel.RaiseEvent(attacker, 1138, nil, 0, attacker:GetControler(), attacker:GetControler(), 0)
+                
                 return true
             end
 

@@ -53,6 +53,24 @@ A carta **"7 Completed"** é uma Carta Mágica de Equipamento (Equip Spell) muit
 ### 💡 O grande truque dessa carta:
 A sua flexibilidade é o seu ponto forte. Diferente de outros equipamentos que dão um bônus fixo, com a "7 Completed" você pode se adaptar ao estado do jogo. Precisa destruir um monstro forte do oponente? Coloque os 700 no ATK de um *Jinzo* ou *X-Head Cannon*. Está encurralado e precisa ganhar tempo? Equipe em um monstro setado virado para cima e coloque os 700 na DEF, criando uma barreira de metal quase impenetrável!
 
+## ID: DM0027 - After the Struggle (Password: 25345186)
+
+A carta **"After the Struggle"** (Após a Luta) é uma Carta Mágica Normal (Normal Spell) que instaura uma regra de "Morte Súbita" no campo de batalha para o turno em que é ativada.
+
+> *"This card can only be activated during Main Phase 1. All monsters on both sides of the field that have been involved in damage calculation are destroyed during the End Step of the turn."*
+
+### Como ela funciona na prática:
+
+1. **Ativação Restrita:** Você obrigatoriamente só pode ativá-la na sua **Main Phase 1** (antes da Fase de Batalha).
+2. **A Marcação LUA (Flag Effect):** Nas sombras da Engine, a carta cria um efeito contínuo invisível que fica monitorando o campo. Toda vez que dois monstros colidem e entram na etapa de cálculo de dano (`EVENT_BATTLED`), o LUA "carimba" as duas cartas com uma flag invisível.
+3. **A Resolução (Morte Certa):** Quando a Fase de Batalha termina e o jogo transita para a Main Phase 2 (ou End Phase), a Mágica cobra o preço: ela varre a mesa e destrói absolutamente todos os monstros (seus e do oponente) que receberam o carimbo de batalha.
+
+### 💡 O grande truque dessa carta:
+Essa carta é a definição de "Ataque Suicida Tático" e ignora completamente a matemática de ATK/DEF.
+
+* **Matador de Gigantes:** Se o oponente tem um *Blue-Eyes White Dragon* intocável e você tem apenas um monstro incrivelmente fraco. Você ativa a magia e joga o seu monstro fraco (ataque kamikaze) contra o Dragão dele. Você vai tomar dano e seu monstro vai morrer? Sim. Mas, no fim da Fase de Batalha, o Dragão intocável do oponente será destruído automaticamente porque ele participou de um cálculo de dano contra você!
+* **Escudo Envenenado:** Se você ativar essa carta e o oponente (no próximo turno) atacar seus monstros, qualquer monstro dele que tocar nos seus será pulverizado no fim da batalha.
+
 ## ID: DM0009 - A Deal with Dark Ruler (Password: 06850209)
 
 A carta **"A Deal with Dark Ruler"** é uma Carta Mágica Rápida (Quick-Play Spell) com um requisito de ativação muito específico que traz ao campo uma besta de puro poder destrutivo.

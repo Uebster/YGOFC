@@ -154,3 +154,12 @@ O controle de tempo da *Standby Phase* apresentou dois sintomas distintos que ma
 ### Conflito de Eixo X no Hover da Mão (Layout Group)
 - **Bug Original:** Ao manter o mouse sobre uma carta na mão enquanto uma nova carta era sacada (ou a mão reordenada), a carta sob o hover dava um "pulo" bizarro ou tremia para os lados, ficando fora de sincronia com as outras.
 - **Correção Aplicada:** O `HoverAnimationRoutine` no `CardDisplay` estava memorizando e forçando a posição absoluta nos eixos X e Y (`basePosition`). Como a Mão usa um *Horizontal Layout Group* (que controla o X dinamicamente), ocorria uma "briga" entre a animação e o Layout. A corrotina foi alterada para interpolar estritamente o eixo Y (`anchoredPosition.y`), deixando o eixo X livre para a Unity deslizar a carta suavemente para os lados durante o Hover.
+
+
+
+# Lista de Logs (Log Library)
+
+**SaveLoadMenu**
+        Debug.Log($"[SaveLoadMenu - {menuType}] Awake: Iniciando auto-configuração.");
+
+

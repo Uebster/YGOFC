@@ -703,7 +703,7 @@ public class CardEffectManager : MonoBehaviour
         monster.currentAtk = newAtk;
         monster.currentDef = newDef;
 
-        Debug.Log($"[RecalculateStats] Status de {monster.CurrentCardData.name} atualizado para ATK {newAtk} / DEF {newDef}");
+        // Debug.Log($"[RecalculateStats] Status de {monster.CurrentCardData.name} atualizado para ATK {newAtk} / DEF {newDef}");
     }
 
     private int GetEffectValue(LuaEffect effect, CardDisplay target)

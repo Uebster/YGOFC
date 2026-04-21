@@ -303,7 +303,26 @@ public class LuaCard
     public bool IsSSetable(params object[] args) { return true; }
     public LuaGroup GetEquipGroup() { return new LuaGroup(); }
     public int GetSequence() { return 0; }
-    public int GetFlagEffect(object id) { return 0; }
+    
+    private string GetCardUniqueKey()
+    {
+        if (unityCard != null) return "GO_" + unityCard.gameObject.GetInstanceID().ToString();
+        if (unityData != null) return "DATA_" + unityData.GetHashCode().ToString();
+        return "UNKNOWN";
+    }
+
+    public int GetFlagEffect(object id) 
+    { 
+        int flagId = ConvertToInt(id);
+        int result = 0;
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
+        {
+            string key = GetCardUniqueKey();
+            if (CardEffectManager.Instance.luaDuel.cardFlags.ContainsKey(key))
+                result = CardEffectManager.Instance.luaDuel.cardFlags[key].ContainsKey(flagId) ? CardEffectManager.Instance.luaDuel.cardFlags[key][flagId] : 0;
+        }
+        return result;
+    }
     
     public bool IsImmuneToEffect(object e) { return false; }
     public bool CanAttack() { return true; }
@@ -320,7 +339,20 @@ public class LuaCard
         return 0;
     }
     public int GetOriginalCode() { return GetCode(); }
-    public void RegisterFlagEffect(params object[] args) { }
+    
+    public void RegisterFlagEffect(params object[] args) 
+    { 
+        if (args == null || args.Length == 0) return;
+        int flagId = ConvertToInt(args[0]);
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
+        {
+            string key = GetCardUniqueKey();
+            if (!CardEffectManager.Instance.luaDuel.cardFlags.ContainsKey(key)) CardEffectManager.Instance.luaDuel.cardFlags[key] = new Dictionary<int, int>();
+            if (CardEffectManager.Instance.luaDuel.cardFlags[key].ContainsKey(flagId)) CardEffectManager.Instance.luaDuel.cardFlags[key][flagId]++;
+            else CardEffectManager.Instance.luaDuel.cardFlags[key][flagId] = 1;
+        }
+    }
+
     public void SetCardTarget(object tc) { }
     public bool IsStatus(object status) { return false; }
     public LuaCard GetFirstCardTarget() { return SafeDummyCard(); }
@@ -337,7 +369,17 @@ public class LuaCard
     public void EnableUnsummonable() { }
     public void SetSPSummonOnce(params object[] args) { }
     public DynValue IsHasEffect(object effectCode) { return DynValue.Nil; }
-    public void ResetFlagEffect(object id) { }
+    
+    public void ResetFlagEffect(object id) 
+    { 
+        int flagId = ConvertToInt(id);
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
+        {
+            string key = GetCardUniqueKey();
+            if (CardEffectManager.Instance.luaDuel.cardFlags.ContainsKey(key)) CardEffectManager.Instance.luaDuel.cardFlags[key].Remove(flagId);
+        }
+    }
+
     public void SetFlagEffectLabel(object id, object label) { }
     public void CreateEffectRelation(object e) { }
     public void ReleaseEffectRelation(object e) { }
@@ -384,7 +426,7 @@ public class LuaCard
     {
         if (e == null) return;
         registeredEffects.Add(e);
-        Debug.Log($"[Lua] Efeito tipo {e.type} (Code {e.code}) registrado em {unityData?.name}.");
+        // Debug.Log($"[Lua] Efeito tipo {e.type} (Code {e.code}) registrado em {unityData?.name}.");
 
         // Se for um efeito de equipamento (0x4) e a carta já estiver no campo, avisa o alvo para recalcular!
         if ((e.type & 0x0004) != 0 && unityCard != null && unityCard.isOnField && CardEffectManager.Instance != null)

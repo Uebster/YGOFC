@@ -1330,7 +1330,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             return;
         }
 
-        Debug.Log($"CardDisplay: Clique detectado na carta {currentCardData?.name}");
+        // Debug.Log($"CardDisplay: Clique detectado na carta {currentCardData?.name}");
 
         // Lógica de Batalha (Battle Phase)
         if (GameManager.Instance != null && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle)
@@ -1541,7 +1541,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             CardEffectManager.Instance.luaDuel.currentAttacker, 
             CardEffectManager.Instance.luaDuel.currentAttackTarget));
             
-        CardEffectManager.Instance.luaDuel.currentAttacker = null;
+        // CardEffectManager.Instance.luaDuel.currentAttacker = null; // Removido para prevenir amnésia assíncrona no LUA
     }
 
 #if UNITY_EDITOR

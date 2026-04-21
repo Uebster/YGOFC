@@ -84,7 +84,7 @@ public class PhaseManager : MonoBehaviour
         if (standbyCoroutine != null) { StopCoroutine(standbyCoroutine); standbyCoroutine = null; }
 
         currentPhase = newPhase;
-        Debug.Log($"--- FASE: {currentPhase} ---");
+        // Debug.Log($"--- FASE: {currentPhase} ---");
 
         if (phaseText != null) phaseText.text = currentPhase.ToString().ToUpper().Replace("1", " 1").Replace("2", " 2");
 
@@ -171,8 +171,26 @@ public class PhaseManager : MonoBehaviour
 
     public void TryChangePhase(GamePhase newPhase)
     {
+        // REGRA OFICIAL OCG: É obrigatório passar pela Main Phase 2 se você entrou na Battle Phase.
+        if (currentPhase == GamePhase.Battle && newPhase == GamePhase.End)
+        {
+            Debug.Log("Regra Oficial OCG: Transição automática para Main Phase 2 antes da End Phase.");
+            StartCoroutine(AutoRouteBattleToEnd());
+            return;
+        }
+
         // TODO LUA: Substituir a chamada direta pela emissão de um Request para o motor Lua validar se a fase pode ser alterada.
         ChangePhase(newPhase);
+    }
+
+    private IEnumerator AutoRouteBattleToEnd()
+    {
+        ChangePhase(GamePhase.Main2);
+        if (CardEffectManager.Instance != null) {
+            yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen);
+        }
+        yield return new WaitForSeconds(0.8f); // Tempo visual para o jogador ver as explosões e resoluções da MP2
+        ChangePhase(GamePhase.End);
     }
 
     public void UpdateHoverColors(bool isPlayerTurn)

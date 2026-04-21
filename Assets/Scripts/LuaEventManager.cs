@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -118,18 +119,53 @@ public class LuaEventManager
     public void OnControlSwitched(CardDisplay card) { }
     
     public void OnPhaseStart(GamePhase phase) { 
-        if (phase == GamePhase.End) {
-            core.CleanAllExpiredModifiers(); 
-            core.luaDuel.playerFlags.Clear(); // Limpa as flags temporárias de turno
-            if (core.luaDuel.endTurnCallbacks != null) {
-                var callbacksToRun = new List<MoonSharp.Interpreter.Closure>(core.luaDuel.endTurnCallbacks);
-                foreach (var cb in callbacksToRun) {
-                    try { core.luaEngine.Call(cb); } catch (System.Exception e) { Debug.LogWarning($"Erro no AddValuesReset: {e.Message}"); }
-                }
-            }
+        // Dispara o Gatilho Específico de Fase para o Lua (ex: Fim da Batalha)
+        if (phase == GamePhase.Main2 || phase == GamePhase.End) {
+            TriggerLuaEvent(4096 + 128, null); // EVENT_PHASE + PHASE_BATTLE (4224)
+            
+            // LIMPEZA OFICIAL (OCG): O contexto de ataque cessa de existir ao sair da Battle Phase
+            core.luaDuel.currentAttacker = null;
+            core.luaDuel.currentAttackTarget = null;
         }
+        if (phase == GamePhase.End) {
+            TriggerLuaEvent(4096 + 256, null); // EVENT_PHASE + PHASE_MAIN2 (4352)
+        }
+
         TriggerLuaEvent(4096, null); // EVENT_PHASE
         core.StartCoroutine(core.OpenFastEffectWindow($"Início da {phase}", 4096, null));
+
+        // Executa a limpeza pesada da memória APENAS depois que todos os efeitos do fim do turno se resolverem
+        if (phase == GamePhase.End) {
+            core.StartCoroutine(DelayedEndTurnCleanup());
+        }
+    }
+
+    private IEnumerator DelayedEndTurnCleanup()
+    {
+        // Espera pacientemente qualquer janela de resposta (UI) e corrente de cartas terminarem de agir
+        yield return new WaitWhile(() => core.isChainResolving || core.isWaitingForLuaYield || core.isFastEffectWindowOpen);
+        yield return new WaitForEndOfFrame();
+
+        core.CleanAllExpiredModifiers(); 
+        core.luaDuel.playerFlags.Clear(); // Limpa as flags temporárias de turno
+        core.luaDuel.cardFlags.Clear();   // Limpa a memória das cartas no fim do turno
+        
+        // Limpa o Histórico de Batalha (Safety Net) no fim do turno
+        core.luaDuel.historicalAttacker = null;
+        core.luaDuel.historicalAttackTarget = null;
+
+        // Remove Efeitos Globais/Invisíveis que duram até o fim do turno!
+        if (core.luaDuel.globalEffects != null) {
+            core.luaDuel.globalEffects.RemoveAll(e => (e.GetReset() & 0x1000) != 0 || (e.GetReset() & 0x0200) != 0);
+        }
+
+        if (core.luaDuel.endTurnCallbacks != null) {
+            var callbacksToRun = new List<MoonSharp.Interpreter.Closure>(core.luaDuel.endTurnCallbacks);
+            foreach (var cb in callbacksToRun) {
+                try { core.luaEngine.Call(cb); } catch (System.Exception e) { Debug.LogWarning($"Erro no AddValuesReset: {e.Message}"); }
+            }
+            core.luaDuel.endTurnCallbacks.Clear();
+        }
     }
     
     public void OnPreDrawPhase(bool isPlayerTurn, System.Action onContinue) { onContinue?.Invoke(); }
@@ -148,15 +184,15 @@ public class LuaEventManager
         lc.ownerPlayerIndex = isOwnerPlayer ? 0 : 1;
         int tp = lc.GetControler();
 
-        Debug.Log($"[LuaEventManager] {card.name} enviado ao GY. PreviousLocation: {fromLocation}, PreviousController: {tp}");
+        // Debug.Log($"[LuaEventManager] {card.name} enviado ao GY. PreviousLocation: {fromLocation}, PreviousController: {tp}");
 
         var gyEffects = lc.registeredEffects.FindAll(e => e.code == 1014 && (e.type & 0x0001) != 0); // EVENT_TO_GRAVE
-        Debug.Log($"[Surgical Log] Carta '{card.name}' caiu no GY. Efeitos EVENT_TO_GRAVE (1014) encontrados: {gyEffects.Count}");
+        // Debug.Log($"[Surgical Log] Carta '{card.name}' caiu no GY. Efeitos EVENT_TO_GRAVE (1014) encontrados: {gyEffects.Count}");
         
         foreach(var e in gyEffects)
         {
             bool canAct = core.CanActivateEffect(lc, e, tp, lc);
-            Debug.Log($"[Surgical Log] CanActivateEffect para {card.name} (chk=0) retornou: {canAct}");
+            // Debug.Log($"[Surgical Log] CanActivateEffect para {card.name} (chk=0) retornou: {canAct}");
             
             if (canAct)
                 core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, lc, tp, null));

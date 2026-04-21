@@ -132,7 +132,7 @@ public class DeckManager : MonoBehaviour
             playerDeck.RemoveAt(0);
             UpdateDeckVisuals();
 
-            Debug.Log($"Carta comprada: {drawnCard.name}. Cartas restantes no deck: {playerDeck.Count}");
+            // Debug.Log($"Carta comprada: {drawnCard.name}. Cartas restantes no deck: {playerDeck.Count}");
 
             if (!ignoreLimit) hasDrawnThisTurn = true;
 

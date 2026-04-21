@@ -914,7 +914,7 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayCardActivation(CardDisplay card, bool isTrap, System.Action onComplete = null)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayCardActivation | Alvo: {card?.CurrentCardData?.name} | Tipo: {(isTrap ? "Trap" : "Spell")} | Momento: Carta ativada (entrando na corrente).");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayCardActivation | Alvo: {card?.CurrentCardData?.name}");
         if (!enableAnimations)
         {
             onComplete?.Invoke();
@@ -927,7 +927,7 @@ public class DuelFXManager : MonoBehaviour
 
     private IEnumerator AnimateActivationRoutine(CardDisplay card, bool isTrap, bool isFieldSpell, System.Action onComplete)
     {
-        Debug.Log($"[VFX] ⚙ [ROUTINE INICIADA] AnimateActivationRoutine | Alvo: {card?.CurrentCardData?.name}");
+        // Debug.Log($"[VFX] [ROUTINE INICIADA] AnimateActivationRoutine");
         PlaySound(isTrap ? trapSound : spellSound);
 
         // 1. Instancia a Partícula Clássica (Se a opção estiver marcada)
@@ -1026,7 +1026,7 @@ public class DuelFXManager : MonoBehaviour
                 yield return new WaitForSeconds(0.6f / (animationSpeed > 0 ? animationSpeed : 1f));
         }
 
-        Debug.Log($"[VFX] ✔ [ROUTINE CONCLUÍDA] AnimateActivationRoutine.");
+        // Debug.Log($"[VFX] [ROUTINE CONCLUÍDA] AnimateActivationRoutine.");
         onComplete?.Invoke();
     }
 
@@ -1058,7 +1058,7 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayAttack(CardDisplay attacker, CardDisplay target, System.Action onHit)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayAttack | Atacante: {attacker?.CurrentCardData?.name} -> Alvo: {target?.CurrentCardData?.name} | Momento: Espada voando em direção ao alvo.");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayAttack");
         if (!enableAnimations)
         {
             onHit?.Invoke();
@@ -1227,7 +1227,7 @@ public class DuelFXManager : MonoBehaviour
         PlayHitEffect(target);
         
         yield return null; 
-        Debug.Log($"[VFX] ✔ [ROUTINE CONCLUÍDA] AttackRoutine finalizada.");
+        // Debug.Log($"[VFX] [ROUTINE CONCLUÍDA] AttackRoutine finalizada.");
         onHit?.Invoke();
     }
 
@@ -1278,7 +1278,7 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayDestruction(CardDisplay card)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayDestruction | Alvo: {card?.CurrentCardData?.name} | Momento: Após cálculo de dano / Monstro derrotado.");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayDestruction");
         if (!enableAnimations || card == null) return;
         PlaySound(destroySound);
         
@@ -1337,7 +1337,7 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayTokenSummonEffect(CardDisplay card)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayTokenSummonEffect (Fumaça) | Alvo: {card?.CurrentCardData?.name} | Momento: Ficha (Token) gerada no campo.");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayTokenSummonEffect");
         if (!enableAnimations || card == null) return;
         StartCoroutine(TokenSummonRoutine(card));
     }
@@ -1414,7 +1414,7 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayTributeEffect(CardDisplay card)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayTributeEffect (Alma) | Alvo (Sacrifício): {card?.CurrentCardData?.name} | Momento: Selecionado/Enviado ao GY como custo de Tributo.");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayTributeEffect");
         if (!enableAnimations || card == null) return;
         PlaySound(tributeSound);
         SetSelectionIcon(card, SummonVFXType.Tribute, SelectionState.Selected);
@@ -1425,7 +1425,7 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayBanishEffect(CardDisplay card)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayBanishEffect | Alvo: {card?.CurrentCardData?.name} | Momento: Carta Removida de Jogo (Banida).");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayBanishEffect");
         if (!enableAnimations || card == null) return;
         PlaySound(banishSound);
         
@@ -1437,7 +1437,7 @@ public class DuelFXManager : MonoBehaviour
     private void AnimateCardDeath(CardDisplay card, bool isBanish)
     {
         if (card == null) return;
-        Debug.Log($"[VFX] ⚙ [ROUTINE INICIADA] AnimateCardDeath | Alvo: {card.CurrentCardData?.name} | Tipo: {(isBanish ? "Banimento" : "Destruição")}");
+        // Debug.Log($"[VFX] [ROUTINE INICIADA] AnimateCardDeath");
         
         Transform uiParent = GetUIParent();
         if (uiParent == null) return;
@@ -1542,7 +1542,7 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayFlipEffect(CardDisplay card)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayFlipEffect | Alvo: {card?.CurrentCardData?.name} | Momento: Carta virada para cima ou setada (Face-Down).");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayFlipEffect");
         if (!enableAnimations || card == null) return;
         PlaySound(flipSound);
         if (useFlipPrefab && flipVFX != null) SpawnVFXPublic(flipVFX, card.transform.position);
@@ -1559,7 +1559,7 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayDamageEffect(Vector3 position)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayDamageEffect (Tremor de Tela) | Momento: Redução nos Life Points confirmada.");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayDamageEffect");
         if (!enableAnimations) return;
         PlaySound(damageSound);
         
@@ -1575,7 +1575,7 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayAttackFail(CardDisplay attacker)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayAttackFail | Alvo (Atacante): {attacker?.CurrentCardData?.name} | Momento: ATK <= DEF do alvo (Ricochete).");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayAttackFail");
         if (!enableAnimations || attacker == null) return;
         PlaySound(reflectSound);
         
@@ -1626,7 +1626,7 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayDefenseSuccessEffect(CardDisplay card)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayDefenseSuccessEffect (Escudo) | Alvo (Defensor): {card?.CurrentCardData?.name} | Momento: Sobreviveu ao ataque.");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayDefenseSuccessEffect");
         if (!enableAnimations || card == null) return;
         PlaySound(defenseSound);
         
@@ -1698,7 +1698,7 @@ public class DuelFXManager : MonoBehaviour
     public void PlayCardShake(CardDisplay card)
     {
         if (!enableAnimations || card == null) return;
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayCardShake | Alvo: {card.CurrentCardData?.name} | Momento: Tremedeira de impacto físico.");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayCardShake");
         StartCoroutine(ShakeRoutine(card.transform, hitShakeDuration, hitShakeMagnitude));
     }
 
@@ -1721,7 +1721,7 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayChainLinkEffect(CardDisplay card, int linkNumber)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayChainLinkEffect | Alvo: {card?.CurrentCardData?.name} | Link: {linkNumber} | Momento: Efeito engatilhado em resposta.");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayChainLinkEffect");
         
         if (linkNumber <= 1 || !enableAnimations) return;
 
@@ -1914,13 +1914,13 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayAttackDeclare()
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayAttackDeclare | Momento: Início da mira de ataque na UI.");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayAttackDeclare");
         PlaySound(attackDeclareSound);
     }
 
     public void PlayMonsterEffect(CardDisplay card)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayMonsterEffect (Brilho) | Alvo: {card?.CurrentCardData?.name} | Momento: Efeito de monstro ativado no campo.");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayMonsterEffect");
         if (!enableAnimations || card == null) return;
         PlaySound(monsterEffectSound);
         if (useMonsterEffectPrefab && monsterEffectVFX != null) SpawnVFXPublic(monsterEffectVFX, card.transform.position);
@@ -1988,7 +1988,7 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayPlacementAura(CardDisplay card)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayPlacementAura | Alvo: {card?.CurrentCardData?.name} | Momento: Carta foi posicionada fisicamente na mesa (Set/Summon/Activate).");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayPlacementAura");
         if (!enableAnimations || card == null) return;
 
         StartCoroutine(PlacementAuraWrapper(card));
@@ -2087,7 +2087,7 @@ public class DuelFXManager : MonoBehaviour
         }
         Destroy(vfx, destroyTime);
         
-        Debug.Log($"[VFX] ✔ [AURA INSTANCIADA] '{placementAuraVFX.name}' renderizada atrás da carta. Vida: {destroyTime}s.");
+        // Debug.Log($"[VFX] [AURA INSTANCIADA]");
     }
 
     private Color GetAuraColor(CardDisplay card)
@@ -2156,7 +2156,7 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayEquipEffect(CardDisplay source, CardDisplay target)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayEquipEffect | Origem: {source?.CurrentCardData?.name} -> Alvo: {target?.CurrentCardData?.name} | Momento: Carta equipada com sucesso.");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayEquipEffect");
         if (!enableAnimations || source == null || target == null) return; // FIX: Removida a exigência desnecessária do boardCenter
         
         if (useEquipPrefab && equipImpactVFX != null)
@@ -2310,7 +2310,7 @@ public class DuelFXManager : MonoBehaviour
     public void PlayShuffleEffect(Transform pileTransform)
     {
         if (!enableAnimations || pileTransform == null) return;
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayShuffleEffect | Momento: Embaralhamento engatilhado na pilha {pileTransform.name}.");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayShuffleEffect");
         
         if (useShuffleRoutine || useCustomHinduShuffle || useSimple2DShuffle || useShufflePrefab)
         {
@@ -3493,7 +3493,7 @@ public class DuelFXManager : MonoBehaviour
     {
         if (prefab != null)
         {
-            Debug.Log($"[VFX] ✨ [SPAWN] Instanciando Prefab de Partícula: '{prefab.name}' na posição {position}.");
+            // Debug.Log($"[VFX] [SPAWN] Instanciando Prefab");
             GameObject instance = Instantiate(prefab);
 
             // Se for interface 2D, prende no Canvas. Se for Partícula 3D, mantém no World Space!
@@ -3582,7 +3582,7 @@ public class DuelFXManager : MonoBehaviour
 
     public void PlayControlSwap(CardDisplay card, Transform targetZone, float targetZRot, bool newOwnerIsPlayer, System.Action onComplete)
     {
-        Debug.Log($"[VFX] ➔ [CHAMADA] PlayControlSwap (Change of Heart) | Alvo: {card?.CurrentCardData?.name} | Momento: Posse de controle transferida.");
+        // Debug.Log($"[VFX] > [CHAMADA] PlayControlSwap");
         if (!enableAnimations || card == null || targetZone == null)
         {
             onComplete?.Invoke();

@@ -17,7 +17,7 @@ public class SaveSlotUI : MonoBehaviour
 
     public void Setup(SaveLoadSystem.GameSaveData data, System.Action<SaveLoadSystem.GameSaveData> selectCallback, bool isSelected)
     {
-        Debug.Log($"[SaveSlotUI] Configurando slot para: {(data != null ? data.playerName : "null")}");
+        // Debug.Log($"[SaveSlotUI] Configurando slot para: {(data != null ? data.playerName : "null")}");
         myData = data;
         menuManager = GetComponentInParent<SaveLoadMenu>();
         onAction = selectCallback;

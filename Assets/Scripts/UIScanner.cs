@@ -7,8 +7,13 @@ using UnityEngine.InputSystem;
 
 public class UIScanner : MonoBehaviour
 {
+    [Header("Configuração de Debug")]
+    public bool enableScanner = true;
+
     void Update()
     {
+        if (!enableScanner) return;
+
         bool clicked = false;
         Vector2 mousePos = Vector2.zero;
 
