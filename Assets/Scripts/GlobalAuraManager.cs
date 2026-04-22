@@ -87,6 +87,13 @@ public class GlobalAuraManager : MonoBehaviour
             {
                 if (aura.filter(card))
                 {
+                    // Verifica se a carta é imune a este efeito específico
+                    if (IsImmuneTo(card, aura.sourceEffect))
+                    {
+                        // Debug.Log($"[AuraManager] A carta {card.unityData?.name} está imune ao bloqueio de {aura.sourceCard?.unityData?.name}!");
+                        continue;
+                    }
+
                     Debug.Log($"[AuraManager] Aplicando Aura em {card.unityData.name} ({card.unityData.attribute}/{card.unityData.race}): {statType} {aura.value}");
                     total += aura.value;
                 }
@@ -98,15 +105,68 @@ public class GlobalAuraManager : MonoBehaviour
     /// <summary>
     /// Verifica se uma carta está sob uma restrição específica (ex: "CANNOT_ATTACK").
     /// </summary>
-    public bool IsUnderRestriction(LuaCard card, string restrictionType, CardLocation location)
+    public bool IsUnderRestriction(LuaCard card, LuaEffect effectToActivate, string restrictionType, CardLocation location)
     {
         foreach (var aura in activeAuras)
         {
             if (aura.modifierType == restrictionType && (aura.affectedLocations & location) != 0)
             {
+                bool applies = false;
+                if (restrictionType == "CANNOT_ACTIVATE")
+                {
+                    if (aura.sourceEffect.GetValue() is MoonSharp.Interpreter.Closure valClosure)
+                    {
+                        try {
+                            var res = valClosure.Call(aura.sourceEffect, effectToActivate, card.GetControler());
+                            applies = res.Type == MoonSharp.Interpreter.DataType.Boolean && res.Boolean;
+                        } catch { applies = false; }
+                    }
+                }
+                else applies = aura.filter(card);
+
+                if (applies)
+                {
+                    // VERIFICA IMUNIDADE ANTES DE BLOQUEAR!
+                    if (IsImmuneTo(card, aura.sourceEffect))
+                    {
+                        // Debug.Log($"[AuraManager] A carta {card.unityData?.name} está imune ao bloqueio de {aura.sourceCard?.unityData?.name}!");
+                        continue;
+                    }
+                    
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Verifica se uma carta é imune a um efeito restritivo (Ex: Amplifier protegendo Armadilhas do Jinzo).
+    /// </summary>
+    public bool IsImmuneTo(LuaCard card, LuaEffect threateningEffect)
+    {
+        if (threateningEffect == null) return false;
+        
+        foreach (var aura in activeAuras)
+        {
+            if (aura.modifierType == "IMMUNE")
+            {
                 if (aura.filter(card))
                 {
-                    return true;
+                    // A imunidade avalia de quem vem a ameaça através da propriedade 'Value' do efeito IMMUNE (e, re)
+                    object valObj = aura.sourceEffect.GetValue();
+                    if (valObj is MoonSharp.Interpreter.Closure valClosure)
+                    {
+                        try
+                        {
+                            var res = valClosure.Call(aura.sourceEffect, threateningEffect);
+                            if (res.Type == MoonSharp.Interpreter.DataType.Boolean && res.Boolean)
+                            {
+                                return true;
+                            }
+                        }
+                        catch { }
+                    }
                 }
             }
         }

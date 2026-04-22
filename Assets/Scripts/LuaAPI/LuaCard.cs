@@ -71,6 +71,7 @@ public class LuaCard
     public bool IsLocation(object locationVal) 
     { 
         int loc = ConvertToInt(locationVal);
+        // Debug.Log($"<color=magenta>[IsLocation]</color> O LUA perguntou se '{unityData?.name}' está na zona (código {loc})");
         if (unityCard != null && unityCard.isOnField)
         {
             if (unityData.type.Contains("Spell") || unityData.type.Contains("Trap")) return (loc & 0x08) != 0;
@@ -148,7 +149,10 @@ public class LuaCard
     public int GetTextAttack() { return GetAttack(); }
     public int GetTextDefense() { return GetDefense(); }
 
-    public bool IsType(object t) { return (GetType() & ConvertToInt(t)) != 0; }
+    public bool IsType(object t) { 
+        // Debug.Log($"<color=magenta>[IsType]</color> O LUA perguntou se '{unityData?.name}' possui o Tipo (código {ConvertToInt(t)})");
+        return (GetType() & ConvertToInt(t)) != 0; 
+    }
     
     public bool IsTrap() { return unityData != null && unityData.type.Contains("Trap"); }
     public bool IsSpell() { return unityData != null && unityData.type.Contains("Spell"); }
@@ -171,7 +175,17 @@ public class LuaCard
     }
     public LuaCard GetBattleTarget() { return SafeDummyCard(); }
     public bool IsDiscardable(params object[] args) { return true; }
-    public LuaCard GetEquipTarget() { return SafeDummyCard(); }
+    
+    public LuaCard GetEquipTarget() 
+    { 
+        if (CardEffectManager.Instance != null && unityCard != null)
+        {
+            CardDisplay target = CardEffectManager.Instance.GetEquipTarget(unityCard);
+            if (target != null) return CardEffectManager.Instance.EnsureCardScriptLoaded(target);
+        }
+        return null; 
+    }
+
     public bool IsAbleToGraveAsCost() { return true; }
     public bool IsAbleToRemoveAsCost() { return true; }
     public bool IsAbleToDeck() { return true; }
@@ -309,8 +323,14 @@ public class LuaCard
     public void DeleteGroup() { }
 
     // Stubs para compatibilidade da API Lua
-    public bool IsRace(object r) { return (GetRace() & ConvertToInt(r)) != 0; }
-    public bool IsAttribute(object attr) { return (GetAttribute() & ConvertToInt(attr)) != 0; }
+    public bool IsRace(object r) { 
+        // Debug.Log($"<color=magenta>[IsRace]</color> O LUA perguntou se '{unityData?.name}' possui a Raça (código {ConvertToInt(r)})");
+        return (GetRace() & ConvertToInt(r)) != 0; 
+    }
+    public bool IsAttribute(object attr) { 
+        // Debug.Log($"<color=magenta>[IsAttribute]</color> O LUA perguntou se '{unityData?.name}' possui o Atributo (código {ConvertToInt(attr)})");
+        return (GetAttribute() & ConvertToInt(attr)) != 0; 
+    }
     public bool IsReason(object reason) { return true; }
     public bool IsRelateToEffect(object e) { return true; } // Evita crash no final de correntes (Chains)
     public bool IsAttackBelow(object atk) { return GetAttack() <= ConvertToInt(atk); }
@@ -383,7 +403,16 @@ public class LuaCard
 
     public void SetCardTarget(object tc) { }
     public bool IsStatus(object status) { return false; }
-    public LuaCard GetFirstCardTarget() { return SafeDummyCard(); }
+    
+    public LuaCard GetFirstCardTarget() 
+    { 
+        // Emulamos GetFirstCardTarget para Equip Spells retornando o alvo do equipamento
+        if (unityData != null && (unityData.type.Contains("Equip") || unityData.property == "Equip"))
+            return GetEquipTarget();
+            
+        return SafeDummyCard(); 
+    }
+
     public void SetTurnCounter(object ct) { }
     public int GetLabel() { return 0; }
     public void SetLabel(object ct) { }
@@ -416,6 +445,8 @@ public class LuaCard
     public bool IsCode(params object[] codes)
     {
         int myId = GetCode();
+        // string codesLog = string.Join(", ", codes);
+        // Debug.Log($"<color=magenta>[IsCode]</color> O LUA perguntou se '{unityData?.name}' é a carta de ID: {codesLog}");
         foreach(var c in codes) 
         {
             int targetCode = ConvertToInt(c);
@@ -468,7 +499,7 @@ public class LuaCard
                 }
             }
         }
-        else if (e.type == 0x0001) // Efeito SINGLE aplicado diretamente nesta carta
+        else if (e.type == 0x0001 && unityCard != null && unityCard.isOnField) // Efeito SINGLE (Proteção contra loops de Preload)
         {
             // Se o código for de ATK, DEF ou Level, força a atualização visual imediatamente
             if ((e.code >= 1 && e.code <= 8) || e.code == 10)
@@ -484,8 +515,8 @@ public class LuaCard
         string arch = unityData.archetype ?? "";
         string cardName = unityData.name.ToLowerInvariant();
         
-        string codesLog = string.Join(", ", setCodes);
-        Debug.Log($"<color=yellow>[IsSetCard]</color> O LUA quer saber se '{unityData.name}' (Arquétipo: '{arch}') possui o código: {codesLog}");
+        // string codesLog = string.Join(", ", setCodes);
+        // Debug.Log($"<color=magenta>[IsSetCard]</color> O LUA quer saber se '{unityData.name}' (Arquétipo: '{arch}') possui o código: {codesLog}");
 
         foreach(var s in setCodes)
         {
@@ -494,7 +525,7 @@ public class LuaCard
             // 1. Checagem Oficial de Arquétipo (via Banco de Dados / JSON)
             if (!string.IsNullOrEmpty(arch) && arch != "None")
             {
-                if (code == 0x04 && arch.Contains("Amazoness")) { Debug.Log($"<color=green>[IsSetCard]</color> '{unityData.name}' validado com sucesso como Amazoness (0x04)!"); return true; }
+                if (code == 0x04 && arch.Contains("Amazoness")) { /* Debug.Log($"<color=green>[IsSetCard]</color> '{unityData.name}' validado com sucesso como Amazoness (0x04)!"); */ return true; }
                 if (code == 0x45 && arch.Contains("Archfiend")) return true;
                 if (code == 0x2e && arch.Contains("Gravekeeper")) return true;
                 if (code == 0x2b && arch.Contains("Ninja")) return true;

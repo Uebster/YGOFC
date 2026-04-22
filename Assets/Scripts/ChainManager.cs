@@ -108,14 +108,13 @@ public class ChainManager
                 resolvingLink = link; // Avisa o C# qual cápsula está sendo aberta agora
                 if (link.isDummy) continue; // Pula a execução física do dummy (apenas ancora a corrente)
 
-                if (link.isActivationNegated)
+                // Dispara EVENT_CHAIN_SOLVING (1019) para permitir que Jinzo e afins neguem a resolução!
+                yield return core.StartCoroutine(core.eventManager.ProcessTriggersRoutine(1019, link.card));
+
+                if (link.isActivationNegated || link.isNegated)
                 {
-                    Debug.Log($"[Chain] Link {link.chainIndex} ({link.card.unityData.name}): Ativação Negada.");
-                    continue;
-                }
-                if (link.isNegated)
-                {
-                    Debug.Log($"[Chain] Link {link.chainIndex} ({link.card.unityData.name}): Efeito Negado.");
+                    Debug.Log($"[Chain] Link {link.chainIndex} ({link.card.unityData.name}): Negado (isActivationNegated={link.isActivationNegated}, isNegated={link.isNegated}).");
+                    CleanupSpellTrapAfterResolution(link.card);
                     continue;
                 }
 
@@ -174,6 +173,7 @@ public class ChainManager
         }
         else if (!isHuman && OpponentAI.Instance != null && (!GameManager.Instance.isSimulating))
         {
+            yield return new WaitForSeconds(0.8f); // Delay para a IA "pensar" durante as interrupções, dando tempo das animações prévias assentarem
             chosenCard = OpponentAI.Instance.ChooseBestResponse(validResponses, triggerLink);
             decisionMade = true;
         }
@@ -218,6 +218,12 @@ public class ChainManager
 
     public bool NegateChainLink(int chainIndex)
     {
+        if (chainIndex == 0 && resolvingLink != null)
+        {
+            resolvingLink.isNegated = true;
+            return true;
+        }
+
         var link = currentChain.Find(l => l.chainIndex == chainIndex);
         if (link != null) { link.isActivationNegated = true; return true; }
         return false;

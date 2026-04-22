@@ -171,8 +171,9 @@ public class LuaEngineCore
         
         auxTable.Table.Set("NecroValleyFilter", DynValue.FromObject(luaEngine,
             (System.Func<object, object>)(filterFunc => {
-                string luaCode = "return function(c) return true end";
-                return luaEngine.DoString(luaCode);
+                // Retorna a função de filtro original intacta. 
+                // Mantém a restrição da carta original (Ex: Agido limitando a Fadas).
+                return filterFunc;
             })));
 
         auxTable.Table.Set("RemainFieldCost", luaEngine.DoString(@"
@@ -249,6 +250,7 @@ public class LuaEngineCore
         luaEngine.Globals["EVENT_BATTLE_START"] = 1132;
         luaEngine.Globals["EVENT_BATTLE_DESTROYED"] = 1140;
         luaEngine.Globals["EVENT_DAMAGE_STEP_END"] = 1141;
+        luaEngine.Globals["EVENT_CHAIN_SOLVING"] = 1019;
         luaEngine.Globals["EFFECT_TYPE_SINGLE"] = 0x0001;
         luaEngine.Globals["EFFECT_TYPE_FIELD"] = 0x0002;
         luaEngine.Globals["EFFECT_TYPE_EQUIP"] = 0x0004;
@@ -272,6 +274,7 @@ public class LuaEngineCore
         luaEngine.Globals["CHAININFO_TARGET_PLAYER"] = 1;
         luaEngine.Globals["CHAININFO_TARGET_PARAM"] = 2;
         luaEngine.Globals["CHAININFO_TARGET_CARDS"] = 3;
+        luaEngine.Globals["CHAININFO_TRIGGERING_LOCATION"] = 1024;
 
         // Constantes de Raça e Atributo (Essenciais para Filtros funcionarem)
         luaEngine.Globals["RACE_WARRIOR"] = 0x1;
@@ -305,6 +308,8 @@ public class LuaEngineCore
         // Constantes de Arquétipo (Setcodes)
         luaEngine.Globals["SET_AMAZONESS"] = 0x04;
         luaEngine.Globals["SET_ARCHFIEND"] = 0x45;
+        
+        luaEngine.Globals["CARD_JINZO"] = 77585513;
 
         // Constantes de Status Oficiais do OCGCore
         luaEngine.Globals["EFFECT_UPDATE_ATTACK"] = 1;
@@ -316,7 +321,28 @@ public class LuaEngineCore
         luaEngine.Globals["EFFECT_SET_BASE_DEFENSE"] = 8;
         luaEngine.Globals["EFFECT_UPDATE_LEVEL"] = 10;
         luaEngine.Globals["EFFECT_SET_DEFENSE_FINAL"] = 6;
+        luaEngine.Globals["EFFECT_CANNOT_ACTIVATE"] = 13;
+        luaEngine.Globals["EFFECT_CANNOT_TRIGGER"] = 24;
+        luaEngine.Globals["EFFECT_DISABLE"] = 30;
+        luaEngine.Globals["EFFECT_DISABLE_TRAPMONSTER"] = 258;
+        luaEngine.Globals["EFFECT_IMMUNE_EFFECT"] = 104;
         luaEngine.Globals["EFFECT_EQUIP_LIMIT"] = 147;
+
+        luaEngine.Globals["EFFECT_FLAG_PLAYER_TARGET"] = 0x0001;
+        luaEngine.Globals["EFFECT_FLAG_SET_AVAILABLE"] = 0x0020;
+        luaEngine.Globals["EFFECT_FLAG_CANNOT_INACTIVATE"] = 0x0800;
+        luaEngine.Globals["EFFECT_FLAG_CANNOT_DISABLE"] = 0x1000;
+        luaEngine.Globals["EFFECT_FLAG_CANNOT_NEGATE"] = 0x2000;
+
+        // Posições de Batalha (Battle Positions)
+        luaEngine.Globals["POS_FACEUP_ATTACK"] = 0x1;
+        luaEngine.Globals["POS_FACEDOWN_ATTACK"] = 0x2;
+        luaEngine.Globals["POS_FACEUP_DEFENSE"] = 0x4;
+        luaEngine.Globals["POS_FACEDOWN_DEFENSE"] = 0x8;
+        luaEngine.Globals["POS_FACEUP"] = 0x5;
+        luaEngine.Globals["POS_FACEDOWN"] = 0xA;
+        luaEngine.Globals["POS_ATTACK"] = 0x3;
+        luaEngine.Globals["POS_DEFENSE"] = 0xC;
 
         // Constantes de Fases (Phases)
         luaEngine.Globals["PHASE_DRAW"] = 0x01;
@@ -332,8 +358,22 @@ public class LuaEngineCore
 
         // Constantes de Reset e Memória Temporária
         luaEngine.Globals["RESET_EVENT"] = 0x1fe0000;
+        luaEngine.Globals["RESETS_STANDARD"] = 0x1fe0000;
         luaEngine.Globals["RESET_PHASE"] = 0x1000;
+        luaEngine.Globals["RESET_SELF_TURN"] = 0x2000;
+        luaEngine.Globals["RESET_OPPO_TURN"] = 0x4000;
         luaEngine.Globals["RESETS_STANDARD_PHASE_END"] = 0x1fe0000 | 0x1000 | 0x200;
+        luaEngine.Globals["RESET_DISABLE"] = 0x00010000;
+        luaEngine.Globals["RESET_TURN_SET"] = 0x00020000;
+        luaEngine.Globals["RESET_TOGRAVE"] = 0x00040000;
+        luaEngine.Globals["RESET_REMOVE"] = 0x00080000;
+        luaEngine.Globals["RESET_TEMP_REMOVE"] = 0x00100000;
+        luaEngine.Globals["RESET_TOHAND"] = 0x00200000;
+        luaEngine.Globals["RESET_TODECK"] = 0x00400000;
+        luaEngine.Globals["RESET_LEAVE"] = 0x00800000;
+        luaEngine.Globals["RESET_TOFIELD"] = 0x01000000;
+        luaEngine.Globals["RESET_CONTROL"] = 0x02000000;
+        luaEngine.Globals["RESET_OVERLAY"] = 0x04000000;
 
         // Metatable Global Segura
         luaEngine.DoString(@"
@@ -386,6 +426,17 @@ public class LuaEngineCore
                             -- Fallbacks Vitais: Ensina a Engine C# a responder aos filtros clássicos do OCGCore
                             if k == 'IsDestructable' or k == 'IsAbleToHand' or k == 'IsAbleToGrave' or k == 'IsAbleToRemove' or k == 'IsAbleToHandAsCost' then return true end
                             if k == 'IsRelateToEffect' then return true end
+                            if k == 'IsCanBeEffectTarget' then return true end
+                            if k == 'IsFacedown' then return not c:IsFaceup() end
+                            
+                            -- Stat & State Checks
+                            if k == 'IsDefenseBelow' then return c:GetDefense() <= select(1, ...) end
+                            if k == 'IsDefenseAbove' then return c:GetDefense() >= select(1, ...) end
+                            if k == 'IsAttackBelow' then return c:GetAttack() <= select(1, ...) end
+                            if k == 'IsAttackAbove' then return c:GetAttack() >= select(1, ...) end
+                            if k == 'IsLevelBelow' then return c:GetLevel() <= select(1, ...) end
+                            if k == 'IsLevelAbove' then return c:GetLevel() >= select(1, ...) end
+                            if k == 'IsSummonPlayer' then return c:GetControler() == select(1, ...) end
                         end
                         return false
                     end

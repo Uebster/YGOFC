@@ -32,6 +32,7 @@ public class FullTestManager : MonoBehaviour
     public Button btnDice;
     public Button btnClock;
     public Button btnSpawnCard;
+    public Button btnSpawnCardOpponent;
     public Button btnExodiaWin;
     public Button btnDestinyBoardWin;
     public Button btnSimulateAttack;
@@ -60,6 +61,7 @@ public class FullTestManager : MonoBehaviour
         if (btnDice == null) btnDice = allButtons.FirstOrDefault(b => b.name.Contains("Dice"));
         if (btnClock == null) btnClock = allButtons.FirstOrDefault(b => b.name.Contains("Clock"));
         if (btnSpawnCard == null) btnSpawnCard = allButtons.FirstOrDefault(b => b.name.Contains("Spawn"));
+        if (btnSpawnCardOpponent == null) btnSpawnCardOpponent = allButtons.FirstOrDefault(b => b.name.Contains("SpawnOpponent") || b.name == "Btn_SpawnCardOpponent");
         if (btnExodiaWin == null) btnExodiaWin = allButtons.FirstOrDefault(b => b.name.Contains("Exodia"));
         if (btnDestinyBoardWin == null) btnDestinyBoardWin = allButtons.FirstOrDefault(b => b.name.Contains("Destiny"));
         if (btnSimulateAttack == null) btnSimulateAttack = allButtons.FirstOrDefault(b => b.name.Contains("Attack"));
@@ -147,6 +149,7 @@ public class FullTestManager : MonoBehaviour
         if (btnDice) btnDice.onClick.AddListener(TestDice);
         if (btnClock) btnClock.onClick.AddListener(TestClock);
         if (btnSpawnCard) btnSpawnCard.onClick.AddListener(TestSpawnCard);
+        if (btnSpawnCardOpponent) btnSpawnCardOpponent.onClick.AddListener(TestSpawnCardOpponent);
         if (btnExodiaWin) btnExodiaWin.onClick.AddListener(TestExodiaWin);
         if (btnDestinyBoardWin) btnDestinyBoardWin.onClick.AddListener(TestDestinyBoardWin);
         if (btnSimulateAttack) btnSimulateAttack.onClick.AddListener(TestSimulateAttack);
@@ -253,6 +256,28 @@ public class FullTestManager : MonoBehaviour
         else
         {
             Debug.LogError("[TestMode] ERRO: GlobalCardSearchUI não encontrado na cena! Verifique se ele foi apagado acidentalmente.");
+        }
+    }
+
+    public void TestSpawnCardOpponent()
+    {
+        if (GlobalCardSearchUI.Instance == null)
+            GlobalCardSearchUI.Instance = Resources.FindObjectsOfTypeAll<GlobalCardSearchUI>().FirstOrDefault();
+
+        if (GlobalCardSearchUI.Instance != null)
+        {
+            GlobalCardSearchUI.Instance.Show("Gerar Carta para o Oponente", (data) => {
+                if (data != null)
+                {
+                    GameManager.Instance.AddCardToHand(data, false);
+                    Debug.Log($"[TestMode] {data.name} adicionada à mão do oponente.");
+                    GameManager.Instance.Dev_InjectDependencies(data);
+                }
+            });
+        }
+        else
+        {
+            Debug.LogError("[TestMode] ERRO: GlobalCardSearchUI não encontrado na cena!");
         }
     }
 
@@ -408,50 +433,76 @@ public class FullTestManager : MonoBehaviour
         yield return new WaitForSeconds(0.2f); // Pequeno delay para o campo limpar
 
         // Invoca monstros para o jogador
-        CardData p_monster1_data = GameManager.Instance.cardDatabase.GetCardById("0001"); // Blue-Eyes White Dragon
+        CardData p_monster1_data = GameManager.Instance.cardDatabase.GetCardById("0001") ?? GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.type.Contains("Monster") && c.atk >= 2500);
         if (p_monster1_data != null) GameManager.Instance.SpecialSummonFromData(p_monster1_data, true, 0, true, false);
 
         yield return new WaitForSeconds(0.1f);
 
         // Invoca monstros para o oponente
-        CardData o_monster1_data = GameManager.Instance.cardDatabase.GetCardById("0005"); // Dark Magician
+        CardData o_monster1_data = GameManager.Instance.cardDatabase.GetCardById("0005") ?? GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.type.Contains("Monster") && c.atk >= 2000 && c.atk < 2500);
         if (o_monster1_data != null) GameManager.Instance.SpecialSummonFromData(o_monster1_data, false, 0, true, false);
         
         yield return new WaitForSeconds(0.1f);
 
-        CardData o_monster2_data = GameManager.Instance.cardDatabase.GetCardById("0010"); // Giant Soldier of Stone
-        if (o_monster2_data != null) GameManager.Instance.SpecialSummonFromData(o_monster2_data, false, 0, true, true); // Em defesa
+        CardData o_monster2_data = GameManager.Instance.cardDatabase.GetCardById("0010") ?? GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.type.Contains("Monster") && c.def >= 2000);
+        if (o_monster2_data != null) GameManager.Instance.SpecialSummonFromData(o_monster2_data, false, 1, true, true); // Em defesa na Zona 1
 
         Debug.Log("[TestMode] Cenário de batalha pronto. É o turno do jogador. Mude para a Battle Phase para atacar.");
     }
 
     public void TestSimulateTrap()
     {
-        Debug.Log("[TestMode] Iniciando simulação de Trap...");
-        StartCoroutine(SimulateTrapRoutine());
+        if (GlobalCardSearchUI.Instance == null)
+            GlobalCardSearchUI.Instance = Resources.FindObjectsOfTypeAll<GlobalCardSearchUI>().FirstOrDefault();
+
+        if (GlobalCardSearchUI.Instance != null)
+        {
+            GlobalCardSearchUI.Instance.Show("Escolha a Armadilha para a IA (Oponente)", (data) => {
+                if (data != null)
+                {
+                    StartCoroutine(SimulateTrapRoutine(data));
+                }
+            });
+        }
+        else
+        {
+            StartCoroutine(SimulateTrapRoutine(null));
+        }
     }
 
-    private IEnumerator SimulateTrapRoutine()
+    private IEnumerator SimulateTrapRoutine(CardData customTrap)
     {
         TestCleanField();
         
-        CardData trapData = GameManager.Instance.cardDatabase.GetCardById("0164"); // Trap Hole
-        if (trapData == null && GameManager.Instance.cardDatabase.cardDatabase.Count > 0)
-            trapData = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.type.Contains("Trap"));
+        CardData trapData = customTrap;
+        if (trapData == null)
+        {
+            trapData = GameManager.Instance.cardDatabase.GetCardById("0164"); // Fallback Trap Hole
+            if (trapData == null && GameManager.Instance.cardDatabase.cardDatabase.Count > 0)
+                trapData = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.type.Contains("Trap"));
+        }
 
         if (trapData != null)
         {
-            GameManager.Instance.SetSpellTrapFromData(trapData, true, 2, false); // False = Face-Down
+            // Setamos a armadilha para o OPONENTE (False) para testarmos se a Inteligência Artificial reage!
+            GameManager.Instance.SetSpellTrapFromData(trapData, false, 2, false); 
+            Debug.Log($"[TestMode] {trapData.name} setada para o Oponente.");
         }
 
         yield return new WaitForSeconds(1.0f);
 
-        if (GameManager.Instance.isPlayerTurn) GameManager.Instance.SwitchTurn();
+        // Garante que é o turno do JOGADOR para a invocação engatilhar a resposta defensiva da IA
+        if (!GameManager.Instance.isPlayerTurn) GameManager.Instance.SwitchTurn();
         yield return new WaitForSeconds(1.0f);
 
-        Debug.Log("[TestMode] Oponente invoca monstro. Verifique a janela de Chain para sua Armadilha!");
-        CardData oMon = GameManager.Instance.cardDatabase.GetCardById("0001"); // Blue-Eyes ou algo forte
-        GameManager.Instance.SpecialSummonFromData(oMon, false, 2, true, false);
+        Debug.Log("[TestMode] Jogador invoca monstro. Verifique a reação da IA!");
+        
+        // Busca um monstro genérico forte de forma segura (evita o crash de ID fixo)
+        CardData pMon = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.type.Contains("Monster") && c.atk >= 1500); 
+        if (pMon != null)
+        {
+            GameManager.Instance.SpecialSummonFromData(pMon, true, 2, true, false); // true = Invocado pro Jogador
+        }
     }
 
     public void TestCleanField()

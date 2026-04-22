@@ -209,3 +209,23 @@ O *Heavy Storm* define o ritmo do duelo. A simples existência dessa carta no se
 * **A Punição da Ganância (Punishing Overextension):** Se o oponente baixar (Set) 3 ou 4 armadilhas na mesa para se sentir 100% seguro, um único *Heavy Storm* vai destruir todas elas de uma vez. O oponente perderá 4 cartas, e você apenas 1, criando uma vantagem de recursos (Card Advantage) absurda a seu favor. Por causa do *Heavy Storm*, duelistas de elite raramente baixam mais de 2 cartas por turno.
 * **Liberando a Zona de Combate (The OTK Enabler):** A tática mais comum é guardar o *Heavy Storm* na mão até você ter monstros suficientes para vencer a partida no mesmo turno. Você ativa a tempestade, garante que não há mais *Mirror Force* ou *Torrential Tribute* para te impedir, e ataca com todos os monstros de uma vez para zerar a vida do oponente (One-Turn Kill - OTK).
 * **Destruição Tática Própria:** Você também pode usar *Heavy Storm* para destruir suas próprias cartas que o estão prejudicando! Por exemplo, se você está perdendo vida por causa do seu próprio *Premature Burial* ou se os seus monstros de nível alto estão presos por conta da sua própria magia *Gravity Bind*, você pode usar a tempestade para limpar a mesa e destravar o seu próprio jogo!
+
+## ID: DM0000 - Amplifier (Password: 00303660)
+
+A carta **"Amplifier"** (Amplificador) é uma Carta Mágica de Equipamento (Equip Spell) extremamente específica, criada sob medida para interagir com um dos monstros mais temidos do formato clássico: o *Jinzo*.
+
+> *"Equip only to "Jinzo". While this card is equipped, the equipped monster's effect does not negate the effects of its controller's Trap Cards. When this card is removed from the field, destroy the equipped monster. This card's activation and effect cannot be negated."*
+
+### Como ela funciona na prática:
+
+1. **Alvo Exclusivo:** Você só pode ativar e equipar esta carta em um monstro virado para cima chamado **"Jinzo"**.
+2. **O Hack do Sistema (Filtro de Negação):** O *Jinzo* possui um efeito contínuo brutal que desativa absolutamente todas as armadilhas no campo para ambos os jogadores. O *Amplifier* reescreve essa regra de forma assimétrica: ele injeta uma exceção no campo que faz com que o *Jinzo* pare de negar as **suas** armadilhas, enquanto as armadilhas do oponente continuam totalmente bloqueadas!
+3. **A Imunidade (Velocidade e Proteção):** A ativação e o efeito desta carta **não podem ser negados**. Isso significa que o oponente não pode usar uma *Counter Trap* (como *Magic Jammer* ou *Solemn Judgment*) para impedir que você a ative e a equipe no seu *Jinzo*.
+4. **O Calcanhar de Aquiles (O Preço de Morte):** Esse poder tem um risco altíssimo. Se o *Amplifier* for removido do campo de qualquer forma (destruído, devolvido para a mão ou banido), o *Jinzo* que estava equipado com ele é **destruído imediatamente**.
+
+### 💡 O grande truque dessa carta:
+Esta é a carta definitiva para estabelecer um "Monopólio de Jogo" (Lockdown Absoluto), mas que exige cuidado com o posicionamento.
+
+* **O Monopólio das Armadilhas:** Com o *Amplifier* ativo, você joga um jogo completamente desleal. Você pode usar cartas como *Mirror Force* para limpar o campo do oponente ou *Call of the Haunted* para reviver seus monstros livremente, enquanto o oponente fica apenas assistindo, impossibilitado de ativar qualquer armadilha para se defender.
+* **A Isca Perfeita (Baiting):** O oponente fará de tudo para destruir o *Amplifier* (usando *Mystical Space Typhoon* ou *Heavy Storm*), pois isso é um "dois em um" (destrói a mágica de equipamento e destrói o *Jinzo* de quebra). Sabendo disso, você pode usar o *Amplifier* como isca para forçar o oponente a gastar essas valiosas magias de remoção rápida logo no início, deixando o caminho livre para as suas outras mágicas ou simplesmente punindo-o ativando as armadilhas que o Jinzo acabou de te devolver o direito de usar!
+* **Atenção à Engine LUA (Para o Simulador):** Para o nosso motor em Unity, essa carta é um desafio de programação fantástico. Ela não adiciona ATK/DEF, mas injeta uma condição no evento contínuo do Jinzo e cria um "Vínculo de Morte" (`CardLink`). A engine precisa garantir que se o equipamento for enviado ao cemitério (`EVENT_LEAVE_FIELD`), o C# empurre o *Jinzo* para o cemitério junto na mesma resolução!

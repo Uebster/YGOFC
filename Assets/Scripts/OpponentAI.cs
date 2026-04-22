@@ -165,10 +165,13 @@ public class OpponentAI : MonoBehaviour
                 
             bestAction.Execute();
             
+            // Pausa base para a engine gráfica iniciar a animação da jogada
+            yield return new WaitForSeconds(0.6f);
+            
             // Garante que a IA espere correntes resolverem antes de pensar na próxima ação!
             if (CardEffectManager.Instance != null)
             {
-                yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen);
+                yield return new WaitWhile(() => CardEffectManager.Instance.isBusy);
             }
 
             // Espera apenas se não estiver em simulação rápida
@@ -508,8 +511,25 @@ public class OpponentAI : MonoBehaviour
                 if ((cat & 0x1) != 0) // CATEGORY_DESTROY
                 {
                     int opponentCards = GetPlayerMonsterCount() + GameManager.Instance.duelFieldUI.playerSpellZones.Count(z => z.childCount > 0);
-                    score += opponentCards * 600;
-                    if (opponentCards == 0) score -= 1000; // Não queimar recursos à toa
+                    
+                    string desc = cd.CurrentCardData.description.ToLower();
+                    if (desc.Contains("spell") || desc.Contains("trap"))
+                    {
+                        int playerST = GameManager.Instance.duelFieldUI.playerSpellZones.Count(z => z.childCount > 0);
+                        score += playerST * 600;
+                        if (playerST == 0) score -= 5000;
+                    }
+                    else if (desc.Contains("monster"))
+                    {
+                        int playerMonsters = GetPlayerMonsterCount();
+                        score += playerMonsters * 600;
+                        if (playerMonsters == 0) score -= 5000;
+                    }
+                    else 
+                    {
+                        score += opponentCards * 500;
+                        if (opponentCards == 0) score -= 5000;
+                    }
                 }
                 if ((cat & 0x200) != 0) // CATEGORY_SPECIAL_SUMMON
                 {
@@ -933,9 +953,16 @@ public class OpponentAI : MonoBehaviour
                     }
                     else if ((cat & 0x1) != 0 || (cat & 0x8) != 0) // DESTROY or TOHAND (Mirror Force, Sakuretsu, Dimensional Prison)
                     {
-                        if (attackerAtk >= 1500 || target == null) {
-                            score += attackerAtk; // Usa remoção em ataques fortes ou ataques diretos ao HP
+                        // Fogo Amigo: Se o atacante for da IA, não ativa armadilha contra si
+                        if (attacker != null && !attacker.isPlayerCard)
+                        {
+                            score -= 9000;
                         }
+                        else
+                        {
+                            if (attackerAtk >= 1500 || target == null) {
+                                score += attackerAtk; // Usa remoção em ataques fortes ou ataques diretos ao HP
+                            }                        }
                     }
                     else {
                         score -= 500; // Guarda para ameaças piores
@@ -983,11 +1010,19 @@ public class OpponentAI : MonoBehaviour
 
                     if ((cat & 0x1) != 0 || (cat & 0x4) != 0) // DESTROY or REMOVE (Trap Hole, Bottomless)
                     {
-                        if (summonedAtk >= 1500) score += summonedAtk;
-                        else if (isLifeOrDeath) score += 1000; 
-                        else if (preventingTribute) score += 500; 
-                        else if (protectingTributeFodder) score += 800;
-                        else score -= 5000;
+                        // Fogo Amigo: Se a IA invocou, não ativa armadilha contra si
+                        if (triggerCard != null && !triggerCard.isPlayerCard)
+                        {
+                            score -= 9000;
+                        }
+                        else
+                        {
+                            if (summonedAtk >= 1500) score += summonedAtk;
+                            else if (isLifeOrDeath) score += 1000; 
+                            else if (preventingTribute) score += 500; 
+                            else if (protectingTributeFodder) score += 800;
+                            else score -= 5000;
+                        }
                     }
                 }
                 else // Any other chain link (CardActivation)
@@ -1135,7 +1170,7 @@ public class OpponentAI : MonoBehaviour
         {
             if (zone.childCount > 0)
             {
-                var cd = zone.GetChild(0).GetComponent<CardDisplay>();
+                var cd = zone.GetComponentInChildren<CardDisplay>();
                 if (cd != null && !cd.isFlipped)
                 {
                     int val = (cd.position == CardDisplay.BattlePosition.Attack) ? cd.currentAtk : cd.currentDef;

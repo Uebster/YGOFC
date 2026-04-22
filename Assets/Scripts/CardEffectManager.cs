@@ -33,6 +33,7 @@ public class CardEffectManager : MonoBehaviour
     public DynValue yieldReturnValue = null;
     public bool lastCoroutineSuccess = true;
     public bool isFastEffectWindowOpen = false;
+    public bool isBusy => isChainResolving || isWaitingForLuaYield || isFastEffectWindowOpen || (eventManager != null && eventManager.isProcessingTriggers) || fastEffectQueueCount > 0 || (chainManager != null && chainManager.activeChainTasks > 0);
 
     // --- SUBSISTEMAS LÓGICOS ---
     public ChainManager chainManager;
@@ -59,6 +60,7 @@ public class CardEffectManager : MonoBehaviour
     
     public class FastEffectRequest { public string name; public int eventCode; public object eventArg; }
     private Queue<FastEffectRequest> fastEffectQueue = new Queue<FastEffectRequest>();
+    public int fastEffectQueueCount => fastEffectQueue.Count;
 
     void Awake()
     {
@@ -118,7 +120,6 @@ public class CardEffectManager : MonoBehaviour
             // Apenas precisamos garantir que a nova seja adicionada.
             continuousFieldEffects.AddRange(luaCard.registeredEffects.Where(e => (e.type & 0x0002) != 0 && !continuousFieldEffects.Contains(e)));
             ApplyAllContinuousEffects();
-            return;
         }
 
         // Procura por um efeito ativável instantâneo (Magia, Armadilha ou Ignition)
@@ -187,11 +188,7 @@ public class CardEffectManager : MonoBehaviour
     private object WrapTriggerArgs(object triggerArgs)
     {
         if (triggerArgs == null) 
-        {
-            LuaGroup dummyGroup = new LuaGroup();
-            dummyGroup.AddCard(new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 }));
-            return dummyGroup; 
-        }
+            return null; // OCGCore nativo exige que eventos sem alvo passem 'nil' em vez de um grupo falso com carta dummy.
         if (triggerArgs is LuaCard card)
         {
             LuaGroup group = new LuaGroup();
@@ -216,24 +213,43 @@ public class CardEffectManager : MonoBehaviour
         // Cria um Dummy 're' (Reason Effect) para evitar crashes se a carta tentar ler propriedades da corrente
         LuaEffect dummyRe = new LuaEffect { owner = luaCard };
 
+        // Captura inteligentemente quem disparou a Invocação ou Batalha para a Trap Hole entender
+        int ep = tp;
+        int rp = tp;
+        if (triggerArgs is LuaCard tCard) { ep = tCard.GetControler(); rp = ep; }
+        else if (eg is LuaGroup g && g.cards.Count > 0) { ep = g.cards[0].GetControler(); rp = ep; }
+
+        // 0. Verifica Auras Globais de Bloqueio (Ex: Jinzo, Imperial Order)
+        bool isManualActivation = effect.type == 0x0010 || effect.type == 0x0040 || effect.type == 0x0080 || effect.type == 0x0100;
+        if (isManualActivation && auraManager != null)
+        {
+            if (auraManager.IsUnderRestriction(luaCard, effect, "CANNOT_ACTIVATE", CardLocation.Hand | CardLocation.Field | CardLocation.Graveyard) ||
+                auraManager.IsUnderRestriction(luaCard, effect, "CANNOT_TRIGGER", CardLocation.Hand | CardLocation.Field | CardLocation.Graveyard) ||
+                (luaCard.IsOnField() && auraManager.IsUnderRestriction(luaCard, effect, "DISABLE", CardLocation.Field)))
+            {
+                // Debug.LogWarning($"<color=yellow>[Aura Lock]</color> A ativação de {luaCard.unityData.name} foi bloqueada por um Efeito Contínuo Global!");
+                return false;
+            }
+        }
+
         try 
         {
             if (effect.conditionFunc != null) {
-                DynValue res = luaEngine.Call(effect.conditionFunc, effect, arg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0));
+                DynValue res = luaEngine.Call(effect.conditionFunc, effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(rp));
                 if (res.Type == DataType.Boolean && !res.Boolean) {
                     Debug.LogWarning($"<color=yellow>[Lua Validation]</color> Condition falhou para a carta {luaCard.unityData.name}");
                     return false;
                 }
             }
             if (effect.costFunc != null) {
-                DynValue res = luaEngine.Call(effect.costFunc, effect, arg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), DynValue.NewNumber(0)); // chk = 0
+                DynValue res = luaEngine.Call(effect.costFunc, effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(rp), DynValue.NewNumber(0)); // chk = 0
                 if (res.Type == DataType.Boolean && !res.Boolean) {
                     Debug.LogWarning($"<color=yellow>[Lua Validation]</color> Cost (chk=0) falhou para a carta {luaCard.unityData.name}");
                     return false;
                 }
             }
             if (effect.targetFunc != null) {
-                DynValue res = luaEngine.Call(effect.targetFunc, effect, arg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0, null); // chk = 0
+                DynValue res = luaEngine.Call(effect.targetFunc, effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(rp), 0, null); // chk = 0
                 if (res.Type == DataType.Boolean && !res.Boolean) {
                     Debug.LogWarning($"<color=yellow>[Lua Validation]</color> Target (chk=0) falhou para a carta {luaCard.unityData.name}!");
                     return false;
@@ -264,14 +280,19 @@ public class CardEffectManager : MonoBehaviour
         
         LuaEffect dummyRe = new LuaEffect { owner = effect.owner ?? new LuaCard(new CardData { id = "0000", name = "Dummy" }) };
 
+        int ep = tp;
+        int rp = tp;
+        if (triggerArgs is LuaCard tCard) { ep = tCard.GetControler(); rp = ep; }
+        else if (eg is LuaGroup g && g.cards.Count > 0) { ep = g.cards[0].GetControler(); rp = ep; }
+
         activeLuaCoroutine = luaEngine.CreateCoroutine(func);
         DynValue result;
         
         try
         {
             // Assinatura YGOPro: (e, tp, eg, ep, ev, re, r, rp, chk)
-            if (chk >= 0) result = activeLuaCoroutine.Coroutine.Resume(effect, arg2, eg, DynValue.NewNumber(tp), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(tp), DynValue.NewNumber(chk));
-            else result = activeLuaCoroutine.Coroutine.Resume(effect, arg2, eg, DynValue.NewNumber(tp), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(tp));
+            if (chk >= 0) result = activeLuaCoroutine.Coroutine.Resume(effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(rp), DynValue.NewNumber(chk));
+            else result = activeLuaCoroutine.Coroutine.Resume(effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(rp));
         }
         catch (System.Exception e)
         {
@@ -591,6 +612,7 @@ public class CardEffectManager : MonoBehaviour
     // --- HOOKS DA ENGINE (O LUA VAI SE INSCREVER NELES DEPOIS) ---
     public void OnSummon(CardDisplay card) => eventManager.OnSummon(card);
     public void OnSet(CardDisplay card) => eventManager.OnSet(card);
+    public void OnFlipSummon(CardDisplay card) => eventManager.OnFlipSummon(card);
     public void OnBattlePositionChanged(CardDisplay card) => eventManager.OnBattlePositionChanged(card);
     public void OnDamageDealt(CardDisplay attacker, CardDisplay target, int amount) => eventManager.OnDamageDealt(attacker, target, amount);
     public void OnCounterTrapResolved(CardDisplay trap) => eventManager.OnCounterTrapResolved(trap);
@@ -629,14 +651,41 @@ public class CardEffectManager : MonoBehaviour
         {
             auraManager.ClearAllAuras(); // Limpa as auras velhas
 
+            // PASSO 1: Registra as Auras de Bloqueio (Floodgates) como Jinzo e Skill Drain primeiro!
             foreach (var effect in continuousFieldEffects)
             {
                 // Só aplica o Aura se a carta geradora estiver ativa no campo e virada para cima!
                 if (effect.owner == null || effect.owner.unityCard == null || !effect.owner.unityCard.isOnField || effect.owner.unityCard.isFlipped) continue;
 
                 string modType = "";
-                if (effect.code == 1 || effect.code == 100) modType = "ATK";       // EFFECT_UPDATE_ATTACK
-                else if (effect.code == 4 || effect.code == 104) modType = "DEF";  // EFFECT_UPDATE_DEFENSE
+                if (effect.code == 13) modType = "CANNOT_ACTIVATE"; // EFFECT_CANNOT_ACTIVATE
+                else if (effect.code == 24) modType = "CANNOT_TRIGGER"; // EFFECT_CANNOT_TRIGGER
+                else if (effect.code == 30) modType = "DISABLE";                   // EFFECT_DISABLE
+                else if (effect.code == 104) modType = "IMMUNE";                   // EFFECT_IMMUNE_EFFECT
+
+                if (!string.IsNullOrEmpty(modType))
+                {
+                    var filterToUse = effect.targetFunc;
+                    if (modType == "CANNOT_ACTIVATE")
+                    {
+                        filterToUse = null; // Será avaliado dinamicamente via GetValue() em IsUnderRestriction
+                    }
+
+                    auraManager.RegisterAura(effect.owner, effect, filterToUse, modType, 0, CardLocation.Hand | CardLocation.Field | CardLocation.Graveyard);
+                }
+            }
+
+            // PASSO 2: Registra os modificadores de Status (ATK, DEF, LEVEL) respeitando as restrições do Passo 1!
+            foreach (var effect in continuousFieldEffects)
+            {
+                if (effect.owner == null || effect.owner.unityCard == null || !effect.owner.unityCard.isOnField || effect.owner.unityCard.isFlipped) continue;
+
+                // OCGCore: Ignora a aplicação se a própria carta geradora estiver sob um efeito "DISABLE" (Ex: Jinzo silenciando uma Armadilha Contínua)
+                if (auraManager.IsUnderRestriction(effect.owner, effect, "DISABLE", CardLocation.Field)) continue;
+
+                string modType = "";
+                if (effect.code == 1) modType = "ATK";       // EFFECT_UPDATE_ATTACK
+                else if (effect.code == 4) modType = "DEF";  // EFFECT_UPDATE_DEFENSE
                 else if (effect.code == 10) modType = "LEVEL";                     // EFFECT_UPDATE_LEVEL
 
                 if (!string.IsNullOrEmpty(modType))
@@ -773,18 +822,35 @@ public class CardEffectManager : MonoBehaviour
         return equipped;
     }
 
+    public CardDisplay GetEquipTarget(CardDisplay equipSpell)
+    {
+        CardLink[] links = UnityEngine.Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
+        foreach (var link in links)
+            if (link.source == equipSpell && link.type == CardLink.LinkType.Equipment && link.target != null)
+                return link.target;
+        return null;
+    }
+
     public void CleanAllExpiredModifiers()
     {
+        int removedCount = 0;
         // Limpeza de Efeitos Temporários registrados diretamente nas cartas (ex: Amazoness Spellcaster)
         foreach(var kvp in activeLuaCards)
         {
             if (kvp.Value != null && kvp.Value.registeredEffects != null)
             {
                 // 0x1000 = RESET_PHASE, 0x0200 = PHASE_END
-                kvp.Value.registeredEffects.RemoveAll(e => (e.GetReset() & 0x1000) != 0 || (e.GetReset() & 0x0200) != 0);
+                int removed = kvp.Value.registeredEffects.RemoveAll(e => {
+                    bool shouldRemove = (e.GetReset() & 0x1000) != 0 || (e.GetReset() & 0x0200) != 0;
+                    if (shouldRemove) Debug.Log($"[CleanAllExpiredModifiers] Removendo efeito {e.code} de {kvp.Value.unityData.name} (Reset Value: {e.GetReset()})");
+                    return shouldRemove;
+                });
+                if (removed > 0) removedCount += removed;
             }
         }
         
+        Debug.Log($"[CleanAllExpiredModifiers] Total de efeitos temporários expirados removidos: {removedCount}");
+
         // Força a UI a recalcular tudo agora que os bônus sumiram
         if (GameManager.Instance != null)
         {

@@ -36,7 +36,13 @@ public static class LuaScriptLoader
         if (!System.IO.File.Exists(scriptPath))
             scriptPath = System.IO.Path.Combine(Application.dataPath, "Scripts", "LuaScripts", $"c{cardId}.lua");
         
-        if (!System.IO.File.Exists(scriptPath)) return null;
+        if (!System.IO.File.Exists(scriptPath)) 
+        {
+            // FIX: Cacheia Monstros Normais e Tokens na RAM para que eles possam reter Efeitos Temporários!
+            LuaCard emptyCard = new LuaCard(card);
+            activeLuaCards[card] = emptyCard;
+            return emptyCard;
+        }
 
         try
         {
@@ -77,8 +83,8 @@ public static class LuaScriptLoader
             if (!initialEffect.IsNil())
             {
                 LuaCard luaCard = new LuaCard(card);
+                activeLuaCards[card] = luaCard; // FIX: Cacheia antes de invocar o initial_effect para prevenir Stack Overflow (Loop Infinito)!
                 luaEngine.Call(initialEffect, luaCard);
-                activeLuaCards[card] = luaCard;
                 return luaCard;
             }
         }

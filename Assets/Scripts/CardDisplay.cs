@@ -548,7 +548,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 RevealCard(false, true, () => {
                     if (GameManager.Instance != null) {
                         GameManager.Instance.OnBattlePositionChanged(this);
-                        GameManager.Instance.OnSummon(this);
+                        GameManager.Instance.OnFlipSummon(this);
                     }
                 });
             }
@@ -556,7 +556,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             {
                 if (GameManager.Instance != null) {
                     GameManager.Instance.OnBattlePositionChanged(this);
-                    GameManager.Instance.OnSummon(this);
                 }
             }
         }

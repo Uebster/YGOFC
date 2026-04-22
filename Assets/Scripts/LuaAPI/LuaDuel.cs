@@ -551,10 +551,14 @@ public class LuaDuel
             // CardEffectManager.Instance.currentChain[idx - 1].operationInfo = ...
         }
     }
-
     
     // Extensões Descobertas pelo Mass Validator
-    public bool CheckReleaseGroupCost(object player, object filterFunc, object count, object use_hand, object excluded, params object[] extraArgs) { return true; }
+    public bool CheckReleaseGroupCost(object player, object filterFunc, object count, object use_hand, object excluded, params object[] extraArgs) 
+    { 
+        int locSelf = 0x04 | (ConvertToInt(use_hand) != 0 ? 0x02 : 0);
+        LuaGroup group = GetMatchingGroup(filterFunc, player, locSelf, 0, excluded, extraArgs);
+        return group.GetCount() >= ConvertToInt(count); 
+    }    
     public bool IsTurnPlayer(object player) { return GetTurnPlayer() == ConvertToInt(player); }
     public int GetFieldGroupCount(object player, object location1, object location2) { return 0; }
     public bool IsEnvironment(object cardcode) { return false; }
@@ -623,7 +627,33 @@ public class LuaDuel
         return GetMatchingGroup(filterFunc, player, locSelf, locOpp, excluded, extraArgs).GetCount(); 
     }    
     
-    public LuaGroup CheckReleaseGroup(object player, object filterFunc, object count, object use_hand, object excluded, params object[] extraArgs) { return new LuaGroup(); }
+    public void ConfirmDecktop(object player, object count)
+    {
+        if (UIManager.Instance != null && !GameManager.Instance.isSimulating)
+        {
+            UIManager.Instance.ShowMessage($"Top Deck revelado: {ConvertToInt(count)} carta(s).");
+        }
+    }
+    
+    public LuaGroup GetDecktopGroup(object player, object count)
+    {
+        int c = ConvertToInt(count);
+        bool isPlayer = IsPlayer(player);
+        List<CardData> deck = isPlayer ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+        LuaGroup g = new LuaGroup();
+        for (int i = 0; i < c && i < deck.Count; i++)
+        {
+            g.AddCard(new LuaCard(deck[i]) { ownerPlayerIndex = isPlayer ? 0 : 1, previousLocation = CardLocation.Deck });
+        }
+        return g;
+    }
+
+    public bool CheckReleaseGroup(object player, object filterFunc, object count, object use_hand, object excluded, params object[] extraArgs) 
+    { 
+        int locSelf = 0x04 | (ConvertToInt(use_hand) != 0 ? 0x02 : 0);
+        LuaGroup group = GetMatchingGroup(filterFunc, player, locSelf, 0, excluded, extraArgs);
+        return group.GetCount() >= ConvertToInt(count); 
+    }
     public bool IsPlayerCanDiscardDeckAsCost(object player, object count) { return true; }
     public DynValue GetOperationInfo(object chainc, object category) { return DynValue.NewTuple(DynValue.NewBoolean(false), UserData.Create(new LuaGroup()), DynValue.NewNumber(0), DynValue.NewNumber(0), DynValue.NewNumber(0)); }
     
@@ -923,10 +953,36 @@ public class LuaDuel
     public void ChangeChainOperation(object chainc, object op) { }
 
     
-    public DynValue SelectReleaseGroupCost(params object[] args) { return UserData.Create(new LuaGroup()); }
+    public DynValue SelectReleaseGroupCost(object player, object filterFunc, object min, object max, object use_hand, object excluded, params object[] extraArgs)
+    {
+        int locSelf = 0x04 | (ConvertToInt(use_hand) != 0 ? 0x02 : 0);
+        return InternalSelectMatchingCard(player, filterFunc, player, locSelf, 0, ConvertToInt(min), ConvertToInt(max), excluded, HighlightCategory.Tribute, extraArgs);
+    }    
     public int SelectDisableField(params object[] args) { return 0; }
     public LuaEffect SelectEffect(params object[] args) { return new LuaEffect { owner = SafeDummyCard() }; }
-    public void ConfirmCards(params object[] args) { }
+    
+    public DynValue ConfirmCards(object player, object targets) 
+    { 
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+
+        // Revela as cartas temporariamente se estiverem no campo viradas para baixo
+        if (targets is LuaGroup group) {
+            foreach (var c in group.cards) if (c.unityCard != null && c.unityCard.isFlipped && c.unityCard.isOnField) c.unityCard.ShowFront();
+        } else if (targets is LuaCard card) {
+            if (card.unityCard != null && card.unityCard.isFlipped && card.unityCard.isOnField) card.unityCard.ShowFront();
+        }
+
+        CardEffectManager.Instance.StartCoroutine(ConfirmCardsRoutine(1.2f));
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("ConfirmCards") });
+    }
+
+    private IEnumerator ConfirmCardsRoutine(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
+    }
     public void SetPossibleOperationInfo(params object[] args) { }
     public int GetDrawCount(params object[] args) { return 1; }
     public void SetTargetPlayer(object p) { targetPlayer = ConvertToInt(p); }
@@ -952,6 +1008,7 @@ public class LuaDuel
         int targetPl = targetPlayer;
         int targetPa = targetParam;
         LuaGroup targGr = currentTargetGroup;
+        ChainManager.ChainLink targetLink = null;
         
         int chainIndex = ConvertToInt(chainc);
         if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null)
@@ -961,6 +1018,7 @@ public class LuaDuel
                 targetPl = CardEffectManager.Instance.chainManager.resolvingLink.targetPlayer;
                 targetPa = CardEffectManager.Instance.chainManager.resolvingLink.targetParam;
                 targGr = CardEffectManager.Instance.chainManager.resolvingLink.targetGroup;
+                targetLink = CardEffectManager.Instance.chainManager.resolvingLink;
             }
             else if (chainIndex > 0)
             {
@@ -970,6 +1028,7 @@ public class LuaDuel
                     targetPl = specificLink.targetPlayer;
                     targetPa = specificLink.targetParam;
                     targGr = specificLink.targetGroup;
+                    targetLink = specificLink;
                 }
             }
         }
@@ -1000,6 +1059,11 @@ public class LuaDuel
                     operationFunc = CardEffectManager.Instance.dummyClosureTrue
                 };
                 returns.Add(UserData.Create(dummyEff));
+            }
+            else if (arg == 1024) // CHAININFO_TRIGGERING_LOCATION
+            {
+                int loc = targetLink != null && targetLink.card != null ? targetLink.card.GetLocation() : 0;
+                returns.Add(DynValue.NewNumber(loc));
             }
             else
             {
@@ -1204,9 +1268,88 @@ public class LuaDuel
         return false;
     }
 
-    public void ChangePosition(object card, object au, object ad, object du, object dd)
+    public DynValue ChangePosition(object target, object au, object ad = null, object du = null, object dd = null, params object[] extraArgs)
     {
-        if (card is LuaCard c && c.unityCard != null) c.unityCard.ChangePosition();
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+
+        int posAU = ConvertToInt(au); // POS_FACEUP_ATTACK (1)
+        int posAD = ad != null && (!(ad is MoonSharp.Interpreter.DynValue d1) || !d1.IsNil()) ? ConvertToInt(ad) : posAU;
+        int posDU = du != null && (!(du is MoonSharp.Interpreter.DynValue d2) || !d2.IsNil()) ? ConvertToInt(du) : posAU;
+        int posDD = dd != null && (!(dd is MoonSharp.Interpreter.DynValue d3) || !d3.IsNil()) ? ConvertToInt(dd) : posAU;
+
+        List<CardDisplay> cardsToChange = new List<CardDisplay>();
+        if (target is LuaGroup group) { foreach (var c in group.cards) if (c.unityCard != null) cardsToChange.Add(c.unityCard); }
+        else if (target is LuaCard card && card.unityCard != null) { cardsToChange.Add(card.unityCard); }
+
+        CardEffectManager.Instance.StartCoroutine(ChangePositionRoutine(cardsToChange, posAU, posAD, posDU, posDD));
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("ChangePosition") });
+    }
+
+    private IEnumerator ChangePositionRoutine(List<CardDisplay> cards, int posAU, int posAD, int posDU, int posDD)
+    {
+        int count = 0;
+        int pendingAnimations = 0;
+
+        foreach (CardDisplay c in cards)
+        {
+            if (c == null || !c.isOnField) continue;
+            
+            int currentPos = 0;
+            if (c.position == CardDisplay.BattlePosition.Attack && !c.isFlipped) currentPos = 1;
+            else if (c.position == CardDisplay.BattlePosition.Attack && c.isFlipped) currentPos = 2;
+            else if (c.position == CardDisplay.BattlePosition.Defense && !c.isFlipped) currentPos = 4;
+            else if (c.position == CardDisplay.BattlePosition.Defense && c.isFlipped) currentPos = 8;
+
+            int targetPos = 0;
+            if (currentPos == 1) targetPos = posAU;
+            else if (currentPos == 2) targetPos = posAD;
+            else if (currentPos == 4) targetPos = posDU;
+            else if (currentPos == 8) targetPos = posDD;
+
+            if (targetPos == 0 || targetPos == currentPos) continue;
+
+            bool isAttackTarget = (targetPos == 1 || targetPos == 2);
+            bool isFaceUpTarget = (targetPos == 1 || targetPos == 4);
+
+            if ((isAttackTarget && c.position == CardDisplay.BattlePosition.Defense) || (!isAttackTarget && c.position == CardDisplay.BattlePosition.Attack))
+            {
+                c.position = isAttackTarget ? CardDisplay.BattlePosition.Attack : CardDisplay.BattlePosition.Defense;
+                c.transform.localRotation = Quaternion.Euler(0, 0, isAttackTarget ? (c.isPlayerCard ? 0f : 180f) : (c.isPlayerCard ? 90f : -90f));
+            }
+
+            if (isFaceUpTarget && c.isFlipped)
+            {
+                pendingAnimations++;
+                c.RevealCard(false, true, () => { 
+                    if (GameManager.Instance != null) { 
+                        GameManager.Instance.OnBattlePositionChanged(c); 
+                        if (isAttackTarget) GameManager.Instance.OnFlipSummon(c); 
+                    } 
+                    pendingAnimations--;            
+                });
+            }
+            else if (!isFaceUpTarget && !c.isFlipped)
+            {
+                pendingAnimations++;
+                c.ShowBack(true, () => {
+                    if (GameManager.Instance != null) GameManager.Instance.OnBattlePositionChanged(c);
+                    pendingAnimations--;
+                });            
+            }
+            else { if (GameManager.Instance != null) GameManager.Instance.OnBattlePositionChanged(c); }
+            count++;
+        }
+
+        // Aguarda todas as animações visuais terminarem
+        while (pendingAnimations > 0) yield return null;
+        
+        // Pausa extra de 0.6s para o jogador absorver a informação (ex: Acid Trap Hole)
+        if (count > 0 && GameManager.Instance != null && !GameManager.Instance.isSimulating)
+            yield return new WaitForSeconds(0.6f);
+
+        CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(count);
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
     }
 
     public void Summon(object player, object card, object ignoreLimit, object param)
@@ -1401,19 +1544,27 @@ public class LuaDuel
         int loc = ConvertToInt(location);
         int seq = ConvertToInt(sequence);
 
+        System.Func<CardDisplay, LuaCard> GetCachedCard = (cd) => {
+            if (CardEffectManager.Instance != null) {
+                LuaCard cached = CardEffectManager.Instance.EnsureCardScriptLoaded(cd);
+                if (cached != null) return cached;
+            }
+            return new LuaCard(cd);
+        };
+
         Transform[] zones = null;
         if ((loc & 0x04) != 0) zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
         else if ((loc & 0x08) != 0) zones = isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
 
         if (zones != null && seq >= 0 && seq < zones.Length && zones[seq].childCount > 0)
         {
-            var cd = zones[seq].GetChild(0).GetComponent<CardDisplay>();
-            if (cd != null) return new LuaCard(cd);
+            var cd = zones[seq].GetComponentInChildren<CardDisplay>();
+            if (cd != null) return GetCachedCard(cd);
         }
         if ((loc & 0x08) != 0 && seq == 5) // Field Zone Convention
         {
             Transform fz = isPlayer ? GameManager.Instance.duelFieldUI.playerFieldSpell : GameManager.Instance.duelFieldUI.opponentFieldSpell;
-            if (fz.childCount > 0) { var cd = fz.GetChild(0).GetComponent<CardDisplay>(); if (cd != null) return new LuaCard(cd); }
+            if (fz.childCount > 0) { var cd = fz.GetComponentInChildren<CardDisplay>(); if (cd != null) return GetCachedCard(cd); }
         }
         return null;
     }
@@ -1423,6 +1574,15 @@ public class LuaDuel
     private void CollectCandidates(int loc, bool isPlayer, List<LuaCard> candidates, LuaCard excluded = null)
     {
         int pIdx = isPlayer ? 0 : 1;
+
+        System.Func<CardDisplay, LuaCard> GetCachedCard = (cd) => {
+            if (CardEffectManager.Instance != null) {
+                LuaCard cached = CardEffectManager.Instance.EnsureCardScriptLoaded(cd);
+                if (cached != null) return cached;
+            }
+            return new LuaCard(cd);
+        };
+
         if ((loc & 0x01) != 0) // DECK
         {
             var deck = isPlayer ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
@@ -1431,19 +1591,43 @@ public class LuaDuel
         if ((loc & 0x02) != 0) // HAND
         {
             var handGOs = isPlayer ? GameManager.Instance.playerHand : GameManager.Instance.opponentHand;
-            foreach(var go in handGOs) { LuaCard lc = new LuaCard(go.GetComponent<CardDisplay>()); lc.ownerPlayerIndex = pIdx; if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
+            foreach(var go in handGOs) { 
+                CardDisplay cd = go.GetComponent<CardDisplay>();
+                if (cd != null) {
+                    LuaCard lc = GetCachedCard(cd); lc.ownerPlayerIndex = pIdx; 
+                    if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); 
+                }
+            }
         }
         if ((loc & 0x04) != 0) // MZONE
         {
             Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
-            foreach (var z in zones) if (z.childCount > 0) { LuaCard lc = new LuaCard(z.GetChild(0).GetComponent<CardDisplay>()); lc.ownerPlayerIndex = pIdx; if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
+            foreach (var z in zones) if (z.childCount > 0) { 
+                CardDisplay cd = z.GetComponentInChildren<CardDisplay>();
+                if (cd != null) {
+                    LuaCard lc = GetCachedCard(cd); lc.ownerPlayerIndex = pIdx; 
+                    if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); 
+                }
+            }
         }
         if ((loc & 0x08) != 0) // SZONE
         {
             Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
-            foreach (var z in zones) if (z.childCount > 0) { LuaCard lc = new LuaCard(z.GetChild(0).GetComponent<CardDisplay>()); lc.ownerPlayerIndex = pIdx; if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
+            foreach (var z in zones) if (z.childCount > 0) { 
+                CardDisplay cd = z.GetComponentInChildren<CardDisplay>();
+                if (cd != null) {
+                    LuaCard lc = GetCachedCard(cd); lc.ownerPlayerIndex = pIdx; 
+                    if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); 
+                }
+            }
             Transform fz = isPlayer ? GameManager.Instance.duelFieldUI.playerFieldSpell : GameManager.Instance.duelFieldUI.opponentFieldSpell;
-            if (fz.childCount > 0) { LuaCard lc = new LuaCard(fz.GetChild(0).GetComponent<CardDisplay>()); lc.ownerPlayerIndex = pIdx; if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); }
+            if (fz.childCount > 0) { 
+                CardDisplay cd = fz.GetComponentInChildren<CardDisplay>();
+                if (cd != null) {
+                    LuaCard lc = GetCachedCard(cd); lc.ownerPlayerIndex = pIdx; 
+                    if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); 
+                }
+            }
         }
         if ((loc & 0x10) != 0) // GRAVE
         {

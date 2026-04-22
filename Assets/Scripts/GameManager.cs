@@ -960,7 +960,11 @@ public class GameManager : MonoBehaviour
                 if (statDisplayMatchCardRotation && !isPlayer) adjustment = -adjustment; 
                 cardGO.transform.localPosition += new Vector3(0, adjustment, 0);
             }
-            OnSummon(cardDisplay);
+
+            if (CardEffectManager.Instance != null)
+            {
+                CardEffectManager.Instance.OnSpecialSummon(cardDisplay);
+            }
             if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayPlacementAura(cardDisplay);
         };
 
@@ -1006,7 +1010,13 @@ public class GameManager : MonoBehaviour
         }
     }
 
-
+    public void OnFlipSummon(CardDisplay card)
+    {
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.OnFlipSummon(card);
+        }
+    }
 
     // Sobrecarga para iniciar duelo contra personagem específico (Campanha)
     public void StartDuel(CharacterData opponent, int duelIndex = -1)
@@ -2411,6 +2421,8 @@ public void ShuffleDeck(bool isPlayer)
         // Espera o texto do turno sumir perfeitamente para emendar na Draw Phase
         yield return new WaitForSeconds((phaseAnnouncements.displayDuration + phaseAnnouncements.fadeDuration) * phaseAnnouncements.masterDelayMultiplier);
 
+        if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isBusy);
+
         if (PhaseManager.Instance != null) PhaseManager.Instance.StartTurn();
 
         // Se for turno do oponente, inicia a IA
@@ -2554,6 +2566,7 @@ public void ShuffleDeck(bool isPlayer)
             // Se for turno do jogador, troca o turno automaticamente (já que não haverá descarte)
             if (isPlayerTurn && !isSimulating)
             {
+                if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isBusy);
                 yield return new WaitForSeconds(0.5f);
                 SwitchTurn();
             }
@@ -2601,6 +2614,7 @@ public void ShuffleDeck(bool isPlayer)
         // (A IA troca o turno no final da rotina dela, então não precisamos chamar aqui para ela)
         if (isPlayerTurn && !isSimulating)
         {
+            if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isBusy);
             yield return new WaitForSeconds(0.5f);
             SwitchTurn();
         }
@@ -2629,6 +2643,9 @@ public void ShuffleDeck(bool isPlayer)
     private IEnumerator DelayedPhaseChange(GamePhase phase, float delay)
     {
         yield return new WaitForSeconds(delay);
+        if (CardEffectManager.Instance != null) {
+            yield return new WaitWhile(() => CardEffectManager.Instance.isBusy);
+        }
         if (PhaseManager.Instance != null) PhaseManager.Instance.ChangePhase(phase);
     }
 
@@ -3540,7 +3557,12 @@ public void ShuffleDeck(bool isPlayer)
                     System.Action onCinematicComplete = () => {
                         display.SetVisibility(true);
                         DuelFXManager.Instance.PlaySummonAura(display);
-                        if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnSummon(display);
+                        if (CardEffectManager.Instance != null) {
+                            if (isFaceDown) CardEffectManager.Instance.OnSet(display);
+                            else if (cardData.type.Contains("Fusion") || cardData.type.Contains("Ritual") || cardData.type.Contains("Synchro") || cardData.type.Contains("Xyz") || cardData.type.Contains("Link")) 
+                                CardEffectManager.Instance.OnSpecialSummon(display);
+                            else CardEffectManager.Instance.OnSummon(display);
+                        }
                     };
                     if (isFusion) DuelFXManager.Instance.PlayFusionCinematic(display, specialMaterials, null, onCinematicComplete);
                     else if (isRitual) DuelFXManager.Instance.PlayRitualCinematic(display, null, onCinematicComplete);
@@ -3556,7 +3578,12 @@ public void ShuffleDeck(bool isPlayer)
                     else if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayFlipEffect(display);
                 
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayPlacementAura(display);
-                    if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnSummon(display);
+                    if (CardEffectManager.Instance != null) {
+                        if (isFaceDown) CardEffectManager.Instance.OnSet(display);
+                        else if (cardData.type.Contains("Fusion") || cardData.type.Contains("Ritual") || cardData.type.Contains("Synchro") || cardData.type.Contains("Xyz") || cardData.type.Contains("Link")) 
+                            CardEffectManager.Instance.OnSpecialSummon(display);
+                        else CardEffectManager.Instance.OnSummon(display);
+                    }
                 }
             };
             
@@ -3597,9 +3624,6 @@ public void ShuffleDeck(bool isPlayer)
         if (isTributeSummon && TrophyManager.Instance != null)
             TrophyManager.Instance.TrackStat("tribute_summon", 1);
 
-        if (CardEffectManager.Instance != null)
-            CardEffectManager.Instance.OnSummon(display);
-            
         RefreshAttackIndicators();
         RefreshAllCardsVisuals();
     }
@@ -4472,7 +4496,11 @@ public void ShuffleDeck(bool isPlayer)
         {
             if (confirmHandSelection)
             {
-                string msg = customSelectionValidator != null ? "Confirmar os materiais selecionados?" : (handSelectionCountRequired == 1 ? $"Selecionar {currentDataSelection[0].name}?" : "Confirmar seleção?");
+                string cardName = currentDataSelection[0].name;
+                var cd = currentHandSelectionObjects[0].GetComponent<CardDisplay>();
+                if (cd != null && cd.isFlipped && !cd.isPlayerCard) cardName = "monstro virado para baixo";
+
+                string msg = customSelectionValidator != null ? "Confirmar os materiais selecionados?" : (handSelectionCountRequired == 1 ? $"Selecionar {cardName}?" : "Confirmar seleção?");
                 UIManager.Instance.ShowConfirmation(msg, () => FinishHandSelection(false), () => {
                     // Se cancelar, remove a última seleção para permitir trocar
                     if (currentHandSelectionObjects.Count > 0)
