@@ -428,6 +428,7 @@ public class LuaEngineCore
                             if k == 'IsRelateToEffect' then return true end
                             if k == 'IsCanBeEffectTarget' then return true end
                             if k == 'IsFacedown' then return not c:IsFaceup() end
+                            if k == 'IsOnField' then return c:IsLocation(LOCATION_ONFIELD) end
                             
                             -- Stat & State Checks
                             if k == 'IsDefenseBelow' then return c:GetDefense() <= select(1, ...) end

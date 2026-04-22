@@ -250,8 +250,9 @@ public class CardEffectManager : MonoBehaviour
             }
             if (effect.targetFunc != null) {
                 DynValue res = luaEngine.Call(effect.targetFunc, effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(rp), 0, null); // chk = 0
+                
                 if (res.Type == DataType.Boolean && !res.Boolean) {
-                    Debug.LogWarning($"<color=yellow>[Lua Validation]</color> Target (chk=0) falhou para a carta {luaCard.unityData.name}!");
+                    // Debug.LogWarning($"<color=yellow>[Lua Validation]</color> Target (chk=0) falhou para a carta {luaCard.unityData.name}!");
                     return false;
                 }
             }
@@ -525,8 +526,8 @@ public class CardEffectManager : MonoBehaviour
             if (pResponses.Count > 0 || oResponses.Count > 0)
             {
                 LuaCard dummyCard = new LuaCard(new CardData { id = "0000", name = $"[Evento] {req.name}", type = "Spell", property = "Normal" });
-                LuaEffect dummyEff = new LuaEffect { owner = dummyCard, type = 0x0010, conditionFunc = dummyClosureTrue, costFunc = dummyClosureTrue, targetFunc = dummyClosureTrue, operationFunc = dummyClosureTrue };
-                yield return StartCoroutine(chainManager.BuildAndResolveChainRoutine(dummyCard, dummyEff, null, 1, null, true));
+                LuaEffect dummyEff = new LuaEffect { owner = dummyCard, type = 0x0010, code = req.eventCode, conditionFunc = dummyClosureTrue, costFunc = dummyClosureTrue, targetFunc = dummyClosureTrue, operationFunc = dummyClosureTrue };
+                yield return StartCoroutine(chainManager.BuildAndResolveChainRoutine(dummyCard, dummyEff, req.eventArg, 1, null, true));
             }
             
             isFastEffectWindowOpen = false;

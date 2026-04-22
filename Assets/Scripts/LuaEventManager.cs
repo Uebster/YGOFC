@@ -81,9 +81,21 @@ public class LuaEventManager
             {
                 if (core.CanActivateEffect(lc_loop, effect, lc_loop.GetControler(), triggerArgs))
                 {
-                    bool chainDone = false;
-                    core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc_loop, effect, triggerArgs, lc_loop.GetControler(), () => chainDone = true));
-                    yield return new WaitUntil(() => chainDone);
+                    if ((effect.type & 0x0800) != 0) // EFFECT_TYPE_CONTINUOUS
+                    {
+                        if (effect.operationFunc != null)
+                        {
+                            bool opDone = false;
+                            core.StartCoroutine(RunCoroutineAndSetDone(core.RunLuaCoroutine(effect.operationFunc, effect, lc_loop.GetControler(), triggerArgs, -1), () => opDone = true));
+                            yield return new WaitUntil(() => opDone);
+                        }
+                    }
+                    else
+                    {
+                        bool chainDone = false;
+                        core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc_loop, effect, triggerArgs, lc_loop.GetControler(), () => chainDone = true));
+                        yield return new WaitUntil(() => chainDone);
+                    }
                 }
             }
         }
@@ -131,6 +143,8 @@ public class LuaEventManager
         LuaCard lc = core.EnsureCardScriptLoaded(card);
         if (lc == null) lc = new LuaCard(card);
 
+        // Debug.Log($"<color=orange>[DEBUG LUA]</color> EVENT_SUMMON_SUCCESS (1100) acionado para: {card.CurrentCardData.name} | ATK: {card.currentAtk} | Controlador: {lc.GetControler()} | Faceup: {!card.isFlipped} | IsOnField: {card.isOnField}");
+
         // Adiciona efeitos contínuos ao entrar em campo
         var fieldEffects = lc.registeredEffects.FindAll(e => (e.type & 0x0002) != 0);
         core.continuousFieldEffects.AddRange(fieldEffects.Where(e => !core.continuousFieldEffects.Contains(e)));
@@ -158,6 +172,8 @@ public class LuaEventManager
     public void OnFlipSummon(CardDisplay card) {
         LuaCard lc = core.EnsureCardScriptLoaded(card);
         if (lc == null) lc = new LuaCard(card);
+
+        // Debug.Log($"<color=orange>[DEBUG LUA]</color> EVENT_FLIP_SUMMON_SUCCESS (1101) acionado para: {card.CurrentCardData.name} | ATK: {card.currentAtk} | Controlador: {lc.GetControler()} | Faceup: {!card.isFlipped} | IsOnField: {card.isOnField}");
         
         var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1101 && (e.type & 0x0001) != 0); // EFFECT_TYPE_SINGLE
         if (singleEffects.Count > 0)

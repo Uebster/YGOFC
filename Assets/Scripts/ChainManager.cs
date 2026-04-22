@@ -140,7 +140,8 @@ public class ChainManager
     private IEnumerator ResponseWindowRoutine(int priorityPlayer, ChainLink triggerLink, System.Action<bool> onComplete)
     {
         bool isHuman = (priorityPlayer == 0); // 0 = Player, 1 = Opponent(IA)
-        List<CardDisplay> validResponses = core.GetValidResponses(priorityPlayer, triggerLink);
+        int eventCode = triggerLink != null && triggerLink.effect != null ? triggerLink.effect.code : 0;
+        List<CardDisplay> validResponses = core.GetValidResponses(priorityPlayer, triggerLink, eventCode);
 
         if (validResponses.Count == 0) { onComplete?.Invoke(false); yield break; }
 
@@ -205,7 +206,10 @@ public class ChainManager
             }
                 
             bool childChainEnded = false;
-            core.ActivateCard(chosenCard, triggerLink.card, () => { childChainEnded = true; });
+            // Se for um evento Dummy (Engine), passamos o argumento original (o monstro invocado). 
+            // Se for uma resposta a uma ativação real, passamos a carta que ativou.
+            object argsToPass = triggerLink.isDummy ? triggerLink.triggerArgs : triggerLink.card;
+            core.ActivateCard(chosenCard, argsToPass, () => { childChainEnded = true; });
             while (!childChainEnded) yield return null;
             
             onComplete?.Invoke(true);

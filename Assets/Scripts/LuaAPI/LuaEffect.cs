@@ -81,10 +81,10 @@ public class LuaEffect
     public bool IsHasProperty(object prop) { return true; }
     public bool IsHasCategory(object cat) { return true; }
     public int GetActiveType() { return type; }
-    public bool IsSpellEffect() { return true; }
-    public bool IsTrapEffect() { return true; }
-    public bool IsMonsterEffect() { return true; }
-    public bool IsSpellTrapEffect() { return true; }
+    public bool IsSpellEffect() { return owner != null && owner.IsSpell(); }
+    public bool IsTrapEffect() { return owner != null && owner.IsTrap(); }
+    public bool IsMonsterEffect() { return owner != null && owner.IsMonster(); }
+    public bool IsSpellTrapEffect() { return owner != null && (owner.IsSpell() || owner.IsTrap()); }
     
     public Closure GetCondition() { return conditionFunc != null ? conditionFunc : CardEffectManager.Instance.dummyClosureTrue; }
     public Closure GetCost() { return costFunc != null ? costFunc : CardEffectManager.Instance.dummyClosureTrue; }

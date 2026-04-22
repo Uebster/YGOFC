@@ -1432,6 +1432,15 @@ public class LuaDuel
         
         if (defCard == null)
         {
+            Debug.Log($"<color=orange>[DEBUG LUA BATTLE]</color> Calculando dano direto: {atkCard.CurrentCardData.name} (ATK {atkPower})...");
+        }
+        else
+        {
+            Debug.Log($"<color=orange>[DEBUG LUA BATTLE]</color> Calculando dano: {atkCard.CurrentCardData.name} (ATK {atkPower}) vs {defCard.CurrentCardData.name}...");
+        }
+
+        if (defCard == null)
+        {
             // Ataque Direto
             if (atkIsPlayer) GameManager.Instance.DamageOpponent(atkPower);
             else GameManager.Instance.DamagePlayer(atkPower);

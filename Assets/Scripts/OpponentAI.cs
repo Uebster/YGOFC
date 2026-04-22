@@ -925,7 +925,9 @@ public class OpponentAI : MonoBehaviour
             LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(card);
             LuaEffect quickEffect = lc?.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0080); // ACTIVATE / TRIGGER_O
             
-            if (quickEffect != null && !CardEffectManager.Instance.CanActivateEffect(lc, quickEffect, 1, triggerLink?.card))
+            object argsToPass = triggerLink != null ? (triggerLink.isDummy ? triggerLink.triggerArgs : triggerLink.card) : null;
+
+            if (quickEffect != null && !CardEffectManager.Instance.CanActivateEffect(lc, quickEffect, 1, argsToPass))
             {
                 return new { Card = card, Score = -9999f }; // Cortado na raiz.
             }
@@ -934,7 +936,10 @@ public class OpponentAI : MonoBehaviour
             {
                 int cat = quickEffect != null ? quickEffect.category : 0;
                 int eventCode = triggerLink.effect != null ? triggerLink.effect.code : 0;
-                CardDisplay triggerCard = triggerLink.card.unityCard;
+                
+                CardDisplay triggerCard = null;
+                if (argsToPass is LuaCard tc) triggerCard = tc.unityCard;
+                else if (argsToPass is LuaGroup g && g.cards.Count > 0) triggerCard = g.cards[0].unityCard;
 
                 if (eventCode == 1130) // EVENT_ATTACK_ANNOUNCE
                 {
