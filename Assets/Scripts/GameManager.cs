@@ -350,7 +350,7 @@ public class GameManager : MonoBehaviour
     public List<string> forbiddenSpells = new List<string>();
     public List<string> prohibitedCards = new List<string>(); // Prohibition (1460)
 
-    [Header("Current Duel Info")]
+    [Header("Current Duel Info (Auto-Assigned - Não Edite)")]
     public CharacterData currentOpponent; // Oponente atual carregado
     public int currentDuelIndex = -1; // Índice do duelo atual na campanha (para salvar progresso)
 
@@ -406,6 +406,8 @@ public class GameManager : MonoBehaviour
     [HideInInspector] public bool justCanceledSomething = false;
     [HideInInspector] public bool isSelectingFromHand = false;
     private List<CardData> handSelectionCandidates;
+    private List<CardDisplay> handSelectionDisplayCandidates;
+    private System.Action<List<CardDisplay>> displaySelectionCallback;
 
     private List<GameObject> currentHandSelectionObjects;
     private int handSelectionCountRequired;
@@ -1125,7 +1127,7 @@ public class GameManager : MonoBehaviour
         // Validação de segurança: Se o objeto oponente existe mas está vazio/inválido (sem ID), reseta
         if (currentOpponent != null && string.IsNullOrEmpty(currentOpponent.id))
         {
-            Debug.LogWarning("[GameManager] Oponente atual é inválido (ID vazio). Resetando para tentar carregar novamente.");
+            // A engine limpa o oponente fantasma silenciosamente sem poluir o console do desenvolvedor.
             currentOpponent = null;
         }
 
@@ -1807,7 +1809,7 @@ public void ShuffleDeck(bool isPlayer)
             else 
             { 
                 // Ignora falsos positivos de Arquétipos comuns
-                if (!mentionedName.Contains("Archfiend") && !mentionedName.Contains("Toon") && !mentionedName.Contains("Gravekeeper's") && !mentionedName.Contains("Spirit Message"))
+                if (!mentionedName.Contains("Archfiend") && !mentionedName.Contains("Toon") && !mentionedName.Contains("Gravekeeper's") && !mentionedName.Contains("Spirit Message") && !mentionedName.Contains("Amazoness"))
                     Debug.LogWarning($"<color=yellow>⚠️ [QA] Dependência '{mentionedName}' solicitada, mas não encontrada no DB (Pode ser um Arquétipo).</color>"); 
             }
         }
@@ -2283,18 +2285,74 @@ public void ShuffleDeck(bool isPlayer)
                     
                     if (cd.CurrentCardData.type.Contains("Monster"))
                     {
+                        // Puxa o Script do monstro da memória para ler se ele sofreu alguma alteração temporária
+                        LuaCard lc = CardEffectManager.Instance != null ? CardEffectManager.Instance.EnsureCardScriptLoaded(cd) : new LuaCard(cd);
+                        if (lc == null) lc = new LuaCard(cd);
+                        
+                        // 1.5 Processa modificadores SINGLE próprios da carta (SET_BASE_ATK, etc)
+                        int baseAtk = lc.GetBaseAttack();
+                        int baseDef = lc.GetBaseDefense();
+
+                        if (CardEffectManager.Instance != null)
+                        {
+                            var singleEffects = lc.registeredEffects.FindAll(e => e.type == 1); // EFFECT_TYPE_SINGLE
+                            foreach(var eff in singleEffects)
+                            {
+                                int val = 0;
+                                object valObj = eff.GetValue();
+                                if (valObj is double || valObj is long) val = System.Convert.ToInt32(valObj);
+                                else if (valObj is MoonSharp.Interpreter.Closure valClosure)
+                                {
+                                    try {
+                                        var res = CardEffectManager.Instance.luaEngine.Call(valClosure, eff, lc);
+                                        if (res.Type == MoonSharp.Interpreter.DataType.Number) val = (int)res.Number;
+                                    } catch { }
+                                }
+
+                                if (eff.code == 1 || eff.code == 100) baseAtk += val; // UPDATE_ATTACK
+                                else if (eff.code == 4 || eff.code == 104) baseDef += val; // UPDATE_DEFENSE
+                                else if (eff.code == 2) baseAtk = val; // SET_ATTACK
+                                else if (eff.code == 5) baseDef = val; // SET_DEFENSE
+                            }
+                        }
+
+                        cd.currentAtk = baseAtk;
+                        cd.currentDef = baseDef;
+                        
                         // 2. Adiciona os bônus Globais (Auras / Field Spells)
-                        LuaCard lc = new LuaCard(cd);
                         CardLocation loc = cd.isOnField ? CardLocation.Field : CardLocation.Hand;
-                        cd.currentAtk = cd.originalAtk + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "ATK", loc);
-                        cd.currentDef = cd.originalDef + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "DEF", loc);
-                        cd.currentLevel = cd.originalLevel + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "LEVEL", loc);
+                        cd.currentAtk += CardEffectManager.Instance.auraManager.GetStatModifier(lc, "ATK", loc);
+                        cd.currentDef += CardEffectManager.Instance.auraManager.GetStatModifier(lc, "DEF", loc);
 
                         // 3. Aplica os bônus de Equipamento por cima dos bônus globais
                         if (CardEffectManager.Instance != null && cd.isOnField)
                         {
                             CardEffectManager.Instance.RecalculateStats(cd);
                         }
+
+                        // 4. Aplica modificadores SINGLE Finais
+                        if (CardEffectManager.Instance != null)
+                        {
+                            var singleEffects = lc.registeredEffects.FindAll(e => e.type == 1); // EFFECT_TYPE_SINGLE
+                            foreach(var eff in singleEffects)
+                            {
+                                int val = 0;
+                                object valObj = eff.GetValue();
+                                if (valObj is double || valObj is long) val = System.Convert.ToInt32(valObj);
+                                else if (valObj is MoonSharp.Interpreter.Closure valClosure)
+                                {
+                                    try {
+                                        var res = CardEffectManager.Instance.luaEngine.Call(valClosure, eff, lc);
+                                        if (res.Type == MoonSharp.Interpreter.DataType.Number) val = (int)res.Number;
+                                    } catch { }
+                                }
+
+                                if (eff.code == 3) cd.currentAtk = val; // SET_ATTACK_FINAL
+                                else if (eff.code == 6) cd.currentDef = val; // SET_DEFENSE_FINAL
+                            }
+                        }
+                        
+                        cd.currentLevel = cd.originalLevel + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "LEVEL", loc);
                     }
                     
                     // 4. Força a atualização dos textos na interface da carta
@@ -4340,10 +4398,39 @@ public void ShuffleDeck(bool isPlayer)
         Debug.Log($"[GameManager] Iniciando seleção tátil: {title}");
     }
 
+    public void OpenDirectCardDisplaySelection(List<CardDisplay> candidates, string title, int min, int max, System.Action<List<CardDisplay>> callback, HighlightCategory category = HighlightCategory.GenericTarget)
+    {
+        isSelectingFromHand = true;
+        handSelectionDisplayCandidates = candidates;
+        handSelectionCandidates = null; // Garante que a seleção por CardData não interfira
+        handSelectionCountRequired = max;
+        displaySelectionCallback = callback;
+        handSelectionCallback = null;
+        currentHandSelectionObjects = new List<GameObject>();
+        currentSelectionHighlightCategory = category;
+
+        if (UIManager.Instance != null) UIManager.Instance.ShowMessage(title);
+
+        foreach (var cd in handSelectionDisplayCandidates)
+        {
+            if (cd != null)
+            {
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetSelectionIcon(cd, currentSelectionHighlightCategory, SelectionState.Available);
+                else cd.SetHighlight(currentSelectionHighlightCategory, true);
+            }
+        }
+        Debug.Log($"[GameManager] Iniciando seleção tátil EXATA por display: {title}");
+    }
+
     public void HandleHandCardClick(CardDisplay card)
     {
         if (!isSelectingFromHand) return;
-        if (!handSelectionCandidates.Contains(card.CurrentCardData)) return;
+        
+        if (handSelectionDisplayCandidates != null) {
+            if (!handSelectionDisplayCandidates.Contains(card)) return;
+        } else {
+            if (handSelectionCandidates == null || !handSelectionCandidates.Contains(card.CurrentCardData)) return;
+        }
 
         if (currentHandSelectionObjects.Contains(card.gameObject))
         {
@@ -4411,31 +4498,51 @@ public void ShuffleDeck(bool isPlayer)
 
     private void FinishHandSelection(bool isCancel)
     {
-        // Limpa visuais (Mão e Campo)
-        List<GameObject> allCards = new List<GameObject>(playerHand);
-        if (duelFieldUI != null) {
-            foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
-            foreach(var z in duelFieldUI.playerSpellZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
-            foreach(var z in duelFieldUI.opponentMonsterZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
-            foreach(var z in duelFieldUI.opponentSpellZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
-        }
-
-        foreach (var go in allCards)
+        if (handSelectionDisplayCandidates != null)
         {
-            var cd = go.GetComponent<CardDisplay>();
-            if (cd != null)
+            foreach (var cd in handSelectionDisplayCandidates)
             {
-                if (DuelFXManager.Instance != null)
-                    DuelFXManager.Instance.SetSelectionIcon(cd, currentSelectionHighlightCategory, SelectionState.None);
-                
-                cd.SetHighlight(currentSelectionHighlightCategory, false);
-                cd.SetAttackSelectionVisual(false);
+                if (cd != null)
+                {
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetSelectionIcon(cd, currentSelectionHighlightCategory, SelectionState.None);
+                    cd.SetHighlight(currentSelectionHighlightCategory, false);
+                    cd.SetAttackSelectionVisual(false);
+                }
+            }
+        }
+        else
+        {
+            List<GameObject> allCards = new List<GameObject>(playerHand);
+            if (duelFieldUI != null) {
+                foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+                foreach(var z in duelFieldUI.playerSpellZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+                foreach(var z in duelFieldUI.opponentMonsterZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+                foreach(var z in duelFieldUI.opponentSpellZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+            }
+
+            foreach (var go in allCards)
+            {
+                var cd = go.GetComponent<CardDisplay>();
+                if (cd != null)
+                {
+                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetSelectionIcon(cd, currentSelectionHighlightCategory, SelectionState.None);
+                    cd.SetHighlight(currentSelectionHighlightCategory, false);
+                    cd.SetAttackSelectionVisual(false);
+                }
             }
         }
 
-        List<CardData> finalData = currentHandSelectionObjects.Select(go => go.GetComponent<CardDisplay>().CurrentCardData).ToList();
         isSelectingFromHand = false;
-        handSelectionCallback?.Invoke(isCancel ? new List<CardData>() : finalData);
+        
+        if (displaySelectionCallback != null) {
+            List<CardDisplay> finalData = currentHandSelectionObjects.Select(go => go.GetComponent<CardDisplay>()).ToList();
+            displaySelectionCallback.Invoke(isCancel ? new List<CardDisplay>() : finalData);
+            displaySelectionCallback = null; handSelectionDisplayCandidates = null;
+        } else if (handSelectionCallback != null) {
+            List<CardData> finalData = currentHandSelectionObjects.Select(go => go.GetComponent<CardDisplay>().CurrentCardData).ToList();
+            handSelectionCallback.Invoke(isCancel ? new List<CardData>() : finalData);
+            handSelectionCallback = null; handSelectionCandidates = null;
+        }
     }
 
     // --- LÓGICA DE SELEÇÃO DE RESPOSTA DIRETA ---

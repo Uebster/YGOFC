@@ -14,10 +14,15 @@ public class ChainManager
         public bool isNegated = false;
         public bool isActivationNegated = false;
         public bool isDummy = false;
+        public LuaGroup targetGroup;
+        public int targetPlayer;
+        public int targetParam;
     }
 
     public List<ChainLink> currentChain = new List<ChainLink>();
     public bool isChainResolving = false;
+    public ChainLink resolvingLink = null;
+    public int activeChainTasks = 0;
 
     private CardEffectManager core;
 
@@ -28,6 +33,7 @@ public class ChainManager
 
     public IEnumerator BuildAndResolveChainRoutine(LuaCard luaCard, LuaEffect effect, object triggerArgs, int tp, System.Action onComplete, bool isDummy = false)
     {
+        activeChainTasks++;
         // NOVO: Se a corrente atual já está em resolução, os novos gatilhos (Ex: Destruição em Batalha, RaiseSingleEvent) 
         // devem aguardar para formarem uma NOVA corrente limpa logo em seguida (SEGOC Simplificado).
         if (isChainResolving)
@@ -38,15 +44,18 @@ public class ChainManager
 
         // FASE DE ATIVAÇÃO (Custo e Alvo) [chk=1]
         core.luaDuel.currentActivatingEffect = effect;
+        core.luaDuel.currentTargetGroup = new LuaGroup(); // Limpa os alvos da ativação anterior
+        core.luaDuel.targetParam = 0;
+        core.luaDuel.targetPlayer = 0;
         if (effect.costFunc != null) {
             yield return core.StartCoroutine(core.RunLuaCoroutine(effect.costFunc, effect, tp, triggerArgs, 1));
-            if (!core.lastCoroutineSuccess) { AbortActivation(luaCard); onComplete?.Invoke(); yield break; }
+            if (!core.lastCoroutineSuccess) { AbortActivation(luaCard); activeChainTasks--; onComplete?.Invoke(); yield break; }
         }
         if (effect.targetFunc != null) {
             Debug.Log($"[Surgical Log] Chamando targetFunc (chk=1) para {luaCard.unityData.name}");
             yield return core.StartCoroutine(core.RunLuaCoroutine(effect.targetFunc, effect, tp, triggerArgs, 1));
             Debug.Log($"[Surgical Log] Sucesso da targetFunc: {core.lastCoroutineSuccess}");
-            if (!core.lastCoroutineSuccess) { AbortActivation(luaCard); onComplete?.Invoke(); yield break; }
+            if (!core.lastCoroutineSuccess) { AbortActivation(luaCard); activeChainTasks--; onComplete?.Invoke(); yield break; }
         }
         core.luaDuel.currentActivatingEffect = null;
 
@@ -57,7 +66,10 @@ public class ChainManager
             card = luaCard, 
             player = tp, 
             triggerArgs = triggerArgs,
-            isDummy = isDummy
+            isDummy = isDummy,
+            targetGroup = core.luaDuel.currentTargetGroup, // Salva o estado exato da seleção nesta cápsula!
+            targetPlayer = core.luaDuel.targetPlayer,
+            targetParam = core.luaDuel.targetParam
         };
         currentChain.Add(newLink);
         
@@ -93,6 +105,7 @@ public class ChainManager
             for (int i = currentChain.Count - 1; i >= 0; i--)
             {
                 ChainLink link = currentChain[i];
+                resolvingLink = link; // Avisa o C# qual cápsula está sendo aberta agora
                 if (link.isDummy) continue; // Pula a execução física do dummy (apenas ancora a corrente)
 
                 if (link.isActivationNegated)
@@ -117,9 +130,11 @@ public class ChainManager
 
             currentChain.Clear();
             isChainResolving = false;
+            resolvingLink = null;
             Debug.Log($"[Chain] Corrente resolvida e limpa com sucesso!");
         }
 
+        activeChainTasks--;
         onComplete?.Invoke();
     }
 

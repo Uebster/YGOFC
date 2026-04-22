@@ -93,9 +93,18 @@ public class CardViewerUI : MonoBehaviour
         if (cardNameText != null) cardNameText.text = card.name;
         if (cardDescriptionText != null) cardDescriptionText.text = card.description;
 
-        string info = $"[{card.type}]";
-        if (!string.IsNullOrEmpty(card.race)) info += $" / {card.race}";
-        if (card.level > 0) info += $" / LV: {card.level}";
+        string displayedType = !string.IsNullOrEmpty(card.typeline) ? card.typeline : card.type;
+        string info = $"[{displayedType}]";
+        
+        if (card.type.Contains("Monster"))
+        {
+            if (!string.IsNullOrEmpty(card.race)) info += $" / {card.race}";
+            if (card.level > 0) info += $" / LV: {card.level}";
+        }
+        else if (!string.IsNullOrEmpty(card.property) && card.property != "Normal")
+        {
+            info += $" / {card.property}";
+        }
         if (cardInfoText != null) cardInfoText.text = info;
 
         if (cardStatsText != null)
@@ -142,9 +151,18 @@ public class CardViewerUI : MonoBehaviour
         if (cardNameText) cardNameText.text = card.name;
         if (cardDescriptionText) cardDescriptionText.text = card.description;
 
-        string info = $"[{card.type}]";
-        if (!string.IsNullOrEmpty(card.race)) info += $" / {card.race}";
-        if (card.level > 0) info += $" / LV: {card.level}";
+        string displayedType = !string.IsNullOrEmpty(card.typeline) ? card.typeline : card.type;
+        string info = $"[{displayedType}]";
+        
+        if (card.type.Contains("Monster"))
+        {
+            if (!string.IsNullOrEmpty(card.race)) info += $" / {card.race}";
+            if (card.level > 0) info += $" / LV: {card.level}";
+        }
+        else if (!string.IsNullOrEmpty(card.property) && card.property != "Normal")
+        {
+            info += $" / {card.property}";
+        }
         if (cardInfoText) cardInfoText.text = info;
 
         if (cardStatsText)

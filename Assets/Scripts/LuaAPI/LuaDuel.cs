@@ -7,7 +7,11 @@ using System.Linq;
 
 // ==============================================================================
 // 1. CLASSE DUEL (Ações Globais e Tabuleiro)
-// Chamado no Lua como: Duel.Damage(tp, 500, REASON_EFFECT)
+// Onde a Mágica Acontece: Intercepta os comandos 'Duel.' do OCGCore.
+// Tratativas Críticas & Dependências: 
+// - CardEffectManager.cs: Exige suspensão (Yields) e Corrotinas Assíncronas.
+// - GameManager.cs: Executa a movimentação física 3D e interfaces UI.
+// - LuaEngineCore.cs: Injeta Constantes Nativas (ex: CHAININFO_TARGET_CARDS).
 // ==============================================================================
 [MoonSharpUserData]
 public class LuaDuel
@@ -26,6 +30,7 @@ public class LuaDuel
     public Dictionary<string, int> playerFlags = new Dictionary<string, int>();
     public Dictionary<string, Dictionary<int, int>> cardFlags = new Dictionary<string, Dictionary<int, int>>();
     public List<Closure> endTurnCallbacks = new List<Closure>();
+    public string lastHintMsg = "Selecione um alvo";
 
     private int ConvertToInt(object obj)
     {
@@ -529,7 +534,11 @@ public class LuaDuel
         return GetCurrentPhase() == phase;
     }
 
-    public void Hint(object msgType, object player, object desc) { }
+    public void Hint(object msgType, object player, object desc) { 
+        int type = ConvertToInt(msgType);
+        if (type == 3) // HINT_SELECTMSG
+            lastHintMsg = GetHintMessageString(ConvertToInt(desc));
+    }
     public void AddCustomActivityCounter(object counter_id, object activity_type, object filter) { }
     public void EnableGlobalFlag(object flag) { }
 
@@ -779,16 +788,23 @@ public class LuaDuel
 
     private string GetHintMessageString(int hintCode)
     {
-        if (hintCode == 500) return "Selecione";
-        if (hintCode == 501) return "Descarte";
-        if (hintCode == 502) return "Confirme";
-        if (hintCode == 503) return "Ativar";
-        if (hintCode == 504) return "Tributo";
-        if (hintCode == 506) return "Destruir";
-        if (hintCode == 509) return "Special Summon";
-        if (hintCode == 510) return "Retornar para a Mão";
-        if (hintCode == 525) return "Setar";
-        return $"Opção {hintCode}";
+        switch (hintCode)
+        {
+            case 500: return "Selecione um alvo";
+            case 501: return "Selecione carta(s) para descartar";
+            case 502: return "Confirme a(s) carta(s)";
+            case 503: return "Selecione a carta para ativar";
+            case 504: return "Selecione carta(s) para tributar";
+            case 505: return "Selecione carta(s) para remover (Banir)";
+            case 506: return "Selecione carta(s) para destruir";
+            case 509: return "Selecione monstro(s) para Special Summon";
+            case 510: return "Selecione carta(s) para retornar à mão";
+            case 525: return "Selecione carta(s) para Setar";
+            case 545: return "Selecione monstro(s) Face-Up (virado p/ cima)";
+            case 546: return "Selecione monstro(s) Face-Down (virado p/ baixo)";
+            case 549: return "Selecione um alvo para equipar";
+            default: return $"Selecione (Ação {hintCode})";
+        }
     }
 
     public int AnnounceNumber(object player, params object[] args) { return 1000; }
@@ -854,8 +870,14 @@ public class LuaDuel
     public bool IsChainDisablable(object chainc) { return true; }
     public void DiscardDeck(object player, object count, object reason) { }
     public bool CheckTribute(object card, object min, object max, object group = null, object zone = null) { return true; }
-    public void SetTargetCard(object target) { }
-    public void ClearTargetCard() { }
+    public void SetTargetCard(object target) { 
+        if (currentTargetGroup == null) currentTargetGroup = new LuaGroup();
+        if (target is LuaGroup g) currentTargetGroup.cards.AddRange(g.cards);
+        else if (target is LuaCard c) currentTargetGroup.AddCard(c);
+    }
+    public void ClearTargetCard() { 
+        currentTargetGroup = new LuaGroup(); 
+    }
     public bool CheckEvent(object event_code, object chainc = null) { return false; }
 
     public void RaiseEvent(object triggerCard, object eventCode, object eg, object ep, object ev, object re, object r)
@@ -927,22 +949,45 @@ public class LuaDuel
          if (arg3 != null) argsList.Add(arg3);
          if (arg4 != null) argsList.Add(arg4);
 
+        int targetPl = targetPlayer;
+        int targetPa = targetParam;
+        LuaGroup targGr = currentTargetGroup;
+        
+        int chainIndex = ConvertToInt(chainc);
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null)
+        {
+            if (chainIndex == 0 && CardEffectManager.Instance.chainManager.resolvingLink != null)
+            {
+                targetPl = CardEffectManager.Instance.chainManager.resolvingLink.targetPlayer;
+                targetPa = CardEffectManager.Instance.chainManager.resolvingLink.targetParam;
+                targGr = CardEffectManager.Instance.chainManager.resolvingLink.targetGroup;
+            }
+            else if (chainIndex > 0)
+            {
+                var specificLink = CardEffectManager.Instance.chainManager.currentChain.Find(l => l.chainIndex == chainIndex);
+                if (specificLink != null)
+                {
+                    targetPl = specificLink.targetPlayer;
+                    targetPa = specificLink.targetParam;
+                    targGr = specificLink.targetGroup;
+                }
+            }
+        }
+
         foreach (object o in argsList)
         {
             int arg = ConvertToInt(o);
             if (arg == 1) // CHAININFO_TARGET_PLAYER
             {
-                // Debug.Log($"[Surgical Log] Retornando targetPlayer: {targetPlayer}");
-                returns.Add(DynValue.NewNumber(targetPlayer));
+                returns.Add(DynValue.NewNumber(targetPl));
             }
             else if (arg == 2) // CHAININFO_TARGET_PARAM
             {
-                // Debug.Log($"[Surgical Log] Retornando targetParam: {targetParam}");
-                returns.Add(DynValue.NewNumber(targetParam));
+                returns.Add(DynValue.NewNumber(targetPa));
             }
-            else if (arg == 16 || arg == 8388608) // CHAININFO_TARGET_CARDS (0x10)
+            else if (arg == 3 || arg == 16 || arg == 8388608) // CHAININFO_TARGET_CARDS (3 injetado pelo nosso Core)
             {
-                LuaGroup g = currentTargetGroup != null ? currentTargetGroup : new LuaGroup();
+                LuaGroup g = targGr != null ? targGr : new LuaGroup();
                 returns.Add(UserData.Create(g));
             }
             else if (arg == 64 || arg == 128 || arg == 32) // TRIGGERING_EFFECT (0x40)
@@ -973,11 +1018,14 @@ public class LuaDuel
 
     public LuaCard GetFirstTarget()
     {
-        return (currentTargetGroup != null && currentTargetGroup.GetFirst() != null) ? currentTargetGroup.GetFirst() : SafeDummyCard();
+        LuaGroup group = GetTargetCards(null);
+        return (group != null && group.GetFirst() != null) ? group.GetFirst() : SafeDummyCard();
     }
 
     public LuaGroup GetTargetCards(object e)
     {
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.resolvingLink != null)
+            return CardEffectManager.Instance.chainManager.resolvingLink.targetGroup ?? new LuaGroup();
         return currentTargetGroup != null ? currentTargetGroup : new LuaGroup();
     }
 
@@ -1445,16 +1493,15 @@ public class LuaDuel
                 try {
                     DynValue result = closure.Call(callArgs.ToArray());
                     
-                    // --- LOG DE DEBUG DO FILTRO ---
-                    // string argsLog = extraArgs != null ? string.Join(", ", extraArgs) : "N/A";
                     bool passed = result.Type == DataType.Boolean && result.Boolean;
-                    // Debug.Log($"[Filtro LUA] Avaliando: {c.unityData?.name} | Args extras: [{argsLog}] | Aprovado: {passed}");
+                    
+                    Debug.Log($"<color=cyan>[Filtro LUA]</color> Avaliando alvo: '{c.unityData?.name}' | Aprovado no filtro? {passed}");
                     
                     if (result.Type == DataType.Boolean && result.Boolean) {
                         group.AddCard(c);
                     }
                 } catch (System.Exception ex) {
-                    Debug.LogWarning($"[LuaDuel] Erro ao executar filterFunc em IsExistingMatchingCard para a carta {c.unityData?.name}: {ex.Message}");
+                    Debug.LogWarning($"<color=red>[Filtro LUA]</color> Erro fatal ao avaliar '{c.unityData?.name}': {ex.Message}");
                 }
             }
             else
@@ -1469,7 +1516,8 @@ public class LuaDuel
     {
         LuaGroup group = GetMatchingGroup(filterFunc, player, locSelf, locOpp, excluded, extraArgs);
         bool res = group.GetCount() >= ConvertToInt(count);
-        // Debug.Log($"[LuaDuel] IsExistingMatchingCard consultado -> Result: {res} (Encontrou {group.GetCount()} cartas)");
+        
+        Debug.Log($"<color=orange>[LuaDuel]</color> Validando alvo no campo | Requisito: >= {ConvertToInt(count)} alvos | Encontrou: {group.GetCount()} | Permitido? {res}");
         return res;
     }
 
@@ -1485,6 +1533,9 @@ public class LuaDuel
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
 
+        string promptTitle = lastHintMsg;
+        lastHintMsg = "Selecione um alvo"; // Reseta para o próximo uso
+
         // Combina o 'excluded' do LUA com o nosso 'lastCostGroup' do C#
         LuaGroup finalExcluded = new LuaGroup();
         if (excluded is LuaGroup exGroup)
@@ -1498,10 +1549,19 @@ public class LuaDuel
         if (this.lastCostGroup != null)
         {
             finalExcluded.cards.AddRange(this.lastCostGroup.cards);
-            Debug.Log($"[LuaDuel] Excluindo {this.lastCostGroup.GetCount()} carta(s) paga(s) como custo da seleção de alvo.");
         }
 
-        LuaGroup candidates = GetMatchingGroup(filterFunc, ConvertToInt(player), ConvertToInt(locSelf), ConvertToInt(locOpp), finalExcluded, extraArgs);
+        int lSelf = ConvertToInt(locSelf);
+        int lOpp = ConvertToInt(locOpp);
+
+        // Fallback para assinaturas incompletas
+        if (lSelf == 0 && lOpp == 0)
+        {
+            lSelf = 0x3C;
+            lOpp = 0x3C;
+        }
+
+        LuaGroup candidates = GetMatchingGroup(filterFunc, ConvertToInt(player2), lSelf, lOpp, finalExcluded, extraArgs);
 
         if (candidates.cards.Count == 0)
         {
@@ -1516,7 +1576,10 @@ public class LuaDuel
             LuaGroup selectedGroup = new LuaGroup();
             selectedGroup.AddCard(candidates.cards[0]);
             CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
-            this.currentTargetGroup = selectedGroup;
+            
+            if (this.currentTargetGroup == null) this.currentTargetGroup = selectedGroup;
+            else this.currentTargetGroup.cards.AddRange(selectedGroup.cards);
+            
             this.lastCostGroup = null; // Limpa a memória de custo
             CardEffectManager.Instance.isWaitingForLuaYield = false;
             return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectTarget") });
@@ -1527,37 +1590,67 @@ public class LuaDuel
         {
             LuaGroup aiChoice = OpponentAI.Instance.SelectLuaTargets(candidates, ConvertToInt(min), ConvertToInt(max));
             CardEffectManager.Instance.yieldReturnValue = UserData.Create(aiChoice);
-            this.currentTargetGroup = aiChoice;
+            
+            if (this.currentTargetGroup == null) this.currentTargetGroup = aiChoice;
+            else this.currentTargetGroup.cards.AddRange(aiChoice.cards);
+            
             this.lastCostGroup = null; // Limpa a memória de custo
             CardEffectManager.Instance.isWaitingForLuaYield = false;
             return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectTarget") });
         }
 
-        // Extrai CardData dos candidatos para a UI de seleção
-        List<CardData> selectableData = new List<CardData>();
-        foreach (var c in candidates.cards)
+        if (GameManager.Instance != null)
         {
-            if (c.unityData != null) selectableData.Add(c.unityData);
-        }
+            // Extrai a lista estrita de CardDisplays
+            List<CardDisplay> exactTargets = new List<CardDisplay>();
+            foreach (var c in candidates.cards)
+            {
+                if (c.unityCard != null && c.unityCard.isOnField) exactTargets.Add(c.unityCard);
+            }
 
-        if (GameManager.Instance != null && selectableData.Count > 0)
-        {
-            int combinedLoc = ConvertToInt(locSelf) | ConvertToInt(locOpp);
-            bool forceModal = (combinedLoc & (0x01 | 0x10 | 0x20 | 0x40)) != 0; // DECK, GRAVE, REMOVED, EXTRA
+            // Se todas as cartas alvo estão no campo, usa a Seleção Estrita por Display (Evita duplicação de CardData)
+            if (exactTargets.Count == candidates.cards.Count && exactTargets.Count > 0)
+            {
+                GameManager.Instance.OpenDirectCardDisplaySelection(exactTargets, promptTitle, ConvertToInt(min), ConvertToInt(max), (selectedList) => {
+                    LuaGroup selectedGroup = new LuaGroup();
+                    foreach (var display in selectedList)
+                    {
+                        LuaCard match = candidates.cards.Find(lc => lc.unityCard == display);
+                        if (match != null) selectedGroup.AddCard(match);
+                        else selectedGroup.AddCard(new LuaCard(display));
+                    }
+                    CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
+                    
+                    if (this.currentTargetGroup == null) this.currentTargetGroup = selectedGroup;
+                    else this.currentTargetGroup.cards.AddRange(selectedGroup.cards);
+                    
+                    this.lastCostGroup = null; 
+                    CardEffectManager.Instance.isWaitingForLuaYield = false;
+                }, HighlightCategory.GenericTarget);
+            }
+            else
+            {
+                // Fallback (ex: selecionando do Cemitério abre a Modal)
+                List<CardData> selectableData = new List<CardData>();
+                foreach (var c in candidates.cards) if (c.unityData != null) selectableData.Add(c.unityData);
 
-            GameManager.Instance.OpenCardMultiSelection(selectableData, GetHintMessageString(500), ConvertToInt(min), ConvertToInt(max), (selectedList) => {
-                LuaGroup selectedGroup = new LuaGroup();
-                foreach (var data in selectedList)
-                {
-                    LuaCard match = candidates.cards.Find(lc => lc.unityData == data && !selectedGroup.cards.Contains(lc));
-                    if (match != null) selectedGroup.AddCard(match);
-                    else selectedGroup.AddCard(new LuaCard(data)); // Fallback se não encontrar a instância original
-                }
-                CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
-                this.currentTargetGroup = selectedGroup; // Salva para o GetFirstTarget()
-                this.lastCostGroup = null; // Limpa a memória de custo
-                CardEffectManager.Instance.isWaitingForLuaYield = false;
-            }, HighlightCategory.GenericTarget, forceModal);
+                GameManager.Instance.OpenCardMultiSelection(selectableData, promptTitle, ConvertToInt(min), ConvertToInt(max), (selectedList) => {
+                    LuaGroup selectedGroup = new LuaGroup();
+                    foreach (var data in selectedList)
+                    {
+                        LuaCard match = candidates.cards.Find(lc => lc.unityData == data && !selectedGroup.cards.Contains(lc));
+                        if (match != null) selectedGroup.AddCard(match);
+                        else selectedGroup.AddCard(new LuaCard(data));
+                    }
+                    CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
+                    
+                    if (this.currentTargetGroup == null) this.currentTargetGroup = selectedGroup;
+                    else this.currentTargetGroup.cards.AddRange(selectedGroup.cards);
+                    
+                    this.lastCostGroup = null; 
+                    CardEffectManager.Instance.isWaitingForLuaYield = false;
+                }, HighlightCategory.GenericTarget, true); // Força Modal para garantir seleção de pilhas invisíveis
+            }
         }
         else
         {
@@ -1578,6 +1671,9 @@ public class LuaDuel
     {
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
+        
+        string promptTitle = lastHintMsg;
+        lastHintMsg = "Selecione"; // Reseta
 
         LuaGroup finalExcluded = new LuaGroup();
         if (excluded is LuaGroup exGroup)
@@ -1593,7 +1689,7 @@ public class LuaDuel
             finalExcluded.cards.AddRange(this.lastCostGroup.cards);
         }
 
-        LuaGroup candidates = GetMatchingGroup(filterFunc, ConvertToInt(player), ConvertToInt(locSelf), ConvertToInt(locOpp), finalExcluded, extraArgs);
+        LuaGroup candidates = GetMatchingGroup(filterFunc, ConvertToInt(player2), ConvertToInt(locSelf), ConvertToInt(locOpp), finalExcluded, extraArgs);
         if (candidates.cards.Count == 0) {
             CardEffectManager.Instance.isWaitingForLuaYield = false;
             this.lastCostGroup = null; // Limpa a memória de custo
@@ -1606,7 +1702,6 @@ public class LuaDuel
             LuaGroup aiChoice = OpponentAI.Instance.SelectLuaTargets(candidates, ConvertToInt(min), ConvertToInt(max));
             // Debug.Log($"<color=orange>[LuaDuel] Bypass IA (SelectMatchingCard) -> Opções válidas: {candidates.cards.Count}, IA escolheu: {aiChoice.cards.Count}</color>");
             CardEffectManager.Instance.yieldReturnValue = UserData.Create(aiChoice);
-            this.currentTargetGroup = aiChoice;
             CardEffectManager.Instance.isWaitingForLuaYield = false;
             this.lastCostGroup = null; // Limpa a memória de custo
             return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectMatchingCard") });
@@ -1622,7 +1717,7 @@ public class LuaDuel
             int combinedLoc = ConvertToInt(locSelf) | ConvertToInt(locOpp);
             bool forceModal = (combinedLoc & (0x01 | 0x10 | 0x20 | 0x40)) != 0;
 
-            GameManager.Instance.OpenCardMultiSelection(selectableData, "Escolha um alvo", ConvertToInt(min), ConvertToInt(max), (selectedList) => {
+            GameManager.Instance.OpenCardMultiSelection(selectableData, promptTitle, ConvertToInt(min), ConvertToInt(max), (selectedList) => {
                 LuaGroup selectedGroup = new LuaGroup();
                 foreach (var data in selectedList)
                 {
@@ -1631,7 +1726,6 @@ public class LuaDuel
                     else selectedGroup.AddCard(new LuaCard(data));
                 }
                 CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
-                this.currentTargetGroup = selectedGroup; // Salva para o GetFirstTarget()
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
                 this.lastCostGroup = null; // Limpa a memória de custo
             }, category, forceModal);
@@ -1651,8 +1745,16 @@ public class LuaDuel
         return InternalSelectMatchingCard(player, filterFunc, player, 0x04, 0, ConvertToInt(min), ConvertToInt(max), excluded, HighlightCategory.Tribute, extraArgs);
     }
 
-    public int GetTargetPlayer() { return targetPlayer; }
-    public int GetTargetParam() { return targetParam; }
+    public int GetTargetPlayer() { 
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.resolvingLink != null)
+            return CardEffectManager.Instance.chainManager.resolvingLink.targetPlayer;
+        return targetPlayer; 
+    }
+    public int GetTargetParam() { 
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.resolvingLink != null)
+            return CardEffectManager.Instance.chainManager.resolvingLink.targetParam;
+        return targetParam; 
+    }
 
     public DynValue TossCoin(object player, object count)
     {

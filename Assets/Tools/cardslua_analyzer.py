@@ -140,7 +140,8 @@ class LuaScriptAnalyzer:
         self.load_game_data()
         self.initialize_symbol_table()
 
-        lua_files_on_disk = {p.stem[1:] for p in self.scripts_dir.glob("c*.lua") if p.stem.startswith('c')}
+        lua_files_map = {p.stem[1:]: p for p in self.scripts_dir.rglob("c*.lua") if p.stem.startswith('c')}
+        lua_files_on_disk = set(lua_files_map.keys())
         
         # Check for missing/extraneous scripts
         missing_scripts = self.expected_lua_scripts - lua_files_on_disk
@@ -161,7 +162,7 @@ class LuaScriptAnalyzer:
         for lua_file_stem in lua_files_on_disk:
             processed_count += 1
             card_id = lua_file_stem
-            lua_file_path = self.scripts_dir / f"c{card_id}.lua"
+            lua_file_path = lua_files_map[card_id]
             
             try:
                 content = lua_file_path.read_text(encoding='utf-8')
@@ -285,7 +286,7 @@ class LuaScriptAnalyzer:
     def generate_reports(self):
         """Interactive prompt to save reports in multiple formats."""
         report_data = {
-            'total_scripts_on_disk': len(list(self.scripts_dir.glob("c*.lua"))),
+            'total_scripts_on_disk': len(list(self.scripts_dir.rglob("c*.lua"))),
             'expected_scripts_from_cards_json': len(self.expected_lua_scripts),
             'valid_scripts_analyzed': len(self.valid_scripts),
             'scripts_with_errors_or_issues': len(self.errors),
@@ -383,7 +384,7 @@ def main():
     # Define paths relative to the script's location
     base_dir = Path(__file__).resolve().parent.parent.parent # YuGiOh_Forbidden_Chaos/Assets
     
-    scripts_dir = get_path_with_fallback(base_dir / "Scripts" / "LuaScripts", "Pasta LuaScripts", is_dir=True)
+    scripts_dir = get_path_with_fallback(base_dir / "Scripts", "Pasta Raiz dos Scripts (ex: Scripts)", is_dir=True)
     cards_json_path = get_path_with_fallback(base_dir / "Scripts" / "Cards" / "cards.json", "Arquivo cards.json", filetypes=[("JSON", "*.json")])
     lua_api_cs_path = get_path_with_fallback(base_dir / "Scripts" / "LuaAPI.cs", "Arquivo LuaAPI.cs", filetypes=[("C#", "*.cs")])
     card_effect_manager_cs_path = get_path_with_fallback(base_dir / "Scripts" / "CardEffectManager.cs", "Arquivo CardEffectManager.cs", filetypes=[("C#", "*.cs")])

@@ -6,7 +6,10 @@ using System;
 
 // ==============================================================================
 // 2. CLASSE CARD (Representação de uma Carta Física)
-// Chamado no Lua como: c:GetAttack()
+// Onde a Mágica Acontece: Intercepta as chamadas de propriedades 'c:' do OCGCore.
+// Tratativas Críticas & Dependências: 
+// - CardData.cs / CardDisplay.cs: Acessa os status reais do Unity (ATK, DEF, Level).
+// - GameManager.cs: Verifica pilhas, zonas e propriedades da partida para filtros.
 // ==============================================================================
 [MoonSharpUserData]
 public class LuaCard
@@ -103,7 +106,9 @@ public class LuaCard
     {
         if (unityData == null || string.IsNullOrEmpty(unityData.type)) return 0;
         int t = 0;
-        string typeStr = unityData.type.Trim().ToUpperInvariant();
+        
+        // Usa o typeline completo da API se existir (Para suportar Tuner, Synchro, etc), senão usa o type básico da UI
+        string typeStr = (!string.IsNullOrEmpty(unityData.typeline) ? unityData.typeline : unityData.type).Trim().ToUpperInvariant();
         string propStr = unityData.property != null ? unityData.property.Trim().ToUpperInvariant() : "";
 
         if (typeStr.Contains("MONSTER")) t |= 0x1;
@@ -233,8 +238,31 @@ public class LuaCard
     public bool IsSummonableCard() { return true; }
     public LuaGroup GetMaterial() { return new LuaGroup(); }
     public int GetEffectCount(object code) { return 0; }
-    public int GetBaseAttack() { return unityCard != null ? unityCard.originalAtk : (unityData != null ? unityData.atk : 0); }
-    public int GetBaseDefense() { return unityCard != null ? unityCard.originalDef : (unityData != null ? unityData.def : 0); }
+    
+    public int GetBaseAttack() 
+    { 
+        int baseAtk = unityCard != null ? unityCard.originalAtk : (unityData != null ? unityData.atk : 0); 
+        if (registeredEffects != null) {
+            var eff = registeredEffects.FindLast(e => e.type == 1 && e.code == 7); // 7 = EFFECT_SET_BASE_ATTACK
+            if (eff != null) {
+                object valObj = eff.GetValue();
+                if (valObj is double || valObj is long) baseAtk = System.Convert.ToInt32(valObj);
+            }
+        }
+        return baseAtk;
+    }
+    public int GetBaseDefense() 
+    { 
+        int baseDef = unityCard != null ? unityCard.originalDef : (unityData != null ? unityData.def : 0); 
+        if (registeredEffects != null) {
+            var eff = registeredEffects.FindLast(e => e.type == 1 && e.code == 8); // 8 = EFFECT_SET_BASE_DEFENSE
+            if (eff != null) {
+                object valObj = eff.GetValue();
+                if (valObj is double || valObj is long) baseDef = System.Convert.ToInt32(valObj);
+            }
+        }
+        return baseDef;
+    }
     public bool IsControlerCanBeChanged() { return true; }
     public int GetSummonType() { return 0; }
     public int GetPreviousLocation() { return 0; }
@@ -440,9 +468,71 @@ public class LuaCard
                 }
             }
         }
+        else if (e.type == 0x0001) // Efeito SINGLE aplicado diretamente nesta carta
+        {
+            // Se o código for de ATK, DEF ou Level, força a atualização visual imediatamente
+            if ((e.code >= 1 && e.code <= 8) || e.code == 10)
+            {
+                GameManager.Instance.RefreshAllCardsVisuals();
+            }
+        }
     }
 
-    public bool IsSetCard(params object[] setCodes) { return true; }
+    public bool IsSetCard(params object[] setCodes) 
+    { 
+        if (unityData == null || string.IsNullOrEmpty(unityData.name)) return false;
+        string arch = unityData.archetype ?? "";
+        string cardName = unityData.name.ToLowerInvariant();
+        
+        string codesLog = string.Join(", ", setCodes);
+        Debug.Log($"<color=yellow>[IsSetCard]</color> O LUA quer saber se '{unityData.name}' (Arquétipo: '{arch}') possui o código: {codesLog}");
+
+        foreach(var s in setCodes)
+        {
+            int code = ConvertToInt(s) & 0xffff; 
+            
+            // 1. Checagem Oficial de Arquétipo (via Banco de Dados / JSON)
+            if (!string.IsNullOrEmpty(arch) && arch != "None")
+            {
+                if (code == 0x04 && arch.Contains("Amazoness")) { Debug.Log($"<color=green>[IsSetCard]</color> '{unityData.name}' validado com sucesso como Amazoness (0x04)!"); return true; }
+                if (code == 0x45 && arch.Contains("Archfiend")) return true;
+                if (code == 0x2e && arch.Contains("Gravekeeper")) return true;
+                if (code == 0x2b && arch.Contains("Ninja")) return true;
+                if (code == 0x3b && arch.Contains("Red-Eyes")) return true;
+                if (code == 0xdd && arch.Contains("Blue-Eyes")) return true;
+                if (code == 0xa2 && arch.Contains("Magician")) return true;
+                if (code == 0x10a2 && arch.Contains("Dark Magician")) return true;
+                if (code == 0x40 && arch.Contains("Exodia")) return true;
+                if (code == 0x52 && arch.Contains("Guardian")) return true;
+                if (code == 0x62 && arch.Contains("Toon")) return true;
+                if (code == 0x64 && arch.Contains("Harpie")) return true;
+                if (code == 0x3a && arch.Contains("Ojama")) return true;
+                if (code == 0x08 && arch.Contains("HERO")) return true;
+            }
+
+            // 2. Fallback de Segurança (Nome da Carta)
+            if (code == 0x04 && cardName.Contains("amazoness")) return true;
+            if (code == 0x45 && cardName.Contains("archfiend")) return true;
+            if (code == 0x2e && cardName.Contains("gravekeeper")) return true;
+            if (code == 0x2b && cardName.Contains("ninja")) return true;
+            if (code == 0x3b && cardName.Contains("red-eyes")) return true;
+            if (code == 0xdd && cardName.Contains("blue-eyes")) return true;
+            if (code == 0xa2 && cardName.Contains("magician")) return true;
+            if (code == 0x10a2 && cardName.Contains("dark magician")) return true;
+            if (code == 0x40 && (cardName.Contains("exodia") || cardName.Contains("forbidden one"))) return true;
+            if (code == 0x52 && cardName.Contains("guardian")) return true;
+            if (code == 0x62 && cardName.Contains("toon")) return true;
+            if (code == 0x64 && cardName.Contains("harpie")) return true;
+            if (code == 0x3a && cardName.Contains("ojama")) return true;
+            if (code == 0x08 && cardName.Contains("hero")) return true;
+        }
+        
+        return false; // CORRIGIDO: Este fallback era o que quebrava o jogo tratando toda carta como arquétipo!
+    }
+        
+    // Muitos scripts LUA do EDOPro chamam estes métodos em vez de IsSetCard
+    public bool IsHasSetcode(params object[] setCodes) { return IsSetCard(setCodes); }
+    public bool IsHasSetCard(params object[] setCodes) { return IsSetCard(setCodes); }
     
     public LuaEffect CheckActivateResult(object b) 
     { 

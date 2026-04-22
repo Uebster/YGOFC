@@ -177,6 +177,23 @@ Esta é a clássica carta de **Side Deck** (Baralho Auxiliar). Ela brilha contra
 * **O Pesadelo de Bandit Keith:** Durante a campanha, oponentes como Bandit Keith e outros capangas da Kaiba Corp usam Baralhos inteiramente compostos por Máquinas de alto ataque (como *Barrel Dragon* e *Slot Machine*). Usar *Acid Rain* destrói o exército inteiro do oponente de uma só vez, sem custar nenhum Ponto de Vida a você.
 * **Atenção ao "Fogo Amigo":** Como a chuva atinge o campo inteiro, **seus próprios** monstros do Tipo Máquina também derreterão. É uma carta que exige precisão (ou que o seu deck seja composto por guerreiros, dragões ou magos para se aproveitar da tempestade sem sofrer as consequências).
 
+## ID: DM0046 - Amazoness Spellcaster (Password: 81325903)
+
+A carta **"Amazoness Spellcaster"** (Feiticeira Amazona) é uma Carta Mágica Normal (Normal Spell) com um efeito de inversão de poder projetado para destruir Boss Monsters (Monstros Chefões).
+
+> *"Target 1 "Amazoness" monster you control and 1 face-up monster your opponent controls; switch their original ATK until the end of this turn."*
+
+### Como ela funciona na prática:
+
+1. **Duplo Alvo (Targeting):** Você precisa escolher dois alvos simultâneos para a carta ativar: 1 monstro do arquétipo "Amazoness" que você controla, e 1 monstro virado para cima no campo do oponente.
+2. **A Troca de Poder (Stat Swap):** Ao resolver, a magia pega o ATK Original de ambos os monstros e os inverte até o final do turno. 
+
+### 💡 O grande truque dessa carta:
+Esta é a carta definitiva de "Davi contra Golias" do arquétipo Amazoness.
+
+* **Matando Deuses:** Se o oponente invocar um *Blue-Eyes White Dragon* (3000 ATK) e você tiver apenas uma *Amazoness Paladin* (1700 ATK) no campo. Você ativa a mágica, alveja os dois. Imediatamente, a sua Paladina sobe para 3000 de ATK e o Blue-Eyes cai para 1700. Você então ataca o Dragão com a sua guerreira, destruindo-o e causando 1300 de dano ao oponente no processo!
+* **A Identidade do Arquétipo (SetCode):** Nas sombras da Engine, o LUA pergunta ao C# se a carta é `SET_AMAZONESS` (Código `0x04`). Como o nosso banco de dados não tem uma coluna de "Arquétipo", o C# usa uma heurística genial: ele verifica se o ID é `0x04` e, em caso positivo, varre o **nome** da sua carta para ver se a palavra "Amazoness" está escrita lá!
+
 ## ID: DM0853 - Heavy Storm (Password: 19613556)
 
 A carta **"Heavy Storm"** (Tempestade Pesada) é uma Carta Mágica Normal (Normal Spell) e é, historicamente, a "Rainha das Remoções" no formato Goat e em toda a era clássica do Yu-Gi-Oh!

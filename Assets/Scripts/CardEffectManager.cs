@@ -93,12 +93,13 @@ public class CardEffectManager : MonoBehaviour
                 }
             }
 
-            // A carta que está sendo ativada ainda não está no campo, então contamos ela também.
-            // Se já existem 2 no campo, esta será a 3ª.
-            if (count7 >= 2)
+            // O GameManager primeiro move a carta para a zona e a vira para cima, DEPOIS chama este método.
+            // Isso significa que a carta ATUAL já foi contada no loop acima! O alvo é 3 cartas em campo.
+            if (count7 >= 3)
             {
-                cards7.Add(card); // Adiciona a carta atual à lista para ser destruída
-                StartCoroutine(Jackpot7Routine(cards7, card.isPlayerCard));                onComplete?.Invoke();
+                if (!cards7.Contains(card)) cards7.Add(card); // Garantia extra caso a mecânica mude
+                StartCoroutine(Jackpot7Routine(cards7, card.isPlayerCard));
+                onComplete?.Invoke();
                 return; // Ignora o LUA e executa a nossa corrotina visual!
             }
         }
@@ -220,21 +221,21 @@ public class CardEffectManager : MonoBehaviour
             if (effect.conditionFunc != null) {
                 DynValue res = luaEngine.Call(effect.conditionFunc, effect, arg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0));
                 if (res.Type == DataType.Boolean && !res.Boolean) {
-                    Debug.Log($"[Lua Validation] Condition falhou para {luaCard.unityData.name}");
+                    Debug.LogWarning($"<color=yellow>[Lua Validation]</color> Condition falhou para a carta {luaCard.unityData.name}");
                     return false;
                 }
             }
             if (effect.costFunc != null) {
                 DynValue res = luaEngine.Call(effect.costFunc, effect, arg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), DynValue.NewNumber(0)); // chk = 0
                 if (res.Type == DataType.Boolean && !res.Boolean) {
-                    Debug.Log($"[Lua Validation] Cost falhou para {luaCard.unityData.name}");
+                    Debug.LogWarning($"<color=yellow>[Lua Validation]</color> Cost (chk=0) falhou para a carta {luaCard.unityData.name}");
                     return false;
                 }
             }
             if (effect.targetFunc != null) {
                 DynValue res = luaEngine.Call(effect.targetFunc, effect, arg2, eg, DynValue.NewNumber(0), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(0), 0, null); // chk = 0
                 if (res.Type == DataType.Boolean && !res.Boolean) {
-                    Debug.Log($"[Lua Validation] Target falhou para {luaCard.unityData.name}");
+                    Debug.LogWarning($"<color=yellow>[Lua Validation]</color> Target (chk=0) falhou para a carta {luaCard.unityData.name}!");
                     return false;
                 }
             }
@@ -330,7 +331,7 @@ public class CardEffectManager : MonoBehaviour
                 string yieldCmd = result.String;
                 if (yieldCmd == "WaitChain")
                 {
-                    yield return new WaitWhile(() => isChainResolving);
+                    yield return new WaitWhile(() => chainManager.activeChainTasks > 0 || eventManager.isProcessingTriggers);
                 }
             else if (yieldCmd.StartsWith("FastEffectWindow"))
             {
@@ -376,6 +377,16 @@ public class CardEffectManager : MonoBehaviour
         
         // Garante que a espada de mira suma se o ataque for abortado por uma Armadilha (ex: Mirror Force)
         if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
+
+        // Limpa a memória de ataque para evitar ataques infinitos e fantasmas
+        if (luaDuel != null)
+        {
+            if (luaDuel.currentAttacker != null && luaDuel.currentAttacker.unityCard != null)
+                luaDuel.currentAttacker.unityCard.SetAttackSelectionVisual(false);
+            luaDuel.currentAttacker = null;
+            luaDuel.currentAttackTarget = null;
+        }
+        if (GameManager.Instance != null) GameManager.Instance.RefreshAttackIndicators();
     }
 
     public void TriggerLuaEvent(int eventCode, object triggerArgs) => eventManager.TriggerLuaEvent(eventCode, triggerArgs);
@@ -481,7 +492,7 @@ public class CardEffectManager : MonoBehaviour
         {
             var req = fastEffectQueue.Peek();
             
-            yield return new WaitWhile(() => isChainResolving || currentChain.Count > 0);
+            yield return new WaitWhile(() => chainManager.activeChainTasks > 0 || eventManager.isProcessingTriggers);
             isFastEffectWindowOpen = true;
             
             // Aguarda a Unity limpar os GameObjects destruídos do tabuleiro para liberar espaço
@@ -764,7 +775,21 @@ public class CardEffectManager : MonoBehaviour
 
     public void CleanAllExpiredModifiers()
     {
-        // O LUA Core já cuida da limpeza das Closures de Turno (RESET_PHASE + PHASE_END)
+        // Limpeza de Efeitos Temporários registrados diretamente nas cartas (ex: Amazoness Spellcaster)
+        foreach(var kvp in activeLuaCards)
+        {
+            if (kvp.Value != null && kvp.Value.registeredEffects != null)
+            {
+                // 0x1000 = RESET_PHASE, 0x0200 = PHASE_END
+                kvp.Value.registeredEffects.RemoveAll(e => (e.GetReset() & 0x1000) != 0 || (e.GetReset() & 0x0200) != 0);
+            }
+        }
+        
+        // Força a UI a recalcular tudo agora que os bônus sumiram
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.RefreshAllCardsVisuals();
+        }
     }
 
     public void RollDice(int amount, System.Action<List<int>> onResult)

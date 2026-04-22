@@ -6,6 +6,7 @@ public class CardData
     public string id;
     public string name;
     public string type;
+    public string typeline;
     public string description;
     public int atk;
     public int def;
@@ -17,6 +18,11 @@ public class CardData
     public string pool;
     public string password;
     public string goat_banlist;
+    public string archetype;
+    public string first_set;
+    public int scale;
+    public int linkval;
+    public System.Collections.Generic.List<string> linkmarkers;
     public System.Collections.Generic.List<string> fusion_materials; // Lista de nomes dos materiais de fusão
 }
 

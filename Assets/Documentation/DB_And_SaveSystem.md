@@ -16,13 +16,18 @@ Cada carta é um objeto com os seguintes campos:
 | `id` | string | Identificador único de 4 dígitos (ex: "0001"). |
 | `name` | string | Nome da carta (ex: "Blue-Eyes White Dragon"). |
 | `description` | string | Texto de efeito ou flavor text. |
-| `type` | string | Categoria principal (Monster, Spell, Trap). **Deve incluir** subtipos exatos (ex: "Monster (Fusion)"). Vital para a engine diferenciar cartas no Extra Deck. |
+| `type` | string | Categoria principal e subtipo simplificado para a UI (ex: "Monster (Fusion)", "Spell"). |
+| `typeline` | string | A string crua e oficial da API preservada (ex: "Flip Effect Monster", "Synchro Tuner Monster"). Vital para Filtros OCGCore avançados. |
 | `race` | string | Tipo do monstro (Dragon, Warrior) ou Propriedade da magia/armadilha (Equip, Field, Continuous). |
 | `attribute` | string | Atributo (LIGHT, DARK, FIRE, etc). |
 | `level` | int | Nível do monstro (1-12). |
 | `atk` | int | Pontos de Ataque base. |
 | `def` | int | Pontos de Defesa base. |
 | `password` | string | Código oficial de 8 dígitos da carta. |
+| `archetype` | string | Nome do arquétipo associado (ex: "Amazoness", "Blue-Eyes"). Retorna `""` se não houver. |
+| `first_set` | string | Primeira coleção oficial onde a carta foi impressa. |
+| `scale` | int | Escala de Pêndulo (Preparação futura para Master Rule 3+). |
+| `linkval` / `linkmarkers` | int / List | Valor Link e vetor de setas (Preparação futura para Master Rule 4+). |
 | `image_filename` | string | Caminho relativo dentro de StreamingAssets para a imagem. |
 | `pool` | string | (Injetado via Python) Define a raridade/tier da carta (ex: "3.4"). |
 
@@ -81,8 +86,10 @@ O script-mestre central de construção do `cards.json`. Flexível e multi-forma
 A aquisição de dados brutos foi centralizada em uma única e poderosa ferramenta, `download_cards_ultimate.py`. Este script não é uma simples ferramenta de linha de comando, mas sim uma aplicação web local completa, construída com Flask.
 
 *   **Interface Web (UI):** Ao ser executado, o script inicia um servidor em `http://localhost:5000` que renderiza uma interface gráfica no navegador. A partir dela, o desenvolvedor pode configurar e disparar diferentes tarefas de extração.
+*   **Preparação Multi-Eras:** Inclui presets automáticos de datas para fatiar o banco de dados oficial em eras exatas (Clássica/DM, GX, 5D's, ZEXAL, ARC-V, VRAINS, MR5). O banco agora suporta Syncros, Xyz e Links intactos, caso desejado.
+*   **Prefixo Inteligente de Imagens:** Através de um botão nativo do Explorer, o usuário seleciona a pasta alvo (ex: `DMCardImages`). A ferramenta extrai o prefixo automaticamente e injeta direto no JSON, blindando a engine C# contra problemas de quebra de diretório (salvando como `DMCardImages/0001 - Carta.jpg`).
 *   **Multi-Funcionalidade ("Ultimate Extractor"):** A ferramenta pode executar uma variedade de tarefas de forma independente:
-    *   **Gerar TXT/CSV:** Cria listas de cartas formatadas com colunas selecionáveis.
+    *   **Gerar TXT/CSV:** Cria listas de cartas formatadas com colunas selecionáveis (incluindo as novas opções como Typeline Cru e Link Markers).
     *   **Gerar JSON Master:** Produz o `cards_ultimate.json`, uma versão mais completa e estruturada que a usada pelo jogo, servindo como uma base de dados crua.
     *   **Baixar Imagens (HD):** Utiliza Multi-Threading para baixar rapidamente todas as imagens de alta resolução da API, incluindo artes alternativas.
     *   **Baixar Scripts LUA:** Busca os scripts de efeito de múltiplos repositórios do YGOPro (ProjectIgnis, etc.) para garantir a maior cobertura possível.

@@ -6,6 +6,9 @@ using System;
 
 // ==============================================================================
 // 5. CLASSES DE PROCEDIMENTO (FUSÃO, SYNCHRO, ETC)
+// Onde a Mágica Acontece: Fornece classes vazias exigidas pela sintaxe do EDOPro.
+// Tratativas Críticas & Dependências: 
+// - OCGCore: Cartas invocam 'Fusion.AddProcMix' ou 'Spirit.AddProcedure', que não devem quebrar a Unity.
 // ==============================================================================
 [MoonSharpUserData] public class Fusion { 
     public static void AddProcMix(params object[] args) { } 

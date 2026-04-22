@@ -2,7 +2,16 @@ using UnityEngine;
 using MoonSharp.Interpreter;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Linq;
 
+// ==============================================================================
+// CLASSE SCRIPT LOADER (O Compilador e Sanitizador)
+// Onde a Mágica Acontece: Lê os arquivos .lua do disco e os converte para a Unity.
+// Tratativas Críticas & Dependências: 
+// - Regex: O OCGCore usa Bitwise Operators do Lua 5.3 (>>, <<, ~, |). O MoonSharp (Lua 5.2) não suporta.
+//   O Loader sanitiza e converte tudo on-the-fly usando bit32 e math.
+// - Cache RAM: Mantém um dicionário de scripts já carregados (activeLuaCards) para performance.
+// ==============================================================================
 public static class LuaScriptLoader
 {
     public static LuaCard EnsureCardScriptLoaded(CardDisplay card, Script luaEngine, Dictionary<CardDisplay, LuaCard> activeLuaCards)
@@ -11,7 +20,21 @@ public static class LuaScriptLoader
         if (activeLuaCards.ContainsKey(card)) return activeLuaCards[card];
         
         string cardId = card.CurrentCardData.id;
-        string scriptPath = System.IO.Path.Combine(Application.dataPath, "Scripts", "LuaScripts", $"c{cardId}.lua");
+        
+        // 1. Extrai a Era dinamicamente do ID (ex: "DM" de "DM0001")
+        string prefix = new string(cardId.TakeWhile(char.IsLetter).ToArray());
+        if (string.IsNullOrEmpty(prefix)) prefix = "DM";
+        
+        string folderName = $"{prefix}LuaScripts";
+        string scriptPath = System.IO.Path.Combine(Application.dataPath, "Scripts", folderName, $"c{cardId}.lua");
+
+        // 2. Fallback de Segurança 1: Pasta Fixa DM
+        if (!System.IO.File.Exists(scriptPath))
+            scriptPath = System.IO.Path.Combine(Application.dataPath, "Scripts", "DMLuaScripts", $"c{cardId}.lua");
+
+        // 3. Fallback de Segurança 2: Pasta Antiga Clássica
+        if (!System.IO.File.Exists(scriptPath))
+            scriptPath = System.IO.Path.Combine(Application.dataPath, "Scripts", "LuaScripts", $"c{cardId}.lua");
         
         if (!System.IO.File.Exists(scriptPath)) return null;
 
@@ -71,7 +94,22 @@ public static class LuaScriptLoader
     {
         if (data == null) return null;
         string cardId = data.id;
-        string scriptPath = System.IO.Path.Combine(Application.dataPath, "Scripts", "LuaScripts", $"c{cardId}.lua");
+        
+        // 1. Extrai a Era dinamicamente do ID
+        string prefix = new string(cardId.TakeWhile(char.IsLetter).ToArray());
+        if (string.IsNullOrEmpty(prefix)) prefix = "DM";
+        
+        string folderName = $"{prefix}LuaScripts";
+        string scriptPath = System.IO.Path.Combine(Application.dataPath, "Scripts", folderName, $"c{cardId}.lua");
+
+        // 2. Fallback de Segurança 1: Pasta Fixa DM
+        if (!System.IO.File.Exists(scriptPath))
+            scriptPath = System.IO.Path.Combine(Application.dataPath, "Scripts", "DMLuaScripts", $"c{cardId}.lua");
+
+        // 3. Fallback de Segurança 2: Pasta Antiga Clássica
+        if (!System.IO.File.Exists(scriptPath))
+            scriptPath = System.IO.Path.Combine(Application.dataPath, "Scripts", "LuaScripts", $"c{cardId}.lua");
+            
         if (!System.IO.File.Exists(scriptPath)) return null;
 
         try

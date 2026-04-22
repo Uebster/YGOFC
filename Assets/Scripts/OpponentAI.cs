@@ -677,6 +677,7 @@ public class OpponentAI : MonoBehaviour
             if (bestTarget != null) // Encontrou um alvo vantajoso
             {
                 Debug.Log($"AI: {attacker.CurrentCardData.name} ataca {bestTarget.CurrentCardData.name}!");
+                attacker.hasAttackedThisTurn = true;
                 if (CardEffectManager.Instance != null) {
                     CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(attacker);
                     CardEffectManager.Instance.luaDuel.currentAttackTarget = new LuaCard(bestTarget);
@@ -690,6 +691,7 @@ public class OpponentAI : MonoBehaviour
             else if (GetPlayerMonsterCount() == 0) // Campo aberto
             {
                 Debug.Log($"AI: {attacker.CurrentCardData.name} ataca diretamente!");
+                attacker.hasAttackedThisTurn = true;
                 if (CardEffectManager.Instance != null) {
                     CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(attacker);
                     CardEffectManager.Instance.luaDuel.currentAttackTarget = null;

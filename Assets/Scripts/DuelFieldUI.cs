@@ -197,6 +197,9 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
     {
         if (CardEffectManager.Instance == null || CardEffectManager.Instance.luaDuel.currentAttacker == null) return;
 
+        // NOVO: Previne clique duplo ou re-ataque se o monstro já iniciou o ataque
+        if (CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.hasAttackedThisTurn) return;
+
         CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.hasAttackedThisTurn = true;
         if (GameManager.Instance != null) GameManager.Instance.RefreshAttackIndicators();
 

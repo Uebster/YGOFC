@@ -6,7 +6,11 @@ using System;
 
 // ==============================================================================
 // 3. CLASSE EFFECT (Estrutura de Habilidades)
-// Chamado no Lua como: Effect.CreateEffect(c)
+// Onde a Mágica Acontece: Intercepta a criação e configuração de efeitos ('Effect.').
+// Tratativas Críticas & Dependências: 
+// - LuaCard.cs: Todo efeito pertence a um 'owner' (LuaCard).
+// - MoonSharp.Closure: Armazena os ponteiros vitais para condition, cost, target e operation
+//   que serão disparados posteriormente pelo CardEffectManager e ChainManager.
 // ==============================================================================
 [MoonSharpUserData]
 public class LuaEffect

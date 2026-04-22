@@ -1,6 +1,14 @@
 using UnityEngine;
 using MoonSharp.Interpreter;
 
+// ==============================================================================
+// CLASSE ENGINE CORE (O Coração do Interpretador MoonSharp)
+// Onde a Mágica Acontece: Instancia a Máquina Virtual Lua e mapeia a API do OCGCore.
+// Tratativas Críticas & Dependências: 
+// - LuaAPI: Registra e disponibiliza as classes (LuaDuel, LuaCard, etc.) pro LUA.
+// - Constantes: Todas as variáveis globais (LOCATION_DECK, TYPE_SPELL) nascem aqui.
+// - Closures: Fornece a tabela 'aux' com funções utilitárias do Yu-Gi-Oh nativo.
+// ==============================================================================
 public class LuaEngineCore
 {
     public Script luaEngine;
@@ -175,6 +183,8 @@ public class LuaEngineCore
         "));
 
         dummyClosureTrue = auxTable.Table.Get("TRUE").Function;
+        auxTable.Table.Set("FaceupFilter", auxTable.Table.Get("FilterFaceupFunction")); // Alias vital para scripts modernos
+        auxTable.Table.Set("Filter", auxTable.Table.Get("FilterBoolFunction")); // Alias de segurança
         luaEngine.Globals["aux"] = auxTable;
 
         // Previne o crash "attempt to call a nil value" criando uma metatable de fallback na tabela 'aux'
@@ -261,6 +271,7 @@ public class LuaEngineCore
         luaEngine.Globals["REASON_MATERIAL"] = 0x80;
         luaEngine.Globals["CHAININFO_TARGET_PLAYER"] = 1;
         luaEngine.Globals["CHAININFO_TARGET_PARAM"] = 2;
+        luaEngine.Globals["CHAININFO_TARGET_CARDS"] = 3;
 
         // Constantes de Raça e Atributo (Essenciais para Filtros funcionarem)
         luaEngine.Globals["RACE_WARRIOR"] = 0x1;
@@ -291,12 +302,18 @@ public class LuaEngineCore
         luaEngine.Globals["ATTRIBUTE_LIGHT"] = 0x20;
         luaEngine.Globals["ATTRIBUTE_DIVINE"] = 0x40;
 
+        // Constantes de Arquétipo (Setcodes)
+        luaEngine.Globals["SET_AMAZONESS"] = 0x04;
+        luaEngine.Globals["SET_ARCHFIEND"] = 0x45;
+
         // Constantes de Status Oficiais do OCGCore
         luaEngine.Globals["EFFECT_UPDATE_ATTACK"] = 1;
         luaEngine.Globals["EFFECT_SET_ATTACK"] = 2;
         luaEngine.Globals["EFFECT_SET_ATTACK_FINAL"] = 3;
         luaEngine.Globals["EFFECT_UPDATE_DEFENSE"] = 4;
         luaEngine.Globals["EFFECT_SET_DEFENSE"] = 5;
+        luaEngine.Globals["EFFECT_SET_BASE_ATTACK"] = 7;
+        luaEngine.Globals["EFFECT_SET_BASE_DEFENSE"] = 8;
         luaEngine.Globals["EFFECT_UPDATE_LEVEL"] = 10;
         luaEngine.Globals["EFFECT_SET_DEFENSE_FINAL"] = 6;
         luaEngine.Globals["EFFECT_EQUIP_LIMIT"] = 147;

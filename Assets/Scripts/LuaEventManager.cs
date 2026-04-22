@@ -3,9 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+// ==============================================================================
+// CLASSE EVENT MANAGER (O Ouvinte Universal)
+// Onde a Mágica Acontece: Capta os eventos C# da Unity e engatilha os scripts LUA.
+// Tratativas Críticas & Dependências: 
+// - CardEffectManager.cs: Transfere as chamadas para formar as correntes (ChainManager).
+// - PhaseManager.cs / GameManager.cs: Avisa ao LUA quando turnos, danos e invocações ocorrem.
+// ==============================================================================
 public class LuaEventManager
 {
     private CardEffectManager core;
+    public bool isProcessingTriggers = false;
+    private int triggerTasks = 0;
 
     public LuaEventManager(CardEffectManager coreManager)
     {
@@ -15,6 +24,13 @@ public class LuaEventManager
     public void TriggerLuaEvent(int eventCode, object triggerArgs)
     {
         if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return;
+        core.StartCoroutine(ProcessTriggersRoutine(eventCode, triggerArgs));
+    }
+
+    private IEnumerator ProcessTriggersRoutine(int eventCode, object triggerArgs)
+    {
+        triggerTasks++;
+        isProcessingTriggers = true;
 
         // Identifica a carta que originou o evento para evitar re-trigger
         LuaCard sourceCard = null;
@@ -30,7 +46,11 @@ public class LuaEventManager
                 if (core.CanActivateEffect(effect.owner, effect, 0, triggerArgs))
                 {
                     if (effect.operationFunc != null)
-                        core.StartCoroutine(core.RunLuaCoroutine(effect.operationFunc, effect, 0, triggerArgs, -1));
+                    {
+                        bool opDone = false;
+                        core.StartCoroutine(RunCoroutineAndSetDone(core.RunLuaCoroutine(effect.operationFunc, effect, 0, triggerArgs, -1), () => opDone = true));
+                        yield return new WaitUntil(() => opDone);
+                    }
                 }
             }
         }
@@ -61,10 +81,37 @@ public class LuaEventManager
             {
                 if (core.CanActivateEffect(lc_loop, effect, lc_loop.GetControler(), triggerArgs))
                 {
-                    core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc_loop, effect, triggerArgs, lc_loop.GetControler(), null));
+                    bool chainDone = false;
+                    core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc_loop, effect, triggerArgs, lc_loop.GetControler(), () => chainDone = true));
+                    yield return new WaitUntil(() => chainDone);
                 }
             }
         }
+        triggerTasks--;
+        if (triggerTasks <= 0) isProcessingTriggers = false;
+    }
+
+    private IEnumerator ProcessSingleEffectsRoutine(LuaCard lc, List<LuaEffect> effects, object triggerArgs)
+    {
+        triggerTasks++;
+        isProcessingTriggers = true;
+        foreach (var e in effects)
+        {
+            if (core.CanActivateEffect(lc, e, lc.GetControler(), triggerArgs))
+            {
+                bool chainDone = false;
+                core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, triggerArgs, lc.GetControler(), () => chainDone = true));
+                yield return new WaitUntil(() => chainDone);
+            }
+        }
+        triggerTasks--;
+        if (triggerTasks <= 0) isProcessingTriggers = false;
+    }
+
+    private IEnumerator RunCoroutineAndSetDone(IEnumerator routine, System.Action onDone)
+    {
+        yield return routine;
+        onDone?.Invoke();
     }
 
     private void CollectCards(Transform[] zones, List<CardDisplay> list)
@@ -91,10 +138,9 @@ public class LuaEventManager
             core.ApplyAllContinuousEffects();
         
         var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1100 && (e.type & 0x0001) != 0); // EFFECT_TYPE_SINGLE
-        foreach(var e in singleEffects) 
+        if (singleEffects.Count > 0)
         {
-            if (core.CanActivateEffect(lc, e, lc.GetControler(), null))
-                core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, null, lc.GetControler(), null));
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, null));
         }
         TriggerLuaEvent(1100, lc); // EVENT_SUMMON_SUCCESS
     }
@@ -239,9 +285,8 @@ public class LuaEventManager
             if (deadCard == null) deadCard = new LuaCard(target);
 
             var singleEffects = deadCard.registeredEffects.FindAll(e => e.code == 1010 && (e.type & 0x0001) != 0); 
-            foreach(var e in singleEffects) { 
-                if (core.CanActivateEffect(deadCard, e, deadCard.GetControler(), deadCard)) 
-                    core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(deadCard, e, deadCard, deadCard.GetControler(), null)); 
+            if (singleEffects.Count > 0) {
+                core.StartCoroutine(ProcessSingleEffectsRoutine(deadCard, singleEffects, deadCard));
             }
             TriggerLuaEvent(1010, deadCard);
         }

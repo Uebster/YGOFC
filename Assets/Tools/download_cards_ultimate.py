@@ -193,6 +193,22 @@ HTML_UI = """
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label>Pasta de Imagens (Selecione para usar como Prefixo)</label>
+                    <div class="input-group">
+                        <input type="text" id="img_prefix" placeholder="Ex: DMCardImages (Deixe vazio para nenhum)">
+                        <button class="action-btn cyan-btn browse" onclick="selectImgPrefix()">Procurar</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Pasta LUA (Selecione para usar como Prefixo)</label>
+                    <div class="input-group">
+                        <input type="text" id="lua_prefix" placeholder="Ex: DMLuaScripts (Padrão: LuaScripts)">
+                        <button class="action-btn purple-btn browse" onclick="selectLuaPrefix()">Procurar</button>
+                    </div>
+                </div>
+
                 <div class="form-group" style="margin-top: 5px; padding: 12px; background: #0a0a0a; border: 1px solid #333; border-radius: 10px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
                     <label style="color: var(--gold); text-shadow: 0 0 5px var(--gold); margin-bottom: 8px;">Guia de Eras Oficiais (OCG)</label>
                     <ul style="margin: 0; padding-left: 20px; font-size: 0.8em; color: #aaa; line-height: 1.6;">
@@ -221,6 +237,8 @@ HTML_UI = """
                         <label><input type="checkbox" id="col_desc" checked> Descrição</label>
                         <label><input type="checkbox" id="col_arch"> Arquétipo</label>
                         <label><input type="checkbox" id="col_scale"> Scale</label>
+                        <label><input type="checkbox" id="col_typeline"> Subtipos Crús</label>
+                        <label><input type="checkbox" id="col_markers"> Link Setas</label>
                         <label><input type="checkbox" id="col_goat"> Goat List</label>
                     </div>
                     <div class="checkbox-actions">
@@ -268,13 +286,19 @@ HTML_UI = """
             const start = document.getElementById('start');
             const end = document.getElementById('end');
             
-            if (era === 'DM') { start.value = '1999-02-04'; end.value = '2005-05-25'; }
-            else if (era === 'GX') { start.value = '2005-05-26'; end.value = '2008-04-18'; }
-            else if (era === '5D') { start.value = '2008-04-19'; end.value = '2011-04-15'; }
-            else if (era === 'ZX') { start.value = '2011-04-16'; end.value = '2014-04-18'; }
-            else if (era === 'AV') { start.value = '2014-04-19'; end.value = '2017-04-14'; }
-            else if (era === 'VR') { start.value = '2017-04-15'; end.value = '2020-03-31'; }
-            else if (era === 'MD') { start.value = '2020-04-01'; end.value = new Date().toISOString().split('T')[0]; }
+            let prefix = "";
+            if (era === 'DM') { start.value = '1999-02-04'; end.value = '2005-05-25'; prefix = "DM"; }
+            else if (era === 'GX') { start.value = '2005-05-26'; end.value = '2008-04-18'; prefix = "GX"; }
+            else if (era === '5D') { start.value = '2008-04-19'; end.value = '2011-04-15'; prefix = "5D"; }
+            else if (era === 'ZX') { start.value = '2011-04-16'; end.value = '2014-04-18'; prefix = "ZX"; }
+            else if (era === 'AV') { start.value = '2014-04-19'; end.value = '2017-04-14'; prefix = "AV"; }
+            else if (era === 'VR') { start.value = '2017-04-15'; end.value = '2020-03-31'; prefix = "VR"; }
+            else if (era === 'MD') { start.value = '2020-04-01'; end.value = new Date().toISOString().split('T')[0]; prefix = "MD"; }
+            
+            if (prefix !== "") {
+                document.getElementById('img_prefix').value = prefix + "CardImages";
+                document.getElementById('lua_prefix').value = prefix + "LuaScripts";
+            }
         }
 
         function selectFolder() {
@@ -283,12 +307,52 @@ HTML_UI = """
             });
         }
 
+        function extractFolderName(pathStr) {
+            let cleanPath = "";
+            // Converte barras do Windows (\) para barras normais (/) de forma blindada contra o Python
+            for (let i = 0; i < pathStr.length; i++) {
+                if (pathStr.charCodeAt(i) === 92) cleanPath += "/"; 
+                else cleanPath += pathStr[i];
+            }
+            let parts = cleanPath.split('/');
+            let last = "";
+            for (let i = 0; i < parts.length; i++) if (parts[i].trim() !== "") last = parts[i];
+            return last;
+        }
+
+        function selectImgPrefix() {
+            fetch('/select_folder').then(r => r.json()).then(d => {
+                if(d.folder) {
+                    document.getElementById('img_prefix').value = extractFolderName(d.folder);
+                }
+            });
+        }
+
+        function selectLuaPrefix() {
+            fetch('/select_folder').then(r => r.json()).then(d => {
+                if(d.folder) {
+                    document.getElementById('lua_prefix').value = extractFolderName(d.folder);
+                }
+            });
+        }
+
         function toggleAllTxt(state) {
-            const checkboxes = ['col_id', 'col_name', 'col_type', 'col_attr', 'col_race', 'col_level', 'col_atk', 'col_def', 'col_pass', 'col_desc', 'col_arch', 'col_scale', 'col_goat'];
+            const checkboxes = ['col_id', 'col_name', 'col_type', 'col_typeline', 'col_attr', 'col_race', 'col_level', 'col_atk', 'col_def', 'col_pass', 'col_arch', 'col_scale', 'col_markers', 'col_goat', 'col_desc'];
             checkboxes.forEach(id => document.getElementById(id).checked = state);
         }
 
         function startTask(type) {
+            let imgPrefix = document.getElementById('img_prefix').value;
+            let luaPrefix = document.getElementById('lua_prefix').value;
+            
+            // Usa padrões caso esteja vazio, para não travar o usuário com Popups
+            if (imgPrefix.trim() === "") imgPrefix = "Images";
+            if (luaPrefix.trim() === "") luaPrefix = "LuaScripts";
+
+            sendTaskRequest(type, imgPrefix, luaPrefix);
+        }
+
+        function sendTaskRequest(type, imgPrefix, luaPrefix) {
             const data = {
                 type: type,
                 folder: document.getElementById('folder').value || "Ultimate_Assets",
@@ -308,8 +372,12 @@ HTML_UI = """
                     desc: document.getElementById('col_desc').checked,
                     arch: document.getElementById('col_arch').checked,
                     scale: document.getElementById('col_scale').checked,
-                    goat: document.getElementById('col_goat').checked
-                }
+                    goat: document.getElementById('col_goat').checked,
+                    typeline: document.getElementById('col_typeline').checked,
+                    markers: document.getElementById('col_markers').checked
+                },
+                img_prefix: imgPrefix,
+                lua_prefix: luaPrefix
             };
             fetch('/start', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
             if(interval) clearInterval(interval);
@@ -324,13 +392,20 @@ HTML_UI = """
             fetch('/status').then(r => r.json()).then(d => {
                 const perc = (d.atual / d.total) * 100 || 0;
                 document.getElementById('bar').style.width = perc + '%';
-                document.getElementById('info').innerText = d.card ? `Processando: ${d.card}` : d.status;
+                
+                let isTerminal = d.status === "Finalizado!" || d.status === "Concluído com Erros" || d.status === "Finalizado (Com Correções)" || d.status === "Cancelado" || d.status.startsWith("Erro:");
+                if (isTerminal) {
+                    document.getElementById('info').innerText = d.status;
+                    clearInterval(interval);
+                } else {
+                    document.getElementById('info').innerText = d.card ? `Processando: ${d.card}` : d.status;
+                }
+
                 if (d.log.length > 0) {
                     const logDiv = document.getElementById('log');
                     logDiv.innerHTML = d.log.map(line => `<div>${line}</div>`).join('');
                     logDiv.scrollTop = logDiv.scrollHeight;
                 }
-                if(d.status === "Finalizado!") clearInterval(interval);
             });
         }
     </script>
@@ -338,7 +413,7 @@ HTML_UI = """
 </html>
 """
 
-def task_executor(tipo, folder, start, end, region, txt_cols=None):
+def task_executor(tipo, folder, start, end, region, txt_cols=None, img_prefix="", lua_prefix=""):
     global progresso, cancel_task
     cancel_task = False
     progresso = {"atual": 0, "total": 0, "status": "Iniciando...", "card": "", "log": []}
@@ -409,9 +484,11 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
         total = len(cards)
         progresso["total"] = total
 
-        images_folder = os.path.join(folder, "Images")
+        images_folder_name = img_prefix.strip().rstrip('\\/') if img_prefix else "Images"
+        images_folder = os.path.join(folder, images_folder_name)
         alt_folder = os.path.join(images_folder, "Alt_Arts")
-        lua_dir = os.path.join(folder, "LuaScripts")
+        lua_folder_name = lua_prefix.strip().rstrip('\\/') if lua_prefix else "LuaScripts"
+        lua_dir = os.path.join(folder, lua_folder_name)
 
         def download_image(c):
             if cancel_task: return
@@ -419,7 +496,7 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
             clean_name = "".join([char for char in name_raw if char not in r'<>:"/\\|?*'])
             custom_id = c['custom_id']
 
-            images = c.get('card_images', [])
+            images = c.get('card_images') or []
             for idx, img_info in enumerate(images):
                 img_url = img_info.get('image_url', '')
                 if not img_url: continue
@@ -449,9 +526,14 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
             name_raw = c.get('name', 'Unknown')
             custom_id = c['custom_id']
             official_id = str(c.get('id', ''))
-            tipo_api = c.get('type', '')
+            tipo_api = c.get('type') or ''
 
-            if "Normal Monster" in tipo_api and "Effect" not in tipo_api: return
+            # Filtragem Inteligente 1: Pula monstros normais e Tokens, a não ser que sejam Pêndulos com efeito na escala
+            is_normal = "Normal" in tipo_api or "Token" in tipo_api
+            desc_text = c.get('desc') or c.get('description') or ''
+            has_pendulum_effect = "[ Pendulum Effect ]" in desc_text
+            if is_normal and not has_pendulum_effect: 
+                return
 
             lua_path = os.path.join(lua_dir, f"c{custom_id}.lua")
             if os.path.exists(lua_path):
@@ -487,14 +569,27 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                 if successful_id != official_id:
                     warnings_list.append(f"[{custom_id}] {name_raw}: LUA corrigido! Usou ID de arte alternativa ({successful_id}).")
             else:
-                progresso["log"].append(f"✗ Falha LUA: {custom_id}")
-                errors_list.append(f"[{custom_id}] LUA não encontrado: {name_raw} (IDs Testados: {', '.join(possible_ids)})")
+                # Scanner Pós-Falha: Lê o texto para justificar o motivo do script não existir no EDOPro
+                if "win the Match" in desc_text or "wins the Match" in desc_text:
+                    progresso["log"].append(f"⚠ Aviso (Prêmio): {custom_id}")
+                    warnings_list.append(f"[{custom_id}] {name_raw}: LUA ignorado (Carta Prêmio de Campeonato).")
+                elif "cannot be used in a Duel" in desc_text:
+                    progresso["log"].append(f"⚠ Aviso (Ilegal): {custom_id}")
+                    warnings_list.append(f"[{custom_id}] {name_raw}: LUA ignorado (Carta Ilegal/Promocional).")
+                elif ("Fusion" in tipo_api or "Synchro" in tipo_api or "XYZ" in tipo_api or "Link" in tipo_api) and "Effect" not in tipo_api:
+                    # Monstros do Extra Deck sem efeito não possuem arquivo Lua
+                    progresso["log"].append(f"⚠ Aviso (Sem Efeito): {custom_id}")
+                    warnings_list.append(f"[{custom_id}] {name_raw}: LUA ignorado (Monstro do Extra Deck sem Efeito).")
+                else:
+                    progresso["log"].append(f"✗ Falha LUA: {custom_id}")
+                    errors_list.append(f"[{custom_id}] LUA não encontrado: {name_raw} (IDs Testados: {', '.join(possible_ids)})")
 
         if tipo == 'txt':
             if not txt_cols:
                 txt_cols = {'id': True, 'name': True, 'type': True, 'attr': True, 'race': True, 'level': True, 'atk': True, 'def': True, 'pass': True, 'desc': True, 'arch': False, 'scale': False, 'goat': False}
             progresso["status"] = "Gerando TXT..."
-            path_txt = os.path.join(folder, "lista_cartas.txt")
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            path_txt = os.path.join(folder, f"lista_cartas_{timestamp}.txt")
             with open(path_txt, "w", encoding="utf-8") as f:
                 headers = []
                 if txt_cols.get('id'): headers.append("Nº")
@@ -507,7 +602,10 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                 if txt_cols.get('def'): headers.append("DEF")
                 if txt_cols.get('pass'): headers.append("ID")
                 if txt_cols.get('arch'): headers.append("ARCHETYPE")
+                if txt_cols.get('typeline'): headers.append("TYPELINE")
                 if txt_cols.get('scale'): headers.append("SCALE")
+                if txt_cols.get('markers'): headers.append("MARKERS")
+                if txt_cols.get('goat'): headers.append("GOAT LIST")
                 if txt_cols.get('desc'): headers.append("DESC")
                 f.write("\t".join(headers) + "\n")
                 
@@ -520,19 +618,23 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                     name = c.get('name', 'Unknown')
                     tipo_api = c.get('type', '')
                     cid = c.get('id', '')
-                    desc = c.get('desc', '').replace('\n', ' ').replace('\r', ' ')
+                    desc = (c.get('desc') or '').replace('\n', ' ').replace('\r', ' ')
                     archetype = c.get('archetype', 'None')
                     goat_status = c.get('banlist_info', {}).get('banlist_goat', 'Unlimited')
                     scale = c.get('scale', '-')
+                    markers = ", ".join(c.get('linkmarkers', [])) if c.get('linkmarkers') else "-"
 
                     if "Monster" in tipo_api:
                         if "Fusion" in tipo_api: sub_tipo = "Fusion"
                         elif "Ritual" in tipo_api: sub_tipo = "Ritual"
+                        elif "Synchro" in tipo_api: sub_tipo = "Synchro"
+                        elif "Xyz" in tipo_api: sub_tipo = "Xyz"
+                        elif "Link" in tipo_api: sub_tipo = "Link"
                         elif "Normal" in tipo_api: sub_tipo = "Normal"
                         else: sub_tipo = "Effect"
                         tipo_final = f"Monster ({sub_tipo})"
 
-                        attribute = c.get('attribute', '-').upper()
+                        attribute = (c.get('attribute') or '-').upper()
                         race = c.get('race', '-')
                         level = str(c.get('level', c.get('linkval', 0)))
                         atk = str(c.get('atk', 0))
@@ -556,7 +658,9 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                     if txt_cols.get('def'): row.append(defe)
                     if txt_cols.get('pass'): row.append(str(cid))
                     if txt_cols.get('arch'): row.append(archetype)
+                    if txt_cols.get('typeline'): row.append(tipo_api)
                     if txt_cols.get('scale'): row.append(str(scale))
+                    if txt_cols.get('markers'): row.append(markers)
                     if txt_cols.get('goat'): row.append(goat_status)
                     if txt_cols.get('desc'): row.append(desc)
                     f.write("\t".join(row) + "\n")
@@ -565,7 +669,8 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
 
         elif tipo == 'csv':
             progresso["status"] = "Gerando CSV..."
-            path_csv = os.path.join(folder, "lista_cartas.csv")
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            path_csv = os.path.join(folder, f"lista_cartas_{timestamp}.csv")
             with open(path_csv, "w", encoding="utf-8", newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(["ID", "Name", "Type", "Attribute", "Race/Property", "Level/Link", "ATK", "DEF", "Password", "Archetype", "Scale", "Description"])
@@ -578,7 +683,7 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                     name_raw = c.get('name', 'Unknown')
                     tipo_api = c.get('type', '')
                     cid = str(c.get('id', ''))
-                    desc = c.get('desc', '').replace('\n', ' ').replace('\r', ' ')
+                    desc = (c.get('desc') or '').replace('\n', ' ').replace('\r', ' ')
                     archetype = c.get('archetype', 'None')
                     goat_status = c.get('banlist_info', {}).get('banlist_goat', 'Unlimited')
                     scale = c.get('scale', '-')
@@ -586,11 +691,14 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                     if "Monster" in tipo_api:
                         if "Fusion" in tipo_api: sub_tipo = "Fusion"
                         elif "Ritual" in tipo_api: sub_tipo = "Ritual"
+                        elif "Synchro" in tipo_api: sub_tipo = "Synchro"
+                        elif "Xyz" in tipo_api: sub_tipo = "Xyz"
+                        elif "Link" in tipo_api: sub_tipo = "Link"
                         elif "Normal" in tipo_api: sub_tipo = "Normal"
                         else: sub_tipo = "Effect"
                         tipo_final = f"Monster ({sub_tipo})"
 
-                        attribute = c.get('attribute', '-').upper()
+                        attribute = (c.get('attribute') or '-').upper()
                         race = c.get('race', '-')
                         level = c.get('level', c.get('linkval', 0))
                         atk = c.get('atk', 0)
@@ -612,14 +720,14 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                 custom_id = c['custom_id']
                 name_raw = c.get('name', 'Unknown')
                 tipo_api = c.get('type', '')
-                desc = c.get('desc', '').replace('\r', '')
+                desc = (c.get('desc') or '').replace('\r', '')
 
                 card_obj = {
                     "id": custom_id,
                     "name": name_raw,
                     "password": str(c.get('id', '')),
                     "description": desc,
-                    "archetype": c.get('archetype', 'None'),
+                    "archetype": c.get('archetype', ''),
                     "goat_banlist": c.get('banlist_info', {}).get('banlist_goat', 'Unlimited'),
                     "first_set": c.get('card_sets', [{}])[0].get("set_name", "Unknown Set") if c.get('card_sets') else "Unknown Set"
                 }
@@ -627,17 +735,22 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                 if "Monster" in tipo_api:
                     if "Fusion" in tipo_api: sub_tipo = "Fusion"
                     elif "Ritual" in tipo_api: sub_tipo = "Ritual"
+                    elif "Synchro" in tipo_api: sub_tipo = "Synchro"
+                    elif "Xyz" in tipo_api: sub_tipo = "Xyz"
+                    elif "Link" in tipo_api: sub_tipo = "Link"
                     elif "Normal" in tipo_api: sub_tipo = "Normal"
                     else: sub_tipo = "Effect"
                     
                     card_obj["type"] = f"Monster ({sub_tipo})"
-                    card_obj["attribute"] = c.get('attribute', '-').upper()
+                    card_obj["typeline"] = tipo_api
+                    card_obj["attribute"] = (c.get('attribute') or '-').upper()
                     card_obj["race"] = c.get('race', '-')
                     card_obj["level"] = c.get('level', 0)
                     card_obj["atk"] = c.get('atk', 0)
                     card_obj["def"] = c.get('def', 0)
                 else:
                     card_obj["type"] = "Spell" if "Spell" in tipo_api else "Trap"
+                    card_obj["typeline"] = tipo_api
                     card_obj["property"] = c.get('race', 'Normal')
 
                 if "scale" in c: card_obj["scale"] = c["scale"]
@@ -645,7 +758,11 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                 if "linkmarkers" in c: card_obj["linkmarkers"] = c["linkmarkers"]
 
                 clean_name = "".join([char for char in name_raw if char not in r'<>:"/\\|?*'])
-                card_obj["image_filename"] = f"{custom_id} - {clean_name}.jpg"
+                if img_prefix:
+                    safe_prefix = img_prefix.strip().rstrip('\\/')
+                    card_obj["image_filename"] = f"{safe_prefix}/{custom_id} - {clean_name}.jpg"
+                else:
+                    card_obj["image_filename"] = f"{custom_id} - {clean_name}.jpg"
 
                 final_db.append(card_obj)
 
@@ -711,8 +828,11 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None):
                 if not os.path.exists(os.path.join(images_folder, f"{custom_id} - {clean_name}.jpg")):
                     missing_images.append(f"{custom_id} - {c['name']}")
                     
-                tipo_api = c.get('type', '')
-                if not ("Normal Monster" in tipo_api and "Effect" not in tipo_api):
+                tipo_api = c.get('type') or ''
+                is_normal = "Normal" in tipo_api or "Token" in tipo_api
+                desc_text = c.get('desc') or c.get('description') or ''
+                has_pendulum_effect = "[ Pendulum Effect ]" in desc_text
+                if not (is_normal and not has_pendulum_effect):
                     if not os.path.exists(os.path.join(lua_dir, f"c{custom_id}.lua")):
                         missing_luas.append(f"{custom_id} - {c['name']}")
                 
@@ -846,7 +966,7 @@ def cancel():
 @app.route('/start', methods=['POST'])
 def start():
     d = request.json
-    threading.Thread(target=task_executor, args=(d['type'], d['folder'], d['start'], d['end'], d['region'], d.get('txt_cols', {}))).start()
+    threading.Thread(target=task_executor, args=(d['type'], d['folder'], d['start'], d['end'], d['region'], d.get('txt_cols', {}), d.get('img_prefix', ''), d.get('lua_prefix', ''))).start()
     return jsonify({"ok": True})
 
 @app.route('/status')

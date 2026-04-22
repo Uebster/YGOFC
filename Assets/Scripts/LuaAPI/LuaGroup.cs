@@ -6,7 +6,11 @@ using System;
 
 // ==============================================================================
 // 4. CLASSE GROUP (Lista de Cartas selecionadas ou filtradas)
-// Chamado no Lua como: g:GetFirst()
+// Onde a Mágica Acontece: Gerencia os agrupamentos ('Group.') e filtragens do OCGCore.
+// Tratativas Críticas & Dependências: 
+// - LuaCard.cs: A lista é essencialmente um HashSet/List dinâmico de instâncias LuaCard.
+// - GameManager.cs: Invoca as UIs de seleção múltipla (CardSelectionUI) quando 'Select' é chamado.
+// - OpponentAI.cs: Intercepta a seleção de grupos se o jogador chamador for a IA.
 // ==============================================================================
 [MoonSharpUserData]
 public class LuaGroup
@@ -155,7 +159,6 @@ public class LuaGroup
         {
             LuaGroup aiChoice = OpponentAI.Instance.SelectLuaTargets(this, ConvertToInt(min), ConvertToInt(max));
             CardEffectManager.Instance.yieldReturnValue = UserData.Create(aiChoice);
-            CardEffectManager.Instance.luaDuel.currentTargetGroup = aiChoice; 
             CardEffectManager.Instance.isWaitingForLuaYield = false;
             return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("Group.Select") });
         }
@@ -169,7 +172,6 @@ public class LuaGroup
                     if (match != null) selectedGroup.AddCard(match);
                 }
                 CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
-                CardEffectManager.Instance.luaDuel.currentTargetGroup = selectedGroup; 
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
             }, HighlightCategory.GenericTarget, forceModal);
         } else {

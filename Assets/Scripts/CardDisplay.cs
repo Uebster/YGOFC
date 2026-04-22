@@ -322,7 +322,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (cardNameText != null) cardNameText.text = currentCardData.name;
         if (cardDescriptionText != null) cardDescriptionText.text = currentCardData.description;
 
-        if (cardITypeText != null) cardITypeText.text = $"[{currentCardData.type}]";
+        string displayedType = !string.IsNullOrEmpty(currentCardData.typeline) ? currentCardData.typeline : currentCardData.type;
+        if (cardITypeText != null) cardITypeText.text = $"[{displayedType}]";
         if (cardIRaceText != null) cardIRaceText.text = !string.IsNullOrEmpty(currentCardData.race) ? currentCardData.race : "";
 
         if (cardILvlText != null)
@@ -1525,6 +1526,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     private void ExecuteAttackToTarget(CardDisplay targetCard)
     {
         if (CardEffectManager.Instance == null || CardEffectManager.Instance.luaDuel.currentAttacker == null) return;
+        
+        // NOVO: Previne clique duplo ou re-ataque se o monstro já iniciou o ataque
+        if (CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.hasAttackedThisTurn) return;
         
         // Marca que o atacante concluiu o ataque neste turno
         CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.hasAttackedThisTurn = true;
