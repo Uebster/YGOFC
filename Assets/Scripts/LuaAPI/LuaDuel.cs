@@ -26,6 +26,7 @@ public class LuaDuel
     public LuaEffect currentActivatingEffect;
     public LuaGroup lastCostGroup; // Memória de curto prazo para custos pagos
     public List<CardDisplay> pendingComparisonCards = new List<CardDisplay>(); // Buffer para Confrontos Cinemáticos
+    public Dictionary<string, int> hardOncePerTurnUsages = new Dictionary<string, int>(); // Controle de Usos (Hard Once per Turn)
 
     public List<LuaEffect> globalEffects = new List<LuaEffect>();
     public Dictionary<string, int> playerFlags = new Dictionary<string, int>();
@@ -197,7 +198,7 @@ public class LuaDuel
             }
             // Debug.Log($"[Lua] Duel.SendtoGrave(Grupo com {count} cartas)");
         }
-        else if (target is LuaCard card && card.unityCard != null)
+        else if (target is LuaCard card)
         {
             if (card.unityCard != null)
             {
@@ -637,13 +638,14 @@ public class LuaDuel
     
     public DynValue ConfirmDecktop(object player, object count)
     {
-        Debug.Log($"<color=magenta>[LuaDuel LOG]</color> LUA pediu ConfirmDecktop. Revelando o Topo do Deck: {ConvertToInt(count)} carta(s).");
-        
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
 
         LuaGroup topCards = GetDecktopGroup(player, count);
         List<CardData> cardsToShow = topCards.cards.Select(c => c.unityData).Where(d => d != null).ToList();
+
+        string cardNames = string.Join(", ", cardsToShow.Select(c => c.name));
+        Debug.Log($"<color=magenta>[LuaDuel LOG]</color> LUA pediu ConfirmDecktop. Revelando: {cardNames}");
 
         if (cardsToShow.Count > 0 && GameManager.Instance != null && !GameManager.Instance.isSimulating)
         {
@@ -1302,7 +1304,7 @@ public class LuaDuel
         globalEffects.Add(e);
     }
 
-    public void SetTargetParam(object p) { targetParam = ConvertToInt(p); }
+    public void SetTargetParam(object p) { targetParam = ConvertToInt(p); Debug.Log($"<color=magenta>[LuaDuel LOG]</color> SetTargetParam: Guardando valor '{targetParam}' na memória do LUA!"); }
     
     public DynValue GetChainInfo(object chainc, object arg1 = null, object arg2 = null, object arg3 = null, object arg4 = null)
     {
@@ -1351,6 +1353,7 @@ public class LuaDuel
             }
             else if (arg == 2) // CHAININFO_TARGET_PARAM
             {
+                Debug.Log($"<color=magenta>[LuaDuel LOG]</color> GetChainInfo: Resgatando TARGET_PARAM da memória. Valor: {targetPa}");
                 returns.Add(DynValue.NewNumber(targetPa));
             }
             else if (arg == 3 || arg == 16 || arg == 8388608) // CHAININFO_TARGET_CARDS (3 injetado pelo nosso Core)

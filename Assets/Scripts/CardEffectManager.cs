@@ -232,6 +232,28 @@ public class CardEffectManager : MonoBehaviour
             }
         }
 
+        // Validação de "Once per Turn" (CountLimit)
+        if (effect.countLimitMax > 0)
+        {
+            if (effect.countLimitCode == 0)
+            {
+                if (effect.currentUsages >= effect.countLimitMax) 
+                {
+                    Debug.LogWarning($"<color=orange>[OncePerTurn]</color> O efeito de {luaCard.unityData.name} atingiu o limite de usos ({effect.currentUsages}/{effect.countLimitMax}). Bloqueado!");
+                    return false;
+                }
+            }
+            else
+            {
+                string key = $"{tp}_{effect.countLimitCode}";
+                if (luaDuel.hardOncePerTurnUsages.ContainsKey(key) && luaDuel.hardOncePerTurnUsages[key] >= effect.countLimitMax) 
+                {
+                    Debug.LogWarning($"<color=orange>[OncePerTurn]</color> O efeito HARD de {luaCard.unityData.name} atingiu o limite. Bloqueado!");
+                    return false;
+                }
+            }
+        }
+
         try 
         {
             if (effect.conditionFunc != null) {

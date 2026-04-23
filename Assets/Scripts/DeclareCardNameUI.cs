@@ -143,10 +143,23 @@ public class DeclareCardNameUI : MonoBehaviour
 
     void ConfirmSelection()
     {
-        if (currentMatch != null && int.TryParse(currentMatch.password, out int cardId))
+        if (currentMatch != null)
         {
+            int cardId = 0;
+            if (!string.IsNullOrEmpty(currentMatch.password) && int.TryParse(currentMatch.password, out cardId)) { }
+            else {
+                string digits = System.Text.RegularExpressions.Regex.Replace(currentMatch.id, @"\D", "");
+                int.TryParse(digits, out cardId);
+            }
+            
+            Debug.Log($"<color=green>[DeclareCardNameUI]</color> Carta Selecionada: <b>{currentMatch.name}</b> | Pass: {currentMatch.password} | ID LUA: {cardId}");
+
             gameObject.SetActive(false);
             onConfirm?.Invoke(cardId);
+        }
+        else
+        {
+            Debug.LogWarning("<color=orange>[DeclareCardNameUI]</color> Tentou confirmar, mas nenhuma carta correspondente foi encontrada no 'currentMatch'.");
         }
     }
 

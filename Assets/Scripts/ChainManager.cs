@@ -71,6 +71,19 @@ public class ChainManager
             targetPlayer = core.luaDuel.targetPlayer,
             targetParam = core.luaDuel.targetParam
         };
+        
+        // Registra o uso ("Once per turn")
+        if (effect.countLimitMax > 0)
+        {
+            if (effect.countLimitCode == 0) effect.currentUsages++;
+            else
+            {
+                string key = $"{tp}_{effect.countLimitCode}";
+                if (!core.luaDuel.hardOncePerTurnUsages.ContainsKey(key)) core.luaDuel.hardOncePerTurnUsages[key] = 0;
+                core.luaDuel.hardOncePerTurnUsages[key]++;
+            }
+        }
+        
         currentChain.Add(newLink);
         
         int visualLinkNumber = newLink.chainIndex;

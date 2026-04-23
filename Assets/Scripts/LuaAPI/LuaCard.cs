@@ -3,6 +3,7 @@ using MoonSharp.Interpreter;
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 
 // ==============================================================================
 // 2. CLASSE CARD (Representação de uma Carta Física)
@@ -445,8 +446,9 @@ public class LuaCard
     public bool IsCode(params object[] codes)
     {
         int myId = GetCode();
-        // string codesLog = string.Join(", ", codes);
-        // Debug.Log($"<color=magenta>[IsCode]</color> O LUA perguntou se '{unityData?.name}' é a carta de ID: {codesLog}");
+        string codesLog = string.Join(", ", codes.Select(c => ConvertToInt(c).ToString()));
+        Debug.Log($"<color=magenta>[IsCode LOG]</color> O LUA perguntou se '{unityData?.name}' (Meu ID: {myId}) é igual a: {codesLog}");
+        
         foreach(var c in codes) 
         {
             int targetCode = ConvertToInt(c);

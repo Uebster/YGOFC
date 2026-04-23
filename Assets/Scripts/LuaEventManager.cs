@@ -257,6 +257,15 @@ public class LuaEventManager
         core.CleanAllExpiredModifiers(); 
         core.luaDuel.playerFlags.Clear(); // Limpa as flags temporárias de turno
         core.luaDuel.cardFlags.Clear();   // Limpa a memória das cartas no fim do turno
+        core.luaDuel.hardOncePerTurnUsages.Clear(); // Limpa os usos "Hard Once per Turn"
+        
+        foreach (var lc in core.activeLuaCards.Values)
+        {
+            foreach (var eff in lc.registeredEffects)
+            {
+                eff.currentUsages = 0; // Limpa os usos "Soft Once per Turn"
+            }
+        }
         
         // Limpa o Histórico de Batalha (Safety Net) no fim do turno
         core.luaDuel.historicalAttacker = null;

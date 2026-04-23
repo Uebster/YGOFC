@@ -24,6 +24,9 @@ public class LuaEffect
     private object _valueObject = 0;
     private int _label = 0;
     private int _resetValue = 0;
+    public int countLimitMax = 0;
+    public int countLimitCode = 0;
+    public int currentUsages = 0;
     
     public Closure conditionFunc;
     public Closure costFunc;
@@ -66,8 +69,13 @@ public class LuaEffect
     public int GetDescription() { return 0; }
     public void SetHint(params object[] args) { }
     
-    // Funções muito usadas no OCGCore na inicialização ignoradas elegantemente
-    public void SetCountLimit(params object[] args) { }
+    public void SetCountLimit(params object[] args) 
+    { 
+        if (args != null && args.Length > 0) countLimitMax = ConvertToInt(args[0]); 
+        if (args != null && args.Length > 1) countLimitCode = ConvertToInt(args[1]); 
+        Debug.Log($"<color=orange>[LuaEffect]</color> SetCountLimit registrado! Máx: {countLimitMax} | Código: {countLimitCode}");
+    }
+    
     public void SetHintTiming(params object[] args) { }
     public void SetTargetRange(params object[] args) { }
     public void SetReset(params object[] args) { if (args != null && args.Length > 0) _resetValue = ConvertToInt(args[0]); }
@@ -117,7 +125,10 @@ public class LuaEffect
             operationFunc = this.operationFunc,
             _valueObject = this._valueObject,
             _label = this._label,
-            _resetValue = this._resetValue
+            _resetValue = this._resetValue,
+            countLimitMax = this.countLimitMax,
+            countLimitCode = this.countLimitCode,
+            currentUsages = 0
         };
     }
 
