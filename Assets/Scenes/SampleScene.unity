@@ -111768,6 +111768,7 @@ GameObject:
   - component: {fileID: 1231471462}
   - component: {fileID: 1231471465}
   - component: {fileID: 1231471464}
+  - component: {fileID: 1231471466}
   m_Layer: 5
   m_Name: Panel_NumberDeclare
   m_TagString: Untagged
@@ -111797,7 +111798,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 77.502014, y: 1.8447}
+  m_AnchoredPosition: {x: 77.502014, y: 1.8447266}
   m_SizeDelta: {x: -1565.896, y: -637.4657}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1231471464
@@ -111838,6 +111839,34 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1231471461}
   m_CullTransparentMesh: 1
+--- !u!114 &1231471466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1231471461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 018acb65c8720c74e829f67cfd5f4fbc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeclareNumberUI
+  titleText: {fileID: 623128794}
+  declaredNumberText: {fileID: 1268475894}
+  inputField: {fileID: 2012771821}
+  confirmButton: {fileID: 737311977}
+  closeButton: {fileID: 82001109}
+  numberButtons:
+  - {fileID: 1288936720}
+  - {fileID: 1229088384}
+  - {fileID: 781733513}
+  - {fileID: 1306777475}
+  - {fileID: 172962471}
+  - {fileID: 238758219}
+  - {fileID: 1236350634}
+  - {fileID: 1543066717}
+  - {fileID: 1429610495}
+  - {fileID: 1294965271}
 --- !u!1 &1231799569
 GameObject:
   m_ObjectHideFlags: 0

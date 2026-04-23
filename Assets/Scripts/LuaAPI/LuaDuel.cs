@@ -845,13 +845,84 @@ public class LuaDuel
         }
     }
 
-    public int AnnounceNumber(object player, params object[] args) { 
-        if (args != null && args.Length > 0) return ConvertToInt(args[args.Length - 1]);
-        return 1000; 
+    public DynValue AnnounceNumber(object player, params object[] args)
+    {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+
+        if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
+        {
+            int defaultNum = (args != null && args.Length > 0) ? ConvertToInt(args[args.Length - 1]) : 1000;
+            CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(defaultNum);
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceNumber") });
+        }
+
+        Action<int> onNumberSelected = (num) => {
+            CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(num);
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+        };
+
+        Type declareUIType = Type.GetType("DeclareNumberUI") ?? AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes()).FirstOrDefault(t => t.Name == "DeclareNumberUI");
+        if (declareUIType != null)
+        {
+            System.Reflection.FieldInfo instanceField = declareUIType.GetField("Instance");
+            object instance = instanceField != null ? instanceField.GetValue(null) : null;
+            if (instance != null)
+            {
+                var showMethod = declareUIType.GetMethod("Show");
+                if (showMethod != null)
+                {
+                    try {
+                        showMethod.Invoke(instance, new object[] { "Declarar Número", 1, 9999999, onNumberSelected });
+                        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceNumber") });
+                    } catch { }
+                }
+            }
+        }
+
+        onNumberSelected(1000);
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceNumber") });
     }
-    public int AnnounceLevel(object player, params object[] args) { 
-        if (args != null && args.Length > 0) return ConvertToInt(args[args.Length - 1]); // Pega o limite máximo passado (Ex: 5)
-        return 4; 
+
+    public DynValue AnnounceLevel(object player, params object[] args)
+    {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+
+        if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
+        {
+            int defaultLvl = (args != null && args.Length > 0) ? ConvertToInt(args[args.Length - 1]) : 4;
+            CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(defaultLvl);
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceLevel") });
+        }
+
+        Action<int> onLevelSelected = (lvl) => {
+            CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(lvl);
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+        };
+
+        Type declareUIType = Type.GetType("DeclareNumberUI") ?? AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes()).FirstOrDefault(t => t.Name == "DeclareNumberUI");
+        if (declareUIType != null)
+        {
+            System.Reflection.FieldInfo instanceField = declareUIType.GetField("Instance");
+            object instance = instanceField != null ? instanceField.GetValue(null) : null;
+            if (instance != null)
+            {
+                var showMethod = declareUIType.GetMethod("Show");
+                if (showMethod != null)
+                {
+                    try {
+                        showMethod.Invoke(instance, new object[] { "Declarar Nível", 1, 12, onLevelSelected });
+                        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceLevel") });
+                    } catch { }
+                }
+            }
+        }
+
+        onLevelSelected(4);
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceLevel") });
     }
     
     public DynValue AnnounceAttribute(object player, object count, object avail)
