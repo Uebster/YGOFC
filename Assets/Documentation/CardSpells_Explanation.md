@@ -233,6 +233,50 @@ A carta **"Ancient Telescope"** (Luneta Antiga) é uma Carta Mágica Normal (Nor
 * **Sinergia de Sabotagem (Mind Crush):** O conhecimento perfeito é a maior arma para as cartas de descarte. Sabendo exatamente o que o oponente vai sacar, você pode preparar uma armadilha como *Mind Crush* ou a magia *Abyssal Designator*. Assim que o oponente iniciar o turno dele e comprar a carta que você já sabe qual é, você ativa sua armadilha, declara o nome com 100% de precisão e rasga o trunfo dele antes que ele tenha a chance de sorrir!
 * **Controle de Fluxo (Destruição Preditiva):** Se você olhar o topo e constatar que as próximas 5 cartas do oponente são "tijolos" ou cartas inúteis para a situação atual, você simplesmente o deixa sacar e morrer lentamente. Porém, se a luneta revelar que as peças do *Exodia* ou as ferramentas de um combo mortal estão empilhadas no topo, você pode usar imediatamente uma magia sua que force o oponente a embaralhar o próprio deck ou enviar cartas do topo pro cemitério (Efeitos de Mill como *Needle Worm*), arruinando totalmente a sorte iminente que o aguardava.
 
+## ID: DM0070 - Ante (Password: 11324436)
+
+A carta **"Ante"** (Aposta) é uma Carta Mágica Normal (Normal Spell) que cria um minigame de "Risco e Recompensa" intenso usando os recursos diretos das mãos dos jogadores.
+
+> *"Each player selects 1 card from their hand, then both players reveal them. The player who revealed the card with the lower Level takes 1000 damage, and sends that card to the Graveyard. The player who revealed the card with the higher Level adds their card to their hand. If both players reveal a card with the same Level, they are both sent to the Graveyard. (Spell and Trap Cards are treated as Level 0.)"*
+
+### Como ela funciona na prática:
+
+1. **A Escolha:** Após ativada, ambos os jogadores devem escolher, em segredo, exatamente 1 carta de suas próprias mãos.
+2. **A Revelação:** As cartas escolhidas são reveladas simultaneamente para ambos. (No nosso simulador, esse é um momento perfeito para a nossa interface "View-Only" brilhar exibindo o confronto!).
+3. **A Batalha de Níveis:** O Nível das cartas reveladas é comparado. Monstros usam a quantidade de estrelas nativa deles. Cartas de Mágica e Armadilha possuem "Nível 0".
+4. **A Consequência e Punição:**
+   * **O Perdedor (Menor Nível):** Toma 1000 pontos de dano e a carta que apostou é mandada imediatamente para o Cemitério.
+   * **O Vencedor (Maior Nível):** Pega a carta que apostou de volta para a própria mão, são e salvo.
+   * **Empate:** Ninguém leva dano, mas a magia envia as DUAS cartas apostadas para o Cemitério!
+
+### 💡 O grande truque dessa carta:
+Embora o nome sugira uma "Aposta" cega, você nunca deve jogar essa carta dependendo apenas da sorte. Você deve manipulá-la para encurralar o oponente!
+
+* **A Aposta do Trapaceiro (Nível 8+):** Se você usa um deck focado em Boss Monsters pesados (como *Blue-Eyes White Dragon*, *Dark Magician* ou monstros de Ritual), você pode apostar um deles com segurança. A chance matemática do oponente ter um Nível 8 na mão dele e decidir apostá-lo às cegas é minúscula. Você quase sempre vencerá a aposta, o que significa que o oponente **vai perder uma carta da mão dele** E **levar 1000 de dano**, enquanto você recupera seu dragão intacto!
+* **Reciclagem Tática de Cemitério:** E se você *quiser* perder a aposta ou empatar de propósito? A carta que você apostou vai ser enviada ao Cemitério por um efeito de carta. Isso é ideal para "jogar fora" monstros que ativam efeitos lá do fundo (como *Sinister Serpent* que volta todo turno, ou *Night Assailant*).
+* **O Carrasco do Fim de Jogo:** Quando as mãos dos jogadores estão com poucas cartas, o oponente frequentemente só terá cartas mágicas ou armadilhas (Nível 0) guardadas na mão para se defender. Se você ativar a *Ante* e revelar qualquer monstro (mesmo de Nível 1), você já garante a vitória automática, arrancando o último recurso de defesa dele e fechando o duelo com aqueles cruéis 1000 pontos de dano!
+
+## ID: DM0089 - Archfiend's Oath (Password: 32015116)
+
+A carta **"Archfiend's Oath"** (Juramento do Arquidemônio) é uma Carta Mágica Contínua (Continuous Spell) que transforma o seu baralho num jogo de adivinhação incrivelmente recompensador.
+
+> *"Once per turn: You can pay 500 Life Points, then declare 1 card name; excavate the top card of your Deck, and if it is the declared card, add it to your hand. Otherwise, send it to the Graveyard."*
+
+### Como ela funciona na prática:
+
+1. **O Contrato (Custo):** Uma vez por turno, enquanto esta carta estiver virada para cima no seu campo, você pode ativá-la pagando **500 LP**.
+2. **A Previsão:** Ao ativar, a interface de busca global se abre e você deve digitar/declarar o nome de **exatamente 1 carta** do jogo.
+3. **A Revelação:** A engine do jogo escava (revela) a carta do topo do seu baralho.
+4. **O Julgamento:**
+   * **Acertou:** Se a carta revelada for exatamente a que você declarou, ela vai direto para a sua mão (um saque extra perfeito!). Pelas regras do OCGCore, o baralho **não é embaralhado** (Disable Shuffle).
+   * **Errou:** Se você errar a adivinhação, a carta revelada é enviada imediatamente para o Cemitério.
+
+### 💡 O grande truque dessa carta:
+Embora pareça uma loteria, no Yu-Gi-Oh! de alto nível nós não dependemos da sorte. O verdadeiro poder desta carta vem das **Sinergias e Manipulações de Topo de Deck**!
+
+* **O Combo Perfeito (O Olho Que Tudo Vê):** Se você leu sobre a carta **"Ancient Telescope"** (Luneta Antiga), você já conhece o truque. Você usa magias que permitem espiar ou organizar o topo do seu próprio deck. Ao saber com precisão qual é a próxima carta, você ativa o *Archfiend's Oath*, declara o nome que você acabou de ver e garante um saque extra imbatível por meros 500 LP! E como ela é contínua, você pode fazer isso todo turno se tiver controle do seu topo.
+* **O Moinho Tático (Self-Mill Controlado):** Em decks que dependem fortemente de monstros no cemitério (como decks de *Chaos*, *Zumbis* ou peças cruciais para reviver depois), você pode usar o *Archfiend's Oath* e declarar um nome absurdo de propósito. O resultado? Você erra a adivinhação garantidamente e "manda" a carta do topo do deck pro cemitério. É uma forma fantástica e barata de acelerar (Milar) o próprio deck ativamente a cada turno, alimentando sua pilha de cemitério para jogadas futuras!
+
 
 
 

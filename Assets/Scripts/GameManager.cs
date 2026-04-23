@@ -1399,7 +1399,13 @@ public void ShuffleDeck(bool isPlayer)
         }
 
         // 3. Executa a Animação Visual ou Atualização Direta
-        if (DuelFXManager.Instance != null && DuelFXManager.Instance.useHandShuffleAnimation && !isSimulating)
+        bool useAnim = false;
+        if (DuelFXManager.Instance != null)
+        {
+            useAnim = isPlayer ? DuelFXManager.Instance.useHandShuffleAnimation : DuelFXManager.Instance.useOpponentHandShuffleAnimation;
+        }
+
+        if (useAnim && !isSimulating)
         {
             StartCoroutine(HandShuffleRoutine(isPlayer, hand, originalPositions));
         }
@@ -1487,7 +1493,9 @@ public void ShuffleDeck(bool isPlayer)
                         
                         // A Parábola Cross-Swap
                         float dirX = (end.x > start.x) ? 1f : ((end.x < start.x) ? -1f : 0f);
-                        currentPos.y += Mathf.Sin(t * Mathf.PI) * 30f * dirX; 
+                        float yOffset = Mathf.Sin(t * Mathf.PI) * 30f * dirX; 
+                        if (!isPlayer) yOffset = -yOffset; // Inverte o salto Y para a mão do oponente (que está de ponta-cabeça no teto)
+                        currentPos.y += yOffset; 
                         hand[i].transform.position = currentPos;
                     }
                     yield return null;

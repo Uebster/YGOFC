@@ -25,12 +25,14 @@ public class LuaDuel
     public LuaCard historicalAttackTarget;
     public LuaEffect currentActivatingEffect;
     public LuaGroup lastCostGroup; // Memória de curto prazo para custos pagos
+    public List<CardDisplay> pendingComparisonCards = new List<CardDisplay>(); // Buffer para Confrontos Cinemáticos
 
     public List<LuaEffect> globalEffects = new List<LuaEffect>();
     public Dictionary<string, int> playerFlags = new Dictionary<string, int>();
     public Dictionary<string, Dictionary<int, int>> cardFlags = new Dictionary<string, Dictionary<int, int>>();
     public List<Closure> endTurnCallbacks = new List<Closure>();
     public string lastHintMsg = "Selecione um alvo";
+    public bool nextShuffleDisabled = false;
 
     private int ConvertToInt(object obj)
     {
@@ -906,7 +908,68 @@ public class LuaDuel
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceRace") });
     }
 
-    public int AnnounceCard(object player, params object[] args) { return 0; }
+    public DynValue AnnounceCard(object player, params object[] args)
+    {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+
+        if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
+        {
+            CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(40640057); // IA chuta o código de "Kuriboh"
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceCard") });
+        }
+
+        // Callback de Sucesso para destravar o LUA
+        Action<int> onCardSelected = (cardId) => {
+            CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(cardId);
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+        };
+
+        // Tenta invocar a nova UI Rápida de Declaração Dinamicamente
+        Type declareUIType = Type.GetType("DeclareCardNameUI") ?? AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes()).FirstOrDefault(t => t.Name == "DeclareCardNameUI");
+        if (declareUIType != null)
+        {
+            System.Reflection.FieldInfo instanceField = declareUIType.GetField("Instance");
+            object instance = instanceField != null ? instanceField.GetValue(null) : null;
+            if (instance != null)
+            {
+                var showMethod = declareUIType.GetMethod("Show");
+                if (showMethod != null)
+                {
+                    try {
+                        showMethod.Invoke(instance, new object[] { "Declare 1 Nome de Carta", onCardSelected });
+                        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceCard") });
+                    } catch { }
+                }
+            }
+        }
+
+        // Fallback de Segurança para a Busca Global
+        Type searchUIType = Type.GetType("GlobalCardSearchUI") ?? AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes()).FirstOrDefault(t => t.Name == "GlobalCardSearchUI");
+        if (searchUIType != null)
+        {
+            System.Reflection.FieldInfo instanceField = searchUIType.GetField("Instance");
+            System.Reflection.PropertyInfo instanceProp = searchUIType.GetProperty("Instance");
+            object instance = instanceField != null ? instanceField.GetValue(null) : (instanceProp != null ? instanceProp.GetValue(null, null) : null);
+            if (instance != null)
+            {
+                var showMethod = searchUIType.GetMethod("Show");
+                if (showMethod != null)
+                {
+                    try {
+                        showMethod.Invoke(instance, new object[] { onCardSelected });
+                        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceCard") });
+                    } catch { }
+                }
+            }
+        }
+
+        Debug.LogWarning("[LuaDuel] GlobalCardSearchUI não encontrada ou assinatura incompatível. Retornando ID de teste (Kuriboh).");
+        onCardSelected(40640057);
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceCard") });
+    }
+
     public bool IsChainNegatable(object chaincount) { return true; }
     public int GetOperationCount(object chainc) { return 0; }
     public bool IsChainDisablable(object chainc) { return true; }
@@ -979,16 +1042,107 @@ public class LuaDuel
         CardEffectManager.Instance.yieldReturnValue = null;
 
         List<CardData> offFieldCards = new List<CardData>();
+        List<CardDisplay> handCardsPlayer = new List<CardDisplay>();
+        List<CardDisplay> handCardsOpponent = new List<CardDisplay>();
+
+        // Debug.Log($"<color=yellow>[ConfirmCards LOG]</color> Início da Chamada. Player Invocador: {player}");
 
         // Revela as cartas temporariamente se estiverem no campo viradas para baixo
         if (targets is LuaGroup group) {
+            // Debug.Log($"<color=yellow>[ConfirmCards LOG]</color> Alvo é LuaGroup com {group.cards.Count} cartas.");
             foreach (var c in group.cards) {
+                if (c.unityCard != null && (!c.unityCard.isOnField || c.unityCard.CurrentLocation == CardLocation.Hand)) {
+                    // Debug.Log($"<color=yellow>[ConfirmCards LOG]</color> Capturado da Mão: {c.unityCard.CurrentCardData.name} (isPlayer: {c.unityCard.isPlayerCard})");
+                    if (c.unityCard.isPlayerCard) handCardsPlayer.Add(c.unityCard);
+                    else handCardsOpponent.Add(c.unityCard);
+                }
+
                 if (c.unityCard != null && c.unityCard.isFlipped && c.unityCard.isOnField) c.unityCard.ShowFront();
                 else if (c.unityCard == null && c.unityData != null) offFieldCards.Add(c.unityData);
             }
         } else if (targets is LuaCard card) {
+            // Debug.Log($"<color=yellow>[ConfirmCards LOG]</color> Alvo é LuaCard (Single).");
+            if (card.unityCard != null && (!card.unityCard.isOnField || card.unityCard.CurrentLocation == CardLocation.Hand)) {
+                // Debug.Log($"<color=yellow>[ConfirmCards LOG]</color> Capturado da Mão: {card.unityCard.CurrentCardData.name} (isPlayer: {card.unityCard.isPlayerCard})");
+                if (card.unityCard.isPlayerCard) handCardsPlayer.Add(card.unityCard);
+                else handCardsOpponent.Add(card.unityCard);
+            }
+
             if (card.unityCard != null && card.unityCard.isFlipped && card.unityCard.isOnField) card.unityCard.ShowFront();
             else if (card.unityCard == null && card.unityData != null) offFieldCards.Add(card.unityData);
+        }
+
+        // INTERCEPTAÇÃO CINEMÁTICA: O "Ante" (E Duelos Similares)
+        if (CardComparisonUI.Instance == null)
+            CardComparisonUI.Instance = Resources.FindObjectsOfTypeAll<CardComparisonUI>().FirstOrDefault(x => x.gameObject.scene.IsValid());
+
+        // Verifica se é a carta Ante (ou similar que exija confronto)
+        bool isComparisonEffect = false;
+        string currentEffName = "Nenhum";
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.resolvingLink != null)
+        {
+            var eff = CardEffectManager.Instance.chainManager.resolvingLink.effect;
+            if (eff != null && eff.owner != null && eff.owner.unityData != null && 
+               (eff.owner.unityData.id == "11324436" || eff.owner.unityData.id == "DM0070" || eff.owner.unityData.name == "Ante"))
+            {
+                currentEffName = eff.owner.unityData.name;
+                isComparisonEffect = true;
+            }
+        }
+
+        // Debug.Log($"<color=yellow>[ConfirmCards LOG]</color> Efeito em Resolução: {currentEffName} | É Ante/Aposta? {isComparisonEffect} | UI Existe? {CardComparisonUI.Instance != null}");
+
+        if (isComparisonEffect && CardComparisonUI.Instance != null && !GameManager.Instance.isSimulating)
+        {
+            if (handCardsPlayer.Count > 0) pendingComparisonCards.AddRange(handCardsPlayer);
+            if (handCardsOpponent.Count > 0) pendingComparisonCards.AddRange(handCardsOpponent);
+
+            // Debug.Log($"<color=yellow>[ConfirmCards LOG]</color> Cartas pendentes no Buffer (Player + Oponente): {pendingComparisonCards.Count}");
+
+            if (pendingComparisonCards.Count >= 2)
+            {
+                var pCard = pendingComparisonCards.FirstOrDefault(c => c.isPlayerCard);
+                var oCard = pendingComparisonCards.FirstOrDefault(c => !c.isPlayerCard);
+                
+                pendingComparisonCards.Clear(); // Limpa o buffer para o próximo confronto
+
+                if (pCard != null && oCard != null)
+                {
+                    // Debug.Log($"<color=green>[ConfirmCards LOG]</color> SUCESSO! Abrindo Confronto: {pCard.CurrentCardData.name} vs {oCard.CurrentCardData.name}");
+
+                    int pLvl = pCard.CurrentCardData.type.Contains("Monster") ? pCard.originalLevel : 0;
+                    int oLvl = oCard.CurrentCardData.type.Contains("Monster") ? oCard.originalLevel : 0;
+
+                    CardComparisonUI.Instance.ShowVersus(
+                        pCard, oCard,
+                        "CONFRONTO DE NÍVEIS!",
+                        $"LVL {pLvl}", $"LVL {oLvl}",
+                        pLvl, oLvl,
+                        () => {
+                            CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+                            CardEffectManager.Instance.isWaitingForLuaYield = false;
+                        },
+                        true // Para Ante, o maior Nível vence a aposta!
+                    );
+                    return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("ConfirmCards") });
+                }
+                else
+                {
+                    // Debug.Log($"<color=red>[ConfirmCards LOG]</color> FALHA: Pelo menos uma das cartas no buffer era nula.");
+                }
+            }
+            else
+            {
+                // Debug.Log($"<color=yellow>[ConfirmCards LOG]</color> Buffer incompleto (Apenas 1 lado escolheu). Silenciando Engine C# e esperando a segunda metade do LUA...");
+                // Silencia a primeira chamada visualmente e aguarda a segunda metade do LUA
+                CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+                CardEffectManager.Instance.isWaitingForLuaYield = false;
+                return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("ConfirmCards") });
+            }
+        }
+        else
+        {
+            pendingComparisonCards.Clear(); // Limpeza de segurança para outras magias
         }
 
         // Se houver cartas invisíveis (como o topo do Deck), abre o painel modal como um "Visualizador"
@@ -1160,19 +1314,19 @@ public class LuaDuel
             if (DeckManager.Instance.GetPlayerDeck().Contains(data)) { 
                 DeckManager.Instance.GetPlayerDeck().Remove(data); 
                 DeckManager.Instance.UpdateDeckVisuals(); 
-                GameManager.Instance.ShuffleDeck(true); // AUTO-SHUFFLE DO CORE
+                if (!nextShuffleDisabled) GameManager.Instance.ShuffleDeck(true); else nextShuffleDisabled = false;
                 wasPlayerPile = true; return CardLocation.Deck; 
             }
             if (DeckManager.Instance.GetOpponentDeck().Contains(data)) { 
                 DeckManager.Instance.GetOpponentDeck().Remove(data); 
                 DeckManager.Instance.UpdateDeckVisuals(); 
-                GameManager.Instance.ShuffleDeck(false); // AUTO-SHUFFLE DO CORE
+                if (!nextShuffleDisabled) GameManager.Instance.ShuffleDeck(false); else nextShuffleDisabled = false;
                 wasPlayerPile = false; return CardLocation.Deck; 
             }
         }
         // Fallbacks de Segurança
-        if (GameManager.Instance.GetPlayerMainDeck().Contains(data)) { GameManager.Instance.GetPlayerMainDeck().Remove(data); GameManager.Instance.ShuffleDeck(true); wasPlayerPile = true; return CardLocation.Deck; }
-        if (GameManager.Instance.GetOpponentMainDeck().Contains(data)) { GameManager.Instance.GetOpponentMainDeck().Remove(data); GameManager.Instance.ShuffleDeck(false); wasPlayerPile = false; return CardLocation.Deck; }
+        if (GameManager.Instance.GetPlayerMainDeck().Contains(data)) { GameManager.Instance.GetPlayerMainDeck().Remove(data); if (!nextShuffleDisabled) GameManager.Instance.ShuffleDeck(true); else nextShuffleDisabled = false; wasPlayerPile = true; return CardLocation.Deck; }
+        if (GameManager.Instance.GetOpponentMainDeck().Contains(data)) { GameManager.Instance.GetOpponentMainDeck().Remove(data); if (!nextShuffleDisabled) GameManager.Instance.ShuffleDeck(false); else nextShuffleDisabled = false; wasPlayerPile = false; return CardLocation.Deck; }
         
         if (GameManager.Instance.GetPlayerExtraDeck().Contains(data)) { GameManager.Instance.GetPlayerExtraDeck().Remove(data); wasPlayerPile = true; return CardLocation.ExtraDeck; }
         if (GameManager.Instance.GetOpponentExtraDeck().Contains(data)) { GameManager.Instance.GetOpponentExtraDeck().Remove(data); wasPlayerPile = false; return CardLocation.ExtraDeck; }
@@ -1296,6 +1450,11 @@ public class LuaDuel
             return true;
         }
         return false;
+    }
+
+    public void DisableShuffleCheck(params object[] args)
+    {
+        nextShuffleDisabled = true;
     }
 
     public DynValue ChangePosition(object target, object au, object ad = null, object du = null, object dd = null, params object[] extraArgs)

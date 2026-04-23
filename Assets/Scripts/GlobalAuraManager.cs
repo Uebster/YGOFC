@@ -54,7 +54,7 @@ public class GlobalAuraManager : MonoBehaviour
                     // if (sourceCard != null && sourceCard.unityData.name == "Jinzo")
                     //     Debug.Log($"<color=orange>[DEBUG JINZO]</color> Aura Filter testando se carta é Trap: {card.unityData.name}. Resultado: {resBool}");
                     return resBool;
-                } catch (System.Exception ex) { 
+                } catch (System.Exception) { 
                     // if (sourceCard != null && sourceCard.unityData.name == "Jinzo")
                     //     Debug.Log($"<color=red>[DEBUG JINZO]</color> Aura Filter Exception: {ex.Message}");
                     return false; 

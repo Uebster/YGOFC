@@ -1068,23 +1068,60 @@ public class OpponentAI : MonoBehaviour
             bool isMine = c.IsControler(1); // 1 = Oponente (IA)
             bool isField = c.IsLocation(0x04) || c.IsLocation(0x08); // Campo
             bool isGrave = c.IsLocation(0x10); // Cemitério
+            bool isHand = c.IsLocation(0x02); // Mão
             
+            LuaEffect currentEff = null;
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
+            {
+                if (CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.resolvingLink != null)
+                    currentEff = CardEffectManager.Instance.chainManager.resolvingLink.effect;
+                else
+                    currentEff = CardEffectManager.Instance.luaDuel.currentActivatingEffect;
+            }
+
+            if (currentEff != null)
+            {
+                // --- ESTRATÉGIA ESPECÍFICA PARA A CARTA "ANTE" ---
+                if (currentEff.owner != null && currentEff.owner.unityData != null && (currentEff.owner.unityData.id == "11324436" || currentEff.owner.unityData.id == "DM0070" || currentEff.owner.unityData.name == "Ante"))
+                {
+                    if (isMine && isHand)
+                    {
+                        int lp = GameManager.Instance.opponentLP;
+                        int lvl = c.GetLevel();
+                        
+                        if (lp <= 2000) 
+                        {
+                            // Desespero: Vida baixa, a IA precisa tentar ganhar a aposta a todo custo!
+                            score += lvl * 1000; 
+                        }
+                        else 
+                        {
+                            // Estratégico: Se tem um monstro de nível MUITO alto (7 ou 8), aposta ele para esmagar o jogador.
+                            if (lvl >= 7) score += 5000 + (lvl * 100);
+                            // Caso contrário, joga a carta mais inútil/fraca (nível 0 de Spells/Traps ou nível baixo) para perder de propósito e poupar os monstros bons.
+                            else score -= (lvl * 100) + c.GetAttack(); 
+                        }
+                        return score; // Retorna imediatamente para não misturar com as outras lógicas
+                    }
+                }
+            }
+
             if (!isMine && isField && c.GetAttack() > 0) score += 10000 + c.GetAttack(); // Matar o monstro mais forte do player
             else if (!isMine && c.IsSpellTrap()) score += 8000; // Destruir S/T do player
             else if (isMine && isGrave) score += 5000 + c.GetAttack(); // Reviver o próprio monstro mais forte do GY
             else if (isMine && isField) 
             {
                 bool isEquipOrBuff = false;
-                if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null && CardEffectManager.Instance.luaDuel.currentActivatingEffect != null)
-                {
-                    var eff = CardEffectManager.Instance.luaDuel.currentActivatingEffect;
-                    if (eff.owner != null && eff.owner.unityData != null && eff.owner.unityData.property == "Equip") isEquipOrBuff = true;
-                    // CATEGORY_ATKCHANGE (0x800) ou CATEGORY_EQUIP (0x40000)
-                    if ((eff.category & 0x800) != 0 || (eff.category & 0x40000) != 0) isEquipOrBuff = true;
-                }
+                if (currentEff != null && currentEff.owner != null && currentEff.owner.unityData != null && currentEff.owner.unityData.property == "Equip") isEquipOrBuff = true;
+                if (currentEff != null && ((currentEff.category & 0x800) != 0 || (currentEff.category & 0x40000) != 0)) isEquipOrBuff = true;
                 
                 if (isEquipOrBuff) score += c.GetAttack(); // Queremos buffar o monstro mais forte
                 else score -= c.GetAttack(); // Se for custo/tributo, escolhe o lacaio mais fraco
+            }
+            else if (isMine && isHand)
+            {
+                // Se o jogo está pedindo pra selecionar carta da mão por um efeito genérico:
+                score -= c.GetAttack(); // Descarta o mais fraco
             }
             
             return score;

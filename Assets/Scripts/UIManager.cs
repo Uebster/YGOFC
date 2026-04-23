@@ -67,6 +67,7 @@ public class UIManager : MonoBehaviour
     public GameObject destinyBoardWinPanel; // Arraste o Panel_DestinyBoardWin aqui
     public GameObject exodiaWinPanel; // Arraste o Panel_ExodiaWin aqui
     public Jackpot7UI jackpot7UI; // Arraste o Panel_Card7 aqui!
+    public CardComparisonUI cardComparisonUI; // Arraste o Panel_CardComparison aqui!
     
     [Header("End Duel Assets")]
     public Sprite endDuelWinSprite;
@@ -237,6 +238,7 @@ public class UIManager : MonoBehaviour
         if (destinyBoardWinPanel != null) destinyBoardWinPanel.SetActive(false);
         if (exodiaWinPanel != null) exodiaWinPanel.SetActive(false);
         if (jackpot7UI != null) jackpot7UI.gameObject.SetActive(false);
+        if (cardComparisonUI != null) cardComparisonUI.gameObject.SetActive(false);
 
         // 2. Ativa apenas a tela desejada
         if (screenToShow != null)
@@ -699,5 +701,6 @@ public class UIManager : MonoBehaviour
         if (extraDeckViewer != null) extraDeckViewer.gameObject.SetActive(false);
         if (removedCardsViewer != null) removedCardsViewer.gameObject.SetActive(false);
         if (jackpot7UI != null) jackpot7UI.gameObject.SetActive(false);
+        if (cardComparisonUI != null) cardComparisonUI.gameObject.SetActive(false);
     }
 }

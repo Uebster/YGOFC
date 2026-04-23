@@ -356,6 +356,9 @@ public class DuelFXManager : MonoBehaviour
     public CardFlightSettings flightBanishToExtraDeck = new CardFlightSettings { enableFlight = true, duration = 0.5f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.Shadows, trailColor = new Color(0.0f, 0.0f, 0.0f, 0.4f), useImpact = false };
     public CardFlightSettings flightBanishToGraveyard = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.2f, 0.2f, 0.2f, 0.8f) };
     public CardFlightSettings flightBanishToField = new CardFlightSettings { enableFlight = true, duration = 0.5f, flightScale = 1.3f, useTrail = true, trailType = AttackTrailType.Shadows, trailColor = new Color(0.1f, 0.1f, 0.1f, 0.5f), useImpact = false };
+    [Header("- UI Modals (View-Only) -")]
+    public CardFlightSettings flightCardSelectionUI = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.0f, useTrail = false, trailType = AttackTrailType.SmoothShadows, trailColor = new Color(0f, 0f, 0f, 0.4f), useImpact = false, startScaleMult = 1.0f, endScaleMult = 1.0f, popOffset = Vector2.zero };
+    public CardFlightSettings flightCardComparisonUI = new CardFlightSettings { enableFlight = true, duration = 0.6f, flightScale = 1.5f, useTrail = true, trailType = AttackTrailType.SmoothShadows, trailColor = new Color(1f, 0.8f, 0f, 0.5f), useImpact = false, startScaleMult = 1.0f, endScaleMult = 1.0f, popOffset = Vector2.zero };
 
     [Header("--- GENERIC TARGET ---")]
     public SelectionIconSettings genericTargetIcon = new SelectionIconSettings();
@@ -459,6 +462,7 @@ public class DuelFXManager : MonoBehaviour
 
     [Header("Opções de Embaralhamento da Mão (Hand Shuffle)")]
     public bool useHandShuffleAnimation = true;
+    public bool useOpponentHandShuffleAnimation = true;
     public HandShuffleType handShuffleType = HandShuffleType.CrossSwap;
     [Tooltip("Duração de CADA ciclo individual de embaralhamento.")]
     public float handShuffleDuration = 0.3f;

@@ -376,6 +376,8 @@ public class CardSelectionUI : MonoBehaviour
         int endIdx = isPlayerSource ? spawnedObjects.Count : -1;
         int step = isPlayerSource ? 1 : -1;
 
+        CardFlightSettings settings = DuelFXManager.Instance != null ? DuelFXManager.Instance.flightCardSelectionUI : new CardFlightSettings();
+
         for (int i = startIdx; i != endIdx; i += step)
         {
             GameObject realCard = spawnedObjects[i];
@@ -383,7 +385,7 @@ public class CardSelectionUI : MonoBehaviour
             
             if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.spellSound);
             
-            StartCoroutine(FlyGhostCard(deckSourcePos, targetPos, true, realCard.GetComponent<CanvasGroup>()));
+            StartCoroutine(FlyGhostCard(deckSourcePos, targetPos, true, realCard.GetComponent<CanvasGroup>(), settings));
             yield return new WaitForSeconds(0.15f); // Intervalo de cascata
         }
 
@@ -412,7 +414,8 @@ public class CardSelectionUI : MonoBehaviour
 
             if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.spellSound);
             
-            StartCoroutine(FlyGhostCard(startPos, deckSourcePos, false, cg));
+            CardFlightSettings settings = DuelFXManager.Instance != null ? DuelFXManager.Instance.flightCardSelectionUI : new CardFlightSettings();
+            StartCoroutine(FlyGhostCard(startPos, deckSourcePos, false, cg, settings));
             yield return new WaitForSeconds(0.15f);
         }
 
@@ -421,8 +424,10 @@ public class CardSelectionUI : MonoBehaviour
         FinishClose(isConfirm);
     }
 
-    private IEnumerator FlyGhostCard(Vector3 start, Vector3 end, bool isIntro, CanvasGroup realCardCG)
+    private IEnumerator FlyGhostCard(Vector3 start, Vector3 end, bool isIntro, CanvasGroup realCardCG, CardFlightSettings settings)
     {
+        if (settings == null) settings = new CardFlightSettings();
+
         GameObject ghost = new GameObject("GhostCard_ViewOnly", typeof(RectTransform), typeof(RawImage));
         ghost.transform.SetParent(transform, false);
         ghost.transform.SetAsLastSibling();
@@ -433,8 +438,6 @@ public class CardSelectionUI : MonoBehaviour
             rt.sizeDelta = realRt.rect.size;
             rt.pivot = realRt.pivot;
         }
-        rt.position = start;
-
         RawImage ri = ghost.GetComponent<RawImage>();
         Texture2D backTex = GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null;
         Texture2D frontTex = null;
@@ -446,9 +449,42 @@ public class CardSelectionUI : MonoBehaviour
             ri.texture = frontTex != null ? frontTex : backTex; // Se tiver saindo, começa com a frente
         }
 
-        float duration = 0.4f;
+        float duration = settings.duration > 0 ? settings.duration : 0.4f;
         float t = 0f;
         bool flipped = false;
+
+        // --- LÓGICA DE VOO BIDIRECIONAL ---
+        // Inverte a escala e o offset para o voo de volta, garantindo uma animação perfeitamente simétrica.
+        Vector3 actualStart;
+        Vector3 actualEnd;
+        Vector3 baseStartScale;
+        Vector3 baseEndScale;
+
+        if (isIntro) {
+            actualStart = start + new Vector3(settings.popOffset.x, settings.popOffset.y, 0);
+            actualEnd = end;
+            baseStartScale = rt.localScale * settings.startScaleMult;
+            baseEndScale = rt.localScale * settings.endScaleMult;
+        } else { // Voo de Retorno (Outro)
+            actualStart = start;
+            actualEnd = end; // O offset de "pouso" no deck não é necessário aqui, a pilha já tem um visual de entrada.
+            baseStartScale = rt.localScale * settings.endScaleMult;   // Começa com a escala final
+            baseEndScale = rt.localScale * settings.startScaleMult * 0.8f; // Termina com a escala inicial (Reduzido em 20% para suavizar o encaixe visual no deck)
+        }
+
+        rt.position = actualStart;
+
+        GameObject lineObj = null; RectTransform lineRT = null; Image lineImg = null;
+        if (settings.useTrail && settings.trailType == AttackTrailType.ContinuousLine) {
+            lineObj = new GameObject("FlightLineTrail", typeof(RectTransform), typeof(Image));
+            lineObj.transform.SetParent(ghost.transform.parent, false);
+            lineObj.transform.SetSiblingIndex(ghost.transform.GetSiblingIndex());
+            lineRT = lineObj.GetComponent<RectTransform>();
+            lineRT.pivot = new Vector2(0, 0.5f); lineRT.position = actualStart;
+            lineImg = lineObj.GetComponent<Image>(); lineImg.color = settings.trailColor;
+        }
+
+        float spawnTrailTimer = 0f;
 
         while (t < 1f)
         {
@@ -456,7 +492,7 @@ public class CardSelectionUI : MonoBehaviour
             float smooth = Mathf.SmoothStep(0, 1, t);
             
             // Cria um arco parabólico durante o voo
-            Vector3 currentPos = Vector3.Lerp(start, end, smooth);
+            Vector3 currentPos = Vector3.Lerp(actualStart, actualEnd, smooth);
             currentPos.y += Mathf.Sin(smooth * Mathf.PI) * 60f; 
             rt.position = currentPos;
 
@@ -465,7 +501,11 @@ public class CardSelectionUI : MonoBehaviour
             {
                 float flipProgress = (t - 0.4f) / 0.2f;
                 float scaleX = Mathf.Cos(flipProgress * Mathf.PI);
-                rt.localScale = new Vector3(Mathf.Abs(scaleX), 1, 1);
+                
+                float scaleMultiplier = 1f + Mathf.Sin(smooth * Mathf.PI) * (settings.flightScale - 1f);
+                Vector3 currentBaseScale = Vector3.Lerp(baseStartScale, baseEndScale, smooth) * scaleMultiplier;
+                
+                rt.localScale = new Vector3(currentBaseScale.x * Mathf.Abs(scaleX), currentBaseScale.y, currentBaseScale.z);
 
                 if (flipProgress >= 0.5f && !flipped)
                 {
@@ -478,12 +518,79 @@ public class CardSelectionUI : MonoBehaviour
                     }
                 }
             }
-            else if (t > 0.6f) rt.localScale = Vector3.one;
+            else
+            {
+                float scaleMultiplier = 1f + Mathf.Sin(smooth * Mathf.PI) * (settings.flightScale - 1f);
+                rt.localScale = Vector3.Lerp(baseStartScale, baseEndScale, smooth) * scaleMultiplier;
+            }
+
+            if (settings.useTrail) {
+                if (settings.trailType == AttackTrailType.Shadows || settings.trailType == AttackTrailType.SmoothShadows) {
+                    spawnTrailTimer -= Time.deltaTime; 
+                    float interval = settings.trailType == AttackTrailType.SmoothShadows ? 0.015f : 0.04f;
+                    if (spawnTrailTimer <= 0) { 
+                        spawnTrailTimer = interval; 
+                        SpawnTrailGhost(rt, ri.texture, settings.trailColor, settings.trailType == AttackTrailType.SmoothShadows ? 0.15f : 0.3f); 
+                    }
+                } else if (settings.trailType == AttackTrailType.ContinuousLine && lineObj != null) {
+                    Vector3 dirToCurrent = currentPos - actualStart;
+                    float dist = dirToCurrent.magnitude; float canvasScale = lineObj.transform.lossyScale.x;
+                    if (canvasScale > 0) lineRT.sizeDelta = new Vector2(dist / canvasScale, settings.trailWidth);
+                    lineRT.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(dirToCurrent.y, dirToCurrent.x) * Mathf.Rad2Deg);
+                }
+            }
 
             yield return null;
         }
 
+        if (lineObj != null) {
+            StartCoroutine(FadeAndDestroyLine(lineObj, lineImg, 0.2f));
+        }
+
         if (isIntro && realCardCG != null) realCardCG.alpha = 1f; // Revela a carta real encaixada na UI
         Destroy(ghost);
+    }
+
+    private void SpawnTrailGhost(RectTransform sourceRT, Texture tex, Color color, float duration)
+    {
+        GameObject ghost = new GameObject("CardTrailGhost", typeof(RectTransform), typeof(RawImage));
+        ghost.transform.SetParent(sourceRT.parent, false);
+        ghost.transform.SetSiblingIndex(sourceRT.GetSiblingIndex()); 
+        
+        RectTransform rt = ghost.GetComponent<RectTransform>();
+        rt.position = sourceRT.position; rt.rotation = sourceRT.rotation;
+        rt.sizeDelta = sourceRT.sizeDelta; rt.localScale = sourceRT.localScale;
+        rt.pivot = sourceRT.pivot;
+        
+        RawImage ri = ghost.GetComponent<RawImage>();
+        ri.texture = tex; ri.color = color;
+        
+        StartCoroutine(FadeAndDestroyCardGhost(ghost, ri, duration));
+    }
+
+    private IEnumerator FadeAndDestroyCardGhost(GameObject obj, RawImage img, float duration)
+    {
+        float t = 0; Color startColor = img.color;
+        Vector3 startScale = obj.transform.localScale;
+        while (t < 1f) {
+            if (obj == null || img == null) break;
+            t += Time.deltaTime / duration;
+            img.color = new Color(startColor.r, startColor.g, startColor.b, Mathf.Lerp(startColor.a, 0f, t));
+            obj.transform.localScale = Vector3.Lerp(startScale, startScale * 0.7f, t);
+            yield return null;
+        }
+        if (obj != null) Destroy(obj);
+    }
+
+    private IEnumerator FadeAndDestroyLine(GameObject obj, Image img, float duration)
+    {
+        float t = 0; Color startColor = img.color;
+        while (t < 1f) {
+            if (obj == null || img == null) break;
+            t += Time.deltaTime / duration;
+            img.color = new Color(startColor.r, startColor.g, startColor.b, Mathf.Lerp(startColor.a, 0f, t));
+            yield return null;
+        }
+        if (obj != null) Destroy(obj);
     }
 }

@@ -29,8 +29,9 @@ public class GlobalCardSearchUI : MonoBehaviour
     private List<CardData> filteredCards = new List<CardData>();
 
     private int currentPage = 1;
-    private const int itemsPerPage = 30;
+    private const int itemsPerPage = 36;
     private int totalPages = 1;
+    private bool dropdownsInitialized = false;
 
     private float enableTime;
     void OnEnable() { enableTime = Time.unscaledTime; }
@@ -94,28 +95,31 @@ public class GlobalCardSearchUI : MonoBehaviour
     void InitializeDropdowns()
     {
         if (allCards == null || allCards.Count == 0) return;
+        if (dropdownsInitialized) return;
 
-        if (typeDropdown != null && typeDropdown.options.Count <= 1)
+        if (typeDropdown != null)
         {
             typeDropdown.ClearOptions();
-            typeDropdown.AddOptions(new List<string> { "Todos os Tipos", "Monster", "Spell", "Trap" });
+            typeDropdown.AddOptions(new List<string> { "All Types", "Monster", "Monster (Normal)", "Monster (Effect)", "Spell", "Trap" });
         }
 
-        if (raceDropdown != null && raceDropdown.options.Count <= 1)
+        if (raceDropdown != null)
         {
             raceDropdown.ClearOptions();
             var races = allCards.Where(c => !string.IsNullOrEmpty(c.race)).Select(c => c.race).Distinct().OrderBy(r => r).ToList();
-            races.Insert(0, "Todas as Raças");
+            races.Insert(0, "All Races");
             raceDropdown.AddOptions(races);
         }
 
-        if (subTypeDropdown != null && subTypeDropdown.options.Count <= 1)
+        if (subTypeDropdown != null)
         {
             subTypeDropdown.ClearOptions();
             var props = allCards.Where(c => !string.IsNullOrEmpty(c.property)).Select(c => c.property).Distinct().OrderBy(p => p).ToList();
-            props.Insert(0, "Todos os Subtipos");
+            props.Insert(0, "All Subtypes");
             subTypeDropdown.AddOptions(props);
         }
+        
+        dropdownsInitialized = true;
     }
 
     void OnFilterChanged()
@@ -123,7 +127,7 @@ public class GlobalCardSearchUI : MonoBehaviour
         if (allCards == null || allCards.Count == 0) return;
 
         string query = searchInput ? searchInput.text.ToLowerInvariant() : "";
-        string selectedType = typeDropdown != null && typeDropdown.value > 0 ? typeDropdown.options[typeDropdown.value].text : "";
+        string selectedType = typeDropdown != null && typeDropdown.value > 0 ? typeDropdown.options[typeDropdown.value].text.ToLowerInvariant() : "";
         string selectedRace = raceDropdown != null && raceDropdown.value > 0 ? raceDropdown.options[raceDropdown.value].text : "";
         string selectedProp = subTypeDropdown != null && subTypeDropdown.value > 0 ? subTypeDropdown.options[subTypeDropdown.value].text : "";
 
@@ -131,10 +135,29 @@ public class GlobalCardSearchUI : MonoBehaviour
         {
             if (!string.IsNullOrEmpty(query))
             {
-                if (!c.name.ToLowerInvariant().Contains(query) && !c.id.Contains(query) && !(c.password != null && c.password.Contains(query)))
+                bool nameMatch = c.name != null && c.name.ToLowerInvariant().Contains(query);
+                bool idMatch = c.id != null && c.id.ToLowerInvariant().Contains(query);
+                bool passMatch = c.password != null && c.password.ToLowerInvariant().Contains(query);
+                
+                if (!nameMatch && !idMatch && !passMatch)
                     return false;
             }
-            if (!string.IsNullOrEmpty(selectedType) && !c.type.Contains(selectedType)) return false;
+            
+            if (!string.IsNullOrEmpty(selectedType))
+            {
+                if (c.type == null) return false;
+                string cType = c.type.ToLowerInvariant();
+                if (selectedType == "monster (normal)")
+                {
+                    if (!cType.Contains("monster") || !cType.Contains("normal")) return false;
+                }
+                else if (selectedType == "monster (effect)")
+                {
+                    if (!cType.Contains("monster") || !cType.Contains("effect")) return false;
+                }
+                else if (!cType.Contains(selectedType)) return false;
+            }
+
             if (!string.IsNullOrEmpty(selectedRace) && c.race != selectedRace) return false;
             if (!string.IsNullOrEmpty(selectedProp) && c.property != selectedProp) return false;
 
