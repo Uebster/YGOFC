@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 using System.Linq;
+using System.Collections;
 
 public class CardSelectionUI : MonoBehaviour
 {
@@ -33,6 +34,9 @@ public class CardSelectionUI : MonoBehaviour
     private Color originalScrollColor;
     private Image panelImage;
     private Image scrollImage;
+    private bool isAnimating = false;
+    private Vector3 deckSourcePos;
+    private bool isPlayerSource = false;
 
     void Awake()
     {
@@ -97,7 +101,7 @@ public class CardSelectionUI : MonoBehaviour
 
     private void ApplyViewOnlyMode(bool isViewOnly)
     {
-        if (panelImage != null) panelImage.color = isViewOnly ? Color.clear : originalPanelColor;
+        if (panelImage != null) panelImage.color = isViewOnly ? new Color(0f, 0f, 0f, 0.85f) : originalPanelColor;
         if (scrollImage != null) scrollImage.color = isViewOnly ? Color.clear : originalScrollColor;
     }
 
@@ -131,6 +135,10 @@ public class CardSelectionUI : MonoBehaviour
             CardDisplay display = go.GetComponent<CardDisplay>();
             if (display == null) display = go.AddComponent<CardDisplay>();
             
+            CanvasGroup cg = go.GetComponent<CanvasGroup>();
+            if (cg == null) cg = go.AddComponent<CanvasGroup>();
+            if (maxSelection <= 0) cg.alpha = 0f; // Começa invisível para a animação de entrada
+
             // Configura visual
             display.SetCard(card, GameManager.Instance.GetCardBackTexture(), true);
             display.isInteractable = false; // Sem menu de ação (apenas clique para selecionar)
@@ -151,6 +159,11 @@ public class CardSelectionUI : MonoBehaviour
         }
 
         UpdateConfirmButton();
+
+        if (maxSelection <= 0)
+        {
+            StartCoroutine(AnimateIntroRoutine());
+        }
     }
 
     void ToggleSelection(CardDisplay display)
@@ -301,17 +314,176 @@ public class CardSelectionUI : MonoBehaviour
 
     void ConfirmSelection()
     {
-        gameObject.SetActive(false);
-        List<CardData> result = selectedDisplays.Select(d => d.CurrentCardData).ToList();
-        ClearSpawnedObjects();
-        onConfirm?.Invoke(result);
+        if (isAnimating) return;
+        if (maxSelection <= 0)
+        {
+            StartCoroutine(AnimateOutroRoutine(true));
+        }
+        else
+        {
+            FinishClose(true);
+        }
     }
 
     void CancelSelection()
     {
+        if (isAnimating) return;
+        if (maxSelection <= 0)
+        {
+            StartCoroutine(AnimateOutroRoutine(false));
+        }
+        else
+        {
+            FinishClose(false);
+        }
+    }
+
+    private void FinishClose(bool isConfirm)
+    {
         gameObject.SetActive(false);
+        List<CardData> result = isConfirm ? selectedDisplays.Select(d => d.CurrentCardData).ToList() : new List<CardData>();
         ClearSpawnedObjects();
-        // Retorna nulo ou lista vazia para indicar cancelamento
-        onConfirm?.Invoke(new List<CardData>());
+        onConfirm?.Invoke(result);
+    }
+
+    private IEnumerator AnimateIntroRoutine()
+    {
+        isAnimating = true;
+        if (confirmButton != null) confirmButton.interactable = false;
+
+        yield return new WaitForEndOfFrame(); // Espera a Unity calcular a largura do GridLayout!
+
+        deckSourcePos = new Vector3(Screen.width / 2f, Screen.height / 2f, 0); // Centro padrão
+        isPlayerSource = false;
+
+        if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null && sourceList != null && sourceList.Count > 0)
+        {
+            if (GameManager.Instance.GetPlayerMainDeck().Contains(sourceList[0]) && GameManager.Instance.duelFieldUI.playerDeck != null)
+            {
+                deckSourcePos = GameManager.Instance.duelFieldUI.playerDeck.position;
+                isPlayerSource = true;
+            }
+            else if (GameManager.Instance.GetOpponentMainDeck().Contains(sourceList[0]) && GameManager.Instance.duelFieldUI.opponentDeck != null)
+            {
+                deckSourcePos = GameManager.Instance.duelFieldUI.opponentDeck.position;
+                isPlayerSource = false;
+            }
+        }
+
+        // PLAYER: Da Esquerda para a Direita (0 -> N)
+        // OPPONENT: Da Direita para a Esquerda (N -> 0)
+        int startIdx = isPlayerSource ? 0 : spawnedObjects.Count - 1;
+        int endIdx = isPlayerSource ? spawnedObjects.Count : -1;
+        int step = isPlayerSource ? 1 : -1;
+
+        for (int i = startIdx; i != endIdx; i += step)
+        {
+            GameObject realCard = spawnedObjects[i];
+            Vector3 targetPos = realCard.transform.position;
+            
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.spellSound);
+            
+            StartCoroutine(FlyGhostCard(deckSourcePos, targetPos, true, realCard.GetComponent<CanvasGroup>()));
+            yield return new WaitForSeconds(0.15f); // Intervalo de cascata
+        }
+
+        yield return new WaitForSeconds(0.4f); // Espera o último fantasma pousar
+        isAnimating = false;
+        if (confirmButton != null) confirmButton.interactable = true;
+    }
+
+    private IEnumerator AnimateOutroRoutine(bool isConfirm)
+    {
+        isAnimating = true;
+        if (confirmButton != null) confirmButton.interactable = false;
+
+        // PLAYER: Da Direita para a Esquerda (N -> 0)
+        // OPPONENT: Da Esquerda para a Direita (0 -> N)
+        int startIdx = isPlayerSource ? spawnedObjects.Count - 1 : 0;
+        int endIdx = isPlayerSource ? -1 : spawnedObjects.Count;
+        int step = isPlayerSource ? -1 : 1;
+
+        for (int i = startIdx; i != endIdx; i += step)
+        {
+            GameObject realCard = spawnedObjects[i];
+            Vector3 startPos = realCard.transform.position;
+            CanvasGroup cg = realCard.GetComponent<CanvasGroup>();
+            if (cg != null) cg.alpha = 0f; // Esconde a carta da UI
+
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.spellSound);
+            
+            StartCoroutine(FlyGhostCard(startPos, deckSourcePos, false, cg));
+            yield return new WaitForSeconds(0.15f);
+        }
+
+        yield return new WaitForSeconds(0.4f); // Espera o último fantasma voltar pro Deck
+        isAnimating = false;
+        FinishClose(isConfirm);
+    }
+
+    private IEnumerator FlyGhostCard(Vector3 start, Vector3 end, bool isIntro, CanvasGroup realCardCG)
+    {
+        GameObject ghost = new GameObject("GhostCard_ViewOnly", typeof(RectTransform), typeof(RawImage));
+        ghost.transform.SetParent(transform, false);
+        ghost.transform.SetAsLastSibling();
+
+        RectTransform rt = ghost.GetComponent<RectTransform>();
+        if (realCardCG != null) {
+            RectTransform realRt = realCardCG.GetComponent<RectTransform>();
+            rt.sizeDelta = realRt.rect.size;
+            rt.pivot = realRt.pivot;
+        }
+        rt.position = start;
+
+        RawImage ri = ghost.GetComponent<RawImage>();
+        Texture2D backTex = GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null;
+        Texture2D frontTex = null;
+
+        CardDisplay realCD = realCardCG != null ? realCardCG.GetComponent<CardDisplay>() : null;
+        if (isIntro) ri.texture = backTex;
+        else {
+            if (realCD != null) frontTex = realCD.GetFrontTexture();
+            ri.texture = frontTex != null ? frontTex : backTex; // Se tiver saindo, começa com a frente
+        }
+
+        float duration = 0.4f;
+        float t = 0f;
+        bool flipped = false;
+
+        while (t < 1f)
+        {
+            t += Time.deltaTime / duration;
+            float smooth = Mathf.SmoothStep(0, 1, t);
+            
+            // Cria um arco parabólico durante o voo
+            Vector3 currentPos = Vector3.Lerp(start, end, smooth);
+            currentPos.y += Mathf.Sin(smooth * Mathf.PI) * 60f; 
+            rt.position = currentPos;
+
+            // Animação de Flip no meio do voo (entre 40% e 60% do trajeto)
+            if (t >= 0.4f && t <= 0.6f)
+            {
+                float flipProgress = (t - 0.4f) / 0.2f;
+                float scaleX = Mathf.Cos(flipProgress * Mathf.PI);
+                rt.localScale = new Vector3(Mathf.Abs(scaleX), 1, 1);
+
+                if (flipProgress >= 0.5f && !flipped)
+                {
+                    flipped = true;
+                    if (isIntro) {
+                        if (frontTex == null && realCD != null) frontTex = realCD.GetFrontTexture();
+                        ri.texture = frontTex != null ? frontTex : backTex;
+                    } else {
+                        ri.texture = backTex; // Se tiver saindo, vira pro verso
+                    }
+                }
+            }
+            else if (t > 0.6f) rt.localScale = Vector3.one;
+
+            yield return null;
+        }
+
+        if (isIntro && realCardCG != null) realCardCG.alpha = 1f; // Revela a carta real encaixada na UI
+        Destroy(ghost);
     }
 }
