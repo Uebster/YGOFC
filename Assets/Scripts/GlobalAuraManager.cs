@@ -51,12 +51,12 @@ public class GlobalAuraManager : MonoBehaviour
                         result = filterFunc.Call(card);
                         
                     bool resBool = result.Type == MoonSharp.Interpreter.DataType.Boolean && result.Boolean;
-                    if (sourceCard != null && sourceCard.unityData.name == "Jinzo")
-                        Debug.Log($"<color=orange>[DEBUG JINZO]</color> Aura Filter testando se carta é Trap: {card.unityData.name}. Resultado: {resBool}");
+                    // if (sourceCard != null && sourceCard.unityData.name == "Jinzo")
+                    //     Debug.Log($"<color=orange>[DEBUG JINZO]</color> Aura Filter testando se carta é Trap: {card.unityData.name}. Resultado: {resBool}");
                     return resBool;
                 } catch (System.Exception ex) { 
-                    if (sourceCard != null && sourceCard.unityData.name == "Jinzo")
-                        Debug.Log($"<color=red>[DEBUG JINZO]</color> Aura Filter Exception: {ex.Message}");
+                    // if (sourceCard != null && sourceCard.unityData.name == "Jinzo")
+                    //     Debug.Log($"<color=red>[DEBUG JINZO]</color> Aura Filter Exception: {ex.Message}");
                     return false; 
                 }
             },
@@ -140,8 +140,8 @@ public class GlobalAuraManager : MonoBehaviour
                         continue;
                     }
                     
-                    if (aura.sourceCard != null && aura.sourceCard.unityData.name == "Jinzo")
-                        Debug.Log($"<color=orange>[DEBUG JINZO]</color> IsUnderRestriction aplicou bloqueio '{restrictionType}' em {card.unityData.name}");
+                    // if (aura.sourceCard != null && aura.sourceCard.unityData.name == "Jinzo")
+                    //     Debug.Log($"<color=orange>[DEBUG JINZO]</color> IsUnderRestriction aplicou bloqueio '{restrictionType}' em {card.unityData.name}");
                     return true;
                 }
             }

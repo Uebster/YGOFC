@@ -27,6 +27,13 @@ public class CardSelectionUI : MonoBehaviour
     private List<GameObject> spawnedObjects = new List<GameObject>();
     private Dictionary<CardDisplay, GameObject> badges = new Dictionary<CardDisplay, GameObject>();
 
+    // Variáveis para salvar o visual original e poder deixá-lo transparente
+    private bool originalColorsSaved = false;
+    private Color originalPanelColor;
+    private Color originalScrollColor;
+    private Image panelImage;
+    private Image scrollImage;
+
     void Awake()
     {
         Instance = this;
@@ -64,12 +71,34 @@ public class CardSelectionUI : MonoBehaviour
 
         if (titleText) titleText.text = title;
         
+        SaveOriginalColors();
+        ApplyViewOnlyMode(max <= 0);
+
         // Se o prefab não estiver atribuído, tenta pegar do GameManager
         if (cardItemPrefab == null && GameManager.Instance != null)
             cardItemPrefab = GameManager.Instance.cardPrefab;
 
         gameObject.SetActive(true);
         RefreshUI();
+    }
+
+    private void SaveOriginalColors()
+    {
+        if (originalColorsSaved) return;
+        panelImage = GetComponent<Image>();
+        if (panelImage != null) originalPanelColor = panelImage.color;
+        
+        ScrollRect sr = GetComponentInChildren<ScrollRect>(true);
+        if (sr != null) scrollImage = sr.GetComponent<Image>();
+        if (scrollImage != null) originalScrollColor = scrollImage.color;
+        
+        originalColorsSaved = true;
+    }
+
+    private void ApplyViewOnlyMode(bool isViewOnly)
+    {
+        if (panelImage != null) panelImage.color = isViewOnly ? Color.clear : originalPanelColor;
+        if (scrollImage != null) scrollImage.color = isViewOnly ? Color.clear : originalScrollColor;
     }
 
     private void ClearSpawnedObjects()
@@ -126,6 +155,8 @@ public class CardSelectionUI : MonoBehaviour
 
     void ToggleSelection(CardDisplay display)
     {
+        if (maxSelection <= 0) return; // Modo apenas visualização (View-Only)
+
         if (selectedDisplays.Contains(display))
         {
             selectedDisplays.Remove(display);
@@ -162,10 +193,12 @@ public class CardSelectionUI : MonoBehaviour
         bool isSelected = selectedDisplays.Contains(display);
         
         SelectionState state = isSelected ? SelectionState.Selected : SelectionState.Available;
+        if (maxSelection <= 0) state = SelectionState.None;
+
         if (DuelFXManager.Instance != null)
             DuelFXManager.Instance.SetSelectionIcon(display, currentCategory, state);
         else
-            display.SetHighlight(currentCategory, isSelected);
+            display.SetHighlight(currentCategory, isSelected && maxSelection > 0);
 
         // Lógica de Ordem Visual (Badges)
         if (isSelected && maxSelection > 1)
@@ -248,6 +281,13 @@ public class CardSelectionUI : MonoBehaviour
     {
         if (confirmButton)
         {
+            if (maxSelection <= 0)
+            {
+                confirmButton.interactable = true;
+                if (confirmButtonText) confirmButtonText.text = "OK";
+                return;
+            }
+
             bool isValid = selectedDisplays.Count >= minSelection && selectedDisplays.Count <= maxSelection;
             confirmButton.interactable = isValid;
             

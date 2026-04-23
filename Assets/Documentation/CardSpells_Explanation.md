@@ -194,23 +194,7 @@ Esta é a carta definitiva de "Davi contra Golias" do arquétipo Amazoness.
 * **Matando Deuses:** Se o oponente invocar um *Blue-Eyes White Dragon* (3000 ATK) e você tiver apenas uma *Amazoness Paladin* (1700 ATK) no campo. Você ativa a mágica, alveja os dois. Imediatamente, a sua Paladina sobe para 3000 de ATK e o Blue-Eyes cai para 1700. Você então ataca o Dragão com a sua guerreira, destruindo-o e causando 1300 de dano ao oponente no processo!
 * **A Identidade do Arquétipo (SetCode):** Nas sombras da Engine, o LUA pergunta ao C# se a carta é `SET_AMAZONESS` (Código `0x04`). Como o nosso banco de dados não tem uma coluna de "Arquétipo", o C# usa uma heurística genial: ele verifica se o ID é `0x04` e, em caso positivo, varre o **nome** da sua carta para ver se a palavra "Amazoness" está escrita lá!
 
-## ID: DM0853 - Heavy Storm (Password: 19613556)
-
-A carta **"Heavy Storm"** (Tempestade Pesada) é uma Carta Mágica Normal (Normal Spell) e é, historicamente, a "Rainha das Remoções" no formato Goat e em toda a era clássica do Yu-Gi-Oh!
-
-> *"Destroy all Spell and Trap Cards on the field."*
-
-### Como ela funciona na prática:
-Ao ativá-la, uma tempestade varre o tabuleiro inteiro, destruindo instantaneamente **todas as Cartas Mágicas e Armadilhas** em ambos os lados do campo. Isso inclui cartas viradas para baixo (Face-down), cartas viradas para cima (Face-up), Magias de Equipamento e Magias de Campo (Field Spells).
-
-### 💡 O grande truque dessa carta:
-O *Heavy Storm* define o ritmo do duelo. A simples existência dessa carta no seu deck impõe o que chamamos de "Regra do Overextension" (Avançar demais).
-
-* **A Punição da Ganância (Punishing Overextension):** Se o oponente baixar (Set) 3 ou 4 armadilhas na mesa para se sentir 100% seguro, um único *Heavy Storm* vai destruir todas elas de uma vez. O oponente perderá 4 cartas, e você apenas 1, criando uma vantagem de recursos (Card Advantage) absurda a seu favor. Por causa do *Heavy Storm*, duelistas de elite raramente baixam mais de 2 cartas por turno.
-* **Liberando a Zona de Combate (The OTK Enabler):** A tática mais comum é guardar o *Heavy Storm* na mão até você ter monstros suficientes para vencer a partida no mesmo turno. Você ativa a tempestade, garante que não há mais *Mirror Force* ou *Torrential Tribute* para te impedir, e ataca com todos os monstros de uma vez para zerar a vida do oponente (One-Turn Kill - OTK).
-* **Destruição Tática Própria:** Você também pode usar *Heavy Storm* para destruir suas próprias cartas que o estão prejudicando! Por exemplo, se você está perdendo vida por causa do seu próprio *Premature Burial* ou se os seus monstros de nível alto estão presos por conta da sua própria magia *Gravity Bind*, você pode usar a tempestade para limpar a mesa e destravar o seu próprio jogo!
-
-## ID: DM0000 - Amplifier (Password: 00303660)
+## ID: DM0053 - Amplifier (Password: 00303660)
 
 A carta **"Amplifier"** (Amplificador) é uma Carta Mágica de Equipamento (Equip Spell) extremamente específica, criada sob medida para interagir com um dos monstros mais temidos do formato clássico: o *Jinzo*.
 
@@ -229,3 +213,47 @@ Esta é a carta definitiva para estabelecer um "Monopólio de Jogo" (Lockdown Ab
 * **O Monopólio das Armadilhas:** Com o *Amplifier* ativo, você joga um jogo completamente desleal. Você pode usar cartas como *Mirror Force* para limpar o campo do oponente ou *Call of the Haunted* para reviver seus monstros livremente, enquanto o oponente fica apenas assistindo, impossibilitado de ativar qualquer armadilha para se defender.
 * **A Isca Perfeita (Baiting):** O oponente fará de tudo para destruir o *Amplifier* (usando *Mystical Space Typhoon* ou *Heavy Storm*), pois isso é um "dois em um" (destrói a mágica de equipamento e destrói o *Jinzo* de quebra). Sabendo disso, você pode usar o *Amplifier* como isca para forçar o oponente a gastar essas valiosas magias de remoção rápida logo no início, deixando o caminho livre para as suas outras mágicas ou simplesmente punindo-o ativando as armadilhas que o Jinzo acabou de te devolver o direito de usar!
 * **Atenção à Engine LUA (Para o Simulador):** Para o nosso motor em Unity, essa carta é um desafio de programação fantástico. Ela não adiciona ATK/DEF, mas injeta uma condição no evento contínuo do Jinzo e cria um "Vínculo de Morte" (`CardLink`). A engine precisa garantir que se o equipamento for enviado ao cemitério (`EVENT_LEAVE_FIELD`), o C# empurre o *Jinzo* para o cemitério junto na mesma resolução!
+
+## ID: DM0065 - Ancient Telescope (Password: 17092736)
+
+A carta **"Ancient Telescope"** (Luneta Antiga) é uma Carta Mágica Normal (Normal Spell) clássica de pura espionagem e coleta de informações.
+
+> *"See the top 5 cards of your opponent's Deck. Return the cards to the Deck in the same order."*
+
+### Como ela funciona na prática:
+
+1. **O Foco (A Espionagem):** Ao ativar esta carta, você ganha o direito inquestionável de olhar as 5 cartas do topo do baralho do seu oponente.
+2. **A Manutenção (Sem Alteração):** Após visualizar e memorizar quais são essas cartas, elas devem ser devolvidas exatamente na mesma ordem em que estavam no topo do Deck. Você não pode reordená-las ou forçar um embaralhamento.
+3. **A Experiência no Simulador:** Na nossa Engine, o comando `Duel.ConfirmDecktop` e `Duel.GetDecktopGroup` disparam a abertura de um painel de UI seguro e assíncrono. O jogo congela perfeitamente, permitindo que você leia as cartas com tranquilidade. Assim que você fecha o modal de espionagem, a corrente é liberada e o jogo segue.
+
+### 💡 O grande truque dessa carta:
+À primeira vista, gastar uma carta da sua mão apenas para "olhar" o baralho inimigo parece uma desvantagem numérica terrível (você perdeu 1 recurso e não alterou o estado do campo). No entanto, Yu-Gi-Oh! é um jogo de "conhecimento oculto" e *Card Advantage* psicológico. Saber o futuro pode ser devastador!
+
+* **Previsão Absoluta (Read):** Saber as próximas 5 compras do oponente significa que você sabe exatamente quais ameaças ele terá em mãos nos próximos turnos. Se você espionar e vir que um *Heavy Storm* ou *Raigeki* está chegando, você saberá que **não deve** baixar todas as suas armadilhas ou invocar seus melhores monstros simultaneamente, frustrando completamente a futura limpeza de mesa dele!
+* **Sinergia de Sabotagem (Mind Crush):** O conhecimento perfeito é a maior arma para as cartas de descarte. Sabendo exatamente o que o oponente vai sacar, você pode preparar uma armadilha como *Mind Crush* ou a magia *Abyssal Designator*. Assim que o oponente iniciar o turno dele e comprar a carta que você já sabe qual é, você ativa sua armadilha, declara o nome com 100% de precisão e rasga o trunfo dele antes que ele tenha a chance de sorrir!
+* **Controle de Fluxo (Destruição Preditiva):** Se você olhar o topo e constatar que as próximas 5 cartas do oponente são "tijolos" ou cartas inúteis para a situação atual, você simplesmente o deixa sacar e morrer lentamente. Porém, se a luneta revelar que as peças do *Exodia* ou as ferramentas de um combo mortal estão empilhadas no topo, você pode usar imediatamente uma magia sua que force o oponente a embaralhar o próprio deck ou enviar cartas do topo pro cemitério (Efeitos de Mill como *Needle Worm*), arruinando totalmente a sorte iminente que o aguardava.
+
+
+
+
+
+
+
+
+
+
+## ID: DM0853 - Heavy Storm (Password: 19613556)
+
+A carta **"Heavy Storm"** (Tempestade Pesada) é uma Carta Mágica Normal (Normal Spell) e é, historicamente, a "Rainha das Remoções" no formato Goat e em toda a era clássica do Yu-Gi-Oh!
+
+> *"Destroy all Spell and Trap Cards on the field."*
+
+### Como ela funciona na prática:
+Ao ativá-la, uma tempestade varre o tabuleiro inteiro, destruindo instantaneamente **todas as Cartas Mágicas e Armadilhas** em ambos os lados do campo. Isso inclui cartas viradas para baixo (Face-down), cartas viradas para cima (Face-up), Magias de Equipamento e Magias de Campo (Field Spells).
+
+### 💡 O grande truque dessa carta:
+O *Heavy Storm* define o ritmo do duelo. A simples existência dessa carta no seu deck impõe o que chamamos de "Regra do Overextension" (Avançar demais).
+
+* **A Punição da Ganância (Punishing Overextension):** Se o oponente baixar (Set) 3 ou 4 armadilhas na mesa para se sentir 100% seguro, um único *Heavy Storm* vai destruir todas elas de uma vez. O oponente perderá 4 cartas, e você apenas 1, criando uma vantagem de recursos (Card Advantage) absurda a seu favor. Por causa do *Heavy Storm*, duelistas de elite raramente baixam mais de 2 cartas por turno.
+* **Liberando a Zona de Combate (The OTK Enabler):** A tática mais comum é guardar o *Heavy Storm* na mão até você ter monstros suficientes para vencer a partida no mesmo turno. Você ativa a tempestade, garante que não há mais *Mirror Force* ou *Torrential Tribute* para te impedir, e ataca com todos os monstros de uma vez para zerar a vida do oponente (One-Turn Kill - OTK).
+* **Destruição Tática Própria:** Você também pode usar *Heavy Storm* para destruir suas próprias cartas que o estão prejudicando! Por exemplo, se você está perdendo vida por causa do seu próprio *Premature Burial* ou se os seus monstros de nível alto estão presos por conta da sua própria magia *Gravity Bind*, você pode usar a tempestade para limpar a mesa e destravar o seu próprio jogo!

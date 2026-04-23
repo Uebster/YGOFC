@@ -560,7 +560,10 @@ public class LuaDuel
         return group.GetCount() >= ConvertToInt(count); 
     }    
     public bool IsTurnPlayer(object player) { return GetTurnPlayer() == ConvertToInt(player); }
-    public int GetFieldGroupCount(object player, object location1, object location2) { return 0; }
+    public int GetFieldGroupCount(object player, object location1, object location2) 
+    { 
+        return GetMatchingGroup(null, player, location1, location2, null).GetCount(); 
+    }
     public bool IsEnvironment(object cardcode) { return false; }
     public bool IsPlayerCanDiscardDeck(object player, object count) { return true; }
     public bool IsPlayerCanRemove(object player) { return true; }
@@ -582,7 +585,10 @@ public class LuaDuel
     public bool IsMainPhase() { return PhaseManager.Instance != null && (PhaseManager.Instance.currentPhase == GamePhase.Main1 || PhaseManager.Instance.currentPhase == GamePhase.Main2); }
     public int GetLP(object player) { return IsPlayer(player) ? GameManager.Instance.playerLP : GameManager.Instance.opponentLP; }
     public bool IsPlayerAffectedByEffect(object player, object effect_code) { return false; }
-    public LuaGroup GetFieldGroup(object player, object loc1, object loc2) { return new LuaGroup(); }
+    public LuaGroup GetFieldGroup(object player, object loc1, object loc2) 
+    { 
+        return GetMatchingGroup(null, player, loc1, loc2, null); 
+    }
     public bool IsCanRemoveCounter(object player, object s, object o, object counterType, object count, object reason) { return true; }
     public bool CheckEvent(object event_code) { return false; }
 
@@ -837,8 +843,14 @@ public class LuaDuel
         }
     }
 
-    public int AnnounceNumber(object player, params object[] args) { return 1000; }
-    public int AnnounceLevel(object player, params object[] args) { return 4; }
+    public int AnnounceNumber(object player, params object[] args) { 
+        if (args != null && args.Length > 0) return ConvertToInt(args[args.Length - 1]);
+        return 1000; 
+    }
+    public int AnnounceLevel(object player, params object[] args) { 
+        if (args != null && args.Length > 0) return ConvertToInt(args[args.Length - 1]); // Pega o limite máximo passado (Ex: 5)
+        return 4; 
+    }
     
     public DynValue AnnounceAttribute(object player, object count, object avail)
     {
@@ -966,14 +978,32 @@ public class LuaDuel
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
 
+        List<CardData> offFieldCards = new List<CardData>();
+
         // Revela as cartas temporariamente se estiverem no campo viradas para baixo
         if (targets is LuaGroup group) {
-            foreach (var c in group.cards) if (c.unityCard != null && c.unityCard.isFlipped && c.unityCard.isOnField) c.unityCard.ShowFront();
+            foreach (var c in group.cards) {
+                if (c.unityCard != null && c.unityCard.isFlipped && c.unityCard.isOnField) c.unityCard.ShowFront();
+                else if (c.unityCard == null && c.unityData != null) offFieldCards.Add(c.unityData);
+            }
         } else if (targets is LuaCard card) {
             if (card.unityCard != null && card.unityCard.isFlipped && card.unityCard.isOnField) card.unityCard.ShowFront();
+            else if (card.unityCard == null && card.unityData != null) offFieldCards.Add(card.unityData);
         }
 
-        CardEffectManager.Instance.StartCoroutine(ConfirmCardsRoutine(1.2f));
+        // Se houver cartas invisíveis (como o topo do Deck), abre o painel modal como um "Visualizador"
+        if (offFieldCards.Count > 0 && GameManager.Instance != null && !GameManager.Instance.isSimulating)
+        {
+            GameManager.Instance.OpenCardMultiSelection(offFieldCards, "Cartas Reveladas do Topo", 0, 0, (selected) => {
+                CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+                CardEffectManager.Instance.isWaitingForLuaYield = false;
+            });
+        }
+        else
+        {
+            CardEffectManager.Instance.StartCoroutine(ConfirmCardsRoutine(1.2f));
+        }
+        
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("ConfirmCards") });
     }
 

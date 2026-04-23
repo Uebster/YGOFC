@@ -4343,6 +4343,7 @@ public void ShuffleDeck(bool isPlayer)
     {
         if (isSimulating)
         {
+                if (max <= 0) { onSelected?.Invoke(new List<CardData>()); return; }
             int count = Mathf.Max(min, 1);
             onSelected?.Invoke(sourceList.Take(count).ToList());
             return;
