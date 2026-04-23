@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +21,7 @@ public class DeclareCardNameUI : MonoBehaviour
     public RawImage cardImage;
     public Button confirmButton;
     public Button closeButton;
+    public Button eraseButton;
 
     private System.Action<int> onConfirm;
     private CardData currentMatch;
@@ -28,6 +32,7 @@ public class DeclareCardNameUI : MonoBehaviour
         Instance = this;
         if (confirmButton) confirmButton.onClick.AddListener(ConfirmSelection);
         if (closeButton) closeButton.onClick.AddListener(CancelSelection);
+        if (eraseButton) eraseButton.onClick.AddListener(OnEraseClicked);
         if (searchInput) searchInput.onValueChanged.AddListener(OnInputChanged);
         
         // Submete com a tecla Enter
@@ -40,7 +45,14 @@ public class DeclareCardNameUI : MonoBehaviour
     {
         if (gameObject.activeSelf)
         {
-            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1))
+            bool cancelPressed = false;
+#if ENABLE_INPUT_SYSTEM
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) cancelPressed = true;
+            if (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame) cancelPressed = true;
+#else
+            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1)) cancelPressed = true;
+#endif
+            if (cancelPressed)
             {
                 CancelSelection();
             }
@@ -82,6 +94,15 @@ public class DeclareCardNameUI : MonoBehaviour
         if (currentMatch == null) currentMatch = allCards.FirstOrDefault(c => c.name.ToLowerInvariant().Contains(lowerInput));
 
         UpdateVisuals();
+    }
+
+    void OnEraseClicked()
+    {
+        if (searchInput != null && searchInput.text.Length > 0)
+        {
+            searchInput.text = searchInput.text.Substring(0, searchInput.text.Length - 1);
+            searchInput.caretPosition = searchInput.text.Length; // Mantém o cursor no final
+        }
     }
 
     void UpdateVisuals()

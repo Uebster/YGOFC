@@ -620,29 +620,46 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                     }
                 }
             }
-            else if ((CurrentCardData.type.Contains("Spell") || CurrentCardData.type.Contains("Trap")) && isFlipped)
+            else if (CurrentCardData.type.Contains("Spell") || CurrentCardData.type.Contains("Trap"))
             {
-                // Regra de Traps: Não podem ser ativadas no turno em que foram setadas
-                if (CurrentCardData.type.Contains("Trap") && summonedTurnCount == GameManager.Instance.turnCount) return false;
-                // Quick-Play Spells também não podem ser ativadas no turno em que foram setadas
-                if (CurrentCardData.property == "Quick-Play" && summonedTurnCount == GameManager.Instance.turnCount) return false;
-
-                if (CardEffectManager.Instance != null)
+                if (isFlipped)
                 {
-                    LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(this);
-                    LuaEffect eff = lc?.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0080);
-                    if (eff != null && CardEffectManager.Instance.CanActivateEffect(lc, eff, 0, null))
+                    // Regra de Traps: Não podem ser ativadas no turno em que foram setadas
+                    if (CurrentCardData.type.Contains("Trap") && summonedTurnCount == GameManager.Instance.turnCount) return false;
+                    // Quick-Play Spells também não podem ser ativadas no turno em que foram setadas
+                    if (CurrentCardData.property == "Quick-Play" && summonedTurnCount == GameManager.Instance.turnCount) return false;
+
+                    if (CardEffectManager.Instance != null)
                     {
-                        return true;
+                        LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(this);
+                        LuaEffect eff = lc?.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0080);
+                        if (eff != null && CardEffectManager.Instance.CanActivateEffect(lc, eff, 0, null))
+                        {
+                            return true;
+                        }
+                        else if (eff == null)
+                        {
+                            // Fallback: Se não tem script LUA atrelado, assumimos que é uma magia básica C# ativável
+                            return true;
+                        }
+                        return false;
                     }
-                    else if (eff == null)
+                    return true;
+                }
+                else
+                {
+                    // Face-up Spell/Trap
+                    if (CardEffectManager.Instance != null)
                     {
-                        // Fallback: Se não tem script LUA atrelado, assumimos que é uma magia básica C# ativável
-                        return true;
+                        LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(this);
+                        LuaEffect eff = lc?.registeredEffects.Find(e => e.type == 0x0040); // IGNITION
+                        if (eff != null && CardEffectManager.Instance.CanActivateEffect(lc, eff, 0, null))
+                        {
+                            return true;
+                        }
                     }
                     return false;
                 }
-                return true;
             }
         }
         return false;
@@ -808,6 +825,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                     }
                     else { 
                         if (isFlipped && GameManager.Instance.activateEffectsWithOneClick && CanBeActivatedNow()) left = "Activate";
+                        else if (!isFlipped && GameManager.Instance.activateEffectsWithOneClick && CanBeActivatedNow()) left = "Effect";
                         else if (!GameManager.Instance.activateEffectsWithOneClick) left = "Menu";
                         right = ""; 
                     }
@@ -1509,11 +1527,19 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                         }
                     }
                 } else {
-                    if (isLeftClick && isFlipped) {
-                        if (GameManager.Instance.activateEffectsWithOneClick && CanBeActivatedNow()) {
-                            GameManager.Instance.ActivateFieldSpellTrap(gameObject);
-                        } else if (!GameManager.Instance.activateEffectsWithOneClick) {
-                            if (DuelActionMenu.Instance != null) DuelActionMenu.Instance.ShowMenu(this);
+                    if (isLeftClick) {
+                        if (isFlipped) {
+                            if (GameManager.Instance.activateEffectsWithOneClick && CanBeActivatedNow()) {
+                                GameManager.Instance.ActivateFieldSpellTrap(gameObject);
+                            } else if (!GameManager.Instance.activateEffectsWithOneClick) {
+                                if (DuelActionMenu.Instance != null) DuelActionMenu.Instance.ShowMenu(this);
+                            }
+                        } else {
+                            if (GameManager.Instance.activateEffectsWithOneClick && CanBeActivatedNow()) {
+                                CardEffectManager.Instance.ExecuteCardEffect(this);
+                            } else if (!GameManager.Instance.activateEffectsWithOneClick) {
+                                if (DuelActionMenu.Instance != null) DuelActionMenu.Instance.ShowMenu(this);
+                            }
                         }
                     }
                 }

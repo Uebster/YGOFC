@@ -2,6 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 public class DeclareNumberUI : MonoBehaviour
 {
@@ -13,6 +16,7 @@ public class DeclareNumberUI : MonoBehaviour
     public TMP_InputField inputField;
     public Button confirmButton;
     public Button closeButton;
+    public Button eraseButton;
 
     [Header("Numpad Buttons")]
     [Tooltip("Arraste os botões do seu painel aqui na ordem exata de 0 a 9 (Botão 0 no índice 0, Botão 1 no índice 1, etc).")]
@@ -29,6 +33,7 @@ public class DeclareNumberUI : MonoBehaviour
         
         if (confirmButton) confirmButton.onClick.AddListener(ConfirmSelection);
         if (closeButton) closeButton.onClick.AddListener(CancelSelection);
+        if (eraseButton) eraseButton.onClick.AddListener(OnEraseClicked);
         if (inputField) 
         {
             inputField.onValueChanged.AddListener(OnInputChanged);
@@ -52,7 +57,14 @@ public class DeclareNumberUI : MonoBehaviour
     {
         if (gameObject.activeSelf)
         {
-            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1))
+            bool cancelPressed = false;
+#if ENABLE_INPUT_SYSTEM
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) cancelPressed = true;
+            if (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame) cancelPressed = true;
+#else
+            if (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1)) cancelPressed = true;
+#endif
+            if (cancelPressed)
             {
                 CancelSelection();
             }
@@ -100,6 +112,21 @@ public class DeclareNumberUI : MonoBehaviour
     {
         currentInput = input;
         UpdateVisuals();
+    }
+
+    void OnEraseClicked()
+    {
+        if (currentInput.Length > 0)
+        {
+            currentInput = currentInput.Substring(0, currentInput.Length - 1);
+            
+            if (inputField) 
+            {
+                inputField.text = currentInput;
+                inputField.caretPosition = inputField.text.Length; // Mantém o cursor piscando no final
+            }
+            UpdateVisuals();
+        }
     }
 
     void UpdateVisuals()

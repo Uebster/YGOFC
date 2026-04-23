@@ -155,9 +155,9 @@ public class CardEffectManager : MonoBehaviour
         LuaCard luaCard = EnsureCardScriptLoaded(card);
         if (luaCard == null) return false;
 
-        // Fallback Original: Procura por um efeito e o ativa instantaneamente (Pula a Corrente)
-        // Útil para efeitos engatilhados pela IA ou sistemas que não passam pela interface manual.
-        LuaEffect activationEffect = luaCard.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0040 || e.type == 0x0080);
+        // Para cartas já ativas no campo (Face-up), procuramos APENAS por Ignition ou Trigger
+        // Ignoramos o 0x0010 (ACTIVATE) para não reativar o efeito de "jogar a carta" de Magias Contínuas!
+        LuaEffect activationEffect = luaCard.registeredEffects.Find(e => e.type == 0x0040 || e.type == 0x0080);
 
         if (activationEffect != null)
         {

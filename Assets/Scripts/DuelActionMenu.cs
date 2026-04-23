@@ -176,22 +176,50 @@ public class DuelActionMenu : MonoBehaviour
             {
                 activateBtn.gameObject.SetActive(isMyTurn && isMainPhase);
             }
-            else if ((card.CurrentCardData.type.Contains("Spell") || card.CurrentCardData.type.Contains("Trap")) && card.isFlipped)
+            else if (card.CurrentCardData.type.Contains("Spell") || card.CurrentCardData.type.Contains("Trap"))
             {
-                bool canActivate = isMyTurn && isMainPhase;
-                
-                // Dry-Run LUA (Testa a ativação no fundo antes de acender o botão)
-                if (canActivate && CardEffectManager.Instance != null)
+                if (card.isFlipped)
                 {
-                    LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(card);
-                    LuaEffect eff = lc?.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0080);
-                    if (eff != null && !CardEffectManager.Instance.CanActivateEffect(lc, eff, 0, null))
+                    bool canActivate = isMyTurn && isMainPhase;
+                    
+                    // Dry-Run LUA (Testa a ativação no fundo antes de acender o botão)
+                    if (canActivate && CardEffectManager.Instance != null)
+                    {
+                        LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(card);
+                        LuaEffect eff = lc?.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0080);
+                        if (eff != null && !CardEffectManager.Instance.CanActivateEffect(lc, eff, 0, null))
+                        {
+                            canActivate = false;
+                        }
+                    }
+
+                    activateBtn.gameObject.SetActive(canActivate);
+                }
+                else
+                {
+                    bool canActivate = isMyTurn && isMainPhase;
+                    
+                    // Dry-Run LUA para efeitos Ignition de magias face-up
+                    if (canActivate && CardEffectManager.Instance != null)
+                    {
+                        LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(card);
+                        LuaEffect eff = lc?.registeredEffects.Find(e => e.type == 0x0040); // IGNITION
+                        if (eff != null && CardEffectManager.Instance.CanActivateEffect(lc, eff, 0, null))
+                        {
+                            canActivate = true;
+                        }
+                        else
+                        {
+                            canActivate = false;
+                        }
+                    }
+                    else
                     {
                         canActivate = false;
                     }
-                }
 
-                activateBtn.gameObject.SetActive(canActivate);
+                    activateBtn.gameObject.SetActive(canActivate);
+                }
             }
         }
 
@@ -250,6 +278,8 @@ public class DuelActionMenu : MonoBehaviour
             if (!targetCard.isOnField)
                 GameManager.Instance.PlaySpellTrap(targetCard.gameObject, targetCard.CurrentCardData, false);
             else if (targetCard.CurrentCardData.type.Contains("Monster"))
+                CardEffectManager.Instance.ExecuteCardEffect(targetCard);
+            else if (!targetCard.isFlipped)
                 CardEffectManager.Instance.ExecuteCardEffect(targetCard);
             else
                 GameManager.Instance.ActivateFieldSpellTrap(targetCard.gameObject);

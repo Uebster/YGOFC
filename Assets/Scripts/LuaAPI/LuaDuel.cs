@@ -635,12 +635,29 @@ public class LuaDuel
         return GetMatchingGroup(filterFunc, player, locSelf, locOpp, excluded, extraArgs).GetCount(); 
     }    
     
-    public void ConfirmDecktop(object player, object count)
+    public DynValue ConfirmDecktop(object player, object count)
     {
-        if (UIManager.Instance != null && !GameManager.Instance.isSimulating)
+        Debug.Log($"<color=magenta>[LuaDuel LOG]</color> LUA pediu ConfirmDecktop. Revelando o Topo do Deck: {ConvertToInt(count)} carta(s).");
+        
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+
+        LuaGroup topCards = GetDecktopGroup(player, count);
+        List<CardData> cardsToShow = topCards.cards.Select(c => c.unityData).Where(d => d != null).ToList();
+
+        if (cardsToShow.Count > 0 && GameManager.Instance != null && !GameManager.Instance.isSimulating)
         {
-            UIManager.Instance.ShowMessage($"Top Deck revelado: {ConvertToInt(count)} carta(s).");
+            GameManager.Instance.OpenCardMultiSelection(cardsToShow, "Cartas do Topo do Deck", 0, 0, (selected) => {
+                CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+                CardEffectManager.Instance.isWaitingForLuaYield = false;
+            }, HighlightCategory.GenericTarget, true); // Force modal for deck view
         }
+        else
+        {
+            CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+        }
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("ConfirmDecktop") });
     }
     
     public LuaGroup GetDecktopGroup(object player, object count)
@@ -654,6 +671,41 @@ public class LuaDuel
             g.AddCard(new LuaCard(deck[i]) { ownerPlayerIndex = isPlayer ? 0 : 1, previousLocation = CardLocation.Deck });
         }
         return g;
+    }
+
+    public DynValue SortDecktop(object sort_player, object target_player, object count)
+    {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+
+        int c = ConvertToInt(count);
+        bool isTargetPlayer = IsPlayer(target_player);
+        List<CardData> deck = isTargetPlayer ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+        
+        List<CardData> topCards = new List<CardData>();
+        for (int i = 0; i < c && i < deck.Count; i++) topCards.Add(deck[i]);
+
+        if (topCards.Count > 0 && GameManager.Instance != null && !GameManager.Instance.isSimulating)
+        {
+            if (ReorderCardsUI.Instance == null)
+                ReorderCardsUI.Instance = Resources.FindObjectsOfTypeAll<ReorderCardsUI>().FirstOrDefault(x => x.gameObject.scene.IsValid());
+
+            if (ReorderCardsUI.Instance != null)
+            {
+                ReorderCardsUI.Instance.Show(topCards, "Visualize/Reordene as cartas", (reordered) => {
+                    for (int i = 0; i < topCards.Count; i++) deck.Remove(topCards[i]);
+                    for (int i = reordered.Count - 1; i >= 0; i--) deck.Insert(0, reordered[i]);
+                    if (DeckManager.Instance != null) DeckManager.Instance.UpdateDeckVisuals();
+                    CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+                    CardEffectManager.Instance.isWaitingForLuaYield = false;
+                });
+                return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SortDecktop") });
+            }
+        }
+        
+        CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SortDecktop") });
     }
 
     public bool CheckReleaseGroup(object player, object filterFunc, object count, object use_hand, object excluded, params object[] extraArgs) 
@@ -983,6 +1035,8 @@ public class LuaDuel
     {
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
+        
+        Debug.Log($"<color=magenta>[LuaDuel LOG]</color> LUA pediu AnnounceCard. Pausando Engine e abrindo a UI Preditiva...");
 
         if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
         {
@@ -1525,6 +1579,7 @@ public class LuaDuel
 
     public void DisableShuffleCheck(params object[] args)
     {
+        Debug.Log($"<color=magenta>[LuaDuel LOG]</color> LUA pediu DisableShuffleCheck. O auto-shuffle do C# será bloqueado temporariamente.");
         nextShuffleDisabled = true;
     }
 
