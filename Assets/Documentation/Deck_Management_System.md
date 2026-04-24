@@ -222,3 +222,17 @@ Para garantir que o deck seja válido para o início da campanha (Ato 1), o sist
 3.  O Builder varre o `CardDatabase` e separa as cartas candidatas para cada Pool.
 4.  Seleciona aleatoriamente a quantidade necessária de cada Pool.
 5.  Embaralha a lista final e salva a coleção (Trunk) e a receita base no perfil do jogador.
+
+# 9. Diretrizes de Interface de Batalha (UI Guidelines)
+
+## Regras de Exibição de Ícones Táticos (UI Indicators)
+
+Para manter o tabuleiro de duelo limpo, imersivo e fiel ao jogo físico, os ícones indicadores da Engine C# obedecem a regras estritas de renderização dinâmica.
+
+### 🚫 Ícone de Bloqueio (Cannot Attack)
+Este ícone (geralmente um cadeado ou símbolo vermelho) informa visualmente que um monstro no campo está impedido de declarar ataques por efeitos de cartas (Ex: *Swords of Revealing Light*, *Array of Revealing Light*, *Gravity Bind*).
+Ele **só será exibido** se TODAS as condições abaixo forem verdadeiras:
+1. **Apenas na Battle Phase:** O ícone só se torna visível se o jogador atual estiver na Fase de Batalha. Durante as Main Phases, ele fica oculto para não poluir a mesa.
+2. **Ignorado no 1º Turno:** O motor não exibe indicadores de ataque ou bloqueio no primeiro turno do duelo, visto que a mecânica de ataque é bloqueada pelas regras base do jogo.
+3. **Apenas Posição de Ataque:** O ícone só aparece em monstros que estão fisicamente na posição de Ataque. Monstros em Defesa já não podem atacar, logo, a Engine supre o ícone por redundância.
+4. **Apenas Face-Up:** Monstros virados para baixo (Facedown/Set) jamais recebem o ícone, para não revelar ao oponente características ocultas da carta ou prever imunidades.

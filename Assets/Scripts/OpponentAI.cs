@@ -689,6 +689,11 @@ public class OpponentAI : MonoBehaviour
         foreach (var attacker in myMonsters)
         {
             if (attacker == null || attacker.position == CardDisplay.BattlePosition.Defense || attacker.hasAttackedThisTurn) continue;
+            
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+                LuaCard cachedCard = CardEffectManager.Instance.EnsureCardScriptLoaded(attacker) ?? new LuaCard(attacker);
+                if (CardEffectManager.Instance.auraManager.IsUnderRestriction(cachedCard, null, "CANNOT_ATTACK", CardLocation.Field)) continue;
+            }
 
             // Avalia o melhor alvo para este atacante
             CardDisplay bestTarget = FindBestTarget(attacker);
@@ -1202,7 +1207,14 @@ public class OpponentAI : MonoBehaviour
     bool HasAttackCapableMonsters()
     {
         var monsters = GetMyMonstersOnField();
-        return monsters.Any(m => m.position == CardDisplay.BattlePosition.Attack && !m.hasAttackedThisTurn);
+        return monsters.Any(m => {
+            if (m.position != CardDisplay.BattlePosition.Attack || m.hasAttackedThisTurn) return false;
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+                LuaCard cachedCard = CardEffectManager.Instance.EnsureCardScriptLoaded(m) ?? new LuaCard(m);
+                if (CardEffectManager.Instance.auraManager.IsUnderRestriction(cachedCard, null, "CANNOT_ATTACK", CardLocation.Field)) return false;
+            }
+            return true;
+        });
     }
 
     int GetPlayerStrongestAtk()

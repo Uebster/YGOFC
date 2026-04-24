@@ -325,8 +325,14 @@ public class LuaCard
 
     // Stubs para compatibilidade da API Lua
     public bool IsRace(object r) { 
-        // Debug.Log($"<color=magenta>[IsRace]</color> O LUA perguntou se '{unityData?.name}' possui a Raça (código {ConvertToInt(r)})");
-        return (GetRace() & ConvertToInt(r)) != 0; 
+        int targetRace = ConvertToInt(r);
+        int myRace = GetRace();
+        bool passed = (myRace & targetRace) != 0;
+        
+        if (unityCard != null && unityCard.isOnField && unityData != null && unityData.type.Contains("Monster")) {
+            Debug.Log($"<color=cyan>[IsRace LOG]</color> Avaliando {unityData.name} | Raça do Monstro: {myRace} | Raça Alvo (Da Magia): {targetRace} -> Combina? {passed}");
+        }
+        return passed; 
     }
     public bool IsAttribute(object attr) { 
         // Debug.Log($"<color=magenta>[IsAttribute]</color> O LUA perguntou se '{unityData?.name}' possui o Atributo (código {ConvertToInt(attr)})");
@@ -403,7 +409,23 @@ public class LuaCard
     }
 
     public void SetCardTarget(object tc) { }
-    public bool IsStatus(object status) { return false; }
+    
+    public bool IsStatus(object status) 
+    { 
+        int s = ConvertToInt(status);
+        if (unityCard != null && unityCard.isOnField)
+        {
+            // 0x800 = STATUS_SUMMON_TURN, 0x20000000 = STATUS_FLIP_SUMMON_TURN, 0x40000000 = STATUS_SPSUMMON_TURN
+            int summonTurnFlags = 0x800 | 0x20000000 | 0x40000000;
+            bool passed = ((s & summonTurnFlags) != 0 && GameManager.Instance != null && unityCard.summonedTurnCount == GameManager.Instance.turnCount);
+            
+            if (unityCard.CurrentCardData != null && unityCard.CurrentCardData.type.Contains("Monster")) {
+                Debug.Log($"<color=cyan>[IsStatus LOG]</color> Avaliando {unityData.name} | Status: {s} | Math Bitwise OK? {((s & summonTurnFlags) != 0)} | Turno Invocação: {unityCard.summonedTurnCount} == Turno Atual: {GameManager.Instance?.turnCount} -> Resultado Final: {passed}");
+            }
+            return passed;
+        }
+        return false; 
+    }
     
     public LuaCard GetFirstCardTarget() 
     { 
@@ -441,13 +463,69 @@ public class LuaCard
     public void SetFlagEffectLabel(object id, object label) { }
     public void CreateEffectRelation(object e) { }
     public void ReleaseEffectRelation(object e) { }
-    public void SetHint(params object[] args) { }
+    
+    public void SetHint(params object[] args) 
+    { 
+        if (args == null || args.Length < 2 || unityCard == null) return;
+        int type = ConvertToInt(args[0]);
+        int value = ConvertToInt(args[1]);
+        
+        Debug.Log($"<color=magenta>[LuaCard LOG]</color> SetHint chamado! Tipo: {type}, Valor: {value}");
+        
+        string hintText = "";
+        if (type == 3) // CHINT_RACE
+        {
+            List<string> races = new List<string>();
+            if ((value & 0x1) != 0) races.Add("Warrior");
+            if ((value & 0x2) != 0) races.Add("Spellcaster");
+            if ((value & 0x4) != 0) races.Add("Fairy");
+            if ((value & 0x8) != 0) races.Add("Fiend");
+            if ((value & 0x10) != 0) races.Add("Zombie");
+            if ((value & 0x20) != 0) races.Add("Machine");
+            if ((value & 0x40) != 0) races.Add("Aqua");
+            if ((value & 0x80) != 0) races.Add("Pyro");
+            if ((value & 0x100) != 0) races.Add("Rock");
+            if ((value & 0x200) != 0) races.Add("Winged Beast");
+            if ((value & 0x400) != 0) races.Add("Plant");
+            if ((value & 0x800) != 0) races.Add("Insect");
+            if ((value & 0x1000) != 0) races.Add("Thunder");
+            if ((value & 0x2000) != 0) races.Add("Dragon");
+            if ((value & 0x4000) != 0) races.Add("Beast");
+            if ((value & 0x8000) != 0) races.Add("Beast-Warrior");
+            if ((value & 0x10000) != 0) races.Add("Dinosaur");
+            if ((value & 0x20000) != 0) races.Add("Fish");
+            if ((value & 0x40000) != 0) races.Add("Sea Serpent");
+            if ((value & 0x80000) != 0) races.Add("Reptile");
+            hintText = "Declared Race: " + string.Join(", ", races);
+        }
+        else if (type == 4) // CHINT_ATTRIBUTE
+        {
+            List<string> attrs = new List<string>();
+            if ((value & 0x1) != 0) attrs.Add("EARTH");
+            if ((value & 0x2) != 0) attrs.Add("WATER");
+            if ((value & 0x4) != 0) attrs.Add("FIRE");
+            if ((value & 0x8) != 0) attrs.Add("WIND");
+            if ((value & 0x10) != 0) attrs.Add("DARK");
+            if ((value & 0x20) != 0) attrs.Add("LIGHT");
+            if ((value & 0x40) != 0) attrs.Add("DIVINE");
+            hintText = "Declared Attribute: " + string.Join(", ", attrs);
+        }
+        else if (type == 5) // CHINT_NUMBER
+        {
+            hintText = "Declared Number: " + value;
+        }
+
+        if (!string.IsNullOrEmpty(hintText))
+        {
+            unityCard.clientHintText = hintText;
+            if (GameManager.Instance != null) GameManager.Instance.RefreshAllCardsVisuals();
+        }
+    }
     
     public bool IsCode(params object[] codes)
     {
         int myId = GetCode();
-        string codesLog = string.Join(", ", codes.Select(c => ConvertToInt(c).ToString()));
-        Debug.Log($"<color=magenta>[IsCode LOG]</color> O LUA perguntou se '{unityData?.name}' (Meu ID: {myId}) é igual a: {codesLog}");
+        // Debug.Log($"<color=magenta>[IsCode LOG]</color> O LUA perguntou se '{unityData?.name}' (Meu ID: {myId}) é igual a: {string.Join(", ", codes.Select(c => ConvertToInt(c).ToString()))}");
         
         foreach(var c in codes) 
         {

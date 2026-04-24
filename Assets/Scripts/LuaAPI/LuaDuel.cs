@@ -645,7 +645,7 @@ public class LuaDuel
         List<CardData> cardsToShow = topCards.cards.Select(c => c.unityData).Where(d => d != null).ToList();
 
         string cardNames = string.Join(", ", cardsToShow.Select(c => c.name));
-        Debug.Log($"<color=magenta>[LuaDuel LOG]</color> LUA pediu ConfirmDecktop. Revelando: {cardNames}");
+        // Debug.Log($"<color=magenta>[LuaDuel LOG]</color> LUA pediu ConfirmDecktop. Revelando: {cardNames}");
 
         if (cardsToShow.Count > 0 && GameManager.Instance != null && !GameManager.Instance.isSimulating)
         {
@@ -1038,7 +1038,7 @@ public class LuaDuel
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
         
-        Debug.Log($"<color=magenta>[LuaDuel LOG]</color> LUA pediu AnnounceCard. Pausando Engine e abrindo a UI Preditiva...");
+        // Debug.Log($"<color=magenta>[LuaDuel LOG]</color> LUA pediu AnnounceCard. Pausando Engine e abrindo a UI Preditiva...");
 
         if (!IsPlayer(player) && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
         {
@@ -1304,7 +1304,7 @@ public class LuaDuel
         globalEffects.Add(e);
     }
 
-    public void SetTargetParam(object p) { targetParam = ConvertToInt(p); Debug.Log($"<color=magenta>[LuaDuel LOG]</color> SetTargetParam: Guardando valor '{targetParam}' na memória do LUA!"); }
+    public void SetTargetParam(object p) { targetParam = ConvertToInt(p); /* Debug.Log($"<color=magenta>[LuaDuel LOG]</color> SetTargetParam: Guardando valor '{targetParam}' na memória do LUA!"); */ }
     
     public DynValue GetChainInfo(object chainc, object arg1 = null, object arg2 = null, object arg3 = null, object arg4 = null)
     {
@@ -1353,7 +1353,7 @@ public class LuaDuel
             }
             else if (arg == 2) // CHAININFO_TARGET_PARAM
             {
-                Debug.Log($"<color=magenta>[LuaDuel LOG]</color> GetChainInfo: Resgatando TARGET_PARAM da memória. Valor: {targetPa}");
+                // Debug.Log($"<color=magenta>[LuaDuel LOG]</color> GetChainInfo: Resgatando TARGET_PARAM da memória. Valor: {targetPa}");
                 returns.Add(DynValue.NewNumber(targetPa));
             }
             else if (arg == 3 || arg == 16 || arg == 8388608) // CHAININFO_TARGET_CARDS (3 injetado pelo nosso Core)
@@ -1582,7 +1582,7 @@ public class LuaDuel
 
     public void DisableShuffleCheck(params object[] args)
     {
-        Debug.Log($"<color=magenta>[LuaDuel LOG]</color> LUA pediu DisableShuffleCheck. O auto-shuffle do C# será bloqueado temporariamente.");
+        // Debug.Log($"<color=magenta>[LuaDuel LOG]</color> LUA pediu DisableShuffleCheck. O auto-shuffle do C# será bloqueado temporariamente.");
         nextShuffleDisabled = true;
     }
 

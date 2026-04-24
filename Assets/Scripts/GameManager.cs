@@ -5237,6 +5237,15 @@ public void ShuffleDeck(bool isPlayer)
             {
                 bool isAttacker = CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null && CardEffectManager.Instance.luaDuel.currentAttacker.unityCard == card;
                 bool canAttack = isPlayerTurn && card.position == CardDisplay.BattlePosition.Attack && !card.hasAttackedThisTurn && !isAttacker;
+                
+                // Verifica restrição global de ataque (ex: Array of Revealing Light)
+                if (canAttack && CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null)
+                {
+                    LuaCard cachedCard = CardEffectManager.Instance.EnsureCardScriptLoaded(card) ?? new LuaCard(card);
+                    if (CardEffectManager.Instance.auraManager.IsUnderRestriction(cachedCard, null, "CANNOT_ATTACK", CardLocation.Field))
+                        canAttack = false;
+                }
+                
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCanAttackIndicator(card, isHovering && canAttack);
 
                 bool cannotAttack = !canAttack;
@@ -5297,7 +5306,15 @@ public void ShuffleDeck(bool isPlayer)
                         {
                         bool isAttacker = CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null && CardEffectManager.Instance.luaDuel.currentAttacker.unityCard == card;
                         bool canAttack = card.position == CardDisplay.BattlePosition.Attack && !card.hasAttackedThisTurn && !isAttacker;
-                            
+
+                        // Verifica restrição global de ataque
+                        if (canAttack && CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null)
+                        {
+                            LuaCard cachedCard = CardEffectManager.Instance.EnsureCardScriptLoaded(card) ?? new LuaCard(card);
+                            if (CardEffectManager.Instance.auraManager.IsUnderRestriction(cachedCard, null, "CANNOT_ATTACK", CardLocation.Field))
+                                canAttack = false;
+                        }
+                                                        
                             // Debug.Log($"[RefreshAttackIndicators] {card.CurrentCardData.name} (Zona {i+1}) -> Em Ataque? {card.position == CardDisplay.BattlePosition.Attack} | Já atacou? {card.hasAttackedThisTurn} | Recebeu Espadinha? {canAttack}");
                             
                             if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCanAttackIndicator(card, canAttack);

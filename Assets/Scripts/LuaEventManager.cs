@@ -160,6 +160,19 @@ public class LuaEventManager
         core.StartCoroutine(core.OpenFastEffectWindow($"Invocação de {card.CurrentCardData.name}", 1100, lc));
     }
     
+    public void OnFlip(CardDisplay card)
+    {
+        LuaCard lc = core.EnsureCardScriptLoaded(card);
+        if (lc == null) lc = new LuaCard(card);
+
+        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1013 && (e.type & 0x0020) != 0); // EVENT_FLIP & EFFECT_TYPE_FLIP
+        if (singleEffects.Count > 0)
+        {
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, null));
+        }
+        // Não abrimos janela de resposta para FLIP, pois é um efeito obrigatório que inicia sua própria corrente.
+    }
+
     public void OnSet(CardDisplay card) { 
         LuaCard lc = core.EnsureCardScriptLoaded(card);
         if (lc == null) lc = new LuaCard(card);
@@ -185,6 +198,19 @@ public class LuaEventManager
         core.StartCoroutine(core.OpenFastEffectWindow($"Invocação-Virar de {card.CurrentCardData.name}", 1101, lc));
     }
     
+    public void OnFlip(CardDisplay card)
+    {
+        LuaCard lc = core.EnsureCardScriptLoaded(card);
+        if (lc == null) lc = new LuaCard(card);
+
+        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1013 && (e.type & 0x0020) != 0); // EVENT_FLIP & EFFECT_TYPE_FLIP
+        if (singleEffects.Count > 0)
+        {
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, null));
+        }
+        // Não abrimos janela de resposta para FLIP, pois é um efeito obrigatório que inicia sua própria corrente.
+    }
+
     public void OnBattlePositionChanged(CardDisplay card) { 
         LuaCard lc = core.EnsureCardScriptLoaded(card);
         if (lc == null) lc = new LuaCard(card);

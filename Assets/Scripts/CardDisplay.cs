@@ -87,6 +87,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public CardLocation previousPreviousLocation = CardLocation.Unknown; // For multi-hop warp checks
 
     // FASE 26: Display data and ownership tracking
+    [HideInInspector] public string clientHintText = "";
     [HideInInspector] public Dictionary<string, object> displayData = new Dictionary<string, object>(); // Dynamic display properties
     [HideInInspector] public bool ownerPlayer = true; // true = player, false = opponent
     private CardLocation _currentLocation = CardLocation.Unknown;
@@ -259,6 +260,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         originalLevel = card.level;
         currentLevel = card.level;
 
+        clientHintText = ""; // Reseta o hint ao mudar de carta
         turnCounter = 0; // Reseta contadores de turno
         maxTurnCounter = 0;
         
@@ -320,7 +322,14 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (currentCardData == null) return;
 
         if (cardNameText != null) cardNameText.text = currentCardData.name;
-        if (cardDescriptionText != null) cardDescriptionText.text = currentCardData.description;
+        if (cardDescriptionText != null) 
+        {
+            cardDescriptionText.text = currentCardData.description;
+            if (!string.IsNullOrEmpty(clientHintText) && !isFlipped)
+            {
+                cardDescriptionText.text += $"\n\n<color=yellow><b>[{clientHintText}]</b></color>";
+            }
+        }
 
         string displayedType = !string.IsNullOrEmpty(currentCardData.typeline) ? currentCardData.typeline : currentCardData.type;
         if (cardITypeText != null) cardITypeText.text = $"[{displayedType}]";
@@ -578,8 +587,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Verifica se é um monstro de efeito FLIP
         if (triggerEffects && (currentCardData.description.StartsWith("FLIP:") || currentCardData.description.Contains("FLIP:")))
         {
-            if (CardEffectManager.Instance != null)
-                CardEffectManager.Instance.ExecuteCardEffect(this);
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.eventManager != null)
+            {
+                Debug.Log($"<color=yellow>[FLIP EFFECT]</color> {currentCardData.name} foi virado, disparando evento de FLIP para a Engine LUA.");
+                CardEffectManager.Instance.eventManager.OnFlip(this);
+            }
         }
 
         ShowFront(true, onComplete);
@@ -1369,6 +1381,15 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                         {
                             if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Este monstro já atacou neste turno.");
                             return;
+                        }
+                        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null)
+                        {
+                            LuaCard cachedCard = CardEffectManager.Instance.EnsureCardScriptLoaded(this) ?? new LuaCard(this);
+                            if (CardEffectManager.Instance.auraManager.IsUnderRestriction(cachedCard, null, "CANNOT_ATTACK", CardLocation.Field))
+                            {
+                                if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Este monstro está impedido de atacar por um efeito de carta.");
+                                return;
+                            }
                         }
                         CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(this);
                         if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.ShowAndFollowMouse(transform);

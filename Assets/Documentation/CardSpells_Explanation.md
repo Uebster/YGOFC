@@ -277,7 +277,24 @@ Embora pareça uma loteria, no Yu-Gi-Oh! de alto nível nós não dependemos da 
 * **O Combo Perfeito (O Olho Que Tudo Vê):** Se você leu sobre a carta **"Ancient Telescope"** (Luneta Antiga), você já conhece o truque. Você usa magias que permitem espiar ou organizar o topo do seu próprio deck. Ao saber com precisão qual é a próxima carta, você ativa o *Archfiend's Oath*, declara o nome que você acabou de ver e garante um saque extra imbatível por meros 500 LP! E como ela é contínua, você pode fazer isso todo turno se tiver controle do seu topo.
 * **O Moinho Tático (Self-Mill Controlado):** Em decks que dependem fortemente de monstros no cemitério (como decks de *Chaos*, *Zumbis* ou peças cruciais para reviver depois), você pode usar o *Archfiend's Oath* e declarar um nome absurdo de propósito. O resultado? Você erra a adivinhação garantidamente e "manda" a carta do topo do deck pro cemitério. É uma forma fantástica e barata de acelerar (Milar) o próprio deck ativamente a cada turno, alimentando sua pilha de cemitério para jogadas futuras!
 
+## ID: DM0107 - Array of Revealing Light (Password: 69806154)
 
+A carta **"Array of Revealing Light"** (Matriz da Luz Reveladora) é uma Magia de Campo (Field Spell) que atua como uma ferramenta severa de controle de ritmo (*Stall*), punindo diretamente invocações.
+
+> *"Declare 1 Type of monster. Any monster of the declared Type cannot declare an attack during the turn it is Normal Summoned, Special Summoned, or Flip Summoned."*
+
+### Como ela funciona na prática:
+
+1. **A Declaração:** Ao ativar esta Magia de Campo, o painel de Seleção de Raças da nossa Engine (`AnnounceSelectionUI`) se abre, pedindo para você escolher um Tipo específico (ex: *Dragon*, *Machine*, *Warrior*).
+2. **O Status no Tabuleiro:** Por ser uma Magia de Campo, ela permanece ativa na mesa indefinidamente até ser destruída ou substituída por outra Magia de Campo.
+3. **A Restrição (Enjoo de Invocação):** Enquanto a carta estiver ativa, qualquer monstro que for Invocado (Normal, Special ou Flip) que possua o Tipo que você escolheu **ficará proibido de atacar naquele mesmo turno**.
+   * *Atenção:* O efeito dura **apenas no turno em que o monstro nasceu**. Se ele sobreviver até o próximo turno, ele estará livre para atacar normalmente!
+
+### 💡 O grande truque dessa carta:
+Diferente da *Swords of Revealing Light* (que trava tudo por 3 turnos e some), a *Array* é um escudo permanente contra "Ataques Surpresa", exigindo que você conheça bem o baralho do oponente!
+
+* **O Matador de Combos/OTK:** Muitos decks de campeonato (como dragões ou zumbis) dependem de invocar o chefe deles e atacar no mesmo turno para zerar seus Pontos de Vida (OTK - One Turn Kill). Ao declarar a raça principal do oponente, você garante que qualquer "monstrão" que ele chame da mão ou do cemitério ficará "congelado" assistindo, dando a você um turno inteiro para destruí-lo com uma mágica antes que ele possa desferir o golpe!
+* **A Integração na Engine C#:** No nosso motor de jogo, essa magia inaugura a varredura da flag `STATUS_SUMMON_TURN`. A Engine C# agora marca o turno exato de nascimento de cada carta no tabuleiro, permitindo que a IA do oponente e a interface do jogador (Espada de Ataque) saibam exatamente se estão paralisados ou prontos para a guerra!
 
 
 

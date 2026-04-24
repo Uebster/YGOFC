@@ -54,9 +54,8 @@ public class GlobalAuraManager : MonoBehaviour
                     // if (sourceCard != null && sourceCard.unityData.name == "Jinzo")
                     //     Debug.Log($"<color=orange>[DEBUG JINZO]</color> Aura Filter testando se carta é Trap: {card.unityData.name}. Resultado: {resBool}");
                     return resBool;
-                } catch (System.Exception) { 
-                    // if (sourceCard != null && sourceCard.unityData.name == "Jinzo")
-                    //     Debug.Log($"<color=red>[DEBUG JINZO]</color> Aura Filter Exception: {ex.Message}");
+                } catch (System.Exception ex) { 
+                    Debug.LogWarning($"<color=red>[AuraManager] Erro fatal no filtro da Aura ({sourceCard?.unityData?.name}): {ex.Message}</color>");
                     return false; 
                 }
             },
@@ -126,7 +125,10 @@ public class GlobalAuraManager : MonoBehaviour
                         try {
                             var res = valClosure.Call(aura.sourceEffect, effectToActivate, card.GetControler());
                             applies = res.Type == MoonSharp.Interpreter.DataType.Boolean && res.Boolean;
-                        } catch { applies = false; }
+                        } catch (System.Exception ex) { 
+                            Debug.LogWarning($"<color=red>[AuraManager] Erro na imunidade de {aura.sourceCard?.unityData?.name}: {ex.Message}</color>");
+                            applies = false; 
+                        }
                     }
                 }
                 else applies = aura.filter(card);

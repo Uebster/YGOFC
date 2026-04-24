@@ -152,14 +152,14 @@ public class DeclareCardNameUI : MonoBehaviour
                 int.TryParse(digits, out cardId);
             }
             
-            Debug.Log($"<color=green>[DeclareCardNameUI]</color> Carta Selecionada: <b>{currentMatch.name}</b> | Pass: {currentMatch.password} | ID LUA: {cardId}");
+            // Debug.Log($"<color=green>[DeclareCardNameUI]</color> Carta Selecionada: <b>{currentMatch.name}</b> | Pass: {currentMatch.password} | ID LUA: {cardId}");
 
             gameObject.SetActive(false);
             onConfirm?.Invoke(cardId);
         }
         else
         {
-            Debug.LogWarning("<color=orange>[DeclareCardNameUI]</color> Tentou confirmar, mas nenhuma carta correspondente foi encontrada no 'currentMatch'.");
+            // Debug.LogWarning("<color=orange>[DeclareCardNameUI]</color> Tentou confirmar, mas nenhuma carta correspondente foi encontrada no 'currentMatch'.");
         }
     }
 

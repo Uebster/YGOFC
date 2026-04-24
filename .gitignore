@@ -85,3 +85,6 @@ Assets/Documentation/Ideas*
 
 
 SpriteGeneratorAI/
+
+Assets/Scripts/LuaUtilityCSharp.cs
+Assets/Scripts/HintTranslator.cs

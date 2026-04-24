@@ -239,7 +239,7 @@ public class CardEffectManager : MonoBehaviour
             {
                 if (effect.currentUsages >= effect.countLimitMax) 
                 {
-                    Debug.LogWarning($"<color=orange>[OncePerTurn]</color> O efeito de {luaCard.unityData.name} atingiu o limite de usos ({effect.currentUsages}/{effect.countLimitMax}). Bloqueado!");
+                    // Debug.LogWarning($"<color=orange>[OncePerTurn]</color> O efeito de {luaCard.unityData.name} atingiu o limite de usos ({effect.currentUsages}/{effect.countLimitMax}). Bloqueado!");
                     return false;
                 }
             }
@@ -248,7 +248,7 @@ public class CardEffectManager : MonoBehaviour
                 string key = $"{tp}_{effect.countLimitCode}";
                 if (luaDuel.hardOncePerTurnUsages.ContainsKey(key) && luaDuel.hardOncePerTurnUsages[key] >= effect.countLimitMax) 
                 {
-                    Debug.LogWarning($"<color=orange>[OncePerTurn]</color> O efeito HARD de {luaCard.unityData.name} atingiu o limite. Bloqueado!");
+                    // Debug.LogWarning($"<color=orange>[OncePerTurn]</color> O efeito HARD de {luaCard.unityData.name} atingiu o limite. Bloqueado!");
                     return false;
                 }
             }
@@ -684,6 +684,7 @@ public class CardEffectManager : MonoBehaviour
                 if (effect.code == 13) modType = "CANNOT_ACTIVATE"; // EFFECT_CANNOT_ACTIVATE
                 else if (effect.code == 24) modType = "CANNOT_TRIGGER"; // EFFECT_CANNOT_TRIGGER
                 else if (effect.code == 30) modType = "DISABLE";                   // EFFECT_DISABLE
+                else if (effect.code == 85) modType = "CANNOT_ATTACK";             // EFFECT_CANNOT_ATTACK
                 else if (effect.code == 104) modType = "IMMUNE";                   // EFFECT_IMMUNE_EFFECT
 
                 if (!string.IsNullOrEmpty(modType))
@@ -694,6 +695,7 @@ public class CardEffectManager : MonoBehaviour
                         filterToUse = null; // Será avaliado dinamicamente via GetValue() em IsUnderRestriction
                     }
 
+                    Debug.Log($"<color=green>[AuraManager LOG]</color> Barreira Invisível Registrada: {modType} | Fonte: {effect.owner.unityData.name} | Efeito LUA: {effect.code}");
                     auraManager.RegisterAura(effect.owner, effect, filterToUse, modType, 0, CardLocation.Hand | CardLocation.Field | CardLocation.Graveyard);
                 }
             }

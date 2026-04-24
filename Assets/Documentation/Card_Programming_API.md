@@ -354,3 +354,32 @@ Muitos scripts LUA precisam armazenar escolhas feitas pelo jogador (como declara
 *   **O Problema (Amnésia):** Cartas como *Abyssal Designator* usavam `e:SetLabel(att)` para guardar o atributo escolhido. Como a implementação C# de `LuaEffect.cs` possuía apenas Stubs vazios para esses métodos, a variável era descartada, e o filtro recebia `0`, falhando silenciosamente na hora de procurar a carta no deck.
 *   **A Solução:** Implementação das propriedades internas `_label` e `_labelObject` no `LuaEffect.cs` e a correção do despachante `GetChainInfo` no `LuaDuel.cs` para transportar o `targetParam` e `targetPlayer` corretamente.
 *   **O Impacto:** A Engine tornou-se capaz de sustentar o "Contexto" (Context State) de uma carta, permitindo que a IA ou o jogador retenham escolhas arbitrárias na RAM e apliquem filtros precisos sem modificar a estrutura OCGCore original.
+
+---
+
+## 5.9 Core Pillars e A Regra Brutal das Constantes (Metatable Interceptor)
+
+A estabilidade do motor LUA depende de uma regra de design inquebrável: **Jamais assuma que a matemática de um script falhou sem antes verificar se a Unity conhece as palavras contidas nela.** O LUA não avisa naturalmente quando uma variável global não existe; ele a trata como nula (`nil`). Tentar fazer operações matemáticas com nulos (ex: `STATUS_SUMMON_TURN + nil`) causa um erro fatal silencioso na Engine, abortando o script por completo.
+
+### 5.9.1 O Detector Universal (A Regra Brutal)
+Para erradicar a caça a fantasmas (onde um script LUA trava e o desenvolvedor passa horas depurando funções C# em vão), injetamos um interceptador implacável na metatabela global (`_G`) através do script `LuaEngineCore.cs`:
+
+```lua
+setmetatable(_G, {
+    __index = function(t, k)
+        if type(k) == 'string' and string.match(k, '^[A-Z0-9_]+$') then 
+            Log('<color=red>[LUA MISSING CONSTANT]</color> A constante ' .. k .. ' não está definida na Engine C#! Retornando 0 (NIL) como Fallback.')
+            return 0 
+        end
+        if type(k) == 'string' and string.match(k, '^[A-Z][a-zA-Z0-9_]*$') then 
+            Log('<color=red>[LUA MISSING STUB]</color> A Classe ' .. k .. ' não está definida na Engine C#! Retornando Dummy.')
+            return dummyTable 
+        end
+        return nil
+    end
+})
+```
+
+### 5.9.2 Protocolo de Resolução e Mitigação
+*   **Monitoramento Implacável:** Se o Console da Unity gritar `<color=red>[LUA MISSING CONSTANT] NOME_DA_VARIAVEL</color>`, a prioridade máxima e imediata do desenvolvedor é abrir o arquivo original `constant.lua` do YGOPro (incluído no projeto como referência/cheat sheet), descobrir o valor numérico ou hexadecimal daquela constante, e injetá-la imediatamente no método `InjectVitalConstants()` da classe `LuaEngineCore.cs`.
+*   **Mitigação de Stubs (Funções Vazias):** Da mesma forma, se a engine alertar `<color=red>[LUA MISSING STUB] NomeDaClasse</color>` (ex: uma carta chamou `Coin.Toss()`), significa que uma classe de procedimento nativa em C# não foi exportada para o Lua. A Engine C# agora devolve uma tabela inofensiva (`dummyTable`) blindada contra crasches. No entanto, a prioridade do projeto é **diminuir a quantidade de Stubs Vazios**. Verifique o que a classe ausente estava tentando fazer e mapeie o comportamento visual ou lógico corretamente na Unity!

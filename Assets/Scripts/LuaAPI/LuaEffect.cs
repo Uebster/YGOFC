@@ -23,6 +23,7 @@ public class LuaEffect
     public int category;
     private object _valueObject = 0;
     private int _label = 0;
+    private object _labelObject = null;
     private int _resetValue = 0;
     public int countLimitMax = 0;
     public int countLimitCode = 0;
@@ -83,8 +84,15 @@ public class LuaEffect
     public void SetValue(params object[] args) { if (args != null && args.Length > 0) _valueObject = args[0]; }
     public object GetValue() { return _valueObject; }
     public void SetRange(params object[] args) { }
-    public void SetLabel(params object[] args) { if (args != null && args.Length > 0) _label = ConvertToInt(args[0]); }
-    public int GetLabel() { return _label; }
+    
+    public void SetLabel(params object[] args) { 
+        if (args != null && args.Length > 0) _label = ConvertToInt(args[0]); 
+        Debug.Log($"<color=magenta>[LuaEffect LOG]</color> SetLabel chamado! Memória armazenada: {_label} (Efeito ID: {code})");
+    }
+    
+    public int GetLabel() { 
+        return _label; 
+    }
     
     public bool IsHasProperty(object prop) { return true; }
     public bool IsHasCategory(object cat) { return true; }
@@ -103,8 +111,11 @@ public class LuaEffect
     public int GetProperty() { return property; }
     public int GetCode() { return code; }
     
-    private object _labelObject = null;
-    public void SetLabelObject(object o) { _labelObject = o; }
+    public void SetLabelObject(object o) { 
+        _labelObject = o; 
+        Debug.Log($"<color=magenta>[LuaEffect LOG]</color> SetLabelObject chamado! Ponte criada com o objeto LUA.");
+    }
+    
     public object GetLabelObject() { 
         if (_labelObject != null) return _labelObject;
         return new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 }); 
@@ -125,6 +136,7 @@ public class LuaEffect
             operationFunc = this.operationFunc,
             _valueObject = this._valueObject,
             _label = this._label,
+            _labelObject = this._labelObject, // FIX: Copiando a Ponte de Memória!
             _resetValue = this._resetValue,
             countLimitMax = this.countLimitMax,
             countLimitCode = this.countLimitCode,
