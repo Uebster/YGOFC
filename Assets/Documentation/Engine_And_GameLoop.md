@@ -32,93 +32,74 @@ O jogo utiliza uma arquitetura de múltiplos Managers (Singletons) para separar 
 
 ---
 
-## 3.2 Funções Vitais e Configurações (`GameManager.cs`)
+## 3.2 O Grande Cérebro Dividido (A Arquitetura Modular do `GameManager`)
 
-O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente. Ele orquestra o duelo, atuando como o "mestre de cerimônias" que detém o estado do jogo e serve como a API principal para a UI e outros gerenciadores.
+O `GameManager` é um Singleton (`GameManager.Instance`) acessível globalmente. Devido à imensa quantidade de responsabilidades, ele foi refatorado utilizando o padrão `partial class` do C#. Isso significa que, para a engine da Unity e os scripts Lua, ele age como um único objeto monolítico, mas o seu código-fonte é organizado cirurgicamente em 7 arquivos diferentes para facilitar a manutenção e escalabilidade.
 
-### 3.2.1 Orquestração do Duelo e Gerenciamento de Estado
-*   **Controle do Duelo:**
-    *   `StartDuel()`: Ponto de entrada para iniciar um duelo. Limpa o estado anterior, inicializa decks, LPs e define de quem é o turno (`isPlayerTurn`). Em seguida, chama a corrotina `DuelStartSequence`.
-    *   `DuelStartSequence()`: A rotina cinematográfica que organiza o fluxo inicial: Embaralha os decks -> Saca as 5 cartas para ambos simultaneamente -> Anuncia "YOUR TURN" -> Aguarda o tempo exato do Fade Out do texto -> Dá o gatilho para o `PhaseManager.StartTurn()`.
-    *   `StartDuel(opponent, duelIndex)`: Sobrecarga para iniciar um duelo de campanha contra um oponente específico.
-    *   `EndDuel(bool playerWon, isDeckOut)`: Finaliza o duelo, chama o `DuelScoreManager` e exibe a tela de recompensas.
-    *   `SwitchTurn()` e `TurnTransitionRoutine()`: Preparam a mesa para o próximo jogador. Exibem a mensagem de "Turno", aguardam o tempo de leitura configurado no Inspector (`displayDuration`) e só então destravam a IA e passam para a próxima Draw Phase, evitando que a IA jogue cartas por cima dos textos da UI.
-    *   `CleanupDuelState()`: Método de limpeza pesada que destrói todos os GameObjects de cartas, limpa todas as listas de dados (mão, campo, GY, etc.) e reseta a UI.
-*   **Gerenciamento de Vida (LP):**
-    *   `DamagePlayer(int amount)` / `DamageOpponent(int amount)`: Reduz LP, exibe pop-up de dano, notifica o `CardEffectManager` e verifica condição de derrota.
-    *   `PayLifePoints(isPlayer, amount)`: Tenta pagar um custo em LP. Retorna `false` se os LPs forem insuficientes.
-    *   `GainLifePoints(isPlayer, amount)`: Aumenta os LPs, exibe pop-up e notifica o `CardEffectManager`.
-*   **Eventos de Fase (Hooks):**
-    *   `OnDrawPhaseStart()`: Chamado pelo `PhaseManager`. Reseta contadores de turno (Normal Summon, ataques) e inicia o saque.
-    *   `OnStandbyPhaseStart()`: Chamado pelo `PhaseManager`. Dispara a verificação de custos de manutenção no `CardEffectManager`.
-    *   `OnEndPhaseStart()`: Chamado pelo `PhaseManager`. Inicia a corrotina `HandleHandLimitSequence` para verificar o limite de mão.
-*   **Consultas de Estado:**
-    *   `IsCardActiveOnField(cardId)`: Verifica se uma carta com um ID específico está com a face para cima no campo (para efeitos contínuos como *Jinzo*).
-    *   `GetFieldCardCount(isPlayer)`, `GetMonsterCount(isPlayer)`, `GetFreeMonsterZones(isPlayer)`, `GetFreeSpellTrapZones(isPlayer)`: Helpers para a IA e efeitos de cartas consultarem o estado do tabuleiro.
-    *   `GetPlayerHandData()`, `GetPlayerGraveyard()`, etc.: Métodos que retornam as listas de `CardData` das zonas correspondentes.
+### 3.2.1 `GameManager.cs` (O Core, Configurações e Variáveis)
+É o arquivo base e hub de memória. Abriga **exclusivamente** as variáveis globais, enumeradores (`GamePhase`, `StatDisplayMode`), referências de Inspector para UI, e os métodos nativos da Unity (`Awake`, `Start`, `Update`, `OnValidate`, `OnDestroy`).
+*   **Hooks de Inicialização:** `EnsureCoreManagers()`, `CreateManager()`, `GetUIParent()`, `SetPlayerProfile()`.
+*   **Modos de Jogo e Debug (Flags):** `devMode`, `fullTestMode`, `testDuelDirectly`, `infiniteLP`, `disableBanlist`, `unlockAllCards`, `alwaysCoinHead`.
+*   **UX e Configurações de UI:** `useMouseTooltipUI`, `quickSummonFromHand`, `confirmAttackTarget`, `useDirectHandSelection`, `playerDrawSpeed`.
 
-### 3.2.2 API de Ações de Jogo (A Caixa de Ferramentas)
-Esta é a API principal que a UI e o `CardEffectManager` usam para executar ações no jogo.
+### 3.2.2 `GameManager_Phases.cs` (Orquestração de Fases, Turnos e Fim de Jogo)
+Gerencia o fluxo de tempo e a transição do duelo do começo ao fim. É o parceiro direto do `PhaseManager`.
+*   **Início e Fim:** 
+    *   `StartDuel()`, `StartDuel(opponent, duelIndex)`: Ponto de entrada, limpa o campo e delega a criação dos decks.
+    *   `DuelStartSequence()`: Rotina de abertura cinematográfica (compra as 5 cartas iniciais após o shuffle).
+    *   `EndDuel(playerWon, isDeckOut)`: Mostra a mensagem de vitória, escurece a tela e processa os drops.
+    *   `CalculateDrop(rank, opponent)`: Lógica percentual baseada no rank e nas pools (S+ a D).
+    *   `CheckExodiaWin()`: Condição de vitória instantânea varrendo a mão do jogador.
+*   **Ciclo de Turnos:** `SwitchTurn()`, `TurnTransitionRoutine()` (pausa a engine para o texto "YOUR TURN").
+*   **Gatilhos de Fase (Hooks C#):** `OnDrawPhaseStart()`, `OnStandbyPhaseStart()`, `OnMainPhase1Start()`, `OnEndPhaseStart()`.
+*   **Limites e UI Dinâmica:** `HandleHandLimitSequence()` (regra das 6 cartas) e `AnnounceText(string text)` (cria o banner de fase voador no HUD).
 
-*   **Movimentação de Cartas (Core):**
-    *   `MoveCard(card, destination, reason)`: **Método unificado** para mover uma carta entre zonas (Mão, Deck, GY, Banida). Centraliza a lógica de saída de campo.
-    *   `DrawCard(ignoreLimit)` / `DrawOpponentCard()`: Delega a compra de cartas ao `DeckManager`.
-    *   `SendToGraveyard(card, isPlayer, from, reason)`: Adiciona a carta à lista do cemitério e notifica o `CardEffectManager`.
-    *   `BanishCard(card)`: Nova implementação para banir uma carta do jogo.
-    *   `ReturnToHand(card)` / `ReturnToDeck(card, toTop)`: Efeitos de "Bounce" e "Spin".
-    *   `EquipMonsterToMonster(equip, target)`: Transforma um monstro em equipamento e cria um `CardLink`.
-*   **Ações de Jogo:**
-    *   `TrySummonMonster(cardGO, data, isSet)`: Inicia a validação de invocação e, se aprovada, delega para `CardEffectManager` (Lua) ou `FinalizeSummon`.
-    *   `FinalizeSummon(...)`: Etapa final da invocação, responsável por colocar a carta fisicamente na zona e aplicar os efeitos visuais.
-    *   `PlaySpellTrap(cardGO, data, isSet)`: Inicia a validação para ativar ou baixar uma Magia/Armadilha.
-    *   `ActivateFieldSpellTrap(cardGO)`: Ativa uma carta que já estava Setada no campo.
-    *   `TributeCard(card)`: Envia uma carta ao cemitério como tributo (com VFX).
-    *   `DiscardCard(card)` / `DiscardRandomHand(isPlayer, amount)` / `DiscardHand(isPlayer)`: Métodos para descarte.
-*   **Invocações Especiais e Mecânicas:**
-    *   `SpecialSummonFromData(...)`: Invoca um monstro diretamente a partir de seus dados (`CardData`), usado para reviver do cemitério ou invocar do deck.
-    *   `BeginFusionSummon(source)` / `BeginRitualSummon(source)`: Abrem as UIs de Fusão/Ritual para seleção de materiais.
-    *   `PerformRitualSummon(source, ritual, tributes)`: Executa a invocação ritual após a seleção.
-    *   `SpawnToken(...)`: Cria um Token em uma zona de monstro livre.
-    *   `SwitchControl(card)`: Troca o controle de um monstro para o oponente.
-*   **Interação com UI e Minigames:**
-    *   `OpenCardMultiSelection(...)`: Abre a UI para seleção de cartas de uma lista.
-    *   `HandleHandCardClick(card)`: Gerencia a lógica de clique para o modo `useDirectHandSelection`.
-    *   `TossCoin(...)` / `RollDice(...)`: Inicia os respectivos minigames.
-    *   `ViewGraveyard(isPlayer)`, `ViewDeck(isPlayer)`, etc: Abrem os painéis de visualização das pilhas.
-    *   `UpdateCardViewer(card, isFaceUp)` / `ClearCardViewer()`: Controla a janela de visualização principal.
-    *   `ToggleOpponentHandVisibility()`: Ferramenta de debug para mostrar/esconder a mão do oponente.
+### 3.2.3 `GameManager_BoardActions.cs` (Movimentação Física e Magias/Armadilhas)
+Lida puramente com a manipulação espacial dos GameObjects, zonas e vínculos no tabuleiro.
+*   **Movimento Base:** 
+    *   `MoveCard(card, destination, reason)`: O método universal e seguro para mover uma carta entre zonas (Graveyard, Hand, Deck, Banished, ExtraDeck).
+    *   `SendToGraveyard(card, isPlayer, from, reason)`: Insere logicamente na pilha de cemitério.
+    *   `BanishCard(card)`, `RemoveFromPlay(card, isPlayer)`: Exilação do jogo.
+    *   `ReturnToHand(card)`, `AnimateCardToHand(...)`: Retorno e Bounce com animação ou fantasma.
+*   **Spells/Traps:** `PlaySpellTrap(cardGO, data, isSet)`, `ActivateFieldSpellTrap(cardGO)`, `SetSpellTrapFromData(...)`.
+*   **Interações e Vínculos:** `EquipMonsterToMonster(equip, target)`, `SwitchControl(card)`, `CreateCardLink(source, target, type)`.
+*   **Helpers:** `ClearFieldZonesOnly()`, `GetFieldCardCount()`, `GetMonsterCount()`, `FindCardOnField()`, `IsCardActiveOnField(cardId)`.
 
-### 3.2.3 Modos de Jogo, Debug e Ferramentas (Inspector Flags)
-*   `devMode`: Habilita trapaças gerais (comprar a qualquer hora, controlar cartas do oponente).
-*   `effectTestMode`: Habilita o menu de teste de VFX/Sons isolados.
-*   **Hierarquia de Teste Direto (Pula o Menu Principal):** O sistema agora segue uma prioridade rígida (1 frame delay) para iniciar telas diretamente pela Unity:
-    1.  `testDuelDirectly`: (Prioridade 1) Pula menus e inicia duelo livre imediatamente.
-    2.  `testDeckBuilderDirectly`: (Prioridade 2) Inicia na tela de Deck.
-    3.  `testLibraryDirectly`: (Prioridade 3) Inicia na página da Biblioteca de Cartas.
-*   `testOpponentID` / `testPlayerID`: Substitui baralhos por perfis específicos para teste.
-*   `unlockAllCards`: (Requer `devMode`) Se marcado, adiciona 3 cópias de TODAS as cartas ao Baú. As cartas virão marcadas como "Usadas" para evitar poluir a Biblioteca com a tag "New".
-*   `disableDeckShuffle`: Impede o embaralhamento inicial. As cartas virão na ordem do JSON (Útil para "Stacking the Deck").
-*   `forcePlayerGoingFirst`: Força o jogador a sempre ter o primeiro turno, ignorando a moeda.
-*   `infiniteLP`: O jogador não toma dano (Modo Deus).
-*   `infiniteNormalSummons`: Remove o limite de 1 Normal Summon por turno.
-*   `disableTributeRequirements`: Permite invocar monstros Nível 5+ sem tributos.
-*   `disableFusionCost` / `disableRitualCost`: Não consome materiais ou a carta mágica no processo.
-*   `alwaysCoinHead`: Força o resultado das moedas a ser sempre Cara.
-*   `enableHandLimit`: Ativa a regra de limite de mão (6 cartas) no End Phase.
-*   `allowForbiddenCards` / `disableBanlist`: Flexibiliza ou ignora a lista de cartas proibidas.
-*   `placeTributeSummonInTributeZone`: Monstros invocados ocupam a zona do primeiro sacrifício.
-*   `applyModernFirstTurnDrawRule`: Se marcado (Regra MR3+), o jogador que iniciar o duelo NÃO saca uma carta no seu 1º turno. Se desmarcado, utiliza a Regra Clássica/Goat, permitindo a compra. Essencial para suporte futuro a múltiplas eras (Classic vs Modern).
-*   `ToggleFullscreen()`: Alterna modo janela/tela cheia (Atalho: F11 em DevMode).
+### 3.2.4 `GameManager_Decks.cs` (Pilhas, Setup, Saque e Visualizadores)
+Focado estritamente na mecânica de baralhos, compra de cartas, embaralhamento e exibição visual de pilhas.
+*   **Setup e Gestão:** `CleanupDuelState()` (Limpeza hard de tela/listas), `InitializePlayerDeck()`, `InitializeOpponentDeck()`.
+*   **Compras (Draw) e Deck:** `DrawCard(ignoreLimit)`, `DrawOpponentCard()`, `DrawInitialHandRoutine(count)`, `MillCards(...)`.
+*   **Embaralhamento:** `ShuffleDeck(isPlayer)`, `ShuffleHand(isPlayer)` e a corrotina `HandShuffleRoutine(...)`.
+*   **Visuais e Modais (Viewers):** `ViewGraveyard(isPlayer)`, `ViewExtraDeck(isPlayer)`, `ViewDeck(isPlayer)`, `ViewRemovedCards(isPlayer)`, `UpdatePileVisuals()`.
 
-### 3.2.4 Opções de Input, UX e Velocidade
-*   `enableRightClickPhaseMenu`: Clicar com botão direito no campo vazio abre atalhos de fase.
-*   `confirmBattlePositionChange` / `confirmAttackTarget`: Omissão de UI para gameplay ágil.
-*   `useDirectHandSelection`: Permite selecionar cartas de tributo/descarte clicando fisicamente nelas na mão 3D.
-*   `confirmHandSelection`: Se marcado, pede confirmação final após selecionar a carta 3D.
-*   `useMouseTooltipUI`: Se ativado, usa um prefab de mouse com atalhos de Esquerdo/Direito em vez do Menu de Ação Clássico.
-*   `quickSummonFromHand` / `quickSpellTrapFromHand`: Permite invocar/setar com um clique único, pulando o menu.
-*   `quickAttackDirectly`: Se não houver monstros inimigos, clicar no atacante bate direto sem precisar clicar no Avatar.
-*   **Velocidade (`playerDrawSpeed` / `opponentDrawSpeed`):** Tempo (em segundos) entre cada carta comprada na animação fluida inicial.
+### 3.2.5 `GameManager_Stats.cs` (Life Points, Status Visuais e Dev Tools)
+Isola os cálculos matemáticos de pontos de vida, os recálculos visuais de status sobre as cartas renderizadas e ferramentas de depuração em tempo real.
+*   **Life Points (LP):** `DamagePlayer(amount)`, `DamageOpponent(amount)`, `UpdateLPUI()`.
+*   **Renderização Dinâmica (Card Viewer):** `UpdateCardViewer(hoveredCard, isFaceUp)`, `ClearCardViewer()`.
+*   **Motor de Status (`RefreshAllCardsVisuals`):** Varre a mesa inteira injetando os efeitos contínuos (`EFFECT_TYPE_SINGLE`) processados pelo Lua direto nos textos da UI.
+*   **Buscas Espaciais:** `GetFreeMonsterZone(isPlayer)`, `GetFreeSpellZone(isPlayer)`.
+*   **Ferramentas Dev/QA:** `Dev_InjectDependencies(CardData)` (Lê aspas no texto da carta e injeta dependências no Deck em runtime para não dar soft-lock em testes), `Dev_NextOpponent()`, `ToggleOpponentHandVisibility()`.
+
+### 3.2.6 `GameManager_Summons.cs` (O Motor de Invocações)
+Arquivo dedicado única e exclusivamente à complexa mecânica de trazer monstros para o jogo e suas regras atreladas.
+*   **Invocação Normal/Tributo:** `TrySummonMonster(cardGO, cardData, isSet, ignoreLimit)` e `PerformTributeSummon(...)`.
+*   **Invocação Especial:** `PerformSpecialSummon(cardGO, cardData)` (abre escolha Atk/Def), `SpecialSummonFromData(...)` (puxa cartas direto do JSON, usado no cemitério), `DefaultSpecialSummon(...)`.
+*   **A Ponte Final:** `FinalizeSummon(...)` (a função crítica que ancora a carta na mesa, calcula rotações de Atk/Def e dispara as cinemáticas do `DuelFXManager`).
+*   **Gatilhos de LUA:** `OnSummon(card)`, `OnFlipSummon(card)`.
+*   **Mecânicas Dedicadas:**
+    *   **Fusão:** `BeginFusionSummon(sourceCard)`, `SelectMaterialsForFusion(...)`.
+    *   **Ritual:** `BeginRitualSummon(sourceCard)`, `SelectTributesForRitual(...)`, `PerformRitualSummon(...)`.
+    *   **Fichas:** `SpawnToken(forPlayer, atk, def, name, level, race, attribute)`.
+
+### 3.2.7 `GameManager_Selections.cs` (UI Tátil, Miras, Espadas e Minigames)
+Acomoda tudo o que exige Input interativo humano no tabuleiro para satisfazer requisições e "Yields" do LUA.
+*   **Miras e Combate:** 
+    *   `HandleAttackIndicatorHover(card, isHovering)` e `RefreshAttackIndicators()` (Mostram os ícones de cruzamento de espadas sobre cartas aptas).
+    *   `CancelAttackTargeting()` (Aborta o alvo e destrói as espadas em voo).
+*   **Seleção Tátil (Hand/Field 3D):** `StartDirectSelection(...)`, `OpenDirectCardDisplaySelection(...)`, `HandleHandCardClick(card)`, `FinishHandSelection(isCancel)`. Substitui o modal genérico por cliques reais no tabuleiro.
+*   **Seleção Tradicional (Modal UI):** `OpenCardMultiSelection(...)`, `OpenCardSelection(...)`.
+*   **Janela de Corrente:** `StartResponseSelection(...)`, `HandleResponseSelection(card)`, `CancelResponseSelection()`, `IsResponseCandidate(card)`.
+*   **Minigames Matemáticos:** `TossCoin(numberOfCoins, onResult)`, `CoinTossRoutine(...)`, `RollDice(count, requireChoice, callback)`.
 
 ---
 

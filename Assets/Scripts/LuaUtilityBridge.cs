@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using MoonSharp.Interpreter;
+using Card = LuaCard;
+using Effect = LuaEffect;
+using Group = LuaGroup;
 
 /// <summary>
 /// Bridge para chamar as funções auxiliares definidas no arquivo utility.lua.
@@ -177,9 +180,9 @@ public static class LuaUtilityBridge
         public static bool IsInMainMZone(Card c, int? tp = null) => CallLuaFunction<bool>("Auxiliary.IsInMainMZone", c, tp);
         public static bool IsInExtraMZone(Card c, int? tp = null) => CallLuaFunction<bool>("Auxiliary.IsInExtraMZone", c, tp);
         public static int AnnounceAnotherAttribute(Card c, int tp) => CallLuaFunction<int>("Auxiliary.AnnounceAnotherAttribute", c, tp);
-        public static bool IsAttributeExcept(Card c, int att, Card scard = null, int sumtype = 0, int playerid = PLAYER_NONE) => CallLuaFunction<bool>("Auxiliary.IsAttributeExcept", c, att, scard, sumtype, playerid);
+        public static bool IsAttributeExcept(Card c, int att, Card scard = null, int sumtype = 0, int playerid = 2 /*PLAYER_NONE*/) => CallLuaFunction<bool>("Auxiliary.IsAttributeExcept", c, att, scard, sumtype, playerid);
         public static int AnnounceAnotherRace(Card c, int tp) => CallLuaFunction<int>("Auxiliary.AnnounceAnotherRace", c, tp);
-        public static bool IsRaceExcept(Card c, int race, Card scard = null, int sumtype = 0, int playerid = PLAYER_NONE) => CallLuaFunction<bool>("Auxiliary.IsRaceExcept", c, race, scard, sumtype, playerid);
+        public static bool IsRaceExcept(Card c, int race, Card scard = null, int sumtype = 0, int playerid = 2 /*PLAYER_NONE*/) => CallLuaFunction<bool>("Auxiliary.IsRaceExcept", c, race, scard, sumtype, playerid);
         public static bool IsSequence(Card c, params int[] seqs) => CallLuaFunction<bool>("Auxiliary.IsSequence", c, seqs);
         public static bool HasLevel(Card c) => CallLuaFunction<bool>("Auxiliary.HasLevel", c);
         public static bool HasRank(Card c) => CallLuaFunction<bool>("Auxiliary.HasRank", c);
@@ -302,7 +305,7 @@ public static class LuaUtilityBridge
             => CallLuaFunction<bool>("Cost.HintSelectedEffect", e, tp, eg, ep, ev, re, r, rp, chk);
         public static Func<Effect, int, Group, int, int, Effect, int, int, int, bool> Discard(Func<Card, Effect, int, bool> filter, Card other, object min, object max, Action<Effect, int, Group> op = null)
             => (e, tp, eg, ep, ev, re, r, rp, chk) => CallLuaFunction<bool>("Cost.Discard", filter, other, min, max, op, e, tp, eg, ep, ev, re, r, rp, chk);
-        public static Func<Effect, int, Group, int, int, Effect, int, int, int, bool> Reveal(Func<Card, Effect, int, bool> filter, Card other, object min, object max, Action<Effect, int, Group> op = null, int location = LOCATION_HAND)
+        public static Func<Effect, int, Group, int, int, Effect, int, int, int, bool> Reveal(Func<Card, Effect, int, bool> filter, Card other, object min, object max, Action<Effect, int, Group> op = null, int location = 0x02 /*LOCATION_HAND*/)
             => (e, tp, eg, ep, ev, re, r, rp, chk) => CallLuaFunction<bool>("Cost.Reveal", filter, other, min, max, op, location, e, tp, eg, ep, ev, re, r, rp, chk);
         public static Func<Effect, int, Group, int, int, Effect, int, int, int, bool> DetachFromSelf(object min, object max = null, Action<Effect, Group> op = null)
             => (e, tp, eg, ep, ev, re, r, rp, chk) => CallLuaFunction<bool>("Cost.DetachFromSelf", min, max, op, e, tp, eg, ep, ev, re, r, rp, chk);
@@ -377,111 +380,4 @@ public static class LuaUtilityBridge
             throw new InvalidOperationException($"Função Lua '{functionName}' não encontrada.");
         _luaScript.Call(func, args);
     }
-
-    // Placeholder para constantes que podem ser necessárias (definir conforme seu projeto)
-    private const int LOCATION_HAND = 0x02;
-    private const int LOCATION_MZONE = 0x04;
-    private const int LOCATION_EXTRA = 0x40;
-    private const int LOCATION_REMOVED = 0x20;
-    private const int LOCATION_ONFIELD = 0x0c;
-    private const int LOCATION_SZONE = 0x08;
-    private const int LOCATION_DECK = 0x01;
-    private const int LOCATION_GRAVE = 0x10;
-    private const int LOCATION_PZONE = 0x80;
-    private const int LOCATION_MMZONE = 0x04;
-    private const int LOCATION_EMZONE = 0x100;
-    private const int PLAYER_NONE = 2;
-    private const int CATEGORY_DAMAGE = 0x80000;
-    private const int CATEGORY_RECOVER = 0x100000;
-    private const int PHASE_DAMAGE = 0x20;
-    private const int RESET_EVENT = 0x1000;
-    private const int RESET_CHAIN = 0x80000000;
-    private const int RESET_TURN_SET = 0x20000;
-    private const int RESET_TOFIELD = 0x1000000;
-    private const int RESET_LEAVE = 0x800000;
-    private const int RESET_TODECK = 0x400000;
-    private const int RESET_TOHAND = 0x200000;
-    private const int RESET_TEMP_REMOVE = 0x100000;
-    private const int RESET_REMOVE = 0x80000;
-    private const int RESET_TOGRAVE = 0x40000;
-    private const int RESET_DISABLE = 0x10000;
-    private const int RESETS_STANDARD = 0x1000000 | 0x800000 | 0x400000 | 0x200000 | 0x100000 | 0x80000 | 0x40000 | 0x20000;
-    private const int RESETS_STANDARD_DISABLE = RESETS_STANDARD | RESET_DISABLE;
-    private const int RESET_PHASE = 0x40000000;
-    private const int PHASE_END = 0x200;
-    private const int RESET_EVENT_PHASE_END = RESET_EVENT | RESET_PHASE | PHASE_END;
-    private const int EFFECT_FLAG_CANNOT_DISABLE = 0x4000;
-    private const int EFFECT_FLAG_UNCOPYABLE = 0x1000;
-    private const int EFFECT_FLAG_IGNORE_IMMUNE = 0x2000;
-    private const int EFFECT_FLAG_SET_AVAILABLE = 0x40000;
-    private const int EFFECT_FLAG_CLIENT_HINT = 0x80000;
-    private const int EFFECT_FLAG_OATH = 0x200;
-    private const int EFFECT_FLAG_PLAYER_TARGET = 0x400;
-    private const int EFFECT_FLAG2_MAJESTIC_MUST_COPY = 0x1;
-    private const int EFFECT_TYPE_SINGLE = 0x0001;
-    private const int EFFECT_TYPE_FIELD = 0x0002;
-    private const int EFFECT_TYPE_CONTINUOUS = 0x8000;
-    private const int EFFECT_TYPE_ACTIONS = 0x8000;
-    private const int TYPE_MONSTER = 0x1;
-    private const int TYPE_SPELL = 0x2;
-    private const int TYPE_TRAP = 0x4;
-    private const int TYPE_QUICKPLAY = 0x10000;
-    private const int TYPE_CONTINUOUS = 0x20000;
-    private const int TYPE_EQUIP = 0x40000;
-    private const int TYPE_FIELD = 0x80000;
-    private const int TYPE_RITUAL = 0x80;
-    private const int TYPE_LINK = 0x4000000;
-    private const int TYPE_COUNTER = 0x100000;
-    private const int TYPE_FUSION = 0x40;
-    private const int TYPE_SYNCHRO = 0x2000;
-    private const int TYPE_XYZ = 0x800000;
-    private const int TYPE_PENDULUM = 0x1000000;
-    private const int TYPE_EFFECT = 0x20;
-    private const int TYPE_TRAPMONSTER = 0x100;
-    private const int ATTRIBUTE_ALL = 0x7f;
-    private const int RACE_ALL = 0x3ffffff;
-    private const int POS_FACEUP = 0x5;
-    private const int POS_FACEDOWN = 0xa;
-    private const int POS_FACEUP_ATTACK = 0x1;
-    private const int POS_FACEDOWN_DEFENSE = 0x8;
-    private const int REASON_COST = 0x8;
-    private const int REASON_DISCARD = 0x100;
-    private const int REASON_DESTROY = 0x2;
-    private const int REASON_RETURN = 0x400;
-    private const int REASON_BATTLE = 0x4;
-    private const int REASON_TEMPORARY = 0x2000;
-    private const int REASON_EFFECT = 0x1;
-    private const int REASON_RULE = 0x8000;
-    private const int SUMMON_TYPE_NORMAL = 0x1000000;
-    private const int SUMMON_TYPE_TRIBUTE = 0x2000000;
-    private const int SUMMON_TYPE_FLIP = 0x4000000;
-    private const int SUMMON_TYPE_GEMINI = 0x8000000;
-    private const int SUMMON_TYPE_SPECIAL = 0x10000000;
-    private const int SUMMON_TYPE_RITUAL = 0x20000000;
-    private const int SUMMON_TYPE_FUSION = 0x40000000;
-    private const int SUMMON_TYPE_SYNCHRO = 0x80000000;
-    private const int SUMMON_TYPE_XYZ = 0x100000000;
-    private const int SUMMON_TYPE_PENDULUM = 0x200000000;
-    private const int SUMMON_TYPE_LINK = 0x400000000;
-    private const int STATUS_BATTLE_DESTROYED = 0x4000;
-    private const int STATUS_NO_LEVEL = 0x20;
-    private const int STATUS_OPPO_BATTLE = 0x10000000;
-    private const int STATUS_PROC_COMPLETE = 0x8;
-    private const int SEQ_DECKSHUFFLE = 1;
-    private const int SEQ_DECKTOP = 0;
-    private const int SEQ_DECKBOTTOM = 1;
-    private const int HINT_SELECTMSG = 2;
-    private const int HINTMSG_RESOLVEEFFECT = 634;
-    private const int HINTMSG_TOZONE = 503;
-    private const int HINTMSG_ATTRIBUTE = 505;
-    private const int HINTMSG_RACE = 506;
-    private const int HINTMSG_CONFIRM = 508;
-    private const int HINTMSG_TOFIELD = 509;
-    private const int HINTMSG_TOZONE = 503;
-    private const int HINTMSG_SPSUMMON = 501;
-    private const int HINTMSG_MONSTER = 500;
-    private const int HINTMSG_FIELD = 502;
-    private const int HINTMSG_RELEASE = 504;
-    private const int HINTMSG_DISCARD = 507;
-    // etc. – adicione os valores que seu projeto já define.
 }

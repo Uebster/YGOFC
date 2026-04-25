@@ -1102,6 +1102,30 @@ public class LuaEngineCore
         luaEngine.Globals["EFFECT_MARKER_TELLAR"] = 58858807;
         luaEngine.Globals["EFFECT_MARKER_DRAGON_RULER"] = 4965193;
         luaEngine.Globals["EFFECT_CAN_BE_TUNER"] = 30765615;
+        luaEngine.Globals["EFFECT_CLEAR_WALL"] = 6089145;
+        luaEngine.Globals["EFFECT_CLEAR_WORLD_IMMUNE"] = 97811903;
+        luaEngine.Globals["EFFECT_CYBERDARK_WORLD"] = 64753988;
+        luaEngine.Globals["EFFECT_FORMUD_SKIPPER"] = 50366775;
+        luaEngine.Globals["EFFECT_FUR_HIRE_REPLACE"] = 101303062;
+        luaEngine.Globals["EFFECT_GOLDEN_ALLURE_QUEEN"] = 95937545;
+        luaEngine.Globals["EFFECT_ICEBARRIER_REPLACE"] = 18319762;
+        luaEngine.Globals["EFFECT_MULTIPLE_TUNERS"] = 21142671;
+        luaEngine.Globals["EFFECT_SFORCE_REPLACE"] = 55049722;
+        luaEngine.Globals["EFFECT_SUPREME_CASTLE"] = 72043279;
+        luaEngine.Globals["EFFECT_SYNSUB_NORDIC"] = 61777313;
+        luaEngine.Globals["EFFECT_WITCHCRAFTER_REPLACE"] = 83289866;
+
+        luaEngine.Globals["FUSPROC_NOTFUSION"] = 0x100;
+        luaEngine.Globals["FUSPROC_CONTACTFUS"] = 0x200;
+        luaEngine.Globals["FUSPROC_LISTEDMATS"] = 0x400;
+        luaEngine.Globals["FUSPROC_NOLIMIT"] = 0x800;
+        luaEngine.Globals["FUSPROC_CANCELABLE"] = 0x1000;
+        luaEngine.Globals["RITPROC_EQUAL"] = 0x1;
+        luaEngine.Globals["RITPROC_GREATER"] = 0x2;
+        luaEngine.Globals["MATERIAL_FUSION"] = 0x1L << 32;
+        luaEngine.Globals["MATERIAL_SYNCHRO"] = 0x2L << 32;
+        luaEngine.Globals["MATERIAL_XYZ"] = 0x4L << 32;
+        luaEngine.Globals["MATERIAL_LINK"] = 0x8L << 32;
 
         luaEngine.Globals["WIN_REASON_EXODIA"] = 0x10;
         luaEngine.Globals["WIN_REASON_FINAL_COUNTDOWN"] = 0x11;
