@@ -473,6 +473,11 @@ public class LuaCard
         Debug.Log($"<color=magenta>[LuaCard LOG]</color> SetHint chamado! Tipo: {type}, Valor: {value}");
         
         string hintText = "";
+        
+        if (type == 1) // CHINT_TURN
+        {
+            unityCard.SetTurnHintVisual(value);
+        }
         if (type == 3) // CHINT_RACE
         {
             List<string> races = new List<string>();
@@ -513,6 +518,24 @@ public class LuaCard
         else if (type == 5) // CHINT_NUMBER
         {
             hintText = "Declared Number: " + value;
+        }
+        else if (type == 6) // CHINT_DESC_ADD
+        {
+            int cardId = value / 16;
+            int strIdx = value % 16;
+            string cardName = "Card";
+            if (GameManager.Instance != null && GameManager.Instance.cardDatabase != null)
+            {
+                var cData = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.password == cardId.ToString() || c.id == cardId.ToString());
+                if (cData != null) cardName = cData.name;
+            }
+            hintText = $"Active Effect: {cardName} ({strIdx + 1})";
+        }
+        else if (type == 7) // CHINT_DESC_REMOVE
+        {
+            unityCard.clientHintText = "";
+            if (GameManager.Instance != null) GameManager.Instance.RefreshAllCardsVisuals();
+            return;
         }
 
         if (!string.IsNullOrEmpty(hintText))

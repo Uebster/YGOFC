@@ -141,6 +141,7 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **5.7.1** Como Executar
     *   **5.7.2** As Duas Fases de Validação (Compile-Time e Runtime)
     *   **5.7.3** O Relatório Agrupado
+*   **5.10.** Dicionário OCGCore: A Anatomia das Variáveis LUA (e, tp, eg, chk, etc)
 
 ### 6. 🧠 `AI_And_Characters.md` (Inteligência Artificial e Personagens)
 *   **6.1.** Design da Inteligência Artificial (`OpponentAI.cs`)
@@ -213,9 +214,24 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
 
 ## 6. Protocolo de Manutenção da Base de Conhecimento (Instruções Estritas para a IA)
 
-Para preservar a integridade desta "Bíblia" arquitetural e impedir a perda de contexto ou fragmentação de memória, a IA assistente deve operar **OBRIGATORIAMENTE** sob o seguinte fluxo ao criar documentações ou revisar grandes lógicas:
+Para preservar a integridade desta "Bíblia" arquitetural e impedir a perda de contexto ou fragmentação de memória, a IA assistente deve operar **OBRIGATORIAMENTE** sob as seguintes diretrizes de agora em diante:
 
-*   **Etapa 0 - Verificação e Contenção (Zero Suposições):** Nunca deduza lógicas ausentes, nunca aplique regras genéricas de TCG e não invente nomes de variáveis. Procure sempre nos documentos listados acima. Caso a informação, script ou contexto necessário para responder não seja encontrado, **INTERROMPA** a geração da resposta e peça orientações precisas ou o arquivo faltante ao usuário.
-*   **Etapa 1 - Enriquecimento Centralizado:** Priorize utilizar a arquitetura dos 9 Super Documentos já criados. Ao documentar uma funcionalidade nova, não crie novos arquivos avulsos. Em vez disso, incorpore e expanda as seções existentes do documento apropriado. O foco é enriquecer e detalhar, nunca resumir, reduzir ou apagar dados antigos (mantendo taxonomia, assinaturas e notas intactas).
-*   **Etapa 2 - Mapeamento Cirúrgico no Índice Mestre:** Com o arquivo atualizado, é mandatório retornar ao Pilar Central (`GameDesign_CorePillars.md`) e atualizar o **Índice Mestre (Seção 5)**. Toda nova função, citação, classe, script, gancho (hook), componente ou funcionalidade de UI criada deve constar no índice de forma detalhada e rastreável, utilizando o sistema de numeração decimal (ex: `2.1.3`). Isso garante que um simples "Ctrl+F" revele imediatamente o local exato de qualquer mecânica na documentação.
-*   **Etapa 3 - Relatório de Transparência:** Na conclusão da resposta fornecida ao usuário, apresente um relatório (Status) informando clara e detalhadamente o que foi incluído no código/documento e, caso algo tenha sido intencionalmente excluído ou postergado, forneça a devida justificativa para essa tomada de decisão.
+### 6.1. Leis Absolutas da Nova Arquitetura
+*   **A Morte do LuaToC:** A arquitetura antiga baseada em métodos C# engessados (`CardEffectManager_Impl` / `LuaToC`) está **extinta**. O projeto opera 100% sob emulação OCGCore via MoonSharp. Os scripts originais `.lua` ditam a lógica; o C# apenas obedece e renderiza na tela.
+*   **Gerenciadores Fragmentados (Partial Classes):** Nunca tente reescrever ou sugerir uma classe Core inteira em um único bloco de código. Atue sempre no submódulo responsável:
+    *   `GameManager` está fragmentado em: `_BoardActions`, `_Decks`, `_Stats`, `_Summons`, `_Selections`, `_Phases`.
+    *   `DuelFXManager` está fragmentado em: `_Combat`, `_Effects`, `_Flights`, `_Summons`.
+    *   `LuaDuel` está fragmentado em: `_Core`, `_Actions`, `_Queries`, `_UI`, `_Stubs`.
+
+### 6.2. A Lei de Ouro da Programação de Cartas (Análise LUA)
+Ao introduzir ou debugar o efeito de uma carta, a IA deve cumprir este ritual estrito:
+1.  **Análise de Raio-X:** Ler o script `.lua` nativo (YGOPro/EDOPro) da carta de ponta a ponta.
+2.  **Mapeamento de Constantes:** Rastrear todas as constantes (`EVENT_*`, `REASON_*`, `EFFECT_*`, `HINTMSG_*`). Se a Engine C# (`LuaEngineCore.cs`) não tiver a constante nativa, **injetá-la imediatamente**.
+3.  **Checagem de Funções Auxiliares (`utility.lua`):** Verificar se o script usa Closures como `aux.Filter` ou `aux.Next`. Acionar a `LuaUtilityBridge` (ou o próprio `LuaEngineCore`) para resolver a lógica no interpretador Lua antes de tentar recriar rodas complexas no C#.
+4.  **Necessidade de UI (Interrupções de Interface):** Identificar se a carta exige escolhas visíveis (`Duel.SelectTarget`, `Duel.AnnounceRace`). Se faltar o modal, conectá-lo via **YieldReq** no `LuaDuel_UI.cs` e alertar o desenvolvedor para acoplar os painéis no `UIManager`.
+
+### 6.3. Fluxo de Geração de Respostas
+*   **Etapa 0 - Verificação e Contenção (Zero Suposições):** Nunca deduza lógicas ausentes e não aplique regras genéricas de TCG que não estejam documentadas. Se faltar contexto do código, **INTERROMPA** e exija o arquivo ao desenvolvedor.
+*   **Etapa 1 - Enriquecimento Centralizado:** Ao documentar uma funcionalidade nova, não crie arquivos avulsos. Expanda as seções dos 9 Super Documentos existentes, mantendo a taxonomia e as notas anteriores intactas.
+*   **Etapa 2 - Mapeamento Cirúrgico no Índice Mestre:** Atualize sempre o **Índice Mestre (Seção 5)** deste documento sempre que uma nova grande mecânica for consolidada.
+*   **Etapa 3 - Relatório de Transparência:** No fim de cada resposta sistêmica, forneça um status claro do que foi alterado e o motivo de possíveis recusas técnicas.

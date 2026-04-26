@@ -68,6 +68,10 @@ public class UIManager : MonoBehaviour
     public GameObject exodiaWinPanel; // Arraste o Panel_ExodiaWin aqui
     public Jackpot7UI jackpot7UI; // Arraste o Panel_Card7 aqui!
     public CardComparisonUI cardComparisonUI; // Arraste o Panel_CardComparison aqui!
+    public TypeDeclareUI typeDeclareUI; // Novo painel de Tipo
+    public DeclareNumberUI declareNumberUI; // Arraste o Panel_NumberDeclare aqui!
+    public DeclareCardNameUI declareCardNameUI; // Arraste o Panel_NameCardSearch aqui!
+    public AnnounceSelectionUI announceSelectionUI; // Painéis de Atributo/Raça
     
     [Header("End Duel Assets")]
     public Sprite endDuelWinSprite;
@@ -702,5 +706,9 @@ public class UIManager : MonoBehaviour
         if (removedCardsViewer != null) removedCardsViewer.gameObject.SetActive(false);
         if (jackpot7UI != null) jackpot7UI.gameObject.SetActive(false);
         if (cardComparisonUI != null) cardComparisonUI.gameObject.SetActive(false);
+        if (typeDeclareUI != null) typeDeclareUI.gameObject.SetActive(false);
+        if (declareNumberUI != null) declareNumberUI.gameObject.SetActive(false);
+        if (declareCardNameUI != null) declareCardNameUI.gameObject.SetActive(false);
+        if (announceSelectionUI != null) announceSelectionUI.gameObject.SetActive(false);
     }
 }

@@ -282,6 +282,11 @@ public partial class GameManager : MonoBehaviour
     [Tooltip("Se marcado, sempre pedirá confirmação para seleção de alvo, mesmo que haja apenas um alvo possível.")]
     public bool alwaysConfirmSingleTarget = false;
 
+    [Tooltip("Se marcado, exibe balões de texto (Tooltip) sobre o Avatar dos jogadores quando efeitos adicionam dicas.")]
+    public bool enableProfileTooltip = false;
+    [Tooltip("Se marcado, exibe números flutuantes e piscantes na carta indicando a contagem de turnos.")]
+    public bool enableFloatingTurnCounters = false;
+
     [Header("Minigames Settings")]
     [Tooltip("Ativa a escolha manual de Cara/Coroa para os lançamentos de moeda.")]
     public bool coinTossRequiresChoice = true;
@@ -353,6 +358,10 @@ public partial class GameManager : MonoBehaviour
     [Header("Current Duel Info (Auto-Assigned - Não Edite)")]
     public CharacterData currentOpponent; // Oponente atual carregado
     public int currentDuelIndex = -1; // Índice do duelo atual na campanha (para salvar progresso)
+
+    // --- Memória de Dicas de Perfil (LUA PHINT) ---
+    [HideInInspector] public string playerHintDesc = "";
+    [HideInInspector] public string opponentHintDesc = "";
 
     [Header("Player Profile")]
     public string playerName = "Duelist";

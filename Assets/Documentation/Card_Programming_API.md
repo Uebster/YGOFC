@@ -395,3 +395,29 @@ setmetatable(_G, {
 ### 5.9.2 Protocolo de Resolução e Mitigação
 *   **Monitoramento Implacável:** Se o Console da Unity gritar `<color=red>[LUA MISSING CONSTANT] NOME_DA_VARIAVEL</color>`, a prioridade máxima e imediata do desenvolvedor é abrir o arquivo original `constant.lua` do YGOPro (incluído no projeto como referência/cheat sheet), descobrir o valor numérico ou hexadecimal daquela constante, e injetá-la imediatamente no método `InjectVitalConstants()` da classe `LuaEngineCore.cs`.
 *   **Mitigação de Stubs (Funções Vazias):** Da mesma forma, se a engine alertar `<color=red>[LUA MISSING STUB] NomeDaClasse</color>` (ex: uma carta chamou `Coin.Toss()`), significa que uma classe de procedimento nativa em C# não foi exportada para o Lua. A Engine C# agora devolve uma tabela inofensiva (`dummyTable`) blindada contra crasches. No entanto, a prioridade do projeto é **diminuir a quantidade de Stubs Vazios**. Verifique o que a classe ausente estava tentando fazer e mapeie o comportamento visual ou lógico corretamente na Unity!
+
+---
+
+## 5.10 Dicionário OCGCore: A Anatomia das Variáveis LUA
+
+Ao ler ou portar scripts nativos do YGOPro/EDOPro, você encontrará abreviações padronizadas exaustivamente utilizadas pela comunidade. Para intervir no LUA com precisão, a equipe deve compreender o significado exato de cada sigla no ecossistema:
+
+*   **`e` (Effect):** A classe do Efeito atual que está sendo avaliado, ativado ou resolvido (`LuaEffect`).
+*   **`tp` (Trigger Player / Turn Player):** O índice do jogador (0 = Você, 1 = Oponente) que ativou o efeito ou de quem é o turno ativo.
+*   **`eg` (Event Group):** O Grupo de cartas envolvidas no evento que disparou este efeito (`LuaGroup`). Ex: a lista de monstros destruídos por um *Dark Hole*.
+*   **`ep` (Event Player):** O jogador envolvido no evento disparador. Ex: o jogador que tomou o dano de batalha.
+*   **`ev` (Event Value):** O valor numérico atrelado ao evento. Ex: a quantidade exata de dano recebido ou os LPs ganhos.
+*   **`re` (Reason Effect):** O Efeito (a Carta) que causou o evento.
+*   **`r` (Reason):** O motivo (código Bitwise) pelo qual o evento ocorreu (Ex: `REASON_BATTLE`, `REASON_EFFECT`, `REASON_COST`).
+*   **`rp` (Reason Player):** O jogador responsável por causar o evento.
+*   **`c` (Card):** A própria carta que é "dona" do script (equivalente ao `this` no C# ou o `GetHandler()`).
+*   **`tc` (Target Card):** Uma carta alvo específica, tipicamente nomeada assim dentro de loops de iteração ou resgatada de um grupo (`GetFirst()`).
+*   **`g` (Group):** Um grupo genérico de cartas recém instanciado ou filtrado (`LuaGroup`).
+*   **`sg` (Selected Group / Sub Group):** O grupo final e irreversível de cartas que foi selecionado pelo jogador após um filtro ou UI (`SelectTarget`).
+*   **`mg` (Material Group):** O grupo de cartas disponíveis ou já utilizadas como Materiais (Fusões, Rituais).
+*   **`chk` (Check):** A flag binária mais crítica da Engine, definindo a Dry-Run de uma Corrente:
+    *   `chk == 0`: "Validação Silenciosa". A Engine C# apenas quer saber se o efeito **pode** ser ativado (Verifica custos, alvos no deck). **Não modifique a partida nem abra UIs sob esta flag.**
+    *   `chk == 1`: "Ativação Real". A Engine já entrou na Corrente e está ordenando que o jogador abra UIs, selecione alvos e pague custos.
+*   **`val` (Value):** Variável temporária de Valor Numérico gerada sob demanda.
+*   **`id` (ID):** O código numérico (Password) da carta.
+*   **`s` (Script):** Uma referência à tabela estática do próprio script LUA. No design moderno (YGOPro), substitui a injeção via `cXXXXX` para hospedar funções locais (`s.filter`).

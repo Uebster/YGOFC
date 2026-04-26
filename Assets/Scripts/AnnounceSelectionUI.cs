@@ -2,6 +2,18 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 
+// ==============================================================================
+// VALORES PARA O INSPECTOR DA UNITY (Botões OnClick -> SelectValue)
+//
+// ATK/DEF: 704 = ATK | 705 = DEF
+// ATRIBUTOS: 1=EARTH, 2=WATER, 4=FIRE, 8=WIND, 16=DARK, 32=LIGHT, 64=DIVINE
+// RAÇAS:
+// 1=Warrior, 2=Spellcaster, 4=Fairy, 8=Fiend, 16=Zombie, 32=Machine, 64=Aqua
+// 128=Pyro, 256=Rock, 512=Winged Beast, 1024=Plant, 2048=Insect, 4096=Thunder
+// 8192=Dragon, 16384=Beast, 32768=Beast-Warrior, 65536=Dinosaur, 131072=Fish
+// 262144=Sea Serpent, 524288=Reptile, 1048576=Psychic, 2097152=Divine
+// ==============================================================================
+
 public class AnnounceSelectionUI : MonoBehaviour
 {
     public static AnnounceSelectionUI Instance;

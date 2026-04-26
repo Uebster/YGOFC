@@ -48,6 +48,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     private GraphicRaycaster graphicRaycaster;
     private Vector3 originalScale = Vector3.one;
     private Dictionary<HighlightCategory, GameObject> fallbackHighlightIcons = new Dictionary<HighlightCategory, GameObject>();
+    private GameObject turnHintObj;
 
     [HideInInspector] public float hoverYOffset = 30f;
     [HideInInspector] public bool isInteractable = false; // Usado para habilitar hover apenas para cartas na mão
@@ -612,6 +613,44 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         DisplayCardDetails();
     }
     
+    public void SetTurnHintVisual(int turnNumber)
+    {
+        bool enableFloating = GameManager.Instance != null && GameManager.Instance.enableFloatingTurnCounters;
+        if (!enableFloating || turnNumber <= 0)
+        {
+            if (turnHintObj != null) Destroy(turnHintObj);
+            return;
+        }
+        
+        if (turnHintObj == null)
+        {
+            turnHintObj = new GameObject("TurnHintVisual", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(UnityEngine.UI.Outline));
+            turnHintObj.transform.SetParent(transform, false);
+            turnHintObj.transform.SetAsLastSibling();
+            
+            RectTransform rt = turnHintObj.GetComponent<RectTransform>();
+            rt.anchoredPosition = new Vector2(0, 20f); 
+            rt.sizeDelta = new Vector2(100, 100);
+            
+            TextMeshProUGUI txt = turnHintObj.GetComponent<TextMeshProUGUI>();
+            txt.fontSize = 70;
+            txt.alignment = TextAlignmentOptions.Center;
+            txt.fontStyle = FontStyles.Bold;
+            txt.color = Color.cyan;
+            
+            UnityEngine.UI.Outline outline = turnHintObj.GetComponent<UnityEngine.UI.Outline>();
+            outline.effectColor = Color.black;
+            outline.effectDistance = new Vector2(3, -3);
+            
+            VfxAutoAnim anim = turnHintObj.AddComponent<VfxAutoAnim>();
+            anim.duration = 9999f;
+            anim.fadeType = VfxAutoAnim.FadeType.Blink;
+            anim.blinkSpeed = 2f;
+        }
+        
+        if (turnHintObj != null) turnHintObj.GetComponent<TextMeshProUGUI>().text = turnNumber.ToString();
+    }
+        
     public bool CanBeActivatedNow()
     {
         if (GameManager.Instance == null || !GameManager.Instance.isPlayerTurn) return false;

@@ -13,10 +13,45 @@ public partial class LuaDuel
     // ==============================================================================
 
     // --- CORTE 1 ADAPTADO AO SEU LUAHINTS.CS ---
-    public void Hint(object msgType, object player, object desc) { 
+    public void Hint(object msgType, object player, object desc) 
+    { 
         int type = ConvertToInt(msgType);
+        int descCode = ConvertToInt(desc);
+
         if (type == 3) // HINT_SELECTMSG
-            lastHintMsg = GetHintMessageString(ConvertToInt(desc));
+        {
+            lastHintMsg = GetHintMessageString(descCode);
+        }
+        else if (type == 1 || type == 2) // HINT_EVENT ou HINT_MESSAGE
+        {
+            if (UIManager.Instance != null && GameManager.Instance != null && !GameManager.Instance.isSimulating)
+            {
+                if (desc is string s) UIManager.Instance.ShowMessage(s);
+                else if (descCode > 10000) // Formato LUA para Carta/Efeito (ID * 16 + Index)
+                {
+                    int cardId = descCode / 16;
+                    var cData = GameManager.Instance.cardDatabase?.cardDatabase.Find(c => c.password == cardId.ToString());
+                    if (cData != null) UIManager.Instance.ShowMessage($"Effect Activated: {cData.name}");
+                }
+                else UIManager.Instance.ShowMessage(GetHintMessageString(descCode));
+            }
+        }
+        else if (type == 6) // PHINT_DESC_ADD
+        {
+            string descStr = desc is string s ? s : GetHintMessageString(descCode);
+            if (ConvertToInt(player) == 0) GameManager.Instance.playerHintDesc = descStr;
+            else GameManager.Instance.opponentHintDesc = descStr;
+        }
+        else if (type == 7) // PHINT_DESC_REMOVE
+        {
+            if (ConvertToInt(player) == 0) GameManager.Instance.playerHintDesc = "";
+            else GameManager.Instance.opponentHintDesc = "";
+        }
+        else if (type >= 200 && type <= 203 && UIManager.Instance != null && !GameManager.Instance.isSimulating) // HINT_SKILL
+        {
+            string skillName = desc is string s2 ? s2 : GetHintMessageString(descCode);
+            UIManager.Instance.ShowMessage($"Skill Ativada:\n{skillName}");
+        }
     }
 
     public DynValue ConfirmDecktop(object player, object count)
@@ -145,7 +180,24 @@ public partial class LuaDuel
         int opt1 = options.Length > 0 ? ConvertToInt(options[0]) : 0;
         int opt2 = options.Length > 1 ? ConvertToInt(options[1]) : 0;
         bool isAtkDefChoice = options.Length == 2 && ((opt1 == 704 && opt2 == 705) || (opt1 == 96 && opt2 == 97));
+        bool isTypeDeclare = options.Length > 0 && (opt1 == 70 || opt1 == 71 || opt1 == 72);
        
+        if (isTypeDeclare)
+        {
+            TypeDeclareUI typeUI = TypeDeclareUI.Instance ?? Resources.FindObjectsOfTypeAll<TypeDeclareUI>().FirstOrDefault(x => x.gameObject.scene.IsValid());
+            if (typeUI != null)
+            {
+                List<int> typeOpts = options.Select(o => ConvertToInt(o)).ToList();
+                typeUI.Show(typeOpts, (selectedValue) => {
+                    // O LUA exige o ÍNDICE do array da escolha, não o número da constante bruta!
+                    int index = typeOpts.IndexOf(selectedValue);
+                    CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(Mathf.Max(0, index));
+                    CardEffectManager.Instance.isWaitingForLuaYield = false;
+                });
+                return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectOption") });
+            }
+        }
+
         // Interceptação específica para a carta "7 Completed" (ID 86198326) que usa seus próprios IDs de String para ATK/DEF
         if (!isAtkDefChoice && options.Length == 2 && opt1 > 10000 && opt2 > 10000)
         {
@@ -185,6 +237,11 @@ public partial class LuaDuel
                 // Tradução rápida dos IDs de String mais comuns do OCGCore (ATK/DEF)
                 if (optVal == 704 || optVal == 96) optStrings.Add("Attack (ATK)");
                 else if (optVal == 705 || optVal == 97) optStrings.Add("Defense (DEF)");
+                else if (optVal == 60) optStrings.Add("Heads"); // SELECT_HEADS
+                else if (optVal == 61) optStrings.Add("Tails"); // SELECT_TAILS
+                else if (optVal == 70) optStrings.Add("Monster Card"); // DECLTYPE_MONSTER Fallback
+                else if (optVal == 71) optStrings.Add("Spell Card"); // DECLTYPE_SPELL Fallback
+                else if (optVal == 72) optStrings.Add("Trap Card"); // DECLTYPE_TRAP Fallback
                 else if (optVal > 10000)
                 {
                     int cardId = optVal / 16;
@@ -338,22 +395,10 @@ public partial class LuaDuel
             CardEffectManager.Instance.isWaitingForLuaYield = false;
         };
 
-        Type declareUIType = Type.GetType("DeclareNumberUI") ?? AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes()).FirstOrDefault(t => t.Name == "DeclareNumberUI");
-        if (declareUIType != null)
+        if (UIManager.Instance != null && UIManager.Instance.declareNumberUI != null)
         {
-            System.Reflection.FieldInfo instanceField = declareUIType.GetField("Instance");
-            object instance = instanceField != null ? instanceField.GetValue(null) : null;
-            if (instance != null)
-            {
-                var showMethod = declareUIType.GetMethod("Show");
-                if (showMethod != null)
-                {
-                    try {
-                        showMethod.Invoke(instance, new object[] { "Declare a Number", 1, 9999999, onNumberSelected });
-                        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceNumber") });
-                    } catch { }
-                }
-            }
+            UIManager.Instance.declareNumberUI.Show("Declare a Number", 1, 9999999, onNumberSelected);
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceNumber") });
         }
 
         onNumberSelected(1000);
@@ -378,28 +423,16 @@ public partial class LuaDuel
             CardEffectManager.Instance.isWaitingForLuaYield = false;
         };
 
-        Type declareUIType = Type.GetType("DeclareNumberUI") ?? AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes()).FirstOrDefault(t => t.Name == "DeclareNumberUI");
-        if (declareUIType != null)
+        if (UIManager.Instance != null && UIManager.Instance.declareNumberUI != null)
         {
-            System.Reflection.FieldInfo instanceField = declareUIType.GetField("Instance");
-            object instance = instanceField != null ? instanceField.GetValue(null) : null;
-            if (instance != null)
-            {
-                var showMethod = declareUIType.GetMethod("Show");
-                if (showMethod != null)
-                {
-                    try {
-                        showMethod.Invoke(instance, new object[] { "Declare a Level", 1, 12, onLevelSelected });
-                        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceLevel") });
-                    } catch { }
-                }
-            }
+            UIManager.Instance.declareNumberUI.Show("Declare a Level", 1, 12, onLevelSelected);
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceLevel") });
         }
 
         onLevelSelected(4);
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceLevel") });
     }
-    
+
     public DynValue AnnounceAttribute(object player, object count, object avail)
     {
         CardEffectManager.Instance.isWaitingForLuaYield = true;
@@ -474,63 +507,40 @@ public partial class LuaDuel
             CardEffectManager.Instance.isWaitingForLuaYield = false;
         };
 
-        // Tenta invocar a nova UI Rápida de Declaração Dinamicamente
-        Type declareUIType = Type.GetType("DeclareCardNameUI") ?? AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes()).FirstOrDefault(t => t.Name == "DeclareCardNameUI");
-        if (declareUIType != null)
+        if (UIManager.Instance != null && UIManager.Instance.declareCardNameUI != null)
         {
-            System.Reflection.FieldInfo instanceField = declareUIType.GetField("Instance");
-            object instance = instanceField != null ? instanceField.GetValue(null) : null;
-            if (instance != null)
-            {
-                var showMethod = declareUIType.GetMethod("Show");
-                if (showMethod != null)
-                {
-                    try {
-                        showMethod.Invoke(instance, new object[] { "Declare 1 Card Name", onCardSelected });
-                        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceCard") });
-                    } catch { }
-                }
-            }
+            UIManager.Instance.declareCardNameUI.Show("Declare 1 Card Name", onCardSelected);
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceCard") });
         }
 
-        // Fallback de Segurança para a Busca Global
-        Type searchUIType = Type.GetType("GlobalCardSearchUI") ?? AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes()).FirstOrDefault(t => t.Name == "GlobalCardSearchUI");
-        if (searchUIType != null)
-        {
-            System.Reflection.FieldInfo instanceField = searchUIType.GetField("Instance");
-            System.Reflection.PropertyInfo instanceProp = searchUIType.GetProperty("Instance");
-            object instance = instanceField != null ? instanceField.GetValue(null) : (instanceProp != null ? instanceProp.GetValue(null, null) : null);
-            if (instance != null)
-            {
-                var showMethod = searchUIType.GetMethod("Show");
-                if (showMethod != null)
-                {
-                    try {
-                        showMethod.Invoke(instance, new object[] { onCardSelected });
-                        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceCard") });
-                    } catch { }
-                }
-            }
-        }
-
-        Debug.LogWarning("[LuaDuel] GlobalCardSearchUI não encontrada ou assinatura incompatível. Retornando ID de teste (Kuriboh).");
+        Debug.LogWarning("[LuaDuel] DeclareCardNameUI não encontrada no UIManager. Retornando ID de teste (Kuriboh).");
         onCardSelected(40640057);
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("AnnounceCard") });
     }
 
-    public void HintSelection(object group) { }
-
-
     public DynValue SelectReleaseGroupCost(object player, object filterFunc, object min, object max, object use_hand, object excluded, params object[] extraArgs)
     {
-        int locSelf = 0x04 | (ConvertToInt(use_hand) != 0 ? 0x02 : 0);
-        return InternalSelectMatchingCard(player, filterFunc, player, locSelf, 0, ConvertToInt(min), ConvertToInt(max), excluded, HighlightCategory.Tribute, extraArgs);
-    }    
-    public int SelectDisableField(params object[] args) { return 0; }
-    public LuaEffect SelectEffect(params object[] args) { return new LuaEffect { owner = SafeDummyCard() }; }
-    
-    public DynValue ConfirmCards(object player, object targets) 
-    { 
+        return InternalSelectMatchingCard(player, filterFunc, player, 0x04 | (ConvertToInt(use_hand) != 0 ? 0x02 : 0), 0, ConvertToInt(min), ConvertToInt(max), excluded, HighlightCategory.Tribute, extraArgs);
+    }
+
+    public DynValue SelectDisableField(object player, object count, object locSelf, object locOpp, object filter)
+    {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(0);
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectDisableField") });
+    }
+
+    public DynValue SelectEffect(object player, object group)
+    {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(0);
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectEffect") });
+    }
+
+    public DynValue ConfirmCards(object player, object targets)
+    {
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
 
@@ -538,14 +548,13 @@ public partial class LuaDuel
         List<CardDisplay> handCardsPlayer = new List<CardDisplay>();
         List<CardDisplay> handCardsOpponent = new List<CardDisplay>();
 
-        // Debug.Log($"<color=yellow>[ConfirmCards LOG]</color> Início da Chamada. Player Invocador: {player}");
-
-        // Revela as cartas temporariamente se estiverem no campo viradas para baixo
-        if (targets is LuaGroup group) {
-            // Debug.Log($"<color=yellow>[ConfirmCards LOG]</color> Alvo é LuaGroup com {group.cards.Count} cartas.");
-            foreach (var c in group.cards) {
-                if (c.unityCard != null && (!c.unityCard.isOnField || c.unityCard.CurrentLocation == CardLocation.Hand)) {
-                    // Debug.Log($"<color=yellow>[ConfirmCards LOG]</color> Capturado da Mão: {c.unityCard.CurrentCardData.name} (isPlayer: {c.unityCard.isPlayerCard})");
+        if (targets is LuaGroup group)
+        {
+            // Debug.Log($"<color=yellow>[ConfirmCards LOG]</color> Alvo é LuaGroup. Cartas: {group.cards.Count}");
+            foreach (var c in group.cards)
+            {
+                if (c.unityCard != null && (!c.unityCard.isOnField || c.unityCard.CurrentLocation == CardLocation.Hand))
+                {
                     if (c.unityCard.isPlayerCard) handCardsPlayer.Add(c.unityCard);
                     else handCardsOpponent.Add(c.unityCard);
                 }
@@ -553,10 +562,12 @@ public partial class LuaDuel
                 if (c.unityCard != null && c.unityCard.isFlipped && c.unityCard.isOnField) c.unityCard.ShowFront();
                 else if (c.unityCard == null && c.unityData != null) offFieldCards.Add(c.unityData);
             }
-        } else if (targets is LuaCard card) {
+        }
+        else if (targets is LuaCard card)
+        {
             // Debug.Log($"<color=yellow>[ConfirmCards LOG]</color> Alvo é LuaCard (Single).");
-            if (card.unityCard != null && (!card.unityCard.isOnField || card.unityCard.CurrentLocation == CardLocation.Hand)) {
-                // Debug.Log($"<color=yellow>[ConfirmCards LOG]</color> Capturado da Mão: {card.unityCard.CurrentCardData.name} (isPlayer: {card.unityCard.isPlayerCard})");
+            if (card.unityCard != null && (!card.unityCard.isOnField || card.unityCard.CurrentLocation == CardLocation.Hand))
+            {
                 if (card.unityCard.isPlayerCard) handCardsPlayer.Add(card.unityCard);
                 else handCardsOpponent.Add(card.unityCard);
             }
