@@ -318,3 +318,23 @@ O *Heavy Storm* define o ritmo do duelo. A simples existência dessa carta no se
 * **A Punição da Ganância (Punishing Overextension):** Se o oponente baixar (Set) 3 ou 4 armadilhas na mesa para se sentir 100% seguro, um único *Heavy Storm* vai destruir todas elas de uma vez. O oponente perderá 4 cartas, e você apenas 1, criando uma vantagem de recursos (Card Advantage) absurda a seu favor. Por causa do *Heavy Storm*, duelistas de elite raramente baixam mais de 2 cartas por turno.
 * **Liberando a Zona de Combate (The OTK Enabler):** A tática mais comum é guardar o *Heavy Storm* na mão até você ter monstros suficientes para vencer a partida no mesmo turno. Você ativa a tempestade, garante que não há mais *Mirror Force* ou *Torrential Tribute* para te impedir, e ataca com todos os monstros de uma vez para zerar a vida do oponente (One-Turn Kill - OTK).
 * **Destruição Tática Própria:** Você também pode usar *Heavy Storm* para destruir suas próprias cartas que o estão prejudicando! Por exemplo, se você está perdendo vida por causa do seu próprio *Premature Burial* ou se os seus monstros de nível alto estão presos por conta da sua própria magia *Gravity Bind*, você pode usar a tempestade para limpar a mesa e destravar o seu próprio jogo!
+
+## ID: DM0118 - Autonomous Action Unit (Password: 71453557)
+
+A carta **"Autonomous Action Unit"** (Unidade de Ação Autônoma) é uma Carta Mágica de Equipamento (Equip Spell) extremamente agressiva, que te permite roubar recursos diretamente do cemitério inimigo.
+
+> *"Pay 1500 Life Points, then target 1 monster in your opponent's Graveyard; Special Summon that target to your side of the field in face-up Attack Position, and equip it with this card. When this card leaves the field, destroy the equipped monster."*
+
+### Como ela funciona na prática:
+
+1. **O Custo de Sangue:** Para ativar esta magia, você precisa pagar um custo salgado de **1500 LP**. Se a ativação for negada (ex: *Magic Jammer*), seus 1500 LP já foram gastos e não voltam.
+2. **A Invasão (Target):** Você alveja exatamente 1 monstro no Cemitério do seu oponente. Esse monstro precisa ser passível de invocação especial (ex: um *Black Luster Soldier* que não foi invocado corretamente antes não pode ser pego).
+3. **O Sequestro:** O monstro é Invocado Especialmente para o **seu lado do campo**, obrigatoriamente em **Posição de Ataque**, e a *Autonomous Action Unit* se equipa a ele.
+4. **O Vínculo:** Assim como *Premature Burial* ou *Call of the Haunted*, a vida do monstro fica atrelada à magia. Se a *Autonomous Action Unit* for destruída ou removida do campo, o monstro é destruído junto. *(E se o monstro morrer primeiro, a magia perde o alvo e também é destruída pelas regras básicas do jogo).*
+
+### 💡 O grande truque dessa carta:
+No formato Goat, o cemitério do oponente costuma ser uma mina de ouro cheia de monstros de efeito absurdos. Essa carta não só te dá um monstro "de graça" (sem gastar sua Normal Summon), mas também tira uma peça de reviver do oponente!
+
+* **Roubo de Habilidades (Efeitos Flip e Passivos):** A melhor utilidade dessa carta é roubar um *Jinzo* do oponente para você bloquear as armadilhas dele, ou roubar um *Sangan* para que, quando ele morrer no seu lado do campo, **você** ative o efeito de buscar uma carta do *seu* deck para a *sua* mão!
+* **O Sacrifício Imediato (Tribute Fodder):** O monstro sequestrado está livre para ser usado como Tributo para a invocação de um monstro de nível alto seu (ex: *Blue-Eyes White Dragon*). Ao tributá-lo, a *Autonomous Action Unit* vai para o cemitério sem problemas, e o monstro volta para o cemitério do oponente após já ter servido ao seu propósito.
+* **⚠️ Regra de Ouro (Dono vs Controlador):** Lembre-se, mesmo que você controle o monstro do oponente, o **Dono (Owner)** sempre será ele. Se o monstro for destruído ou devolvido para a mão (ex: *Penguin Soldier*), ele voltará para o Cemitério ou Mão originais do seu oponente!

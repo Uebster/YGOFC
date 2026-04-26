@@ -24,7 +24,8 @@ public partial class GameManager
         if (card == null) return;
 
         CardData data = card.CurrentCardData;
-        bool isPlayer = card.isPlayerCard;
+        bool isController = card.isPlayerCard;
+        bool isOwner = card.ownerPlayer;
         Vector3 startPos = card.transform.position;
         CardLocation prevLoc = card.CurrentLocation;
         bool isFieldSpellZone = card.isOnField && (card.transform.parent == duelFieldUI.playerFieldSpell || card.transform.parent == duelFieldUI.opponentFieldSpell);
@@ -43,12 +44,13 @@ public partial class GameManager
         // REAPROVEITAMENTO FÍSICO: Não destruímos o GameObject. Isso mantém as referências LUA vivas!
         card.isOnField = false;
         card.isInteractable = true;
-        card.hoverYOffset = isPlayer ? playerHandHoverYOffset : opponentHandHoverYOffset;
+        card.isPlayerCard = isOwner; // RESET TO OWNER! A carta voltou pra casa.
+        card.hoverYOffset = isOwner ? playerHandHoverYOffset : opponentHandHoverYOffset;
         
-        Transform handTransform = isPlayer ? playerHandLayoutGroup : opponentHandLayoutGroup;
+        Transform handTransform = isOwner ? playerHandLayoutGroup : opponentHandLayoutGroup;
         card.transform.SetParent(handTransform);
         
-        if (isPlayer) { if (!playerHand.Contains(card.gameObject)) playerHand.Add(card.gameObject); }
+        if (isOwner) { if (!playerHand.Contains(card.gameObject)) playerHand.Add(card.gameObject); }
         else { if (!opponentHand.Contains(card.gameObject)) opponentHand.Add(card.gameObject); }
 
         card.transform.localScale = handCardScale;
@@ -64,11 +66,11 @@ public partial class GameManager
                 else if (prevLoc == CardLocation.Banished) settings = DuelFXManager.Instance.flightBanishToHand;
                 else settings = DuelFXManager.Instance.flightDeckToHand;
             }
-            StartCoroutine(AnimateCardToHand(card.gameObject, isPlayer, startPos, settings, prevLoc != CardLocation.Field && prevLoc != CardLocation.Hand));
+            StartCoroutine(AnimateCardToHand(card.gameObject, isOwner, startPos, settings, prevLoc != CardLocation.Field && prevLoc != CardLocation.Hand));
         }
         else
         {
-            if (isPlayer || showOpponentHand) card.ShowFront();
+            if (isOwner || showOpponentHand) card.ShowFront();
             else { card.transform.localRotation = Quaternion.Euler(0, 0, 180f); card.ShowBack(); }
         }
 
@@ -77,8 +79,8 @@ public partial class GameManager
         // 0343 - Criosphinx
         if (data.type.Contains("Monster") && IsCardActiveOnField("0343"))
         {
-            Debug.Log("Criosphinx: Monstro retornou à mão, oponente descarta 1 carta.");
-            DiscardRandomHand(!isPlayer, 1);
+            Debug.Log($"Criosphinx: Monstro retornou à mão, o dono ({(isOwner ? "Player" : "Oponente")}) descarta 1 carta.");
+            DiscardRandomHand(isOwner, 1);
         }
     }
 
@@ -98,7 +100,7 @@ public partial class GameManager
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
 
         // Envia para o GY (Lógica de dados)
-        SendToGraveyard(card.CurrentCardData, card.isPlayerCard);
+        SendToGraveyard(card.CurrentCardData, card.ownerPlayer);
 
         card.transform.SetParent(null);
         // Destrói o objeto visual
@@ -172,7 +174,7 @@ public partial class GameManager
             {
                 // Simula destruição: envia para o GY e destrói o objeto
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
-                SendToGraveyard(card.CurrentCardData, card.isPlayerCard, CardLocation.Field, SendReason.Destroyed);
+                SendToGraveyard(card.CurrentCardData, card.ownerPlayer, CardLocation.Field, SendReason.Destroyed);
                 
                 if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
                 
@@ -221,18 +223,19 @@ public partial class GameManager
     {
         if (card == null) return;
         
-        bool isPlayer = card.isPlayerCard;
+        bool isController = card.isPlayerCard;
+        bool isOwner = card.ownerPlayer;
         bool wasOnField = card.isOnField;
         CardLocation prevLoc = card.CurrentLocation;
         Vector3 startPos = card.transform.position;
         Quaternion startRot = card.transform.rotation;
 
-        // Remove da lista da mão se estiver lá
-        if (isPlayer) playerHand.Remove(card.gameObject);
+        // Remove da lista da mão do controlador atual se estiver lá
+        if (isController) playerHand.Remove(card.gameObject);
         else opponentHand.Remove(card.gameObject);
 
         // Adiciona à lista de removidas
-        RemoveFromPlay(card.CurrentCardData, isPlayer);
+        RemoveFromPlay(card.CurrentCardData, isOwner);
 
         // Remove modificadores que esta carta gerou em outras
         if (wasOnField && CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
@@ -250,7 +253,7 @@ public partial class GameManager
 
             if (flightSettings != null && flightSettings.enableFlight)
             {
-                Vector3 endPos = isPlayer ? playerRemovedDisplay.transform.position : opponentRemovedDisplay.transform.position;
+                Vector3 endPos = isOwner ? playerRemovedDisplay.transform.position : opponentRemovedDisplay.transform.position;
                 DuelFXManager.Instance.PlayCardFlight(card.CurrentCardData, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
                     wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
                     startRot, Quaternion.identity, flightSettings, false, () => {
@@ -381,14 +384,15 @@ public partial class GameManager
     {
         if (card == null) return;
         
-        bool isPlayer = card.isPlayerCard;
+        bool isController = card.isPlayerCard;
+        bool isOwner = card.ownerPlayer;
         CardData data = card.CurrentCardData;
-        string logPrefix = $"[MoveCard] {data.name} ({(isPlayer ? "Player" : "Opponent")})";
+        string logPrefix = $"[MoveCard] {data.name} ({(isOwner ? "Player" : "Opponent")})";
         
         // FASE 13: Track previous location before moving
         card.previousPreviousLocation = card.previousLocation;
         card.previousLocation = card.CurrentLocation;
-        card.previousOwner = (isPlayer ? 0 : 1);
+        card.previousOwner = (isController ? 0 : 1);
         // Debug.Log($"{logPrefix} | Tracked history: from {card.previousLocation} (owner: {card.previousOwner})");
         
         // Declaração unificada de variáveis para evitar erros de escopo
@@ -407,9 +411,9 @@ public partial class GameManager
             case CardLocation.Graveyard:
                 // Debug.Log($"{logPrefix} -> Graveyard");
                 
-                if (isPlayer) playerHand.Remove(card.gameObject);
+                if (isController) playerHand.Remove(card.gameObject);
                 else opponentHand.Remove(card.gameObject);
-                SendToGraveyard(data, isPlayer, card.isOnField ? CardLocation.Field : CardLocation.Hand, reason);
+                SendToGraveyard(data, isOwner, card.isOnField ? CardLocation.Field : CardLocation.Hand, reason);
                 card.transform.SetParent(null);
                 Destroy(card.gameObject);
 
@@ -418,7 +422,7 @@ public partial class GameManager
                     CardFlightSettings flightSettings = wasOnField ? (isFieldSpellZone ? DuelFXManager.Instance.flightFieldSpellZoneToGraveyard : DuelFXManager.Instance.flightFieldToGraveyard) : DuelFXManager.Instance.flightHandToGraveyard;
                     if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed && reason != SendReason.Battle && reason != SendReason.Tribute)
                     {
-                        Vector3 endPos = isPlayer ? playerGraveyardDisplay.transform.position : opponentGraveyardDisplay.transform.position;
+                        Vector3 endPos = isOwner ? playerGraveyardDisplay.transform.position : opponentGraveyardDisplay.transform.position;
                         DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
                             wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
                             startRot, Quaternion.identity, flightSettings, false, null);
@@ -450,7 +454,7 @@ public partial class GameManager
 
                     if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed)
                     {
-                        Vector3 endPos = isPlayer ? playerDeckDisplay.transform.position : opponentDeckDisplay.transform.position;
+                        Vector3 endPos = isOwner ? playerDeckDisplay.transform.position : opponentDeckDisplay.transform.position;
                         DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
                             wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
                             startRot, Quaternion.identity, flightSettings, false, null);
@@ -472,7 +476,7 @@ public partial class GameManager
 
                     if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed && reason != SendReason.Battle && reason != SendReason.Tribute)
                     {
-                        Vector3 endPos = isPlayer ? playerRemovedDisplay.transform.position : opponentRemovedDisplay.transform.position;
+                        Vector3 endPos = isOwner ? playerRemovedDisplay.transform.position : opponentRemovedDisplay.transform.position;
                         DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
                             wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
                             startRot, Quaternion.identity, flightSettings, false, () => {
@@ -482,9 +486,9 @@ public partial class GameManager
                     else if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayBanishEffect(card);
                 }
                 
-                if (isPlayer) playerHand.Remove(card.gameObject);
+                if (isController) playerHand.Remove(card.gameObject);
                 else opponentHand.Remove(card.gameObject);
-                RemoveFromPlay(data, isPlayer);
+                RemoveFromPlay(data, isOwner);
                 card.transform.SetParent(null);
                 Destroy(card.gameObject);
                 break;
@@ -492,7 +496,7 @@ public partial class GameManager
             case CardLocation.ExtraDeck:
                 // Debug.Log($"{logPrefix} -> Extra Deck");
                 
-                if (isPlayer) playerExtraDeck.Add(data);
+                if (isOwner) playerExtraDeck.Add(data);
                 else opponentExtraDeck.Add(data);
                 card.transform.SetParent(null);
                 Destroy(card.gameObject);
@@ -502,7 +506,7 @@ public partial class GameManager
                     CardFlightSettings flightSettings = wasOnField ? DuelFXManager.Instance.flightFieldToExtraDeck : DuelFXManager.Instance.flightGraveyardToExtraDeck;
                     if (flightSettings != null && flightSettings.enableFlight)
                     {
-                        Vector3 endPos = isPlayer ? playerExtraDeckDisplay.transform.position : opponentExtraDeckDisplay.transform.position;
+                        Vector3 endPos = isOwner ? playerExtraDeckDisplay.transform.position : opponentExtraDeckDisplay.transform.position;
                         DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
                             wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
                             startRot, Quaternion.identity, flightSettings, false, null);

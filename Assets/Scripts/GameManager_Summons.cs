@@ -19,7 +19,7 @@ public partial class GameManager
     // SUMMONS
     // ==============================================================================
 
-    public CardDisplay SpecialSummonFromData(CardData cardData, bool isPlayer, int zoneIndex = -1, bool inAttackPosition = true, bool faceDown = false, Vector3? sourcePos = null, CardLocation sourceLoc = CardLocation.Graveyard)
+    public CardDisplay SpecialSummonFromData(CardData cardData, bool isPlayer, int zoneIndex = -1, bool inAttackPosition = true, bool faceDown = false, Vector3? sourcePos = null, CardLocation sourceLoc = CardLocation.Graveyard, bool? ownerIsPlayer = null)
     {
         if (cardData == null || !cardData.type.Contains("Monster"))
         {
@@ -59,6 +59,7 @@ public partial class GameManager
 
         cardDisplay.isInteractable = false; // Cartas no campo não são interativas como as da mão
         cardDisplay.isPlayerCard = isPlayer;
+        cardDisplay.ownerPlayer = ownerIsPlayer ?? isPlayer;
         cardDisplay.isOnField = true;
         cardDisplay.position = inAttackPosition ? CardDisplay.BattlePosition.Attack : CardDisplay.BattlePosition.Defense;
         cardDisplay.summonedTurnCount = turnCount;
@@ -307,7 +308,7 @@ public partial class GameManager
 
     // Novo método público para finalizar a invocação (chamado pelo SummonManager após tributo manual)
     // Atualizado para suportar Face-Down explicitamente
-    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false, bool isTributeSummon = false, Transform specificZone = null, List<CardData> specialMaterials = null, Vector3? sourcePos = null, CardLocation sourceLoc = CardLocation.Hand)
+    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false, bool isTributeSummon = false, Transform specificZone = null, List<CardData> specialMaterials = null, Vector3? sourcePos = null, CardLocation sourceLoc = CardLocation.Hand, bool? ownerIsPlayer = null)
     {
         // 2. Encontrar Zona Livre
         Transform targetZone = specificZone;
@@ -325,8 +326,8 @@ public partial class GameManager
 
         // 3. Mover Carta (Lógica de Dados e Visual)
         CardDisplay display = cardGO.GetComponent<CardDisplay>();
-        if (isPlayer) playerHand.Remove(cardGO);
-        else opponentHand.Remove(cardGO);
+        if (playerHand.Contains(cardGO)) playerHand.Remove(cardGO);
+        else if (opponentHand.Contains(cardGO)) opponentHand.Remove(cardGO);
 
         cardGO.transform.SetParent(targetZone); // Coloca na zona
         cardGO.transform.localPosition = Vector3.zero; // Centraliza
@@ -336,6 +337,8 @@ public partial class GameManager
         if (display != null)
         {
             display.isInteractable = false; // Desativa o hover de mão (subir)
+            display.isPlayerCard = isPlayer;
+            display.ownerPlayer = ownerIsPlayer ?? isPlayer;
             display.isOnField = true;
             display.summonedTurnCount = turnCount; // Registra o turno de invocação
             display.hasChangedPositionThisTurn = false;

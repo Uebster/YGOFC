@@ -19,7 +19,7 @@ public partial class GameManager
     // Manipulações de Decks
     // ==============================================================================
 
-    public void AddCardToHand(CardData cardData, bool isPlayer, Vector3? customStartPos = null, CardLocation sourceLoc = CardLocation.Deck, bool isFromFieldSpellZone = false)
+    public void AddCardToHand(CardData cardData, bool isPlayer, Vector3? customStartPos = null, CardLocation sourceLoc = CardLocation.Deck, bool isFromFieldSpellZone = false, bool? originalOwner = null)
     {
         // Tokens não podem existir na mão. Evaporam.
         if (cardData == null || cardData.id == "TOKEN") return;
@@ -35,6 +35,7 @@ public partial class GameManager
         newCardDisplay.hoverYOffset = isPlayer ? playerHandHoverYOffset : opponentHandHoverYOffset;
         newCardDisplay.isInteractable = true;
         newCardDisplay.isPlayerCard = isPlayer;
+        newCardDisplay.ownerPlayer = originalOwner ?? isPlayer;
 
         // Adiciona à lista lógica IMEDIATAMENTE para o LayoutGroup calcular a posição
         if (isPlayer) playerHand.Add(newCardGO);
@@ -81,12 +82,15 @@ public partial class GameManager
     {
         if (card == null) return;
 
-        if (card.isPlayerCard) playerHand.Remove(card.gameObject);
+        bool isController = card.isPlayerCard;
+        bool isOwner = card.ownerPlayer;
+
+        if (isController) playerHand.Remove(card.gameObject);
         else opponentHand.Remove(card.gameObject);
         
         Vector3 startPos = card.transform.position;
 
-        SendToGraveyard(card.CurrentCardData, card.isPlayerCard, CardLocation.Hand, SendReason.Discarded);
+        SendToGraveyard(card.CurrentCardData, isOwner, CardLocation.Hand, SendReason.Discarded);
 
         // Remove modificadores (caso raro de efeito na mão, mas seguro)
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
@@ -94,8 +98,8 @@ public partial class GameManager
 
         if (DuelFXManager.Instance != null && DuelFXManager.Instance.flightHandToGraveyard.enableFlight && !isSimulating)
         {
-            Vector3 endPos = card.isPlayerCard ? playerGraveyardDisplay.transform.position : opponentGraveyardDisplay.transform.position;
-            Quaternion startRot = Quaternion.Euler(0, 0, card.isPlayerCard ? 0 : 180f);
+            Vector3 endPos = isOwner ? playerGraveyardDisplay.transform.position : opponentGraveyardDisplay.transform.position;
+            Quaternion startRot = Quaternion.Euler(0, 0, isOwner ? 0 : 180f);
             DuelFXManager.Instance.PlayCardFlight(card.CurrentCardData, cardBackTexture, true, true, startPos, endPos, handCardScale, fieldCardScale, startRot, Quaternion.identity, DuelFXManager.Instance.flightHandToGraveyard, false, null);
         }
 

@@ -115,15 +115,9 @@ public partial class GameManager
             // ATUALIZAÇÃO: Injeta os valores dinâmicos (ATK/DEF/LVL) da carta sob o mouse para o viewer
             if (hoveredCard.CurrentCardData.type.Contains("Monster"))
             {
-                LuaCard lc = new LuaCard(hoveredCard);
-                CardLocation loc = hoveredCard.isOnField ? CardLocation.Field : CardLocation.Hand;
-                int displayAtk = hoveredCard.originalAtk + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "ATK", loc);
-                int displayDef = hoveredCard.originalDef + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "DEF", loc);
-                int displayLvl = hoveredCard.originalLevel + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "LEVEL", loc);
-
-                cardViewerDisplay.currentAtk = displayAtk;
-                cardViewerDisplay.currentDef = displayDef;
-                cardViewerDisplay.currentLevel = displayLvl;
+                cardViewerDisplay.currentAtk = hoveredCard.currentAtk;
+                cardViewerDisplay.currentDef = hoveredCard.currentDef;
+                cardViewerDisplay.currentLevel = hoveredCard.currentLevel;
                 cardViewerDisplay.originalLevel = hoveredCard.originalLevel;
                 cardViewerDisplay.SendMessage("DisplayCardDetails", SendMessageOptions.DontRequireReceiver);
             }

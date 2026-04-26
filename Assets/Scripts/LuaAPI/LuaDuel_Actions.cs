@@ -106,7 +106,7 @@ public partial class LuaDuel
                 {
                     bool wasPlayerPile;
                     CardLocation sourceLoc = RemoveDataFromAllPiles(c.unityData, out wasPlayerPile);
-                    GameManager.Instance.SendToGraveyard(c.unityData, c.GetControler() == 0, sourceLoc, SendReason.Effect);
+                    GameManager.Instance.SendToGraveyard(c.unityData, wasPlayerPile, sourceLoc, SendReason.Effect);
                     
                     if (DuelFXManager.Instance != null && !GameManager.Instance.isSimulating && sourceLoc != CardLocation.Unknown)
                     {
@@ -118,7 +118,7 @@ public partial class LuaDuel
                         if (flightSettings != null && flightSettings.enableFlight)
                         {
                             Vector3 startPos = GetPilePosition(sourceLoc, wasPlayerPile);
-                            Vector3 endPos = c.GetControler() == 0 ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position;
+                            Vector3 endPos = wasPlayerPile ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position;
                             DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
                         }
                     }
@@ -139,7 +139,7 @@ public partial class LuaDuel
             {
                 bool wasPlayerPile;
                 CardLocation sourceLoc = RemoveDataFromAllPiles(card.unityData, out wasPlayerPile);
-                GameManager.Instance.SendToGraveyard(card.unityData, card.GetControler() == 0, sourceLoc, SendReason.Effect);
+                GameManager.Instance.SendToGraveyard(card.unityData, wasPlayerPile, sourceLoc, SendReason.Effect);
                 
                 if (DuelFXManager.Instance != null && !GameManager.Instance.isSimulating && sourceLoc != CardLocation.Unknown)
                 {
@@ -151,7 +151,7 @@ public partial class LuaDuel
                     if (flightSettings != null && flightSettings.enableFlight)
                     {
                         Vector3 startPos = GetPilePosition(sourceLoc, wasPlayerPile);
-                        Vector3 endPos = card.GetControler() == 0 ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position;
+                        Vector3 endPos = wasPlayerPile ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position;
                         DuelFXManager.Instance.PlayCardFlight(card.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
                     }
                 }
@@ -171,7 +171,7 @@ public partial class LuaDuel
                 else if (c.unityData != null) { 
                     bool wasPlayerPile;
                     CardLocation sourceLoc = RemoveDataFromAllPiles(c.unityData, out wasPlayerPile); 
-                    GameManager.Instance.RemoveFromPlay(c.unityData, c.GetControler() == 0); 
+                    GameManager.Instance.RemoveFromPlay(c.unityData, wasPlayerPile); 
                     
                     if (DuelFXManager.Instance != null && !GameManager.Instance.isSimulating && sourceLoc != CardLocation.Unknown)
                     {
@@ -183,7 +183,7 @@ public partial class LuaDuel
                         if (flightSettings != null && flightSettings.enableFlight)
                         {
                             Vector3 startPos = GetPilePosition(sourceLoc, wasPlayerPile);
-                            Vector3 endPos = c.GetControler() == 0 ? GameManager.Instance.playerRemovedDisplay.transform.position : GameManager.Instance.opponentRemovedDisplay.transform.position;
+                            Vector3 endPos = wasPlayerPile ? GameManager.Instance.playerRemovedDisplay.transform.position : GameManager.Instance.opponentRemovedDisplay.transform.position;
                             DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
                         }
                     }
@@ -204,7 +204,7 @@ public partial class LuaDuel
             {
                 bool wasPlayerPile;
                 CardLocation sourceLoc = RemoveDataFromAllPiles(card.unityData, out wasPlayerPile);
-                GameManager.Instance.RemoveFromPlay(card.unityData, card.GetControler() == 0);
+                GameManager.Instance.RemoveFromPlay(card.unityData, wasPlayerPile);
                 
                 if (DuelFXManager.Instance != null && !GameManager.Instance.isSimulating && sourceLoc != CardLocation.Unknown)
                 {
@@ -216,7 +216,7 @@ public partial class LuaDuel
                     if (flightSettings != null && flightSettings.enableFlight)
                     {
                         Vector3 startPos = GetPilePosition(sourceLoc, wasPlayerPile);
-                        Vector3 endPos = card.GetControler() == 0 ? GameManager.Instance.playerRemovedDisplay.transform.position : GameManager.Instance.opponentRemovedDisplay.transform.position;
+                        Vector3 endPos = wasPlayerPile ? GameManager.Instance.playerRemovedDisplay.transform.position : GameManager.Instance.opponentRemovedDisplay.transform.position;
                         DuelFXManager.Instance.PlayCardFlight(card.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
                     }
                 }
@@ -252,7 +252,7 @@ public partial class LuaDuel
                     bool wasPlayerPile; 
                     capturedSourceLoc = RemoveDataFromAllPiles(c.unityData, out wasPlayerPile); 
                     capturedStartPos = GetPilePosition(capturedSourceLoc, wasPlayerPile);
-                    if(c.GetControler() == 0) GameManager.Instance.GetPlayerMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetPlayerMainDeck().Count, c.unityData); 
+                    if(wasPlayerPile) GameManager.Instance.GetPlayerMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetPlayerMainDeck().Count, c.unityData); 
                     else GameManager.Instance.GetOpponentMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetOpponentMainDeck().Count, c.unityData); count++; 
                 }
             }
@@ -273,7 +273,7 @@ public partial class LuaDuel
                 capturedSourceLoc = RemoveDataFromAllPiles(card.unityData, out wasPlayerPile);
                 capturedStartPos = GetPilePosition(capturedSourceLoc, wasPlayerPile);
                 if (card.unityData != null) cardsToAnimate.Add(card.unityData);
-                if(card.GetControler() == 0) GameManager.Instance.GetPlayerMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetPlayerMainDeck().Count, card.unityData); 
+                if(wasPlayerPile) GameManager.Instance.GetPlayerMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetPlayerMainDeck().Count, card.unityData); 
                 else GameManager.Instance.GetOpponentMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetOpponentMainDeck().Count, card.unityData);
                 count = 1;
             }
@@ -388,7 +388,7 @@ public partial class LuaDuel
         {
             foreach (var c in group.cards) { 
                 if (c.unityCard != null) { GameManager.Instance.ReturnToHand(c.unityCard); count++; }
-                else if (c.unityData != null) { bool pDummy; RemoveDataFromAllPiles(c.unityData, out pDummy); GameManager.Instance.AddCardToHand(c.unityData, c.GetControler() == 0); count++; }
+                else if (c.unityData != null) { bool wasPlayerPile; RemoveDataFromAllPiles(c.unityData, out wasPlayerPile); GameManager.Instance.AddCardToHand(c.unityData, wasPlayerPile, null, CardLocation.Deck, false, wasPlayerPile); count++; }
             }
             // Debug.Log($"[Lua] Duel.SendtoHand(Grupo com {count} cartas)");
         }
@@ -402,8 +402,8 @@ public partial class LuaDuel
             }
             else if (card.unityData != null)
             {
-                bool pDummy; RemoveDataFromAllPiles(card.unityData, out pDummy);
-                GameManager.Instance.AddCardToHand(card.unityData, card.GetControler() == 0);
+                bool wasPlayerPile; RemoveDataFromAllPiles(card.unityData, out wasPlayerPile);
+                GameManager.Instance.AddCardToHand(card.unityData, wasPlayerPile, null, CardLocation.Deck, false, wasPlayerPile);
                 count = 1;
             }
         }
@@ -453,6 +453,7 @@ public partial class LuaDuel
             {
                 if (c.unityCard != null)
                 {
+                    bool originalOwner = c.unityCard.ownerPlayer;
                     if (GameManager.Instance.playerHand.Contains(c.unityCard.gameObject)) GameManager.Instance.playerHand.Remove(c.unityCard.gameObject);
                     else if (GameManager.Instance.opponentHand.Contains(c.unityCard.gameObject)) GameManager.Instance.opponentHand.Remove(c.unityCard.gameObject);
                     
@@ -460,13 +461,13 @@ public partial class LuaDuel
                     if (c.unityCard != null) { sPos = c.unityCard.transform.position; sLoc = c.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand; }
                     else { sLoc = CardLocation.Graveyard; sPos = isPlayerSummoning ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position; }
                     
-                    GameManager.Instance.SpecialSummonFromData(c.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc);
+                    GameManager.Instance.SpecialSummonFromData(c.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, originalOwner);
                     GameObject.Destroy(c.unityCard.gameObject);
                 }
                 else if (c.unityData != null)
                 {
-                    bool pDummy; RemoveDataFromAllPiles(c.unityData, out pDummy);
-                    GameManager.Instance.SpecialSummonFromData(c.unityData, isPlayerSummoning, -1, true, inDefense, null, CardLocation.Graveyard);
+                    bool wasPlayerPile; RemoveDataFromAllPiles(c.unityData, out wasPlayerPile);
+                    GameManager.Instance.SpecialSummonFromData(c.unityData, isPlayerSummoning, -1, true, inDefense, null, CardLocation.Graveyard, wasPlayerPile);
                 }
             }
             // Debug.Log($"[Lua] Duel.SpecialSummon(Grupo)");
@@ -476,6 +477,7 @@ public partial class LuaDuel
         {
             if (card.unityCard != null)
             {
+                bool originalOwner = card.unityCard.ownerPlayer;
                 if (GameManager.Instance.playerHand.Contains(card.unityCard.gameObject)) GameManager.Instance.playerHand.Remove(card.unityCard.gameObject);
                 else if (GameManager.Instance.opponentHand.Contains(card.unityCard.gameObject)) GameManager.Instance.opponentHand.Remove(card.unityCard.gameObject);
                 
@@ -483,15 +485,15 @@ public partial class LuaDuel
                 if (card.unityCard != null) { sPos = card.unityCard.transform.position; sLoc = card.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand; }
                 else { sLoc = CardLocation.Graveyard; sPos = isPlayerSummoning ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position; }
                 
-                GameManager.Instance.SpecialSummonFromData(card.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc);
+                GameManager.Instance.SpecialSummonFromData(card.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, originalOwner);
                 GameObject.Destroy(card.unityCard.gameObject);
                 // Debug.Log($"[Lua] Duel.SpecialSummon({card.unityCard.CurrentCardData.name})");
                 return true;
             }
             else if (card.unityData != null)
             {
-                bool pDummy; RemoveDataFromAllPiles(card.unityData, out pDummy);
-                GameManager.Instance.SpecialSummonFromData(card.unityData, isPlayerSummoning, -1, true, inDefense, null, CardLocation.Graveyard);
+                bool wasPlayerPile; RemoveDataFromAllPiles(card.unityData, out wasPlayerPile);
+                GameManager.Instance.SpecialSummonFromData(card.unityData, isPlayerSummoning, -1, true, inDefense, null, CardLocation.Graveyard, wasPlayerPile);
                 // Debug.Log($"[Lua] Duel.SpecialSummon({card.unityData.name} - Token)");
                 return true;
             }
