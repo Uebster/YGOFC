@@ -530,7 +530,7 @@ public partial class DuelFXManager
         }
     }
     
-    public void PlayReturnToDeckAnimation(CardData data, bool isPlayer, CardLocation sourceLoc, Vector3? startPos, System.Action onComplete)
+    public void PlayReturnToDeckAnimation(CardData data, bool isPlayer, CardLocation sourceLoc, Vector3? startPos, bool startFaceUp, System.Action onComplete)
     {
         if (!enableAnimations) { onComplete?.Invoke(); return; }
         
@@ -544,7 +544,7 @@ public partial class DuelFXManager
         else settings = flightGraveyardToDeck;
         bool pop = sourceLoc != CardLocation.Field && sourceLoc != CardLocation.Hand;
         
-        PlayCardFlight(data, GameManager.Instance.GetCardBackTexture(), true, true, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, settings, pop, onComplete);
+        PlayCardFlight(data, GameManager.Instance.GetCardBackTexture(), startFaceUp, false, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, settings, pop, onComplete);
     }
 
     public void PlayCardFlight(CardData data, Texture2D backTex, bool startFaceUp, bool endFaceUp, Vector3 startPos, Vector3 endPos, Vector3 startScale, Vector3 endScale, Quaternion startRot, Quaternion endRot, CardFlightSettings settings, bool popFromPile, System.Action onComplete)

@@ -237,8 +237,14 @@ public partial class LuaDuel
         int count = 0;
         bool toTop = (ConvertToInt(seq) == 0);
         List<CardData> cardsToAnimate = new List<CardData>();
-        CardLocation capturedSourceLoc = CardLocation.Unknown;
-        Vector3? capturedStartPos = null;
+        List<bool> isOwnerList = new List<bool>();
+        List<bool> startFaceUpList = new List<bool>();
+        List<CardLocation> sourceLocList = new List<CardLocation>();
+        List<Vector3?> startPosList = new List<Vector3?>();
+
+        // Verifica se o LUA exigiu o envio para o deck de um player específico (Raro, mas existe). Se nil, usamos o dono original.
+        bool playerProvided = player != null && (!(player is MoonSharp.Interpreter.DynValue dv) || !dv.IsNil());
+        int pInt = playerProvided ? ConvertToInt(player) : -1;
 
         if (target is LuaGroup group)
         {
@@ -246,34 +252,96 @@ public partial class LuaDuel
             {
                 if (c.unityData != null) cardsToAnimate.Add(c.unityData);
 
-                // Lógica de dados original (executa imediatamente)
-                if (c.unityCard != null) { GameManager.Instance.ReturnToDeck(c.unityCard, toTop); count++; } 
+                bool targetDeckIsPlayer = true;
+                bool sFaceUp = true;
+                CardLocation sLoc = CardLocation.Unknown;
+                Vector3? sPos = null;
+
+                if (c.unityCard != null) 
+                { 
+                    targetDeckIsPlayer = playerProvided ? (pInt == 0) : c.unityCard.ownerPlayer;
+                    sLoc = c.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand;
+                    sPos = c.unityCard.transform.position;
+                    sFaceUp = !c.unityCard.isFlipped;
+                    
+                    isOwnerList.Add(targetDeckIsPlayer);
+                    startFaceUpList.Add(sFaceUp);
+                    sourceLocList.Add(sLoc);
+                    startPosList.Add(sPos);
+
+                    if(targetDeckIsPlayer) GameManager.Instance.GetPlayerMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetPlayerMainDeck().Count, c.unityData); 
+                    else GameManager.Instance.GetOpponentMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetOpponentMainDeck().Count, c.unityData); 
+
+                    if (GameManager.Instance.playerHand.Contains(c.unityCard.gameObject)) GameManager.Instance.playerHand.Remove(c.unityCard.gameObject);
+                    else if (GameManager.Instance.opponentHand.Contains(c.unityCard.gameObject)) GameManager.Instance.opponentHand.Remove(c.unityCard.gameObject);
+                    
+                    if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(c.unityCard);
+                    GameObject.Destroy(c.unityCard.gameObject);
+
+                    count++; 
+                }                 
                 else if (c.unityData != null) { 
                     bool wasPlayerPile; 
-                    capturedSourceLoc = RemoveDataFromAllPiles(c.unityData, out wasPlayerPile); 
-                    capturedStartPos = GetPilePosition(capturedSourceLoc, wasPlayerPile);
-                    if(wasPlayerPile) GameManager.Instance.GetPlayerMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetPlayerMainDeck().Count, c.unityData); 
-                    else GameManager.Instance.GetOpponentMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetOpponentMainDeck().Count, c.unityData); count++; 
+                    sLoc = RemoveDataFromAllPiles(c.unityData, out wasPlayerPile); 
+                    sPos = GetPilePosition(sLoc, wasPlayerPile);
+                    targetDeckIsPlayer = playerProvided ? (pInt == 0) : wasPlayerPile;
+                    
+                    isOwnerList.Add(targetDeckIsPlayer);
+                    startFaceUpList.Add(true);
+                    sourceLocList.Add(sLoc);
+                    startPosList.Add(sPos);
+
+                    if(targetDeckIsPlayer) GameManager.Instance.GetPlayerMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetPlayerMainDeck().Count, c.unityData); 
+                    else GameManager.Instance.GetOpponentMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetOpponentMainDeck().Count, c.unityData); 
+                    count++; 
                 }
             }
             // Debug.Log($"[Lua] Duel.SendtoDeck(Grupo com {count} cartas)");
         }
         else if (target is LuaCard card)
         {
+            if (card.unityData != null) cardsToAnimate.Add(card.unityData);
+            bool targetDeckIsPlayer = true;
+            bool sFaceUp = true;
+            CardLocation sLoc = CardLocation.Unknown;
+            Vector3? sPos = null;
+
             if (card.unityCard != null)
             {
-                if (card.unityData != null) cardsToAnimate.Add(card.unityData);
-                GameManager.Instance.ReturnToDeck(card.unityCard, toTop);
-                count = 1;
-                // Debug.Log($"[Lua] Duel.SendtoDeck({card.unityCard.CurrentCardData.name})");
+                targetDeckIsPlayer = playerProvided ? (pInt == 0) : card.unityCard.ownerPlayer;
+                sLoc = card.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand;
+                sPos = card.unityCard.transform.position;
+                sFaceUp = !card.unityCard.isFlipped;
+                
+                isOwnerList.Add(targetDeckIsPlayer);
+                startFaceUpList.Add(sFaceUp);
+                sourceLocList.Add(sLoc);
+                startPosList.Add(sPos);
+
+                if(targetDeckIsPlayer) GameManager.Instance.GetPlayerMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetPlayerMainDeck().Count, card.unityData); 
+                else GameManager.Instance.GetOpponentMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetOpponentMainDeck().Count, card.unityData); 
+
+                if (GameManager.Instance.playerHand.Contains(card.unityCard.gameObject)) GameManager.Instance.playerHand.Remove(card.unityCard.gameObject);
+                else if (GameManager.Instance.opponentHand.Contains(card.unityCard.gameObject)) GameManager.Instance.opponentHand.Remove(card.unityCard.gameObject);
+                
+                if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card.unityCard);
+                GameObject.Destroy(card.unityCard.gameObject);
+
+                count = 1;;
             }
             else if (card.unityData != null)
             {
                 bool wasPlayerPile; 
-                capturedSourceLoc = RemoveDataFromAllPiles(card.unityData, out wasPlayerPile);
-                capturedStartPos = GetPilePosition(capturedSourceLoc, wasPlayerPile);
-                if (card.unityData != null) cardsToAnimate.Add(card.unityData);
-                if(wasPlayerPile) GameManager.Instance.GetPlayerMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetPlayerMainDeck().Count, card.unityData); 
+                sLoc = RemoveDataFromAllPiles(card.unityData, out wasPlayerPile);
+                sPos = GetPilePosition(sLoc, wasPlayerPile);
+                targetDeckIsPlayer = playerProvided ? (pInt == 0) : wasPlayerPile;
+                
+                isOwnerList.Add(targetDeckIsPlayer);
+                startFaceUpList.Add(true);
+                sourceLocList.Add(sLoc);
+                startPosList.Add(sPos);
+
+                if(targetDeckIsPlayer) GameManager.Instance.GetPlayerMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetPlayerMainDeck().Count, card.unityData); 
                 else GameManager.Instance.GetOpponentMainDeck().Insert(toTop ? 0 : GameManager.Instance.GetOpponentMainDeck().Count, card.unityData);
                 count = 1;
             }
@@ -282,22 +350,26 @@ public partial class LuaDuel
         // Dispara a animação visual após a lógica de dados
         if (GameManager.Instance != null && GameManager.Instance.enableReturnToDeckAnimation && cardsToAnimate.Count > 0)
         {
-            bool animDone = false;
-            
-            CardLocation sourceLoc = CardLocation.Unknown;
-            Vector3? startPos = null;
-            if (target is LuaCard tCard && tCard.unityCard != null) { sourceLoc = CardLocation.Field; startPos = tCard.unityCard.transform.position; }
-            else { sourceLoc = capturedSourceLoc; startPos = capturedStartPos; }
-            
-            if (DuelFXManager.Instance != null) {
-                DuelFXManager.Instance.PlayReturnToDeckAnimation(cardsToAnimate[0], IsPlayer(player), sourceLoc, startPos, () => animDone = true);
-            } else { animDone = true; }
-            yield return new WaitUntil(() => animDone);
+            for(int i = 0; i < cardsToAnimate.Count; i++)
+            {
+                bool animDone = false;
+                if (DuelFXManager.Instance != null) {
+                    DuelFXManager.Instance.PlayReturnToDeckAnimation(cardsToAnimate[i], isOwnerList[i], sourceLocList[i], startPosList[i], startFaceUpList[i], () => animDone = true);
+                } else { animDone = true; }
+                yield return new WaitUntil(() => animDone);
+            }
         }
 
-        if (!toTop && GameManager.Instance != null) GameManager.Instance.ShuffleDeck(IsPlayer(player));
-
-        if (DeckManager.Instance != null) DeckManager.Instance.UpdateDeckVisuals();
+        if (!toTop && GameManager.Instance != null) 
+        {
+            if (playerProvided) GameManager.Instance.ShuffleDeck(pInt == 0);
+            else 
+            {
+                // Se devolveu cartas de donos diferentes, embaralha ambos os decks afetados
+                if (isOwnerList.Contains(true)) GameManager.Instance.ShuffleDeck(true);
+                if (isOwnerList.Contains(false)) GameManager.Instance.ShuffleDeck(false);
+            }
+        }
     }
 
     public void ShuffleDeck(object player)

@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -16,7 +17,8 @@ public class QAAutoSpawner : MonoBehaviour
 
     // --- INTERFACE DRAGGABLE (IMGUI) ---
     private bool showWindow = false;
-    private Rect windowRect = new Rect(20, 20, 320, 260);
+    private Rect windowRect = new Rect(20, 20, 380, 500);
+    private Texture2D bgTex;
     private GUIStyle titleStyle;
     private GUIStyle btnStyle;
     private bool styleInitialized = false;
@@ -50,12 +52,19 @@ public class QAAutoSpawner : MonoBehaviour
         btnStyle.fontSize = 13;
         btnStyle.fixedHeight = 26;
         btnStyle.margin = new RectOffset(4, 4, 4, 4);
+        btnStyle.richText = true;
 
         titleStyle = new GUIStyle(GUI.skin.label);
         titleStyle.fontSize = 14;
         titleStyle.fontStyle = FontStyle.Bold;
         titleStyle.normal.textColor = Color.yellow;
         titleStyle.alignment = TextAnchor.MiddleCenter;
+        titleStyle.richText = true;
+
+        bgTex = new Texture2D(1, 1);
+        bgTex.SetPixel(0, 0, new Color(0.1f, 0.1f, 0.1f, 0.95f));
+        bgTex.Apply();
+
         styleInitialized = true;
     }
 
@@ -64,13 +73,19 @@ public class QAAutoSpawner : MonoBehaviour
         if (!showWindow) return;
         InitStyles();
         
-        // Trava de segurança para manter o painel na frente de tudo
         GUI.depth = -100;
-        windowRect = GUI.Window(10101, windowRect, DrawQAWindow, "QA Auto-Spawner (Ctrl+Q para Ocultar)");
+        GUI.backgroundColor = Color.clear;
+        windowRect = GUI.Window(10101, windowRect, DrawQAWindow, "");
+        GUI.backgroundColor = Color.white;
     }
 
     void DrawQAWindow(int windowID)
     {
+        GUI.DrawTexture(new Rect(0, 0, windowRect.width, windowRect.height), bgTex);
+        
+        GUILayout.Space(5);
+        GUILayout.Label("🛠️ QA Auto-Spawner (Ctrl+Q Ocultar)", titleStyle);
+        
         GUILayout.Space(5);
         if (string.IsNullOrEmpty(currentTestCardId))
         {
@@ -81,35 +96,77 @@ public class QAAutoSpawner : MonoBehaviour
         }
         else
         {
-            GUILayout.BeginVertical("box");
-            GUILayout.Label($"<b>Carta:</b> {currentTestCardName} ({currentTestCardId})");
+            GUIStyle boxStyle = new GUIStyle(GUI.skin.box);
+            boxStyle.richText = true;
+
+            GUILayout.BeginVertical(boxStyle);
+            GUILayout.Label($"<b>Carta:</b> {currentTestCardName} ({currentTestCardId})", new GUIStyle(GUI.skin.label) { richText = true });
             
             string color = currentStatus.Contains("x") ? "green" : (currentStatus.Contains("R") ? "orange" : "white");
-            GUILayout.Label($"<b>Status:</b> <color={color}>{currentStatus}</color>");
+            GUILayout.Label($"<b>Status:</b> <color={color}>{currentStatus}</color>", new GUIStyle(GUI.skin.label) { richText = true });
             
-            GUILayout.Space(10);
+            GUILayout.Space(5);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("✅ Confirmar [x]", btnStyle)) MarkCurrentAs("x");
+            if (GUILayout.Button("✅ Aprovar [x]", btnStyle)) MarkCurrentAs("x");
             if (GUILayout.Button("⚠️ Revisar [R]", btnStyle)) MarkCurrentAs("R");
             GUILayout.EndHorizontal();
 
-            GUILayout.Space(5);
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("⏮️ Ant.", btnStyle)) TestPreviousCard();
-            if (GUILayout.Button("🔄 Reiniciar", btnStyle)) RestartCurrentTest();
+            if (GUILayout.Button("🔄 Cópia Nova", btnStyle)) RestartCurrentTest();
             if (GUILayout.Button("Próx. ⏭️", btnStyle)) TestNextCard(true);
             GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
+
+            GUILayout.Space(10);
+            GUILayout.Label("<b>--- GOD MODE / SANDBOX ---</b>", titleStyle);
             
-            GUILayout.Space(5);
+            GUILayout.BeginVertical(boxStyle);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("➕ Adicionar Cópia", btnStyle)) SpawnCopyOfCurrentCard();
-            if (GUILayout.Button("🧹 Limpar Campo", btnStyle)) CleanFieldQA();
+            GUILayout.Label("Mão:", GUILayout.Width(100));
+            if (GUILayout.Button("Limpar (P)", btnStyle)) ClearHand(true);
+            if (GUILayout.Button("Limpar (O)", btnStyle)) ClearHand(false);
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Monstros:", GUILayout.Width(100));
+            if (GUILayout.Button("Limpar (P)", btnStyle)) ClearMonsters(true);
+            if (GUILayout.Button("Limpar (O)", btnStyle)) ClearMonsters(false);
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Mag/Arm:", GUILayout.Width(100));
+            if (GUILayout.Button("Limpar (P)", btnStyle)) ClearSpells(true);
+            if (GUILayout.Button("Limpar (O)", btnStyle)) ClearSpells(false);
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(5);
+            
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Token/Alvo:", GUILayout.Width(100));
+            if (GUILayout.Button("Spawn (P)", btnStyle)) SpawnTestMonster(true);
+            if (GUILayout.Button("Spawn (O)", btnStyle)) SpawnTestMonster(false);
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Mag/Set:", GUILayout.Width(100));
+            if (GUILayout.Button("Spawn (P)", btnStyle)) SpawnTestSpell(true);
+            if (GUILayout.Button("Spawn (O)", btnStyle)) SpawnTestSpell(false);
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(5);
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Olhar Deck:", GUILayout.Width(100));
+            if (GUILayout.Button("Player", btnStyle)) { if (GameManager.Instance != null) GameManager.Instance.ViewDeck(true); }
+            if (GUILayout.Button("Oponente", btnStyle)) { if (GameManager.Instance != null) GameManager.Instance.ViewDeck(false); }
             GUILayout.EndHorizontal();
 
             GUILayout.Space(5);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("👁️ Meu Deck", btnStyle)) { if (GameManager.Instance != null) GameManager.Instance.ViewDeck(true); }
-            if (GUILayout.Button("👁️ Deck Oponente", btnStyle)) { if (GameManager.Instance != null) GameManager.Instance.ViewDeck(false); }
+            GUILayout.Label("Zerar Tudo:", GUILayout.Width(100));
+            if (GUILayout.Button("Limpar o Campo Completo", btnStyle)) CleanFieldQA();
+            if (GUILayout.Button("Reiniciar Duelo", btnStyle)) { if (GameManager.Instance != null) GameManager.Instance.StartDuel(); }
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
         }
@@ -286,31 +343,111 @@ public class QAAutoSpawner : MonoBehaviour
         }
     }
 
+    public static void ClearHand(bool isPlayer)
+    {
+        if (GameManager.Instance == null) return;
+        var hand = isPlayer ? GameManager.Instance.playerHand : GameManager.Instance.opponentHand;
+        foreach(var go in new List<GameObject>(hand))
+        {
+            if(go != null)
+            {
+                var cd = go.GetComponent<CardDisplay>();
+                if(cd != null) GameManager.Instance.DiscardCard(cd);
+            }
+        }
+    }
+
+    public static void ClearMonsters(bool isPlayer)
+    {
+        if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return;
+        var zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+        foreach(var z in zones)
+        {
+            if(z.childCount > 0)
+            {
+                var cd = z.GetComponentInChildren<CardDisplay>();
+                if(cd != null) {
+                    if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(cd);
+                    GameManager.Instance.SendToGraveyard(cd.CurrentCardData, cd.ownerPlayer, CardLocation.Field, SendReason.Rule);
+                    Destroy(cd.gameObject);
+                }
+            }
+        }
+    }
+
+    public static void ClearSpells(bool isPlayer)
+    {
+        if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return;
+        var zones = isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+        foreach(var z in zones)
+        {
+            if(z.childCount > 0)
+            {
+                var cd = z.GetComponentInChildren<CardDisplay>();
+                if(cd != null) {
+                    if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(cd);
+                    GameManager.Instance.SendToGraveyard(cd.CurrentCardData, cd.ownerPlayer, CardLocation.Field, SendReason.Rule);
+                    Destroy(cd.gameObject);
+                }
+            }
+        }
+        var fz = isPlayer ? GameManager.Instance.duelFieldUI.playerFieldSpell : GameManager.Instance.duelFieldUI.opponentFieldSpell;
+        if(fz.childCount > 0)
+        {
+            var cd = fz.GetComponentInChildren<CardDisplay>();
+            if(cd != null) {
+                if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(cd);
+                GameManager.Instance.SendToGraveyard(cd.CurrentCardData, cd.ownerPlayer, CardLocation.Field, SendReason.Rule);
+                Destroy(cd.gameObject);
+            }
+        }
+    }
+
+    public static void SpawnTestMonster(bool isPlayer)
+    {
+        if (GameManager.Instance == null) return;
+        CardData dummyMonster = GameManager.Instance.cardDatabase.cardDatabase.FirstOrDefault(c => c.name.Contains("Blue-Eyes White Dragon") || (c.type.Contains("Monster") && c.atk >= 2500));
+        if (dummyMonster != null) 
+        {
+            // Garante que o dono da carta é o jogador/oponente correto (Evita bugs de cemitério)
+            GameManager.Instance.SpecialSummonFromData(dummyMonster, isPlayer, -1, true, false, null, CardLocation.Unknown, isPlayer);
+            Debug.Log($"<color=cyan>➕ [QA] Monstro de Teste injetado para o {(isPlayer ? "Jogador" : "Oponente")}.</color>");
+        }
+    }
+
+    public static void SpawnTestSpell(bool isPlayer)
+    {
+        if (GameManager.Instance == null) return;
+        CardData dummySpell = GameManager.Instance.cardDatabase.cardDatabase.FirstOrDefault(c => c.type.Contains("Spell") && !c.name.Contains("7") && c.id != "DM0004");
+        if (dummySpell != null) 
+        {
+            Transform zone = GameManager.Instance.GetFreeSpellZone(isPlayer);
+            if (zone != null) {
+                int zoneIdx = -1;
+                var zones = isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+                for(int i=0; i<zones.Length; i++) if (zones[i] == zone) { zoneIdx = i; break; }
+                
+                if (zoneIdx != -1)
+                {
+                    GameManager.Instance.SetSpellTrapFromData(dummySpell, isPlayer, zoneIdx, false);
+                    Debug.Log($"<color=cyan>➕ [QA] Magia Setada injetada para o {(isPlayer ? "Jogador" : "Oponente")}.</color>");
+                }
+            }
+        }
+    }
+
     private static void SetupQABoard(string cardId)
     {
         if (GameManager.Instance == null) return;
 
-        // 1. Limpeza Segura do Tabuleiro e Mãos (Para evitar conflitos com Efeitos Anteriores)
+        // Limpa miras pendentes para evitar travar a UI
         if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null) {
             CardEffectManager.Instance.luaDuel.currentAttacker = null;
             CardEffectManager.Instance.luaDuel.currentAttackTarget = null;
         }
         if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
         
-        GameManager.Instance.ClearFieldZonesOnly();
-        
-        foreach (var go in GameManager.Instance.playerHand) Destroy(go);
-        GameManager.Instance.playerHand.Clear();
-        
-        foreach (var go in GameManager.Instance.opponentHand) Destroy(go);
-        GameManager.Instance.opponentHand.Clear();
-
-        GameManager.Instance.GetPlayerGraveyard().Clear();
-        GameManager.Instance.GetOpponentGraveyard().Clear();
-        GameManager.Instance.GetPlayerRemoved().Clear();
-        GameManager.Instance.GetOpponentRemoved().Clear();
-
-        // 1.5. Preenchimento de Segurança de Decks para QA
+        // 1. Preenchimento de Segurança de Decks para QA
         // O GameManager pode ter um playerMainDeck criado no menu, mas o duelo físico (DeckManager) ainda não começou!
         if (DeckManager.Instance != null && GameManager.Instance.cardDatabase != null)
         {
@@ -346,16 +483,5 @@ public class QAAutoSpawner : MonoBehaviour
             Debug.Log($"<color=cyan>🧪 [QA] Injetando {testCard.name} ({cardId}) para Homologação.</color>");
             GameManager.Instance.Dev_InjectDependencies(testCard);
         } else Debug.LogError($"[QA] Carta {cardId} não encontrada no banco de dados!");
-
-        // 3. Invoca os Sacos de Pancada (Inimigos)
-        CardData dummyMonster = GameManager.Instance.cardDatabase.cardDatabase.FirstOrDefault(c => c.name.Contains("Blue-Eyes White Dragon") || (c.type.Contains("Monster") && c.atk >= 2500));
-        if (dummyMonster != null) 
-        {
-            GameManager.Instance.SpecialSummonFromData(dummyMonster, false, 2, true, false); // Coloca pro Oponente
-            GameManager.Instance.SpecialSummonFromData(dummyMonster, true, 2, true, false);  // Coloca pro Jogador (Para poder destruir/tributar)
-        }
-
-        CardData dummySpell = GameManager.Instance.cardDatabase.cardDatabase.FirstOrDefault(c => c.type.Contains("Spell") && !c.name.Contains("7") && c.id != "DM0004");
-        if (dummySpell != null) GameManager.Instance.SetSpellTrapFromData(dummySpell, false, 2, true); // Coloca setada (face-down)
     }
 }
