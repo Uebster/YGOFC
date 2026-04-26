@@ -729,4 +729,175 @@ public partial class DuelFXManager
         }
         if (squeezeObj != null) Destroy(squeezeObj);
     }
+    public void PlayControlSwap(CardDisplay card, Transform targetZone, float targetZRot, bool newOwnerIsPlayer, System.Action onComplete)
+    {
+        // Debug.Log($"[VFX] > [CHAMADA] PlayControlSwap");
+        if (!enableAnimations || card == null || targetZone == null)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+        StartCoroutine(ControlSwapRoutine(card, targetZone, targetZRot, newOwnerIsPlayer, onComplete));
+    }
+
+    private IEnumerator ControlSwapRoutine(CardDisplay card, Transform targetZone, float targetZRot, bool newOwnerIsPlayer, System.Action onComplete)
+    {
+        Vector3 startPos = card.transform.position;
+        Quaternion startRot = card.transform.rotation;
+        
+        Transform uiParent = GetUIParent();
+        if (uiParent != null) { card.transform.SetParent(uiParent, true); card.transform.SetAsLastSibling(); }
+
+        // Salva a escala que a Unity calculou para manter a carta com o mesmo tamanho visual na UI
+        Vector3 flightScale = card.transform.localScale;
+
+        PlaySound(spellSound);
+        if (useControlSwapPrefab && spellActivateVFX != null) SpawnVFXPublic(spellActivateVFX, startPos);
+
+        float duration = controlSwapDuration / (animationSpeed > 0 ? animationSpeed : 1f);
+        float elapsed = 0f;
+        Vector3 endPos = targetZone.position;
+        Quaternion endRot = Quaternion.Euler(0, 0, targetZRot);
+        
+        GameObject lineObj = null; RectTransform lineRT = null; Image lineImg = null;
+        if (useControlSwapTrail && controlSwapTrailType == AttackTrailType.ContinuousLine) {
+            lineObj = new GameObject("SwapLineTrail", typeof(RectTransform), typeof(Image));
+            lineObj.transform.SetParent(card.transform.parent, true);
+            lineObj.transform.SetSiblingIndex(card.transform.GetSiblingIndex());
+            lineRT = lineObj.GetComponent<RectTransform>();
+            lineRT.pivot = new Vector2(0, 0.5f); lineRT.position = startPos;
+            lineImg = lineObj.GetComponent<Image>(); lineImg.color = controlSwapTrailColor;
+        }
+
+        GameObject outlineGhost = null;
+        if (useControlSwapOutline) {
+            outlineGhost = new GameObject("SwapOutline", typeof(RectTransform), typeof(RawImage), typeof(Outline));
+            outlineGhost.transform.SetParent(card.transform, false);
+            outlineGhost.transform.SetAsFirstSibling(); 
+            
+            RectTransform rt = outlineGhost.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; 
+            rt.sizeDelta = Vector2.zero; rt.anchoredPosition = Vector2.zero;
+            
+            RawImage ri = outlineGhost.GetComponent<RawImage>();
+            ri.texture = card.cardImage.texture;
+            ri.color = controlSwapOutlineColor; 
+            
+            Outline outl = outlineGhost.GetComponent<Outline>();
+            outl.effectColor = controlSwapOutlineColor;
+            outl.effectDistance = new Vector2(8f, -8f);
+        }
+
+        float spawnTrailTimer = 0;
+
+        if (useControlSwapRoutine)
+        {
+            while (elapsed < duration)
+            {
+                if (card == null) break;
+                elapsed += Time.deltaTime;
+                float t = Mathf.SmoothStep(0, 1, elapsed / duration);
+
+                card.transform.position = Vector3.Lerp(startPos, endPos, t);
+                card.transform.rotation = Quaternion.Slerp(startRot, endRot, t);
+                
+                float scaleMultiplier = 1f + Mathf.Sin(t * Mathf.PI) * (controlSwapFlightScale - 1f);
+                card.transform.localScale = flightScale * scaleMultiplier;
+
+                if (useControlSwapTrail) {
+                    if (controlSwapTrailType == AttackTrailType.Shadows) {
+                        spawnTrailTimer -= Time.deltaTime; if (spawnTrailTimer <= 0) { spawnTrailTimer = 0.03f; SpawnCardTrailGhost(card.GetComponent<RectTransform>(), card.cardImage.texture, controlSwapTrailColor); }
+                    } else if (controlSwapTrailType == AttackTrailType.ContinuousLine && lineObj != null) {
+                        Vector3 currentPos = card.transform.position; Vector3 dirToCurrent = currentPos - startPos;
+                        float dist = dirToCurrent.magnitude; float canvasScale = lineObj.transform.lossyScale.x;
+                        if (canvasScale > 0) lineRT.sizeDelta = new Vector2(dist / canvasScale, controlSwapTrailWidth);
+                        lineRT.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(dirToCurrent.y, dirToCurrent.x) * Mathf.Rad2Deg);
+                    }
+                }
+
+                yield return null;
+            }
+        }
+        else 
+        {
+            yield return new WaitForSeconds(0.6f / (animationSpeed > 0 ? animationSpeed : 1f));
+        }
+
+        if (lineObj != null) StartCoroutine(FadeAndDestroyLine(lineObj, lineImg, 0.2f));
+        if (outlineGhost != null) Destroy(outlineGhost);
+
+        if (card != null) { 
+            card.transform.SetParent(targetZone, false); 
+            card.transform.localPosition = Vector3.zero; 
+            card.transform.localRotation = endRot; 
+            
+            card.transform.localScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale : Vector3.one; 
+            
+            if (useControlSwapPrefab && summonVFX != null) SpawnVFXPublic(summonVFX, endPos); 
+            PlaySound(summonSound); 
+            
+            if (useControlSwapImpact) 
+            {
+                if (controlSwapImpactType == ControlSwapImpactType.Squeeze)
+                    StartCoroutine(ControlSwapImpactRoutine(card));
+                else
+                    StartCoroutine(PulseGhostRoutine(card, controlSwapImpactScale, 0.2f, controlSwapImpactColor, controlSwapImpactOutlineWidth));
+            }
+        }
+        onComplete?.Invoke();
+    }
+    private IEnumerator ControlSwapImpactRoutine(CardDisplay card)
+    {
+        GameObject squeezeObj = new GameObject("ControlSwapSqueeze", typeof(RectTransform), typeof(RawImage), typeof(Outline));
+        
+        Transform parentToUse = card.transform.parent;
+        squeezeObj.transform.SetParent(parentToUse, false);
+        squeezeObj.transform.SetSiblingIndex(card.transform.GetSiblingIndex()); 
+
+        RectTransform rt = squeezeObj.GetComponent<RectTransform>();
+        RectTransform targetRT = card.GetComponent<RectTransform>();
+        
+        rt.position = targetRT.position;
+        rt.sizeDelta = targetRT.sizeDelta;
+        rt.rotation = targetRT.rotation;
+        rt.pivot = targetRT.pivot;
+
+        RawImage ri = squeezeObj.GetComponent<RawImage>();
+        ri.texture = card.cardImage.texture;
+        ri.color = controlSwapImpactColor; 
+        
+        Outline outline = squeezeObj.GetComponent<Outline>();
+        outline.effectColor = controlSwapImpactColor;
+        outline.effectDistance = new Vector2(controlSwapImpactOutlineWidth, -controlSwapImpactOutlineWidth);
+
+        float halfDuration = 0.2f / (animationSpeed > 0 ? animationSpeed : 1f);
+        float t = 0;
+        Vector3 startScale = card.transform.localScale * controlSwapImpactScale;
+        Vector3 endScale = card.transform.localScale;
+
+        while (t < 1f)
+        {
+            if (card == null) break;
+            t += Time.deltaTime / halfDuration;
+            float smooth = Mathf.SmoothStep(0, 1, t);
+            
+            rt.position = targetRT.position; 
+            rt.localScale = Vector3.Lerp(startScale, endScale, smooth);
+            
+            if (smooth > 0.7f)
+            {
+                float fadeT = (smooth - 0.7f) / 0.3f;
+                Color currentImgColor = controlSwapImpactColor;
+                currentImgColor.a = (1f - fadeT) * controlSwapImpactColor.a;
+                ri.color = currentImgColor;
+                
+                Color outlineColor = controlSwapImpactColor;
+                outlineColor.a = (1f - fadeT) * controlSwapImpactColor.a;
+                outline.effectColor = outlineColor;
+            }
+            yield return null;
+        }
+
+        if (squeezeObj != null) Destroy(squeezeObj);
+    }
 }
