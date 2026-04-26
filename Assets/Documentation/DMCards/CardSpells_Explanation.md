@@ -296,29 +296,6 @@ Diferente da *Swords of Revealing Light* (que trava tudo por 3 turnos e some), a
 * **O Matador de Combos/OTK:** Muitos decks de campeonato (como dragões ou zumbis) dependem de invocar o chefe deles e atacar no mesmo turno para zerar seus Pontos de Vida (OTK - One Turn Kill). Ao declarar a raça principal do oponente, você garante que qualquer "monstrão" que ele chame da mão ou do cemitério ficará "congelado" assistindo, dando a você um turno inteiro para destruí-lo com uma mágica antes que ele possa desferir o golpe!
 * **A Integração na Engine C#:** No nosso motor de jogo, essa magia inaugura a varredura da flag `STATUS_SUMMON_TURN`. A Engine C# agora marca o turno exato de nascimento de cada carta no tabuleiro, permitindo que a IA do oponente e a interface do jogador (Espada de Ataque) saibam exatamente se estão paralisados ou prontos para a guerra!
 
-
-
-
-
-
-
-
-## ID: DM0853 - Heavy Storm (Password: 19613556)
-
-A carta **"Heavy Storm"** (Tempestade Pesada) é uma Carta Mágica Normal (Normal Spell) e é, historicamente, a "Rainha das Remoções" no formato Goat e em toda a era clássica do Yu-Gi-Oh!
-
-> *"Destroy all Spell and Trap Cards on the field."*
-
-### Como ela funciona na prática:
-Ao ativá-la, uma tempestade varre o tabuleiro inteiro, destruindo instantaneamente **todas as Cartas Mágicas e Armadilhas** em ambos os lados do campo. Isso inclui cartas viradas para baixo (Face-down), cartas viradas para cima (Face-up), Magias de Equipamento e Magias de Campo (Field Spells).
-
-### 💡 O grande truque dessa carta:
-O *Heavy Storm* define o ritmo do duelo. A simples existência dessa carta no seu deck impõe o que chamamos de "Regra do Overextension" (Avançar demais).
-
-* **A Punição da Ganância (Punishing Overextension):** Se o oponente baixar (Set) 3 ou 4 armadilhas na mesa para se sentir 100% seguro, um único *Heavy Storm* vai destruir todas elas de uma vez. O oponente perderá 4 cartas, e você apenas 1, criando uma vantagem de recursos (Card Advantage) absurda a seu favor. Por causa do *Heavy Storm*, duelistas de elite raramente baixam mais de 2 cartas por turno.
-* **Liberando a Zona de Combate (The OTK Enabler):** A tática mais comum é guardar o *Heavy Storm* na mão até você ter monstros suficientes para vencer a partida no mesmo turno. Você ativa a tempestade, garante que não há mais *Mirror Force* ou *Torrential Tribute* para te impedir, e ataca com todos os monstros de uma vez para zerar a vida do oponente (One-Turn Kill - OTK).
-* **Destruição Tática Própria:** Você também pode usar *Heavy Storm* para destruir suas próprias cartas que o estão prejudicando! Por exemplo, se você está perdendo vida por causa do seu próprio *Premature Burial* ou se os seus monstros de nível alto estão presos por conta da sua própria magia *Gravity Bind*, você pode usar a tempestade para limpar a mesa e destravar o seu próprio jogo!
-
 ## ID: DM0118 - Autonomous Action Unit (Password: 71453557)
 
 A carta **"Autonomous Action Unit"** (Unidade de Ação Autônoma) é uma Carta Mágica de Equipamento (Equip Spell) extremamente agressiva, que te permite roubar recursos diretamente do cemitério inimigo.
@@ -338,3 +315,40 @@ No formato Goat, o cemitério do oponente costuma ser uma mina de ouro cheia de 
 * **Roubo de Habilidades (Efeitos Flip e Passivos):** A melhor utilidade dessa carta é roubar um *Jinzo* do oponente para você bloquear as armadilhas dele, ou roubar um *Sangan* para que, quando ele morrer no seu lado do campo, **você** ative o efeito de buscar uma carta do *seu* deck para a *sua* mão!
 * **O Sacrifício Imediato (Tribute Fodder):** O monstro sequestrado está livre para ser usado como Tributo para a invocação de um monstro de nível alto seu (ex: *Blue-Eyes White Dragon*). Ao tributá-lo, a *Autonomous Action Unit* vai para o cemitério sem problemas, e o monstro volta para o cemitério do oponente após já ter servido ao seu propósito.
 * **⚠️ Regra de Ouro (Dono vs Controlador):** Lembre-se, mesmo que você controle o monstro do oponente, o **Dono (Owner)** sempre será ele. Se o monstro for destruído ou devolvido para a mão (ex: *Penguin Soldier*), ele voltará para o Cemitério ou Mão originais do seu oponente!
+
+## ID: DM0121 - Axe of Despair (Password: 40619825)
+
+A carta **"Axe of Despair"** (Machado do Desespero) é uma Carta Mágica de Equipamento (Equip Spell) que oferece um dos maiores bônus de ataque irrestritos do jogo clássico, além de uma mecânica de reciclagem.
+
+> *"(This card is always treated as an "Archfiend" card.) The equipped monster gains 1000 ATK. When this card is sent from the field to the Graveyard: You can Tribute 1 monster; place this card on the top of your Deck."*
+
+### Como ela funciona na prática:
+
+1. **O Bônus de Força:** O monstro equipado ganha instantaneamente **1000 pontos de ATK**. Ela pode ser equipada a qualquer monstro no campo, seu ou do oponente.
+2. **A Reciclagem Opcional:** Se esta carta for enviada do campo para o Cemitério (seja porque o monstro foi destruído, ou a própria magia foi alvejada por um *Mystical Space Typhoon*), um efeito opcional é ativado. Você pode **Tributar 1 monstro** do seu lado do campo. Se o fizer, o *Axe of Despair* não fica no cemitério; ele é colocado no **topo do seu baralho**.
+3. **Membro da Família:** Por uma regra oculta escrita em seu texto, ela é eternamente tratada como uma carta do arquétipo **"Archfiend"** (Arquidemônio), o que a permite ser buscada e interagida por suportes dessa família (como o bônus de imunidade em uma zona *Pandemonium*).
+
+### 💡 O grande truque dessa carta:
+O aumento massivo de 1000 ATK transforma instantaneamente monstros medianos de Nível 4 (como *Goblin Attack Force* ou *Gemini Elf*) em ameaças com força de Boss Monsters (2900 ATK), capazes de destruir até um *Blue-Eyes White Dragon* em combate!
+
+* **O Custo do Retorno:** Cuidado ao usar o efeito de retornar a carta para o topo do Deck! Embora recicle o Machado, isso significa que a sua **próxima compra na Draw Phase será o próprio Machado**. Isso pode "travar" a sua mão se você estiver precisando de monstros urgentes para se defender.
+* **Sinergia com Fichas (Tokens):** O tributo exigido para o Machado voltar ao topo não especifica o tipo de monstro. Você pode sacrificar uma mera Ficha de Ovelha (*Scapegoat*) para garantir que o Machado volte para você no próximo turno, reciclando recursos sem valor em poder real!
+
+## ID: DM0125 - Back to Square One (Password: 47453433)
+
+A carta **"Back to Square One"** (De Volta à Estaca Zero) é uma Carta Mágica Normal (Normal Spell) com um dos tipos de remoção mais cruéis e estratégicos de todo o jogo.
+
+> *"Discard 1 card, then target 1 monster on the field; place that target on the top of the Deck."*
+
+### Como ela funciona na prática:
+
+1. **O Custo (O Descarte):** Para ativá-la, você é obrigado a **descartar 1 carta da sua mão**. Assim como a maioria das cartas de custo, se a magia for negada (por *Magic Jammer*), a carta descartada se perde no processo.
+2. **O Alvo (Spin):** Você seleciona **1 monstro no campo** (seu ou do oponente, virado para cima ou para baixo) e o devolve para o **topo do Deck** do dono original dele.
+
+### 💡 O grande truque dessa carta:
+No Yu-Gi-Oh!, a mecânica de "Spin" (Devolver para o Deck) é infinitamente superior à mecânica "Destruir" (Mandar para o Cemitério) por vários motivos cruciais:
+
+* **Bypass Absoluto de Proteção:** Cartas indestrutíveis em batalha (*Spirit Reaper*, *Marshmallon*) ou protegidas por efeitos mágicos contra destruição, são alvos fáceis para essa magia, pois ela não "destrói", ela apenas "move".
+* **O "Tijolo" no Saque (Draw Denial):** Ao colocar o monstro do oponente no topo do baralho dele, você garante matematicamente que a próxima carta que ele comprar será exatamente a mesma. Em vez de sacar uma magia ou armadilha que poderia salvá-lo, o oponente acabou de "perder" a rodada de saque, puxando uma carta que ele *já tinha* na mesa. É praticamente um roubo de turno!
+* **Negando Gatilhos de Cemitério:** Monstros infames como *Sangan*, *Mystic Tomato* ou *Vampire Lord* ativam seus efeitos poderosos unicamente quando são **enviados ao Cemitério**. Ao devolvê-los para o Deck, você impede que qualquer um desses efeitos mortais dispare, limpando a ameaça de campo com 100% de segurança!
+* **Custo Útil:** O custo de descartar uma carta da mão pode ser transformado numa vantagem! Você pode descartar propositalmente uma *Sinister Serpent* (que volta de graça no seu turno) ou monstros *LIGHT / DARK* para carregar o seu Cemitério rápido e invocar um *Black Luster Soldier - Envoy of the Beginning*.
