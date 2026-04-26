@@ -14,16 +14,28 @@ O `CardEffectManager` é a Máquina Virtual central do jogo. Ele hospeda o inter
 ### 5.1.1 Estrutura de Arquivos e Componentes
 *   **`CardEffectManager.cs` (O Singleton Hub):** Delega e une o motor Lua com as Corrotinas do Unity. Guarda o cache de `activeLuaCards` e despacha requisições entre a Lógica C# e os scripts de cartas.
 *   **`LuaScriptLoader.cs` (O Compilador):** Classe estática responsável por ler os arquivos `.lua` no disco e realizar o `SanitizeOCGScript`. É ele que transforma a sintaxe moderna de Lua 5.3 (YGOPro) em algo que o nosso interpretador MoonSharp consiga rodar sem travar.
-*   **`LuaEngineCore.cs` (A Fundação do Interpretador):** Responsável por carregar o MoonSharp, injetar as classes C# e registrar centenas de constantes LUA na memória (como IDs de eventos e zonas).
+*   **`LuaEngineCore.cs` (A Fundação e o Dicionário):** Carrega a Máquina Virtual MoonSharp e mapeia a API do OCGCore. É o cofre que guarda todas as **Constantes de Jogo** (`LOCATION_DECK`, `TYPE_SPELL`, `EVENT_SUMMON_SUCCESS`).
 *   **`ChainManager.cs` (O Motor de Pilhas LIFO):** Extensão modular instanciada pelo CardEffectManager. Cuida exclusivamente das Janelas de Corrente, orquestrando as validações, a limpeza de Mágicas/Traps após o fim da corrente e emitindo os Callbacks da interface gráfica para o oponente responder (`ResponseWindowRoutine`).
 *   **`LuaEventManager.cs` (Os Olhos e Ouvidos):** Extrai todos os gatilhos e escutas do motor. Funções como `OnSummon` e `OnCardLeavesField` moram aqui, vigiando o jogo e ativando as cartas que estavam escutando silenciosamente (`TriggerLuaEvent`).
 *   **Pasta `LuaAPI/` (A Ponte C# <-> LUA):** Diretório contendo os arquivos independentes que expõem as lógicas do C# para os scripts de cartas:
-    *   **`LuaDuel.cs`** (`Duel.`): Ações de tabuleiro (`Duel.Damage`, `Duel.SelectTarget`).
+    *   **O Ecossistema `LuaDuel`** (`Duel.`): Devido ao seu tamanho massivo, a classe principal foi dividida usando `partial class` em 5 pilares funcionais:
+        *   **`LuaDuel_Core.cs`:** A calculadora da partida. Contém variáveis de memória (`currentTargetGroup`), lógicas vitais de matemática de batalha (`CalculateDamage`) e vida (`Recover`).
+        *   **`LuaDuel_Queries.cs`:** Os "Radares". Reúne consultas passivas que escaneiam o tabuleiro em 1 frame sem travar o jogo (`GetMatchingGroup`, `GetFieldCard`, `IsExistingTarget`).
+        *   **`LuaDuel_Actions.cs`:** A "Mão" de tabuleiro. Funções que manipulam as cartas fisicamente (`SendtoGrave`, `SpecialSummon`, `Destroy`, `Draw`).
+        *   **`LuaDuel_UI.cs`:** As "Interrupções". Funções que obrigam a engine Lua a se suspender (`YieldReq`) para abrir modais interativos para o jogador (`SelectTarget`, `SelectOption`, `ConfirmCards`). Integrado ao **`LuaHints.cs`** para traduções.
+        *   **`LuaDuel_Stubs.cs`:** O "Lixão Organizado". Arquivo destinado a receber declarações vazias de funções `Duel.` que não usamos na nossa engine, mas que o YGOPro exige que existam para não crachar a compilação. Pode ficar vazio por longos períodos.
     *   **`LuaCard.cs`** (`c:`): A representação física da carta (`c:GetAttack()`).
     *   **`LuaEffect.cs`** (`Effect.`): Contêiner que monta a habilidade (`Condition`, `Cost`).
     *   **`LuaGroup.cs`** (`Group` ou `eg`): Listas dinâmicas usadas em invocações e destruições em massa.
-    *   **`LuaProcsAndStubs.cs`**: Implementações simuladas (Stubs) de classes processuais como `Fusion`, `Synchro` e dependências exclusivas do analisador Python.
+    *   **`LuaUtilityBridge.cs`:** A "Ponte de Atalhos". Um tradutor elegante que permite ao C# chamar rotinas puras de LUA (Tabelas `aux.` e `bit.`) que vivem dentro do MoonSharp. Permite reciclar filtros complexos (como `Auxiliary.IsMonster`) diretamente em lógicas C#, poupando centenas de linhas de código duplicado.
+    *   **`LuaProcsAndStubs.cs`**: Diferente do *Duel_Stubs*, este arquivo simula **Classes Inteiras** do OCGCore (`Fusion`, `Synchro`, `Xyz`, `Spirit`). Ele impede que a Unity entre em pânico quando uma carta tenta invocar `Fusion.AddProcMix`. Também hospeda a `PythonAnalyzerStubs`, uma classe vazia projetada unicamente para cegar a regex do nosso Validador LUA Estático (Python) e evitar alarmes falsos.
 *   **`Assets/Scripts/LuaScripts/`:** O diretório que contém os scripts de lógica para cada carta, nomeados por sua ID (ex: `c0618.lua` para o *Exodia*).
+
+### 5.1.3 A Supremacia do `LuaEngineCore` e as Constantes
+A estabilidade do simulador depende de uma lei imutável: **O C# deve falar o mesmo idioma do YGOPro.**
+*   Quando uma carta no campo é destruída por batalha, o script Lua dela espera ouvir o grito do evento `EVENT_BATTLE_DESTROYED`. O C# não pode simplesmente inventar um número aleatório ou string para esse evento. Ele **deve** usar o número exato atrelado a esse evento na tabela do OCGCore.
+*   O `LuaEngineCore.cs` hospeda a função `InjectVitalConstants()`. Este é o santuário onde definimos, por exemplo, que `LOCATION_GRAVE = 0x10` e `EVENT_SUMMON_SUCCESS = 1100`.
+*   **Sempre que for programar uma ação nova no C#** (Ex: "Quero avisar as cartas que um monstro mudou de posição"), consulte o `LuaEngineCore.cs` ou o arquivo `constant.lua` original. Encontre o ID correto (ex: `1016` para `EVENT_CHANGE_POS`) e dispare o `TriggerLuaEvent(1016, carta)`. O respeito a essa regra é o que garante que 100% dos scripts de cartas oficiais funcionem em nossa Engine sem precisar de uma única reescrita!
 
 ### 5.1.2 O Fluxo de Execução e o Sistema `chk`
 O jogo obedece rigorosamente às janelas de ativação de um simulador autêntico. A ação foi dividida entre o momento de pagar/escolher alvos (Ativação) e a explosão do efeito (Resolução na Corrente):

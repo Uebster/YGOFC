@@ -107,8 +107,9 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
 
 ### 5. 📖 `Card_Programming_API.md` (A Bíblia de Programação de Cartas)
 *   **5.1.** Arquitetura do Sistema de Efeitos (`CardEffectManager` e MoonSharp)
-    *   **5.1.1** Estrutura de Arquivos e Componentes (`LuaAPI`, `SanitizeOCGScript`)
+    *   **5.1.1** Estrutura de Arquivos e Componentes (A Ponte C# <-> LUA)
     *   **5.1.2** O Fluxo de Execução e o Sistema `chk` (Validação Silenciosa -> Ativação -> Corrente -> Resolução)
+    *   **5.1.3** A Supremacia do `LuaEngineCore` e as Constantes
 *   **5.2.** Referência de Gatilhos C# e Escutas LUA (Event Listeners)
     *   **5.2.1** Hooks de Fases e Turno (`OnPhaseStart`, `OnPreDrawPhase`)
     *   **5.2.2** Hooks de Batalha (Iniciados pela UI, `Core.Attack` em Lua, `EVENT_ATTACK_ANNOUNCE`)

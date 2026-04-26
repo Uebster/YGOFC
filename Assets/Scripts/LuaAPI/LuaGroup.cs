@@ -165,7 +165,7 @@ public class LuaGroup
 
         if (GameManager.Instance != null && selectableData.Count > 0) {
             bool forceModal = cards.Exists(c => !c.IsLocation(0x02 | 0x04 | 0x08));
-            GameManager.Instance.OpenCardMultiSelection(selectableData, "Escolha um alvo do grupo", ConvertToInt(min), ConvertToInt(max), (selectedList) => {
+            GameManager.Instance.OpenCardMultiSelection(selectableData, "Select a target from the group", ConvertToInt(min), ConvertToInt(max), (selectedList) => {
                 LuaGroup selectedGroup = new LuaGroup();
                 foreach (var data in selectedList) {
                     LuaCard match = cards.Find(lc => lc.unityData == data && !selectedGroup.cards.Contains(lc));
