@@ -243,13 +243,44 @@ O Relógio Gigante é customizável via `DuelTheme`, permitindo adaptar qualquer
 
 ---
 
-## 9.8 Efeitos Visuais e Sonoros (`DuelFXManager.cs`)
+## 9.8 Efeitos Visuais e Sonoros (A Arquitetura Modular do `DuelFXManager`)
 
-Centraliza todos os instanciadores de partículas (VFX) e áudios do duelo. Os assets utilizados podem ser sobrescritos pelas configurações dinâmicas do `DuelTheme`.
+O `DuelFXManager` centraliza todos os instanciadores de partículas (VFX), animações baseadas em corrotinas e o áudio do duelo. Assim como o `GameManager`, ele foi dividido utilizando o padrão `partial class` em 5 arquivos especializados para garantir fácil manutenção e evitar travamentos de leitura na IDE.
 
-**Velocidade Global:** A propriedade `animationSpeed` do `DuelFXManager` atua como um multiplicador inverso para durações e direto para velocidades. (Ex: `1.5f` faz as animações nativas rodarem 50% mais rápido). Futuramente, isso poderá ser plugado em um slider no Menu de Opções do jogador.
+**Velocidade Global:** A propriedade `animationSpeed` do `DuelFXManager` atua como um multiplicador inverso para durações e direto para velocidades. (Ex: `1.5f` faz as animações nativas rodarem 50% mais rápido).
 
-### Efeitos de Ação de Carta
+### 9.8.1 `DuelFXManager.cs` (Core, Inspector e Som)
+O arquivo principal atua como um "Hub de Configurações" voltado para a Unity.
+*   **Estruturas e Classes:** Mantém todas as `structs` e classes serializadas para o Inspector (ex: `SummonVFXPackage`, `CardFlightSettings`, `SelectionIconSettings`).
+*   **Inspector:** Declara dezenas de variáveis de configuração de cor, tempo, booleanas e referências a prefabs.
+*   **Utilitários:** Abriga funções vitais reutilizáveis como `PlaySound()`, `SpawnVFXPublic()` e orquestra a máquina de estados de BGM (`UpdateBGM`, `UpdateThemeFX`).
+
+### 9.8.2 `DuelFXManager_Combat.cs` (Ataques, Dano e Destruição)
+Focado inteiramente em violência de tabuleiro e saída de campo.
+*   **Batalha:** `PlayAttack()`, `AttackRoutine()`, `SpawnSwordGhost()`, `GetDirectAttackTargetPublic()`.
+*   **Impacto e Defesa:** `PlayHitEffect()`, `PlayAttackFail()`, `PlayDefenseSuccessEffect()`, `NativeDefenseShieldRoutine()`.
+*   **Dano e Remoção:** `PlayCardShake()`, `PlayDamageEffect()`, `PlayDestruction()`, `AnimateCardDeath()`, `PlayBanishEffect()`.
+
+### 9.8.3 `DuelFXManager_Summons.cs` (Invocações, Fichas e Cinemáticas)
+Lida com animações de pouso, sacrifícios e efeitos colossais de entrada no tabuleiro.
+*   **Pousos e Tokens:** `PlaySummonImpact()`, `PlayTokenSummonEffect()`, `PlayTributeEffect()`, `SpawnFieldMarker()`.
+*   **Cinemáticas de Tela:** `PlaySummonCinematic()`, `PlayFusionCinematic()`, `PlayRitualCinematic()` e suas respectivas corrotinas que manipulam Dark Overlays e vórtices giratórios.
+
+### 9.8.4 `DuelFXManager_Flights.cs` (Voos, Equipamentos e Embaralhamento)
+Contém a lógica matemática densa de manipulação de coordenadas (Movimento da carta de um ponto A para B).
+*   **Voos Gerais:** `PlayCardFlight()`, `CardFlightRoutine()`, `PlayReturnToDeckAnimation()`.
+*   **Vínculos:** `PlayEquipEffect()` (Fantasma voando até o alvo), `EquipOutlineSqueezeRoutine()`.
+*   **Mudança de Controle:** `PlayControlSwap()`, `ControlSwapRoutine()`.
+*   **Pilha e Mistura:** `PlayShuffleEffect()`, `ShuffleRoutine()` e a mecânica das cartas se auto-misturando.
+
+### 9.8.5 `DuelFXManager_Effects.cs` (Magias, Correntes, Auras e Ícones UI)
+Controla brilhos estáticos, luzes, marcações sobre a carta e o sistema de encadeamento.
+*   **Efeitos Base:** `PlayCardActivation()`, `PlayMonsterEffect()`, `PlayFlipEffect()`.
+*   **Sistema de Corrente:** `PlayChainLinkEffect()`, `ChainLinkRoutine()` (Gerador de Textos flutuantes).
+*   **Auras:** `PlayPlacementAura()` e seus identificadores de cores dinâmicas.
+*   **UI Dinâmica:** `SetSelectionIcon()`, `SetStatusIndicator()`, e marcadores de estado como `CanAttack` ou cadeados.
+
+### 9.8.6 Resumo Visual Prático (Efeitos de Ação de Carta)
 | Ação | Descrição Visual |
 |:---|:---|
 | **Ativação (Magia/Armadilha/Monstro)** | A carta cresce e emite um "fantasma" com contorno neon colorido (Verde para Magia, Rosa para Armadilha, Laranja para Monstro). Totalmente customizável nas seções `Activation Pulse` e `Monster Effect Pulse`. |

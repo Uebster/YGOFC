@@ -200,7 +200,12 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **9.7.1** Arquitetura de Temas (Console e Cartuchos)
     *   **9.7.2** Configurando o Relógio de Turnos (`TurnClockUI`, Rotação Dinâmica, Camadas e Pivot)
     *   **9.7.3** Minigames Dinâmicos (Moeda e Dados)
-*   **9.8.** Efeitos Visuais e Sonoros (`DuelFXManager.cs`, `TargetingSwordUI.cs`, `StatusIndicatorSettings`, `SelectionIconSettings`: Cinemáticas, Impactos, Trindade das Espadas, BGM Dinâmico, Chain Response, 1-Click Hover)
+*   **9.8.** Efeitos Visuais e Sonoros (A Arquitetura Modular do `DuelFXManager`)
+    *   **9.8.1** `DuelFXManager.cs` (Core, Inspector e Som)
+    *   **9.8.2** `DuelFXManager_Combat.cs` (Ataques, Dano e Destruição)
+    *   **9.8.3** `DuelFXManager_Summons.cs` (Invocações, Fichas e Cinemáticas)
+    *   **9.8.4** `DuelFXManager_Flights.cs` (Voos, Equipamentos e Embaralhamento)
+    *   **9.8.5** `DuelFXManager_Effects.cs` (Magias, Correntes, Auras e Ícones UI)
 *   **9.9.** Personalização de UI e Preferências de Jogo (`PhaseAnnouncementSettings`, Modos de Flip, Velocidade de Jogo)
 
 ---
