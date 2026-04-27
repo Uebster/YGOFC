@@ -321,6 +321,43 @@ public partial class DuelFXManager : MonoBehaviour
     public SummonVFXPackage ritualSummonSettings = new SummonVFXPackage();
     public SummonVFXPackage fusionSummonSettings = new SummonVFXPackage();
 
+    [System.Serializable]
+    public class ExtractionPileSettings
+    {
+        public Vector2 slideOffsetPlayer = new Vector2(120f, 0f);
+        public Vector2 slideOffsetOpponent = new Vector2(-120f, 0f);
+        [Tooltip("Se marcado, a carta volta para o topo da pilha antes de voar pro destino.")]
+        public bool returnToTop = false; 
+        [Tooltip("Escala inicial da carta ao sair da pilha.")]
+        public float startScaleMult = 1.0f;
+        [Tooltip("Escala máxima da carta durante a exibição.")]
+        public float peakScaleMult = 1.3f;
+        [Tooltip("A altura (em pixels) que a carta pula para cima se já estiver no topo.")]
+        public float topJumpHeight = 40f;
+        [Tooltip("Se ativo, ignora a lógica de topo e força a carta a sempre deslizar lateralmente.")]
+        public bool alwaysSlide = false;
+    }
+
+    [System.Serializable]
+    public class ExtractionCinematicSettings
+    {
+        public bool enableExtraction = false;
+        public float slideDuration = 0.3f;
+        public float holdDuration = 0.6f;
+        
+        [Header("Scale Effect")]
+        public bool useScaleEffect = true;
+
+        [Header("Pile Specific Offsets")]
+        public ExtractionPileSettings deck = new ExtractionPileSettings { slideOffsetPlayer = new Vector2(150f, 0f), slideOffsetOpponent = new Vector2(-150f, 0f), returnToTop = false };
+        public ExtractionPileSettings extraDeck = new ExtractionPileSettings { slideOffsetPlayer = new Vector2(150f, 0f), slideOffsetOpponent = new Vector2(-150f, 0f), returnToTop = false };
+        public ExtractionPileSettings graveyard = new ExtractionPileSettings { slideOffsetPlayer = new Vector2(-150f, 0f), slideOffsetOpponent = new Vector2(150f, 0f), returnToTop = false };
+        public ExtractionPileSettings banished = new ExtractionPileSettings { slideOffsetPlayer = new Vector2(-150f, 0f), slideOffsetOpponent = new Vector2(150f, 0f), returnToTop = false };
+    }
+
+    [Header("--- EXTRAÇÃO CINEMÁTICA ---")]
+    public ExtractionCinematicSettings extractionCinematic = new ExtractionCinematicSettings();
+
     [Header("--- MOVIMENTAÇÃO DE CARTAS (FLIGHT) ---")]
     public CardFlightSettings flightHandToField = new CardFlightSettings { enableFlight = true, duration = 0.3f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.5f, 1f, 0.5f, 0.5f) };
     public CardFlightSettings flightHandToSpellZone = new CardFlightSettings { enableFlight = true, duration = 0.4f, flightScale = 1.2f, useTrail = true, trailType = AttackTrailType.Shadows, trailColor = new Color(0.0f, 0.0f, 0.0f, 0.4f), useImpact = false, flipDuringFlight = true };

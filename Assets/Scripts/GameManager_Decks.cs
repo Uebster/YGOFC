@@ -19,7 +19,7 @@ public partial class GameManager
     // Manipulações de Decks
     // ==============================================================================
 
-    public void AddCardToHand(CardData cardData, bool isPlayer, Vector3? customStartPos = null, CardLocation sourceLoc = CardLocation.Deck, bool isFromFieldSpellZone = false, bool? originalOwner = null)
+    public void AddCardToHand(CardData cardData, bool isPlayer, Vector3? customStartPos = null, CardLocation sourceLoc = CardLocation.Deck, bool isFromFieldSpellZone = false, bool? originalOwner = null, bool isDraw = false)
     {
         // Tokens não podem existir na mão. Evaporam.
         if (cardData == null || cardData.id == "TOKEN") return;
@@ -59,7 +59,7 @@ public partial class GameManager
                 else { settings = DuelFXManager.Instance.flightDeckToHand; } // Fallback
             }
 
-            StartCoroutine(AnimateCardToHand(newCardGO, isPlayer, startPos, settings, pop));
+            StartCoroutine(AnimateCardToHand(newCardGO, isPlayer, startPos, sourceLoc, settings, isDraw));
         }
         else
         {
@@ -100,7 +100,8 @@ public partial class GameManager
         {
             Vector3 endPos = isOwner ? playerGraveyardDisplay.transform.position : opponentGraveyardDisplay.transform.position;
             Quaternion startRot = Quaternion.Euler(0, 0, isOwner ? 0 : 180f);
-            DuelFXManager.Instance.PlayCardFlight(card.CurrentCardData, cardBackTexture, true, true, startPos, endPos, handCardScale, fieldCardScale, startRot, Quaternion.identity, DuelFXManager.Instance.flightHandToGraveyard, false, null);
+            Quaternion endRot = isOwner ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
+            DuelFXManager.Instance.PlayCardFlight(card.CurrentCardData, cardBackTexture, true, true, startPos, endPos, handCardScale, fieldCardScale, startRot, endRot, DuelFXManager.Instance.flightHandToGraveyard, false, null);
         }
 
         Destroy(card.gameObject);

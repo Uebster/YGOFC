@@ -188,9 +188,14 @@ public class FullTestManager : MonoBehaviour
         if (GameManager.Instance != null && GameManager.Instance.fullTestMode)
         {
 #if ENABLE_INPUT_SYSTEM
-            if (Keyboard.current != null && Keyboard.current.f3Key.wasPressedThisFrame) TestSpawnCard();
+            if (Keyboard.current != null)
+            {
+                if (Keyboard.current.f3Key.wasPressedThisFrame) TestSpawnCard();
+                if (Keyboard.current.f4Key.wasPressedThisFrame) TestSpawnCardOpponent();
+            }
 #else
             if (Input.GetKeyDown(KeyCode.F3)) TestSpawnCard();
+            if (Input.GetKeyDown(KeyCode.F4)) TestSpawnCardOpponent();
 #endif
         }
 

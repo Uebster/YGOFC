@@ -158,6 +158,10 @@ A ferramenta de QA suprema, ativada no Inspector (`fullTestMode`) ou por **Ctrl 
     *   `Auto Phases`: Congela as fases para testes repetidos de combate.
     *   `Infinite LP`: Impede Game Over para testar dano constante.
     *   `VFX / SFX`: Desativa luzes e som.
+*   **Atalhos Rápidos de Teclado (Com Full Test Ativo):**
+    *   **F3:** Abre o menu de Spawn focado para a mão do **Jogador**.
+    *   **F4:** Abre o menu de Spawn focado para a mão do **Oponente**.
+    *   **TAB:** Retorna o foco imediatamente para o campo de digitação do `GlobalCardSearchUI` caso você clique fora.
 *   **Dropdowns de Cenário:** Força a troca de `DuelTheme` (Ato 1 a 10), carrega baralhos específicos do `CharacterDatabase` e seleciona `Deck Variant` (A, B, C).
 *   **Botões de Ação:**
     *   `Spawn Card`: Abre o `GlobalCardSearchUI` para injetar qualquer carta na mão.

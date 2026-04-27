@@ -64,7 +64,7 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
             
             // Reset básico
             cardObj.transform.localScale = Vector3.one;
-            cardObj.transform.localRotation = Quaternion.identity;
+            cardObj.transform.localRotation = isPlayerPile ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
 
             // Lógica de Índice:
             // Visual 0 = Fundo da pilha (renderizado primeiro)

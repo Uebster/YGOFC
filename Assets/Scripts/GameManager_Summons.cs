@@ -105,8 +105,8 @@ public partial class GameManager
             if (settings != null && !isSimulating && settings.enableFlight)
             {
                 cardDisplay.SetVisibility(false);
-                bool pop = sourceLoc != CardLocation.Hand && sourceLoc != CardLocation.Field;
-                Quaternion startRot = (sourceLoc == CardLocation.Hand) ? Quaternion.Euler(0, isPlayer ? 0 : 180, 0) : Quaternion.identity;
+                bool isPile = sourceLoc == CardLocation.Deck || sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.ExtraDeck || sourceLoc == CardLocation.Banished;
+                Quaternion startRot = (sourceLoc == CardLocation.Hand) ? Quaternion.Euler(0, 0, isPlayer ? 0 : 180f) : Quaternion.identity;
                 Vector3 sScale = (sourceLoc == CardLocation.Hand) ? handCardScale : fieldCardScale;
                 
                 bool sFaceUp = !faceDown;
@@ -114,11 +114,22 @@ public partial class GameManager
                 else if (sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.Banished) sFaceUp = true;
                 else if (sourceLoc == CardLocation.Deck || sourceLoc == CardLocation.ExtraDeck) sFaceUp = false;
 
-                DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, sFaceUp, !faceDown, sourcePos.Value, cardGO.transform.position, 
-                    sScale, fieldCardScale, startRot, cardGO.transform.rotation, settings, pop, () => {
-                    cardDisplay.SetVisibility(true);
-                    completeSummon();
-                });
+                if (isPile && DuelFXManager.Instance.extractionCinematic.enableExtraction)
+                {
+                    bool ownerPile = ownerIsPlayer ?? isPlayer;
+                    DuelFXManager.Instance.PlayExtractionCinematic(cardData, cardBackTexture, ownerPile, sourceLoc, sourcePos.Value, sFaceUp, !faceDown, (ghost, pos) => {
+                        DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, !faceDown, !faceDown, pos, cardGO.transform.position, sScale, fieldCardScale, startRot, cardGO.transform.rotation, settings, false, () => { cardDisplay.SetVisibility(true); completeSummon(); }, ghost);
+                    });
+                }
+                else
+                {
+                    bool popFromPile = sourceLoc != CardLocation.Hand && sourceLoc != CardLocation.Field;
+                    DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, sFaceUp, !faceDown, sourcePos.Value, cardGO.transform.position, 
+                        sScale, fieldCardScale, startRot, cardGO.transform.rotation, settings, popFromPile, () => {
+                        cardDisplay.SetVisibility(true);
+                        completeSummon();
+                    });
+                }
             }
             else completeSummon();
         }

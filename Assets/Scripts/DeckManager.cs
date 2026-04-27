@@ -142,7 +142,7 @@ public class DeckManager : MonoBehaviour
                 GameManager.Instance.cardViewerDisplay.SetCard(drawnCard, GameManager.Instance.GetCardBackTexture());
             }
 
-            GameManager.Instance.AddCardToHand(drawnCard, true);
+            GameManager.Instance.AddCardToHand(drawnCard, true, null, CardLocation.Deck, false, null, true);
             GameManager.Instance.CheckExodiaWin();
 
             if (CardEffectManager.Instance != null) 
@@ -176,7 +176,7 @@ public class DeckManager : MonoBehaviour
             opponentDeck.RemoveAt(0);
             UpdateDeckVisuals();
 
-            GameManager.Instance.AddCardToHand(drawnCard, false);
+            GameManager.Instance.AddCardToHand(drawnCard, false, null, CardLocation.Deck, false, null, true);
             
             if (GameManager.Instance.devMode) Debug.Log($"Oponente comprou: {drawnCard.name}");
 

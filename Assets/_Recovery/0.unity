@@ -53146,7 +53146,6 @@ MonoBehaviour:
   playerSpell: {fileID: 0}
   playerField: {fileID: 0}
   windowWidth: 420
-  testAsOpponent: 0
 --- !u!4 &555079367
 Transform:
   m_ObjectHideFlags: 0
@@ -56419,43 +56418,6 @@ MonoBehaviour:
       delayBeforeMarker: 0.5
       delayBeforeCardDrop: 0.5
       giantCardScale: 1.2
-  extractionCinematic:
-    enableExtraction: 1
-    slideDuration: 0.6
-    holdDuration: 0
-    useScaleEffect: 1
-    deck:
-      slideOffsetPlayer: {x: 120, y: 8}
-      slideOffsetOpponent: {x: -120, y: -8}
-      returnToTop: 1
-      startScaleMult: 0.8
-      peakScaleMult: 0.85
-      topJumpHeight: 0
-      alwaysSlide: 0
-    extraDeck:
-      slideOffsetPlayer: {x: -120, y: 0}
-      slideOffsetOpponent: {x: 120, y: 0}
-      returnToTop: 1
-      startScaleMult: 0.8
-      peakScaleMult: 0.85
-      topJumpHeight: 0
-      alwaysSlide: 0
-    graveyard:
-      slideOffsetPlayer: {x: 120, y: 2}
-      slideOffsetOpponent: {x: -120, y: -2}
-      returnToTop: 1
-      startScaleMult: 0.8
-      peakScaleMult: 0.85
-      topJumpHeight: 0
-      alwaysSlide: 0
-    banished:
-      slideOffsetPlayer: {x: 0, y: 165}
-      slideOffsetOpponent: {x: 0, y: -165}
-      returnToTop: 1
-      startScaleMult: 0.8
-      peakScaleMult: 0.85
-      topJumpHeight: 0
-      alwaysSlide: 0
   flightHandToField:
     enableFlight: 1
     duration: 0.5
@@ -56720,14 +56682,14 @@ MonoBehaviour:
     useTrail: 1
     trailType: 2
     trailWidth: 15
-    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.7607843}
+    trailColor: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 0.5529412}
     useImpact: 0
     impactType: 1
     impactColor: {r: 0.5, g: 0.8, b: 1, a: 1}
     impactScale: 1
     impactOutlineWidth: 8
-    startScaleMult: 0.8
-    endScaleMult: 0.8
+    startScaleMult: 1
+    endScaleMult: 0.9
   flightDeckToField:
     enableFlight: 1
     duration: 0.5
@@ -56922,7 +56884,7 @@ MonoBehaviour:
     popOffset: {x: 0, y: 0}
     flipDuringFlight: 0
     useTrail: 1
-    trailType: 2
+    trailType: 0
     trailWidth: 15
     trailColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.8}
     useImpact: 0
@@ -57655,13 +57617,13 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 594729516}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 1, w: 0}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1544580639}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 180}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 22, y: -131}
@@ -66551,7 +66513,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.0007834862, y: 0.00067516934}
+  m_AnchoredPosition: {x: 0.0007834862, y: 0.0008229199}
   m_SizeDelta: {x: 0, y: 285.3955}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &706721579
@@ -141662,7 +141624,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1633356069}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.99999386
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -155633,7 +155595,6 @@ MonoBehaviour:
   isPlayerCard: 0
   isOnField: 0
   isInPile: 0
-  isGhostImage: 0
   position: 0
   hasPiercing: 0
   originalAtk: 0
@@ -187872,7 +187833,6 @@ MonoBehaviour:
   isPlayerCard: 0
   isOnField: 0
   isInPile: 0
-  isGhostImage: 0
   position: 0
   hasPiercing: 0
   originalAtk: 0

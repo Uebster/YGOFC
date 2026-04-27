@@ -66,7 +66,7 @@ public partial class GameManager
                 else if (prevLoc == CardLocation.Banished) settings = DuelFXManager.Instance.flightBanishToHand;
                 else settings = DuelFXManager.Instance.flightDeckToHand;
             }
-            StartCoroutine(AnimateCardToHand(card.gameObject, isOwner, startPos, settings, prevLoc != CardLocation.Field && prevLoc != CardLocation.Hand));
+            StartCoroutine(AnimateCardToHand(card.gameObject, isOwner, startPos, prevLoc, settings, false));
         }
         else
         {
@@ -254,9 +254,10 @@ public partial class GameManager
             if (flightSettings != null && flightSettings.enableFlight)
             {
                 Vector3 endPos = isOwner ? playerRemovedDisplay.transform.position : opponentRemovedDisplay.transform.position;
+                Quaternion endRot = isOwner ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
                 DuelFXManager.Instance.PlayCardFlight(card.CurrentCardData, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
                     wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
-                    startRot, Quaternion.identity, flightSettings, false, () => {
+                    startRot, endRot, flightSettings, false, () => {
                         if (DuelFXManager.Instance != null && DuelFXManager.Instance.useBanishPrefab && DuelFXManager.Instance.banishVFX != null) DuelFXManager.Instance.SpawnVFXPublic(DuelFXManager.Instance.banishVFX, endPos);
                     });
             }
@@ -268,7 +269,8 @@ public partial class GameManager
         // Destrói o objeto visual (Banish não vai pro GY, então não chama SendToGraveyard)
         Destroy(card.gameObject);
     }
-    private IEnumerator AnimateCardToHand(GameObject realCard, bool isPlayer, Vector3 startPos, CardFlightSettings settings, bool pop)
+    
+    private IEnumerator AnimateCardToHand(GameObject realCard, bool isPlayer, Vector3 startPos, CardLocation sourceLoc, CardFlightSettings settings, bool isDraw = false)
     {
         CardDisplay realCardDisplay = realCard.GetComponent<CardDisplay>();
         CanvasGroup realCardCG = realCard.GetComponent<CanvasGroup>();
@@ -293,8 +295,27 @@ public partial class GameManager
 
         if (settings != null && DuelFXManager.Instance != null && settings.enableFlight)
         {
-            Vector3 sScale = (settings == DuelFXManager.Instance.flightFieldToHand) ? fieldCardScale : fieldCardScale;
-            DuelFXManager.Instance.PlayCardFlight(realCardDisplay.CurrentCardData, cardBackTexture, false, isPlayer || showOpponentHand, startPos, endPos, sScale, handCardScale, Quaternion.Euler(0,180,0), Quaternion.identity, settings, pop, onComplete);
+            Vector3 sScale = (sourceLoc == CardLocation.Hand) ? handCardScale : fieldCardScale;
+
+            bool isPile = sourceLoc == CardLocation.Deck || sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.ExtraDeck || sourceLoc == CardLocation.Banished;
+            bool startFaceUp = sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.Banished || sourceLoc == CardLocation.Field;
+            bool endFaceUp = isPlayer || showOpponentHand;
+            Quaternion startRot = Quaternion.Euler(0, 0, isPlayer ? 0 : 180f);
+            Quaternion endRot = Quaternion.Euler(0, 0, isPlayer ? 0 : 180f);
+
+            if (isPile && !isDraw && DuelFXManager.Instance.extractionCinematic.enableExtraction)
+            {
+                bool animDone = false;
+                DuelFXManager.Instance.PlayExtractionCinematic(realCardDisplay.CurrentCardData, cardBackTexture, isPlayer, sourceLoc, startPos, startFaceUp, endFaceUp, (ghost, pos) => {
+                    DuelFXManager.Instance.PlayCardFlight(realCardDisplay.CurrentCardData, cardBackTexture, endFaceUp, endFaceUp, pos, endPos, sScale, handCardScale, startRot, endRot, settings, false, () => { animDone = true; }, ghost);
+                });
+                yield return new WaitUntil(() => animDone);
+                onComplete();
+            }
+            else
+            {
+                DuelFXManager.Instance.PlayCardFlight(realCardDisplay.CurrentCardData, cardBackTexture, startFaceUp, endFaceUp, startPos, endPos, sScale, handCardScale, startRot, endRot, settings, isPile, onComplete);
+            }
         }
         else
         {
@@ -423,9 +444,10 @@ public partial class GameManager
                     if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed && reason != SendReason.Battle && reason != SendReason.Tribute)
                     {
                         Vector3 endPos = isOwner ? playerGraveyardDisplay.transform.position : opponentGraveyardDisplay.transform.position;
+                        Quaternion endRot = isOwner ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
                         DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
                             wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
-                            startRot, Quaternion.identity, flightSettings, false, null);
+                            startRot, endRot, flightSettings, false, null);
                     }
                 }
                 break;
@@ -455,9 +477,10 @@ public partial class GameManager
                     if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed)
                     {
                         Vector3 endPos = isOwner ? playerDeckDisplay.transform.position : opponentDeckDisplay.transform.position;
+                        Quaternion endRot = isOwner ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
                         DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
                             wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
-                            startRot, Quaternion.identity, flightSettings, false, null);
+                            startRot, endRot, flightSettings, false, null);
                     }
                 }
                 break;
@@ -477,9 +500,10 @@ public partial class GameManager
                     if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed && reason != SendReason.Battle && reason != SendReason.Tribute)
                     {
                         Vector3 endPos = isOwner ? playerRemovedDisplay.transform.position : opponentRemovedDisplay.transform.position;
+                        Quaternion endRot = isOwner ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
                         DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
                             wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
-                            startRot, Quaternion.identity, flightSettings, false, () => {
+                            startRot, endRot, flightSettings, false, () => {
                                 if (DuelFXManager.Instance != null && DuelFXManager.Instance.useBanishPrefab && DuelFXManager.Instance.banishVFX != null) DuelFXManager.Instance.SpawnVFXPublic(DuelFXManager.Instance.banishVFX, endPos);
                             });
                     }
@@ -507,9 +531,10 @@ public partial class GameManager
                     if (flightSettings != null && flightSettings.enableFlight)
                     {
                         Vector3 endPos = isOwner ? playerExtraDeckDisplay.transform.position : opponentExtraDeckDisplay.transform.position;
+                        Quaternion endRot = isOwner ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
                         DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
                             wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
-                            startRot, Quaternion.identity, flightSettings, false, null);
+                            startRot, endRot, flightSettings, false, null);
                     }
                 }
                 break;

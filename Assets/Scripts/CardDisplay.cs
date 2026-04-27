@@ -55,6 +55,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool isPlayerCard = false; // Define se a carta pertence ao jogador (para visualização)
     [HideInInspector] public bool isOnField = false; // Define se a carta está no campo
     [HideInInspector] public bool isInPile = false; // Define se a carta está em uma pilha (Deck, GY, Extra)
+    [HideInInspector] public bool isGhostImage = false; // Define se a carta é apenas um holograma visual animado (ignora efeitos e regras)
     [HideInInspector] public BattlePosition position; // Posição de batalha do monstro
 
     // Status Dinâmicos e Passivos de Batalha
@@ -454,8 +455,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         
         transform.localScale = startScale;
 
-        // O Efeito/Pulse acontece estritamente APÓS a carta terminar de desvirar
-        if (DuelFXManager.Instance != null && DuelFXManager.Instance.enableAnimations) DuelFXManager.Instance.PlayFlipEffect(this);
+        // O Efeito/Pulse acontece estritamente APÓS a carta terminar de desvirar (ignoramos se for um Fantasma Visual)
+        if (!isGhostImage && DuelFXManager.Instance != null && DuelFXManager.Instance.enableAnimations) DuelFXManager.Instance.PlayFlipEffect(this);
         
         onComplete?.Invoke();
     }
@@ -586,8 +587,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             Debug.Log($"CardDisplay: Carta {currentCardData.name} revelada por ataque!");
         }
 
-        // Verifica se é um monstro de efeito FLIP
-        if (triggerEffects && (currentCardData.description.StartsWith("FLIP:") || currentCardData.description.Contains("FLIP:")))
+        // Verifica se é um monstro de efeito FLIP (E bloqueia completamente se for apenas um Fantasma Visual)
+        if (triggerEffects && !isGhostImage && (currentCardData.description.StartsWith("FLIP:") || currentCardData.description.Contains("FLIP:")))
         {
             if (CardEffectManager.Instance != null && CardEffectManager.Instance.eventManager != null)
             {
@@ -720,6 +721,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerEnter(PointerEventData eventData)
     {
+        if (isGhostImage) return; // Cartas fantasmas não reagem ao mouse
+
         HoveredCard = this;
 
         bool shouldShowOutline = enableHoverOutline;
@@ -905,6 +908,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerExit(PointerEventData eventData)
     {
+        if (isGhostImage) return; // Cartas fantasmas não reagem ao mouse
+
         if (HoveredCard == this) HoveredCard = null;
 
         // --- Remove Borda ---
@@ -1253,6 +1258,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerClick(PointerEventData eventData)
     {
+        if (isGhostImage) return; // Cartas fantasmas não podem ser clicadas em hipótese alguma
+
         // FIX: Adiciona uma trava de segurança. Se não estivermos em um duelo ativo
         // (o PhaseManager não existe ou o duelo acabou), o clique esquerdo não faz nada.
         // O clique direito e o arrastar são gerenciados pelo DeckDragHandler.

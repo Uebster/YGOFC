@@ -653,9 +653,25 @@ public partial class LuaDuel
         if (offFieldCards.Count > 0 && GameManager.Instance != null && !GameManager.Instance.isSimulating)
         {
             GameManager.Instance.OpenCardMultiSelection(offFieldCards, "Revealed Top Deck Cards", 0, 0, (selected) => {
+                if (handCardsPlayer.Count > 0 || handCardsOpponent.Count > 0)
+                {
+                    CardEffectManager.Instance.StartCoroutine(RevealHandCardsRoutine(handCardsPlayer, handCardsOpponent, 1.5f));
+                }
+                else
+                {
+                    CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+                    CardEffectManager.Instance.isWaitingForLuaYield = false;
+                }
+            });
+        }
+        else if (handCardsPlayer.Count > 0 || handCardsOpponent.Count > 0)
+        {
+            if (GameManager.Instance != null && !GameManager.Instance.isSimulating) {
+                CardEffectManager.Instance.StartCoroutine(RevealHandCardsRoutine(handCardsPlayer, handCardsOpponent, 1.5f));
+            } else {
                 CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
-            });
+            }
         }
         else
         {
@@ -663,6 +679,34 @@ public partial class LuaDuel
         }
         
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("ConfirmCards") });
+    }
+
+    private IEnumerator RevealHandCardsRoutine(List<CardDisplay> pHand, List<CardDisplay> oHand, float delay)
+    {
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.flipSound);
+
+        // Vira a carta e dá um "Pop-up" na mão para exibição
+        foreach(var c in pHand) { if (c.isFlipped) c.ShowFront(true); c.ForceHover(); }
+        foreach(var c in oHand) { if (c.isFlipped) c.ShowFront(true); c.ForceHover(); }
+
+        yield return new WaitForSeconds(delay);
+
+        // Devolve as cartas para o descanso visual (Esconde se for do Oponente)
+        foreach(var c in pHand) { c.OnPointerExit(null); }
+        foreach(var c in oHand) { 
+            if (GameManager.Instance != null && !GameManager.Instance.showOpponentHand) c.ShowBack(true);
+            c.OnPointerExit(null);
+        }
+
+        // Embaralha a mão para impedir contagem de cartas (Hand Tracking)
+        if (GameManager.Instance != null)
+        {
+            if (pHand.Count > 0) GameManager.Instance.ShuffleHand(true);
+            if (oHand.Count > 0) GameManager.Instance.ShuffleHand(false);
+        }
+
+        CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
     }
 
     private IEnumerator ConfirmCardsRoutine(float delay)

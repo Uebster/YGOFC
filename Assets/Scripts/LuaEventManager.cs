@@ -15,6 +15,7 @@ public class LuaEventManager
     private CardEffectManager core;
     public bool isProcessingTriggers = false;
     private int triggerTasks = 0;
+    private HashSet<CardDisplay> cardsLeavingField = new HashSet<CardDisplay>();
 
     public LuaEventManager(CardEffectManager coreManager)
     {
@@ -348,12 +349,22 @@ public class LuaEventManager
     
     public void OnCardEquipped(CardDisplay equip, CardDisplay target) {
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayEquipEffect(equip, target);
+
+        LuaCard eqLc = core.EnsureCardScriptLoaded(equip);
+        LuaCard tgLc = core.EnsureCardScriptLoaded(target);
+        if (eqLc != null && tgLc != null) {
+            eqLc._lastEquipTarget = tgLc;
+        }
+
         core.RecalculateStats(target);
     }
     
     public void OnSpellActivated(CardDisplay spell) { }
 
     public void OnCardLeavesField(CardDisplay card) {
+        if (card == null || cardsLeavingField.Contains(card)) return;
+        cardsLeavingField.Add(card);
+
         CardLink[] allLinks = UnityEngine.Object.FindObjectsByType<CardLink>(FindObjectsSortMode.None);
 
         // Remove efeitos contínuos
@@ -375,13 +386,31 @@ public class LuaEventManager
 
         foreach (var link in allLinks) if (link.source == card && link.type == CardLink.LinkType.Equipment && link.target != null) core.StartCoroutine(core.RecalculateStatsNextFrame(link.target));
         if (core.activeLuaCards.ContainsKey(card)) core.activeLuaCards.Remove(card);
+
         foreach (var link in allLinks) if (link.target == card && link.type == CardLink.LinkType.Equipment && link.source != null && link.source.isOnField) {
-            GameManager.Instance.SendToGraveyard(link.source.CurrentCardData, link.source.isPlayerCard);
-            GameObject.Destroy(link.source.gameObject);
+            core.StartCoroutine(DestroyEquipDelayed(link.source));
         }
+        
         if (core.blockedZonesByCard.ContainsKey(card)) {
             if (GameManager.Instance.duelFieldUI != null) foreach (var z in core.blockedZonesByCard[card]) GameManager.Instance.duelFieldUI.UnblockZone(z);
             core.blockedZonesByCard.Remove(card);
+        }
+        
+        foreach (var link in allLinks) {
+            if (link.source == card || link.target == card) {
+                if (link != null && link.gameObject != null) GameObject.Destroy(link.gameObject);
+            }
+        }
+
+        cardsLeavingField.Remove(card);
+    }
+
+    private IEnumerator DestroyEquipDelayed(CardDisplay equip)
+    {
+        yield return new WaitForSeconds(0.6f); // Atraso visível para separar a destruição da magia da destruição do monstro
+        if (equip != null && equip.isOnField)
+        {
+            GameManager.Instance.MoveCard(equip, CardLocation.Graveyard, SendReason.Rule);
         }
     }
     

@@ -177,7 +177,7 @@ public class LuaCard
     public LuaCard GetBattleTarget() { return SafeDummyCard(); }
     public bool IsDiscardable(params object[] args) { return true; }
     
-    private LuaCard _lastEquipTarget = null;
+    public LuaCard _lastEquipTarget = null;
 
     public LuaCard GetEquipTarget() 
     { 
@@ -187,6 +187,17 @@ public class LuaCard
             if (target != null) {
                 _lastEquipTarget = CardEffectManager.Instance.EnsureCardScriptLoaded(target);
                 return _lastEquipTarget;
+            }
+        }
+        else if (CardEffectManager.Instance != null && unityData != null)
+        {
+            // Fallback Extremo: Se a carta visual já morreu, caçamos o Elo Invisível (CardLink) ainda pendente na RAM!
+            CardLink[] links = UnityEngine.Object.FindObjectsByType<CardLink>(UnityEngine.FindObjectsSortMode.None);
+            foreach(var l in links) {
+                if (l.source != null && l.source.CurrentCardData == unityData && l.target != null) {
+                    _lastEquipTarget = CardEffectManager.Instance.EnsureCardScriptLoaded(l.target);
+                    return _lastEquipTarget;
+                }
             }
         }
         return _lastEquipTarget; 

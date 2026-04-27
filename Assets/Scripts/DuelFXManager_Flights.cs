@@ -544,40 +544,59 @@ public partial class DuelFXManager
         else settings = flightGraveyardToDeck;
         bool pop = sourceLoc != CardLocation.Field && sourceLoc != CardLocation.Hand;
         
-        PlayCardFlight(data, GameManager.Instance.GetCardBackTexture(), startFaceUp, false, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, settings, pop, onComplete);
+        Quaternion startRot = isPlayer ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
+        Quaternion endRot = isPlayer ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
+        
+        bool isPile = sourceLoc == CardLocation.Deck || sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.ExtraDeck || sourceLoc == CardLocation.Banished;
+
+        if (isPile && extractionCinematic.enableExtraction)
+        {
+            PlayExtractionCinematic(data, GameManager.Instance.GetCardBackTexture(), isPlayer, sourceLoc, sPos, startFaceUp, false, (ghost, pos) => {
+                PlayCardFlight(data, GameManager.Instance.GetCardBackTexture(), false, false, pos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, startRot, endRot, settings, false, onComplete, ghost);
+            });
+        }
+        else
+        {
+            PlayCardFlight(data, GameManager.Instance.GetCardBackTexture(), startFaceUp, false, sPos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, startRot, endRot, settings, pop, onComplete);
+        }
     }
 
-    public void PlayCardFlight(CardData data, Texture2D backTex, bool startFaceUp, bool endFaceUp, Vector3 startPos, Vector3 endPos, Vector3 startScale, Vector3 endScale, Quaternion startRot, Quaternion endRot, CardFlightSettings settings, bool popFromPile, System.Action onComplete)
+    public void PlayCardFlight(CardData data, Texture2D backTex, bool startFaceUp, bool endFaceUp, Vector3 startPos, Vector3 endPos, Vector3 startScale, Vector3 endScale, Quaternion startRot, Quaternion endRot, CardFlightSettings settings, bool popFromPile, System.Action onComplete, GameObject existingGhost = null)
     {
         if (!enableAnimations || settings == null || !settings.enableFlight) 
 
         {
+            if (existingGhost != null) Destroy(existingGhost);
             onComplete?.Invoke();
             return;
         }
-        StartCoroutine(CardFlightRoutine(data, backTex, startFaceUp, endFaceUp, startPos, endPos, startScale, endScale, startRot, endRot, settings, popFromPile, onComplete));
+        StartCoroutine(CardFlightRoutine(data, backTex, startFaceUp, endFaceUp, startPos, endPos, startScale, endScale, startRot, endRot, settings, popFromPile, onComplete, existingGhost));
     }
 
-    private IEnumerator CardFlightRoutine(CardData data, Texture2D backTex, bool startFaceUp, bool endFaceUp, Vector3 startPos, Vector3 endPos, Vector3 startScale, Vector3 endScale, Quaternion startRot, Quaternion endRot, CardFlightSettings settings, bool popFromPile, System.Action onComplete)
+    private IEnumerator CardFlightRoutine(CardData data, Texture2D backTex, bool startFaceUp, bool endFaceUp, Vector3 startPos, Vector3 endPos, Vector3 startScale, Vector3 endScale, Quaternion startRot, Quaternion endRot, CardFlightSettings settings, bool popFromPile, System.Action onComplete, GameObject existingGhost)
     {
         Transform uiParent = GetUIParent();
         if (uiParent == null) { onComplete?.Invoke(); yield break; }
 
-        GameObject ghost = Instantiate(GameManager.Instance.cardPrefab, uiParent);
-        CardDisplay ghostDisplay = ghost.GetComponent<CardDisplay>();
-        ghostDisplay.SetCard(data, backTex, startFaceUp);
-        ghostDisplay.isInteractable = false;
-        
-        LayoutElement le = ghost.GetComponent<LayoutElement>();
-        if (le != null) Destroy(le);
-
-        ghost.transform.SetAsLastSibling();
-        PlaySound(spellSound);
+        GameObject ghost = existingGhost;
+        CardDisplay ghostDisplay = null;
+        if (ghost == null) {
+            ghost = Instantiate(GameManager.Instance.cardPrefab, uiParent);
+            ghostDisplay = ghost.GetComponent<CardDisplay>();
+            ghostDisplay.SetCard(data, backTex, startFaceUp);
+            ghostDisplay.isInteractable = false;
+            LayoutElement le = ghost.GetComponent<LayoutElement>();
+            if (le != null) Destroy(le);
+            ghost.transform.SetAsLastSibling();
+            PlaySound(spellSound);
+        } else {
+            ghostDisplay = ghost.GetComponent<CardDisplay>();
+        }
 
         float animSpeed = animationSpeed > 0 ? animationSpeed : 1f;
         Vector3 initialPos = startPos;
         
-        if (popFromPile && settings.popOffset != Vector2.zero)
+        if (popFromPile && settings.popOffset != Vector2.zero && existingGhost == null)
         {
             ghost.transform.position = startPos;
             ghost.transform.localScale = startScale * settings.startScaleMult;
@@ -650,9 +669,9 @@ public partial class DuelFXManager
                 if (t >= flipStartT && t <= flipEndT)
                 {
                     float flipProgress = (t - flipStartT) / (flipEndT - flipStartT);
-                    float scaleY = Mathf.Cos(flipProgress * Mathf.PI); // Vai de 1 a -1
+                    float scaleX = Mathf.Cos(flipProgress * Mathf.PI); // Vai de 1 a -1
                     
-                    ghost.transform.localScale = new Vector3(ghost.transform.localScale.x, ghost.transform.localScale.y * Mathf.Abs(scaleY), ghost.transform.localScale.z);
+                    ghost.transform.localScale = new Vector3(ghost.transform.localScale.x * Mathf.Abs(scaleX), ghost.transform.localScale.y, ghost.transform.localScale.z);
 
                     if (flipProgress >= 0.5f) {
                         hasFlipped = true;
@@ -729,6 +748,211 @@ public partial class DuelFXManager
         }
         if (squeezeObj != null) Destroy(squeezeObj);
     }
+    
+    public void PlayExtractionCinematic(CardData data, Texture2D backTex, bool isPlayerPile, CardLocation sourceLoc, Vector3 startPos, bool startFaceUp, bool endFaceUp, System.Action<GameObject, Vector3> onHoldComplete)
+    {
+        if (!enableAnimations || !extractionCinematic.enableExtraction)
+        {
+            // Fallback: Traz a carta real visualmente para o topo da pilha sem animações/escalas.
+            PileDisplay pile = null;
+            if (GameManager.Instance != null) {
+                if (sourceLoc == CardLocation.Deck) pile = isPlayerPile ? GameManager.Instance.playerDeckDisplay : GameManager.Instance.opponentDeckDisplay;
+                else if (sourceLoc == CardLocation.Graveyard) pile = isPlayerPile ? GameManager.Instance.playerGraveyardDisplay : GameManager.Instance.opponentGraveyardDisplay;
+                else if (sourceLoc == CardLocation.ExtraDeck) pile = isPlayerPile ? GameManager.Instance.playerExtraDeckDisplay : GameManager.Instance.opponentExtraDeckDisplay;
+                else if (sourceLoc == CardLocation.Banished) pile = isPlayerPile ? GameManager.Instance.playerRemovedDisplay : GameManager.Instance.opponentRemovedDisplay;
+            }
+
+            if (pile != null && pile.contentParent != null)
+            {
+                for (int i = 0; i < pile.contentParent.childCount; i++)
+                {
+                    CardDisplay cd = pile.contentParent.GetChild(i).GetComponent<CardDisplay>();
+                    if (cd != null && cd.CurrentCardData == data)
+                    {
+                        cd.transform.SetAsLastSibling(); // Joga pro topo do Render
+                        if (endFaceUp && cd.isFlipped) cd.ShowFront(false); // Revela sem flip 3D
+                        startPos = cd.transform.position; // Atualiza a coordenada para o Vórtice
+                        break;
+                    }
+                }
+            }
+            onHoldComplete?.Invoke(null, startPos);
+            return;
+        }
+        StartCoroutine(ExtractionRoutine(data, backTex, isPlayerPile, sourceLoc, startPos, startFaceUp, endFaceUp, onHoldComplete));
+    }
+
+    private IEnumerator ExtractionRoutine(CardData data, Texture2D backTex, bool isPlayerPile, CardLocation sourceLoc, Vector3 startPos, bool startFaceUp, bool endFaceUp, System.Action<GameObject, Vector3> onHoldComplete)
+    {
+        Transform uiParent = GetUIParent();
+        if (uiParent == null) { onHoldComplete?.Invoke(null, startPos); yield break; }
+
+        GameObject ghost = Instantiate(GameManager.Instance.cardPrefab, uiParent);
+        CardDisplay ghostDisplay = ghost.GetComponent<CardDisplay>();
+        ghostDisplay.SetCard(data, backTex, startFaceUp);
+        ghostDisplay.isInteractable = false;
+        ghostDisplay.isGhostImage = true; // Protege contra cliques e efeitos falsos acidentais!
+        
+        LayoutElement le = ghost.GetComponent<LayoutElement>();
+        if (le != null) Destroy(le);
+
+        PileDisplay pile = null;
+
+        if (GameManager.Instance != null) {
+            if (sourceLoc == CardLocation.Deck) pile = isPlayerPile ? GameManager.Instance.playerDeckDisplay : GameManager.Instance.opponentDeckDisplay;
+            else if (sourceLoc == CardLocation.Graveyard) pile = isPlayerPile ? GameManager.Instance.playerGraveyardDisplay : GameManager.Instance.opponentGraveyardDisplay;
+            else if (sourceLoc == CardLocation.ExtraDeck) pile = isPlayerPile ? GameManager.Instance.playerExtraDeckDisplay : GameManager.Instance.opponentExtraDeckDisplay;
+            else if (sourceLoc == CardLocation.Banished) pile = isPlayerPile ? GameManager.Instance.playerRemovedDisplay : GameManager.Instance.opponentRemovedDisplay;
+        }
+
+        PlaySound(spellSound); // Som de deslizar/puxar carta
+
+        float animSpeed = animationSpeed > 0 ? animationSpeed : 1f;
+        float slideDuration = extractionCinematic.slideDuration / animSpeed;
+        
+        ExtractionPileSettings pileSettings = extractionCinematic.deck;
+        if (sourceLoc == CardLocation.Graveyard) pileSettings = extractionCinematic.graveyard;
+        else if (sourceLoc == CardLocation.ExtraDeck) pileSettings = extractionCinematic.extraDeck;
+        else if (sourceLoc == CardLocation.Banished) pileSettings = extractionCinematic.banished;
+
+        bool isTopCard = true;
+        if (pileSettings.alwaysSlide)
+        {
+            isTopCard = false;
+        }
+        else if (pile != null && pile.contentParent != null && pile.contentParent.childCount > 1)
+        {
+            int cardIndex = -1;
+            for (int i = 0; i < pile.contentParent.childCount; i++)
+            {
+                CardDisplay cd = pile.contentParent.GetChild(i).GetComponent<CardDisplay>();
+                if (cd != null && cd.CurrentCardData == data)
+                {
+                    cardIndex = i;
+                    break;
+                }
+            }
+            if (cardIndex == -1 || cardIndex < pile.contentParent.childCount - 1)
+            {
+                isTopCard = false;
+            }
+        }
+
+        Vector3 currentPos = startPos;  
+        Quaternion startRot = isPlayerPile ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
+        
+        if (!isTopCard)
+        {
+            ghost.transform.SetParent(pile.contentParent, false);
+            int targetIndex = Mathf.Max(0, pile.contentParent.childCount - 2); 
+            ghost.transform.SetSiblingIndex(targetIndex);
+            
+            ghost.transform.position = startPos;
+            ghost.transform.localScale = Vector3.one;
+            ghost.transform.rotation = startRot;
+
+            Vector2 offset = isPlayerPile ? pileSettings.slideOffsetPlayer : pileSettings.slideOffsetOpponent;
+            Vector3 targetPos = startPos + new Vector3(offset.x * uiParent.lossyScale.x, offset.y * uiParent.lossyScale.y, 0);
+
+            float tSlide = 0;
+            while (tSlide < 1f)
+            {
+                if (ghost == null) { onHoldComplete?.Invoke(null, startPos); yield break; }
+                tSlide += Time.deltaTime / slideDuration;
+                ghost.transform.position = Vector3.Lerp(startPos, targetPos, Mathf.SmoothStep(0, 1, tSlide));
+                yield return null;
+            }
+            currentPos = targetPos;
+        }
+
+        ghost.transform.SetParent(uiParent, true);
+        ghost.transform.SetAsLastSibling();
+        ghost.transform.position = currentPos;
+        ghost.transform.rotation = startRot;
+        
+        Vector3 baseScale = ghost.transform.localScale;
+        Vector3 intendedStartScale = GameManager.Instance.fieldCardScale * pileSettings.startScaleMult;
+        Vector3 intendedPeakScale = GameManager.Instance.fieldCardScale * pileSettings.peakScaleMult;
+
+        if (isTopCard)
+        {
+            baseScale = intendedStartScale;
+            ghost.transform.localScale = baseScale;
+        }
+
+        if (extractionCinematic.useScaleEffect || (isTopCard && pileSettings.topJumpHeight != 0f))
+        {
+            float scaleDur = 0.15f / animSpeed;
+            float tScale = 0;
+            while (tScale < 1f)
+            {
+                if (ghost == null) { onHoldComplete?.Invoke(null, currentPos); yield break; }
+                tScale += Time.deltaTime / scaleDur;
+                
+                if (extractionCinematic.useScaleEffect)
+                    ghost.transform.localScale = Vector3.Lerp(baseScale, intendedPeakScale, Mathf.SmoothStep(0, 1, tScale));
+
+                if (isTopCard)
+                {
+                    float yOffset = pileSettings.topJumpHeight * uiParent.lossyScale.y;
+                    ghost.transform.position = Vector3.Lerp(startPos, startPos + new Vector3(0, yOffset, 0), Mathf.SmoothStep(0, 1, tScale));
+                }
+
+                yield return null;
+            }
+            if (ghost != null && extractionCinematic.useScaleEffect) ghost.transform.localScale = intendedPeakScale;
+            if (isTopCard) currentPos = ghost.transform.position;
+        }
+
+        if (startFaceUp != endFaceUp)
+        {
+            if (endFaceUp) {
+                while (ghostDisplay.GetFrontTexture() == null) yield return null;
+            }
+
+            bool flipDone = false;
+            if (endFaceUp) ghostDisplay.ShowFront(true, () => flipDone = true);
+            else ghostDisplay.ShowBack(true, () => flipDone = true);
+            yield return new WaitUntil(() => flipDone);
+        }
+
+        float hold = extractionCinematic.holdDuration / animSpeed;
+        if (hold > 0) yield return new WaitForSeconds(hold);
+
+        // FASE 4: VOLTAR PRO TOPO (Opcional)
+        if (pileSettings.returnToTop)
+        {
+            float returnDur = slideDuration;
+            float tReturn = 0;
+            
+            // Calcula a posição real do TOPO da pilha
+            Vector3 topPos = startPos;
+            if (!isTopCard && pile != null && pile.contentParent != null && pile.contentParent.childCount > 0) {
+                topPos = pile.contentParent.GetChild(pile.contentParent.childCount - 1).position;
+            }
+
+            while (tReturn < 1f)
+            {
+                if (ghost == null) { onHoldComplete?.Invoke(null, topPos); yield break; }
+                tReturn += Time.deltaTime / returnDur;
+                float smooth = Mathf.SmoothStep(0, 1, tReturn);
+                
+                ghost.transform.position = Vector3.Lerp(currentPos, topPos, smooth);
+                if (extractionCinematic.useScaleEffect) 
+                    ghost.transform.localScale = Vector3.Lerp(intendedPeakScale, intendedStartScale, smooth);
+                
+                yield return null;
+            }
+            ghost.transform.position = topPos;
+            ghost.transform.localScale = intendedStartScale; // Força escala start independentemente
+            onHoldComplete?.Invoke(ghost, topPos);
+        }
+        else
+        {
+            onHoldComplete?.Invoke(ghost, currentPos);
+        }
+    }
+
     public void PlayControlSwap(CardDisplay card, Transform targetZone, float targetZRot, bool newOwnerIsPlayer, System.Action onComplete)
     {
         // Debug.Log($"[VFX] > [CHAMADA] PlayControlSwap");

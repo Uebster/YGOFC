@@ -90,56 +90,42 @@ public partial class LuaDuel
         CardEffectManager.Instance.isWaitingForLuaYield = false;
     }
 
-    public int SendtoGrave(object target, object reason)
+    public DynValue SendtoGrave(object target, object reason)
+    {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+        CardEffectManager.Instance.StartCoroutine(SendtoGraveRoutine(target, reason));
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SendtoGrave") });
+    }
+
+    private IEnumerator SendtoGraveRoutine(object target, object reason)
     {
         int count = 0;
+        List<LuaCard> cardsToProcess = new List<LuaCard>();
+
         if (target is LuaGroup group)
         {
-            foreach (var c in group.cards)
-            {
-                if (c.unityCard != null)
-                {
-                    GameManager.Instance.MoveCard(c.unityCard, CardLocation.Graveyard, SendReason.Effect);
-                    count++;
-                }
-                else if (c.unityData != null)
-                {
-                    bool wasPlayerPile;
-                    CardLocation sourceLoc = RemoveDataFromAllPiles(c.unityData, out wasPlayerPile);
-                    GameManager.Instance.SendToGraveyard(c.unityData, wasPlayerPile, sourceLoc, SendReason.Effect);
-                    
-                    if (DuelFXManager.Instance != null && !GameManager.Instance.isSimulating && sourceLoc != CardLocation.Unknown)
-                    {
-                        CardFlightSettings flightSettings = null;
-                        if (sourceLoc == CardLocation.Deck) flightSettings = DuelFXManager.Instance.flightDeckToGraveyard;
-                        else if (sourceLoc == CardLocation.ExtraDeck) flightSettings = DuelFXManager.Instance.flightExtraToGraveyard;
-                        else if (sourceLoc == CardLocation.Banished) flightSettings = DuelFXManager.Instance.flightBanishToGraveyard;
-
-                        if (flightSettings != null && flightSettings.enableFlight)
-                        {
-                            Vector3 startPos = GetPilePosition(sourceLoc, wasPlayerPile);
-                            Vector3 endPos = wasPlayerPile ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position;
-                            DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
-                        }
-                    }
-                    count++;
-                }
-            }
-            // Debug.Log($"[Lua] Duel.SendtoGrave(Grupo com {count} cartas)");
+            cardsToProcess.AddRange(group.cards);
         }
         else if (target is LuaCard card)
         {
-            if (card.unityCard != null)
+            cardsToProcess.Add(card);
+        }
+
+        foreach (var c in cardsToProcess)
+        {
+            if (c.unityCard != null)
             {
-                GameManager.Instance.MoveCard(card.unityCard, CardLocation.Graveyard, SendReason.Effect);
-                count = 1;
-                // Debug.Log($"[Lua] Duel.SendtoGrave({card.unityCard.CurrentCardData.name})");
+                GameManager.Instance.MoveCard(c.unityCard, CardLocation.Graveyard, SendReason.Effect);
+                count++;
+                if (GameManager.Instance == null || !GameManager.Instance.isSimulating)
+                    yield return new WaitForSeconds(0.3f);
             }
-            else if (card.unityData != null)
+            else if (c.unityData != null)
             {
                 bool wasPlayerPile;
-                CardLocation sourceLoc = RemoveDataFromAllPiles(card.unityData, out wasPlayerPile);
-                GameManager.Instance.SendToGraveyard(card.unityData, wasPlayerPile, sourceLoc, SendReason.Effect);
+                CardLocation sourceLoc = RemoveDataFromAllPiles(c.unityData, out wasPlayerPile);
+                GameManager.Instance.SendToGraveyard(c.unityData, wasPlayerPile, sourceLoc, SendReason.Effect);
                 
                 if (DuelFXManager.Instance != null && !GameManager.Instance.isSimulating && sourceLoc != CardLocation.Unknown)
                 {
@@ -152,78 +138,169 @@ public partial class LuaDuel
                     {
                         Vector3 startPos = GetPilePosition(sourceLoc, wasPlayerPile);
                         Vector3 endPos = wasPlayerPile ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position;
-                        DuelFXManager.Instance.PlayCardFlight(card.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
-                    }
-                }
-                count = 1;
-            }
-        }
-        return count;
-    }
-
-    public int Remove(object target, object pos, object reason)
-    {
-        int count = 0;
-        if (target is LuaGroup group)
-        {
-            foreach (var c in group.cards) { 
-                if (c.unityCard != null) { GameManager.Instance.BanishCard(c.unityCard); count++; }
-                else if (c.unityData != null) { 
-                    bool wasPlayerPile;
-                    CardLocation sourceLoc = RemoveDataFromAllPiles(c.unityData, out wasPlayerPile); 
-                    GameManager.Instance.RemoveFromPlay(c.unityData, wasPlayerPile); 
-                    
-                    if (DuelFXManager.Instance != null && !GameManager.Instance.isSimulating && sourceLoc != CardLocation.Unknown)
-                    {
-                        CardFlightSettings flightSettings = null;
-                        if (sourceLoc == CardLocation.Deck) flightSettings = DuelFXManager.Instance.flightDeckToBanished;
-                        else if (sourceLoc == CardLocation.Graveyard) flightSettings = DuelFXManager.Instance.flightGraveyardToBanished;
-                        else if (sourceLoc == CardLocation.ExtraDeck) flightSettings = DuelFXManager.Instance.flightExtraToBanished;
-
-                        if (flightSettings != null && flightSettings.enableFlight)
+                        Quaternion rot = wasPlayerPile ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
+                        
+                        bool isPile = sourceLoc == CardLocation.Deck || sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.ExtraDeck || sourceLoc == CardLocation.Banished;
+                        
+                        if (isPile && DuelFXManager.Instance.extractionCinematic.enableExtraction)
                         {
-                            Vector3 startPos = GetPilePosition(sourceLoc, wasPlayerPile);
-                            Vector3 endPos = wasPlayerPile ? GameManager.Instance.playerRemovedDisplay.transform.position : GameManager.Instance.opponentRemovedDisplay.transform.position;
-                            DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
+                            bool startFaceUp = sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.Banished;
+                            bool animDone = false;
+                            DuelFXManager.Instance.PlayExtractionCinematic(c.unityData, GameManager.Instance.GetCardBackTexture(), wasPlayerPile, sourceLoc, startPos, startFaceUp, true, (ghost, pos) => {
+                                DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, true, pos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, rot, rot, flightSettings, false, () => animDone = true, ghost);
+                            });
+                            yield return new WaitUntil(() => animDone);
+                        }
+                        else
+                        {
+                            DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, rot, rot, flightSettings, true, null);
                         }
                     }
-                    count++; 
                 }
+                count++;
+                if (GameManager.Instance == null || !GameManager.Instance.isSimulating)
+                    yield return new WaitForSeconds(0.3f);
             }
-            // Debug.Log($"[Lua] Duel.Remove(Grupo com {count} cartas)");
+        }
+        
+        CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(count);
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
+    }
+
+    public DynValue Remove(object target, object pos, object reason)
+    {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+        CardEffectManager.Instance.StartCoroutine(RemoveRoutine(target, pos, reason));
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("Remove") });
+    }
+
+    private IEnumerator RemoveRoutine(object target, object pos, object reason)
+    {
+        int count = 0;
+        List<LuaCard> cardsToProcess = new List<LuaCard>();
+
+        if (target is LuaGroup group)
+        {
+            cardsToProcess.AddRange(group.cards);
         }
         else if (target is LuaCard card)
         {
-            if (card.unityCard != null)
+            cardsToProcess.Add(card);
+        }
+
+        foreach (var c in cardsToProcess)
+        {
+            if (c.unityCard != null)
             {
-                GameManager.Instance.BanishCard(card.unityCard);
-                count = 1;
-                // Debug.Log($"[Lua] Duel.Remove({card.unityCard.CurrentCardData.name})");
+                GameManager.Instance.BanishCard(c.unityCard);
+                count++;
+                if (GameManager.Instance == null || !GameManager.Instance.isSimulating)
+                    yield return new WaitForSeconds(0.4f);
             }
-            else if (card.unityData != null)
+            else if (c.unityData != null)
             {
                 bool wasPlayerPile;
-                CardLocation sourceLoc = RemoveDataFromAllPiles(card.unityData, out wasPlayerPile);
-                GameManager.Instance.RemoveFromPlay(card.unityData, wasPlayerPile);
+                CardLocation sourceLoc = GetPileLocation(c.unityData, out wasPlayerPile);
                 
                 if (DuelFXManager.Instance != null && !GameManager.Instance.isSimulating && sourceLoc != CardLocation.Unknown)
                 {
+                    Vector3 startPos = GetPilePosition(sourceLoc, wasPlayerPile);
+
                     CardFlightSettings flightSettings = null;
                     if (sourceLoc == CardLocation.Deck) flightSettings = DuelFXManager.Instance.flightDeckToBanished;
                     else if (sourceLoc == CardLocation.Graveyard) flightSettings = DuelFXManager.Instance.flightGraveyardToBanished;
                     else if (sourceLoc == CardLocation.ExtraDeck) flightSettings = DuelFXManager.Instance.flightExtraToBanished;
 
-                    if (flightSettings != null && flightSettings.enableFlight)
-                    {
-                        Vector3 startPos = GetPilePosition(sourceLoc, wasPlayerPile);
-                        Vector3 endPos = wasPlayerPile ? GameManager.Instance.playerRemovedDisplay.transform.position : GameManager.Instance.opponentRemovedDisplay.transform.position;
-                        DuelFXManager.Instance.PlayCardFlight(card.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, flightSettings, true, null);
-                    }
+                    bool animDone = false;
+                    DuelFXManager.Instance.PlayExtractionCinematic(c.unityData, GameManager.Instance.GetCardBackTexture(), wasPlayerPile, sourceLoc, startPos, sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.Banished, true, (ghost, pos) => {
+                        CardEffectManager.Instance.StartCoroutine(ProcessBanishVFXAndFlight(c.unityData, wasPlayerPile, sourceLoc, flightSettings, ghost, pos, () => animDone = true));
+                    });
+                    
+                    yield return new WaitUntil(() => animDone);
                 }
-                count = 1;
+                else
+                {
+                    RemoveDataFromAllPiles(c.unityData, out wasPlayerPile);
+                    GameManager.Instance.RemoveFromPlay(c.unityData, wasPlayerPile);
+                }
+                
+                count++;
+                if (GameManager.Instance == null || !GameManager.Instance.isSimulating)
+                    yield return new WaitForSeconds(0.2f);
             }
         }
-        return count;
+        
+        CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(count);
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
+    }
+
+    private IEnumerator ProcessBanishVFXAndFlight(CardData cData, bool wasPlayerPile, CardLocation sourceLoc, CardFlightSettings flightSettings, GameObject ghost, Vector3 pos, System.Action onComplete)
+    {
+        if (DuelFXManager.Instance.useBanishPrefab && DuelFXManager.Instance.banishVFX != null)
+        {
+            DuelFXManager.Instance.SpawnVFXPublic(DuelFXManager.Instance.banishVFX, pos);
+            
+            if (ghost != null)
+            {
+                float suckDuration = 0.5f;
+                float t = 0;
+                Vector3 startScale = ghost.transform.localScale;
+                while(t < 1f) {
+                    if (ghost == null) break;
+                    t += Time.deltaTime / suckDuration;
+                    ghost.transform.Rotate(0, 0, 720f * Time.deltaTime);
+                    ghost.transform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
+                    yield return null;
+                }
+            }
+            else { yield return new WaitForSeconds(0.5f); }
+        }
+
+        RemoveDataFromAllPiles(cData, out wasPlayerPile);
+        GameManager.Instance.RemoveFromPlay(cData, wasPlayerPile);
+
+        if (flightSettings != null && flightSettings.enableFlight)
+        {
+            Vector3 endPos = wasPlayerPile ? GameManager.Instance.playerRemovedDisplay.transform.position : GameManager.Instance.opponentRemovedDisplay.transform.position;
+            Quaternion rot = wasPlayerPile ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
+            
+            bool flightDone = false;
+            float oldStartMult = flightSettings.startScaleMult;
+            if (DuelFXManager.Instance.useBanishPrefab) flightSettings.startScaleMult = 0f;
+            
+            DuelFXManager.Instance.PlayCardFlight(cData, GameManager.Instance.GetCardBackTexture(), true, true, pos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, rot, rot, flightSettings, false, () => {
+                flightDone = true;
+            }, ghost);
+            
+            yield return new WaitUntil(() => flightDone);
+            flightSettings.startScaleMult = oldStartMult;
+        }
+        else
+        {
+            if (ghost != null) GameObject.Destroy(ghost);
+        }
+
+        onComplete?.Invoke();
+    }
+
+    private CardLocation GetPileLocation(CardData data, out bool wasPlayerPile)
+    {
+        wasPlayerPile = true;
+        if (GameManager.Instance == null) return CardLocation.Unknown;
+        if (DeckManager.Instance != null) {
+            if (DeckManager.Instance.GetPlayerDeck().Contains(data)) { wasPlayerPile = true; return CardLocation.Deck; }
+            if (DeckManager.Instance.GetOpponentDeck().Contains(data)) { wasPlayerPile = false; return CardLocation.Deck; }
+        }
+        if (GameManager.Instance.GetPlayerMainDeck().Contains(data)) { wasPlayerPile = true; return CardLocation.Deck; }
+        if (GameManager.Instance.GetOpponentMainDeck().Contains(data)) { wasPlayerPile = false; return CardLocation.Deck; }
+        if (GameManager.Instance.GetPlayerExtraDeck().Contains(data)) { wasPlayerPile = true; return CardLocation.ExtraDeck; }
+        if (GameManager.Instance.GetOpponentExtraDeck().Contains(data)) { wasPlayerPile = false; return CardLocation.ExtraDeck; }
+        if (GameManager.Instance.GetPlayerGraveyard().Contains(data)) { wasPlayerPile = true; return CardLocation.Graveyard; }
+        if (GameManager.Instance.GetOpponentGraveyard().Contains(data)) { wasPlayerPile = false; return CardLocation.Graveyard; }
+        if (GameManager.Instance.GetPlayerRemoved().Contains(data)) { wasPlayerPile = true; return CardLocation.Banished; }
+        if (GameManager.Instance.GetOpponentRemoved().Contains(data)) { wasPlayerPile = false; return CardLocation.Banished; }
+        return CardLocation.Unknown;
     }
 
     public int SendtoDeck(object target, object player, object seq, object reason)
@@ -455,33 +532,50 @@ public partial class LuaDuel
 
     public void SetTargetParam(object p) { targetParam = ConvertToInt(p); /* Debug.Log($"<color=magenta>[LuaDuel LOG]</color> SetTargetParam: Guardando valor '{targetParam}' na memória do LUA!"); */ }
 
-    public int SendtoHand(object target, object player, object reason)
+    public DynValue SendtoHand(object target, object player, object reason)
+    {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+        CardEffectManager.Instance.StartCoroutine(SendtoHandRoutine(target, player, reason));
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SendtoHand") });
+    }
+
+    private IEnumerator SendtoHandRoutine(object target, object player, object reason)
     {
         int count = 0;
+        List<LuaCard> cardsToProcess = new List<LuaCard>();
+
         if (target is LuaGroup group)
         {
-            foreach (var c in group.cards) { 
-                if (c.unityCard != null) { GameManager.Instance.ReturnToHand(c.unityCard); count++; }
-                else if (c.unityData != null) { bool wasPlayerPile; RemoveDataFromAllPiles(c.unityData, out wasPlayerPile); GameManager.Instance.AddCardToHand(c.unityData, wasPlayerPile, null, CardLocation.Deck, false, wasPlayerPile); count++; }
-            }
-            // Debug.Log($"[Lua] Duel.SendtoHand(Grupo com {count} cartas)");
+            cardsToProcess.AddRange(group.cards);
         }
         else if (target is LuaCard card)
         {
-            if (card.unityCard != null)
+            cardsToProcess.Add(card);
+        }
+
+        foreach (var c in cardsToProcess)
+        {
+            if (c.unityCard != null)
             {
-                GameManager.Instance.ReturnToHand(card.unityCard);
-                count = 1;
-                // Debug.Log($"[Lua] Duel.SendtoHand({card.unityCard.CurrentCardData.name})");
+                GameManager.Instance.ReturnToHand(c.unityCard);
+                count++;
+                if (GameManager.Instance == null || !GameManager.Instance.isSimulating)
+                    yield return new WaitForSeconds(0.3f);
             }
-            else if (card.unityData != null)
+            else if (c.unityData != null)
             {
-                bool wasPlayerPile; RemoveDataFromAllPiles(card.unityData, out wasPlayerPile);
-                GameManager.Instance.AddCardToHand(card.unityData, wasPlayerPile, null, CardLocation.Deck, false, wasPlayerPile);
-                count = 1;
+                bool wasPlayerPile;
+                RemoveDataFromAllPiles(c.unityData, out wasPlayerPile);
+                GameManager.Instance.AddCardToHand(c.unityData, wasPlayerPile, null, CardLocation.Deck, false, wasPlayerPile);
+                count++;
+                if (GameManager.Instance == null || !GameManager.Instance.isSimulating)
+                    yield return new WaitForSeconds(0.3f);
             }
         }
-        return count;
+
+        CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(count);
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
     }
 
     private CardLocation RemoveDataFromAllPiles(CardData data, out bool wasPlayerPile)
