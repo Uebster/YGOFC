@@ -86,9 +86,11 @@ public class LuaEventManager
                     {
                         if (effect.operationFunc != null)
                         {
+                            core.luaDuel.currentContinuousEffect = effect;
                             bool opDone = false;
                             core.StartCoroutine(RunCoroutineAndSetDone(core.RunLuaCoroutine(effect.operationFunc, effect, lc_loop.GetControler(), triggerArgs, -1), () => opDone = true));
                             yield return new WaitUntil(() => opDone);
+                            core.luaDuel.currentContinuousEffect = null;
                         }
                     }
                     else
@@ -116,9 +118,11 @@ public class LuaEventManager
                     {
                         if (e.operationFunc != null)
                         {
+                            core.luaDuel.currentContinuousEffect = e;
                             bool opDone = false;
                             core.StartCoroutine(RunCoroutineAndSetDone(core.RunLuaCoroutine(e.operationFunc, e, lc.GetControler(), triggerArgs, -1), () => opDone = true));
                             yield return new WaitUntil(() => opDone);
+                            core.luaDuel.currentContinuousEffect = null;
                         }
                     }
                     else

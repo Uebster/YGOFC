@@ -97,6 +97,13 @@ public class ChainManager
         if (visualLinkNumber > 0 && !isDummy && DuelFXManager.Instance != null && luaCard.unityCard != null)
         {
             Debug.Log($"[Chain] Link {visualLinkNumber}: {luaCard.unityData.name} adicionado à pilha.");
+            
+            // SE A CARTA ATIVAR SEU EFEITO LÁ DO FUNDO DO CEMITÉRIO/DECK, DÁ O HIGHLIGHT!
+            if (luaCard.unityCard.isInPile && !GameManager.Instance.isSimulating)
+            {
+                yield return core.StartCoroutine(core.luaDuel.AnimateCardActivationInPileRoutine(luaCard.unityCard));
+            }
+            
             DuelFXManager.Instance.PlayChainLinkEffect(luaCard.unityCard, visualLinkNumber);
         }
 

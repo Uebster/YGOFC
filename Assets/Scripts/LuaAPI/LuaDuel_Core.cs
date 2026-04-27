@@ -24,6 +24,7 @@ public partial class LuaDuel
     public LuaCard historicalAttacker; // Safety Net: Lembra quem lutou até o fim do turno
     public LuaCard historicalAttackTarget;
     public LuaEffect currentActivatingEffect;
+    public LuaEffect currentContinuousEffect; // Memória do efeito passivo em andamento
     public LuaGroup lastCostGroup; // Memória de curto prazo para custos pagos
     public List<CardDisplay> pendingComparisonCards = new List<CardDisplay>(); // Buffer para Confrontos Cinemáticos
     public Dictionary<string, int> hardOncePerTurnUsages = new Dictionary<string, int>(); // Controle de Usos (Hard Once per Turn)

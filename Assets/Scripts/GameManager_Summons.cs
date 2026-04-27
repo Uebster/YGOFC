@@ -405,6 +405,7 @@ public partial class GameManager
                 if (useCinematic && DuelFXManager.Instance != null)
                 {
                     display.SetVisibility(false);
+                GameManager.Instance.pendingVisualTasks++;
                     System.Action onCinematicComplete = () => {
                         display.SetVisibility(true);
                         DuelFXManager.Instance.PlaySummonAura(display);
@@ -414,6 +415,7 @@ public partial class GameManager
                                 CardEffectManager.Instance.OnSpecialSummon(display);
                             else CardEffectManager.Instance.OnSummon(display);
                         }
+                    GameManager.Instance.pendingVisualTasks--;
                     };
                     if (isFusion) DuelFXManager.Instance.PlayFusionCinematic(display, specialMaterials, null, onCinematicComplete);
                     else if (isRitual) DuelFXManager.Instance.PlayRitualCinematic(display, null, onCinematicComplete);
@@ -450,6 +452,8 @@ public partial class GameManager
                 if (settings != null && settings.enableFlight)
                 {
                     display.SetVisibility(false);
+                    GameManager.Instance.pendingVisualTasks++;
+                    System.Action flightCallback = () => { playEffects(); GameManager.Instance.pendingVisualTasks--; };
                     bool popFromPile = sourceLoc != CardLocation.Hand && sourceLoc != CardLocation.Field;
                     Quaternion startRot = (sourceLoc == CardLocation.Hand) ? Quaternion.Euler(0, 0, isPlayer ? 0 : 180) : Quaternion.identity;
                     Vector3 sScale = (sourceLoc == CardLocation.Hand) ? handCardScale : fieldCardScale;
@@ -461,7 +465,7 @@ public partial class GameManager
 
                     DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, sFaceUp, !isFaceDown, sourcePos.Value, cardGO.transform.position, 
                         sScale, fieldCardScale, 
-                        startRot, endRot, settings, popFromPile, playEffects);
+                        startRot, endRot, settings, popFromPile, flightCallback);
                 }
                 else playEffects();
             }

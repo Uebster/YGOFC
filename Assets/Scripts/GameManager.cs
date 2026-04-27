@@ -411,6 +411,8 @@ public partial class GameManager : MonoBehaviour
 
     [HideInInspector] public int pendingEffectDraws = 0;
 
+    [HideInInspector] public int pendingVisualTasks = 0;
+
     // --- ESTADO DE SELEÇÃO DE MÃO ---
     [HideInInspector] public bool justCanceledSomething = false;
     [HideInInspector] public bool isSelectingFromHand = false;

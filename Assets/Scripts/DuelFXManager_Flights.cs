@@ -753,33 +753,52 @@ public partial class DuelFXManager
     {
         if (!enableAnimations || !extractionCinematic.enableExtraction)
         {
-            // Fallback: Traz a carta real visualmente para o topo da pilha sem animações/escalas.
-            PileDisplay pile = null;
-            if (GameManager.Instance != null) {
-                if (sourceLoc == CardLocation.Deck) pile = isPlayerPile ? GameManager.Instance.playerDeckDisplay : GameManager.Instance.opponentDeckDisplay;
-                else if (sourceLoc == CardLocation.Graveyard) pile = isPlayerPile ? GameManager.Instance.playerGraveyardDisplay : GameManager.Instance.opponentGraveyardDisplay;
-                else if (sourceLoc == CardLocation.ExtraDeck) pile = isPlayerPile ? GameManager.Instance.playerExtraDeckDisplay : GameManager.Instance.opponentExtraDeckDisplay;
-                else if (sourceLoc == CardLocation.Banished) pile = isPlayerPile ? GameManager.Instance.playerRemovedDisplay : GameManager.Instance.opponentRemovedDisplay;
-            }
-
-            if (pile != null && pile.contentParent != null)
-            {
-                for (int i = 0; i < pile.contentParent.childCount; i++)
-                {
-                    CardDisplay cd = pile.contentParent.GetChild(i).GetComponent<CardDisplay>();
-                    if (cd != null && cd.CurrentCardData == data)
-                    {
-                        cd.transform.SetAsLastSibling(); // Joga pro topo do Render
-                        if (endFaceUp && cd.isFlipped) cd.ShowFront(false); // Revela sem flip 3D
-                        startPos = cd.transform.position; // Atualiza a coordenada para o Vórtice
-                        break;
-                    }
-                }
-            }
-            onHoldComplete?.Invoke(null, startPos);
+            StartCoroutine(FallbackExtractionRoutine(data, isPlayerPile, sourceLoc, endFaceUp, startPos, onHoldComplete));
             return;
         }
         StartCoroutine(ExtractionRoutine(data, backTex, isPlayerPile, sourceLoc, startPos, startFaceUp, endFaceUp, onHoldComplete));
+    }
+
+    private IEnumerator FallbackExtractionRoutine(CardData data, bool isPlayerPile, CardLocation sourceLoc, bool endFaceUp, Vector3 startPos, System.Action<GameObject, Vector3> onHoldComplete)
+    {
+        // Espera um instante para garantir que a pilha não está sendo reconstruída neste exato frame
+        yield return new WaitForEndOfFrame();
+
+        PileDisplay pile = null;
+        if (GameManager.Instance != null) {
+            if (sourceLoc == CardLocation.Deck) pile = isPlayerPile ? GameManager.Instance.playerDeckDisplay : GameManager.Instance.opponentDeckDisplay;
+            else if (sourceLoc == CardLocation.Graveyard) pile = isPlayerPile ? GameManager.Instance.playerGraveyardDisplay : GameManager.Instance.opponentGraveyardDisplay;
+            else if (sourceLoc == CardLocation.ExtraDeck) pile = isPlayerPile ? GameManager.Instance.playerExtraDeckDisplay : GameManager.Instance.opponentExtraDeckDisplay;
+            else if (sourceLoc == CardLocation.Banished) pile = isPlayerPile ? GameManager.Instance.playerRemovedDisplay : GameManager.Instance.opponentRemovedDisplay;
+        }
+
+        if (pile != null && pile.contentParent != null)
+        {
+            for (int i = 0; i < pile.contentParent.childCount; i++)
+            {
+                CardDisplay cd = pile.contentParent.GetChild(i).GetComponent<CardDisplay>();
+                if (cd != null && cd.CurrentCardData != null && cd.CurrentCardData.id == data.id)
+                {
+                    cd.transform.SetAsLastSibling(); // Joga visualmente para o topo
+                    
+                    // Arrasta a posição para o topo exato da pilha baseado no offset do PileDisplay
+                    RectTransform rt = cd.GetComponent<RectTransform>();
+                    if (rt != null) rt.anchoredPosition = pile.stackOffset * (pile.contentParent.childCount - 1);
+                    
+                    if (endFaceUp && cd.isFlipped) cd.ShowFront(false); 
+                    
+                    // Espera 1 frame para a Unity atualizar o Transform World Position e pegar a coordenada exata
+                    yield return new WaitForEndOfFrame();
+                    startPos = cd.transform.position; 
+                    break;
+                }
+            }
+        }
+        
+        // Pausa para que você consiga ver a carta no topo antes do vórtice a engolir
+        yield return new WaitForSeconds(0.4f / (animationSpeed > 0 ? animationSpeed : 1f));
+        
+        onHoldComplete?.Invoke(null, startPos);
     }
 
     private IEnumerator ExtractionRoutine(CardData data, Texture2D backTex, bool isPlayerPile, CardLocation sourceLoc, Vector3 startPos, bool startFaceUp, bool endFaceUp, System.Action<GameObject, Vector3> onHoldComplete)

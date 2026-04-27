@@ -787,6 +787,8 @@ public partial class GameManager
                 if (flightSettings != null && flightSettings.enableFlight)
                 {
                     display.SetVisibility(false);
+                GameManager.Instance.pendingVisualTasks++;
+                System.Action flightCallback = () => { onActivationCompleteCallback(); GameManager.Instance.pendingVisualTasks--; };
                     bool popFromPile = sourceLoc != CardLocation.Hand && sourceLoc != CardLocation.Field;
                     Quaternion startRot = (sourceLoc == CardLocation.Hand) ? Quaternion.Euler(0, 0, isPlayer ? 0 : 180) : Quaternion.identity;
                     Vector3 sScale = (sourceLoc == CardLocation.Hand) ? handCardScale : fieldCardScale;
@@ -798,7 +800,7 @@ public partial class GameManager
 
                     DuelFXManager.Instance.PlayCardFlight(cardData, cardBackTexture, sFaceUp, !isSet, sourcePos.Value, endPos, 
                         sScale, fieldCardScale, 
-                        startRot, endRot, flightSettings, popFromPile, onActivationCompleteCallback);
+                    startRot, endRot, flightSettings, popFromPile, flightCallback);
                 }
                 else onActivationCompleteCallback();
             }

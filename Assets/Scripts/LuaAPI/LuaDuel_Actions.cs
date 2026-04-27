@@ -177,6 +177,14 @@ public partial class LuaDuel
 
     private IEnumerator RemoveRoutine(object target, object pos, object reason)
     {
+        // 1. ESPERA ESTRATÉGICA: Garante que cartas recém-destruídas (ex: Big Bang Shot)
+        // terminem de voar e o Cemitério recalcule seu layout antes de tentarmos extrair o alvo!
+        if (GameManager.Instance != null && !GameManager.Instance.isSimulating)
+            yield return new WaitForSeconds(0.6f);
+
+        // --- HIGHLIGHT DA CARTA FONTE (Seja ela qual for) ---
+        yield return CardEffectManager.Instance.StartCoroutine(HighlightEffectSourceRoutine());
+
         int count = 0;
         List<LuaCard> cardsToProcess = new List<LuaCard>();
 
@@ -235,9 +243,88 @@ public partial class LuaDuel
         CardEffectManager.Instance.isWaitingForLuaYield = false;
     }
 
+    public IEnumerator HighlightEffectSourceRoutine(LuaEffect specificEffect = null)
+    {
+        if (GameManager.Instance == null || GameManager.Instance.isSimulating || DuelFXManager.Instance == null || !DuelFXManager.Instance.enableAnimations)
+            yield break;
+
+        LuaEffect sourceEff = specificEffect;
+        if (sourceEff == null)
+        {
+            sourceEff = CardEffectManager.Instance.luaDuel.currentContinuousEffect;
+            if (sourceEff == null && CardEffectManager.Instance.chainManager.resolvingLink != null)
+                sourceEff = CardEffectManager.Instance.chainManager.resolvingLink.effect;
+        }
+
+        if (sourceEff != null && sourceEff.owner != null && sourceEff.owner.unityData != null)
+        {
+            CardDisplay sourceDisplay = null;
+            CardData sData = sourceEff.owner.unityData;
+            
+            var pGY = GameManager.Instance.playerGraveyardDisplay;
+            var oGY = GameManager.Instance.opponentGraveyardDisplay;
+            
+            if (pGY != null && pGY.contentParent != null) {
+                foreach(Transform child in pGY.contentParent) {
+                    var cd = child.GetComponent<CardDisplay>();
+                    if (cd != null && cd.CurrentCardData == sData) sourceDisplay = cd;
+                }
+            }
+            if (sourceDisplay == null && oGY != null && oGY.contentParent != null) {
+                foreach(Transform child in oGY.contentParent) {
+                    var cd = child.GetComponent<CardDisplay>();
+                    if (cd != null && cd.CurrentCardData == sData) sourceDisplay = cd;
+                }
+            }
+            if (sourceDisplay == null && sourceEff.owner.unityCard != null && sourceEff.owner.unityCard.isOnField) 
+                sourceDisplay = sourceEff.owner.unityCard;
+
+            if (sourceDisplay != null && sourceDisplay.isInPile)
+            {
+                yield return CardEffectManager.Instance.StartCoroutine(AnimateCardActivationInPileRoutine(sourceDisplay));
+            }
+        }
+    }
+
+    public IEnumerator AnimateCardActivationInPileRoutine(CardDisplay cd)
+    {
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.spellSound);
+        
+        if (cd.isInPile)
+        {
+            cd.transform.SetAsLastSibling(); 
+            if (cd.isFlipped) cd.ShowFront(false);
+        }
+
+        Vector3 origScale = cd.transform.localScale;
+        Vector3 peakScale = origScale * 1.4f;
+        float dur = 0.2f;
+        float t = 0;
+        
+        UnityEngine.UI.Outline outline = cd.GetComponent<UnityEngine.UI.Outline>();
+        bool hadOutline = outline != null;
+        if (!hadOutline) outline = cd.gameObject.AddComponent<UnityEngine.UI.Outline>();
+        Color origColor = outline.effectColor;
+        outline.effectColor = Color.cyan;
+        outline.effectDistance = new Vector2(8, -8);
+        outline.enabled = true;
+
+        while(t < 1f) { t += Time.deltaTime / dur; cd.transform.localScale = Vector3.Lerp(origScale, peakScale, Mathf.SmoothStep(0, 1, t)); yield return null; }
+        t = 0;
+        while(t < 1f) { t += Time.deltaTime / dur; cd.transform.localScale = Vector3.Lerp(peakScale, origScale, Mathf.SmoothStep(0, 1, t)); yield return null; }
+        cd.transform.localScale = origScale;
+        
+        if (!hadOutline) GameObject.Destroy(outline);
+        else { outline.effectColor = origColor; outline.enabled = false; }
+        
+        yield return new WaitForSeconds(0.4f);
+    }
+
     private IEnumerator ProcessBanishVFXAndFlight(CardData cData, bool wasPlayerPile, CardLocation sourceLoc, CardFlightSettings flightSettings, GameObject ghost, Vector3 pos, System.Action onComplete)
     {
-        if (DuelFXManager.Instance.useBanishPrefab && DuelFXManager.Instance.banishVFX != null)
+        bool useVortex = DuelFXManager.Instance.useBanishPrefab && DuelFXManager.Instance.banishVFX != null;
+
+        if (useVortex)
         {
             DuelFXManager.Instance.SpawnVFXPublic(DuelFXManager.Instance.banishVFX, pos);
             
@@ -253,6 +340,8 @@ public partial class LuaDuel
                     ghost.transform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
                     yield return null;
                 }
+                GameObject.Destroy(ghost);
+                ghost = null; // Apaga o fantasma da memória para que ele não voe!
             }
             else { yield return new WaitForSeconds(0.5f); }
         }
@@ -260,21 +349,18 @@ public partial class LuaDuel
         RemoveDataFromAllPiles(cData, out wasPlayerPile);
         GameManager.Instance.RemoveFromPlay(cData, wasPlayerPile);
 
-        if (flightSettings != null && flightSettings.enableFlight)
+        if (flightSettings != null && flightSettings.enableFlight && !useVortex)
         {
             Vector3 endPos = wasPlayerPile ? GameManager.Instance.playerRemovedDisplay.transform.position : GameManager.Instance.opponentRemovedDisplay.transform.position;
             Quaternion rot = wasPlayerPile ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
             
             bool flightDone = false;
-            float oldStartMult = flightSettings.startScaleMult;
-            if (DuelFXManager.Instance.useBanishPrefab) flightSettings.startScaleMult = 0f;
             
             DuelFXManager.Instance.PlayCardFlight(cData, GameManager.Instance.GetCardBackTexture(), true, true, pos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, rot, rot, flightSettings, false, () => {
                 flightDone = true;
             }, ghost);
             
             yield return new WaitUntil(() => flightDone);
-            flightSettings.startScaleMult = oldStartMult;
         }
         else
         {

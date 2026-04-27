@@ -171,7 +171,7 @@ public class OpponentAI : MonoBehaviour
             // Garante que a IA espere correntes resolverem antes de pensar na próxima ação!
             if (CardEffectManager.Instance != null)
             {
-                yield return new WaitWhile(() => CardEffectManager.Instance.isBusy);
+                yield return new WaitWhile(() => CardEffectManager.Instance.isBusy || GameManager.Instance.pendingVisualTasks > 0);
             }
 
             // Espera apenas se não estiver em simulação rápida
@@ -734,7 +734,7 @@ public class OpponentAI : MonoBehaviour
 
             if (didAttack)
             {
-                if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen);
+                if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen || GameManager.Instance.pendingVisualTasks > 0);
                 if (!useSimulationFastMode) yield return new WaitForSeconds(actionDelay + 1.0f);
             }
         }
