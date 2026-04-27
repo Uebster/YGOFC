@@ -469,7 +469,15 @@ public partial class GameManager : MonoBehaviour
 
         if (isSelectingFromHand && (rightClick || escPressed))
         {
-            FinishHandSelection(true); // Cancela a seleção
+            if (currentHandSelectionObjects != null && currentHandSelectionObjects.Count >= handSelectionMinRequired && currentHandSelectionObjects.Count < handSelectionCountRequired)
+            {
+                // O jogador atingiu o mínimo necessário e escolheu parar. Confirma a seleção parcial!
+                FinishHandSelection(false);
+            }
+            else
+            {
+                FinishHandSelection(true); // Cancela a seleção
+            }
             justCanceledSomething = true;
         }
         else if (isSelectingResponse && (rightClick || escPressed))

@@ -182,7 +182,7 @@ public partial class GameManager
 
         bool isFusionOrRitual = title.Contains("Fusão") || title.Contains("Ritual") || title.Contains("Tributo");
 
-        if (useDirectHandSelection && !forceModal && isHandOrFieldSubset && min == max && !isFusionOrRitual)
+        if (useDirectHandSelection && !forceModal && isHandOrFieldSubset && !isFusionOrRitual)
         {
             StartDirectSelection(sourceList, min, max, null, title, onSelected, category, canCancel);
             return;
@@ -223,7 +223,10 @@ public partial class GameManager
         currentHandSelectionObjects = new List<GameObject>();
         currentSelectionHighlightCategory = category;
 
-        if (UIManager.Instance != null) UIManager.Instance.ShowMessage(title);
+        string displayTitle = title;
+        if (min < max) displayTitle += " (Botão Direito p/ concluir)";
+        
+        if (UIManager.Instance != null) UIManager.Instance.ShowMessage(displayTitle);
 
         // Destaca as cartas válidas na mão E no campo
         List<GameObject> allCards = new List<GameObject>(playerHand);
@@ -261,7 +264,10 @@ public partial class GameManager
         currentHandSelectionObjects = new List<GameObject>();
         currentSelectionHighlightCategory = category;
 
-        if (UIManager.Instance != null) UIManager.Instance.ShowMessage(title);
+        string displayTitle = title;
+        if (min < max) displayTitle += " (Botão Direito p/ concluir)";
+        
+        if (UIManager.Instance != null) UIManager.Instance.ShowMessage(displayTitle);
 
         foreach (var cd in handSelectionDisplayCandidates)
         {
@@ -399,9 +405,8 @@ public partial class GameManager
             isValid = customSelectionValidator(currentDataSelection);
             Debug.Log($"[Selection] Avaliador Customizado do Ritual/Fusão aprovou esta combinação? {isValid}");
         } else {
-            isValid = currentHandSelectionObjects.Count >= handSelectionMinRequired && currentHandSelectionObjects.Count <= handSelectionCountRequired;
-            if (handSelectionCountRequired == 1 && currentHandSelectionObjects.Count == 1) isValid = true;
-            Debug.Log($"[Selection] Quantidade padrão aprovada? {isValid}");
+            isValid = currentHandSelectionObjects.Count == handSelectionCountRequired;
+            Debug.Log($"[Selection] Quantidade máxima atingida? {isValid}");
         }
 
         if (isValid)

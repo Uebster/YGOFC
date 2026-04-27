@@ -94,17 +94,24 @@ public class ChainManager
         }
 
         // Feedback Visual de Corrente
-        if (visualLinkNumber > 0 && !isDummy && DuelFXManager.Instance != null && luaCard.unityCard != null)
+        if (visualLinkNumber > 0 && !isDummy && DuelFXManager.Instance != null && luaCard.unityData != null)
         {
             Debug.Log($"[Chain] Link {visualLinkNumber}: {luaCard.unityData.name} adicionado à pilha.");
             
-            // SE A CARTA ATIVAR SEU EFEITO LÁ DO FUNDO DO CEMITÉRIO/DECK, DÁ O HIGHLIGHT!
-            if (luaCard.unityCard.isInPile && !GameManager.Instance.isSimulating)
+            CardDisplay sourceDisplay = luaCard.unityCard;
+            if (sourceDisplay == null || !sourceDisplay.gameObject.activeInHierarchy)
             {
-                yield return core.StartCoroutine(core.luaDuel.AnimateCardActivationInPileRoutine(luaCard.unityCard));
+                sourceDisplay = core.luaDuel.FindCardDisplayInPiles(luaCard.unityData);
+            }
+
+            // SE A CARTA ATIVAR SEU EFEITO LÁ DO FUNDO DO CEMITÉRIO/DECK, DÁ O HIGHLIGHT!
+            if (sourceDisplay != null && sourceDisplay.isInPile && !GameManager.Instance.isSimulating)
+            {
+                yield return core.StartCoroutine(core.luaDuel.AnimateCardActivationInPileRoutine(sourceDisplay));
             }
             
-            DuelFXManager.Instance.PlayChainLinkEffect(luaCard.unityCard, visualLinkNumber);
+            if (sourceDisplay != null)
+                DuelFXManager.Instance.PlayChainLinkEffect(sourceDisplay, visualLinkNumber);
         }
 
         // JANELA DE RESPOSTA (Speed 2/3 - Pergunta ao Oponente e depois ao Jogador)

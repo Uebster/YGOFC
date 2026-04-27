@@ -311,6 +311,18 @@ public partial class LuaDuel
 
     private string GetHintMessageString(int hintCode)
     {
+        // Traduz os códigos de descrição embutidos do YGOPro (ID * 16 + index)
+        if (hintCode > 10000)
+        {
+            int cardId = hintCode / 16;
+            if (GameManager.Instance != null && GameManager.Instance.cardDatabase != null)
+            {
+                var cData = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.password == cardId.ToString() || c.id == cardId.ToString());
+                if (cData != null) return $"Activate effect of {cData.name}?";
+            }
+            return "Activate card effect?";
+        }
+
         switch (hintCode)
         {
             case 500: return "Select monster(s) to Tribute";

@@ -96,7 +96,7 @@ Acomoda tudo o que exige Input interativo humano no tabuleiro para satisfazer re
 *   **Miras e Combate:** 
     *   `HandleAttackIndicatorHover(card, isHovering)` e `RefreshAttackIndicators()` (Mostram os ícones de cruzamento de espadas sobre cartas aptas).
     *   `CancelAttackTargeting()` (Aborta o alvo e destrói as espadas em voo).
-*   **Seleção Tátil (Hand/Field 3D):** `StartDirectSelection(...)`, `OpenDirectCardDisplaySelection(...)`, `HandleHandCardClick(card)`, `FinishHandSelection(isCancel)`. Substitui o modal genérico por cliques reais no tabuleiro.
+*   **Seleção Tátil Inteligente:** O clique direto no campo/mão usa a lógica *Power-Set* (Matemática Discreta). O método `HandleHandCardClick(card)` calcula todos os subconjuntos de uma seleção para preencher os Rituais (ex: achar a soma 8 cravada descartando o excesso). Permite encerramento antecipado com o Botão Direito (`Right-Click to Finish`) em seleções abertas ("Escolha 1 ou 2 monstros").
 *   **Seleção Tradicional (Modal UI):** `OpenCardMultiSelection(...)`, `OpenCardSelection(...)`.
 *   **Janela de Corrente:** `StartResponseSelection(...)`, `HandleResponseSelection(card)`, `CancelResponseSelection()`, `IsResponseCandidate(card)`.
 *   **Minigames Matemáticos:** `TossCoin(numberOfCoins, onResult)`, `CoinTossRoutine(...)`, `RollDice(count, requireChoice, callback)`.

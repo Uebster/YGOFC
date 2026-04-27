@@ -249,4 +249,31 @@ public partial class LuaDuel
             }
         }
     }
+
+    public CardDisplay FindCardDisplayInPiles(CardData data)
+    {
+        if (GameManager.Instance == null || data == null) return null;
+        
+        var piles = new PileDisplay[] {
+            GameManager.Instance.playerGraveyardDisplay,
+            GameManager.Instance.opponentGraveyardDisplay,
+            GameManager.Instance.playerDeckDisplay,
+            GameManager.Instance.opponentDeckDisplay,
+            GameManager.Instance.playerExtraDeckDisplay,
+            GameManager.Instance.opponentExtraDeckDisplay,
+            GameManager.Instance.playerRemovedDisplay,
+            GameManager.Instance.opponentRemovedDisplay
+        };
+
+        foreach(var pile in piles) {
+            if (pile != null && pile.contentParent != null) {
+                // Procura do topo para o fundo, garantindo pegar a cópia que acabou de cair lá!
+                for (int i = pile.contentParent.childCount - 1; i >= 0; i--) {
+                    var cd = pile.contentParent.GetChild(i).GetComponent<CardDisplay>();
+                    if (cd != null && cd.CurrentCardData == data) return cd;
+                }
+            }
+        }
+        return null;
+    }
 }

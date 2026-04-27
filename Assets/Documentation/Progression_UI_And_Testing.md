@@ -181,8 +181,10 @@ O "Laboratório Cirúrgico" para testar e comparar efeitos visuais (VFX) e sonor
 *   **Categorias de Teste:**
     *   **Auras de Pouso:** Injeta cartas mockadas (Ex: Monstro de Fusão vs Normal) para validar a tintura de cor.
     *   **Estruturas de Invocação:** Permite testar etapas individuais (Selection Icon, Field Marker, Impacto) ou a Cinemática Completa para Normal, Special, Fusion, Ritual e Tribute.
+    *   **Extração (Pop-Out Cinemático):** Avalia a saída de cartas do meio das pilhas (Deck, Extra, GY, Banish). Possui chave seletora para habilitar `Scale (Pulse)` e controla as animações diretas como "Deck -> Hand (Flip)".
     *   **Batalha e Remoção:** Crucial para testar a combinação do voo de ataque (Nativo vs Prefab) com os rastros (Shadows vs Continuous Line).
     *   **Indicadores de Status:** Valida as UIs travadas no monstro (`CanAttack`, `CannotChangePos`) e a Mira de Alvo (`TargetingSword`).
+*   **Contexto de Teste Dinâmico:** Uma chave mestre na aba superior (`[X] Jogador` / `[X] Oponente`) que inverte a perspectiva de 100% dos testes abaixo dela, permitindo ver na hora como o voo, a extração e as partículas se comportam vindo do lado inverso do tabuleiro.
 *   **Segurança de Clique (`DelaySetAttacker`):** Como os botões da GUI coexistem com o Raycast do tabuleiro, testes de Seleção de Ataque possuem uma Corrotina que espera 1 frame (`WaitForEndOfFrame`) antes de ativar a carta. Isso impede que o mesmo clique que ativou o teste também dispare um ataque real acidental no tabuleiro abaixo.
 
 ### 9.5.6 Gerador de Checklist QA LUA (`generate_qa_checklist.py`)

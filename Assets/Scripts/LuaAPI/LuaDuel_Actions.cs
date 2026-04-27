@@ -261,21 +261,7 @@ public partial class LuaDuel
             CardDisplay sourceDisplay = null;
             CardData sData = sourceEff.owner.unityData;
             
-            var pGY = GameManager.Instance.playerGraveyardDisplay;
-            var oGY = GameManager.Instance.opponentGraveyardDisplay;
-            
-            if (pGY != null && pGY.contentParent != null) {
-                foreach(Transform child in pGY.contentParent) {
-                    var cd = child.GetComponent<CardDisplay>();
-                    if (cd != null && cd.CurrentCardData == sData) sourceDisplay = cd;
-                }
-            }
-            if (sourceDisplay == null && oGY != null && oGY.contentParent != null) {
-                foreach(Transform child in oGY.contentParent) {
-                    var cd = child.GetComponent<CardDisplay>();
-                    if (cd != null && cd.CurrentCardData == sData) sourceDisplay = cd;
-                }
-            }
+            sourceDisplay = CardEffectManager.Instance.luaDuel.FindCardDisplayInPiles(sData);
             if (sourceDisplay == null && sourceEff.owner.unityCard != null && sourceEff.owner.unityCard.isOnField) 
                 sourceDisplay = sourceEff.owner.unityCard;
 

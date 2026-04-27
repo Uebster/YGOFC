@@ -83,7 +83,7 @@ Os Hooks são os "radares" do C# chamados automaticamente pela Engine. No novo s
 *   **`OnCardSentToGraveyard(CardData, isOwnerPlayer, fromLocation, reason)`**
     *   *Momento:* Assim que uma carta aterrissa no GY.
     *   *LUA:* Dispara `EVENT_TO_GRAVE (1014)`.
-    *   *Contexto:* Os parâmetros `fromLocation` e `reason` são passados para o evento Lua, permitindo que os scripts verifiquem "se esta carta foi enviada do campo para o cemitério por batalha".
+    *   *Contexto:* Os parâmetros `fromLocation` e `reason` são passados para o evento Lua. Se um efeito dessa carta desencadear no Cemitério, o C# a encontrará visualmente na pilha, a trará para a frente e iniciará o pulso luminoso (Veja Seção 5.8.16).
 *   **`OnCardLeavesField(CardDisplay card)`**
     *   *Momento:* Milissegundos antes da carta física ser destruída/banida/retornada.
     *   *LUA:* Dispara `EVENT_LEAVE_FIELD (1015)`.
@@ -228,7 +228,8 @@ O programador de cartas não precisa criar UIs. Ele chama funções Lua (`Duel.S
 *   **Digitação de Nome de Carta:** `GlobalCardSearchUI.Instance.Show(...)`
 *   **Textos e Escolhas Arbitrárias:** `MultipleChoiceUI.Instance.Show(...)`
 *   **Teclado Numérico Interativo (Numpad):** `NumericSelectionUI.Instance.Show(...)`
-*   **Painéis Visuais (Atributos, Raças, ATK/DEF):** `AnnounceSelectionUI.Instance.Show...(...)` (Substitui UIs genéricas por painéis iconográficos ricos).
+*   **Painéis Visuais (Atributos, Raças, ATK/DEF):** `AnnounceSelectionUI.Instance.Show...(...)`
+*   **Tradução de Dicas (`HINTMSG`):** Se o script chamar `Duel.Hint` com a lógica matemática de OCGCore `(ID * 16) + Index`, o `LuaDuel_UI.cs` fará a engenharia reversa, descobrindo o nome real da carta no Banco de Dados para imprimir: *"Activate effect of [Nome da Carta]?"* na UI.
 
 ### 5.6.3 O Bypass de IA e Simulação
 *   Se o jogador que precisa fazer uma escolha for a IA (`player == 1`) ou o jogo estiver em simulação (`isSimulating`), a `LuaAPI` não abre a UI. Em vez disso, ela chama um método da IA (`OpponentAI.Instance.SelectLuaTargets`) ou escolhe a primeira opção válida para que o duelo prossiga sem interrupção.
@@ -366,6 +367,13 @@ Muitos scripts LUA precisam armazenar escolhas feitas pelo jogador (como declara
 *   **O Problema (Amnésia):** Cartas como *Abyssal Designator* usavam `e:SetLabel(att)` para guardar o atributo escolhido. Como a implementação C# de `LuaEffect.cs` possuía apenas Stubs vazios para esses métodos, a variável era descartada, e o filtro recebia `0`, falhando silenciosamente na hora de procurar a carta no deck.
 *   **A Solução:** Implementação das propriedades internas `_label` e `_labelObject` no `LuaEffect.cs` e a correção do despachante `GetChainInfo` no `LuaDuel.cs` para transportar o `targetParam` e `targetPlayer` corretamente.
 *   **O Impacto:** A Engine tornou-se capaz de sustentar o "Contexto" (Context State) de uma carta, permitindo que a IA ou o jogador retenham escolhas arbitrárias na RAM e apliquem filtros precisos sem modificar a estrutura OCGCore original.
+
+### 5.8.16 O Brilho Universal no Cemitério (Ghostbusters)
+Saber de onde um efeito se originou visualmente é vital para não confundir o jogador. Efeitos no cemitério causavam danos invisíveis e silenciosos.
+*   **O Problema da Destruição:** Cartas como *Black Pendant* e *Sangan* ativam seus efeitos apenas quando `EVENT_TO_GRAVE` é chamado. Quando este gatilho é ouvido pelo C#, o GameObject 3D do tabuleiro já foi limpo e apagado pelo `MoveCard()`, fazendo o Link da Corrente perder o referencial para instanciar o holograma de partículas.
+*   **A Solução (FindCardDisplayInPiles):** A Engine agora atua como uma caça-fantasmas. O `ChainManager` possui a diretriz de que, se a carta alvo não estiver ativa no tabuleiro (`unityCard == null` ou desativada), ele invocará `FindCardDisplayInPiles(CardData)`.
+*   **O "Highlight" LUA:** A função vasculha silenciosamente todas as pilhas (`GraveyardDisplay`, `RemovedDisplay`, etc.) de cima para baixo. Ao achar a alma da carta morta, ele a move provisoriamente para o topo renderizado, chama o `AnimateCardActivationInPileRoutine` (onde a carta incha em 1.4x emitindo uma forte luz Ciano Neon) e atrela o letreiro de "Link 1" sobre ela!
+*   **O Impacto:** Nenhuma ativação fora de campo será mais "fria". Seja um efeito de "Banish" de uma armadilha morta, ou um buscador, tudo pisca com clareza cristalina no cemitério para ambos os jogadores.
 
 ---
 

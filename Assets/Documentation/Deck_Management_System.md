@@ -165,6 +165,19 @@ A lista reflete um formato clássico (baseado em 2005/Goat Format). Estas restri
 *   Creature Swap, Last Turn, Manticore of Darkness, Marauding Captain, Morphing Jar #2, Nobleman of Crossout, Reinforcement of the Army, Upstart Goblin, Cyber Dragon, A Feint Plan, Enemy Controller, Messenger of Peace, Level Limit - Area B, Gravity Bind, Miracle Dig, Good Goblin Housekeeping, Needle Worm, Apprentice Magician, Magician of Faith, Deck Devastation Virus, Second Coin Toss, Reasoning.
 
 ---
+### 8.12 A Cinemática de Extração (Pop-Out)
+A Engine nunca remove cartas de forma invisível das pilhas (Deck, Extra Deck, GY, Banished). Ela utiliza um "Pré-Voo" para criar imersão.
+* **Fase 1 (Slide e Scale):** Um holograma (Ghost) travado para interações (`isGhostImage = true`) é instanciado na penúltima camada da pilha de origem. Ele desliza pelo eixo X, saindo "debaixo" do baralho e ganha um Scale de 1.3x para se aproximar da câmera.
+* **Fase 2 (Flip 3D):** Se o destino exigir que a carta seja exibida ao oponente, a corrotina vira a carta no ar, revelando a textura frontal após um tempo de carregamento seguro.
+* **Fase 3 (Pausa Dramática):** A engine congela por **≈ 0.6s** no ar. É o tempo para o cérebro humano ler qual carta foi extraída do Cemitério ou Baralho.
+* **Fase 4 (O Destino ou Recuo):** O holograma cede seu lugar (Handoff) para a corrotina de voo (`PlayCardFlight`) que viaja para a Mão/Campo. Se o `ReturnToTop` estiver ligado, ela encolhe e desliza de volta para o topo da pilha origem antes do destino final.
+* **O Bypass de Topo (Fallback Inteligente):** Se o script constatar que a carta extraída já era a do Topo (Index máximo) ou se o modo de Extração estiver desligado no Menu, a Engine C# não fará o deslize no eixo X. Ela apenas dará um "salto seco" no eixo Y (ex: 40px), provando que não há nada em cima dela.
+
+### 8.13 Revelação de Mão e Embaralhamento Oculto (Hand Shuffle)
+Quando o jogador usa efeitos de busca cega que puxam cartas específicas (Ex: *Sangan* adicionando um monstro do Deck), o LUA nativo pede para confirmar a carta.
+* **Gatilho:** A Unity intercepta a chamada de `Duel.ConfirmCards()`.
+* **A Mão Viva:** Em vez de abrir uma janela na tela, o jogo permite que a carta voe fechada até a mão do jogador. Assim que ela aterrissa e se acomoda, ela sofre um `ShowFront(true)` automático, revelando sua face na própria mão do jogador para o oponente ler por **≈ 1.5s**.
+* **O Embaralhamento Tático:** Para impedir que o oponente rastreie onde a carta buscada ficou ("Hand Tracking"), assim que o tempo de leitura acaba, a carta vira para baixo e o `GameManager.ShuffleHand()` é acionado. O leque de cartas cruza posições aleatórias, blindando as táticas do jogador.
 
 ## 8.2 Sistema de Importação e Exportação
 

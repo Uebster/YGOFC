@@ -74,7 +74,7 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **3.2.4** `GameManager_Decks.cs` (Pilhas e Saque: `DrawCard`, `ShuffleDeck`, `InitializePlayerDeck`, `ViewGraveyard`)
     *   **3.2.5** `GameManager_Stats.cs` (Vida e UI: `DamagePlayer`, `UpdateCardViewer`, `RefreshAllCardsVisuals`, `Dev_InjectDependencies`)
     *   **3.2.6** `GameManager_Summons.cs` (Invocações: `TrySummonMonster`, `PerformSpecialSummon`, `BeginFusionSummon`, `SpawnToken`)
-    *   **3.2.7** `GameManager_Selections.cs` (Miras e Minigames: `RefreshAttackIndicators`, `OpenCardMultiSelection`, `TossCoin`, `RollDice`)
+*   **3.2.7** `GameManager_Selections.cs` (Miras e Minigames: `RefreshAttackIndicators`, `Smart Select & Power-Set`, `TossCoin`, `RollDice`)
 *   **3.3.** O Sistema de Fases e Turnos (`PhaseManager.cs`)
     *   **3.3.1** O Ciclo de Fases (`GamePhase` Enum, Hooks Automáticos e Manuais)
     *   **3.3.2** UI de Fases (Neon Effect e Avanço Manual)
@@ -104,6 +104,7 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
 *   **4.5.** Sistema de Special Summon
     *   **4.5.1** Fluxo de Código (`PerformSpecialSummon`, `PositionSelectionUI`, `FinalizeSummon`)
     *   **4.5.2** Tipos de Special Summon Suportados
+*   **4.6.** Interfaces de Seleção (Smart Select & Power-Set, Right-Click to Finish, View-Only)
 
 ### 5. 📖 `Card_Programming_API.md` (A Bíblia de Programação de Cartas)
 *   **5.1.** Arquitetura do Sistema de Efeitos (`CardEffectManager` e MoonSharp)
@@ -141,13 +142,16 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **5.7.1** Como Executar
     *   **5.7.2** As Duas Fases de Validação (Compile-Time e Runtime)
     *   **5.7.3** O Relatório Agrupado
+*   **5.8.** Casos de Estudo e Soluções Arquiteturais (Breakthroughs)
+    *   **5.8.16** O Brilho Universal no Cemitério (Ghostbusters)
+*   **5.9.** Core Pillars e A Regra Brutal das Constantes (Metatable Interceptor)
 *   **5.10.** Dicionário OCGCore: A Anatomia das Variáveis LUA (e, tp, eg, chk, etc)
 
 ### 6. 🧠 `AI_And_Characters.md` (Inteligência Artificial e Personagens)
 *   **6.1.** Design da Inteligência Artificial (`OpponentAI.cs`)
     *   **6.1.1** O Sistema de Pontuação (`Fear Score`, `Board Value`, `Panic Threshold`)
     *   **6.1.2** Perfis de Personalidade (Arquétipos Agressivo, Controle, etc.)
-    *   **6.1.3** As Regras de Ouro (Bypass LUA, Heurísticas de Combate e Gestão de Recursos)
+*   **6.1.3** As Regras de Ouro (Bypass LUA, Heurísticas de Combate, Gestão de Recursos e Paciência Visual)
     *   **6.1.4** Lógicas Específicas e Win-Cons (Interpretação de Categorias LUA)
     *   **6.1.5** Estrutura do Loop de Decisão (`AITurnRoutine`)
 *   **6.2.** Sistema de Personagens e Decks (`CharacterDatabase.cs`)
@@ -177,6 +181,8 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **8.3.1** O Gerador Procedural (`InitialDeckBuilder.cs`)
     *   **8.3.2** Estrutura das 5 Pools (Fodder, Warriors, Ace, Spells, Traps)
     *   **8.3.3** Regras de Filtragem Internas (`forbiddenIds`, Limite de Nível)
+*   **8.12.** A Cinemática de Extração (Pop-Out) e Bypass de Topo
+*   **8.13.** Revelação de Mão e Embaralhamento Oculto (Hand Shuffle)
 
 ### 9. 🏆 `Progression_UI_And_Testing.md` (Progressão, Recompensas e Visuais)
 *   **9.1.** Sistema de Pontuação e Drop Rate (`DuelScoreManager.cs`, `RewardPanelUI.cs`, Cálculo Base, Bônus, Ranks S+ a F, Drop Pools JSON)
@@ -194,7 +200,7 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **9.5.2** Tooltip de Mouse Dinâmico (`MouseTooltipUI.cs`)
     *   **9.5.3** Painel de Desenvolvedor (`FullTestManager.cs`, Toggles, Dev Card Menu, Ctrl+T)
     *   **9.5.4** In-Game Debug Console (`InGameDebugConsole.cs`, Ctrl+Shift+D)
-    *   **9.5.5** Laboratório de Teste de Efeitos (`EffectTestManager.cs`, Ctrl+E, Categorias de Teste, Delays de Clique)
+*   **9.5.5** Laboratório de Teste de Efeitos (`EffectTestManager.cs`, Ctrl+E, Extração Cinemática, Contexto de Teste Dinâmico)
     *   **9.5.6** Gerador de Checklist QA (`generate_qa_checklist.py`, Python Tool)
     *   **9.5.7** Bloco de Notas do Desenvolvedor (`NotepadWindow.cs`, Ctrl+G)
 *   **9.6.** Simulador de Caos (`SimulationManager.cs`, Bypass de UI, Visual Mode 1.5x, Fast Mode 50x)
@@ -202,7 +208,7 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **9.7.1** Arquitetura de Temas (Console e Cartuchos)
     *   **9.7.2** Configurando o Relógio de Turnos (`TurnClockUI`, Rotação Dinâmica, Camadas e Pivot)
     *   **9.7.3** Minigames Dinâmicos (Moeda e Dados)
-*   **9.8.** Efeitos Visuais e Sonoros (A Arquitetura Modular do `DuelFXManager`)
+*   **9.8.** Efeitos Visuais e Sonoros (A Arquitetura Modular do `DuelFXManager`, Extração Cinemática, Pacotes de Invocação)
     *   **9.8.1** `DuelFXManager.cs` (Core, Inspector e Som)
     *   **9.8.2** `DuelFXManager_Combat.cs` (Ataques, Dano e Destruição)
     *   **9.8.3** `DuelFXManager_Summons.cs` (Invocações, Fichas e Cinemáticas)

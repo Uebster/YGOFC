@@ -122,8 +122,9 @@ A Invocação Especial permite colocar monstros no campo sem usar a Invocação 
 ## 4.6 Interfaces de Seleção (Direct Selection vs UI Panels)
 A Engine suporta múltiplos fluxos visuais para a seleção de alvos e invocações complexas.
 
-*   **Seleção Direta (Direct Hand/Field Selection):** Se a opção `GameManager.useDirectHandSelection` estiver ativada, a engine evita abrir painéis de interface (`ShowCardSelection`) sempre que os alvos estiverem visíveis no tabuleiro ou na mão. Em vez disso, as cartas elegíveis ficam piscando (`SelectionState.Available`), e ao clicar, ficam estáticas (`SelectionState.Selected`). A confirmação é feita via Popup (Sim/Não) se `confirmHandSelection` for verdadeiro.
-    *   **Ritual:** Usa Seleção Direta tanto para o Monstro de Ritual (na mão) quanto para os Tributos (mão/campo).
+*   **Seleção Direta (Smart Select & Power-Set):** Se a opção `GameManager.useDirectHandSelection` estiver ativada, a engine evita modais pesados. As cartas piscam na mão e campo (`SelectionState.Available`). 
+    *   **Ritual e Fusão Exata:** O C# utiliza um algoritmo de subconjuntos (*Power-Set*). Ao clicar numa nova carta, o motor varre as combinações matemáticas possíveis. Se a soma bater exatamente com o Nível do ritual, ele remove silenciosamente o "peso morto" (cartas antigas desnecessárias) da sua mão, otimizando o sacrifício de forma invisível.
+    *   **Conclusão Antecipada (Right-Click):** Para efeitos que pedem "de 1 a 3 monstros", ao atingir o mínimo (1), o jogador pode apertar o Botão Direito ou ESC para fechar a seleção parcial com sucesso, em vez de cancelar a jogada.
     *   **Fusão:** Usa a Caixa de Seleção (`ShowCardSelection`) para escolher o Monstro de Fusão, pois ele reside no *Extra Deck* (que é uma pilha invisível, não clicável individualmente). Porém, os *Materiais* são selecionados via Seleção Direta no tabuleiro/mão.
 *   **Painéis Customizados (Custom UI):** As opções `useCustomFusionUI` e `useCustomRitualUI` desviam o fluxo para painéis específicos que mostram todas as etapas de uma vez (Ex: Monstro e Tributos na mesma janela).
 *   **Single Target Auto-Select:** Se houver apenas 1 alvo válido, a engine pula a seleção para poupar cliques. Isso pode ser desativado ativando `alwaysConfirmSingleTarget` no GameManager, forçando a seleção visual e confirmação mesmo para opções únicas.

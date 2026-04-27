@@ -47,6 +47,11 @@ Como a engine é baseada em scripts que esperam input do jogador, a IA precisa d
 *   **Não Devolver o que foi Roubado:** Se a IA usa *Change of Heart*, ela tentará sacrificar o monstro roubado na Main Phase 2.
 *   **Suicide Crash (Busca):** A rotina `FindBestTarget` permite que a IA ataque um monstro mais forte com um "Floater" (*Sangan*, *Mystic Tomato*) de forma proposital para ativar seu efeito de busca.
 
+#### Paciência Visual (`pendingVisualTasks`)
+A IA do jogo age em frações de milissegundos, o que poderia engolir as animações visuais.
+*   A flag global `GameManager.Instance.pendingVisualTasks` é incrementada toda vez que o `DuelFXManager` entra em um voo complexo ou Cinemática (Ex: Puxar do Deck, Fusões, Retornos). A rotina central da IA e o encerramento das fases utilizam `yield return new WaitWhile(...)` forçando o "Cérebro" a cruzar os braços até que cada animação termine organicamente na tela.
+
+
 ### 6.1.4 Lógicas Específicas de Cartas e Condições de Vitória (Win-Cons)
 A IA evoluiu de decisões guiadas por IDs para uma interpretação de **categorias de efeito** definidas no Lua.
 *   **Autonomia de Efeitos:** `EvaluateSpellActions` e `EvaluateFieldMonsterActions` leem as `categories` de um `LuaEffect` (ex: `CATEGORY_DESTROY`, `CATEGORY_DRAW`). Isso permite que a IA pontue e utilize cartas novas sem precisar de código C# específico para elas.
