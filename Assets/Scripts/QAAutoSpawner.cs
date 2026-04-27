@@ -14,6 +14,7 @@ public class QAAutoSpawner : MonoBehaviour
     
     // Rastreia a linha atual para facilitar o "Próximo"
     private static int currentLineIndex = -1;
+    private static bool filterReviewOnly = false; // Alterna a busca
 
     // --- INTERFACE DRAGGABLE (IMGUI) ---
     private bool showWindow = false;
@@ -87,9 +88,15 @@ public class QAAutoSpawner : MonoBehaviour
         GUILayout.Label("🛠️ QA Auto-Spawner (Ctrl+Q Ocultar)", titleStyle);
         
         GUILayout.Space(5);
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Filtro de Busca:", GUILayout.Width(100));
+        if (GUILayout.Button(filterReviewOnly ? "<color=orange>⚠️ APENAS REVISÃO [R]</color>" : "<color=white>✅ PENDENTES [ ]</color>", btnStyle)) { filterReviewOnly = !filterReviewOnly; currentLineIndex = -1; }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
         if (string.IsNullOrEmpty(currentTestCardId))
         {
-            GUILayout.Label("Pronto para iniciar a homologação LUA.", titleStyle);
+            GUILayout.Label(filterReviewOnly ? "Procurando cartas com tag [R]..." : "Procurando cartas com tag [ ]...", titleStyle);
             GUILayout.Space(10);
             if (GUILayout.Button("INICIAR BATERIA DE TESTES", btnStyle))
                 TestNextCard();
@@ -196,7 +203,8 @@ public class QAAutoSpawner : MonoBehaviour
 
         for (int i = startIndex; i < lines.Length; i++)
         {
-            if (lines[i].Contains("- [ ]") || lines[i].Contains("- [R]"))
+            bool isMatch = filterReviewOnly ? lines[i].Contains("- [R]") : lines[i].Contains("- [ ]");
+            if (isMatch)
             {
                 int idStart = lines[i].IndexOf('`') + 1;
                 int idEnd = lines[i].IndexOf('`', idStart);
@@ -247,7 +255,8 @@ public class QAAutoSpawner : MonoBehaviour
 
         for (int i = startIndex; i >= 0; i--)
         {
-            if (lines[i].Contains("- [") && lines[i].Contains("`"))
+            bool isMatch = filterReviewOnly ? lines[i].Contains("- [R]") : lines[i].Contains("- [ ]");
+            if (isMatch && lines[i].Contains("`"))
             {
                 int idStart = lines[i].IndexOf('`') + 1;
                 int idEnd = lines[i].IndexOf('`', idStart);

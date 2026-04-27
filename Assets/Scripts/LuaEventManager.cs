@@ -111,9 +111,21 @@ public class LuaEventManager
         {
             if (core.CanActivateEffect(lc, e, lc.GetControler(), triggerArgs))
             {
-                bool chainDone = false;
-                core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, triggerArgs, lc.GetControler(), () => chainDone = true));
-                yield return new WaitUntil(() => chainDone);
+                    if ((e.type & 0x0800) != 0) // EFFECT_TYPE_CONTINUOUS
+                    {
+                        if (e.operationFunc != null)
+                        {
+                            bool opDone = false;
+                            core.StartCoroutine(RunCoroutineAndSetDone(core.RunLuaCoroutine(e.operationFunc, e, lc.GetControler(), triggerArgs, -1), () => opDone = true));
+                            yield return new WaitUntil(() => opDone);
+                        }
+                    }
+                    else
+                    {
+                        bool chainDone = false;
+                        core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, triggerArgs, lc.GetControler(), () => chainDone = true));
+                        yield return new WaitUntil(() => chainDone);
+                    }
             }
         }
         triggerTasks--;
@@ -346,7 +358,17 @@ public class LuaEventManager
 
         // Remove efeitos contínuos
         LuaCard lc = core.activeLuaCards.ContainsKey(card) ? core.activeLuaCards[card] : null;
-        if (lc != null && core.continuousFieldEffects.RemoveAll(e => e.owner == lc) > 0)
+        if (lc == null) lc = new LuaCard(card);
+
+        // Dispara EVENT_LEAVE_FIELD (1015) ANTES da carta perder seus vínculos
+        var leaveEffects = lc.registeredEffects.FindAll(e => e.code == 1015 && (e.type & 0x0001) != 0); // EFFECT_TYPE_SINGLE
+        if (leaveEffects.Count > 0)
+        {
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, leaveEffects, lc));
+        }
+        TriggerLuaEvent(1015, lc);
+
+        if (core.continuousFieldEffects.RemoveAll(e => e.owner == lc) > 0)
         {
             core.ApplyAllContinuousEffects();
         }

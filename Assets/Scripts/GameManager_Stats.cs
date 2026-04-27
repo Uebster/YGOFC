@@ -153,6 +153,30 @@ public partial class GameManager
             if (duelFieldUI.opponentSpellZones != null) foreach (var z in duelFieldUI.opponentSpellZones) if (z != null && z.childCount > 0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
         }
 
+        // COLETAR TODAS AS AURAS ATIVAS NO CAMPO (FIELD e EQUIP)
+        List<LuaEffect> activeAuras = new List<LuaEffect>();
+        if (CardEffectManager.Instance != null)
+        {
+            foreach (var go in allCards)
+            {
+                CardDisplay auraSource = go.GetComponent<CardDisplay>();
+                if (auraSource != null && auraSource.isOnField && !auraSource.isFlipped)
+                {
+                    LuaCard sourceLc = CardEffectManager.Instance.EnsureCardScriptLoaded(auraSource) ?? new LuaCard(auraSource);
+                    if (sourceLc != null && sourceLc.registeredEffects != null)
+                    {
+                        foreach (var eff in sourceLc.registeredEffects)
+                        {
+                            if (eff.type == 2 || eff.type == 4) // EFFECT_TYPE_FIELD (2) ou EFFECT_TYPE_EQUIP (4)
+                            {
+                                activeAuras.Add(eff);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         foreach (var go in allCards)
         {
             if (go != null)
@@ -199,15 +223,20 @@ public partial class GameManager
                         cd.currentAtk = baseAtk;
                         cd.currentDef = baseDef;
                         
-                        // 2. Adiciona os bônus Globais (Auras / Field Spells)
-                        CardLocation loc = cd.isOnField ? CardLocation.Field : CardLocation.Hand;
-                        cd.currentAtk += CardEffectManager.Instance.auraManager.GetStatModifier(lc, "ATK", loc);
-                        cd.currentDef += CardEffectManager.Instance.auraManager.GetStatModifier(lc, "DEF", loc);
-
-                        // 3. Aplica os bônus de Equipamento por cima dos bônus globais
-                        if (CardEffectManager.Instance != null && cd.isOnField)
+                        // 2. Modificadores FIELD (Auras Globais LUA e Equipamentos)
+                        foreach (var aura in activeAuras)
                         {
-                            CardEffectManager.Instance.RecalculateStats(cd);
+                            if (IsTargetOfAura(aura, lc))
+                            {
+                                int val = EvaluateEffectValue(aura, aura.owner, lc);
+                                if (aura.code == 1 || aura.code == 100) cd.currentAtk += val;
+                                else if (aura.code == 4 || aura.code == 104) cd.currentDef += val;
+                                else if (aura.code == 2 || aura.code == 101) cd.currentAtk = val;
+                                else if (aura.code == 5 || aura.code == 105) cd.currentDef = val;
+                                else if (aura.code == 130) cd.currentLevel += val;
+                                else if (aura.code == 131) cd.currentLevel = val;
+                                else if (aura.code == 203) cd.hasPiercing = true; // EFFECT_PIERCE
+                            }
                         }
 
                         // 4. Aplica modificadores SINGLE Finais
@@ -217,21 +246,13 @@ public partial class GameManager
                             foreach(var eff in singleEffects)
                             {
                                 int val = 0;
-                                object valObj = eff.GetValue();
-                                if (valObj is double || valObj is long) val = System.Convert.ToInt32(valObj);
-                                else if (valObj is MoonSharp.Interpreter.Closure valClosure)
-                                {
-                                    try {
-                                        var res = CardEffectManager.Instance.luaEngine.Call(valClosure, eff, lc);
-                                        if (res.Type == MoonSharp.Interpreter.DataType.Number) val = (int)res.Number;
-                                    } catch { }
-                                }
-
-                                if (eff.code == 3) cd.currentAtk = val; // SET_ATTACK_FINAL
-                                else if (eff.code == 6) cd.currentDef = val; // SET_DEFENSE_FINAL
+                                if (eff.code == 3 || eff.code == 102) cd.currentAtk = EvaluateEffectValue(eff, lc, lc);
+                                else if (eff.code == 6 || eff.code == 106) cd.currentDef = EvaluateEffectValue(eff, lc, lc);
+                                else if (eff.code == 203) cd.hasPiercing = true; // EFFECT_PIERCE
                             }
                         }
                         
+                        CardLocation loc = cd.isOnField ? CardLocation.Field : CardLocation.Hand;
                         cd.currentLevel = cd.originalLevel + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "LEVEL", loc);
                     }
                     
@@ -509,5 +530,52 @@ public partial class GameManager
             Debug.Log($"Dev: Trocando para {nextChar.name} (Ato {actIndex+1})");
             StartDuel(nextChar, (actIndex * 10) + oppIndex + 1);
         }
+    }
+
+    // Intérprete Nativo de Valores (Calcula funções LUA em tempo real)
+    private int EvaluateEffectValue(LuaEffect eff, LuaCard sourceCard, LuaCard targetCard)
+    {
+        int val = 0;
+        object valObj = eff.GetValue();
+        if (valObj is double || valObj is long) val = System.Convert.ToInt32(valObj);
+        else if (valObj is MoonSharp.Interpreter.Closure valClosure && CardEffectManager.Instance != null)
+        {
+            try {
+                var res = CardEffectManager.Instance.luaEngine.Call(valClosure, eff, targetCard);
+                if (res.Type == MoonSharp.Interpreter.DataType.Number) val = (int)res.Number;
+                else if (res.Type == MoonSharp.Interpreter.DataType.Boolean && res.Boolean) val = 1;
+            } catch { }
+        }
+        return val;
+    }
+
+    // Filtro OCGCore Absoluto (Sabe quem deve ser afetado pela Aura)
+    private bool IsTargetOfAura(LuaEffect aura, LuaCard targetCard)
+    {
+        if (aura.owner == null || targetCard == null) return false;
+        
+        if (aura.conditionFunc != null && CardEffectManager.Instance != null && aura.conditionFunc != CardEffectManager.Instance.dummyClosureTrue)
+        {
+            try {
+                var res = CardEffectManager.Instance.luaEngine.Call(aura.conditionFunc, aura);
+                if (res.Type == MoonSharp.Interpreter.DataType.Boolean && !res.Boolean) return false;
+            } catch { return false; }
+        }
+        if (aura.type == 4) // Equipamento Físico
+        {
+            if (CardEffectManager.Instance != null) {
+                LuaCard equippedToLua = aura.owner.GetEquipTarget(); // Força a Mágica a memorizar/cachear o alvo no LUA
+                CardDisplay equippedTo = equippedToLua != null ? equippedToLua.unityCard : null;
+                if (equippedTo != null && targetCard.unityCard != null && equippedTo == targetCard.unityCard) return true;
+            } return false;
+        }
+        int sourcePlayer = aura.owner.GetControler(); int targetPlayer = targetCard.GetControler(); int targetLoc = targetCard.GetLocation();
+        int allowedLocs = sourcePlayer == targetPlayer ? aura.targetRangeSelf : aura.targetRangeOpponent;
+        if ((allowedLocs & targetLoc) == 0) return false;
+        
+        if (aura.targetFunc != null && CardEffectManager.Instance != null && aura.targetFunc != CardEffectManager.Instance.dummyClosureTrue)
+        {
+            try { var res = CardEffectManager.Instance.luaEngine.Call(aura.targetFunc, aura, targetCard); if (res.Type == MoonSharp.Interpreter.DataType.Boolean && !res.Boolean) return false; } catch { return false; }
+        } return true;
     }
 }

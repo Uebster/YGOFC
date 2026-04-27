@@ -431,6 +431,8 @@ public partial class GameManager : MonoBehaviour
     private System.Action responseCancelCallback;
     private bool cardViewerShowingBack = false;
 
+    private GamePhase _lastTrackedPhase = GamePhase.Draw;
+
     void Awake()
     {
         Instance = this;
@@ -484,6 +486,13 @@ public partial class GameManager : MonoBehaviour
         if (turnCount == 1 && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
         {
             CancelAttackTargeting();
+        }
+        
+        // Rastreador de Fases para Recálculo de Status Dinâmicos (Ex: Banner of Courage na Battle Phase)
+        if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != _lastTrackedPhase)
+        {
+            _lastTrackedPhase = PhaseManager.Instance.currentPhase;
+            RefreshAllCardsVisuals();
         }
     }
 

@@ -565,11 +565,13 @@ public class LuaEngineCore
         // Constantes de Arquétipo (Setcodes)
         luaEngine.Globals["SET_AMAZONESS"] = 0x04;
         luaEngine.Globals["SET_ARCHFIEND"] = 0x45;
+        luaEngine.Globals["SET_BATTERYMAN"] = 0x28;
         luaEngine.Globals["SET_GAIA_THE_FIERCE_KNIGHT"] = 0x1048;
         
         luaEngine.Globals["CARD_JINZO"] = 77585513;
         luaEngine.Globals["CARD_HARPIE_LADY_SISTERS"] = 12206212;
         luaEngine.Globals["CARD_NECROVALLEY"] = 47355498;
+        luaEngine.Globals["CARD_BLUEEYES_SPIRIT"] = 89399912;
 
         // Constantes de Status Oficiais do OCGCore
         luaEngine.Globals["EFFECT_IMMUNE_EFFECT"] = 1;
@@ -948,9 +950,9 @@ public class LuaEngineCore
         luaEngine.Globals["TIMING_DRAW_PHASE"] = 0x1;
         luaEngine.Globals["TIMING_STANDBY_PHASE"] = 0x2;
         luaEngine.Globals["TIMING_MAIN_END"] = 0x4;
-        luaEngine.Globals["TIMING_BATTLE_END"] = 0x10;
-        luaEngine.Globals["TIMING_BATTLE_END"] = 0x400000;
         luaEngine.Globals["TIMING_BATTLE_START"] = 0x8;
+        luaEngine.Globals["TIMING_DAMAGE_STEP"] = 0x10;
+        luaEngine.Globals["TIMING_BATTLE_END"] = 0x400000;
         luaEngine.Globals["TIMING_END_PHASE"] = 0x20;
         luaEngine.Globals["TIMING_SUMMON"] = 0x40;
         luaEngine.Globals["TIMING_SPSUMMON"] = 0x80;

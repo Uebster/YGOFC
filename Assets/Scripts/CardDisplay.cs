@@ -367,6 +367,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         currentAtk = originalAtk;
         currentDef = originalDef;
         currentLevel = originalLevel;
+        hasPiercing = false;
         DisplayCardDetails();
     }
 

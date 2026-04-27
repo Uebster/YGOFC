@@ -19,6 +19,9 @@ public partial class GameManager
     // SELECTIONS
     // ==============================================================================
 
+    private bool handSelectionCanCancel = true;
+    private int handSelectionMinRequired = 0;
+
     public void CancelAttackTargeting()
     {
         if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
@@ -159,7 +162,7 @@ public partial class GameManager
     }
 
     // Método para Seleção Múltipla
-    public void OpenCardMultiSelection(List<CardData> sourceList, string title, int min, int max, System.Action<List<CardData>> onSelected, HighlightCategory category = HighlightCategory.GenericTarget, bool forceModal = false)
+    public void OpenCardMultiSelection(List<CardData> sourceList, string title, int min, int max, System.Action<List<CardData>> onSelected, HighlightCategory category = HighlightCategory.GenericTarget, bool forceModal = false, bool canCancel = true)
     {
         if (isSimulating)
         {
@@ -181,7 +184,7 @@ public partial class GameManager
 
         if (useDirectHandSelection && !forceModal && isHandOrFieldSubset && min == max && !isFusionOrRitual)
         {
-            StartDirectSelection(sourceList, min, max, null, title, onSelected, category);
+            StartDirectSelection(sourceList, min, max, null, title, onSelected, category, canCancel);
             return;
         }
 
@@ -189,7 +192,7 @@ public partial class GameManager
         {
             if (CardSelectionUI.Instance != null)
             {
-                CardSelectionUI.Instance.Show(sourceList, title, min, max, onSelected, category);
+                CardSelectionUI.Instance.Show(sourceList, title, min, max, onSelected, category, canCancel);
             }
             else if (UIManager.Instance != null)
             {
@@ -208,11 +211,13 @@ public partial class GameManager
 
     // --- LÓGICA DE SELEÇÃO DIRETA DA MÃO ---
 
-    private void StartDirectSelection(List<CardData> candidates, int min, int max, System.Func<List<CardData>, bool> validator, string title, System.Action<List<CardData>> callback, HighlightCategory category = HighlightCategory.GenericTarget)
+    private void StartDirectSelection(List<CardData> candidates, int min, int max, System.Func<List<CardData>, bool> validator, string title, System.Action<List<CardData>> callback, HighlightCategory category = HighlightCategory.GenericTarget, bool canCancel = true)
     {
         isSelectingFromHand = true;
         handSelectionCandidates = candidates;
         handSelectionCountRequired = max;
+        handSelectionMinRequired = min;
+        handSelectionCanCancel = canCancel;
         customSelectionValidator = validator;
         handSelectionCallback = callback;
         currentHandSelectionObjects = new List<GameObject>();
@@ -232,7 +237,7 @@ public partial class GameManager
         foreach (var go in allCards)
         {
             var cd = go.GetComponent<CardDisplay>();
-            if (cd != null && handSelectionCandidates.Contains(cd.CurrentCardData))
+            if (cd != null && handSelectionCandidates.Any(c => c == cd.CurrentCardData || c.id == cd.CurrentCardData.id))
             {
                 if (DuelFXManager.Instance != null)
                     DuelFXManager.Instance.SetSelectionIcon(cd, currentSelectionHighlightCategory, SelectionState.Available);
@@ -249,6 +254,8 @@ public partial class GameManager
         handSelectionDisplayCandidates = candidates;
         handSelectionCandidates = null; // Garante que a seleção por CardData não interfira
         handSelectionCountRequired = max;
+        handSelectionMinRequired = min;
+        handSelectionCanCancel = true;
         displaySelectionCallback = callback;
         handSelectionCallback = null;
         currentHandSelectionObjects = new List<GameObject>();
@@ -271,37 +278,118 @@ public partial class GameManager
     {
         if (!isSelectingFromHand) return;
         
+        Debug.Log($"[Selection] Clique detectado na carta: {card.CurrentCardData?.name}");
+
         if (handSelectionDisplayCandidates != null) {
-            if (!handSelectionDisplayCandidates.Contains(card)) return;
+            if (!handSelectionDisplayCandidates.Contains(card)) {
+                Debug.Log($"[Selection] Bloqueado: {card.CurrentCardData?.name} não é um alvo selecionável neste momento.");
+                return;
+            }
         } else {
-            if (handSelectionCandidates == null || !handSelectionCandidates.Contains(card.CurrentCardData)) return;
+            if (handSelectionCandidates == null || !handSelectionCandidates.Any(c => c == card.CurrentCardData || c.id == card.CurrentCardData.id)) {
+                Debug.Log($"[Selection] Bloqueado: Os dados de {card.CurrentCardData?.name} não estão na lista de permitidos.");
+                return;
+            }
         }
 
         if (currentHandSelectionObjects.Contains(card.gameObject))
         {
             // Deselecionar
+            Debug.Log($"[Selection] A carta {card.CurrentCardData?.name} foi DESMARCADA.");
             currentHandSelectionObjects.Remove(card.gameObject);
-            card.SetAttackSelectionVisual(false); // Remove destaque de seleção (Vermelho)
-            if (DuelFXManager.Instance != null)
-                DuelFXManager.Instance.SetSelectionIcon(card, currentSelectionHighlightCategory, SelectionState.Available);
-            else
-                card.SetHighlight(currentSelectionHighlightCategory, true);
         }
         else
         {
             // Selecionar
-            if (currentHandSelectionObjects.Count < handSelectionCountRequired)
+            Debug.Log($"[Selection] Selecionando: {card.CurrentCardData?.name}. Progresso (Selecionadas/Máximo): {currentHandSelectionObjects.Count + 1} / {handSelectionCountRequired}");
+
+            // --- SMART SELECTION ALGORITHM ---
+            List<CardData> currentDataBeforeClick = currentHandSelectionObjects.Select(go => go.GetComponent<CardDisplay>().CurrentCardData).ToList();
+            bool wasValid = customSelectionValidator != null && customSelectionValidator(currentDataBeforeClick);
+
+            currentHandSelectionObjects.Add(card.gameObject);
+                
+            if (customSelectionValidator != null)
             {
-                currentHandSelectionObjects.Add(card.gameObject);
-                if (DuelFXManager.Instance != null)
-                    DuelFXManager.Instance.SetSelectionIcon(card, currentSelectionHighlightCategory, SelectionState.Selected);
-                else
+                List<CardData> testSelection = currentHandSelectionObjects.Select(go => go.GetComponent<CardDisplay>().CurrentCardData).ToList();
+                    
+                // Se a adição tornou a seleção inválida (ex: excesso de tributo OCG)
+                if (!customSelectionValidator(testSelection))
                 {
-                    card.SetHighlight(currentSelectionHighlightCategory, false);
-                    card.SetAttackSelectionVisual(true); // Adiciona destaque de seleção (Vermelho)
+                    // Tenta achar um subset válido que INCLUA a nova carta
+                    List<GameObject> bestSubset = null;
+                    int bestScore = int.MinValue;
+                    int n = currentHandSelectionObjects.Count;
+                    int subsetCount = 1 << (n - 1);
+                    
+                    for (int i = 0; i < subsetCount; i++)
+                    {
+                        List<GameObject> candidate = new List<GameObject>();
+                        int score = 0;
+                        for (int j = 0; j < n - 1; j++)
+                        {
+                            if ((i & (1 << j)) != 0)
+                            {
+                                candidate.Add(currentHandSelectionObjects[j]);
+                                score += j; // Prefere manter cartas mais recentes
+                            }
+                        }
+                        candidate.Add(card.gameObject); // Sempre inclui a nova carta
+                        
+                        List<CardData> candidateData = candidate.Select(go => go.GetComponent<CardDisplay>().CurrentCardData).ToList();
+                        if (customSelectionValidator(candidateData))
+                        {
+                            int candidateLevelSum = candidateData.Sum(c => c.level);
+                            // Penaliza a quantidade de cartas, penaliza sobras de nível (busca exatidão), prefere recentes
+                            int currentScore = -candidate.Count * 10000 - candidateLevelSum * 100 + score;
+                            if (currentScore > bestScore)
+                            {
+                                bestScore = currentScore;
+                                bestSubset = candidate;
+                            }
+                        }
+                    }
+
+                    if (bestSubset != null)
+                    {
+                        currentHandSelectionObjects = bestSubset;
+                        Debug.Log($"[Selection] Smart Select: Subset válido encontrado! Ajustando a seleção de forma inteligente.");
+                    }
+                    else
+                    {
+                        if (wasValid)
+                        {
+                            // A seleção anterior já era válida. O clique em uma nova carta que não forma subset válido 
+                            // indica que o jogador quer "recomeçar" a seleção a partir desta nova carta.
+                            currentHandSelectionObjects.Clear();
+                            currentHandSelectionObjects.Add(card.gameObject);
+                            Debug.Log($"[Selection] Smart Select: Seleção anterior era válida. Recomeçando com {card.CurrentCardData.name}.");
+                        }
+                        else
+                        {
+                            // Apenas acumula (se ultrapassar o limite, remove o mais antigo)
+                            if (currentHandSelectionObjects.Count > handSelectionCountRequired)
+                            {
+                                currentHandSelectionObjects.RemoveAt(0);
+                                Debug.Log($"[Selection] Rolling Select: Removida a carta mais antiga para respeitar o limite.");
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Lógica de limite padrão (Rolling Selection Tradicional) sem validador customizado
+                if (currentHandSelectionObjects.Count > handSelectionCountRequired)
+                {
+                    currentHandSelectionObjects.RemoveAt(0);
+                    Debug.Log($"[Selection] Rolling Select: Removida a carta mais antiga para respeitar o limite de {handSelectionCountRequired}.");
                 }
             }
         }
+
+        // Atualiza o visual de TODAS as cartas baseado no estado final da lista
+        RefreshHandSelectionVisuals();
 
         List<CardData> currentDataSelection = currentHandSelectionObjects.Select(go => go.GetComponent<CardDisplay>().CurrentCardData).ToList();
 
@@ -309,8 +397,11 @@ public partial class GameManager
         bool isValid = false;
         if (customSelectionValidator != null) {
             isValid = customSelectionValidator(currentDataSelection);
+            Debug.Log($"[Selection] Avaliador Customizado do Ritual/Fusão aprovou esta combinação? {isValid}");
         } else {
-            isValid = currentHandSelectionObjects.Count == handSelectionCountRequired;
+            isValid = currentHandSelectionObjects.Count >= handSelectionMinRequired && currentHandSelectionObjects.Count <= handSelectionCountRequired;
+            if (handSelectionCountRequired == 1 && currentHandSelectionObjects.Count == 1) isValid = true;
+            Debug.Log($"[Selection] Quantidade padrão aprovada? {isValid}");
         }
 
         if (isValid)
@@ -323,19 +414,10 @@ public partial class GameManager
 
                 string msg = customSelectionValidator != null ? "Confirmar os materiais selecionados?" : (handSelectionCountRequired == 1 ? $"Selecionar {cardName}?" : "Confirmar seleção?");
                 UIManager.Instance.ShowConfirmation(msg, () => FinishHandSelection(false), () => {
-                    // Se cancelar, remove a última seleção para permitir trocar
-                    if (currentHandSelectionObjects.Count > 0)
-                    {
-                        var lastObj = currentHandSelectionObjects[currentHandSelectionObjects.Count - 1];
-                        currentHandSelectionObjects.RemoveAt(currentHandSelectionObjects.Count - 1);
-                        
-                        var cd = lastObj.GetComponent<CardDisplay>();
-                        cd.SetAttackSelectionVisual(false);
-                        if (DuelFXManager.Instance != null)
-                            DuelFXManager.Instance.SetSelectionIcon(cd, currentSelectionHighlightCategory, SelectionState.Available);
-                        else
-                            cd.SetHighlight(currentSelectionHighlightCategory, true);
-                    }
+                    // O jogador recusou a seleção atual. Como a janela é apenas de confirmação,
+                    // cancelar aqui significa abortar completamente o efeito/ritual.
+                    GameManager.Instance.justCanceledSomething = true;
+                    FinishHandSelection(true);
                 });
             }
             else
@@ -343,10 +425,85 @@ public partial class GameManager
                 FinishHandSelection(false);
             }
         }
+        else
+        {
+            // Tenta ocultar a janela de confirmação caso ela esteja aberta (útil ao desmarcar cartas e invalidar a soma)
+            if (UIManager.Instance != null)
+            {
+                var hideMethod = UIManager.Instance.GetType().GetMethod("HideConfirmation", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase) 
+                              ?? UIManager.Instance.GetType().GetMethod("CloseConfirmation", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                if (hideMethod != null) 
+                {
+                    hideMethod.Invoke(UIManager.Instance, null);
+                }
+                else 
+                {
+                    var panelField = UIManager.Instance.GetType().GetField("panelConfirmation", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                    if (panelField != null)
+                    {
+                        object panelVal = panelField.GetValue(UIManager.Instance);
+                        if (panelVal is GameObject go) go.SetActive(false);
+                        else if (panelVal is Component comp) comp.gameObject.SetActive(false);
+                    }
+                    else
+                    {
+                        Transform t = UIManager.Instance.transform.Find("Panel_Confirmation") ?? UIManager.Instance.transform.Find("PanelConfirmation");
+                        if (t != null) t.gameObject.SetActive(false);
+                    }
+                }
+            }
+        }
     }
 
-    private void FinishHandSelection(bool isCancel)
+    private void RefreshHandSelectionVisuals()
     {
+        List<CardDisplay> allCandidates = new List<CardDisplay>();
+        if (handSelectionDisplayCandidates != null)
+        {
+            allCandidates.AddRange(handSelectionDisplayCandidates);
+        }
+        else
+        {
+            List<GameObject> allCards = new List<GameObject>(playerHand);
+            if (duelFieldUI != null) {
+                foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+                foreach(var z in duelFieldUI.playerSpellZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+                foreach(var z in duelFieldUI.opponentMonsterZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+                foreach(var z in duelFieldUI.opponentSpellZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+            }
+
+            foreach (var go in allCards)
+            {
+                var cd = go.GetComponent<CardDisplay>();
+                if (cd != null && handSelectionCandidates != null && handSelectionCandidates.Any(c => c == cd.CurrentCardData || c.id == cd.CurrentCardData.id))
+                    allCandidates.Add(cd);
+            }
+        }
+
+        foreach (var cd in allCandidates)
+        {
+            if (currentHandSelectionObjects.Contains(cd.gameObject))
+            {
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetSelectionIcon(cd, currentSelectionHighlightCategory, SelectionState.Selected);
+                else { cd.SetHighlight(currentSelectionHighlightCategory, false); cd.SetAttackSelectionVisual(true); }
+            }
+            else
+            {
+                cd.SetAttackSelectionVisual(false);
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetSelectionIcon(cd, currentSelectionHighlightCategory, SelectionState.Available);
+                else cd.SetHighlight(currentSelectionHighlightCategory, true);
+            }
+        }
+    }
+
+    public void FinishHandSelection(bool isCancel)
+    {
+        if (isCancel && !handSelectionCanCancel)
+        {
+            if (UIManager.Instance != null && !isSimulating) UIManager.Instance.ShowMessage("Esta seleção é obrigatória e não pode ser cancelada.");
+            return;
+        }
+
         if (handSelectionDisplayCandidates != null)
         {
             foreach (var cd in handSelectionDisplayCandidates)
@@ -385,12 +542,14 @@ public partial class GameManager
         
         if (displaySelectionCallback != null) {
             List<CardDisplay> finalData = currentHandSelectionObjects.Select(go => go.GetComponent<CardDisplay>()).ToList();
-            displaySelectionCallback.Invoke(isCancel ? new List<CardDisplay>() : finalData);
+            var tempCallback = displaySelectionCallback;
             displaySelectionCallback = null; handSelectionDisplayCandidates = null;
+            tempCallback.Invoke(isCancel ? new List<CardDisplay>() : finalData);
         } else if (handSelectionCallback != null) {
             List<CardData> finalData = currentHandSelectionObjects.Select(go => go.GetComponent<CardDisplay>().CurrentCardData).ToList();
-            handSelectionCallback.Invoke(isCancel ? new List<CardData>() : finalData);
+            var tempCallback = handSelectionCallback;
             handSelectionCallback = null; handSelectionCandidates = null;
+            tempCallback.Invoke(isCancel ? new List<CardData>() : finalData);
         }
     }
 

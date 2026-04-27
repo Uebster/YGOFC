@@ -53,6 +53,15 @@ public class GlobalCardSearchUI : MonoBehaviour
                 if (GameManager.Instance != null) GameManager.Instance.justCanceledSomething = true;
                 CancelSelection();
             }
+
+#if ENABLE_INPUT_SYSTEM
+        if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.tabKey.wasPressedThisFrame)
+#else
+        if (Input.GetKeyDown(KeyCode.Tab))
+#endif
+        {
+            if (searchInput) searchInput.ActivateInputField();
+        }
         }
     }
 
@@ -89,7 +98,7 @@ public class GlobalCardSearchUI : MonoBehaviour
         OnFilterChanged(); 
         
         // Foca no input de texto automaticamente
-        if (searchInput) searchInput.Select();
+        if (searchInput) searchInput.ActivateInputField();
     }
 
     void InitializeDropdowns()

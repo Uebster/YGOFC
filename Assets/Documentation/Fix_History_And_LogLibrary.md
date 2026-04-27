@@ -121,6 +121,16 @@ O controle de tempo da *Standby Phase* apresentou dois sintomas distintos que ma
 - CAUSA: O `DuelFXManager` perdeu as referências de centro de tabuleiro (`boardCenter`). Isso forçava as animações de VFX a caírem no Canvas Raiz. Ao aplicar `GameManager.fieldCardScale` (0.8) no Root Canvas, a Unity calculava o tamanho relativo ao monitor inteiro, não à zona de UI, deixando os fantasmas gigantes.
 - BLINDAGEM APLICADA: As animações (ex: `ShuffleRoutine`) não usam mais a escala hardcoded do GameManager. Em vez disso, o script instancia o fantasma dentro da zona física real do Deck, extrai a `localScale` dinâmica calculada pela Unity, e utiliza essa escala (baseFakeScale) como multiplicador absoluto. Além disso, foi adicionado um fallback (`uiParent.position`) para garantir que as cartas achem o centro da tela se as referências do tabuleiro forem deletadas acidentalmente.
 
+## 15. A Síndrome de Estocolmo (Dono vs Controlador)
+*   **Sintoma:** Cartas roubadas do oponente (ex: através da magia *Autonomous Action Unit* ou *Change of Heart*) iam para o cemitério, mão ou pilha de banimento de quem as controlava no momento em que eram destruídas, e não para as pilhas do dono original (Owner).
+*   **A Causa Raiz:** Os métodos do `GameManager_BoardActions` utilizavam estritamente a variável `card.isPlayerCard` (que define o controlador atual para acender luzes na UI) na hora de despachar as cartas para o `MoveCard` ou `SendToGraveyard`.
+*   **A Solução:** A propriedade `ownerPlayer` foi oficializada no `CardDisplay`. Todos os métodos de Invocação Especial e Adição à Mão do `GameManager` foram atualizados para herdar e carimbar o dono original lendo de qual pilha a carta saiu. As funções de varredura e o `MoveCard` passaram a utilizar exclusivamente o `isOwner` para decidir o destino físico da carta, mantendo o `isController` apenas para questões de rendering e controle de turnos.
+
+## 16. O Falso Spin (Retorno ao Baralho com Parâmetro Nil)
+*   **Sintoma:** Ao usar magias de Spin (Ex: *Back to Square One*), monstros inimigos eram mandados para o topo do NOSSO deck, e a animação de voo fazia a carta aterrissar no deck com a face virada para cima (Face-Up).
+*   **A Causa Raiz:** O script Lua nativo enviava `nil` no parâmetro `player` da função `Duel.SendtoDeck`. O conversor C# traduzia `nil` para `0` (Jogador Humano), basicamente sequestrando os monstros do oponente para o nosso baralho. Além disso, a animação do `DuelFXManager` estava com `endFaceUp = true` fixado no código (hardcoded).
+*   **A Solução:** A corrotina `SendtoDeckRoutine` no `LuaDuel_Actions` foi totalmente reescrita. Agora, ela verifica se a variável `player` foi intencionalmente fornecida pelo LUA. Caso seja `nil`, ela extrai o `ownerPlayer` de *cada* carta individualmente dentro do grupo selecionado. Paralelamente, o `DuelFXManager_Flights` passou a aceitar a flag de estado `startFaceUp`, permitindo que o holograma suba do campo com a arte à mostra, mas forçando o pouso com `endFaceUp = false`, virando a carta para o verso com perfeição ao tocar no deck de quem for de direito.
+
 ## [Data Atual] - Implementação de Auras Globais e Nível Dinâmico (A Legendary Ocean)
 
 **Nova Feature: Sistema de Auras Globais**
@@ -161,5 +171,3 @@ O controle de tempo da *Standby Phase* apresentou dois sintomas distintos que ma
 
 **SaveLoadMenu**
         Debug.Log($"[SaveLoadMenu - {menuType}] Awake: Iniciando auto-configuração.");
-
-

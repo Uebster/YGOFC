@@ -35,6 +35,7 @@ public class CardSelectionUI : MonoBehaviour
     private Image panelImage;
     private Image scrollImage;
     private bool isAnimating = false;
+    private bool canCancelSelection = true;
     private Vector3 deckSourcePos;
     private bool isPlayerSource = false;
 
@@ -64,13 +65,14 @@ public class CardSelectionUI : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    public void Show(List<CardData> cards, string title, int min, int max, System.Action<List<CardData>> callback, HighlightCategory category = HighlightCategory.GenericTarget)
+    public void Show(List<CardData> cards, string title, int min, int max, System.Action<List<CardData>> callback, HighlightCategory category = HighlightCategory.GenericTarget, bool canCancel = true)
     {
         sourceList = cards;
         minSelection = min;
         maxSelection = max;
         onConfirm = callback;
         currentCategory = category;
+        canCancelSelection = canCancel;
         selectedDisplays.Clear();
 
         if (titleText) titleText.text = title;
@@ -187,6 +189,14 @@ public class CardSelectionUI : MonoBehaviour
                 selectedDisplays.Add(display);
                 // Precisamos atualizar visualmente todas as cartas para remover o destaque da anterior
                 // Para simplificar, chamamos RefreshVisuals em todas
+                RefreshAllVisuals();
+                UpdateConfirmButton();
+                return;
+            }
+            else if (maxSelection > 1) // NOVO: Rolling Selection para múltiplas!
+            {
+                selectedDisplays.RemoveAt(0); // Remove a escolha mais antiga
+                selectedDisplays.Add(display); // Adiciona a nova na frente
                 RefreshAllVisuals();
                 UpdateConfirmButton();
                 return;
@@ -328,6 +338,11 @@ public class CardSelectionUI : MonoBehaviour
     void CancelSelection()
     {
         if (isAnimating) return;
+        if (!canCancelSelection)
+        {
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Você deve concluir esta seleção. Não é possível cancelar.");
+            return;
+        }
         if (maxSelection <= 0)
         {
             StartCoroutine(AnimateOutroRoutine(false));

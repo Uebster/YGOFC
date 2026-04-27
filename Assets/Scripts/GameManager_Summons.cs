@@ -21,9 +21,8 @@ public partial class GameManager
 
     public CardDisplay SpecialSummonFromData(CardData cardData, bool isPlayer, int zoneIndex = -1, bool inAttackPosition = true, bool faceDown = false, Vector3? sourcePos = null, CardLocation sourceLoc = CardLocation.Graveyard, bool? ownerIsPlayer = null)
     {
-        if (cardData == null || !cardData.type.Contains("Monster"))
+        if (cardData == null)
         {
-            Debug.LogError("[GameManager] SpecialSummonFromData: Card is not a Monster.");
             return null;
         }
 
@@ -486,7 +485,7 @@ public partial class GameManager
         }
 
         // Bypass para a IA não travar a tela esperando clique
-        if (!isPlayer || isSimulating || (isPlayer && fullTestMode))
+        if (!isPlayer || isSimulating)
         {
             CardData chosenRitual = possibleRituals[0];
             List<CardData> tributes = new List<CardData>();
@@ -571,7 +570,25 @@ public partial class GameManager
         validTributes.Remove(targetRitual);
 
         System.Func<List<CardData>, bool> tributeValidator = (selectedTributes) => {
-            return RitualManager.Instance.ValidateRitual(sourceCard.CurrentCardData, targetRitual, selectedTributes);
+            bool baseValid = false;
+            if (RitualManager.Instance != null) {
+                baseValid = RitualManager.Instance.ValidateRitual(sourceCard.CurrentCardData, targetRitual, selectedTributes);
+            } else {
+                baseValid = selectedTributes.Sum(c => c.level) >= targetRitual.level;
+            }
+
+            if (!baseValid) return false;
+
+            // Regra OCG Rigorosa: Sem sacrifícios redundantes. Se a remoção de QUALQUER carta da seleção
+            // ainda mantiver o nível exigido, a seleção inteira é considerada ilegal.
+            int totalLevel = 0;
+            List<int> levels = new List<int>();
+            foreach(var t in selectedTributes) {
+                int lvl = t.level; CardDisplay cd = FindCardOnField(t.id, true); if (cd != null) lvl = cd.currentLevel;
+                levels.Add(lvl); totalLevel += lvl;
+            }
+            foreach(int lvl in levels) if (totalLevel - lvl >= targetRitual.level) return false;
+            return true;
         };
 
         StartDirectSelection(validTributes, 1, 5, tributeValidator, $"Selecione os Tributos para {targetRitual.name}", (selectedTributes) => {

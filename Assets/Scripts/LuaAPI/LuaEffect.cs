@@ -21,6 +21,9 @@ public class LuaEffect
     public int property;
     public string description;
     public int category;
+    public int range;
+    public int targetRangeSelf;
+    public int targetRangeOpponent;
     private object _valueObject = 0;
     private int _label = 0;
     private object _labelObject = null;
@@ -78,12 +81,15 @@ public class LuaEffect
     }
     
     public void SetHintTiming(params object[] args) { }
-    public void SetTargetRange(params object[] args) { }
+    public void SetTargetRange(params object[] args) { 
+        if (args != null && args.Length > 0) targetRangeSelf = ConvertToInt(args[0]); 
+        if (args != null && args.Length > 1) targetRangeOpponent = ConvertToInt(args[1]); 
+    }
     public void SetReset(params object[] args) { if (args != null && args.Length > 0) _resetValue = ConvertToInt(args[0]); }
     public int GetReset() { return _resetValue; }
     public void SetValue(params object[] args) { if (args != null && args.Length > 0) _valueObject = args[0]; }
     public object GetValue() { return _valueObject; }
-    public void SetRange(params object[] args) { }
+    public void SetRange(params object[] args) { if (args != null && args.Length > 0) range = ConvertToInt(args[0]); }
     
     public void SetLabel(params object[] args) { 
         if (args != null && args.Length > 0) _label = ConvertToInt(args[0]); 
@@ -130,6 +136,9 @@ public class LuaEffect
             property = this.property,
             description = this.description,
             category = this.category,
+            range = this.range,
+            targetRangeSelf = this.targetRangeSelf,
+            targetRangeOpponent = this.targetRangeOpponent,
             conditionFunc = this.conditionFunc,
             costFunc = this.costFunc,
             targetFunc = this.targetFunc,
@@ -151,6 +160,7 @@ public class LuaEffect
     public void SetOperation(object operation) { operationFunc = operation as Closure; }
 
     public int GetHandlerPlayer() { return owner != null ? owner.GetControler() : 0; }
+    public int GetOwnerPlayer() { return GetHandlerPlayer(); }
     // Retorna a quem o efeito pertence blindado contra Nulos!
     public LuaCard GetHandler() { return owner ?? new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 }); }
     public LuaCard GetOwner() { return owner ?? new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 }); }

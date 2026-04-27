@@ -185,6 +185,15 @@ public class FullTestManager : MonoBehaviour
         mousePos = Input.mousePosition;
 #endif
 
+        if (GameManager.Instance != null && GameManager.Instance.fullTestMode)
+        {
+#if ENABLE_INPUT_SYSTEM
+            if (Keyboard.current != null && Keyboard.current.f3Key.wasPressedThisFrame) TestSpawnCard();
+#else
+            if (Input.GetKeyDown(KeyCode.F3)) TestSpawnCard();
+#endif
+        }
+
         if (openPanel)
         {
             if (GameManager.Instance != null)

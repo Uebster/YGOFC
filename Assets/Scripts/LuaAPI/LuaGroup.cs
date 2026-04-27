@@ -3,6 +3,7 @@ using MoonSharp.Interpreter;
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 
 // ==============================================================================
 // 4. CLASSE GROUP (Lista de Cartas selecionadas ou filtradas)
@@ -109,6 +110,132 @@ public class LuaGroup
             else newGroup.AddCard(c);
         }
         return newGroup;
+    }
+
+    private int EvaluateFuncAsInt(object func, LuaCard c, params object[] extraArgs)
+    {
+        if (func is Closure closure)
+        {
+            List<object> callArgs = new List<object> { c };
+            if (extraArgs != null && extraArgs.Length > 0) callArgs.AddRange(extraArgs);
+            try {
+                DynValue res = closure.Call(callArgs.ToArray());
+                if (res.Type == DataType.Number) return (int)res.Number;
+            } catch { }
+        }
+        else if (func is CallbackFunction cb)
+        {
+            List<DynValue> callArgs = new List<DynValue> { UserData.Create(c) };
+            if (extraArgs != null && extraArgs.Length > 0) 
+                foreach(var arg in extraArgs) callArgs.Add(DynValue.FromObject(null, arg));
+            try {
+                DynValue res = cb.Invoke(null, callArgs, false);
+                if (res.Type == DataType.Number) return (int)res.Number;
+            } catch { }
+        }
+        return 0;
+    }
+
+    public int GetSum(object func, params object[] extraArgs)
+    {
+        int sum = 0;
+        foreach (var c in cards) sum += EvaluateFuncAsInt(func, c, extraArgs);
+        return sum;
+    }
+
+    public bool CheckWithSumEqual(object func, object targetSum, object count, object maxCount, params object[] extraArgs)
+    {
+        int target = ConvertToInt(targetSum);
+        int minC = ConvertToInt(count);
+        int maxC = ConvertToInt(maxCount);
+
+        List<int> values = new List<int>();
+        foreach(var c in cards) values.Add(EvaluateFuncAsInt(func, c, extraArgs));
+
+        return SubsetSumRecursive(values, target, minC, maxC, true, 0, 0, 0);
+    }
+
+    public bool CheckWithSumGreater(object func, object targetSum, params object[] extraArgs)
+    {
+        int target = ConvertToInt(targetSum);
+        
+        List<int> values = new List<int>();
+        foreach(var c in cards) values.Add(EvaluateFuncAsInt(func, c, extraArgs));
+
+        return SubsetSumGreaterRecursive(values, target, 0, new List<int>());
+    }
+
+    private bool SubsetSumRecursive(List<int> values, int target, int minCount, int maxCount, bool exact, int index, int currentSum, int currentCount)
+    {
+        if (exact && currentSum == target && currentCount >= minCount && currentCount <= maxCount) return true;
+        if (index >= values.Count || currentCount >= maxCount) return false;
+
+        if (SubsetSumRecursive(values, target, minCount, maxCount, exact, index + 1, currentSum + values[index], currentCount + 1)) return true;
+        if (SubsetSumRecursive(values, target, minCount, maxCount, exact, index + 1, currentSum, currentCount)) return true;
+
+        return false;
+    }
+
+    private bool SubsetSumGreaterRecursive(List<int> values, int target, int index, List<int> currentSelection)
+    {
+        int currentSum = currentSelection.Sum();
+        if (currentSum >= target)
+        {
+            // Garante a regra rigorosa dos Rituais: Você não pode usar materiais extras redundantes se o Nível já foi atingido.
+            foreach(int val in currentSelection)
+            {
+                if (currentSum - val >= target) return false; 
+            }
+            return true;
+        }
+
+        if (index >= values.Count) return false;
+
+        currentSelection.Add(values[index]);
+        if (SubsetSumGreaterRecursive(values, target, index + 1, currentSelection)) return true;
+        currentSelection.RemoveAt(currentSelection.Count - 1);
+
+        if (SubsetSumGreaterRecursive(values, target, index + 1, currentSelection)) return true;
+
+        return false;
+    }
+
+    public DynValue SelectWithSumEqual(object player, object func, object targetSum, object count, object maxCount, params object[] extraArgs)
+    {
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.isWaitingForLuaYield = false;
+        LuaGroup selected = new LuaGroup();
+        int target = ConvertToInt(targetSum);
+        int current = 0;
+        foreach(var c in cards) {
+            int val = 0;
+            if (func is Closure closure) {
+                List<object> callArgs = new List<object> { c };
+                if (extraArgs != null && extraArgs.Length > 0) callArgs.AddRange(extraArgs);
+                try { DynValue res = closure.Call(callArgs.ToArray()); if (res.Type == DataType.Number) val = (int)res.Number; } catch {}
+            }
+            if (current < target) { selected.AddCard(c); current += val; }
+            if (current == target) break;
+        }
+        return UserData.Create(selected);
+    }
+
+    public DynValue SelectWithSumGreater(object player, object func, object targetSum, params object[] extraArgs)
+    {
+        if (CardEffectManager.Instance != null) CardEffectManager.Instance.isWaitingForLuaYield = false;
+        LuaGroup selected = new LuaGroup();
+        int target = ConvertToInt(targetSum);
+        int current = 0;
+        foreach(var c in cards) {
+            int val = 0;
+            if (func is Closure closure) {
+                List<object> callArgs = new List<object> { c };
+                if (extraArgs != null && extraArgs.Length > 0) callArgs.AddRange(extraArgs);
+                try { DynValue res = closure.Call(callArgs.ToArray()); if (res.Type == DataType.Number) val = (int)res.Number; } catch {}
+            }
+            if (current < target) { selected.AddCard(c); current += val; }
+            if (current >= target) break;
+        }
+        return UserData.Create(selected);
     }
     
     public int FilterCount(params object[] args)

@@ -43,14 +43,25 @@ public partial class DuelFXManager
         if (!activeSelectionIcons.ContainsKey(card))
             activeSelectionIcons[card] = new Dictionary<HighlightCategory, GameObject>();
 
-        if (activeSelectionIcons[card].TryGetValue(category, out GameObject existingIcon))
+        if (state == SelectionState.None)
         {
-            if (existingIcon != null) Destroy(existingIcon);
-            activeSelectionIcons[card].Remove(category);
+            if (activeSelectionIcons[card].TryGetValue(category, out GameObject existingIcon))
+            {
+                if (existingIcon != null) Destroy(existingIcon);
+                activeSelectionIcons[card].Remove(category);
+            }
+            card.SetAttackSelectionVisual(false);
+            card.SetHighlight(category, false);
+            return;
         }
 
-        if (state == SelectionState.None) return;
         if (state == SelectionState.Available && !settings.showAvailableState) return;
+        
+        if (activeSelectionIcons[card].TryGetValue(category, out GameObject oldIcon))
+        {
+            if (oldIcon != null) Destroy(oldIcon);
+            activeSelectionIcons[card].Remove(category);
+        }
 
         GameObject newIcon = null;
 
@@ -102,6 +113,13 @@ public partial class DuelFXManager
                 
                 StartCoroutine(AnimateSelectionIcon(iconObj, img, rt, settings, false));
             }
+        }
+        else
+        {
+            // FALLBACK VISUAL: Se não há ícone nativo ou prefab, usa o brilho padrão da carta
+            if (state == SelectionState.Selected) card.SetAttackSelectionVisual(true);
+            else if (state == SelectionState.Available) card.SetHighlight(category, true);
+            return;
         }
 
         if (newIcon != null)

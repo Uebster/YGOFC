@@ -401,6 +401,8 @@ public partial class LuaDuel
         }
     }
 
+    public void ReleaseRitualMaterial(object target) { } // O C# assume a destruição física através da UI de Ritual!
+
     public void RaiseEvent(object triggerCard, object eventCode, object eg, object ep, object ev, object re, object r)
     {
         if (CardEffectManager.Instance != null)

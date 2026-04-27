@@ -352,3 +352,250 @@ No Yu-Gi-Oh!, a mecânica de "Spin" (Devolver para o Deck) é infinitamente supe
 * **O "Tijolo" no Saque (Draw Denial):** Ao colocar o monstro do oponente no topo do baralho dele, você garante matematicamente que a próxima carta que ele comprar será exatamente a mesma. Em vez de sacar uma magia ou armadilha que poderia salvá-lo, o oponente acabou de "perder" a rodada de saque, puxando uma carta que ele *já tinha* na mesa. É praticamente um roubo de turno!
 * **Negando Gatilhos de Cemitério:** Monstros infames como *Sangan*, *Mystic Tomato* ou *Vampire Lord* ativam seus efeitos poderosos unicamente quando são **enviados ao Cemitério**. Ao devolvê-los para o Deck, você impede que qualquer um desses efeitos mortais dispare, limpando a ameaça de campo com 100% de segurança!
 * **Custo Útil:** O custo de descartar uma carta da mão pode ser transformado numa vantagem! Você pode descartar propositalmente uma *Sinister Serpent* (que volta de graça no seu turno) ou monstros *LIGHT / DARK* para carregar o seu Cemitério rápido e invocar um *Black Luster Soldier - Envoy of the Beginning*.
+
+---
+
+## ID: DM0129 - Bait Doll (Password: 07165085)
+
+A carta **"Bait Doll"** (Isca de Boneca) é uma Carta Mágica Normal (Normal Spell) única, usada como uma ferramenta de desarmamento de armadilhas e espionagem, com a vantagem de ser reciclada.
+
+> *"Target 1 Set card in the Spell & Trap Card Zone; reveal that target, force its activation if it is a Trap Card, then negate its effect if the activation timing is incorrect, and if you do, destroy it. (If it is not a Trap Card, return it face-down.) When this card resolves, shuffle it into the Deck instead of sending it to the Graveyard."*
+
+### Como ela funciona na prática:
+
+1. **O Alvo (A Isca):** Você deve alvejar 1 carta que esteja virada para baixo (Set) na Zona de Mágicas e Armadilhas. A carta é então revelada para ambos os jogadores.
+2. **A Forçada de Ativação:** Se a carta revelada for uma Armadilha (Trap Card), o efeito da *Bait Doll* a obriga a tentar ser ativada naquele exato momento.
+3. **O Fator "Timing" (Momento Correto):** Como a *Bait Doll* é ativada na sua Main Phase, a grande maioria das armadilhas mortais do jogo (como *Mirror Force*, *Magic Cylinder* ou *Torrential Tribute*) não pode ser legalmente ativada nessa fase. Como o "Timing" está incorreto, a armadilha inimiga simplesmente falha, é negada e destruída instantaneamente!
+4. **O Caso Mágico:** Se a carta revelada for uma Mágica em vez de uma Armadilha (ou se o "Timing" por acaso estiver correto), ela é apenas virada para baixo novamente na mesma posição.
+5. **A Reciclagem Infinita:** Diferente de 99% das mágicas normais do jogo, a *Bait Doll* **nunca vai para o Cemitério** após o uso. Ela é embaralhada de volta no seu Deck principal.
+
+### 💡 O grande truque dessa carta:
+Esta é a melhor carta do jogo para "testar as águas" antes de realizar uma grande invocação ou um ataque decisivo.
+
+* **O Pior Pesadelo das Battle Traps:** Armadilhas que dependem de ataques (*Mirror Force*, *Sakuretsu Armor*) são varridas do mapa de forma humilhante. Você ativa a *Bait Doll* na Main Phase 1, revela a *Mirror Force* do oponente, e como não há nenhum ataque acontecendo, ela é destruída sem cerimônias.
+* **Espionagem Gratuita:** Mesmo que você acerte uma Carta Mágica (como um *Mystical Space Typhoon* setado), a carta volta a ficar virada para baixo, mas agora você **sabe** exatamente o que o oponente tem ali! Isso permite que você planeje os próximos turnos sem medo de ser surpreendido.
+* **Deck Thinning vs Reciclagem:** Embora ela volte pro deck e evite que você fique sem cartas (Deck Out), cuidado para que o seu deck não fique sobrecarregado de cópias da *Bait Doll* quando você na verdade precisava sacar um monstro para se defender no late game.
+
+---
+
+## ID: DM0132 - Banner of Courage (Password: 10012614)
+
+A carta **"Banner of Courage"** (Estandarte da Coragem) é uma Carta Mágica Contínua (Continuous Spell) focada em agressividade massiva, fornecendo um bônus tático para enxames de monstros.
+
+> *"All monsters you control gain 200 ATK during your Battle Phase only."*
+
+### Como ela funciona na prática:
+
+1. **Aura Restrita:** Ela é uma carta contínua que afeta **todos** os monstros do seu lado do campo simultaneamente, sem distinção de raça ou atributo. O bônus é de modestos +200 Pontos de Ataque.
+2. **A Janela de Oportunidade:** O grande detalhe desta mágica é que o bônus de força só é válido **durante a sua Fase de Batalha (Battle Phase)**. Assim que a Battle Phase termina, seus monstros voltam ao seu ATK original. E no turno do oponente, eles não recebem absolutamente nenhum bônus desta carta.
+
+### 💡 O grande truque dessa carta:
+O *Banner of Courage* não serve para transformar um monstro em um tanque de guerra, mas sim para "quebrar limites matemáticos" em combates e aumentar o dano letal (OTK).
+
+* **Vantagem Cumulativa (Swarm):** Se você tiver 5 monstros no campo (mesmo os mais fracos, como Tokens ou tokens do *Scapegoat* transformados em agressivos), o estandarte aumenta o dano total que você pode causar no turno em **1000 Pontos** (+200 para cada um dos 5 monstros atacando). É uma carta feita para decks de enxame (Swarm)!
+* **A Quebra de Limiar de Nível 4:** No formato clássico, o ATK "padrão de ouro" para monstros Nível 4 costuma bater em 1800 a 1900. Um monstro seu de 1800 ATK pode, durante a sua Battle Phase, chegar a 2000 ATK, conseguindo destruir ameaças inimigas de Nível 4 (como *Gemini Elf* ou *Vorse Raider*).
+* **O Engodo Defensivo:** Como o bônus some no turno do oponente, seus monstros parecerão fracos na tela dele. Um oponente desavisado pode tentar atacar seu monstro na vez dele achando que está em vantagem, esquecendo que no *seu* turno o monstro dele será atropelado com os +200 de bônus!
+
+---
+
+## ID: DM0142 - Battery Charger (Password: 61181383)
+
+A carta **"Battery Charger"** (Carregador de Bateria) é uma Carta Mágica Normal (Normal Spell) que atua como um *Monster Reborn* exclusivo e barateado para o arquétipo "Batteryman" (Homem-Pilha).
+
+> *"Pay 500 Life Points. Special Summon 1 "Batteryman" monster from your Graveyard."*
+
+### Como ela funciona na prática:
+
+1. **A Conta de Luz (O Custo):** Para ativá-la, você precisa pagar **500 Pontos de Vida (LP)**.
+2. **A Bateria (O Alvo):** Você escolhe exatamente 1 monstro no seu Cemitério que tenha "Batteryman" no nome.
+3. **A Recarga (O Retorno):** O monstro escolhido é invocado por Invocação-Especial (Special Summon) para o seu lado do campo. Não há restrição de posição (Ataque ou Defesa).
+
+### 💡 O grande truque dessa carta:
+O poder desta carta está em seu custo baixíssimo quando comparado a outras opções de reviver monstros. No formato Clássico, o *Monster Reborn* é frequentemente banido ou limitado a 1 cópia, e o *Premature Burial* custa 800 LP e deixa o monstro vulnerável à destruição da própria magia. 
+
+* **O Curto-Circuito (Swarm de Batteryman AA):** O monstro *Batteryman AA* ganha 1000 ATK para cada *Batteryman AA* em campo. Com o *Battery Charger*, você pode reviver um do cemitério de forma extremamente barata para somar forças com os que você já tem na mão, criando rapidamente monstros com 2000 ou 3000 de ATK sem gastar a sua Invocação Normal do turno!
+* **Efeitos de Entrada:** Como a carta apenas diz "Special Summon", ela também serve para ativar efeitos de monstros que engatilham ao entrar no campo, mantendo a presença de tabuleiro (Board Presence) do seu exército elétrico.
+
+---
+
+## ID: DM0152 - Beast Fangs (Password: 46009906)
+
+A carta **"Beast Fangs"** (Presas de Besta) é uma Carta Mágica de Equipamento (Equip Spell) primordial, do início do jogo, projetada para impulsionar feras selvagens.
+
+> *"A Beast-Type monster equipped with this card increases its ATK and DEF by 300 points."*
+
+### Como ela funciona na prática:
+
+1. **O Alvo Restrito:** Você **só pode** ativar e equipar esta carta a um monstro virado para cima no campo que seja do Tipo **Besta (Beast-Type)**. Se tentar equipar em um Guerreiro ou Mago, o jogo (e a Engine) não permitirá.
+2. **O Bônus Simples:** Enquanto estiver equipada, o monstro recebe um bônus constante de **+300 ATK e +300 DEF**.
+3. **Regra de Vínculo:** Se o monstro perder o Tipo Besta por algum efeito (como *DNA Surgery* mudando todos para Máquina), o equipamento deixa de ter um alvo válido e é destruído instantaneamente pelas regras do jogo.
+
+### 💡 O grande truque dessa carta:
+Em um cenário competitivo avançado, +300 ATK pode parecer pouco, mas no "Beatdown" (trocação de força bruta) de formatos base (ou rascunhos de Decks Iniciais), isso vira o jogo.
+
+* **Quebrando Empates de Nível 4:** Muitos dos melhores monstros atacantes de Nível 4 sem efeito têm 1900 de ATK. Um monstro Tipo Besta comum, se equipado com *Beast Fangs*, ultrapassa essa barreira mágica dos 1900.
+* **O Sinergia com Berserk Gorilla:** O *Berserk Gorilla* é um dos monstros Besta de nível 4 mais agressivos do formato (2000 ATK). Equipando *Beast Fangs* nele, ele salta para **2300 ATK**, sendo capaz de atropelar até os monstros de Defesa mais rígidos ou bater de frente com a maioria dos monstros Nível 5 e 6 que exigem sacrifício!
+* **Proteção Dupla:** Por também fornecer +300 em DEF, ajuda na sobrevivência de monstros Besta defensivos ou com efeitos de recrutamento, como o *Giant Rat* (Rato Gigante).
+
+---
+
+## ID: DM0156 - Beastly Mirror Ritual (Password: 81933259)
+
+A carta **"Beastly Mirror Ritual"** (Ritual do Espelho Bestial) é uma Carta Mágica de Ritual (Ritual Spell) usada para invocar o clássico "Fiend's Mirror".
+
+> *"This card is used to Ritual Summon "Fiend's Mirror". You must also Tribute monsters from your hand or field whose total Levels equal 6 or more."*
+
+### Como ela funciona na prática:
+
+1. **A Condição de Invocação:** Para ativar esta magia, você precisa ter o monstro de Ritual *"Fiend's Mirror"* na sua mão.
+2. **O Tributo:** Você deve sacrificar (Tributar) monstros da sua mão ou do seu lado do campo. A soma dos Níveis desses monstros deve ser **exatamente 6 ou mais**.
+3. **A Chegada do Demônio:** Após o sacrifício, o *Fiend's Mirror* é Invocado por Invocação-Ritual para o campo.
+
+### 💡 O grande truque dessa carta:
+Sendo uma magia de ritual clássica, ela não possui efeitos secundários no cemitério como as modernas, mas cumpre seu papel perfeitamente em decks nostálgicos.
+* **Tributos Econômicos:** Como a exigência é nível 6 ou *mais*, você pode usar um único monstro de nível 6 (como um *Summoned Skull* na mão que estava "preso" sem tributos) para realizar a invocação inteira, otimizando seus recursos.
+
+---
+
+## ID: DM0169 - Big Bang Shot (Password: 61127349)
+
+A carta **"Big Bang Shot"** (Tiro do Big Bang) é uma Carta Mágica de Equipamento (Equip Spell) ofensiva que esconde uma das mecânicas de remoção mais criativas e letais do formato clássico.
+
+> *"The equipped monster gains 400 ATK. If the equipped monster attacks a Defense Position monster, inflict piercing battle damage to your opponent. When this card leaves the field, banish the equipped monster."*
+
+### Como ela funciona na prática:
+
+1. **O Bônus Duplo:** O monstro equipado recebe +400 de ATK e ganha a habilidade de causar **Dano Perfurante** (Piercing Damage) contra monstros em posição de defesa.
+2. **A Maldição do Exílio:** O verdadeiro custo desta carta está no seu gatilho de saída. Se o *Big Bang Shot* sair do campo (seja destruído, devolvido para a mão ou banido), o monstro que estava equipado com ele é **Banido (Removido de Jogo)** imediatamente.
+
+### 💡 O grande truque dessa carta:
+O texto não diz que você precisa equipá-la em um monstro *seu*. E é aí que a mágica acontece no cenário competitivo!
+
+* **O Combo de Remoção Absoluta:** Você equipa o *Big Bang Shot* em um "Boss Monster" indestrutível do **oponente**. No mesmo turno, você joga a magia *Giant Trunade* ou *Mystical Space Typhoon* mirando no SEU próprio *Big Bang Shot*. A magia sai do campo, o gatilho ativa, e o monstro do oponente é banido do jogo sem sequer ter sido alvo de um efeito de destruição! É a remoção perfeita que burla proteções como *My Body as a Shield*.
+* **Cuidado com o Feitiço contra o Feiticeiro:** Lembre-se de que o dano perfurante é sempre causado *ao oponente* da carta que ataca. Se você equipar o *Big Bang Shot* no monstro do oponente, e ele atacar um monstro SEU em modo de defesa, VOCÊ tomará o dano perfurante!
+
+---
+
+## ID: DM0175 - Big Wave Small Wave (Password: 51562916)
+
+A carta **"Big Wave Small Wave"** (Grande Onda, Pequena Onda) é uma Carta Mágica Normal (Normal Spell) criada para acelerar drasticamente baralhos temáticos de Água.
+
+> *"Destroy all face-up WATER monsters you control, then you can Special Summon WATER monsters from your hand, up to the number of monsters destroyed by this effect."*
+
+### Como ela funciona na prática:
+
+1. **A Vazante (Destruição em Massa):** Ao ativá-la, a magia destrói **todos** os seus monstros virados para cima que possuam o Atributo ÁGUA (WATER). Monstros virados para baixo (Set) sobrevivem ilesos.
+2. **A Enchente (Invocação Especial):** Imediatamente após a destruição, você pode invocar da sua mão a mesma quantidade de monstros de ÁGUA que foram destruídos.
+
+### 💡 O grande truque dessa carta:
+Esta carta quebra a regra básica de economia de sacrifícios do jogo, permitindo invocar deuses do mar com custo zero.
+
+* **Trocando Lixo por Ouro:** Você pode ativar cartas que geram "Fichas" (Tokens) de Água fracas (como os da *Oyster Meister* ou *Lekunga*), ou usar monstros de nível baixo. Com *Big Wave Small Wave*, essas criaturas fracas são destruídas e trocadas instantaneamente por ameaças massivas da sua mão, como o *Levia-Dragon - Daedalus* ou o *Suijin*, sem gastar invocações normais ou tributos!
+* **Limpando Zonas:** Como o efeito destrói suas próprias cartas, você pode abrir espaço no seu campo quando ele estiver travado com monstros inúteis de ÁGUA, ou até mesmo "desviar" de cartas de equipamento nocivas (ex: *Mask of the Accursed*) que o oponente colocou nas suas criaturas.
+
+---
+
+## ID: DM0183 - Black Illusion Ritual (Password: 41426869)
+
+A carta **"Black Illusion Ritual"** (Ritual de Ilusão Negra) é a Carta Mágica de Ritual clássica de Maximillion Pegasus, usada para trazer o seu monstro mais aterrorizante à vida.
+
+> *"This card is used to Ritual Summon "Relinquished". You must also Tribute a monster from your hand or field whose Level is 1 or more."*
+
+### Como ela funciona na prática:
+
+1. **A Condição de Invocação:** Você precisa ter o monstro de Ritual *"Relinquished"* na sua mão.
+2. **O Tributo:** Você deve sacrificar (Tributar) monstros da sua mão ou do seu lado do campo. A soma dos Níveis deve ser **1 ou mais**.
+3. **A Chegada do Pesadelo:** O *Relinquished* é Invocado por Invocação-Ritual para o campo.
+
+### 💡 O grande truque dessa carta:
+O maior trunfo deste ritual não é a magia em si, mas a acessibilidade do seu alvo.
+* **Custo Quase Nulo:** Como o *Relinquished* é um monstro de Nível 1, você pode usar literalmente *qualquer* monstro do jogo como tributo para esta magia (inclusive Tokens como as Ovelhas de *Scapegoat*, se a regra específica permitir, ou os monstros mais fracos da sua mão).
+* **Regra de Excesso:** Lembre-se, mesmo que a magia diga "1 ou mais", a regra oficial de Tributos Redundantes proíbe você de usar dois monstros se apenas um já cobria o Nível 1. Se você selecionar um monstro de Nível 4, o ritual será pago, e o jogo não te deixará jogar mais nada no cemitério!
+
+---
+
+## ID: DM0184 - Black Luster Ritual (Password: 55761792)
+
+A carta **"Black Luster Ritual"** (Ritual do Lustro Negro) é a Carta Mágica de Ritual icônica do Yugi, usada para evocar o guerreiro supremo.
+
+> *"This card is used to Ritual Summon "Black Luster Soldier". You must also Tribute monsters from your hand or field whose total Levels equal 8 or more."*
+
+### Como ela funciona na prática:
+
+1. **A Condição de Invocação:** Você precisa ter o monstro de Ritual *"Black Luster Soldier"* na sua mão.
+2. **O Tributo:** Você deve sacrificar monstros da sua mão ou campo cuja soma de Níveis seja **8 ou mais**.
+3. **A Chegada do Soldado:** O *Black Luster Soldier* é Invocado Especialmente para o campo.
+
+### 💡 O grande truque dessa carta:
+Nos formatos clássicos, invocar um monstro de 3000 ATK através de Ritual exige recursos altos, mas o impacto no campo é devastador.
+* **Tributos Inteligentes:** Evite usar muitos monstros de baixo nível para somar 8. A melhor tática é sacrificar um único monstro de Nível 8 (como um *Blue-Eyes White Dragon* "morto" na mão) ou combinar dois monstros de Nível 4 que ativam efeitos no cemitério (ex: *Sangan*).
+
+---
+
+## ID: DM0187 - Black Magic Ritual (Password: 76792184)
+
+A carta **"Black Magic Ritual"** (Ritual de Magia Negra) é a Carta Mágica de Ritual que eleva o Mago Negro à sua forma mais poderosa.
+
+> *"This card is used to Ritual Summon "Magician of Black Chaos". You must also Tribute monsters from your hand or field whose total Levels equal 8 or more."*
+
+### Como ela funciona na prática:
+
+1. **A Condição de Invocação:** Você precisa ter o monstro de Ritual *"Magician of Black Chaos"* na sua mão.
+2. **O Tributo:** Você deve sacrificar monstros da sua mão ou campo cuja soma de Níveis seja **8 ou mais**.
+3. **A Chegada do Mestre:** O *Magician of Black Chaos* (2800 ATK) é Invocado para a batalha.
+
+### 💡 O grande truque dessa carta:
+* **Sinergia Temática:** Embora o *Magician of Black Chaos* seja um monstro de Ritual, ele se beneficia de suportes genéricos para Magos (Spellcasters).
+* **Dica de Invocação:** Novamente, o segredo de Rituais de Nível 8 é a otimização da mão. O próprio *Dark Magician* (Nível 7) precisa de apenas mais um monstro de Nível 1 (como um *Kuriboh* na sua mão) para completar o ritual, tornando a invocação temática e eficiente!
+
+---
+
+## ID: DM0188 - Black Pendant (Password: 65169794)
+
+A carta **"Black Pendant"** (Pingente Negro) é uma Carta Mágica de Equipamento (Equip Spell) que fornece um bônus sólido de ataque e um "bote" venenoso quando é destruída.
+
+> *"The equipped monster gains 500 ATK. If this card is sent from the field to the Graveyard: Inflict 500 damage to your opponent."*
+
+### Como ela funciona na prática:
+
+1. **O Bônus:** O monstro equipado ganha +500 de ATK.
+2. **O Dano de Queima (Burn):** Se a carta for enviada do campo para o Cemitério (seja porque o monstro foi destruído ou porque a própria magia foi alvo de um *Mystical Space Typhoon*), ela causa 500 pontos de dano direto aos Pontos de Vida do oponente.
+
+### 💡 O grande truque dessa carta:
+Ela pune o oponente por tentar limpar o seu campo.
+* **O Finalizador (Finisher):** Se o oponente estiver com 500 ou menos Pontos de Vida, você pode equipar o *Black Pendant* em qualquer monstro (até mesmo no do oponente) e depois ativar o seu próprio *Mystical Space Typhoon* ou *Heavy Storm* para destruir o pingente. O dano será causado instantaneamente, garantindo a sua vitória sem precisar atacar!
+
+---
+
+## ID: DM0202 - Blessings of the Nile (Password: 30655537)
+
+A carta **"Blessings of the Nile"** (Bênçãos do Nilo) é uma Carta Armadilha Contínua (Continuous Trap) projetada para transformar o sofrimento do oponente em vitalidade para você.
+
+> *"Each time a card(s) is discarded from your opponent's hand to the Graveyard by a card effect, gain 1000 Life Points."*
+
+### Como ela funciona na prática:
+
+1. **O Gatilho:** Ela só ativa quando cartas são descartadas da mão do oponente para o Cemitério **por um efeito de carta**.
+2. **A Recompensa:** Você ganha 1000 LP cada vez que esse evento ocorre. (Nota: Se várias cartas forem descartadas ao mesmo tempo pelo mesmo efeito, como em *Card Destruction*, você ganha 1000 LP uma única vez por aquela resolução).
+3. **O Que Não Funciona:** Ela **não** ativa por descartes de Custo (ex: oponente descartar para ativar *Tribe-Infecting Virus*), nem por descartes do Limite de Mão na End Phase.
+
+### 💡 O grande truque dessa carta:
+No formato clássico (Goat Format), a manipulação de mão é a estratégia dominante.
+* **Sinergia de Descarte:** Combina perfeitamente com cartas de controle de mão que você mesmo ativa! Se você usar *Delinquent Duo* (custa 1000 LP), o oponente descarta duas cartas, e a *Blessings of the Nile* te cura 1000 LP, anulando totalmente o seu custo de ativação! O mesmo vale para *Confiscation* e *Morphing Jar*.
+
+---
+
+## ID: DM0205 - Block Attack (Password: 25880422)
+
+A carta **"Block Attack"** (Bloquear Ataque) é uma Carta Mágica Normal (Normal Spell) simples, mas com uma utilidade tática excelente para contornar monstros imensos.
+
+> *"Target 1 face-up Attack Position monster your opponent controls; change it to face-up Defense Position."*
+
+### Como ela funciona na prática:
+
+1. **O Alvo:** Você escolhe 1 monstro do oponente que esteja virado para cima em Posição de Ataque.
+2. **O Efeito:** O monstro é forçado a mudar para a Posição de Defesa, permanecendo virado para cima.
+
+### 💡 O grande truque dessa carta:
+No Yu-Gi-Oh!, a grande maioria dos "Boss Monsters" e agressores (Beatsticks) focam todo o seu poder no Ataque, possuindo uma Defesa miserável.
+* **Derrubando Muralhas:** Um *Summoned Skull* tem terríveis 2500 de ATK, mas apenas 1200 de DEF. Um *Jinzo* tem 2400 de ATK e apenas 1500 de DEF. Se você não tem um monstro forte o suficiente para bater de frente com eles, o *Block Attack* os coloca de joelhos, permitindo que monstros mais fracos da sua mão (como *Mystic Tomato* ou *Archfiend Soldier*) passem por cima deles facilmente em batalha!

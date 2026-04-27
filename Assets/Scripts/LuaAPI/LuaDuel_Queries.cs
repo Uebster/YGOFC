@@ -107,6 +107,13 @@ public partial class LuaDuel
     public bool IsCanAddCounter(object player, object counterType, object count, object card) { return true; }
     public LuaGroup GetReleaseGroup(object player, object hand = null) { return new LuaGroup(); }
     public LuaGroup GetTributeGroup(object card) { return new LuaGroup(); }
+
+    public LuaGroup GetRitualMaterial(object player, object nocheck = null)
+    {
+        // Stub blindado: Retorna a Mão (0x02) e o Campo (0x04) do jogador para o proc_ritual.lua aprovar o chk=0 da ativação.
+        return GetMatchingGroup(null, player, 0x02 | 0x04, 0, null);
+    }
+
     public int GetMatchingGroupCount(object filterFunc, object player, object locSelf, object locOpp, object excluded, params object[] extraArgs) 
     { 
         return GetMatchingGroup(filterFunc, player, locSelf, locOpp, excluded, extraArgs).GetCount(); 

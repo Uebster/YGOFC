@@ -177,14 +177,19 @@ public class LuaCard
     public LuaCard GetBattleTarget() { return SafeDummyCard(); }
     public bool IsDiscardable(params object[] args) { return true; }
     
+    private LuaCard _lastEquipTarget = null;
+
     public LuaCard GetEquipTarget() 
     { 
         if (CardEffectManager.Instance != null && unityCard != null)
         {
             CardDisplay target = CardEffectManager.Instance.GetEquipTarget(unityCard);
-            if (target != null) return CardEffectManager.Instance.EnsureCardScriptLoaded(target);
+            if (target != null) {
+                _lastEquipTarget = CardEffectManager.Instance.EnsureCardScriptLoaded(target);
+                return _lastEquipTarget;
+            }
         }
-        return null; 
+        return _lastEquipTarget; 
     }
 
     public bool IsAbleToGraveAsCost() { return true; }
@@ -285,7 +290,9 @@ public class LuaCard
     public bool CheckFusionMaterial(object group = null, object card = null, object chkf = null) { return true; }
     public bool IsCanBeFusionMaterial(object card = null) { return true; }
 
-
+    public bool IsCanBeRitualMaterial(object card = null) { return true; }
+    public int GetRitualLevel(object rc = null) { return GetLevel(); }
+    
     public LuaCard GetHandler() { return this; }
     public int GetCardTargetCount() { return 0; }
     public bool IsOriginalCodeRule(params object[] codes) { return IsCode(codes); }
@@ -302,7 +309,7 @@ public class LuaCard
     public bool IsCanChangePosition() { return true; }
     public int GetTurnID() { return 0; }
     public bool CanChainAttack() { return true; }
-    public LuaCard GetPreviousEquipTarget() { return SafeDummyCard(); }
+    public LuaCard GetPreviousEquipTarget() { return _lastEquipTarget; }
     public bool IsAbleToGrave() { return true; }
     public bool HasFlagEffect(object id) { return false; }
     public int GetTurnCounter() { return unityCard != null ? unityCard.turnCounter : 0; }
@@ -433,6 +440,13 @@ public class LuaCard
         if (unityData != null && (unityData.type.Contains("Equip") || unityData.property == "Equip"))
             return GetEquipTarget();
             
+        // Fallback genérico de alvo para o Elo atual da Corrente
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.resolvingLink != null)
+        {
+            var grp = CardEffectManager.Instance.chainManager.resolvingLink.targetGroup;
+            if (grp != null && grp.cards.Count > 0) return grp.cards[0];
+        }
+
         return SafeDummyCard(); 
     }
 
@@ -642,6 +656,7 @@ public class LuaCard
                 if (code == 0x64 && arch.Contains("Harpie")) return true;
                 if (code == 0x3a && arch.Contains("Ojama")) return true;
                 if (code == 0x08 && arch.Contains("HERO")) return true;
+                if (code == 0x28 && arch.Contains("Batteryman")) return true;
             }
 
             // 2. Fallback de Segurança (Nome da Carta)
@@ -659,6 +674,7 @@ public class LuaCard
             if (code == 0x64 && cardName.Contains("harpie")) return true;
             if (code == 0x3a && cardName.Contains("ojama")) return true;
             if (code == 0x08 && cardName.Contains("hero")) return true;
+            if (code == 0x28 && cardName.Contains("batteryman")) return true;
         }
         
         return false; // CORRIGIDO: Este fallback era o que quebrava o jogo tratando toda carta como arquétipo!

@@ -393,14 +393,23 @@ public partial class GameManager
         yield return new WaitForSeconds(1.5f);
 
         OpenCardMultiSelection(handData, $"Descarte {count} cartas (Limite de Mão)", count, count, (selected) => {
-            foreach(var c in selected)
+            if (selected == null || selected.Count == 0)
             {
-                GameObject go = playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c);
-                if (go != null) DiscardCard(go.GetComponent<CardDisplay>());
+                for (int i = 0; i < count; i++)
+                {
+                    if (playerHand.Count > 0) DiscardCard(playerHand[0].GetComponent<CardDisplay>());
+                }
+            }
+            else
+            {
+                foreach(var c in selected)
+                {
+                    GameObject go = playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c);
+                    if (go != null) DiscardCard(go.GetComponent<CardDisplay>());
+                }
             }
             done = true;
-        });
-
+        }, HighlightCategory.GenericTarget, false, false);
         while (!done) yield return null;
     }
 
