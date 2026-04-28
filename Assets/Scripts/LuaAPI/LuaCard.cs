@@ -161,16 +161,21 @@ public class LuaCard
 
     // Novos Stubs Descobertos pelo Mass Validator
     public CardLocation previousLocation = CardLocation.Unknown;
+    public int currentReason = 0;
     
     public bool IsPreviousLocation(object loc) 
     { 
         int l = ConvertToInt(loc);
         if (previousLocation != CardLocation.Unknown)
         {
-            if (l == 0x04 || l == 0x08 || l == 0x0C) return previousLocation == CardLocation.Field;
-            if (l == 0x02) return previousLocation == CardLocation.Hand;
-            if (l == 0x01) return previousLocation == CardLocation.Deck;
-            if (l == 0x10) return previousLocation == CardLocation.Graveyard;
+            if ((l & 0x08) != 0 && previousLocation == CardLocation.Field) return true; // SZONE
+            if ((l & 0x04) != 0 && previousLocation == CardLocation.Field) return true; // MZONE
+            if ((l & 0x0C) != 0 && previousLocation == CardLocation.Field) return true; // ONFIELD
+            if ((l & 0x02) != 0 && previousLocation == CardLocation.Hand) return true;
+            if ((l & 0x01) != 0 && previousLocation == CardLocation.Deck) return true;
+            if ((l & 0x10) != 0 && previousLocation == CardLocation.Graveyard) return true;
+            if ((l & 0x20) != 0 && previousLocation == CardLocation.Banished) return true;
+            return false;
         }
         return true; 
     }
@@ -228,7 +233,6 @@ public class LuaCard
     public void RemoveCounter(object player, object counterType, object count, object reason) { }
     public bool IsCanAddCounter(object counterType, object count) { return true; }
     public int GetFieldID() { return 0; }
-    public int GetReason() { return 0; }
     public LuaGroup GetTarget() { return new LuaGroup(); }
     public void SetMaterial(object g) { }
     public LuaGroup GetAdminGroup() { return new LuaGroup(); }
@@ -356,7 +360,11 @@ public class LuaCard
         // Debug.Log($"<color=magenta>[IsAttribute]</color> O LUA perguntou se '{unityData?.name}' possui o Atributo (código {ConvertToInt(attr)})");
         return (GetAttribute() & ConvertToInt(attr)) != 0; 
     }
-    public bool IsReason(object reason) { return true; }
+    public bool IsReason(object reason) { 
+        if (currentReason == 0) return true; 
+        return (currentReason & ConvertToInt(reason)) != 0; 
+    }
+    public int GetReason() { return currentReason; }
     public bool IsRelateToEffect(object e) { return true; } // Evita crash no final de correntes (Chains)
     public bool IsAttackBelow(object atk) { return GetAttack() <= ConvertToInt(atk); }
     public bool IsAttackAbove(object atk) { return GetAttack() >= ConvertToInt(atk); }

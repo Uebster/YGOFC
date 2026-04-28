@@ -100,6 +100,12 @@ public partial class LuaDuel
 
     private IEnumerator SendtoGraveRoutine(object target, object reason)
     {
+        int ocgReason = ConvertToInt(reason);
+        SendReason sReason = SendReason.Effect;
+        if ((ocgReason & 0x4000) != 0) sReason = SendReason.Discarded;
+        else if ((ocgReason & 0x1) != 0) sReason = SendReason.Destroyed;
+        else if ((ocgReason & 0x2) != 0) sReason = SendReason.Tribute;
+
         int count = 0;
         List<LuaCard> cardsToProcess = new List<LuaCard>();
 
@@ -116,7 +122,7 @@ public partial class LuaDuel
         {
             if (c.unityCard != null)
             {
-                GameManager.Instance.MoveCard(c.unityCard, CardLocation.Graveyard, SendReason.Effect);
+                GameManager.Instance.MoveCard(c.unityCard, CardLocation.Graveyard, sReason);
                 count++;
                 if (GameManager.Instance == null || !GameManager.Instance.isSimulating)
                     yield return new WaitForSeconds(0.3f);
@@ -125,7 +131,7 @@ public partial class LuaDuel
             {
                 bool wasPlayerPile;
                 CardLocation sourceLoc = RemoveDataFromAllPiles(c.unityData, out wasPlayerPile);
-                GameManager.Instance.SendToGraveyard(c.unityData, wasPlayerPile, sourceLoc, SendReason.Effect);
+                GameManager.Instance.SendToGraveyard(c.unityData, wasPlayerPile, sourceLoc, sReason);
                 
                 if (DuelFXManager.Instance != null && !GameManager.Instance.isSimulating && sourceLoc != CardLocation.Unknown)
                 {

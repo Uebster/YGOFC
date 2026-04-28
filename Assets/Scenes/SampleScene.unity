@@ -3723,8 +3723,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 102.74, y: -593.2785}
-  m_SizeDelta: {x: 78.712, y: 76.0082}
+  m_AnchoredPosition: {x: 102.86, y: -593.0967}
+  m_SizeDelta: {x: 86.207, y: 83.281}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &39675365
 MonoBehaviour:
@@ -50986,7 +50986,7 @@ MonoBehaviour:
   enableRightClickPhaseMenu: 1
   confirmBattlePositionChange: 1
   confirmAttackTarget: 0
-  useDirectHandSelection: 1
+  useDirectHandSelection: 0
   confirmHandSelection: 1
   quickSummonFromHand: 0
   quickSpellTrapFromHand: 0
@@ -51055,8 +51055,8 @@ MonoBehaviour:
   playerHoverColor: {r: 0.24230155, g: 0.9339623, b: 0.10980392, a: 1}
   opponentHoverColor: {r: 0.5803922, g: 0, b: 0.8274511, a: 1}
   enablePhaseHoverEffect: 1
-  phaseHoverColorPlayer: {r: 0, g: 1, b: 0, a: 1}
-  phaseHoverColorOpponent: {r: 0.5803922, g: 0, b: 0.8274511, a: 1}
+  phaseHoverColorPlayer: {r: 0, g: 1, b: 0, a: 0.78431374}
+  phaseHoverColorOpponent: {r: 0.5803922, g: 0, b: 0.8274511, a: 0.78431374}
   enableTributeSummonAnimation: 1
   enableSummonCinematics: 1
   enableFusionCinematic: 1
@@ -51071,6 +51071,7 @@ MonoBehaviour:
   normalSummonsThisTurnPlayer: 0
   normalSummonsThisTurnOpponent: 0
   pendingEffectDraws: 0
+  pendingVisualTasks: 0
   justCanceledSomething: 0
   isSelectingFromHand: 0
   isSelectingResponse: 0
@@ -55932,7 +55933,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DuelFXManager
   enableAnimations: 1
-  animationSpeed: 1.5
+  animationSpeed: 2
   boardCenter: {fileID: 1396565530}
   playerBoardCenter: {fileID: 1870070646}
   opponentBoardCenter: {fileID: 1544580639}
@@ -56421,7 +56422,7 @@ MonoBehaviour:
       giantCardScale: 1.2
   extractionCinematic:
     enableExtraction: 1
-    slideDuration: 0.6
+    slideDuration: 0.4
     holdDuration: 0
     useScaleEffect: 1
     deck:
@@ -56432,6 +56433,7 @@ MonoBehaviour:
       peakScaleMult: 0.85
       topJumpHeight: 0
       alwaysSlide: 0
+      flipDuringExtraction: 0
     extraDeck:
       slideOffsetPlayer: {x: -120, y: 0}
       slideOffsetOpponent: {x: 120, y: 0}
@@ -56440,6 +56442,7 @@ MonoBehaviour:
       peakScaleMult: 0.85
       topJumpHeight: 0
       alwaysSlide: 0
+      flipDuringExtraction: 0
     graveyard:
       slideOffsetPlayer: {x: 120, y: 2}
       slideOffsetOpponent: {x: -120, y: -2}
@@ -56448,6 +56451,7 @@ MonoBehaviour:
       peakScaleMult: 0.85
       topJumpHeight: 0
       alwaysSlide: 0
+      flipDuringExtraction: 0
     banished:
       slideOffsetPlayer: {x: 0, y: 165}
       slideOffsetOpponent: {x: 0, y: -165}
@@ -56456,6 +56460,7 @@ MonoBehaviour:
       peakScaleMult: 0.85
       topJumpHeight: 0
       alwaysSlide: 0
+      flipDuringExtraction: 0
   flightHandToField:
     enableFlight: 1
     duration: 0.5
@@ -59647,8 +59652,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.46061, y: 0.000012159}
-  m_SizeDelta: {x: 85.878, y: 81.796}
+  m_AnchoredPosition: {x: 0.0000049993, y: 0.000056863}
+  m_SizeDelta: {x: 85.394, y: 85.92}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &620062656
 MonoBehaviour:
@@ -66551,7 +66556,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.0007834862, y: 0.00067516934}
+  m_AnchoredPosition: {x: 0.0007834862, y: -0.000016393173}
   m_SizeDelta: {x: 0, y: 285.3955}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &706721579
@@ -71706,8 +71711,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 102.74, y: -495.7862}
-  m_SizeDelta: {x: 78.715, y: 75.3134}
+  m_AnchoredPosition: {x: 102.86, y: -495.4281}
+  m_SizeDelta: {x: 86.206, y: 85.0964}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &764290286
 MonoBehaviour:
@@ -77355,8 +77360,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.0000014305, y: 0.00000017881}
-  m_SizeDelta: {x: 90.093, y: 77.484}
+  m_AnchoredPosition: {x: -0.07001698, y: -0.10575}
+  m_SizeDelta: {x: 86.347, y: 83.493}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &822696243
 MonoBehaviour:
@@ -81597,8 +81602,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 102.74151, y: -99.10068}
-  m_SizeDelta: {x: 78.7151, y: 79.197}
+  m_AnchoredPosition: {x: 103.268524, y: -99.10068}
+  m_SizeDelta: {x: 85.3903, y: 84.1156}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &874521225
 MonoBehaviour:
@@ -81620,8 +81625,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: 10911, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -87524,8 +87529,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 102.74, y: -397.0763}
-  m_SizeDelta: {x: 78.715, y: 78.2427}
+  m_AnchoredPosition: {x: 102.86, y: -397.0763}
+  m_SizeDelta: {x: 86.201, y: 84.6779}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &947845035
 MonoBehaviour:
@@ -110130,8 +110135,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 102.74, y: -197.4747}
-  m_SizeDelta: {x: 78.71, y: 78.4442}
+  m_AnchoredPosition: {x: 103.27, y: -198.0016}
+  m_SizeDelta: {x: 85.395, y: 85.8222}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1205943917
 MonoBehaviour:
@@ -112539,8 +112544,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.000027865, y: 0.16809}
-  m_SizeDelta: {x: 88.8725, y: 85.2339}
+  m_AnchoredPosition: {x: 0.000023305, y: 0.11841}
+  m_SizeDelta: {x: 86.206, y: 85.333}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1228480899
 MonoBehaviour:
@@ -141661,7 +141666,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1633356070}
   m_HandleRect: {fileID: 1633356069}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -148815,8 +148820,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.11867, y: -0.000005722}
-  m_SizeDelta: {x: 85.1904, y: 79.873}
+  m_AnchoredPosition: {x: 0.11867, y: 0.000075579}
+  m_SizeDelta: {x: 85.1904, y: 85.822}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1598976706
 MonoBehaviour:
@@ -149418,8 +149423,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.040734, y: -0.000016212}
-  m_SizeDelta: {x: 90.0167, y: 85.2873}
+  m_AnchoredPosition: {x: -0.00011665, y: -0.00013582}
+  m_SizeDelta: {x: 86.201, y: 84.678}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1609000518
 MonoBehaviour:
@@ -149676,8 +149681,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.000044823, y: -0.0001545}
-  m_SizeDelta: {x: 78.715, y: 79.197}
+  m_AnchoredPosition: {x: 0.00020689, y: 0.00012451}
+  m_SizeDelta: {x: 85.39, y: 84.115}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1610311043
 MonoBehaviour:
@@ -184016,8 +184021,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 102.74, y: -297.9195}
-  m_SizeDelta: {x: 78.707, y: 78.0776}
+  m_AnchoredPosition: {x: 103.27, y: -297.36224}
+  m_SizeDelta: {x: 85.394, y: 85.9195}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1986433567
 MonoBehaviour:

@@ -109,9 +109,38 @@ public class ChainManager
             {
                 yield return core.StartCoroutine(core.luaDuel.AnimateCardActivationInPileRoutine(sourceDisplay));
             }
+            else if (sourceDisplay != null && sourceDisplay.isOnField && !GameManager.Instance.isSimulating)
+            {
+                // Animação de ativação para cartas já no campo que ativam efeitos (Ex: Trap Contínua ativando efeito Trigger)
+                if (effect != null && effect.type != 0x0010) // Ignora a ativação inicial (0x0010) pois já foi animada
+                {
+                    bool isTrap = luaCard.unityData.type.Contains("Trap");
+                    DuelFXManager.Instance.PlayCardActivation(sourceDisplay, isTrap, () => {});
+                }
+            }
             
             if (sourceDisplay != null)
-                DuelFXManager.Instance.PlayChainLinkEffect(sourceDisplay, visualLinkNumber);
+            {
+                // Se estamos criando o Link 2, a corrente acabou de se tornar múltipla (Corrente Surpresa!).
+                // Mostramos retroativamente o texto do Link 1 para manter o visual limpo caso ninguém responda!
+                if (visualLinkNumber == 2)
+                {
+                    int targetChainIndex = (currentChain.Count > 0 && currentChain[0].isDummy) ? 2 : 1;
+                    var link1 = currentChain.Find(l => l.chainIndex == targetChainIndex);
+                    if (link1 != null && !link1.isDummy && link1.card != null)
+                    {
+                        CardDisplay link1Display = link1.card.unityCard;
+                        if (link1Display == null || !link1Display.gameObject.activeInHierarchy)
+                            link1Display = core.luaDuel.FindCardDisplayInPiles(link1.card.unityData);
+                        
+                        if (link1Display != null)
+                            DuelFXManager.Instance.PlayChainLinkEffect(link1Display, 1);
+                    }
+                }
+                
+                if (visualLinkNumber > 1) 
+                    DuelFXManager.Instance.PlayChainLinkEffect(sourceDisplay, visualLinkNumber);
+            }
         }
 
         // JANELA DE RESPOSTA (Speed 2/3 - Pergunta ao Oponente e depois ao Jogador)

@@ -173,8 +173,8 @@ public partial class GameManager
         }
         // Verifica se TODAS as cartas da seleção estão fisicamente presentes na Mesa ou na Mão
         bool isHandOrFieldSubset = sourceList.Count > 0 && sourceList.All(c => {
-            if (playerHand.Exists(go => go.GetComponent<CardDisplay>().CurrentCardData == c)) return true;
-            if (opponentHand.Exists(go => go.GetComponent<CardDisplay>().CurrentCardData == c)) return true;
+            if (playerHand.Exists(go => { var cd = go.GetComponent<CardDisplay>(); return cd != null && (cd.CurrentCardData == c || cd.CurrentCardData.id == c.id); })) return true;
+            if (opponentHand.Exists(go => { var cd = go.GetComponent<CardDisplay>(); return cd != null && (cd.CurrentCardData == c || cd.CurrentCardData.id == c.id); })) return true;
             if (FindCardOnField(c.id, true) != null) return true;
             if (FindCardOnField(c.id, false) != null) return true;
             return false;
@@ -230,6 +230,7 @@ public partial class GameManager
 
         // Destaca as cartas válidas na mão E no campo
         List<GameObject> allCards = new List<GameObject>(playerHand);
+        allCards.AddRange(opponentHand);
         if (duelFieldUI != null) {
             foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
             foreach(var z in duelFieldUI.playerSpellZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
@@ -251,14 +252,14 @@ public partial class GameManager
         Debug.Log($"[GameManager] Iniciando seleção tátil: {title}");
     }
 
-    public void OpenDirectCardDisplaySelection(List<CardDisplay> candidates, string title, int min, int max, System.Action<List<CardDisplay>> callback, HighlightCategory category = HighlightCategory.GenericTarget)
+    public void OpenDirectCardDisplaySelection(List<CardDisplay> candidates, string title, int min, int max, System.Action<List<CardDisplay>> callback, HighlightCategory category = HighlightCategory.GenericTarget, bool canCancel = true)
     {
         isSelectingFromHand = true;
         handSelectionDisplayCandidates = candidates;
         handSelectionCandidates = null; // Garante que a seleção por CardData não interfira
         handSelectionCountRequired = max;
         handSelectionMinRequired = min;
-        handSelectionCanCancel = true;
+        handSelectionCanCancel = canCancel;
         displaySelectionCallback = callback;
         handSelectionCallback = null;
         currentHandSelectionObjects = new List<GameObject>();
@@ -470,6 +471,7 @@ public partial class GameManager
         else
         {
             List<GameObject> allCards = new List<GameObject>(playerHand);
+            allCards.AddRange(opponentHand);
             if (duelFieldUI != null) {
                 foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
                 foreach(var z in duelFieldUI.playerSpellZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
@@ -524,6 +526,7 @@ public partial class GameManager
         else
         {
             List<GameObject> allCards = new List<GameObject>(playerHand);
+            allCards.AddRange(opponentHand);
             if (duelFieldUI != null) {
                 foreach(var z in duelFieldUI.playerMonsterZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
                 foreach(var z in duelFieldUI.playerSpellZones) if(z.childCount>0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }

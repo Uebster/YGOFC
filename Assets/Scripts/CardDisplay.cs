@@ -455,8 +455,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         
         transform.localScale = startScale;
 
-        // O Efeito/Pulse acontece estritamente APÓS a carta terminar de desvirar (ignoramos se for um Fantasma Visual)
-        if (!isGhostImage && DuelFXManager.Instance != null && DuelFXManager.Instance.enableAnimations) DuelFXManager.Instance.PlayFlipEffect(this);
+        // O Efeito/Pulse acontece estritamente APÓS a carta terminar de desvirar.
+        // Ignoramos se for um Fantasma Visual, ou se a carta estiver flutuando na mão (Apenas Field ganha Pulse).
+        if (!isGhostImage && isOnField && DuelFXManager.Instance != null && DuelFXManager.Instance.enableAnimations) DuelFXManager.Instance.PlayFlipEffect(this);
         
         onComplete?.Invoke();
     }

@@ -333,6 +333,17 @@ public class LuaEventManager
 
         // Debug.Log($"[LuaEventManager] {card.name} enviado ao GY. PreviousLocation: {fromLocation}, PreviousController: {tp}");
 
+        int ocgReason = 0;
+        string reasonStr = reason.ToString();
+        if (reasonStr == "Destroyed") ocgReason = 0x1 | 0x40; // REASON_DESTROY | REASON_EFFECT
+        else if (reasonStr == "Battle") ocgReason = 0x1 | 0x20; // REASON_DESTROY | REASON_BATTLE
+        else if (reasonStr == "Rule") ocgReason = 0x400; // REASON_RULE
+        else if (reasonStr == "Effect") ocgReason = 0x40; // REASON_EFFECT
+        else if (reasonStr == "Discarded") ocgReason = 0x4000 | 0x40; // REASON_DISCARD | REASON_EFFECT
+        else if (reasonStr == "Mill") ocgReason = 0x40; // REASON_EFFECT
+        else if (reasonStr == "Tribute") ocgReason = 0x2; // REASON_RELEASE
+        lc.currentReason = ocgReason;
+
         var gyEffects = lc.registeredEffects.FindAll(e => e.code == 1014 && (e.type & 0x0001) != 0); // EVENT_TO_GRAVE
         // Debug.Log($"[Surgical Log] Carta '{card.name}' caiu no GY. Efeitos EVENT_TO_GRAVE (1014) encontrados: {gyEffects.Count}");
         
@@ -344,8 +355,12 @@ public class LuaEventManager
             if (canAct)
                 core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, lc, tp, null));
         }
-        TriggerLuaEvent(1014, lc); 
-        core.StartCoroutine(core.OpenFastEffectWindow($"Queda de {card.name}", 1014, lc));
+
+        LuaGroup eg = new LuaGroup();
+        eg.AddCard(lc);
+
+        TriggerLuaEvent(1014, eg); 
+        core.StartCoroutine(core.OpenFastEffectWindow($"Queda de {card.name}", 1014, eg));
     }
 
     public void OnDamageTaken(bool isPlayer, int amount) { }

@@ -48,6 +48,10 @@ O `ChainManager` foi absorvido pelo `CardEffectManager` para unificar a lógica 
     *   Para garantir um fluxo fluído (UX), a janela global de confirmação *"Deseja responder?"* não interrompe o jogo ativamente durante a Main Phase do jogador se ele apenas ativou sua própria carta. A Engine usa uma regra de Auto-Pass.
     *   **Aviso Apenas Quando Necessário:** O Warning só aparece quando o jogo precisa parar para permitir interrupções táticas (ex: Responder a um ataque inimigo, responder a uma mágica do oponente, ou durante uma janela "Fast Effect" de mudança de fase).
     *   **Atalhos:** O aviso pode ser aceito instantaneamente com a tecla **ENTER**, habilitando o jogador a passar o mouse e ver os balões de ativação das cartas candidatas. Pressionar **ESC** recusa a resposta e o duelo continua.
+*   **4.2.3.2 Feedback Visual (A Corrente Surpresa)**
+    *   Inspirado no clássico *Power of Chaos*, o simulador adota uma política de UI limpa para as correntes.
+    *   Quando um efeito é ativado (Link 1), a Engine não polui a tela com o letreiro holográfico "Link 1". A carta apenas pulsa com sua aura (Ciano para GY, Verde/Rosa para campo) para sinalizar a ativação silenciosa.
+    *   **O Gatilho Retroativo:** Se o oponente (ou o próprio jogador) ativar uma carta em resposta (Link 2), a Engine ativa o modo "Conflito". Ela volta um passo no tempo, resgata a carta que iniciou tudo e carimba a placa de "Link 1" nela retroativamente, seguida imediatamente da placa "Link 2" na carta de resposta. Isso reserva o espetáculo visual (choque de elos) estritamente para quando há uma disputa real!
 *   **4.2.4 Como as Negações Funcionam no Código**
     *   Cartas de negação (ex: *Magic Jammer*) simplesmente definem a flag `isActivationNegated = true` no `ChainLink` alvo. Durante a fase de resolução, qualquer link com essa flag ativada é simplesmente ignorado.
 

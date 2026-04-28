@@ -153,6 +153,11 @@ O controle de tempo da *Standby Phase* apresentou dois sintomas distintos que ma
 *   **A Solução (FindCardDisplayInPiles):** Criamos um radar de almas. Ao iniciar qualquer corrente, se a carta alvo não estiver ativa no tabuleiro (`unityCard == null` ou inativo), o `ChainManager` chama `FindCardDisplayInPiles()`. Ele escaneia silenciosamente as UIs de `GraveyardDisplay`, `DeckDisplay` e `RemovedDisplay` de trás pra frente (para achar a recém-chegada). 
 *   Ao achar a representação visual da carta morta na pilha, a Engine a arrasta para a frente (`SetAsLastSibling`), invoca a `AnimateCardActivationInPileRoutine` (Pulso Ciano Neon de 1.4x de escala) e coloca o texto "Link 1" sobre ela, unificando definitivamente o feedback visual de QUALQUER carta ativada fora de campo!
 
+## 21. A "Corrente Surpresa" (Estética Power of Chaos)
+*   **Sintoma:** O jogo exibia o letreiro holográfico "Link 1" para absolutamente qualquer carta ativada (ex: um *Pot of Greed* isolado), gerando extrema poluição visual em jogadas solitárias.
+*   **A Causa Raiz:** O `ChainManager` engatilhava o `PlayChainLinkEffect` de forma hardcoded e imediata ao empilhar o primeiro elo da corrente, sem saber se haveria uma resposta.
+*   **A Solução:** Injeção da lógica de exibição retroativa. O Link 1 agora roda de forma limpa (apenas com o pulso luminoso ciano/verde indicando a ignição). Se um **Link 2** for adicionado à pilha durante a `ResponseWindowRoutine`, o C# vasculha a memória LIFO, encontra a carta física (ou fantasma no cemitério) do Link 1, aplica a placa visual nela retroativamente e só então exibe o Link 2. O duelo permanece com o HUD limpo, explodindo em correntes apenas durante contra-ataques reais.
+
 ## [Data Atual] - Implementação de Auras Globais e Nível Dinâmico (A Legendary Ocean)
 
 **Nova Feature: Sistema de Auras Globais**

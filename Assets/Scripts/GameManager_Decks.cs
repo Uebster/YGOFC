@@ -31,6 +31,8 @@ public partial class GameManager
         CardDisplay newCardDisplay = newCardGO.GetComponent<CardDisplay>();
         if (newCardDisplay == null) newCardDisplay = newCardGO.AddComponent<CardDisplay>();
 
+        // FIX: Garante que as cartas compradas animadas também respeitem a rotação natural da mão (180 pro oponente)
+        newCardGO.transform.localRotation = Quaternion.Euler(0, 0, isPlayer ? 0f : 180f);
         newCardGO.transform.localScale = handCardScale;
         newCardDisplay.hoverYOffset = isPlayer ? playerHandHoverYOffset : opponentHandHoverYOffset;
         newCardDisplay.isInteractable = true;
@@ -48,14 +50,13 @@ public partial class GameManager
             
             Vector3 startPos = customStartPos ?? (isPlayer ? playerDeckDisplay.transform.position : opponentDeckDisplay.transform.position);
             CardFlightSettings settings = null;
-            bool pop = false;
             
             if (DuelFXManager.Instance != null)
             {
                 if (sourceLoc == CardLocation.Field) settings = isFromFieldSpellZone ? DuelFXManager.Instance.flightFieldSpellZoneToHand : DuelFXManager.Instance.flightFieldToHand;
                 else if (sourceLoc == CardLocation.Deck) settings = DuelFXManager.Instance.flightDeckToHand;
-                else if (sourceLoc == CardLocation.Graveyard) { settings = DuelFXManager.Instance.flightGraveyardToHand; pop = true; }
-                else if (sourceLoc == CardLocation.Banished) { settings = DuelFXManager.Instance.flightBanishToHand; pop = true; }
+                else if (sourceLoc == CardLocation.Graveyard) { settings = DuelFXManager.Instance.flightGraveyardToHand; }
+                else if (sourceLoc == CardLocation.Banished) { settings = DuelFXManager.Instance.flightBanishToHand; }
                 else { settings = DuelFXManager.Instance.flightDeckToHand; } // Fallback
             }
 
@@ -492,6 +493,14 @@ public void ShuffleDeck(bool isPlayer)
         {
             // Se não tiver animação, apenas ajusta os índices na hora
             for (int i = 0; i < hand.Count; i++) hand[i].transform.SetSiblingIndex(i);
+            
+            if (!isPlayer && !showOpponentHand)
+            {
+                foreach (var go in hand) {
+                    var cd = go.GetComponent<CardDisplay>();
+                    if (cd != null) cd.ShowBack(false); // sem animação
+                }
+            }
         }
     }
 
@@ -502,6 +511,7 @@ public void ShuffleDeck(bool isPlayer)
         
         // Desliga o LayoutGroup para que as cartas fiquem livres para voar
         if (layoutGroup != null) layoutGroup.enabled = false;
+
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.shuffleSound);
 
         int cycles = 1;

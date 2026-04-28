@@ -62,8 +62,30 @@ public partial class LuaDuel
 
     public void Damage(object player, object amount, object reason)
     {
-        if (IsPlayer(player)) GameManager.Instance.DamagePlayer(ConvertToInt(amount));
-        else GameManager.Instance.DamageOpponent(ConvertToInt(amount));
+        int pInt = ConvertToInt(player);
+        int aInt = ConvertToInt(amount);
+        
+        if (pInt == 0) GameManager.Instance.DamagePlayer(aInt);
+        else GameManager.Instance.DamageOpponent(aInt);
+
+        // Feedback Visual e Sonoro de Dano de Efeito (Burn)
+        if (DuelFXManager.Instance != null && GameManager.Instance != null && !GameManager.Instance.isSimulating && aInt > 0)
+        {
+            Vector3 vfxPos = Vector3.zero; // Padrão: Centro da tela
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.resolvingLink != null)
+            {
+                var source = CardEffectManager.Instance.chainManager.resolvingLink.card;
+                if (source != null)
+                {
+                    if (source.unityCard != null && source.unityCard.gameObject.activeInHierarchy) vfxPos = source.unityCard.transform.position;
+                    else {
+                        var pileCard = FindCardDisplayInPiles(source.unityData);
+                        if (pileCard != null) vfxPos = pileCard.transform.position;
+                    }
+                }
+            }
+            DuelFXManager.Instance.PlayDamageEffect(vfxPos);
+        }
     }
 
     public void Recover(object player, object amount, object reason)

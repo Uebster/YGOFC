@@ -270,6 +270,9 @@ public class LuaGroup
     {
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
+
+        bool canCancel = !(ConvertToInt(min) > 0 && CardEffectManager.Instance != null && CardEffectManager.Instance.isChainResolving);
+
         List<CardData> selectableData = new List<CardData>();
         foreach (var c in cards) {
             if (excluded != null)
@@ -300,7 +303,7 @@ public class LuaGroup
                 }
                 CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
-            }, HighlightCategory.GenericTarget, forceModal);
+            }, HighlightCategory.GenericTarget, forceModal, canCancel);
         } else {
             CardEffectManager.Instance.isWaitingForLuaYield = false;
             return UserData.Create(new LuaGroup());

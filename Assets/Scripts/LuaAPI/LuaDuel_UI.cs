@@ -667,7 +667,7 @@ public partial class LuaDuel
             GameManager.Instance.OpenCardMultiSelection(offFieldCards, "Revealed Top Deck Cards", 0, 0, (selected) => {
                 if (handCardsPlayer.Count > 0 || handCardsOpponent.Count > 0)
                 {
-                    CardEffectManager.Instance.StartCoroutine(RevealHandCardsRoutine(handCardsPlayer, handCardsOpponent, 1.5f));
+                    CardEffectManager.Instance.StartCoroutine(RevealHandCardsRoutine(handCardsPlayer, handCardsOpponent, 1.5f, ConvertToInt(player)));
                 }
                 else
                 {
@@ -679,7 +679,7 @@ public partial class LuaDuel
         else if (handCardsPlayer.Count > 0 || handCardsOpponent.Count > 0)
         {
             if (GameManager.Instance != null && !GameManager.Instance.isSimulating) {
-                CardEffectManager.Instance.StartCoroutine(RevealHandCardsRoutine(handCardsPlayer, handCardsOpponent, 1.5f));
+                CardEffectManager.Instance.StartCoroutine(RevealHandCardsRoutine(handCardsPlayer, handCardsOpponent, 1.5f, ConvertToInt(player)));
             } else {
                 CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
@@ -693,39 +693,74 @@ public partial class LuaDuel
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("ConfirmCards") });
     }
 
-    private IEnumerator RevealHandCardsRoutine(List<CardDisplay> pHand, List<CardDisplay> oHand, float delay)
+    private IEnumerator RevealHandCardsRoutine(List<CardDisplay> pHand, List<CardDisplay> oHand, float delay, int viewingPlayer)
     {
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.flipSound);
 
-        // Vira a carta e dá um "Pop-up" na mão para exibição
-        foreach(var c in pHand) { if (c.isFlipped) c.ShowFront(true); c.ForceHover(); }
-        foreach(var c in oHand) { if (c.isFlipped) c.ShowFront(true); c.ForceHover(); }
+        // Desliga os layouts temporariamente para evitar que o "esmagamento" da escala acione reorganizações malucas
+        UnityEngine.UI.HorizontalLayoutGroup pLayout = GameManager.Instance != null ? GameManager.Instance.playerHandLayoutGroup.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>() : null;
+        UnityEngine.UI.HorizontalLayoutGroup oLayout = GameManager.Instance != null ? GameManager.Instance.opponentHandLayoutGroup.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>() : null;
+        if (pLayout != null) pLayout.enabled = false;
+        if (oLayout != null) oLayout.enabled = false;
+
+        // Apenas vira a carta travada no mesmo eixo, sem pop-up/hover
+        foreach(var c in pHand) { if (c.isFlipped) c.ShowFront(true); }
+        foreach(var c in oHand) { if (c.isFlipped) c.ShowFront(true); }
+
+        // Libera o motor LUA imediatamente para que ele possa engatilhar a Seleção, se houver.
+        CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
 
         yield return new WaitForSeconds(delay);
 
-        // Devolve as cartas para o descanso visual (Esconde se for do Oponente)
-        foreach(var c in pHand) { c.OnPointerExit(null); }
-        foreach(var c in oHand) { 
-            if (GameManager.Instance != null && !GameManager.Instance.showOpponentHand) c.ShowBack(true);
-            c.OnPointerExit(null);
+        // Aguarda a seleção e confirmação do jogador (se houver alguma ativa) antes de fechar a mão
+        if (GameManager.Instance != null)
+        {
+            yield return new WaitWhile(() => GameManager.Instance.isSelectingFromHand || (CardSelectionUI.Instance != null && CardSelectionUI.Instance.gameObject.activeSelf));
         }
+
+        bool playerHandFullyRevealed = pHand.Count > 0 && GameManager.Instance != null && pHand.Count >= GameManager.Instance.playerHand.Count;
+        bool oppHandFullyRevealed = oHand.Count > 0 && GameManager.Instance != null && oHand.Count >= GameManager.Instance.opponentHand.Count;
+
+        bool oppWait = false;
+        foreach(var c in oHand) { 
+            if (GameManager.Instance != null && !GameManager.Instance.showOpponentHand) 
+            {
+                c.ShowBack(true); // Gira suavemente de volta para faceback sem exceções
+                oppWait = true;
+            }
+        }
+
+        // Aguarda os flips terminarem antes de religar o layout
+        if (oppWait)
+        {
+            float flipWait = DuelFXManager.Instance != null ? DuelFXManager.Instance.flipAnimationDuration : 0.3f;
+            float animSpeed = DuelFXManager.Instance != null && DuelFXManager.Instance.animationSpeed > 0 ? DuelFXManager.Instance.animationSpeed : 1f;
+            yield return new WaitForSeconds(flipWait / animSpeed);
+        }
+
+        if (pLayout != null) pLayout.enabled = true;
+        if (oLayout != null) oLayout.enabled = true;
 
         // Embaralha a mão para impedir contagem de cartas (Hand Tracking)
         if (GameManager.Instance != null)
         {
-            if (pHand.Count > 0) GameManager.Instance.ShuffleHand(true);
-            if (oHand.Count > 0) GameManager.Instance.ShuffleHand(false);
+            if (pHand.Count > 0 && !playerHandFullyRevealed) GameManager.Instance.ShuffleHand(true);
+            if (oHand.Count > 0 && !oppHandFullyRevealed) GameManager.Instance.ShuffleHand(false);
         }
-
-        CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
-        CardEffectManager.Instance.isWaitingForLuaYield = false;
     }
 
     private IEnumerator ConfirmCardsRoutine(float delay)
     {
-        yield return new WaitForSeconds(delay);
         CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
         CardEffectManager.Instance.isWaitingForLuaYield = false;
+
+        yield return new WaitForSeconds(delay);
+        
+        if (GameManager.Instance != null)
+        {
+            yield return new WaitWhile(() => GameManager.Instance.isSelectingFromHand || (CardSelectionUI.Instance != null && CardSelectionUI.Instance.gameObject.activeSelf));
+        }
     }
 
     public DynValue SelectTarget(object player, object filterFunc, object player2, object locSelf, object locOpp, object min, object max, object excluded, params object[] extraArgs)
@@ -735,6 +770,8 @@ public partial class LuaDuel
 
         string promptTitle = lastHintMsg;
         lastHintMsg = "Select a target"; // Reseta para o próximo uso
+
+        bool canCancel = !(ConvertToInt(min) > 0 && CardEffectManager.Instance != null && CardEffectManager.Instance.isChainResolving);
 
         // Combina o 'excluded' do LUA com o nosso 'lastCostGroup' do C#
         LuaGroup finalExcluded = new LuaGroup();
@@ -826,7 +863,7 @@ public partial class LuaDuel
                     
                     this.lastCostGroup = null; 
                     CardEffectManager.Instance.isWaitingForLuaYield = false;
-                }, HighlightCategory.GenericTarget);
+                }, HighlightCategory.GenericTarget, canCancel);
             }
             else
             {
@@ -849,7 +886,7 @@ public partial class LuaDuel
                     
                     this.lastCostGroup = null; 
                     CardEffectManager.Instance.isWaitingForLuaYield = false;
-                }, HighlightCategory.GenericTarget, true); // Força Modal para garantir seleção de pilhas invisíveis
+                }, HighlightCategory.GenericTarget, true, canCancel); // Força Modal para garantir seleção de pilhas invisíveis
             }
         }
         else
@@ -874,6 +911,8 @@ public partial class LuaDuel
         
         string promptTitle = lastHintMsg;
         lastHintMsg = "Select"; // Reseta
+
+        bool canCancel = !(ConvertToInt(min) > 0 && CardEffectManager.Instance != null && CardEffectManager.Instance.isChainResolving);
 
         LuaGroup finalExcluded = new LuaGroup();
         if (excluded is LuaGroup exGroup)
@@ -928,7 +967,7 @@ public partial class LuaDuel
                 CardEffectManager.Instance.yieldReturnValue = UserData.Create(selectedGroup);
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
                 this.lastCostGroup = null; // Limpa a memória de custo
-            }, category, forceModal);
+            }, category, forceModal, canCancel);
         }
         else
         {
@@ -953,6 +992,8 @@ public partial class LuaDuel
         bool isPlayer = IsPlayer(player);
         int minAmt = ConvertToInt(min);
         int maxAmt = ConvertToInt(max);
+        
+        bool canCancel = !(minAmt > 0 && CardEffectManager.Instance != null && CardEffectManager.Instance.isChainResolving);
         
         List<GameObject> hand = isPlayer ? GameManager.Instance.playerHand : GameManager.Instance.opponentHand;
         List<CardData> validCards = new List<CardData>();
@@ -1026,7 +1067,7 @@ public partial class LuaDuel
                 this.lastCostGroup = selectedGroup;
                 CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(discardedCount);
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
-            }, HighlightCategory.GenericTarget, false);
+            }, HighlightCategory.GenericTarget, false, canCancel);
         }
 
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("DiscardHand") });

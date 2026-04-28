@@ -336,6 +336,8 @@ public partial class DuelFXManager : MonoBehaviour
         public float topJumpHeight = 40f;
         [Tooltip("Se ativo, ignora a lógica de topo e força a carta a sempre deslizar lateralmente.")]
         public bool alwaysSlide = false;
+        [Tooltip("Se ativo, a carta será revelada (Flip 3D) durante a extração.")]
+        public bool flipDuringExtraction = true;
     }
 
     [System.Serializable]
@@ -349,7 +351,7 @@ public partial class DuelFXManager : MonoBehaviour
         public bool useScaleEffect = true;
 
         [Header("Pile Specific Offsets")]
-        public ExtractionPileSettings deck = new ExtractionPileSettings { slideOffsetPlayer = new Vector2(150f, 0f), slideOffsetOpponent = new Vector2(-150f, 0f), returnToTop = false };
+        public ExtractionPileSettings deck = new ExtractionPileSettings { slideOffsetPlayer = new Vector2(150f, 0f), slideOffsetOpponent = new Vector2(-150f, 0f), returnToTop = false, flipDuringExtraction = false };
         public ExtractionPileSettings extraDeck = new ExtractionPileSettings { slideOffsetPlayer = new Vector2(150f, 0f), slideOffsetOpponent = new Vector2(-150f, 0f), returnToTop = false };
         public ExtractionPileSettings graveyard = new ExtractionPileSettings { slideOffsetPlayer = new Vector2(-150f, 0f), slideOffsetOpponent = new Vector2(150f, 0f), returnToTop = false };
         public ExtractionPileSettings banished = new ExtractionPileSettings { slideOffsetPlayer = new Vector2(-150f, 0f), slideOffsetOpponent = new Vector2(150f, 0f), returnToTop = false };

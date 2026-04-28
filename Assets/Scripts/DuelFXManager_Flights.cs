@@ -923,14 +923,16 @@ public partial class DuelFXManager
             if (isTopCard) currentPos = ghost.transform.position;
         }
 
-        if (startFaceUp != endFaceUp)
+        bool targetFaceUp = pileSettings.flipDuringExtraction ? endFaceUp : startFaceUp;
+
+        if (startFaceUp != targetFaceUp)
         {
-            if (endFaceUp) {
+            if (targetFaceUp) {
                 while (ghostDisplay.GetFrontTexture() == null) yield return null;
             }
 
             bool flipDone = false;
-            if (endFaceUp) ghostDisplay.ShowFront(true, () => flipDone = true);
+            if (targetFaceUp) ghostDisplay.ShowFront(true, () => flipDone = true);
             else ghostDisplay.ShowBack(true, () => flipDone = true);
             yield return new WaitUntil(() => flipDone);
         }

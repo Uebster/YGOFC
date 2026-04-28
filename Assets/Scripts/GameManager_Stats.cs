@@ -245,7 +245,6 @@ public partial class GameManager
                             var singleEffects = lc.registeredEffects.FindAll(e => e.type == 1); // EFFECT_TYPE_SINGLE
                             foreach(var eff in singleEffects)
                             {
-                                int val = 0;
                                 if (eff.code == 3 || eff.code == 102) cd.currentAtk = EvaluateEffectValue(eff, lc, lc);
                                 else if (eff.code == 6 || eff.code == 106) cd.currentDef = EvaluateEffectValue(eff, lc, lc);
                                 else if (eff.code == 203) cd.hasPiercing = true; // EFFECT_PIERCE

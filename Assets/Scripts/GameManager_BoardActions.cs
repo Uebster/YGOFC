@@ -303,11 +303,20 @@ public partial class GameManager
             Quaternion startRot = Quaternion.Euler(0, 0, isPlayer ? 0 : 180f);
             Quaternion endRot = Quaternion.Euler(0, 0, isPlayer ? 0 : 180f);
 
+            bool ghostEndFaceUp = endFaceUp;
+            if (isPile && DuelFXManager.Instance != null) {
+                var pileSettings = DuelFXManager.Instance.extractionCinematic.deck;
+                if (sourceLoc == CardLocation.Graveyard) pileSettings = DuelFXManager.Instance.extractionCinematic.graveyard;
+                else if (sourceLoc == CardLocation.ExtraDeck) pileSettings = DuelFXManager.Instance.extractionCinematic.extraDeck;
+                else if (sourceLoc == CardLocation.Banished) pileSettings = DuelFXManager.Instance.extractionCinematic.banished;
+                if (!pileSettings.flipDuringExtraction) ghostEndFaceUp = startFaceUp;
+            }
+
             if (isPile && !isDraw && DuelFXManager.Instance.extractionCinematic.enableExtraction)
             {
                 bool animDone = false;
                 DuelFXManager.Instance.PlayExtractionCinematic(realCardDisplay.CurrentCardData, cardBackTexture, isPlayer, sourceLoc, startPos, startFaceUp, endFaceUp, (ghost, pos) => {
-                    DuelFXManager.Instance.PlayCardFlight(realCardDisplay.CurrentCardData, cardBackTexture, endFaceUp, endFaceUp, pos, endPos, sScale, handCardScale, startRot, endRot, settings, false, () => { animDone = true; }, ghost);
+                    DuelFXManager.Instance.PlayCardFlight(realCardDisplay.CurrentCardData, cardBackTexture, ghostEndFaceUp, endFaceUp, pos, endPos, sScale, handCardScale, startRot, endRot, settings, false, () => { animDone = true; }, ghost);
                 });
                 yield return new WaitUntil(() => animDone);
                 onComplete();
