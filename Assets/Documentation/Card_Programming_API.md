@@ -400,6 +400,22 @@ setmetatable(_G, {
 })
 ```
 
+### 5.11 O Motor de Tempo e Timings (Hint Timings)
+O simulador evoluiu de "perguntar apenas se uma carta foi ativada" para um sistema temporal matemático 100% fiel ao OCGCore.
+*   **A Conversão Automática:** Se um monstro atacar, o evento `1130 (EVENT_ATTACK_ANNOUNCE)` é disparado. Silenciosamente, o `CardEffectManager` converte o evento 1130 no flag `TIMING_ATTACK (0x1000)`.
+*   **O Drible do Bitwise (`e:SetHintTiming`):** A Máquina avalia se a Quick-Play ou Trap possui permissão para ser ativada na janela. Se a carta possui o bit `0x1000` armazenado, ela "pega carona" na Fast Effect Window!
+*   **Damage Step Yields:** Janelas críticas como `TIMING_DAMAGE_STEP (0x2000)` e `TIMING_DAMAGE_CAL (0x4000)` não são controladas pelo C#, e sim por comandos suspensivos `coroutine.yield('FastEffectWindow_DamageStep')` embutidos diretamente na função core `Core.Attack` do motor LUA.
+
+### 5.12 Garbage Collection e Resets (O Ciclo de Vida dos Efeitos)
+Emulando o YGOPro, cartas nunca mandam remover seus próprios efeitos. Elas recebem "Tatuagens de Reset" na memória LUA, e o C# age como um lixeiro (Garbage Collector).
+*   **`0x1000` (RESET_EVENT):** O efeito morre se a carta sofrer um evento brusco (ex: ser virada para baixo ou enviada ao cemitério). Verificado instantaneamente no `OnCardLeavesField`.
+*   **`0x40000000` (RESET_PHASE):** O efeito tem "prazo de validade" até uma fase acabar (ex: *Rush Recklessly*). O método `CleanAllExpiredModifiers()` é chamado pelo `PhaseManager` no fim do turno para varrer a RAM global e exterminar qualquer efeito com essa tatuagem.
+*   **`0x80000000` (RESET_CHAIN):** O efeito só existe enquanto a corrente se resolve (ex: Buffs no meio de um combate). O método `CleanChainExpiredModifiers()` é executado pelo `ChainManager` após a pilha LIFO esvaziar.
+
+### 5.13 Sistema de Consultas da Corrente e Jogadores Autônomos
+*   **`Duel.GetChainInfo(chainc, ...)`:** O C# rastreia até 30 parâmetros diferentes (desde Nível e ATK da carta que ativou a corrente, até Zonas e Jogadores alvo). A API não estilhaça em sub-requisições; um *Switch Case* expansivo varre as propriedades da cápsula `ChainLink` cacheada e envia os dados (em Inteiros, Objetos ou Tabelas) de volta para o LUA usar em suas matemáticas.
+*   **Atores Múltiplos (`PLAYER_`):** A Engine abandonou a limitação "Jogador vs CPU". Variáveis como `PLAYER_ALL (3)` são lidas de forma matemática pelo C#. Funções ativas como `Duel.Draw(PLAYER_ALL, 1, REASON_EFFECT)` executam as corrotinas de compra simetricamente, em sequência para ambos os lados, garantindo fidelidade 100% aos efeitos de cartas nativas do OCG sem necessidade de refatorar os scripts base.
+
 ### 5.9.2 Protocolo de Resolução e Mitigação
 *   **Monitoramento Implacável:** Se o Console da Unity gritar `<color=red>[LUA MISSING CONSTANT] NOME_DA_VARIAVEL</color>`, a prioridade máxima e imediata do desenvolvedor é abrir o arquivo original `constant.lua` do YGOPro (incluído no projeto como referência/cheat sheet), descobrir o valor numérico ou hexadecimal daquela constante, e injetá-la imediatamente no método `InjectVitalConstants()` da classe `LuaEngineCore.cs`.
 *   **Mitigação de Stubs (Funções Vazias):** Da mesma forma, se a engine alertar `<color=red>[LUA MISSING STUB] NomeDaClasse</color>` (ex: uma carta chamou `Coin.Toss()`), significa que uma classe de procedimento nativa em C# não foi exportada para o Lua. A Engine C# agora devolve uma tabela inofensiva (`dummyTable`) blindada contra crasches. No entanto, a prioridade do projeto é **diminuir a quantidade de Stubs Vazios**. Verifique o que a classe ausente estava tentando fazer e mapeie o comportamento visual ou lógico corretamente na Unity!

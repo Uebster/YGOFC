@@ -27,14 +27,14 @@ public class LuaCard
         if (obj == null) return 0;
         if (obj is MoonSharp.Interpreter.DynValue dv)
         {
-            if (dv.Type == MoonSharp.Interpreter.DataType.Number) return (int)dv.Number;
+            if (dv.Type == MoonSharp.Interpreter.DataType.Number) return unchecked((int)(long)dv.Number);
             if (dv.Type == MoonSharp.Interpreter.DataType.Boolean) return dv.Boolean ? 1 : 0;
             if (dv.Type == MoonSharp.Interpreter.DataType.String && int.TryParse(dv.String, out int res)) return res;
             return 0;
         }
-        if (obj is double d) return (int)d;
+        if (obj is double d) return unchecked((int)(long)d);
         if (obj is int i) return i;
-        if (obj is long l) return (int)l;
+        if (obj is long l) return unchecked((int)l);
         if (obj is bool b) return b ? 1 : 0;
         if (obj is string s && int.TryParse(s, out int parsed)) return parsed;
         return 0;
@@ -72,20 +72,30 @@ public class LuaCard
     public bool IsLocation(object locationVal) 
     { 
         int loc = ConvertToInt(locationVal);
-        // Debug.Log($"<color=magenta>[IsLocation]</color> O LUA perguntou se '{unityData?.name}' está na zona (código {loc})");
         if (unityCard != null && unityCard.isOnField)
         {
-            if (unityData.type.Contains("Spell") || unityData.type.Contains("Trap")) return (loc & 0x08) != 0;
-            return (loc & 0x04) != 0;
+            if (unityData.type.Contains("Spell") || unityData.type.Contains("Trap")) 
+            {
+                if ((loc & 0x08) != 0) return true; // SZONE
+                if ((loc & 0x100) != 0 && unityCard.transform.parent != null && unityCard.transform.parent.name.Contains("Field")) return true; // FZONE
+                if ((loc & 0x400) != 0) return true; // STZONE
+            }
+            else 
+            {
+                if ((loc & 0x04) != 0) return true; // MZONE
+                if ((loc & 0x800) != 0) return true; // MMZONE
+                if ((loc & 0x1000) != 0) return true; // EMZONE
+            }
         }
         if (unityCard != null && !unityCard.isOnField) return (loc & 0x02) != 0; // Hand
         
         if (unityData != null)
         {
             if ((loc & 0x10) != 0 && (GameManager.Instance.GetPlayerGraveyard().Contains(unityData) || GameManager.Instance.GetOpponentGraveyard().Contains(unityData))) return true;
-            if ((loc & 0x01) != 0 && (GameManager.Instance.GetPlayerMainDeck().Contains(unityData) || GameManager.Instance.GetOpponentMainDeck().Contains(unityData))) return true;
+            if ((loc & 0x01) != 0 && (GameManager.Instance.GetPlayerMainDeck().Contains(unityData) || GameManager.Instance.GetOpponentMainDeck().Contains(unityData))) return true; // Cobre 0x01, DECKBOT (0x10001) e DECKSHF (0x20001)
             if ((loc & 0x20) != 0 && (GameManager.Instance.GetPlayerRemoved().Contains(unityData) || GameManager.Instance.GetOpponentRemoved().Contains(unityData))) return true;
             if ((loc & 0x40) != 0 && (GameManager.Instance.GetPlayerExtraDeck().Contains(unityData) || GameManager.Instance.GetOpponentExtraDeck().Contains(unityData))) return true;
+            if ((loc & 0x80) != 0) return false; // OVERLAY (Evita crashes na validação LUA de Xyz)
         }
         return false;
     }

@@ -51,42 +51,47 @@ public partial class LuaDuel
     public DynValue Draw(object player, object amount, object reason)
     {
         int amt = ConvertToInt(amount);
-        bool isPlayer = IsPlayer(player);
+        int pInt = ConvertToInt(player);
+
+        if (pInt == 2 || pInt > 3) return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("Draw") }); // PLAYER_NONE
 
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
 
-        CardEffectManager.Instance.StartCoroutine(DrawRoutine(isPlayer, amt));
+        CardEffectManager.Instance.StartCoroutine(DrawRoutine(pInt, amt));
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("Draw") });
     }
 
-    private IEnumerator DrawRoutine(bool isPlayer, int amount)
+    private IEnumerator DrawRoutine(int pInt, int amount)
     {
-        if (isPlayer && GameManager.Instance != null && GameManager.Instance.canPlayerDrawFromDeck && !GameManager.Instance.isSimulating)
+        int totalDrawn = 0;
+
+        if (pInt == 0 || pInt == 3)
         {
-            for (int i = 0; i < amount; i++)
+            if (GameManager.Instance != null && GameManager.Instance.canPlayerDrawFromDeck && !GameManager.Instance.isSimulating)
             {
-                int drawsLeft = amount - i;
-                if (UIManager.Instance != null) UIManager.Instance.ShowMessage($"Efeito ativado: Compre {drawsLeft} carta(s) do seu Deck.");
-                
-                GameManager.Instance.pendingEffectDraws = 1;
-                yield return new WaitWhile(() => GameManager.Instance.pendingEffectDraws > 0);
-                yield return new WaitForSeconds(0.2f);
+                for (int i = 0; i < amount; i++)
+                {
+                    int drawsLeft = amount - i;
+                    if (UIManager.Instance != null) UIManager.Instance.ShowMessage($"Efeito ativado: Compre {drawsLeft} carta(s) do seu Deck.");
+                    GameManager.Instance.pendingEffectDraws = 1;
+                    yield return new WaitWhile(() => GameManager.Instance.pendingEffectDraws > 0);
+                    yield return new WaitForSeconds(0.2f);
+                    totalDrawn++;
+                }
             }
-        }
-        else
-        {
-            for (int i = 0; i < amount; i++)
+            else
             {
-                if (isPlayer) GameManager.Instance.DrawCard(true);
-                else GameManager.Instance.DrawOpponentCard();
-                
-                if (GameManager.Instance == null || !GameManager.Instance.isSimulating)
-                    yield return new WaitForSeconds(0.4f);
+                for (int i = 0; i < amount; i++) { GameManager.Instance.DrawCard(true); totalDrawn++; if (GameManager.Instance == null || !GameManager.Instance.isSimulating) yield return new WaitForSeconds(0.4f); }
             }
         }
         
-        CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(amount);
+        if (pInt == 1 || pInt == 3)
+        {
+            for (int i = 0; i < amount; i++) { GameManager.Instance.DrawOpponentCard(); totalDrawn++; if (GameManager.Instance == null || !GameManager.Instance.isSimulating) yield return new WaitForSeconds(0.4f); }
+        }
+        
+        CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(pInt == 3 ? totalDrawn / 2 : totalDrawn);
         CardEffectManager.Instance.isWaitingForLuaYield = false;
     }
 
@@ -390,7 +395,11 @@ public partial class LuaDuel
     private IEnumerator SendtoDeckRoutine(object target, object player, object seq, object reason)
     {
         int count = 0;
-        bool toTop = (ConvertToInt(seq) == 0);
+        int seqInt = ConvertToInt(seq);
+        bool toTop = (seqInt == 0); // SEQ_DECKTOP
+        bool toBottom = (seqInt == 1); // SEQ_DECKBOTTOM
+        bool shuffle = (seqInt == 2) || (!toTop && !toBottom); // SEQ_DECKSHUFFLE
+        
         List<CardData> cardsToAnimate = new List<CardData>();
         List<bool> isOwnerList = new List<bool>();
         List<bool> startFaceUpList = new List<bool>();
@@ -515,7 +524,7 @@ public partial class LuaDuel
             }
         }
 
-        if (!toTop && GameManager.Instance != null) 
+        if (shuffle && GameManager.Instance != null) 
         {
             if (playerProvided) GameManager.Instance.ShuffleDeck(pInt == 0);
             else 
@@ -529,14 +538,20 @@ public partial class LuaDuel
 
     public void ShuffleDeck(object player)
     {
-        if (GameManager.Instance != null)
-            GameManager.Instance.ShuffleDeck(IsPlayer(player));
+        int pInt = ConvertToInt(player);
+        if (GameManager.Instance != null) {
+            if (pInt == 0 || pInt == 3) GameManager.Instance.ShuffleDeck(true);
+            if (pInt == 1 || pInt == 3) GameManager.Instance.ShuffleDeck(false);
+        }
     }
 
     public void ShuffleHand(object player)
     {
-        if (GameManager.Instance != null)
-            GameManager.Instance.ShuffleHand(IsPlayer(player));
+        int pInt = ConvertToInt(player);
+        if (GameManager.Instance != null) {
+            if (pInt == 0 || pInt == 3) GameManager.Instance.ShuffleHand(true);
+            if (pInt == 1 || pInt == 3) GameManager.Instance.ShuffleHand(false);
+        }
     }
 
     public void Release(object target, object reason)
@@ -824,15 +839,18 @@ public partial class LuaDuel
         int posDU = du != null && (!(du is MoonSharp.Interpreter.DynValue d2) || !d2.IsNil()) ? ConvertToInt(du) : posAU;
         int posDD = dd != null && (!(dd is MoonSharp.Interpreter.DynValue d3) || !d3.IsNil()) ? ConvertToInt(dd) : posAU;
 
+        bool noFlip = false;
+        if (extraArgs != null && extraArgs.Length > 0 && ConvertToInt(extraArgs[0]) != 0) noFlip = true;
+
         List<CardDisplay> cardsToChange = new List<CardDisplay>();
         if (target is LuaGroup group) { foreach (var c in group.cards) if (c.unityCard != null) cardsToChange.Add(c.unityCard); }
         else if (target is LuaCard card && card.unityCard != null) { cardsToChange.Add(card.unityCard); }
 
-        CardEffectManager.Instance.StartCoroutine(ChangePositionRoutine(cardsToChange, posAU, posAD, posDU, posDD));
+        CardEffectManager.Instance.StartCoroutine(ChangePositionRoutine(cardsToChange, posAU, posAD, posDU, posDD, noFlip));
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("ChangePosition") });
     }
 
-    private IEnumerator ChangePositionRoutine(List<CardDisplay> cards, int posAU, int posAD, int posDU, int posDD)
+    private IEnumerator ChangePositionRoutine(List<CardDisplay> cards, int posAU, int posAD, int posDU, int posDD, bool noFlip)
     {
         int count = 0;
         int pendingAnimations = 0;
@@ -870,7 +888,8 @@ public partial class LuaDuel
                 c.RevealCard(false, true, () => { 
                     if (GameManager.Instance != null) { 
                         GameManager.Instance.OnBattlePositionChanged(c); 
-                        if (isAttackTarget) GameManager.Instance.OnFlipSummon(c); 
+                        if (isAttackTarget && !noFlip) GameManager.Instance.OnFlipSummon(c); 
+                        else if (!isAttackTarget && !noFlip) CardEffectManager.Instance.eventManager.OnFlip(c);
                     } 
                     pendingAnimations--;            
                 });

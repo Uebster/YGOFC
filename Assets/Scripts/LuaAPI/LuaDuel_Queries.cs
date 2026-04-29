@@ -14,18 +14,30 @@ public partial class LuaDuel
 
     public int GetLocationCount(object player, object location, params object[] extraArgs)
     {
-        if (GameManager.Instance == null) return 0;
+        if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return 0;
         bool isPlayer = IsPlayer(player);
         int loc = ConvertToInt(location);
-        int result = 5;
+        int uzone = 0xff; // Máscara padrão permitindo todas as zonas (11111)
+
+        if (extraArgs != null && extraArgs.Length > 0)
+        {
+            uzone = ConvertToInt(extraArgs[0]);
+        }
         
+        int count = 0;
+
         if (loc == 0x04) // LOCATION_MZONE
-            result = GameManager.Instance.GetFreeMonsterZones(isPlayer);
-        if (loc == 0x08) // LOCATION_SZONE
-            result = GameManager.Instance.GetFreeSpellTrapZones(isPlayer);
+        {
+            Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            for (int i = 0; i < zones.Length; i++) { if ((uzone & (1 << i)) != 0 && zones[i].childCount == 0) count++; }
+        }
+        else if (loc == 0x08) // LOCATION_SZONE
+        {
+            Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+            for (int i = 0; i < zones.Length; i++) { if ((uzone & (1 << i)) != 0 && zones[i].childCount == 0) count++; }
+        }
             
-        // Debug.Log($"[LuaDuel] GetLocationCount consultado: Player {player}, Loc {loc} -> Result: {result}");
-        return result;
+        return count;
     }
 
     public void AddCustomActivityCounter(object counter_id, object activity_type, object filter) { }
@@ -177,9 +189,14 @@ public partial class LuaDuel
 
     public bool IsPlayerCanDraw(object player, object amount = null)
     {
+        int pInt = ConvertToInt(player);
         int amt = amount == null ? 1 : ConvertToInt(amount);
-        int deckCount = IsPlayer(player) ? GameManager.Instance.GetPlayerMainDeck().Count : GameManager.Instance.GetOpponentMainDeck().Count;
-        return deckCount >= (amt > 0 ? amt : 1);
+        int req = amt > 0 ? amt : 1;
+        if (pInt == 3) {
+            return GameManager.Instance.GetPlayerMainDeck().Count >= req && GameManager.Instance.GetOpponentMainDeck().Count >= req;
+        }
+        int deckCount = pInt == 0 ? GameManager.Instance.GetPlayerMainDeck().Count : GameManager.Instance.GetOpponentMainDeck().Count;
+        return deckCount >= req;
     }
     public DynValue GetChainInfo(object chainc, object arg1 = null, object arg2 = null, object arg3 = null, object arg4 = null)
     {
@@ -222,35 +239,114 @@ public partial class LuaDuel
         foreach (object o in argsList)
         {
             int arg = ConvertToInt(o);
-            if (arg == 1) // CHAININFO_TARGET_PLAYER
+            if (arg == 9) // CHAININFO_TARGET_PLAYER
             {
                 returns.Add(DynValue.NewNumber(targetPl));
             }
-            else if (arg == 2) // CHAININFO_TARGET_PARAM
+            else if (arg == 10) // CHAININFO_TARGET_PARAM
             {
-                // Debug.Log($"<color=magenta>[LuaDuel LOG]</color> GetChainInfo: Resgatando TARGET_PARAM da memória. Valor: {targetPa}");
                 returns.Add(DynValue.NewNumber(targetPa));
             }
-            else if (arg == 3 || arg == 16 || arg == 8388608) // CHAININFO_TARGET_CARDS (3 injetado pelo nosso Core)
+            else if (arg == 8) // CHAININFO_TARGET_CARDS
             {
                 LuaGroup g = targGr != null ? targGr : new LuaGroup();
                 returns.Add(UserData.Create(g));
             }
-            else if (arg == 64 || arg == 128 || arg == 32) // TRIGGERING_EFFECT (0x40)
+            else if (arg == 1) // CHAININFO_TRIGGERING_EFFECT
             {
-                LuaEffect dummyEff = new LuaEffect { 
-                    owner = SafeDummyCard(),
-                    conditionFunc = CardEffectManager.Instance.dummyClosureTrue,
-                    costFunc = CardEffectManager.Instance.dummyClosureTrue,
-                    targetFunc = CardEffectManager.Instance.dummyClosureTrue,
-                    operationFunc = CardEffectManager.Instance.dummyClosureTrue
-                };
-                returns.Add(UserData.Create(dummyEff));
+                LuaEffect eff = targetLink != null ? targetLink.effect : new LuaEffect { owner = SafeDummyCard() };
+                returns.Add(UserData.Create(eff));
             }
-            else if (arg == 1024) // CHAININFO_TRIGGERING_LOCATION
+            else if (arg == 2 || arg == 3) // CHAININFO_TRIGGERING_PLAYER ou CONTROLER
+            {
+                int p = targetLink != null ? targetLink.player : 0;
+                returns.Add(DynValue.NewNumber(p));
+            }
+            else if (arg == 4) // CHAININFO_TRIGGERING_LOCATION
             {
                 int loc = targetLink != null && targetLink.card != null ? targetLink.card.GetLocation() : 0;
                 returns.Add(DynValue.NewNumber(loc));
+            }
+            else if (arg == 5) // CHAININFO_TRIGGERING_LOCATION_SYMBOLIC
+            {
+                int loc = targetLink != null && targetLink.card != null ? targetLink.card.GetLocation() : 0;
+                returns.Add(DynValue.NewNumber(loc));
+            }
+            else if (arg == 6 || arg == 7) // CHAININFO_TRIGGERING_SEQUENCE & SYMBOLIC
+            {
+                int seq = targetLink != null && targetLink.card != null ? targetLink.card.GetSequence() : 0;
+                returns.Add(DynValue.NewNumber(seq));
+            }
+            else if (arg == 13) // CHAININFO_CHAIN_ID
+            {
+                returns.Add(DynValue.NewNumber(chainIndex));
+            }
+            else if (arg == 14) // CHAININFO_TYPE
+            {
+                int type = targetLink != null && targetLink.card != null ? targetLink.card.GetType() : 0;
+                returns.Add(DynValue.NewNumber(type));
+            }
+            else if (arg == 16) // CHAININFO_TRIGGERING_POSITION
+            {
+                int pos = targetLink != null && targetLink.card != null ? targetLink.card.GetBattlePosition() : 0;
+                returns.Add(DynValue.NewNumber(pos));
+            }
+            else if (arg == 17) // CHAININFO_TRIGGERING_CODE
+            {
+                int code = targetLink != null && targetLink.card != null ? targetLink.card.GetCode() : 0;
+                returns.Add(DynValue.NewNumber(code));
+            }
+            else if (arg == 18) // CHAININFO_TRIGGERING_CODE2
+            {
+                int code2 = targetLink != null && targetLink.card != null ? targetLink.card.GetOriginalCode() : 0;
+                returns.Add(DynValue.NewNumber(code2));
+            }
+            else if (arg == 19) // CHAININFO_TRIGGERING_TYPE
+            {
+                int type = targetLink != null && targetLink.card != null ? targetLink.card.GetType() : 0;
+                returns.Add(DynValue.NewNumber(type));
+            }
+            else if (arg == 20) // CHAININFO_TRIGGERING_LEVEL
+            {
+                int lvl = targetLink != null && targetLink.card != null ? targetLink.card.GetLevel() : 0;
+                returns.Add(DynValue.NewNumber(lvl));
+            }
+            else if (arg == 21) // CHAININFO_TRIGGERING_RANK
+            {
+                int rank = targetLink != null && targetLink.card != null && targetLink.card.unityData.type.Contains("Xyz") ? targetLink.card.GetLevel() : 0;
+                returns.Add(DynValue.NewNumber(rank));
+            }
+            else if (arg == 22) // CHAININFO_TRIGGERING_ATTRIBUTE
+            {
+                int attr = targetLink != null && targetLink.card != null ? targetLink.card.GetAttribute() : 0;
+                returns.Add(DynValue.NewNumber(attr));
+            }
+            else if (arg == 23) // CHAININFO_TRIGGERING_RACE
+            {
+                int race = targetLink != null && targetLink.card != null ? targetLink.card.GetRace() : 0;
+                returns.Add(DynValue.NewNumber(race));
+            }
+            else if (arg == 24) // CHAININFO_TRIGGERING_ATTACK
+            {
+                int atk = targetLink != null && targetLink.card != null ? targetLink.card.GetAttack() : 0;
+                returns.Add(DynValue.NewNumber(atk));
+            }
+            else if (arg == 25) // CHAININFO_TRIGGERING_DEFENSE
+            {
+                int def = targetLink != null && targetLink.card != null ? targetLink.card.GetDefense() : 0;
+                returns.Add(DynValue.NewNumber(def));
+            }
+            else if (arg >= 26 && arg <= 29) // STATUS, SUMMON_LOCATION, SUMMON_TYPE, PROC_COMPLETE
+            {
+                returns.Add(DynValue.NewNumber(0));
+            }
+            else if (arg == 30) // CHAININFO_TRIGGERING_SETCODES
+            {
+                returns.Add(DynValue.NewTable(CardEffectManager.Instance.luaEngine));
+            }
+            else if (arg == 11 || arg == 12) // DISABLE_REASON, DISABLE_PLAYER
+            {
+                returns.Add(DynValue.NewNumber(0));
             }
             else
             {
@@ -343,7 +439,7 @@ public partial class LuaDuel
                 }
             }
         }
-        if ((loc & 0x04) != 0) // MZONE
+        if ((loc & 0x04) != 0 || (loc & 0x800) != 0) // MZONE ou MMZONE
         {
             Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
             foreach (var z in zones) if (z.childCount > 0) { 
@@ -354,7 +450,7 @@ public partial class LuaDuel
                 }
             }
         }
-        if ((loc & 0x08) != 0) // SZONE
+        if ((loc & 0x08) != 0 || (loc & 0x400) != 0) // SZONE ou STZONE
         {
             Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
             foreach (var z in zones) if (z.childCount > 0) { 
@@ -364,6 +460,9 @@ public partial class LuaDuel
                     if(excluded == null || lc.unityCard != excluded.unityCard) candidates.Add(lc); 
                 }
             }
+        }
+        if ((loc & 0x08) != 0 || (loc & 0x100) != 0 || (loc & 0x400) != 0) // FZONE
+        {
             Transform fz = isPlayer ? GameManager.Instance.duelFieldUI.playerFieldSpell : GameManager.Instance.duelFieldUI.opponentFieldSpell;
             if (fz.childCount > 0) { 
                 CardDisplay cd = fz.GetComponentInChildren<CardDisplay>();

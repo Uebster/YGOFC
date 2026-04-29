@@ -952,10 +952,10 @@ public class CardEffectManager : MonoBehaviour
         {
             if (kvp.Value != null && kvp.Value.registeredEffects != null)
             {
-                // 0x1000 = RESET_PHASE, 0x0200 = PHASE_END
+                // 0x40000000 = RESET_PHASE, 0x0200 = PHASE_END
                 int removed = kvp.Value.registeredEffects.RemoveAll(e => {
-                    bool shouldRemove = (e.GetReset() & 0x1000) != 0 || (e.GetReset() & 0x0200) != 0;
-                    if (shouldRemove) Debug.Log($"[CleanAllExpiredModifiers] Removendo efeito {e.code} de {kvp.Value.unityData.name} (Reset Value: {e.GetReset()})");
+                    bool shouldRemove = ((uint)e.GetReset() & 0x40000000) != 0; // Se o efeito é agendado para expirar em uma Fase!
+                    // if (shouldRemove) Debug.Log($"[CleanAllExpiredModifiers] Removendo efeito {e.code} de {kvp.Value.unityData.name} (Reset Value: {e.GetReset()})");
                     return shouldRemove;
                 });
                 if (removed > 0) removedCount += removed;
@@ -968,6 +968,30 @@ public class CardEffectManager : MonoBehaviour
         if (GameManager.Instance != null)
         {
             GameManager.Instance.RefreshAllCardsVisuals();
+        }
+    }
+
+    public void CleanChainExpiredModifiers()
+    {
+        int removedCount = 0;
+        // Limpeza de Efeitos Temporários registrados diretamente nas cartas (ex: "até o fim desta Corrente")
+        foreach(var kvp in activeLuaCards)
+        {
+            if (kvp.Value != null && kvp.Value.registeredEffects != null)
+            {
+                // 0x80000000 = RESET_CHAIN
+                int removed = kvp.Value.registeredEffects.RemoveAll(e => {
+                    bool shouldRemove = ((uint)e.GetReset() & 0x80000000) != 0;
+                    if (shouldRemove) Debug.Log($"[CleanChainExpiredModifiers] Removendo efeito {e.code} de {kvp.Value.unityData.name} (Reset Value: {e.GetReset()})");
+                    return shouldRemove;
+                });
+                if (removed > 0) removedCount += removed;
+            }
+        }
+        
+        // Remove Efeitos Globais/Invisíveis que duram até o fim da corrente!
+        if (luaDuel != null && luaDuel.globalEffects != null) {
+            removedCount += luaDuel.globalEffects.RemoveAll(e => ((uint)e.GetReset() & 0x80000000) != 0);
         }
     }
 

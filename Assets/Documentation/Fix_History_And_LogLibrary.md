@@ -158,6 +158,25 @@ O controle de tempo da *Standby Phase* apresentou dois sintomas distintos que ma
 *   **A Causa Raiz:** O `ChainManager` engatilhava o `PlayChainLinkEffect` de forma hardcoded e imediata ao empilhar o primeiro elo da corrente, sem saber se haveria uma resposta.
 *   **A Solução:** Injeção da lógica de exibição retroativa. O Link 1 agora roda de forma limpa (apenas com o pulso luminoso ciano/verde indicando a ignição). Se um **Link 2** for adicionado à pilha durante a `ResponseWindowRoutine`, o C# vasculha a memória LIFO, encontra a carta física (ou fantasma no cemitério) do Link 1, aplica a placa visual nela retroativamente e só então exibe o Link 2. O duelo permanece com o HUD limpo, explodindo em correntes apenas durante contra-ataques reais.
 
+## 22. O Drible dos Players (PLAYER_ALL e PLAYER_NONE ignorados)
+- **Sintoma:** Cartas que deveriam afetar ambos os jogadores (ex: causar dano a todos via `PLAYER_ALL`) afetavam apenas o oponente.
+- **A Causa Raiz:** O motor C# utilizava um "jeitinho" (workaround) binário `if (player == 0)` para o jogador local e `else` para o resto. Como `PLAYER_ALL` envia o valor `3`, a Engine ignorava a matemática universal e caía no bloco `else`, punindo apenas a IA.
+- **Correção Aplicada:** Todas as funções de ação da `LuaAPI` (`Damage`, `Recover`, `PayLPCost`, `Draw`, `ShuffleDeck`, `IsPlayerCanDraw`) foram refatoradas para avaliar a variável `pInt`. O valor `3` agora dispara métodos gêmeos simultaneamente, garantindo a autonomia da instrução `Duel.Action(PLAYER_ALL)`.
+
+## 23. O Colapso do ChainInfo (Memory Overwrite LUA)
+- **Sintoma:** A função `Duel.GetChainInfo` retornaria valores errados (ex: devolvendo o número do jogador ao invés de um objeto de carta), potencialmente travando a Máquina Virtual MoonSharp por quebra de tipagem.
+- **A Causa Raiz:** Herança de stubs antigos. As constantes de `CHAININFO_TARGET_PLAYER` e `CHAININFO_TARGET_PARAM` estavam mapeadas no LUA com os valores `1` e `2` (respectivamente), sobrepondo-se aos valores oficiais do OCGCore para `TRIGGERING_EFFECT` e `TRIGGERING_PLAYER`.
+- **Correção Aplicada:** As globais LUA foram atualizadas rigorosamente para os IDs oficiais do OCGCore (ex: `TARGET_CARDS = 8`). A função `GetChainInfo` no C# foi reescrita num formato *Switch Case* estrito, cobrindo os 30 parâmetros oficiais, desde as localizações de invocação até o rank e status da carta que disparou a corrente.
+
+## 24. O Falso Garbage Collector (RESET_PHASE e RESET_CHAIN)
+- **Sintoma:** Efeitos de Mágicas/Armadilhas que diziam "Até a Fase Final" nunca expiravam, deixando monstros buffados para sempre. Efeitos "Até o fim desta Corrente" se tornavam permanentes.
+- **A Causa Raiz:** Erro crasso na máscara de bits. O `CleanAllExpiredModifiers` da Engine varria a memória usando `e.GetReset() & 0x1000` (que é `RESET_EVENT`) achando que era a máscara de fase. A constante oficial do YGOPro para expiração de Fase é `0x40000000`.
+- **Correção Aplicada:** 
+  1. `ConvertToInt` atualizado com o envoltório `unchecked((int)(long))` para suportar as máscaras gigantes do OCGCore sem causar *Overflow* na Unity.
+  2. O `PhaseManager` agora dispara o limpador usando as máscaras Bitwise corretas da tabela nativa (`0x40000000`).
+  3. Adicionado o limpador cirúrgico `CleanChainExpiredModifiers()` acionado pelo `ChainManager` após o encerramento do Elo 1, utilizando a máscara `0x80000000` para limpar lixos atrelados unicamente ao `RESET_CHAIN`.
+
+
 ## [Data Atual] - Implementação de Auras Globais e Nível Dinâmico (A Legendary Ocean)
 
 **Nova Feature: Sistema de Auras Globais**

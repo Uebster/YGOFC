@@ -41,14 +41,14 @@ public partial class LuaDuel
         if (obj == null) return 0;
         if (obj is MoonSharp.Interpreter.DynValue dv)
         {
-            if (dv.Type == MoonSharp.Interpreter.DataType.Number) return (int)dv.Number;
+            if (dv.Type == MoonSharp.Interpreter.DataType.Number) return unchecked((int)(long)dv.Number);
             if (dv.Type == MoonSharp.Interpreter.DataType.Boolean) return dv.Boolean ? 1 : 0;
             if (dv.Type == MoonSharp.Interpreter.DataType.String && int.TryParse(dv.String, out int res)) return res;
             return 0;
         }
-        if (obj is double d) return (int)d;
+        if (obj is double d) return unchecked((int)(long)d);
         if (obj is int i) return i;
-        if (obj is long l) return (int)l;
+        if (obj is long l) return unchecked((int)l);
         if (obj is bool b) return b ? 1 : 0;
         if (obj is string s && int.TryParse(s, out int parsed)) return parsed;
         return 0;
@@ -66,7 +66,9 @@ public partial class LuaDuel
         int aInt = ConvertToInt(amount);
         
         if (pInt == 0) GameManager.Instance.DamagePlayer(aInt);
-        else GameManager.Instance.DamageOpponent(aInt);
+        else if (pInt == 1) GameManager.Instance.DamageOpponent(aInt);
+        else if (pInt == 3) { GameManager.Instance.DamagePlayer(aInt); GameManager.Instance.DamageOpponent(aInt); }
+        else return; // PLAYER_NONE (2) ou inválido
 
         // Feedback Visual e Sonoro de Dano de Efeito (Burn)
         if (DuelFXManager.Instance != null && GameManager.Instance != null && !GameManager.Instance.isSimulating && aInt > 0)
@@ -95,13 +97,19 @@ public partial class LuaDuel
         int aInt = ConvertToInt(amount);
         // Debug.Log($"[Surgical Log] Convertido para C# -> Jogador: {pInt} | Cura: {aInt}");
         if (pInt == 0) GameManager.Instance.GainLifePoints(true, aInt);
-        else GameManager.Instance.GainLifePoints(false, aInt);
+        else if (pInt == 1) GameManager.Instance.GainLifePoints(false, aInt);
+        else if (pInt == 3) { GameManager.Instance.GainLifePoints(true, aInt); GameManager.Instance.GainLifePoints(false, aInt); }
     }
 
     // --- STATUS BASE (Resgatados das requisições LUA) ---
     public bool IsTurnPlayer(object player) { return GetTurnPlayer() == ConvertToInt(player); }
     public int GetTurnCount() { return GameManager.Instance != null ? GameManager.Instance.turnCount : 0; }
-    public int GetLP(object player) { return IsPlayer(player) ? GameManager.Instance.playerLP : GameManager.Instance.opponentLP; }
+    public int GetLP(object player) { 
+        int pInt = ConvertToInt(player);
+        if (pInt == 0) return GameManager.Instance.playerLP;
+        if (pInt == 1) return GameManager.Instance.opponentLP;
+        return 0; // Fallback para PLAYER_ALL/PLAYER_NONE
+    }
     public int GetBattleDamage(object player) { return 0; }
     public bool IsDuelType(object type) { return true; }
 
@@ -144,13 +152,20 @@ public partial class LuaDuel
 
     public bool CheckLPCost(object player, object cost)
     {
-        int lp = IsPlayer(player) ? GameManager.Instance.playerLP : GameManager.Instance.opponentLP;
-        return lp >= ConvertToInt(cost);
+        int pInt = ConvertToInt(player);
+        int cInt = ConvertToInt(cost);
+        if (pInt == 0) return GameManager.Instance.playerLP >= cInt;
+        if (pInt == 1) return GameManager.Instance.opponentLP >= cInt;
+        return false;
     }
 
     public void PayLPCost(object player, object cost)
     {
-        GameManager.Instance.PayLifePoints(IsPlayer(player), ConvertToInt(cost));
+        int pInt = ConvertToInt(player);
+        int cInt = ConvertToInt(cost);
+        if (pInt == 0) GameManager.Instance.PayLifePoints(true, cInt);
+        else if (pInt == 1) GameManager.Instance.PayLifePoints(false, cInt);
+        else if (pInt == 3) { GameManager.Instance.PayLifePoints(true, cInt); GameManager.Instance.PayLifePoints(false, cInt); }
     }
 
     public LuaCard GetAttacker()

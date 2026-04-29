@@ -472,16 +472,16 @@ public class LuaEngineCore
         luaEngine.Globals["LOCATION_REASON_COUNT"] = 0x4;
         luaEngine.Globals["LOCATION_REASON_RETURN"] = 0x8;
 
-        luaEngine.Globals["CHAININFO_TARGET_PLAYER"] = 1;
-        luaEngine.Globals["CHAININFO_TARGET_PARAM"] = 2;
-        luaEngine.Globals["CHAININFO_TARGET_CARDS"] = 3;
-        luaEngine.Globals["CHAININFO_TRIGGERING_LOCATION"] = 1024;
         luaEngine.Globals["CHAININFO_TRIGGERING_EFFECT"] = 1;
         luaEngine.Globals["CHAININFO_TRIGGERING_PLAYER"] = 2;
         luaEngine.Globals["CHAININFO_TRIGGERING_CONTROLER"] = 3;
+        luaEngine.Globals["CHAININFO_TRIGGERING_LOCATION"] = 4;
         luaEngine.Globals["CHAININFO_TRIGGERING_LOCATION_SYMBOLIC"] = 5;
         luaEngine.Globals["CHAININFO_TRIGGERING_SEQUENCE"] = 6;
         luaEngine.Globals["CHAININFO_TRIGGERING_SEQUENCE_SYMBOLIC"] = 7;
+        luaEngine.Globals["CHAININFO_TARGET_CARDS"] = 8;
+        luaEngine.Globals["CHAININFO_TARGET_PLAYER"] = 9;
+        luaEngine.Globals["CHAININFO_TARGET_PARAM"] = 10;
         luaEngine.Globals["CHAININFO_DISABLE_REASON"] = 11;
         luaEngine.Globals["CHAININFO_DISABLE_PLAYER"] = 12;
         luaEngine.Globals["CHAININFO_CHAIN_ID"] = 13;

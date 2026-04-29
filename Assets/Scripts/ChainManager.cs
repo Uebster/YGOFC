@@ -194,6 +194,8 @@ public class ChainManager
                 core.eventManager.TriggerLuaEvent(1026, null); // 1026 = EVENT_CHAIN_END
                 core.StartCoroutine(core.OpenFastEffectWindow("Fim da Corrente", 1026, null, 0x8000)); // 0x8000 = TIMING_CHAIN_END
             }
+            
+            core.CleanChainExpiredModifiers();
         }
 
         activeChainTasks--;
