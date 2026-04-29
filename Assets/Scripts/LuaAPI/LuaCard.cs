@@ -235,7 +235,7 @@ public class LuaCard
     public int GetPreviousCodeOnField() { return GetCode(); }
     public int GetPreviousRaceOnField() { return GetRace(); }
     public bool IsCanBeEffectTarget(object e) { return true; }
-    public bool IsSummonType(object sumtype) { return true; }
+    public bool IsSummonType(object sumtype) { return (GetSummonType() & ConvertToInt(sumtype)) == ConvertToInt(sumtype); }
     public bool IsCanRemoveCounter(object player, object counterType, object count, object reason) { return true; }
     public bool IsPreviousRaceOnField(object race) { return true; }
     public bool IsRelateToCard(object card) { return true; }
@@ -312,7 +312,7 @@ public class LuaCard
         return baseDef;
     }
     public bool IsControlerCanBeChanged() { return true; }
-    public int GetSummonType() { return 0; }
+    public int GetSummonType() { return unityCard != null ? unityCard.summonType : 0; }
     public int GetPreviousLocation() { return 0; }
 
     public bool CheckFusionMaterial(object group = null, object card = null, object chkf = null) { return true; }
@@ -378,7 +378,6 @@ public class LuaCard
         return (GetAttribute() & ConvertToInt(attr)) != 0; 
     }
     public bool IsReason(object reason) { 
-        if (currentReason == 0) return true; 
         return (currentReason & ConvertToInt(reason)) != 0; 
     }
     public int GetReason() { return currentReason; }

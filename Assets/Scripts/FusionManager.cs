@@ -129,7 +129,7 @@ public class FusionManager : MonoBehaviour
         if (sourceCard != null && !disableCost)
         {
             if (sourceCard.CurrentCardData.id != "0707" && sourceCard.CurrentCardData.name != "Fusion Gate") {
-                GameManager.Instance.SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard, CardLocation.Field, SendReason.Effect);
+                GameManager.Instance.SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard, CardLocation.Field, 0x40); // REASON_EFFECT
                 Destroy(sourceCard.gameObject);
             }
         }
@@ -142,7 +142,7 @@ public class FusionManager : MonoBehaviour
             if (handObj != null)
             {
                 if (banishMaterials) GameManager.Instance.RemoveFromPlay(mat, true);
-                else GameManager.Instance.SendToGraveyard(mat, true, CardLocation.Hand, SendReason.Effect);
+                else GameManager.Instance.SendToGraveyard(mat, true, CardLocation.Hand, 0x40); // REASON_EFFECT
                 GameManager.Instance.playerHand.Remove(handObj);
                 Destroy(handObj);
             }
@@ -153,7 +153,7 @@ public class FusionManager : MonoBehaviour
                 {
                     if (banishMaterials) GameManager.Instance.BanishCard(fieldObj);
                     else {
-                        GameManager.Instance.SendToGraveyard(mat, true, CardLocation.Field, SendReason.Effect);
+                        GameManager.Instance.SendToGraveyard(mat, true, CardLocation.Field, 0x40); // REASON_EFFECT
                         fieldObj.transform.SetParent(null);
                         Destroy(fieldObj.gameObject);
                     }
@@ -171,7 +171,7 @@ public class FusionManager : MonoBehaviour
             CardDisplay display = cardGO.GetComponent<CardDisplay>();
             display.SetCard(fusionMonster, GameManager.Instance.GetCardBackTexture(), true);
             display.isPlayerCard = isPlayer;
-            GameManager.Instance.FinalizeSummon(cardGO, fusionMonster, def, isPlayer, false, false, null, materials);
+            GameManager.Instance.FinalizeSummon(cardGO, fusionMonster, def, isPlayer, false, false, null, materials, null, CardLocation.ExtraDeck, null, 0x43000000); // SUMMON_TYPE_FUSION
         };
 
         if (isPlayer && UIManager.Instance != null && !GameManager.Instance.isSimulating)

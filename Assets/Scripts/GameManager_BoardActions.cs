@@ -89,7 +89,7 @@ public partial class GameManager
         if (DeckManager.Instance != null) DeckManager.Instance.ReturnToDeck(card, toTop);
     }
 
-    public void TributeCard(CardDisplay card)
+    public void TributeCard(CardDisplay card, int reason = 0x2) // REASON_RELEASE
     {
         if (card == null) return;
 
@@ -100,7 +100,7 @@ public partial class GameManager
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
 
         // Envia para o GY (Lógica de dados)
-        SendToGraveyard(card.CurrentCardData, card.ownerPlayer);
+        SendToGraveyard(card.CurrentCardData, card.ownerPlayer, card.CurrentLocation, reason);
 
         card.transform.SetParent(null);
         // Destrói o objeto visual
@@ -174,7 +174,7 @@ public partial class GameManager
             {
                 // Simula destruição: envia para o GY e destrói o objeto
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
-                SendToGraveyard(card.CurrentCardData, card.ownerPlayer, CardLocation.Field, SendReason.Destroyed);
+                SendToGraveyard(card.CurrentCardData, card.ownerPlayer, CardLocation.Field, 0x41); // REASON_DESTROY | REASON_EFFECT
                 
                 if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);
                 
@@ -365,8 +365,9 @@ public partial class GameManager
             onComplete();
         }
     }
+
     // Método para enviar carta para o cemitério (Exemplo de uso)
-    public void SendToGraveyard(CardData card, bool isPlayer, CardLocation fromLocation = CardLocation.Unknown, SendReason reason = SendReason.Unknown)
+    public void SendToGraveyard(CardData card, bool isPlayer, CardLocation fromLocation = CardLocation.Unknown, int reason = 0)
     {
         // Tokens evaporam ao sair do campo, não entram no GY.
         if (card == null || card.id == "TOKEN") return;
@@ -410,7 +411,7 @@ public partial class GameManager
     /// Move uma carta entre zonas de forma centralizada e consistente.
     /// Detecta automaticamente a zona de origem e aplica a lógica apropriada.
     /// </summary>
-    public void MoveCard(CardDisplay card, CardLocation destination, SendReason reason = SendReason.Unknown)
+    public void MoveCard(CardDisplay card, CardLocation destination, int reason = 0)
     {
         if (card == null) return;
         
@@ -450,7 +451,7 @@ public partial class GameManager
                 if (DuelFXManager.Instance != null && !isSimulating)
                 {
                     CardFlightSettings flightSettings = wasOnField ? (isFieldSpellZone ? DuelFXManager.Instance.flightFieldSpellZoneToGraveyard : DuelFXManager.Instance.flightFieldToGraveyard) : DuelFXManager.Instance.flightHandToGraveyard;
-                    if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed && reason != SendReason.Battle && reason != SendReason.Tribute)
+                    if (flightSettings != null && flightSettings.enableFlight && (reason & 0x23) == 0 && (reason & 0x1) == 0) // Previne voo em Destruição, Batalha e Sacrifício
                     {
                         Vector3 endPos = isOwner ? playerGraveyardDisplay.transform.position : opponentGraveyardDisplay.transform.position;
                         Quaternion endRot = isOwner ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
@@ -483,7 +484,7 @@ public partial class GameManager
                     else if (prevLoc == CardLocation.Banished) flightSettings = DuelFXManager.Instance.flightBanishToDeck;
                     else flightSettings = DuelFXManager.Instance.flightGraveyardToDeck; // Fallback
 
-                    if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed)
+                    if (flightSettings != null && flightSettings.enableFlight && (reason & 0x1) == 0) // REASON_DESTROY
                     {
                         Vector3 endPos = isOwner ? playerDeckDisplay.transform.position : opponentDeckDisplay.transform.position;
                         Quaternion endRot = isOwner ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
@@ -506,7 +507,7 @@ public partial class GameManager
                     else if (prevLoc == CardLocation.ExtraDeck) flightSettings = DuelFXManager.Instance.flightExtraToBanished;
                     else flightSettings = DuelFXManager.Instance.flightGraveyardToBanished; // Fallback
 
-                    if (flightSettings != null && flightSettings.enableFlight && reason != SendReason.Destroyed && reason != SendReason.Battle && reason != SendReason.Tribute)
+                    if (flightSettings != null && flightSettings.enableFlight && (reason & 0x23) == 0 && (reason & 0x1) == 0)
                     {
                         Vector3 endPos = isOwner ? playerRemovedDisplay.transform.position : opponentRemovedDisplay.transform.position;
                         Quaternion endRot = isOwner ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
@@ -687,7 +688,7 @@ public partial class GameManager
                     var oldField = duelFieldUI.playerFieldSpell.GetComponentInChildren<CardDisplay>();
                     if (oldField != null) {
                         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(oldField);
-                        SendToGraveyard(oldField.CurrentCardData, true, CardLocation.Field, SendReason.Rule);
+                        SendToGraveyard(oldField.CurrentCardData, true, CardLocation.Field, 0x400); // REASON_RULE
                         oldField.transform.SetParent(null);
                         Destroy(oldField.gameObject);
                     }
@@ -697,7 +698,7 @@ public partial class GameManager
                     var oldField = duelFieldUI.opponentFieldSpell.GetComponentInChildren<CardDisplay>();
                     if (oldField != null) {
                         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(oldField);
-                        SendToGraveyard(oldField.CurrentCardData, false, CardLocation.Field, SendReason.Rule);
+                        SendToGraveyard(oldField.CurrentCardData, false, CardLocation.Field, 0x400); // REASON_RULE
                         oldField.transform.SetParent(null);
                         Destroy(oldField.gameObject);
                     }
@@ -1085,7 +1086,7 @@ public partial class GameManager
         if (targetZone == null)
         {
             Debug.LogWarning("Sem zona de S/T para equipar o monstro.");
-            SendToGraveyard(equipCard.CurrentCardData, equipCard.isPlayerCard, CardLocation.Field, SendReason.Rule);
+            SendToGraveyard(equipCard.CurrentCardData, equipCard.isPlayerCard, CardLocation.Field, 0x400); // REASON_RULE
             Destroy(equipCard.gameObject);
             return;
         }
@@ -1138,7 +1139,7 @@ public partial class GameManager
         if (fusions.Count == 0)
         {
             Debug.Log("Nenhum Monstro de Fusão no Extra Deck.");
-            SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+            SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, 0x400); // REASON_RULE
             Destroy(sourceCard.gameObject);
             return;
         }
@@ -1161,14 +1162,14 @@ public partial class GameManager
         if (possibleFusions.Count == 0)
         {
             Debug.Log("Materiais insuficientes para qualquer Fusão.");
-            SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule); Destroy(sourceCard.gameObject);
+            SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, 0x400); Destroy(sourceCard.gameObject);
             return;
         }
 
         if (!isPlayer || isSimulating)
         {
             // A IA de Fusão pura será tratada pela LUA. Por ora, abortamos para não travar a UI de humano.
-            SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+            SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, 0x400); // REASON_RULE
             Destroy(sourceCard.gameObject);
             return;
         }
@@ -1194,7 +1195,7 @@ public partial class GameManager
                 }
                 else
                 {
-                    SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+                    SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, 0x400); // REASON_RULE
                     Destroy(sourceCard.gameObject);
                 }
             }, HighlightCategory.Fusion);
@@ -1230,7 +1231,7 @@ public partial class GameManager
         StartDirectSelection(validMaterials, 2, 5, fusionValidator, $"Selecione os Materiais para {targetFusion.name}", (selectedMaterials) => {
             if (selectedMaterials == null || selectedMaterials.Count < 2 || !fusionValidator(selectedMaterials)) {
                 if (UIManager.Instance != null && !isSimulating) UIManager.Instance.ShowMessage("Materiais cancelados ou inválidos!");
-                SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+                SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, 0x400); // REASON_RULE
                 Destroy(sourceCard.gameObject);
                 return;
             }

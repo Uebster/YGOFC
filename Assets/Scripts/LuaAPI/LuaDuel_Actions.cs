@@ -13,6 +13,7 @@ public partial class LuaDuel
 
     public DynValue Destroy(object target, object reason)
     {
+        int ocgReason = ConvertToInt(reason) | 0x1; // Adiciona REASON_DESTROY
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
 
@@ -29,7 +30,7 @@ public partial class LuaDuel
             // Debug.Log($"[Lua] Duel.Destroy({card.unityCard.CurrentCardData.name})");
         }
 
-        CardEffectManager.Instance.StartCoroutine(DestroyCardsRoutine(toDestroy));
+        CardEffectManager.Instance.StartCoroutine(DestroyCardsRoutine(toDestroy, ocgReason));
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("Destroy") });
     }
 
@@ -106,10 +107,6 @@ public partial class LuaDuel
     private IEnumerator SendtoGraveRoutine(object target, object reason)
     {
         int ocgReason = ConvertToInt(reason);
-        SendReason sReason = SendReason.Effect;
-        if ((ocgReason & 0x4000) != 0) sReason = SendReason.Discarded;
-        else if ((ocgReason & 0x1) != 0) sReason = SendReason.Destroyed;
-        else if ((ocgReason & 0x2) != 0) sReason = SendReason.Tribute;
 
         int count = 0;
         List<LuaCard> cardsToProcess = new List<LuaCard>();
@@ -125,9 +122,10 @@ public partial class LuaDuel
 
         foreach (var c in cardsToProcess)
         {
+            c.currentReason = ocgReason;
             if (c.unityCard != null)
             {
-                GameManager.Instance.MoveCard(c.unityCard, CardLocation.Graveyard, sReason);
+                GameManager.Instance.MoveCard(c.unityCard, CardLocation.Graveyard, ocgReason);
                 count++;
                 if (GameManager.Instance == null || !GameManager.Instance.isSimulating)
                     yield return new WaitForSeconds(0.3f);
@@ -136,7 +134,7 @@ public partial class LuaDuel
             {
                 bool wasPlayerPile;
                 CardLocation sourceLoc = RemoveDataFromAllPiles(c.unityData, out wasPlayerPile);
-                GameManager.Instance.SendToGraveyard(c.unityData, wasPlayerPile, sourceLoc, sReason);
+                GameManager.Instance.SendToGraveyard(c.unityData, wasPlayerPile, sourceLoc, ocgReason);
                 
                 if (DuelFXManager.Instance != null && !GameManager.Instance.isSimulating && sourceLoc != CardLocation.Unknown)
                 {
@@ -188,6 +186,7 @@ public partial class LuaDuel
 
     private IEnumerator RemoveRoutine(object target, object pos, object reason)
     {
+        int ocgReason = ConvertToInt(reason);
         // 1. ESPERA ESTRATÉGICA: Garante que cartas recém-destruídas (ex: Big Bang Shot)
         // terminem de voar e o Cemitério recalcule seu layout antes de tentarmos extrair o alvo!
         if (GameManager.Instance != null && !GameManager.Instance.isSimulating)
@@ -210,6 +209,7 @@ public partial class LuaDuel
 
         foreach (var c in cardsToProcess)
         {
+            c.currentReason = ocgReason;
             if (c.unityCard != null)
             {
                 GameManager.Instance.BanishCard(c.unityCard);
@@ -396,6 +396,7 @@ public partial class LuaDuel
     {
         int count = 0;
         int seqInt = ConvertToInt(seq);
+        int ocgReason = ConvertToInt(reason);
         bool toTop = (seqInt == 0); // SEQ_DECKTOP
         bool toBottom = (seqInt == 1); // SEQ_DECKBOTTOM
         bool shuffle = (seqInt == 2) || (!toTop && !toBottom); // SEQ_DECKSHUFFLE
@@ -414,6 +415,7 @@ public partial class LuaDuel
         {
             foreach (var c in group.cards)
             {
+                c.currentReason = ocgReason;
                 if (c.unityData != null) cardsToAnimate.Add(c.unityData);
 
                 bool targetDeckIsPlayer = true;
@@ -464,6 +466,7 @@ public partial class LuaDuel
         }
         else if (target is LuaCard card)
         {
+            card.currentReason = ocgReason;
             if (card.unityData != null) cardsToAnimate.Add(card.unityData);
             bool targetDeckIsPlayer = true;
             bool sFaceUp = true;
@@ -556,18 +559,23 @@ public partial class LuaDuel
 
     public void Release(object target, object reason)
     {
+        int ocgReason = ConvertToInt(reason) | 0x2; // REASON_RELEASE
         if (target is LuaGroup group)
         {
             this.lastCostGroup = group; // Armazena o grupo para exclusão de alvo
             foreach (var c in group.cards)
-                if (c.unityCard != null) GameManager.Instance.TributeCard(c.unityCard);
+            {
+                c.currentReason = ocgReason;
+                if (c.unityCard != null) GameManager.Instance.TributeCard(c.unityCard, ocgReason);
+            }
         }
         else if (target is LuaCard card && card.unityCard != null)
         {
             LuaGroup tempGroup = new LuaGroup();
             tempGroup.AddCard(card);
             this.lastCostGroup = tempGroup; // Armazena a carta para exclusão de alvo
-            GameManager.Instance.TributeCard(card.unityCard);
+            card.currentReason = ocgReason;
+            GameManager.Instance.TributeCard(card.unityCard, ocgReason);
         }
     }
 
@@ -639,6 +647,7 @@ public partial class LuaDuel
 
     private IEnumerator SendtoHandRoutine(object target, object player, object reason)
     {
+        int ocgReason = ConvertToInt(reason);
         int count = 0;
         List<LuaCard> cardsToProcess = new List<LuaCard>();
 
@@ -653,6 +662,7 @@ public partial class LuaDuel
 
         foreach (var c in cardsToProcess)
         {
+            c.currentReason = ocgReason;
             if (c.unityCard != null)
             {
                 GameManager.Instance.ReturnToHand(c.unityCard);
@@ -712,6 +722,9 @@ public partial class LuaDuel
         int posInt = ConvertToInt(pos);
         bool inDefense = (posInt & 0x8) != 0 || (posInt & 0xA) != 0; // Verifica se tem flag de defesa
 
+        int sumTypeInt = ConvertToInt(sumtype);
+        if (sumTypeInt == 0) sumTypeInt = 0x40000000; // Fallback garantido para SUMMON_TYPE_SPECIAL
+
         if (target is LuaGroup group && group.cards.Count > 0)
         {
             foreach (var c in group.cards)
@@ -726,13 +739,13 @@ public partial class LuaDuel
                     if (c.unityCard != null) { sPos = c.unityCard.transform.position; sLoc = c.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand; }
                     else { sLoc = CardLocation.Graveyard; sPos = isPlayerSummoning ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position; }
                     
-                    GameManager.Instance.SpecialSummonFromData(c.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, originalOwner);
+                    GameManager.Instance.SpecialSummonFromData(c.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, originalOwner, sumTypeInt);
                     GameObject.Destroy(c.unityCard.gameObject);
                 }
                 else if (c.unityData != null)
                 {
                     bool wasPlayerPile; RemoveDataFromAllPiles(c.unityData, out wasPlayerPile);
-                    GameManager.Instance.SpecialSummonFromData(c.unityData, isPlayerSummoning, -1, true, inDefense, null, CardLocation.Graveyard, wasPlayerPile);
+                    GameManager.Instance.SpecialSummonFromData(c.unityData, isPlayerSummoning, -1, true, inDefense, null, CardLocation.Graveyard, wasPlayerPile, sumTypeInt);
                 }
             }
             // Debug.Log($"[Lua] Duel.SpecialSummon(Grupo)");
@@ -750,7 +763,7 @@ public partial class LuaDuel
                 if (card.unityCard != null) { sPos = card.unityCard.transform.position; sLoc = card.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand; }
                 else { sLoc = CardLocation.Graveyard; sPos = isPlayerSummoning ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position; }
                 
-                GameManager.Instance.SpecialSummonFromData(card.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, originalOwner);
+                GameManager.Instance.SpecialSummonFromData(card.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, originalOwner, sumTypeInt);
                 GameObject.Destroy(card.unityCard.gameObject);
                 // Debug.Log($"[Lua] Duel.SpecialSummon({card.unityCard.CurrentCardData.name})");
                 return true;
@@ -758,7 +771,7 @@ public partial class LuaDuel
             else if (card.unityData != null)
             {
                 bool wasPlayerPile; RemoveDataFromAllPiles(card.unityData, out wasPlayerPile);
-                GameManager.Instance.SpecialSummonFromData(card.unityData, isPlayerSummoning, -1, true, inDefense, null, CardLocation.Graveyard, wasPlayerPile);
+                GameManager.Instance.SpecialSummonFromData(card.unityData, isPlayerSummoning, -1, true, inDefense, null, CardLocation.Graveyard, wasPlayerPile, sumTypeInt);
                 // Debug.Log($"[Lua] Duel.SpecialSummon({card.unityData.name} - Token)");
                 return true;
             }
@@ -888,7 +901,10 @@ public partial class LuaDuel
                 c.RevealCard(false, true, () => { 
                     if (GameManager.Instance != null) { 
                         GameManager.Instance.OnBattlePositionChanged(c); 
-                        if (isAttackTarget && !noFlip) GameManager.Instance.OnFlipSummon(c); 
+                        if (isAttackTarget && !noFlip) {
+                            c.summonType = 0x20000000; // SUMMON_TYPE_FLIP
+                            GameManager.Instance.OnFlipSummon(c); 
+                        }
                         else if (!isAttackTarget && !noFlip) CardEffectManager.Instance.eventManager.OnFlip(c);
                     } 
                     pendingAnimations--;            
@@ -926,7 +942,7 @@ public partial class LuaDuel
             
             Vector3 sourcePos = c.unityCard.transform.position;
             CardLocation sourceLoc = c.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand;
-            GameManager.Instance.FinalizeSummon(c.unityCard.gameObject, c.unityData, false, IsPlayer(player), false, c.unityData.level >= 5, null, null, sourcePos, sourceLoc);
+            GameManager.Instance.FinalizeSummon(c.unityCard.gameObject, c.unityData, false, IsPlayer(player), false, c.unityData.level >= 5, null, null, sourcePos, sourceLoc, null, 0x10000000); // SUMMON_TYPE_NORMAL
         }
     }
 
@@ -939,7 +955,7 @@ public partial class LuaDuel
             
             Vector3 sourcePos = c.unityCard.transform.position;
             CardLocation sourceLoc = c.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand;
-            GameManager.Instance.FinalizeSummon(c.unityCard.gameObject, c.unityData, true, IsPlayer(player), true, c.unityData.level >= 5, null, null, sourcePos, sourceLoc);
+            GameManager.Instance.FinalizeSummon(c.unityCard.gameObject, c.unityData, true, IsPlayer(player), true, c.unityData.level >= 5, null, null, sourcePos, sourceLoc, null, 0x10000000); // SUMMON_TYPE_NORMAL
         }
     }
     public void SSet(object player, object target, params object[] extraArgs)
@@ -979,15 +995,18 @@ public partial class LuaDuel
     // --- OPERAÇÕES ASSÍNCRONAS DE LUA (YIELD REQ) ---
 
     // Helper em Corrotina para a Destruição Simultânea com VFX
-    private IEnumerator DestroyCardsRoutine(List<CardDisplay> cards)
+    private IEnumerator DestroyCardsRoutine(List<CardDisplay> cards, int reason)
     {
         int count = 0;
         foreach (var c in cards)
         {
             if (c != null && c.isOnField)
             {
+                LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(c);
+                if (lc != null) lc.currentReason = reason;
+
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(c);
-                GameManager.Instance.MoveCard(c, CardLocation.Graveyard, SendReason.Destroyed);
+                GameManager.Instance.MoveCard(c, CardLocation.Graveyard, reason);
                 count++;
                 
                 if (GameManager.Instance == null || !GameManager.Instance.isSimulating)

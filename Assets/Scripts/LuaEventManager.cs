@@ -385,7 +385,7 @@ public class LuaEventManager
     
     public void OnPreDrawPhase(bool isPlayerTurn, System.Action onContinue) { onContinue?.Invoke(); }
     
-    public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, SendReason reason) 
+    public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, int reason) 
     { 
         if (card == null) return;
 
@@ -401,15 +401,7 @@ public class LuaEventManager
 
         // Debug.Log($"[LuaEventManager] {card.name} enviado ao GY. PreviousLocation: {fromLocation}, PreviousController: {tp}");
 
-        int ocgReason = 0;
-        string reasonStr = reason.ToString();
-        if (reasonStr == "Destroyed") ocgReason = 0x1 | 0x40; // REASON_DESTROY | REASON_EFFECT
-        else if (reasonStr == "Battle") ocgReason = 0x1 | 0x20; // REASON_DESTROY | REASON_BATTLE
-        else if (reasonStr == "Rule") ocgReason = 0x400; // REASON_RULE
-        else if (reasonStr == "Effect") ocgReason = 0x40; // REASON_EFFECT
-        else if (reasonStr == "Discarded") ocgReason = 0x4000 | 0x40; // REASON_DISCARD | REASON_EFFECT
-        else if (reasonStr == "Mill") ocgReason = 0x40; // REASON_EFFECT
-        else if (reasonStr == "Tribute") ocgReason = 0x2; // REASON_RELEASE
+        int ocgReason = reason; // LUA NATIVO E PURO
 
         int rp = isOwnerPlayer ? 0 : 1; // Padrão: O próprio dono
         LuaEffect re = null;
@@ -548,7 +540,7 @@ public class LuaEventManager
         yield return new WaitForSeconds(0.6f); // Atraso visível para separar a destruição da magia da destruição do monstro
         if (equip != null && equip.isOnField)
         {
-            GameManager.Instance.MoveCard(equip, CardLocation.Graveyard, SendReason.Rule);
+            GameManager.Instance.MoveCard(equip, CardLocation.Graveyard, 0x400); // REASON_RULE
         }
     }
     

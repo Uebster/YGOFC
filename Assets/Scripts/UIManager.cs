@@ -379,7 +379,7 @@ public class UIManager : MonoBehaviour
             // Na simulação, ignoramos a fusão complexa por enquanto para não travar
             // Enviamos a carta para o GY para "consumir" a ativação
             Debug.Log("[SIM] Fusão ignorada (Auto-fusão simplificada).");
-            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard, CardLocation.Field, SendReason.Effect);
+            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard, CardLocation.Field, 0x40); // REASON_EFFECT
             Destroy(source.gameObject);
             return;
         }
@@ -403,7 +403,7 @@ public class UIManager : MonoBehaviour
         if (GameManager.Instance != null && GameManager.Instance.isSimulating)
         {
             Debug.Log("[SIM] Ritual ignorado (Auto-ritual simplificado).");
-            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard, CardLocation.Field, SendReason.Effect);
+            GameManager.Instance.SendToGraveyard(source.CurrentCardData, source.isPlayerCard, CardLocation.Field, 0x40); // REASON_EFFECT
             Destroy(source.gameObject);
             return;
         }

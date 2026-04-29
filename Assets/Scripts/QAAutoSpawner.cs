@@ -410,7 +410,8 @@ public class QAAutoSpawner : MonoBehaviour
                 var cd = z.GetComponentInChildren<CardDisplay>();
                 if(cd != null) {
                     if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(cd);
-                    GameManager.Instance.SendToGraveyard(cd.CurrentCardData, cd.ownerPlayer, CardLocation.Field, SendReason.Rule);
+                    GameManager.Instance.SendToGraveyard(cd.CurrentCardData, cd.ownerPlayer, CardLocation.Field, 0x400); // REASON_RULE
+                    GameManager.Instance.SendToGraveyard(cd.CurrentCardData, cd.ownerPlayer, CardLocation.Field, 0x400); // REASON_RULE
                     Destroy(cd.gameObject);
                 }
             }
@@ -428,7 +429,7 @@ public class QAAutoSpawner : MonoBehaviour
                 var cd = z.GetComponentInChildren<CardDisplay>();
                 if(cd != null) {
                     if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(cd);
-                    GameManager.Instance.SendToGraveyard(cd.CurrentCardData, cd.ownerPlayer, CardLocation.Field, SendReason.Rule);
+                    GameManager.Instance.SendToGraveyard(cd.CurrentCardData, cd.ownerPlayer, CardLocation.Field, 0x400); // REASON_RULE
                     Destroy(cd.gameObject);
                 }
             }
@@ -439,7 +440,7 @@ public class QAAutoSpawner : MonoBehaviour
             var cd = fz.GetComponentInChildren<CardDisplay>();
             if(cd != null) {
                 if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(cd);
-                GameManager.Instance.SendToGraveyard(cd.CurrentCardData, cd.ownerPlayer, CardLocation.Field, SendReason.Rule);
+                GameManager.Instance.SendToGraveyard(cd.CurrentCardData, cd.ownerPlayer, CardLocation.Field, 0x400); // REASON_RULE
                 Destroy(cd.gameObject);
             }
         }

@@ -8,7 +8,6 @@ using System.Linq;
 
 [System.Flags]
 public enum CardLocation { Hand = 1, Deck = 2, Field = 4, ExtraDeck = 8, Graveyard = 16, Banished = 32, Unknown = 64 }
-public enum SendReason { Battle, Effect, Cost, Tribute, Destroyed, Discarded, Mill, Return, Rule, Unknown }
 
 public class CardEffectManager : MonoBehaviour
 {
@@ -688,7 +687,7 @@ public class CardEffectManager : MonoBehaviour
             if (c != null && c.isOnField)
             {
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(c);
-                GameManager.Instance.SendToGraveyard(c.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Effect);
+                GameManager.Instance.SendToGraveyard(c.CurrentCardData, isPlayer, CardLocation.Field, 0x40); // REASON_EFFECT
                 Destroy(c.gameObject);
                 yield return new WaitForSeconds(0.8f); // Tempo da cura subir na tela
             }
@@ -735,7 +734,7 @@ public class CardEffectManager : MonoBehaviour
     public void OnControlSwitched(CardDisplay card) => eventManager.OnControlSwitched(card);
     public void OnPhaseStart(GamePhase phase) => eventManager.OnPhaseStart(phase);
     public void OnPreDrawPhase(bool isPlayerTurn, System.Action onContinue) => eventManager.OnPreDrawPhase(isPlayerTurn, onContinue);
-    public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, SendReason reason) => eventManager.OnCardSentToGraveyard(card, isOwnerPlayer, fromLocation, reason);
+    public void OnCardSentToGraveyard(CardData card, bool isOwnerPlayer, CardLocation fromLocation, int reason) => eventManager.OnCardSentToGraveyard(card, isOwnerPlayer, fromLocation, reason);
     public void OnDamageTaken(bool isPlayer, int amount) => eventManager.OnDamageTaken(isPlayer, amount);
     public void OnLifePointsGained(bool isPlayer, int amount) => eventManager.OnLifePointsGained(isPlayer, amount);
     public void OnCardEquipped(CardDisplay equip, CardDisplay target) => eventManager.OnCardEquipped(equip, target);

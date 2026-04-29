@@ -91,7 +91,7 @@ public partial class GameManager
         
         Vector3 startPos = card.transform.position;
 
-        SendToGraveyard(card.CurrentCardData, isOwner, CardLocation.Hand, SendReason.Discarded);
+        SendToGraveyard(card.CurrentCardData, isOwner, CardLocation.Hand, 0x4040); // REASON_DISCARD | REASON_EFFECT
 
         // Remove modificadores (caso raro de efeito na mão, mas seguro)
         if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card);

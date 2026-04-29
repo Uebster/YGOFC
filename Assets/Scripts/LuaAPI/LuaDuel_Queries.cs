@@ -15,25 +15,30 @@ public partial class LuaDuel
     public int GetLocationCount(object player, object location, params object[] extraArgs)
     {
         if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return 0;
-        bool isPlayer = IsPlayer(player);
         int loc = ConvertToInt(location);
+        
+        int use_player = ConvertToInt(player);
+        int reason = 0x1; // LOCATION_REASON_TOFIELD
         int uzone = 0xff; // Máscara padrão permitindo todas as zonas (11111)
 
-        if (extraArgs != null && extraArgs.Length > 0)
+        if (extraArgs != null)
         {
-            uzone = ConvertToInt(extraArgs[0]);
+            if (extraArgs.Length > 0 && extraArgs[0] != null && !(extraArgs[0] is MoonSharp.Interpreter.DynValue dv1 && dv1.IsNil())) use_player = ConvertToInt(extraArgs[0]);
+            if (extraArgs.Length > 1 && extraArgs[1] != null && !(extraArgs[1] is MoonSharp.Interpreter.DynValue dv2 && dv2.IsNil())) reason = ConvertToInt(extraArgs[1]);
+            if (extraArgs.Length > 2 && extraArgs[2] != null && !(extraArgs[2] is MoonSharp.Interpreter.DynValue dv3 && dv3.IsNil())) uzone = ConvertToInt(extraArgs[2]);
         }
         
+        bool checkPlayer = (use_player == 0);
         int count = 0;
 
         if (loc == 0x04) // LOCATION_MZONE
         {
-            Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+            Transform[] zones = checkPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
             for (int i = 0; i < zones.Length; i++) { if ((uzone & (1 << i)) != 0 && zones[i].childCount == 0) count++; }
         }
         else if (loc == 0x08) // LOCATION_SZONE
         {
-            Transform[] zones = isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+            Transform[] zones = checkPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
             for (int i = 0; i < zones.Length; i++) { if ((uzone & (1 << i)) != 0 && zones[i].childCount == 0) count++; }
         }
             
@@ -174,7 +179,14 @@ public partial class LuaDuel
     public bool IsChainNegatable(object chaincount) { return true; }
     public int GetOperationCount(object chainc) { return 0; }
     public bool IsChainDisablable(object chainc) { return true; }
-    public void DiscardDeck(object player, object count, object reason) { }
+    public void DiscardDeck(object player, object count, object reason) 
+    { 
+        int pInt = ConvertToInt(player);
+        int cInt = ConvertToInt(count);
+        int rInt = ConvertToInt(reason);
+        if (pInt == 0 || pInt == 3) GameManager.Instance.MillCards(true, cInt); // Avise-me se atualizar o GameManager para aceitar rInt
+        if (pInt == 1 || pInt == 3) GameManager.Instance.MillCards(false, cInt);
+    }
     public bool CheckTribute(object card, object min, object max, object group = null, object zone = null) { return true; }
     public void SetTargetCard(object target) { 
         if (currentTargetGroup == null) currentTargetGroup = new LuaGroup();

@@ -593,16 +593,16 @@ public class FullTestManager : MonoBehaviour
                 string opt = selected[0];
                 if (opt.Contains("Cemitério")) {
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(card);
-                    GameManager.Instance.MoveCard(card, CardLocation.Graveyard, SendReason.Effect);
+                    GameManager.Instance.MoveCard(card, CardLocation.Graveyard, 0x41); // REASON_DESTROY | REASON_EFFECT
                 }
                 else if (opt.Contains("Banir")) {
-                    GameManager.Instance.MoveCard(card, CardLocation.Banished, SendReason.Effect);
+                    GameManager.Instance.MoveCard(card, CardLocation.Banished, 0x40); // REASON_EFFECT
                 }
                 else if (opt.Contains("Mão")) {
-                    GameManager.Instance.MoveCard(card, CardLocation.Hand, SendReason.Effect);
+                    GameManager.Instance.MoveCard(card, CardLocation.Hand, 0x40); // REASON_EFFECT
                 }
                 else if (opt.Contains("Deck")) {
-                    GameManager.Instance.MoveCard(card, CardLocation.Deck, SendReason.Effect);
+                    GameManager.Instance.MoveCard(card, CardLocation.Deck, 0x40); // REASON_EFFECT
                 }
                 else if (opt.Contains("Posição")) {
                     card.ChangePosition();

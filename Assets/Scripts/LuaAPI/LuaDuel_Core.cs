@@ -237,7 +237,8 @@ public partial class LuaDuel
                     else GameManager.Instance.DamageOpponent(atkPower - defPower);
                     
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
-                    GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, SendReason.Battle);
+                    defender.currentReason = 0x20; // REASON_BATTLE
+                    GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, 0x20);
                 }
                 else if (atkPower < defPower)
                 {
@@ -245,7 +246,8 @@ public partial class LuaDuel
                     else GameManager.Instance.DamageOpponent(defPower - atkPower);
                     
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(atkCard);
-                    GameManager.Instance.MoveCard(atkCard, CardLocation.Graveyard, SendReason.Battle);
+                    attacker.currentReason = 0x20;
+                    GameManager.Instance.MoveCard(atkCard, CardLocation.Graveyard, 0x20);
                 }
                 else
                 {
@@ -253,8 +255,9 @@ public partial class LuaDuel
                         DuelFXManager.Instance.PlayDestruction(atkCard);
                         DuelFXManager.Instance.PlayDestruction(defCard);
                     }
-                    GameManager.Instance.MoveCard(atkCard, CardLocation.Graveyard, SendReason.Battle);
-                    GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, SendReason.Battle);
+                    attacker.currentReason = 0x20; defender.currentReason = 0x20;
+                    GameManager.Instance.MoveCard(atkCard, CardLocation.Graveyard, 0x20);
+                    GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, 0x20);
                 }
             }
             else // Defesa
@@ -267,7 +270,8 @@ public partial class LuaDuel
                         else GameManager.Instance.DamageOpponent(atkPower - defPower);
                     }
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
-                    GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, SendReason.Battle);
+                    defender.currentReason = 0x20;
+                    GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, 0x20);
                 }
                 else if (atkPower < defPower)
                 {

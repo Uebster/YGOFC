@@ -106,6 +106,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public bool hasAttackedThisTurn = false; // Rastreia se o monstro já atacou
 
     [HideInInspector] public int summonedTurnCount = -1; // Rastreia o turno em que a carta foi invocada
+    [HideInInspector] public int summonType = 0; // Máscara de bits do tipo de invocação (ex: SUMMON_TYPE_FUSION)
     [HideInInspector] public bool hasChangedPositionThisTurn = false; // Rastreia se a posição foi alterada manualmente
     
     private bool isHoveredUp = false;

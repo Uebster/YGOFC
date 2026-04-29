@@ -315,7 +315,7 @@ public class ChainManager
         if (!isContinuous && !isEquip && !isField && !hasRemainField)
         {
             Debug.Log($"[ChainManager] Limpando Mágica/Armadilha normal após uso: {luaCard.unityData.name}");
-            GameManager.Instance.MoveCard(luaCard.unityCard, CardLocation.Graveyard, SendReason.Rule);
+            GameManager.Instance.MoveCard(luaCard.unityCard, CardLocation.Graveyard, 0x400); // REASON_RULE
         }
     }
 
@@ -326,7 +326,7 @@ public class ChainManager
             if (luaCard.unityData.type.Contains("Spell") || luaCard.unityData.type.Contains("Trap"))
             {
                 Debug.Log($"[ChainManager] Ativação cancelada/abortada. Destruindo carta mágica: {luaCard.unityData.name}");
-                GameManager.Instance.MoveCard(luaCard.unityCard, CardLocation.Graveyard, SendReason.Rule);
+                GameManager.Instance.MoveCard(luaCard.unityCard, CardLocation.Graveyard, 0x400); // REASON_RULE
             }
         }
     }

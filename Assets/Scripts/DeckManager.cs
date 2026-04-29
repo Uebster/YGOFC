@@ -205,7 +205,7 @@ public class DeckManager : MonoBehaviour
         {
             CardData card = deck[0];
             deck.RemoveAt(0);
-            GameManager.Instance.SendToGraveyard(card, isPlayer, CardLocation.Deck, SendReason.Mill);
+            GameManager.Instance.SendToGraveyard(card, isPlayer, CardLocation.Deck, 0x40); // REASON_EFFECT
             Debug.Log($"Mill: {card.name}");
         }
         UpdateDeckVisuals();

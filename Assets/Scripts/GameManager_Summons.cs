@@ -19,7 +19,7 @@ public partial class GameManager
     // SUMMONS
     // ==============================================================================
 
-    public CardDisplay SpecialSummonFromData(CardData cardData, bool isPlayer, int zoneIndex = -1, bool inAttackPosition = true, bool faceDown = false, Vector3? sourcePos = null, CardLocation sourceLoc = CardLocation.Graveyard, bool? ownerIsPlayer = null)
+    public CardDisplay SpecialSummonFromData(CardData cardData, bool isPlayer, int zoneIndex = -1, bool inAttackPosition = true, bool faceDown = false, Vector3? sourcePos = null, CardLocation sourceLoc = CardLocation.Graveyard, bool? ownerIsPlayer = null, int summonType = 0x40000000)
     {
         if (cardData == null)
         {
@@ -63,6 +63,7 @@ public partial class GameManager
         cardDisplay.position = inAttackPosition ? CardDisplay.BattlePosition.Attack : CardDisplay.BattlePosition.Defense;
         cardDisplay.summonedTurnCount = turnCount;
         cardDisplay.hasChangedPositionThisTurn = false;
+        cardDisplay.summonType = summonType;
         
         cardDisplay.SetCard(cardData, cardBackTexture, !faceDown);
         
@@ -298,7 +299,7 @@ public partial class GameManager
         {
             Vector3 sPosSim = cardGO.transform.position;
             CardLocation sLocSim = cardGO.GetComponent<CardDisplay>().isOnField ? CardLocation.Field : CardLocation.Hand;
-            FinalizeSummon(cardGO, cardData, false, true, false, false, null, null, sPosSim, sLocSim); // false = Face-Up
+            FinalizeSummon(cardGO, cardData, false, true, false, false, null, null, sPosSim, sLocSim, null, 0x40000000); // SUMMON_TYPE_SPECIAL
             return;
         }
 
@@ -311,14 +312,14 @@ public partial class GameManager
             {
                 bool isDefense = (selectedPosition == CardDisplay.BattlePosition.Defense);
                 // Special Summon geralmente é Face-Up, mesmo em defesa
-                FinalizeSummon(cardGO, cardData, isDefense, true, false, false, null, null, sPos, sLoc); // false = Face-Up
+                FinalizeSummon(cardGO, cardData, isDefense, true, false, false, null, null, sPos, sLoc, null, 0x40000000); // SUMMON_TYPE_SPECIAL
             });
         }
     }
 
     // Novo método público para finalizar a invocação (chamado pelo SummonManager após tributo manual)
     // Atualizado para suportar Face-Down explicitamente
-    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false, bool isTributeSummon = false, Transform specificZone = null, List<CardData> specialMaterials = null, Vector3? sourcePos = null, CardLocation sourceLoc = CardLocation.Hand, bool? ownerIsPlayer = null)
+    public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false, bool isTributeSummon = false, Transform specificZone = null, List<CardData> specialMaterials = null, Vector3? sourcePos = null, CardLocation sourceLoc = CardLocation.Hand, bool? ownerIsPlayer = null, int summonType = 0x10000000)
     {
         // 2. Encontrar Zona Livre
         Transform targetZone = specificZone;
@@ -352,6 +353,7 @@ public partial class GameManager
             display.isOnField = true;
             display.summonedTurnCount = turnCount; // Registra o turno de invocação
             display.hasChangedPositionThisTurn = false;
+            display.summonType = summonType; // Associa a Máscara da Invocação permanentemente
 
             // 1081 - Light of Intervention
             if (isFaceDown && IsCardActiveOnField("1081"))
@@ -494,7 +496,7 @@ public partial class GameManager
         if (possibleRituals.Count == 0)
         {
             Debug.Log("Nenhum Monstro de Ritual válido na mão para esta magia.");
-            SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+            SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, 0x400); // REASON_RULE
             Destroy(sourceCard.gameObject);
             return;
         }
@@ -515,7 +517,7 @@ public partial class GameManager
             if (sum >= chosenRitual.level) {
                 PerformRitualSummon(sourceCard, chosenRitual, tributes, false);
             } else {
-                SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+                SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, 0x400); // REASON_RULE
                 Destroy(sourceCard.gameObject);
             }
             return;
@@ -554,7 +556,7 @@ public partial class GameManager
                     }
                     else
                     {
-                        SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+                        SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, 0x400); // REASON_RULE
                         Destroy(sourceCard.gameObject);
                     }
                 }, HighlightCategory.Ritual);
@@ -568,7 +570,7 @@ public partial class GameManager
                     }
                     else
                     {
-                        SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+                        SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, 0x400); // REASON_RULE
                         Destroy(sourceCard.gameObject);
                     }
                 });
@@ -609,7 +611,7 @@ public partial class GameManager
         StartDirectSelection(validTributes, 1, 5, tributeValidator, $"Selecione os Tributos para {targetRitual.name}", (selectedTributes) => {
             if (selectedTributes == null || selectedTributes.Count == 0 || !tributeValidator(selectedTributes)) {
                 if (UIManager.Instance != null && !isSimulating) UIManager.Instance.ShowMessage("Tributos cancelados ou inválidos!");
-                SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, SendReason.Rule);
+                SendToGraveyard(sourceCard.CurrentCardData, isPlayer, CardLocation.Field, 0x400); // REASON_RULE
                 Destroy(sourceCard.gameObject);
                 return;
             }
@@ -633,7 +635,7 @@ public partial class GameManager
         // 1. Envia a Magia de Ritual para o cemitério
         if (!disableRitualCost)
         {
-            SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard, CardLocation.Field, SendReason.Effect);
+            SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard, CardLocation.Field, 0x40); // REASON_EFFECT
             Destroy(sourceCard.gameObject);
         }
 
@@ -664,7 +666,7 @@ public partial class GameManager
            display.SetCard(ritualMonster, cardBackTexture, true);
            display.isPlayerCard = sourceCard.isPlayerCard;
 
-           FinalizeSummon(cardGO, ritualMonster, def, sourceCard.isPlayerCard, false, false, null, tributes);
+           FinalizeSummon(cardGO, ritualMonster, def, sourceCard.isPlayerCard, false, false, null, tributes, null, CardLocation.Hand, null, 0x45000000); // SUMMON_TYPE_RITUAL
        };
 
        if (sourceCard.isPlayerCard && UIManager.Instance != null && !isSimulating)
