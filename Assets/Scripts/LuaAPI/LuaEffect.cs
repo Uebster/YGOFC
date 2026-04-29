@@ -31,6 +31,8 @@ public class LuaEffect
     public int countLimitMax = 0;
     public int countLimitCode = 0;
     public int currentUsages = 0;
+    public int hintTimingSelf = 0;
+    public int hintTimingOpponent = 0;
     
     public Closure conditionFunc;
     public Closure costFunc;
@@ -80,7 +82,12 @@ public class LuaEffect
         Debug.Log($"<color=orange>[LuaEffect]</color> SetCountLimit registrado! Máx: {countLimitMax} | Código: {countLimitCode}");
     }
     
-    public void SetHintTiming(params object[] args) { }
+    public void SetHintTiming(params object[] args) 
+    { 
+        if (args != null && args.Length > 0) hintTimingSelf = ConvertToInt(args[0]); 
+        if (args != null && args.Length > 1) hintTimingOpponent = ConvertToInt(args[1]); 
+        else hintTimingOpponent = hintTimingSelf; // Padrão OCGCore: Assume o mesmo para ambos se só enviar 1
+    }
     public void SetTargetRange(params object[] args) { 
         if (args != null && args.Length > 0) targetRangeSelf = ConvertToInt(args[0]); 
         if (args != null && args.Length > 1) targetRangeOpponent = ConvertToInt(args[1]); 
@@ -149,7 +156,9 @@ public class LuaEffect
             _resetValue = this._resetValue,
             countLimitMax = this.countLimitMax,
             countLimitCode = this.countLimitCode,
-            currentUsages = 0
+            currentUsages = 0,
+            hintTimingSelf = this.hintTimingSelf,
+            hintTimingOpponent = this.hintTimingOpponent
         };
     }
 

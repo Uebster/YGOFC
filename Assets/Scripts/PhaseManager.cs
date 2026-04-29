@@ -25,6 +25,7 @@ public class PhaseManager : MonoBehaviour
     private Dictionary<GamePhase, Button> phaseButtons = new Dictionary<GamePhase, Button>();
     private Dictionary<GamePhase, Image> phaseImages = new Dictionary<GamePhase, Image>();
     private Coroutine standbyCoroutine;
+    private bool isChangingPhase = false;
 
     void Awake()
     {
@@ -99,6 +100,7 @@ public class PhaseManager : MonoBehaviour
                     {
                         CardEffectManager.Instance.OnPreDrawPhase(GameManager.Instance.isPlayerTurn, () => {
                             GameManager.Instance.OnDrawPhaseStart();
+                            StartCoroutine(CardEffectManager.Instance.OpenFastEffectWindow("Draw Phase", 0, null, 0x1)); // TIMING_DRAW_PHASE
                         });
                     }
                     else
@@ -132,6 +134,7 @@ public class PhaseManager : MonoBehaviour
                 break;
             case GamePhase.Battle:
                 if (GameManager.Instance != null) GameManager.Instance.OnBattlePhaseStart();
+                if (CardEffectManager.Instance != null) StartCoroutine(CardEffectManager.Instance.OpenFastEffectWindow("Início da Battle Phase", 0, null, 0x8)); // TIMING_BATTLE_START
                 break;
             case GamePhase.Main2:
                 if (GameManager.Instance != null) GameManager.Instance.OnMainPhase2Start();
@@ -171,26 +174,38 @@ public class PhaseManager : MonoBehaviour
 
     public void TryChangePhase(GamePhase newPhase)
     {
+        if (isChangingPhase) return;
+        StartCoroutine(TryChangePhaseRoutine(newPhase));
+    }
+
+    private IEnumerator TryChangePhaseRoutine(GamePhase newPhase)
+    {
+        isChangingPhase = true;
         // REGRA OFICIAL OCG: É obrigatório passar pela Main Phase 2 se você entrou na Battle Phase.
         if (currentPhase == GamePhase.Battle && newPhase == GamePhase.End)
         {
             Debug.Log("Regra Oficial OCG: Transição automática para Main Phase 2 antes da End Phase.");
-            StartCoroutine(AutoRouteBattleToEnd());
-            return;
+            if (CardEffectManager.Instance != null) yield return StartCoroutine(CardEffectManager.Instance.OpenFastEffectWindow("Fim da Battle Phase", 0, null, 0x10)); // TIMING_BATTLE_END
+            ChangePhase(GamePhase.Main2);
+            if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isBusy);
+            yield return new WaitForSeconds(0.8f);
+            if (CardEffectManager.Instance != null) yield return StartCoroutine(CardEffectManager.Instance.OpenFastEffectWindow("Fim da Main Phase 2", 0, null, 0x4)); // TIMING_MAIN_END
+            ChangePhase(GamePhase.End);
+            isChangingPhase = false;
+            yield break;
         }
 
-        // TODO LUA: Substituir a chamada direta pela emissão de um Request para o motor Lua validar se a fase pode ser alterada.
+        // --- TIMINGS DE SAÍDA DE FASE (Phase Endings) ---
+        if (currentPhase == GamePhase.Main1 && newPhase != GamePhase.Main1) {
+            if (CardEffectManager.Instance != null) yield return StartCoroutine(CardEffectManager.Instance.OpenFastEffectWindow("Fim da Main Phase 1", 0, null, 0x4)); // TIMING_MAIN_END
+        } else if (currentPhase == GamePhase.Main2 && newPhase != GamePhase.Main2) {
+            if (CardEffectManager.Instance != null) yield return StartCoroutine(CardEffectManager.Instance.OpenFastEffectWindow("Fim da Main Phase 2", 0, null, 0x4)); // TIMING_MAIN_END
+        } else if (currentPhase == GamePhase.Battle && newPhase != GamePhase.Battle) {
+            if (CardEffectManager.Instance != null) yield return StartCoroutine(CardEffectManager.Instance.OpenFastEffectWindow("Fim da Battle Phase", 0, null, 0x10)); // TIMING_BATTLE_END
+        }
+
         ChangePhase(newPhase);
-    }
-
-    private IEnumerator AutoRouteBattleToEnd()
-    {
-        ChangePhase(GamePhase.Main2);
-        if (CardEffectManager.Instance != null) {
-            yield return new WaitWhile(() => CardEffectManager.Instance.isBusy);
-        }
-        yield return new WaitForSeconds(0.8f); // Tempo visual para o jogador ver as explosões e resoluções da MP2
-        ChangePhase(GamePhase.End);
+        isChangingPhase = false;
     }
 
     public void UpdateHoverColors(bool isPlayerTurn)

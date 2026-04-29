@@ -333,7 +333,12 @@ public class LuaEventManager
         }
 
         TriggerLuaEvent(4096, edPhase); // EVENT_PHASE
-        core.StartCoroutine(core.OpenFastEffectWindow($"Início da {phase}", 4096, edPhase));
+        
+        int timing = 0;
+        if (phase == GamePhase.Standby) timing = 0x2; // TIMING_STANDBY_PHASE
+        else if (phase == GamePhase.End) timing = 0x20; // TIMING_END_PHASE
+        
+        core.StartCoroutine(core.OpenFastEffectWindow($"Início da {phase}", 4096, edPhase, timing));
 
         // Executa a limpeza pesada da memória APENAS depois que todos os efeitos do fim do turno se resolverem
         if (phase == GamePhase.End) {
@@ -451,8 +456,8 @@ public class LuaEventManager
             re = core.chainManager.resolvingLink.effect;
         }
         EventData ed = new EventData(null, ep, amount, re, 0x40, rp); // REASON_EFFECT
-        TriggerLuaEvent(1025, ed); // EVENT_DAMAGE
-        core.StartCoroutine(core.OpenFastEffectWindow($"Dano Recebido ({amount})", 1025, ed));
+        TriggerLuaEvent(1111, ed); // EVENT_DAMAGE
+        core.StartCoroutine(core.OpenFastEffectWindow($"Dano Recebido ({amount})", 1111, ed));
     }
 
     public void OnLifePointsGained(bool isPlayer, int amount) 
@@ -465,8 +470,8 @@ public class LuaEventManager
             re = core.chainManager.resolvingLink.effect;
         }
         EventData ed = new EventData(null, ep, amount, re, 0x40, rp); // REASON_EFFECT
-        TriggerLuaEvent(1026, ed); // EVENT_RECOVER
-        core.StartCoroutine(core.OpenFastEffectWindow($"Vida Restaurada ({amount})", 1026, ed));
+        TriggerLuaEvent(1112, ed); // EVENT_RECOVER
+        core.StartCoroutine(core.OpenFastEffectWindow($"Vida Restaurada ({amount})", 1112, ed));
     }
     
     public void OnCardEquipped(CardDisplay equip, CardDisplay target) {
@@ -479,6 +484,15 @@ public class LuaEventManager
         }
 
         core.RecalculateStats(target);
+
+        if (eqLc != null)
+        {
+            LuaGroup eg = new LuaGroup(); 
+            eg.AddCard(eqLc);
+            EventData ed = new EventData(eg, eqLc.GetControler(), 0, null, 0, eqLc.GetControler());
+            TriggerLuaEvent(1121, ed); // EVENT_EQUIP
+            core.StartCoroutine(core.OpenFastEffectWindow($"Equipamento de {equip.CurrentCardData.name}", 1121, ed, 0x2000000)); // TIMING_EQUIP
+        }
     }
     
     public void OnSpellActivated(CardDisplay spell) { }

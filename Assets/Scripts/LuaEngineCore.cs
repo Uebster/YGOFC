@@ -1304,10 +1304,18 @@ public class LuaEngineCore
                 if target ~= nil and not target:IsOnField() then return false end
                 coroutine.yield('PlayAttackAnimation')
                 if target ~= nil and target:IsFacedown() then coroutine.yield('RevealTarget') end
+                
+                coroutine.yield('FastEffectWindow_DamageStep')
+                coroutine.yield('FastEffectWindow_DamageCal')
+                
                 Duel.CalculateDamage(attacker, target)
                 
                 -- Dispara o gatilho de Pós-Dano para efeitos contínuos e memórias de campo (EVENT_BATTLED = 1138)
                 Duel.RaiseEvent(attacker, 1138, nil, 0, attacker:GetControler(), attacker:GetControler(), 0)
+                coroutine.yield('WaitChain')
+                coroutine.yield('FastEffectWindow_1138')
+                
+                coroutine.yield('FastEffectWindow_BattleStepEnd')
                 
                 return true
             end

@@ -187,6 +187,13 @@ public class ChainManager
             isChainResolving = false;
             resolvingLink = null;
             Debug.Log($"[Chain] Corrente resolvida e limpa com sucesso!");
+
+            // Dispara EVENT_CHAIN_END e a janela TIMING_CHAIN_END
+            if (!isDummy)
+            {
+                core.eventManager.TriggerLuaEvent(1026, null); // 1026 = EVENT_CHAIN_END
+                core.StartCoroutine(core.OpenFastEffectWindow("Fim da Corrente", 1026, null, 0x8000)); // 0x8000 = TIMING_CHAIN_END
+            }
         }
 
         activeChainTasks--;

@@ -58,7 +58,7 @@ public class CardEffectManager : MonoBehaviour
     public UnityEngine.EventSystems.EventSystem eventSystem => UnityEngine.EventSystems.EventSystem.current;
     public CardDatabase cardDatabase => GameManager.Instance != null ? GameManager.Instance.cardDatabase : null;
     
-    public class FastEffectRequest { public string name; public int eventCode; public object eventArg; }
+    public class FastEffectRequest { public string name; public int eventCode; public object eventArg; public int timing; }
     private Queue<FastEffectRequest> fastEffectQueue = new Queue<FastEffectRequest>();
     public int fastEffectQueueCount => fastEffectQueue.Count;
 
@@ -424,8 +424,14 @@ public class CardEffectManager : MonoBehaviour
             else if (yieldCmd.StartsWith("FastEffectWindow"))
             {
                 int eventCode = 0;
-                if (yieldCmd.Contains("_")) int.TryParse(yieldCmd.Split('_')[1], out eventCode);
-                yield return StartCoroutine(OpenFastEffectWindow("Evento (Batalha)", eventCode, storedAttacker));
+                int explicitTiming = 0;
+                
+                if (yieldCmd == "FastEffectWindow_DamageStep") explicitTiming = 0x2000; // TIMING_DAMAGE_STEP
+                else if (yieldCmd == "FastEffectWindow_DamageCal") explicitTiming = 0x4000; // TIMING_DAMAGE_CAL
+                else if (yieldCmd == "FastEffectWindow_BattleStepEnd") explicitTiming = 0x4000000; // TIMING_BATTLE_STEP_END
+                else if (yieldCmd.Contains("_")) int.TryParse(yieldCmd.Split('_')[1], out eventCode);
+                
+                yield return StartCoroutine(OpenFastEffectWindow("Evento (Batalha)", eventCode, storedAttacker, explicitTiming));
             }
                 else if (yieldCmd == "PlayAttackAnimation")
                 {
@@ -479,7 +485,7 @@ public class CardEffectManager : MonoBehaviour
 
     public void TriggerLuaEvent(int eventCode, object triggerArgs) => eventManager.TriggerLuaEvent(eventCode, triggerArgs);
 
-    public List<CardDisplay> GetValidResponses(int tp, ChainManager.ChainLink triggerLink, int currentEventCode = 0, object currentEventArg = null)
+    public List<CardDisplay> GetValidResponses(int tp, ChainManager.ChainLink triggerLink, int currentEventCode = 0, object currentEventArg = null, int currentTiming = 0)
     {
         List<CardDisplay> responses = new List<CardDisplay>();
         if (GameManager.Instance == null) return responses;
@@ -504,9 +510,6 @@ public class CardEffectManager : MonoBehaviour
                     // O Efeito deve reagir ao gatilho atual (ex: 1102) ou ser Corrente Livre (0 - EVENT_FREE_CHAIN)
                     if (eff.code == 0 || eff.code == currentEventCode)
                     {
-                    // NOVO FIX: Se for um efeito de Corrente Livre (código 0), ele DEVE ser de uma
-                    // carta com Velocidade de Magia 2 ou maior (Armadilhas, Magias Rápidas, Efeitos Rápidos de Monstros).
-                    // Isso impede que Magias Normais (Velocidade 1) sejam sugeridas como resposta.
                     if (eff.code == 0)
                     {
                         string cardType = cd.CurrentCardData.type ?? "";
@@ -514,6 +517,15 @@ public class CardEffectManager : MonoBehaviour
                         bool isSpellSpeed1 = cardType.Contains("Spell") && !cardProperty.Contains("Quick-Play") && !cardType.Contains("Monster");
                         if (isSpellSpeed1)
                             continue; // Pula esta carta, pois é uma Magia Normal.
+                            
+                        // FILTRO DEFINITIVO DE TIMING: (O Respeito Absoluto ao OCGCore)
+                        int effTiming = (tp == luaDuel.GetTurnPlayer()) ? eff.hintTimingSelf : eff.hintTimingOpponent;
+                        
+                        // Se a engine está emitindo um Timing (e.g. TIMING_BATTLE_START), a carta TEM que ter esse bit na máscara!
+                        if (currentTiming > 0 && (effTiming & currentTiming) == 0)
+                        {
+                            continue; // A carta não possui Hint para ser avisada agora. Ignora.
+                        }
                     }
 
                         if (CanActivateEffect(lc, eff, tp, argsToPass))
@@ -571,9 +583,41 @@ public class CardEffectManager : MonoBehaviour
     }
 
     // Abre uma janela de interrupção manualmente para cartas "Free Chain" (Armadilhas, Magias Rápidas)
-    public IEnumerator OpenFastEffectWindow(string windowName, int eventCode = 0, object eventArg = null)
+    public IEnumerator OpenFastEffectWindow(string windowName, int eventCode = 0, object eventArg = null, int explicitTiming = 0)
     {
-        fastEffectQueue.Enqueue(new FastEffectRequest { name = windowName, eventCode = eventCode, eventArg = eventArg });
+        int timing = explicitTiming;
+        
+        // TRADUÇÃO AUTOMÁTICA DE EVENTOS DO TABULEIRO PARA OS SEUS RESPECTIVOS TIMINGS (OCGCore Translation)
+        if (timing == 0)
+        {
+            switch (eventCode)
+            {
+                case 1100: timing = 0x40; break; // TIMING_SUMMON
+                case 1101: timing = 0x100; break; // TIMING_FLIPSUMMON
+                case 1102: timing = 0x80; break; // TIMING_SPSUMMON
+                case 1107: timing = 0x200; break; // TIMING_MSET
+                case 1108: timing = 0x400; break; // TIMING_SSET
+                case 1016: timing = 0x800; break; // TIMING_POS_CHANGE
+                case 1130: timing = 0x1000; break; // TIMING_ATTACK
+                case 1138: timing = 0x8000000; break; // TIMING_BATTLED
+                case 1121: timing = 0x2000000; break; // TIMING_EQUIP
+                case 1026: timing = 0x8000; break; // TIMING_CHAIN_END
+                case 1027: timing = 0x10000; break; // TIMING_DRAW
+                case 1111: timing = 0x20000; break; // TIMING_DAMAGE
+                case 1112: timing = 0x40000; break; // TIMING_RECOVER
+                case 1010: timing = 0x80000; break; // TIMING_DESTROY
+                case 1011: timing = 0x100000; break; // TIMING_REMOVE
+                case 1012: timing = 0x200000; break; // TIMING_TOHAND
+                case 1013: timing = 0x400000; break; // TIMING_TODECK
+                case 1014: timing = 0x800000; break; // TIMING_TOGRAVE
+            }
+        }
+
+        // Injeta TIMING_BATTLE_PHASE globalmente se estivermos na Fase de Batalha
+        if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle)
+            timing |= 0x1000000;
+
+        fastEffectQueue.Enqueue(new FastEffectRequest { name = windowName, eventCode = eventCode, eventArg = eventArg, timing = timing });
         if (fastEffectQueue.Count > 1) yield break; // A rotina já está lidando com a fila
 
         while (fastEffectQueue.Count > 0)
@@ -586,8 +630,8 @@ public class CardEffectManager : MonoBehaviour
             // Aguarda a Unity limpar os GameObjects destruídos do tabuleiro para liberar espaço
             yield return new WaitForEndOfFrame();
 
-            List<CardDisplay> pResponses = GetValidResponses(0, null, req.eventCode, req.eventArg);
-            List<CardDisplay> oResponses = GetValidResponses(1, null, req.eventCode, req.eventArg);
+            List<CardDisplay> pResponses = GetValidResponses(0, null, req.eventCode, req.eventArg, req.timing);
+            List<CardDisplay> oResponses = GetValidResponses(1, null, req.eventCode, req.eventArg, req.timing);
 
             if (pResponses.Count > 0 || oResponses.Count > 0)
             {
