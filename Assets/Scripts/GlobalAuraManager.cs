@@ -91,6 +91,9 @@ public class GlobalAuraManager : MonoBehaviour
         {
             if (aura.modifierType == statType && (aura.affectedLocations & location) != 0)
             {
+                    // Auras normais não afetam cartas viradas para baixo no campo
+                    if (location == CardLocation.Field && card.IsFacedown() && !aura.sourceEffect.isSetAvailable) continue;
+
                 if (aura.filter(card))
                 {
                     // Verifica se a carta é imune a este efeito específico
@@ -117,6 +120,9 @@ public class GlobalAuraManager : MonoBehaviour
         {
             if (aura.modifierType == restrictionType && (aura.affectedLocations & location) != 0)
             {
+                    // Auras normais não afetam cartas viradas para baixo no campo
+                    if (location == CardLocation.Field && card.IsFacedown() && !aura.sourceEffect.isSetAvailable) continue;
+
                 bool applies = false;
                 if (restrictionType == "CANNOT_ACTIVATE")
                 {
@@ -157,6 +163,8 @@ public class GlobalAuraManager : MonoBehaviour
     public bool IsImmuneTo(LuaCard card, LuaEffect threateningEffect)
     {
         if (threateningEffect == null) return false;
+        
+        if (threateningEffect.ignoreImmune) return false; // EFFECT_FLAG_IGNORE_IMMUNE: Fura qualquer escudo!
         
         foreach (var aura in activeAuras)
         {

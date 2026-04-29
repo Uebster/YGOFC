@@ -208,6 +208,8 @@ public partial class GameManager
                             var singleEffects = lc.registeredEffects.FindAll(e => e.type == 1); // EFFECT_TYPE_SINGLE
                             foreach(var eff in singleEffects)
                             {
+                                if (eff.singleRange && (eff.range & lc.GetLocation()) == 0) continue; // EFFECT_FLAG_SINGLE_RANGE
+
                                 int val = 0;
                                 object valObj = eff.GetValue();
                                 if (valObj is double || valObj is long) val = System.Convert.ToInt32(valObj);
@@ -251,6 +253,8 @@ public partial class GameManager
                             var singleEffects = lc.registeredEffects.FindAll(e => e.type == 1); // EFFECT_TYPE_SINGLE
                             foreach(var eff in singleEffects)
                             {
+                                if (eff.singleRange && (eff.range & lc.GetLocation()) == 0) continue; // EFFECT_FLAG_SINGLE_RANGE
+
                                 if (eff.code == 3 || eff.code == 102) cd.currentAtk = EvaluateEffectValue(eff, lc, lc);
                                 else if (eff.code == 6 || eff.code == 106) cd.currentDef = EvaluateEffectValue(eff, lc, lc);
                                 else if (eff.code == 203) cd.hasPiercing = true; // EFFECT_PIERCE
@@ -559,6 +563,10 @@ public partial class GameManager
     {
         if (aura.owner == null || targetCard == null) return false;
         
+        // --- EFFECT_FLAG_SET_AVAILABLE ---
+        // Se o alvo está virado para baixo no campo, ele é imune a auras, a não ser que a aura tenha a permissão explícita!
+        if (targetCard.IsOnField() && targetCard.IsFacedown() && !aura.isSetAvailable) return false;
+
         if (aura.conditionFunc != null && CardEffectManager.Instance != null && aura.conditionFunc != CardEffectManager.Instance.dummyClosureTrue)
         {
             try {
@@ -574,9 +582,13 @@ public partial class GameManager
                 if (equippedTo != null && targetCard.unityCard != null && equippedTo == targetCard.unityCard) return true;
             } return false;
         }
-        int sourcePlayer = aura.owner.GetControler(); int targetPlayer = targetCard.GetControler(); int targetLoc = targetCard.GetLocation();
-        int allowedLocs = sourcePlayer == targetPlayer ? aura.targetRangeSelf : aura.targetRangeOpponent;
-        if ((allowedLocs & targetLoc) == 0) return false;
+        if (!aura.ignoreRange)
+        {
+            int sourcePlayer = aura.owner.GetControler(); int targetPlayer = targetCard.GetControler(); int targetLoc = targetCard.GetLocation();
+            int allowedLocs = sourcePlayer == targetPlayer ? aura.targetRangeSelf : aura.targetRangeOpponent;
+            if (aura.bothSide) allowedLocs = aura.targetRangeSelf | aura.targetRangeOpponent;
+            if ((allowedLocs & targetLoc) == 0) return false;
+        }
         
         if (aura.targetFunc != null && CardEffectManager.Instance != null && aura.targetFunc != CardEffectManager.Instance.dummyClosureTrue)
         {

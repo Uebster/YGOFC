@@ -85,7 +85,7 @@ public class ChainManager
         };
         
         // Registra o uso ("Once per turn")
-        if (effect.countLimitMax > 0)
+        if (effect.hasCountLimit || effect.countLimitMax > 0)
         {
             if (effect.countLimitCode == 0) effect.currentUsages++;
             else
@@ -94,6 +94,23 @@ public class ChainManager
                 if (!core.luaDuel.hardOncePerTurnUsages.ContainsKey(key)) core.luaDuel.hardOncePerTurnUsages[key] = 0;
                 core.luaDuel.hardOncePerTurnUsages[key]++;
             }
+        }
+        
+        // Registra o uso ("Once per duel")
+        if (effect.isOath)
+        {
+            string oathKey = $"{tp}_{effect.code}_OATH";
+            if (!core.luaDuel.oathUsages.ContainsKey(oathKey)) core.luaDuel.oathUsages[oathKey] = 0;
+            core.luaDuel.oathUsages[oathKey]++;
+        }
+                
+        // --- EFFECT_FLAG_CARD_TARGET ---
+        // Se o efeito exige alvo e o jogador/IA os escolheu com sucesso, avisa o mundo que essas cartas viraram alvo!
+        if (effect.isCardTarget && core.luaDuel.currentTargetGroup != null && core.luaDuel.currentTargetGroup.cards.Count > 0)
+        {
+            Debug.Log($"<color=cyan>[Targeting]</color> {luaCard.unityData.name} marcou {core.luaDuel.currentTargetGroup.cards.Count} carta(s) como alvo!");
+            EventData edTarget = new EventData(core.luaDuel.currentTargetGroup, tp, 0, effect, 0, tp);
+            core.eventManager.TriggerLuaEvent(1028, edTarget); // 1028 = EVENT_BECOME_TARGET
         }
         
         currentChain.Add(newLink);
@@ -300,21 +317,37 @@ public class ChainManager
         }
     }
 
-    public bool NegateChainLink(int chainIndex)
+    public bool NegateChainLink(int chainIndex, bool isActivation = true)
     {
         if (chainIndex == 0 && resolvingLink != null)
         {
-            resolvingLink.isNegated = true;
-                if (resolvingLink.card != null && resolvingLink.card.unityCard != null) resolvingLink.card.unityCard.AddStatus(0x40000); // STATUS_ACTIVATE_DISABLED
+            if (resolvingLink.effect != null)
+            {
+                if (isActivation && resolvingLink.effect.cannotNegate) { Debug.Log($"<color=green>[ChainManager]</color> Negação falhou! {resolvingLink.card?.unityData?.name} possui EFFECT_FLAG_CANNOT_NEGATE."); return false; }
+                if (!isActivation && resolvingLink.effect.cannotDisable) { Debug.Log($"<color=green>[ChainManager]</color> Negação falhou! {resolvingLink.card?.unityData?.name} possui EFFECT_FLAG_CANNOT_DISABLE."); return false; }
+            }
+
+            if (isActivation) resolvingLink.isActivationNegated = true;
+            else resolvingLink.isNegated = true;
+
+            if (resolvingLink.card != null && resolvingLink.card.unityCard != null) resolvingLink.card.unityCard.AddStatus(0x40000); // STATUS_ACTIVATE_DISABLED
             return true;
         }
 
         var link = currentChain.Find(l => l.chainIndex == chainIndex);
-            if (link != null) { 
-                link.isActivationNegated = true; 
-                if (link.card != null && link.card.unityCard != null) link.card.unityCard.AddStatus(0x40000); // STATUS_ACTIVATE_DISABLED
-                return true; 
+        if (link != null) { 
+            if (link.effect != null)
+            {
+                if (isActivation && link.effect.cannotNegate) { Debug.Log($"<color=green>[ChainManager]</color> Negação falhou! {link.card?.unityData?.name} possui EFFECT_FLAG_CANNOT_NEGATE."); return false; }
+                if (!isActivation && link.effect.cannotDisable) { Debug.Log($"<color=green>[ChainManager]</color> Negação falhou! {link.card?.unityData?.name} possui EFFECT_FLAG_CANNOT_DISABLE."); return false; }
             }
+
+            if (isActivation) link.isActivationNegated = true;
+            else link.isNegated = true;
+            
+            if (link.card != null && link.card.unityCard != null) link.card.unityCard.AddStatus(0x40000); // STATUS_ACTIVATE_DISABLED
+            return true; 
+        }
         return false;
     }
 

@@ -629,12 +629,12 @@ public partial class LuaDuel
     // Stubs vitais capturados pelo relatório (Counter Traps e UX)
     public bool NegateActivation(object chainc) 
     { 
-        if (CardEffectManager.Instance != null) return CardEffectManager.Instance.NegateChainLink(ConvertToInt(chainc));
+        if (CardEffectManager.Instance != null) return CardEffectManager.Instance.NegateChainLink(ConvertToInt(chainc), true);
         return true; 
     }
     public bool NegateEffect(object chainc) 
     { 
-        if (CardEffectManager.Instance != null) return CardEffectManager.Instance.NegateChainLink(ConvertToInt(chainc));
+        if (CardEffectManager.Instance != null) return CardEffectManager.Instance.NegateChainLink(ConvertToInt(chainc), false);
         return true; 
     }
     public void ChangeChainOperation(object chainc, object op) { }

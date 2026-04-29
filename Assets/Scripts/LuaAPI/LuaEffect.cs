@@ -19,6 +19,7 @@ public class LuaEffect
     public int code;
     public int type;
     public int property;
+    public int propertyExt; // Usado para a FLAG2 do OCGCore moderno
     public string description;
     public int category;
     public int range;
@@ -65,7 +66,7 @@ public class LuaEffect
 
     public void SetType(object t) { type = ConvertToInt(t); }
     public void SetCode(object c) { code = ConvertToInt(c); }
-    public void SetProperty(object p1, object p2 = null) { property = ConvertToInt(p1); }
+    public void SetProperty(object p1, object p2 = null) { property = ConvertToInt(p1); if (p2 != null) propertyExt = ConvertToInt(p2); }
     public void SetDescription(object d) { description = d?.ToString() ?? ""; }
     public void SetCategory(object c) { category = ConvertToInt(c); }
     public bool IsHasType(object t) { return (type & ConvertToInt(t)) != 0; }
@@ -107,9 +108,50 @@ public class LuaEffect
         return _label; 
     }
     
-    public bool IsHasProperty(object prop) { return true; }
-    public bool IsHasCategory(object cat) { return true; }
+    public bool IsHasProperty(object prop) { return (property & ConvertToInt(prop)) != 0; }
+    public bool IsHasCategory(object cat) { return (category & ConvertToInt(cat)) != 0; }
+
     public int GetActiveType() { return type; }
+
+    // --- ACESSO RÁPIDO PARA A ENGINE C# (EFFECT_FLAG_) ---
+    public bool isInitial => (property & 0x1) != 0;
+    public bool isFuncValue => (property & 0x2) != 0;
+    public bool hasCountLimit => (property & 0x4) != 0;
+    public bool isFieldOnly => (property & 0x8) != 0;
+    public bool isCardTarget => (property & 0x10) != 0;
+    public bool ignoreRange => (property & 0x20) != 0;
+    public bool isAbsoluteTarget => (property & 0x40) != 0;
+    public bool ignoreImmune => (property & 0x80) != 0;
+    public bool isSetAvailable => (property & 0x100) != 0;
+    public bool cannotNegate => (property & 0x200) != 0;
+    public bool cannotDisable => (property & 0x400) != 0;
+    public bool isPlayerTarget => (property & 0x800) != 0;
+    public bool bothSide => (property & 0x1000) != 0;
+    public bool copyInherit => (property & 0x2000) != 0;
+    public bool damageStep => (property & 0x4000) != 0;
+    public bool damageCal => (property & 0x8000) != 0;
+    public bool delay => (property & 0x10000) != 0;
+    public bool singleRange => (property & 0x20000) != 0;
+    public bool uncopyable => (property & 0x40000) != 0;
+    public bool isOath => (property & 0x80000) != 0;
+    public bool spSumParam => (property & 0x100000) != 0;
+    public bool repeat => (property & 0x200000) != 0;
+    public bool noTurnReset => (property & 0x400000) != 0;
+    public bool eventPlayer => (property & 0x800000) != 0;
+    public bool ownerRelate => (property & 0x1000000) != 0;
+    public bool cannotInactivate => (property & 0x2000000) != 0;
+    public bool clientHint => (property & 0x4000000) != 0;
+    public bool continuousTarget => (property & 0x8000000) != 0;
+    public bool limitZone => (property & 0x10000000) != 0;
+    public bool immediatelyApply => ((uint)property & 0x80000000) != 0;
+
+    // --- ACESSO RÁPIDO PARA A ENGINE C# (EFFECT_FLAG2_) ---
+    public bool continuousEquip => (propertyExt & 0x1) != 0;
+    public bool cof => (propertyExt & 0x2) != 0;
+    public bool checkSimultaneous => (propertyExt & 0x4) != 0;
+    public bool forceActivateLocation => ((uint)propertyExt & 0x40000000) != 0;
+    public bool majesticMustCopy => ((uint)propertyExt & 0x80000000) != 0;
+    
     public bool IsSpellEffect() { return owner != null && owner.IsSpell(); }
     public bool IsTrapEffect() { return owner != null && owner.IsTrap(); }
     public bool IsMonsterEffect() { return owner != null && owner.IsMonster(); }
@@ -141,6 +183,7 @@ public class LuaEffect
             code = this.code,
             type = this.type,
             property = this.property,
+            propertyExt = this.propertyExt,
             description = this.description,
             category = this.category,
             range = this.range,

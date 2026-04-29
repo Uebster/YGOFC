@@ -28,6 +28,7 @@ public partial class LuaDuel
     public LuaGroup lastCostGroup; // Memória de curto prazo para custos pagos
     public List<CardDisplay> pendingComparisonCards = new List<CardDisplay>(); // Buffer para Confrontos Cinemáticos
     public Dictionary<string, int> hardOncePerTurnUsages = new Dictionary<string, int>(); // Controle de Usos (Hard Once per Turn)
+    public Dictionary<string, int> oathUsages = new Dictionary<string, int>(); // Controle de Usos (Once per Duel)
 
     public List<LuaEffect> globalEffects = new List<LuaEffect>();
     public Dictionary<string, int> playerFlags = new Dictionary<string, int>();

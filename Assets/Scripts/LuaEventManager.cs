@@ -110,6 +110,16 @@ public class LuaEventManager
                     {
                         if (effect.operationFunc != null)
                         {
+                            if (effect.hasCountLimit || effect.countLimitMax > 0)
+                            {
+                                if (effect.countLimitCode == 0) effect.currentUsages++;
+                                else
+                                {
+                                    string key = $"{lc_loop.GetControler()}_{effect.countLimitCode}";
+                                    if (!core.luaDuel.hardOncePerTurnUsages.ContainsKey(key)) core.luaDuel.hardOncePerTurnUsages[key] = 0;
+                                    core.luaDuel.hardOncePerTurnUsages[key]++;
+                                }
+                            }
                             core.luaDuel.currentContinuousEffect = effect;
                             bool opDone = false;
                             core.StartCoroutine(RunCoroutineAndSetDone(core.RunLuaCoroutine(effect.operationFunc, effect, lc_loop.GetControler(), triggerArgs, -1), () => opDone = true));
@@ -134,14 +144,39 @@ public class LuaEventManager
     {
         triggerTasks++;
         isProcessingTriggers = true;
+        
+        bool missed = false;
+        if (core.chainManager != null && core.chainManager.isChainResolving && core.chainManager.resolvingLink != null && core.chainManager.resolvingLink.chainIndex > 1) {
+            missed = true;
+        }
+
         foreach (var e in effects)
         {
+            if ((e.type & 0x0080) != 0) // É Opcional (TRIGGER_O)
+            {
+                if (missed && !e.delay)
+                {
+                    Debug.Log($"<color=red>[Miss Timing]</color> {lc.unityData.name} perdeu o timing do evento {e.code} por não possuir EFFECT_FLAG_DELAY.");
+                    continue;
+                }
+            }
+
             if (core.CanActivateEffect(lc, e, lc.GetControler(), triggerArgs))
             {
                     if ((e.type & 0x0800) != 0) // EFFECT_TYPE_CONTINUOUS
                     {
                         if (e.operationFunc != null)
                         {
+                            if (e.hasCountLimit || e.countLimitMax > 0)
+                            {
+                                if (e.countLimitCode == 0) e.currentUsages++;
+                                else
+                                {
+                                    string key = $"{lc.GetControler()}_{e.countLimitCode}";
+                                    if (!core.luaDuel.hardOncePerTurnUsages.ContainsKey(key)) core.luaDuel.hardOncePerTurnUsages[key] = 0;
+                                    core.luaDuel.hardOncePerTurnUsages[key]++;
+                                }
+                            }
                             core.luaDuel.currentContinuousEffect = e;
                             bool opDone = false;
                             core.StartCoroutine(RunCoroutineAndSetDone(core.RunLuaCoroutine(e.operationFunc, e, lc.GetControler(), triggerArgs, -1), () => opDone = true));
@@ -439,15 +474,10 @@ public class LuaEventManager
 
         EventData edSingle = new EventData(lc, tp, 0, re, ocgReason, rp);
         var gyEffects = lc.registeredEffects.FindAll(e => e.code == 1014 && (e.type & 0x0001) != 0); // EVENT_TO_GRAVE
-        // Debug.Log($"[Surgical Log] Carta '{card.name}' caiu no GY. Efeitos EVENT_TO_GRAVE (1014) encontrados: {gyEffects.Count}");
         
-        foreach(var e in gyEffects)
+        if (gyEffects.Count > 0)
         {
-            bool canAct = core.CanActivateEffect(lc, e, tp, edSingle);
-            // Debug.Log($"[Surgical Log] CanActivateEffect para {card.name} (chk=0) retornou: {canAct}");
-            
-            if (canAct)
-                core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, edSingle, tp, null));
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, gyEffects, edSingle));
         }
 
         LuaGroup eg = new LuaGroup();
@@ -502,7 +532,9 @@ public class LuaEventManager
 
         EventData edSingle = new EventData(lc, tp, 0, re, reason, rp);
         var effects = lc.registeredEffects.FindAll(e => e.code == 1011 && (e.type & 0x0001) != 0); // EVENT_REMOVE (1011)
-        foreach(var e in effects) if (core.CanActivateEffect(lc, e, tp, edSingle)) core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, edSingle, tp, null));
+        if (effects.Count > 0) {
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, effects, edSingle));
+        }
 
         LuaGroup eg = new LuaGroup(); eg.AddCard(lc);
         EventData edGroup = new EventData(eg, tp, 0, re, reason, rp);
@@ -526,7 +558,9 @@ public class LuaEventManager
 
         EventData edSingle = new EventData(lc, tp, 0, re, reason, rp);
         var effects = lc.registeredEffects.FindAll(e => e.code == 1013 && (e.type & 0x0001) != 0); // EVENT_TO_DECK (1013)
-        foreach(var e in effects) if (core.CanActivateEffect(lc, e, tp, edSingle)) core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, edSingle, tp, null));
+        if (effects.Count > 0) {
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, effects, edSingle));
+        }
 
         LuaGroup eg = new LuaGroup(); eg.AddCard(lc);
         EventData edGroup = new EventData(eg, tp, 0, re, reason, rp);

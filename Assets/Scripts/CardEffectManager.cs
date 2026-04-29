@@ -57,7 +57,7 @@ public class CardEffectManager : MonoBehaviour
     public UnityEngine.EventSystems.EventSystem eventSystem => UnityEngine.EventSystems.EventSystem.current;
     public CardDatabase cardDatabase => GameManager.Instance != null ? GameManager.Instance.cardDatabase : null;
     
-    public class FastEffectRequest { public string name; public int eventCode; public object eventArg; public int timing; }
+    public class FastEffectRequest { public string name; public int eventCode; public object eventArg; public int timing; public bool missedTiming; }
     private Queue<FastEffectRequest> fastEffectQueue = new Queue<FastEffectRequest>();
     public int fastEffectQueueCount => fastEffectQueue.Count;
 
@@ -253,11 +253,12 @@ public class CardEffectManager : MonoBehaviour
         }
 
         // Validação de "Once per Turn" (CountLimit)
-        if (effect.countLimitMax > 0)
+        if (effect.hasCountLimit || effect.countLimitMax > 0)
         {
+            int maxLimit = effect.countLimitMax > 0 ? effect.countLimitMax : 1;
             if (effect.countLimitCode == 0)
             {
-                if (effect.currentUsages >= effect.countLimitMax) 
+                if (effect.currentUsages >= maxLimit) 
                 {
                     // Debug.LogWarning($"<color=orange>[OncePerTurn]</color> O efeito de {luaCard.unityData.name} atingiu o limite de usos ({effect.currentUsages}/{effect.countLimitMax}). Bloqueado!");
                     return false;
@@ -266,11 +267,22 @@ public class CardEffectManager : MonoBehaviour
             else
             {
                 string key = $"{tp}_{effect.countLimitCode}";
-                if (luaDuel.hardOncePerTurnUsages.ContainsKey(key) && luaDuel.hardOncePerTurnUsages[key] >= effect.countLimitMax) 
+                if (luaDuel.hardOncePerTurnUsages.ContainsKey(key) && luaDuel.hardOncePerTurnUsages[key] >= maxLimit) 
                 {
                     // Debug.LogWarning($"<color=orange>[OncePerTurn]</color> O efeito HARD de {luaCard.unityData.name} atingiu o limite. Bloqueado!");
                     return false;
                 }
+            }
+        }
+
+        // Validação de EFFECT_FLAG_OATH (Once per Duel)
+        if (effect.isOath)
+        {
+            string oathKey = $"{tp}_{effect.code}_OATH";
+            if (luaDuel.oathUsages.ContainsKey(oathKey) && luaDuel.oathUsages[oathKey] > 0)
+            {
+                // Debug.LogWarning($"<color=orange>[Oath]</color> O efeito de {luaCard.unityData.name} é OATH e já foi usado neste duelo!");
+                return false;
             }
         }
 
@@ -308,9 +320,9 @@ public class CardEffectManager : MonoBehaviour
         }
     }
 
-    public bool NegateChainLink(int chainIndex)
+    public bool NegateChainLink(int chainIndex, bool isActivation = true)
     {
-        return chainManager.NegateChainLink(chainIndex);
+        return chainManager.NegateChainLink(chainIndex, isActivation);
     }
 
     public IEnumerator RunLuaCoroutine(Closure func, LuaEffect effect, int tp, object triggerArgs, int chk)
@@ -484,7 +496,7 @@ public class CardEffectManager : MonoBehaviour
 
     public void TriggerLuaEvent(int eventCode, object triggerArgs) => eventManager.TriggerLuaEvent(eventCode, triggerArgs);
 
-    public List<CardDisplay> GetValidResponses(int tp, ChainManager.ChainLink triggerLink, int currentEventCode = 0, object currentEventArg = null, int currentTiming = 0)
+    public List<CardDisplay> GetValidResponses(int tp, ChainManager.ChainLink triggerLink, int currentEventCode = 0, object currentEventArg = null, int currentTiming = 0, bool missedTiming = false)
     {
         List<CardDisplay> responses = new List<CardDisplay>();
         if (GameManager.Instance == null) return responses;
@@ -509,6 +521,28 @@ public class CardEffectManager : MonoBehaviour
                     // O Efeito deve reagir ao gatilho atual (ex: 1102) ou ser Corrente Livre (0 - EVENT_FREE_CHAIN)
                     if (eff.code == 0 || eff.code == currentEventCode)
                     {
+                        if (eff.type == 0x0080) // TRIGGER_O (Opcional)
+                        {
+                            if (missedTiming && !eff.delay)
+                            {
+                                // Debug.Log($"<color=red>[Miss Timing]</color> {cd.CurrentCardData.name} perdeu o timing para o evento {currentEventCode} porque não possui EFFECT_FLAG_DELAY.");
+                                continue; 
+                            }
+                        }
+
+                        // --- ESCUDO DA DAMAGE STEP ---
+                        bool inDamageStep = (currentTiming & 0x2000) != 0 || (currentTiming & 0x4000) != 0;
+                        if (inDamageStep)
+                        {
+                            bool allowed = false;
+                            if (eff.damageStep || eff.damageCal) allowed = true;
+                            if ((currentTiming & 0x4000) != 0 && !eff.damageCal) allowed = false; // Em Damage Cal, exige a flag específica (0x8000)
+                            if (cd.CurrentCardData.property == "Counter" && eff.type == 0x0010) allowed = true; // Counter Traps ignoram a restrição
+                            if (eff.code == currentEventCode && currentEventCode != 0) allowed = true; // Gatilhos obrigatórios de Batalha passam
+                            
+                            if (!allowed) continue; // Bloqueado pela restrição da Damage Step!
+                        }
+
                     if (eff.code == 0)
                     {
                         string cardType = cd.CurrentCardData.type ?? "";
@@ -585,6 +619,13 @@ public class CardEffectManager : MonoBehaviour
     public IEnumerator OpenFastEffectWindow(string windowName, int eventCode = 0, object eventArg = null, int explicitTiming = 0)
     {
         int timing = explicitTiming;
+
+        bool missed = false;
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.isChainResolving)
+        {
+            var rLink = CardEffectManager.Instance.chainManager.resolvingLink;
+            if (rLink != null && rLink.chainIndex > 1) missed = true; // Aconteceu durante o Elo 2 ou maior!
+        }
         
         // TRADUÇÃO AUTOMÁTICA DE EVENTOS DO TABULEIRO PARA OS SEUS RESPECTIVOS TIMINGS (OCGCore Translation)
         if (timing == 0)
@@ -616,7 +657,7 @@ public class CardEffectManager : MonoBehaviour
         if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle)
             timing |= 0x1000000;
 
-        fastEffectQueue.Enqueue(new FastEffectRequest { name = windowName, eventCode = eventCode, eventArg = eventArg, timing = timing });
+        fastEffectQueue.Enqueue(new FastEffectRequest { name = windowName, eventCode = eventCode, eventArg = eventArg, timing = timing, missedTiming = missed });
         if (fastEffectQueue.Count > 1) yield break; // A rotina já está lidando com a fila
 
         while (fastEffectQueue.Count > 0)
@@ -629,8 +670,8 @@ public class CardEffectManager : MonoBehaviour
             // Aguarda a Unity limpar os GameObjects destruídos do tabuleiro para liberar espaço
             yield return new WaitForEndOfFrame();
 
-            List<CardDisplay> pResponses = GetValidResponses(0, null, req.eventCode, req.eventArg, req.timing);
-            List<CardDisplay> oResponses = GetValidResponses(1, null, req.eventCode, req.eventArg, req.timing);
+            List<CardDisplay> pResponses = GetValidResponses(0, null, req.eventCode, req.eventArg, req.timing, req.missedTiming);
+            List<CardDisplay> oResponses = GetValidResponses(1, null, req.eventCode, req.eventArg, req.timing, req.missedTiming);
 
             if (pResponses.Count > 0 || oResponses.Count > 0)
             {
@@ -775,6 +816,7 @@ public class CardEffectManager : MonoBehaviour
                 else if (effect.code == 30) modType = "DISABLE";                   // EFFECT_DISABLE
                 else if (effect.code == 85) modType = "CANNOT_ATTACK";             // EFFECT_CANNOT_ATTACK
                 else if (effect.code == 104) modType = "IMMUNE";                   // EFFECT_IMMUNE_EFFECT
+                else if (effect.code == 71) modType = "CANNOT_BE_EFFECT_TARGET";   // EFFECT_CANNOT_BE_EFFECT_TARGET
 
                 if (!string.IsNullOrEmpty(modType))
                 {

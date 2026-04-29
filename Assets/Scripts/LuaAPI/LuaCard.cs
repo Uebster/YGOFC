@@ -248,7 +248,15 @@ public class LuaCard
     public int GetPreviousPosition() { return GetBattlePosition(); }
     public int GetPreviousCodeOnField() { return GetCode(); }
     public int GetPreviousRaceOnField() { return GetRace(); }
-    public bool IsCanBeEffectTarget(object e) { return true; }
+    public bool IsCanBeEffectTarget(object e) 
+    { 
+        LuaEffect eff = e as LuaEffect;
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            // Se estiver sob restrição de "CANNOT_BE_EFFECT_TARGET", a Engine Unity a torna invisível para cliques do LUA!
+            if (CardEffectManager.Instance.auraManager.IsUnderRestriction(this, eff, "CANNOT_BE_EFFECT_TARGET", CardLocation.Field)) return false;
+        }
+        return true; 
+    }
     public bool IsSummonType(object sumtype) { return (GetSummonType() & ConvertToInt(sumtype)) == ConvertToInt(sumtype); }
     public bool IsCanRemoveCounter(object player, object counterType, object count, object reason) { return true; }
     public bool IsPreviousRaceOnField(object race) { return true; }
@@ -314,8 +322,9 @@ public class LuaCard
     { 
         int baseAtk = unityCard != null ? unityCard.originalAtk : (unityData != null ? unityData.atk : 0); 
         if (registeredEffects != null) {
-            var eff = registeredEffects.FindLast(e => e.type == 1 && e.code == 7); // 7 = EFFECT_SET_BASE_ATTACK
-            if (eff != null) {
+            var effs = registeredEffects.FindAll(e => e.type == 1 && e.code == 7); // 7 = EFFECT_SET_BASE_ATTACK
+            foreach (var eff in effs) {
+                if (eff.singleRange && (eff.range & GetLocation()) == 0) continue;
                 object valObj = eff.GetValue();
                 if (valObj is double || valObj is long) baseAtk = System.Convert.ToInt32(valObj);
             }
@@ -326,8 +335,9 @@ public class LuaCard
     { 
         int baseDef = unityCard != null ? unityCard.originalDef : (unityData != null ? unityData.def : 0); 
         if (registeredEffects != null) {
-            var eff = registeredEffects.FindLast(e => e.type == 1 && e.code == 8); // 8 = EFFECT_SET_BASE_DEFENSE
-            if (eff != null) {
+            var effs = registeredEffects.FindAll(e => e.type == 1 && e.code == 8); // 8 = EFFECT_SET_BASE_DEFENSE
+            foreach (var eff in effs) {
+                if (eff.singleRange && (eff.range & GetLocation()) == 0) continue;
                 object valObj = eff.GetValue();
                 if (valObj is double || valObj is long) baseDef = System.Convert.ToInt32(valObj);
             }
@@ -453,7 +463,16 @@ public class LuaCard
         return result;
     }
     
-    public bool IsImmuneToEffect(object e) { return false; }
+    public bool IsImmuneToEffect(object e) 
+    { 
+        LuaEffect eff = e as LuaEffect;
+        if (eff != null && eff.ignoreImmune) return false; // EFFECT_FLAG_IGNORE_IMMUNE: Fura as defesas
+
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            return CardEffectManager.Instance.auraManager.IsImmuneTo(this, eff);
+        }
+        return false; 
+    }
     public bool CanAttack() { return true; }
     public bool IsDisabled() { 
         if (IsStatus(0x1)) return true; // STATUS_DISABLED
