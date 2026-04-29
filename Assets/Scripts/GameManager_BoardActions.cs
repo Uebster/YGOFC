@@ -214,6 +214,8 @@ public partial class GameManager
         
         cardDisplay.SetCard(cardData, cardBackTexture, faceUp);
         cardGO.transform.localRotation = Quaternion.Euler(0, 0, isPlayer ? 0f : 180f);
+
+        if (!faceUp) cardDisplay.AddStatus(0x10); // STATUS_SET_TURN
     }
 
 
@@ -740,6 +742,8 @@ public partial class GameManager
             display.isInteractable = false;
             display.isOnField = true;
             display.summonedTurnCount = turnCount; // Registra o turno de Set/Ativação
+
+            if (isSet) display.AddStatus(0x10); // STATUS_SET_TURN
 
             System.Action onActivationCompleteCallback = () => {
                 if (display != null) display.SetVisibility(true);

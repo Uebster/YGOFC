@@ -108,6 +108,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [HideInInspector] public int summonedTurnCount = -1; // Rastreia o turno em que a carta foi invocada
     [HideInInspector] public int summonType = 0; // Máscara de bits do tipo de invocação (ex: SUMMON_TYPE_FUSION)
     [HideInInspector] public bool hasChangedPositionThisTurn = false; // Rastreia se a posição foi alterada manualmente
+    [HideInInspector] public int statusMask = 0; // O "Prontuário Médico" (Máquina de Estados Finita da Carta)
     
     private bool isHoveredUp = false;
     private Coroutine hoverAnimation;
@@ -227,6 +228,10 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             }
         }
     }
+
+    public void AddStatus(int status) { statusMask |= status; }
+    public void RemoveStatus(int status) { statusMask &= ~status; }
+    public bool HasStatus(int status) { return (statusMask & status) != 0; }
 
     // Este método será chamado pelo GameManager para definir os dados da carta
     public void SetCard(CardData card, Texture2D cardBackTexture, bool startFaceUp = true)

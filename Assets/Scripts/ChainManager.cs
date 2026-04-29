@@ -290,11 +290,16 @@ public class ChainManager
         if (chainIndex == 0 && resolvingLink != null)
         {
             resolvingLink.isNegated = true;
+                if (resolvingLink.card != null && resolvingLink.card.unityCard != null) resolvingLink.card.unityCard.AddStatus(0x40000); // STATUS_ACTIVATE_DISABLED
             return true;
         }
 
         var link = currentChain.Find(l => l.chainIndex == chainIndex);
-        if (link != null) { link.isActivationNegated = true; return true; }
+            if (link != null) { 
+                link.isActivationNegated = true; 
+                if (link.card != null && link.card.unityCard != null) link.card.unityCard.AddStatus(0x40000); // STATUS_ACTIVATE_DISABLED
+                return true; 
+            }
         return false;
     }
 

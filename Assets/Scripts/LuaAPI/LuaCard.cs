@@ -43,9 +43,21 @@ public class LuaCard
     // Helper para gerar um dummy seguro e evitar crashes de Null Reference no LUA
     private LuaCard SafeDummyCard() { return new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 }); }
 
-    public int GetAttack() { return unityCard != null ? unityCard.currentAtk : (unityData != null ? unityData.atk : 0); }
-    public int GetDefense() { return unityCard != null ? unityCard.currentDef : (unityData != null ? unityData.def : 0); }
-    public int GetLevel() { return unityCard != null ? unityCard.currentLevel : (unityData != null ? unityData.level : 0); }
+    private Dictionary<int, int> assumedProperties = new Dictionary<int, int>();
+    public void AssumeProperty(object assumeCode, object value) { assumedProperties[ConvertToInt(assumeCode)] = ConvertToInt(value); }
+
+    public int GetAttack() { 
+        if (assumedProperties.ContainsKey(7)) return assumedProperties[7]; // ASSUME_ATTACK
+        return unityCard != null ? unityCard.currentAtk : (unityData != null ? unityData.atk : 0); 
+    }
+    public int GetDefense() { 
+        if (assumedProperties.ContainsKey(8)) return assumedProperties[8]; // ASSUME_DEFENSE
+        return unityCard != null ? unityCard.currentDef : (unityData != null ? unityData.def : 0); 
+    }
+    public int GetLevel() { 
+        if (assumedProperties.ContainsKey(3)) return assumedProperties[3]; // ASSUME_LEVEL
+        return unityCard != null ? unityCard.currentLevel : (unityData != null ? unityData.level : 0); 
+    }
     public int GetOriginalLevel() { return unityCard != null ? unityCard.originalLevel : (unityData != null ? unityData.level : 0); }
     public bool IsFaceup() { return unityCard != null ? !unityCard.isFlipped : false; }
     
@@ -116,6 +128,7 @@ public class LuaCard
 
     public new int GetType()
     {
+        if (assumedProperties.ContainsKey(2)) return assumedProperties[2]; // ASSUME_TYPE
         if (unityData == null || string.IsNullOrEmpty(unityData.type)) return 0;
         int t = 0;
         
@@ -146,6 +159,7 @@ public class LuaCard
     public int GetOriginalRace() { return GetRace(); }
     public int GetOriginalAttribute() { return GetAttribute(); }
     public int GetAttribute() { 
+        if (assumedProperties.ContainsKey(5)) return assumedProperties[5]; // ASSUME_ATTRIBUTE
         if (unityData == null || string.IsNullOrEmpty(unityData.attribute)) return 0;
         string a = unityData.attribute.Trim().ToUpperInvariant();
         if (a.Contains("EARTH")) return 0x01;
@@ -250,10 +264,19 @@ public class LuaCard
     public void SetMaterial(object g) { }
     public LuaGroup GetAdminGroup() { return new LuaGroup(); }
     public bool IsSummonLocation(object loc) { return true; }
-    public void SetStatus(object status, object enable) { }
+    public void SetStatus(object status, object enable) 
+    { 
+        if (unityCard == null) return;
+        int s = ConvertToInt(status);
+        bool en = ConvertToInt(enable) != 0;
+        
+        if (en) unityCard.AddStatus(s);
+        else unityCard.RemoveStatus(s);
+    }
     
     public int GetRace() 
     { 
+        if (assumedProperties.ContainsKey(6)) return assumedProperties[6]; // ASSUME_RACE
         if (unityData == null || string.IsNullOrEmpty(unityData.race)) return 0;
         string r = unityData.race.Trim().ToUpperInvariant();
         if (r.Contains("WARRIOR")) return 0x1;
@@ -432,12 +455,19 @@ public class LuaCard
     
     public bool IsImmuneToEffect(object e) { return false; }
     public bool CanAttack() { return true; }
-    public bool IsDisabled() { return false; }
+    public bool IsDisabled() { 
+        if (IsStatus(0x1)) return true; // STATUS_DISABLED
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            return CardEffectManager.Instance.auraManager.IsUnderRestriction(this, null, "DISABLE", CardLocation.Field);
+        }
+        return false; 
+    }
     public bool IsForbidden() { return false; }
     public bool IsSpecialSummoned() { return false; }
     public bool HasLevel() { return GetLevel() > 0; }
 
     public int GetCode() {
+        if (assumedProperties.ContainsKey(1)) return assumedProperties[1]; // ASSUME_CODE
         if (unityData == null) return 0;
         if (!string.IsNullOrEmpty(unityData.password) && int.TryParse(unityData.password, out int code)) return code;
         string digits = System.Text.RegularExpressions.Regex.Replace(unityData.id, @"\D", "");
@@ -464,17 +494,7 @@ public class LuaCard
     public bool IsStatus(object status) 
     { 
         int s = ConvertToInt(status);
-        if (unityCard != null && unityCard.isOnField)
-        {
-            // 0x800 = STATUS_SUMMON_TURN, 0x20000000 = STATUS_FLIP_SUMMON_TURN, 0x40000000 = STATUS_SPSUMMON_TURN
-            int summonTurnFlags = 0x800 | 0x20000000 | 0x40000000;
-            bool passed = ((s & summonTurnFlags) != 0 && GameManager.Instance != null && unityCard.summonedTurnCount == GameManager.Instance.turnCount);
-            
-            if (unityCard.CurrentCardData != null && unityCard.CurrentCardData.type.Contains("Monster")) {
-                Debug.Log($"<color=cyan>[IsStatus LOG]</color> Avaliando {unityData.name} | Status: {s} | Math Bitwise OK? {((s & summonTurnFlags) != 0)} | Turno Invocação: {unityCard.summonedTurnCount} == Turno Atual: {GameManager.Instance?.turnCount} -> Resultado Final: {passed}");
-            }
-            return passed;
-        }
+        if (unityCard != null) return unityCard.HasStatus(s);
         return false; 
     }
     

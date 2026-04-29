@@ -238,6 +238,7 @@ public partial class LuaDuel
                     
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
                     defender.currentReason = 0x20; // REASON_BATTLE
+                    if (defender.unityCard != null) defender.unityCard.AddStatus(0x4000); // STATUS_BATTLE_DESTROYED
                     GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, 0x20);
                 }
                 else if (atkPower < defPower)
@@ -247,6 +248,7 @@ public partial class LuaDuel
                     
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(atkCard);
                     attacker.currentReason = 0x20;
+                    if (attacker.unityCard != null) attacker.unityCard.AddStatus(0x4000); // STATUS_BATTLE_DESTROYED
                     GameManager.Instance.MoveCard(atkCard, CardLocation.Graveyard, 0x20);
                 }
                 else
@@ -256,6 +258,8 @@ public partial class LuaDuel
                         DuelFXManager.Instance.PlayDestruction(defCard);
                     }
                     attacker.currentReason = 0x20; defender.currentReason = 0x20;
+                    if (attacker.unityCard != null) attacker.unityCard.AddStatus(0x4000); // STATUS_BATTLE_DESTROYED
+                    if (defender.unityCard != null) defender.unityCard.AddStatus(0x4000); // STATUS_BATTLE_DESTROYED
                     GameManager.Instance.MoveCard(atkCard, CardLocation.Graveyard, 0x20);
                     GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, 0x20);
                 }
@@ -271,6 +275,7 @@ public partial class LuaDuel
                     }
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
                     defender.currentReason = 0x20;
+                    if (defender.unityCard != null) defender.unityCard.AddStatus(0x4000); // STATUS_BATTLE_DESTROYED
                     GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, 0x20);
                 }
                 else if (atkPower < defPower)

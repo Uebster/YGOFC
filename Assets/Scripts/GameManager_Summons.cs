@@ -355,6 +355,15 @@ public partial class GameManager
             display.hasChangedPositionThisTurn = false;
             display.summonType = summonType; // Associa a Máscara da Invocação permanentemente
 
+            if (isFaceDown) display.AddStatus(0x10); // STATUS_SET_TURN
+            else {
+                if (summonType == 0x10000000 || summonType == 0x11000000) display.AddStatus(0x800); // STATUS_SUMMON_TURN
+                else if (summonType == 0x20000000) display.AddStatus(0x20000000); // STATUS_FLIP_SUMMON_TURN
+                else display.AddStatus(0x40000000); // STATUS_SPSUMMON_TURN
+                
+                if ((summonType & 0x40000000) != 0 && summonType != 0x40000000) display.AddStatus(0x8); // STATUS_PROC_COMPLETE
+            }
+
             // 1081 - Light of Intervention
             if (isFaceDown && IsCardActiveOnField("1081"))
             {
