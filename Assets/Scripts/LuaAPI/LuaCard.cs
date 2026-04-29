@@ -707,6 +707,12 @@ public class LuaCard
                 GameManager.Instance.RefreshAllCardsVisuals();
             }
         }
+        
+        // EFFECT_FLAG_CLIENT_HINT: Exibe uma mensagem amigável no painel da carta na tela do jogador!
+        if (e.clientHint && !string.IsNullOrEmpty(e.description))
+        {
+            SetHint(6, e.description); // CHINT_DESC_ADD = 6
+        }
     }
 
     public bool IsSetCard(params object[] setCodes) 

@@ -323,7 +323,7 @@ public class ChainManager
         {
             if (resolvingLink.effect != null)
             {
-                if (isActivation && resolvingLink.effect.cannotNegate) { Debug.Log($"<color=green>[ChainManager]</color> Negação falhou! {resolvingLink.card?.unityData?.name} possui EFFECT_FLAG_CANNOT_NEGATE."); return false; }
+                if (isActivation && (resolvingLink.effect.cannotNegate || resolvingLink.effect.cannotInactivate)) { Debug.Log($"<color=green>[ChainManager]</color> Negação falhou! {resolvingLink.card?.unityData?.name} possui PROTEÇÃO DE ATIVAÇÃO."); return false; }
                 if (!isActivation && resolvingLink.effect.cannotDisable) { Debug.Log($"<color=green>[ChainManager]</color> Negação falhou! {resolvingLink.card?.unityData?.name} possui EFFECT_FLAG_CANNOT_DISABLE."); return false; }
             }
 
@@ -338,7 +338,7 @@ public class ChainManager
         if (link != null) { 
             if (link.effect != null)
             {
-                if (isActivation && link.effect.cannotNegate) { Debug.Log($"<color=green>[ChainManager]</color> Negação falhou! {link.card?.unityData?.name} possui EFFECT_FLAG_CANNOT_NEGATE."); return false; }
+                if (isActivation && (link.effect.cannotNegate || link.effect.cannotInactivate)) { Debug.Log($"<color=green>[ChainManager]</color> Negação falhou! {link.card?.unityData?.name} possui PROTEÇÃO DE ATIVAÇÃO."); return false; }
                 if (!isActivation && link.effect.cannotDisable) { Debug.Log($"<color=green>[ChainManager]</color> Negação falhou! {link.card?.unityData?.name} possui EFFECT_FLAG_CANNOT_DISABLE."); return false; }
             }
 

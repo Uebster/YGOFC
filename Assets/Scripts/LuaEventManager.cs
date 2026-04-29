@@ -416,7 +416,7 @@ public class LuaEventManager
         {
             foreach (var eff in lc.registeredEffects)
             {
-                eff.currentUsages = 0; // Limpa os usos "Soft Once per Turn"
+                if (!eff.noTurnReset) eff.currentUsages = 0; // EFFECT_FLAG_NO_TURN_RESET (Pula a limpeza!)
             }
         }
         
