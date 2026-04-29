@@ -601,7 +601,7 @@ public class CardEffectManager : MonoBehaviour
                 case 1138: timing = 0x8000000; break; // TIMING_BATTLED
                 case 1121: timing = 0x2000000; break; // TIMING_EQUIP
                 case 1026: timing = 0x8000; break; // TIMING_CHAIN_END
-                case 1027: timing = 0x10000; break; // TIMING_DRAW
+                case 1110: timing = 0x10000; break; // TIMING_DRAW
                 case 1111: timing = 0x20000; break; // TIMING_DAMAGE
                 case 1112: timing = 0x40000; break; // TIMING_RECOVER
                 case 1010: timing = 0x80000; break; // TIMING_DESTROY
@@ -739,6 +739,8 @@ public class CardEffectManager : MonoBehaviour
     public void OnLifePointsGained(bool isPlayer, int amount) => eventManager.OnLifePointsGained(isPlayer, amount);
     public void OnCardEquipped(CardDisplay equip, CardDisplay target) => eventManager.OnCardEquipped(equip, target);
     public void OnSpellActivated(CardDisplay spell) => eventManager.OnSpellActivated(spell);
+    public void OnCardBanished(CardData card, bool isOwnerPlayer, CardLocation fromLocation, int reason) => eventManager.OnCardBanished(card, isOwnerPlayer, fromLocation, reason);
+    public void OnCardReturnedToDeck(CardData card, bool isOwnerPlayer, CardLocation fromLocation, int reason) => eventManager.OnCardReturnedToDeck(card, isOwnerPlayer, fromLocation, reason);
 
     // Métodos (Stubs) mantidos para não quebrar a lógica hardcoded do GameManager
     public void CheckMaintenanceCosts() { }

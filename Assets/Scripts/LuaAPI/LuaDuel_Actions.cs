@@ -213,6 +213,8 @@ public partial class LuaDuel
             if (c.unityCard != null)
             {
                 GameManager.Instance.BanishCard(c.unityCard);
+                if (CardEffectManager.Instance != null) 
+                    CardEffectManager.Instance.OnCardBanished(c.unityData, c.unityCard.ownerPlayer, c.unityCard.CurrentLocation, ocgReason);
                 count++;
                 if (GameManager.Instance == null || !GameManager.Instance.isSimulating)
                     yield return new WaitForSeconds(0.4f);
@@ -222,6 +224,9 @@ public partial class LuaDuel
                 bool wasPlayerPile;
                 CardLocation sourceLoc = GetPileLocation(c.unityData, out wasPlayerPile);
                 
+                if (CardEffectManager.Instance != null) 
+                    CardEffectManager.Instance.OnCardBanished(c.unityData, wasPlayerPile, sourceLoc, ocgReason);
+
                 if (DuelFXManager.Instance != null && !GameManager.Instance.isSimulating && sourceLoc != CardLocation.Unknown)
                 {
                     Vector3 startPos = GetPilePosition(sourceLoc, wasPlayerPile);
@@ -441,6 +446,8 @@ public partial class LuaDuel
                     if (GameManager.Instance.playerHand.Contains(c.unityCard.gameObject)) GameManager.Instance.playerHand.Remove(c.unityCard.gameObject);
                     else if (GameManager.Instance.opponentHand.Contains(c.unityCard.gameObject)) GameManager.Instance.opponentHand.Remove(c.unityCard.gameObject);
                     
+                    if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardReturnedToDeck(c.unityData, targetDeckIsPlayer, sLoc, ocgReason);
+
                     if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(c.unityCard);
                     GameObject.Destroy(c.unityCard.gameObject);
 
@@ -452,6 +459,8 @@ public partial class LuaDuel
                     sPos = GetPilePosition(sLoc, wasPlayerPile);
                     targetDeckIsPlayer = playerProvided ? (pInt == 0) : wasPlayerPile;
                     
+                    if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardReturnedToDeck(c.unityData, targetDeckIsPlayer, sLoc, ocgReason);
+
                     isOwnerList.Add(targetDeckIsPlayer);
                     startFaceUpList.Add(true);
                     sourceLocList.Add(sLoc);
@@ -491,6 +500,8 @@ public partial class LuaDuel
                 if (GameManager.Instance.playerHand.Contains(card.unityCard.gameObject)) GameManager.Instance.playerHand.Remove(card.unityCard.gameObject);
                 else if (GameManager.Instance.opponentHand.Contains(card.unityCard.gameObject)) GameManager.Instance.opponentHand.Remove(card.unityCard.gameObject);
                 
+                if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardReturnedToDeck(card.unityData, targetDeckIsPlayer, sLoc, ocgReason);
+
                 if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardLeavesField(card.unityCard);
                 GameObject.Destroy(card.unityCard.gameObject);
 
@@ -503,6 +514,8 @@ public partial class LuaDuel
                 sPos = GetPilePosition(sLoc, wasPlayerPile);
                 targetDeckIsPlayer = playerProvided ? (pInt == 0) : wasPlayerPile;
                 
+                if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnCardReturnedToDeck(card.unityData, targetDeckIsPlayer, sLoc, ocgReason);
+
                 isOwnerList.Add(targetDeckIsPlayer);
                 startFaceUpList.Add(true);
                 sourceLocList.Add(sLoc);

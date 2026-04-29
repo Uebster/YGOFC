@@ -36,6 +36,12 @@ public partial class GameManager
         UpdateLPUI();
         Debug.Log($"{(isPlayer ? "Player" : "Oponente")} pagou {amount} LP.");
 
+        if (CardEffectManager.Instance != null)
+        {
+            EventData ed = new EventData(null, isPlayer ? 0 : 1, amount, null, 0, isPlayer ? 0 : 1);
+            CardEffectManager.Instance.TriggerLuaEvent(1201, ed); // EVENT_PAY_LPCOST
+        }
+
         if (enableDamagePopups && DamagePopupManager.Instance != null && amount > 0)
         {
             DamagePopupManager.Instance.ShowPopup(amount, false, isPlayer);

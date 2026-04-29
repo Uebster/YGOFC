@@ -210,7 +210,7 @@ public class LuaEventManager
 
         EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
 
-        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1013 && (e.type & 0x0020) != 0); // EVENT_FLIP & EFFECT_TYPE_FLIP
+        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1001 && (e.type & 0x0020) != 0); // EVENT_FLIP (1001) & EFFECT_TYPE_FLIP
         if (singleEffects.Count > 0)
         {
             core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, ed));
@@ -257,9 +257,15 @@ public class LuaEventManager
     public void OnDamageDealt(CardDisplay attacker, CardDisplay target, int amount) { }
     public void OnCounterTrapResolved(CardDisplay trap) { }
     public void OnCardAddedToHand(CardDisplay card) { 
-        core.EnsureCardScriptLoaded(card);
-        // Recalcula stats caso uma carta como A Legendary Ocean esteja em campo
+        LuaCard lc = core.EnsureCardScriptLoaded(card);
+        if (lc == null) lc = new LuaCard(card);
         core.ApplyAllContinuousEffects();
+
+        LuaGroup eg = new LuaGroup(); eg.AddCard(lc);
+        int ep = lc.GetControler();
+        EventData ed = new EventData(eg, ep, 0, null, 0, ep);
+        TriggerLuaEvent(1012, ed); // 1012 = EVENT_TO_HAND
+        core.StartCoroutine(core.OpenFastEffectWindow($"Adicionada à Mão", 1012, ed, 0x200000)); // TIMING_TOHAND
     }
     public void OnTribute(CardDisplay card) { }
     public void OnCardDiscarded(CardDisplay card, bool causedByOpponent)
@@ -291,8 +297,8 @@ public class LuaEventManager
         
         LuaGroup eg = new LuaGroup(); eg.AddCard(lc);
         EventData ed = new EventData(eg, ep, 1, null, 0, ep);
-        TriggerLuaEvent(1027, ed); // EVENT_DRAW
-        core.StartCoroutine(core.OpenFastEffectWindow($"Carta Comprada", 1027, ed));
+        TriggerLuaEvent(1110, ed); // 1110 = EVENT_DRAW
+        core.StartCoroutine(core.OpenFastEffectWindow($"Carta Comprada", 1110, ed));
     }
     public void OnSpecialSummon(CardDisplay card) { 
         LuaCard lc = core.EnsureCardScriptLoaded(card);
@@ -314,7 +320,21 @@ public class LuaEventManager
         TriggerLuaEvent(1102, ed); // EVENT_SPSUMMON_SUCCESS
         core.StartCoroutine(core.OpenFastEffectWindow($"Invocação Especial de {card.CurrentCardData.name}", 1102, ed));
     }
-    public void OnControlSwitched(CardDisplay card) { }
+    public void OnControlSwitched(CardDisplay card) { 
+        LuaCard lc = core.EnsureCardScriptLoaded(card);
+        if (lc == null) lc = new LuaCard(card);
+        
+        EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
+
+        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1120 && (e.type & 0x0001) != 0); // 1120 = EVENT_CONTROL_CHANGED
+        if (singleEffects.Count > 0)
+        {
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, ed));
+        }
+
+        TriggerLuaEvent(1120, ed); // EVENT_CONTROL_CHANGED
+        core.StartCoroutine(core.OpenFastEffectWindow($"Controle Alterado", 1120, ed));
+    }
     
     public void OnPhaseStart(GamePhase phase) { 
         int tp = core.luaDuel.GetTurnPlayer();
@@ -464,6 +484,54 @@ public class LuaEventManager
         EventData ed = new EventData(null, ep, amount, re, 0x40, rp); // REASON_EFFECT
         TriggerLuaEvent(1112, ed); // EVENT_RECOVER
         core.StartCoroutine(core.OpenFastEffectWindow($"Vida Restaurada ({amount})", 1112, ed));
+    }
+
+    public void OnCardBanished(CardData card, bool isOwnerPlayer, CardLocation fromLocation, int reason)
+    {
+        if (card == null) return;
+        LuaCard lc = LuaScriptLoader.LoadScriptForData(card, core.luaEngine);
+        if (lc == null) lc = new LuaCard(card);
+        lc.previousLocation = fromLocation;
+        lc.ownerPlayerIndex = isOwnerPlayer ? 0 : 1;
+        int tp = lc.GetControler();
+        int rp = isOwnerPlayer ? 0 : 1;
+        LuaEffect re = null;
+        if (core.chainManager != null && core.chainManager.resolvingLink != null) { rp = core.chainManager.resolvingLink.player; re = core.chainManager.resolvingLink.effect; }
+        else if (core.luaDuel.currentActivatingEffect != null) { rp = core.luaDuel.currentActivatingEffect.owner.GetControler(); re = core.luaDuel.currentActivatingEffect; }
+        lc.currentReason = reason; lc.reasonPlayer = rp; lc.reasonEffect = re;
+
+        EventData edSingle = new EventData(lc, tp, 0, re, reason, rp);
+        var effects = lc.registeredEffects.FindAll(e => e.code == 1011 && (e.type & 0x0001) != 0); // EVENT_REMOVE (1011)
+        foreach(var e in effects) if (core.CanActivateEffect(lc, e, tp, edSingle)) core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, edSingle, tp, null));
+
+        LuaGroup eg = new LuaGroup(); eg.AddCard(lc);
+        EventData edGroup = new EventData(eg, tp, 0, re, reason, rp);
+        TriggerLuaEvent(1011, edGroup); 
+        core.StartCoroutine(core.OpenFastEffectWindow($"Banimento de {card.name}", 1011, edGroup, 0x100000));
+    }
+
+    public void OnCardReturnedToDeck(CardData card, bool isOwnerPlayer, CardLocation fromLocation, int reason)
+    {
+        if (card == null) return;
+        LuaCard lc = LuaScriptLoader.LoadScriptForData(card, core.luaEngine);
+        if (lc == null) lc = new LuaCard(card);
+        lc.previousLocation = fromLocation;
+        lc.ownerPlayerIndex = isOwnerPlayer ? 0 : 1;
+        int tp = lc.GetControler();
+        int rp = isOwnerPlayer ? 0 : 1;
+        LuaEffect re = null;
+        if (core.chainManager != null && core.chainManager.resolvingLink != null) { rp = core.chainManager.resolvingLink.player; re = core.chainManager.resolvingLink.effect; }
+        else if (core.luaDuel.currentActivatingEffect != null) { rp = core.luaDuel.currentActivatingEffect.owner.GetControler(); re = core.luaDuel.currentActivatingEffect; }
+        lc.currentReason = reason; lc.reasonPlayer = rp; lc.reasonEffect = re;
+
+        EventData edSingle = new EventData(lc, tp, 0, re, reason, rp);
+        var effects = lc.registeredEffects.FindAll(e => e.code == 1013 && (e.type & 0x0001) != 0); // EVENT_TO_DECK (1013)
+        foreach(var e in effects) if (core.CanActivateEffect(lc, e, tp, edSingle)) core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, edSingle, tp, null));
+
+        LuaGroup eg = new LuaGroup(); eg.AddCard(lc);
+        EventData edGroup = new EventData(eg, tp, 0, re, reason, rp);
+        TriggerLuaEvent(1013, edGroup); 
+        core.StartCoroutine(core.OpenFastEffectWindow($"Retorno ao Deck", 1013, edGroup, 0x400000));
     }
     
     public void OnCardEquipped(CardDisplay equip, CardDisplay target) {

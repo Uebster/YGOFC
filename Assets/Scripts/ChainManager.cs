@@ -4,6 +4,15 @@ using System.Collections.Generic;
 
 public class ChainManager
 {
+    public class OperationInfo
+    {
+        public int category;
+        public LuaGroup targetGroup;
+        public int count;
+        public int player;
+        public int param;
+    }
+
     public class ChainLink
     {
         public int chainIndex;
@@ -17,6 +26,7 @@ public class ChainManager
         public LuaGroup targetGroup;
         public int targetPlayer;
         public int targetParam;
+        public Dictionary<int, OperationInfo> opInfo = new Dictionary<int, OperationInfo>();
     }
 
     public List<ChainLink> currentChain = new List<ChainLink>();
@@ -47,6 +57,7 @@ public class ChainManager
         core.luaDuel.currentTargetGroup = new LuaGroup(); // Limpa os alvos da ativação anterior
         core.luaDuel.targetParam = 0;
         core.luaDuel.targetPlayer = 0;
+        core.luaDuel.ClearOperationInfo();
         if (effect.costFunc != null) {
             yield return core.StartCoroutine(core.RunLuaCoroutine(effect.costFunc, effect, tp, triggerArgs, 1));
             if (!core.lastCoroutineSuccess) { AbortActivation(luaCard); activeChainTasks--; onComplete?.Invoke(); yield break; }
@@ -69,7 +80,8 @@ public class ChainManager
             isDummy = isDummy,
             targetGroup = core.luaDuel.currentTargetGroup, // Salva o estado exato da seleção nesta cápsula!
             targetPlayer = core.luaDuel.targetPlayer,
-            targetParam = core.luaDuel.targetParam
+            targetParam = core.luaDuel.targetParam,
+            opInfo = new Dictionary<int, OperationInfo>(core.luaDuel._opInfoCache)
         };
         
         // Registra o uso ("Once per turn")
@@ -143,13 +155,16 @@ public class ChainManager
             }
         }
 
+        EventData edChaining = new EventData(newLink.card, tp, newLink.chainIndex, effect, 0, tp);
+        if (!isDummy) core.eventManager.TriggerLuaEvent(1027, edChaining); // 1027 = EVENT_CHAINING
+
         // JANELA DE RESPOSTA (Speed 2/3 - Pergunta ao Oponente e depois ao Jogador)
         bool someoneResponded = false;
-        yield return core.StartCoroutine(ResponseWindowRoutine(1 - tp, newLink, (res) => someoneResponded = res));
+        yield return core.StartCoroutine(ResponseWindowRoutine(1 - tp, newLink, edChaining, (res) => someoneResponded = res));
 
         if (!someoneResponded)
         {
-            yield return core.StartCoroutine(ResponseWindowRoutine(tp, newLink, (res) => someoneResponded = res));
+            yield return core.StartCoroutine(ResponseWindowRoutine(tp, newLink, edChaining, (res) => someoneResponded = res));
         }
 
         // RESOLUÇÃO LIFO (De trás pra frente) - Apenas o Link 1 comanda o desempilhamento!
@@ -202,11 +217,11 @@ public class ChainManager
         onComplete?.Invoke();
     }
 
-    private IEnumerator ResponseWindowRoutine(int priorityPlayer, ChainLink triggerLink, System.Action<bool> onComplete)
+    private IEnumerator ResponseWindowRoutine(int priorityPlayer, ChainLink triggerLink, EventData edChaining, System.Action<bool> onComplete)
     {
         bool isHuman = (priorityPlayer == 0); // 0 = Player, 1 = Opponent(IA)
-        int eventCode = triggerLink != null && triggerLink.effect != null ? triggerLink.effect.code : 0;
-        List<CardDisplay> validResponses = core.GetValidResponses(priorityPlayer, triggerLink, eventCode);
+        int eventCode = 1027; // EVENT_CHAINING
+        List<CardDisplay> validResponses = core.GetValidResponses(priorityPlayer, triggerLink, eventCode, edChaining);
 
         if (validResponses.Count == 0) { onComplete?.Invoke(false); yield break; }
 

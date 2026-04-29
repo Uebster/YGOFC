@@ -48,24 +48,43 @@ public partial class LuaDuel
     public void AddCustomActivityCounter(object counter_id, object activity_type, object filter) { }
     public void EnableGlobalFlag(object flag) { }
 
-    private Dictionary<int, LuaGroup> _opInfoCache = new Dictionary<int, LuaGroup>();
+    public Dictionary<int, ChainManager.OperationInfo> _opInfoCache = new Dictionary<int, ChainManager.OperationInfo>();
 
     public void SetOperationInfo(object chainc, object category, object target, object count, object player, object param) 
     { 
         int cat = ConvertToInt(category);
-        if (target is LuaGroup g) _opInfoCache[cat] = g;
+        int idx = ConvertToInt(chainc);
+
+        ChainManager.OperationInfo info = new ChainManager.OperationInfo {
+            category = cat,
+            count = ConvertToInt(count),
+            player = ConvertToInt(player),
+            param = ConvertToInt(param)
+        };
+
+        if (target is LuaGroup g) info.targetGroup = g;
         else if (target is LuaCard c) 
         {
             LuaGroup newG = new LuaGroup();
             newG.AddCard(c);
-            _opInfoCache[cat] = newG;
+            info.targetGroup = newG;
         }
 
-        int idx = ConvertToInt(chainc);
-        if (CardEffectManager.Instance != null && CardEffectManager.Instance.currentChain.Count >= idx && idx > 0)
+        if (idx == 0)
         {
-            // Guarda a informação na memória do elo (Usado por Stardust Dragon, My Body as a Shield, etc)
-            // CardEffectManager.Instance.currentChain[idx - 1].operationInfo = ...
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.isChainResolving && CardEffectManager.Instance.chainManager.resolvingLink != null)
+            {
+                CardEffectManager.Instance.chainManager.resolvingLink.opInfo[cat] = info;
+            }
+            else
+            {
+                _opInfoCache[cat] = info;
+            }
+        }
+        else if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null)
+        {
+            var link = CardEffectManager.Instance.chainManager.currentChain.Find(l => l.chainIndex == idx);
+            if (link != null) link.opInfo[cat] = info;
         }
     }
 
@@ -164,11 +183,34 @@ public partial class LuaDuel
     public DynValue GetOperationInfo(object chainc, object category) 
     { 
         int cat = ConvertToInt(category);
-        if (_opInfoCache.ContainsKey(cat))
+        int idx = ConvertToInt(chainc);
+        ChainManager.OperationInfo info = null;
+
+        if (idx == 0)
         {
-            return DynValue.NewTuple(DynValue.NewBoolean(true), UserData.Create(_opInfoCache[cat]));
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.resolvingLink != null)
+            {
+                if (CardEffectManager.Instance.chainManager.resolvingLink.opInfo.ContainsKey(cat))
+                    info = CardEffectManager.Instance.chainManager.resolvingLink.opInfo[cat];
+            }
+            else if (_opInfoCache.ContainsKey(cat))
+            {
+                info = _opInfoCache[cat];
+            }
         }
-        return DynValue.NewTuple(DynValue.NewBoolean(false), UserData.Create(new LuaGroup())); 
+        else if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null)
+        {
+            var link = CardEffectManager.Instance.chainManager.currentChain.Find(l => l.chainIndex == idx);
+            if (link != null && link.opInfo.ContainsKey(cat))
+                info = link.opInfo[cat];
+        }
+
+        if (info != null)
+        {
+            return DynValue.NewTuple(DynValue.NewBoolean(true), UserData.Create(info.targetGroup ?? new LuaGroup()), DynValue.NewNumber(info.count), DynValue.NewNumber(info.player), DynValue.NewNumber(info.param));
+        }
+        
+        return DynValue.NewTuple(DynValue.NewBoolean(false), UserData.Create(new LuaGroup()), DynValue.NewNumber(0), DynValue.NewNumber(0), DynValue.NewNumber(0)); 
     }
 
     public void ClearOperationInfo() 

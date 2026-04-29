@@ -477,6 +477,9 @@ public partial class GameManager
                 if (DeckManager.Instance != null) 
                     DeckManager.Instance.ReturnToDeck(card, true);
 
+                if (CardEffectManager.Instance != null)
+                    CardEffectManager.Instance.OnCardReturnedToDeck(data, isOwner, prevLoc, reason);
+
                 if (DuelFXManager.Instance != null && !isSimulating)
                 {
                     CardFlightSettings flightSettings = null;
@@ -525,6 +528,10 @@ public partial class GameManager
                 if (isController) playerHand.Remove(card.gameObject);
                 else opponentHand.Remove(card.gameObject);
                 RemoveFromPlay(data, isOwner);
+
+                if (CardEffectManager.Instance != null)
+                    CardEffectManager.Instance.OnCardBanished(data, isOwner, prevLoc, reason);
+
                 card.transform.SetParent(null);
                 Destroy(card.gameObject);
                 break;
@@ -998,6 +1005,9 @@ public partial class GameManager
             // Roda efeitos que reagem a troca de controle
             if (CardEffectManager.Instance != null && (card.CurrentCardData.id == "0834" || card.CurrentCardData.id == "0050"))
                 CardEffectManager.Instance.ExecuteCardEffect(card);
+                
+            if (CardEffectManager.Instance != null)
+                CardEffectManager.Instance.OnControlSwitched(card);
                 
             RefreshAllCardsVisuals();
             RefreshAttackIndicators();
