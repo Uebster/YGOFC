@@ -162,6 +162,8 @@ public class LuaCard
     // Novos Stubs Descobertos pelo Mass Validator
     public CardLocation previousLocation = CardLocation.Unknown;
     public int currentReason = 0;
+    public int reasonPlayer = -1;
+    public LuaEffect reasonEffect = null;
     
     public bool IsPreviousLocation(object loc) 
     { 
@@ -214,7 +216,8 @@ public class LuaCard
     public bool IsLevelBelow(object lvl) { return GetLevel() <= ConvertToInt(lvl); }
     public bool IsHasType(object type) { return IsType(type); }
     public int GetAttackAnnouncedCount() { return 0; }
-    public int GetReasonPlayer() { return GetControler(); }
+    public int GetReasonPlayer() { return reasonPlayer != -1 ? reasonPlayer : GetControler(); }
+    public LuaEffect GetReasonEffect() { return reasonEffect; }
     public int GetCounter(object counterType) { return 0; }
     public bool IsFacedown() { return unityCard != null ? unityCard.isFlipped : false; }
     public bool IsTributeSummoned() { return false; }
@@ -341,7 +344,11 @@ public class LuaCard
     public bool IsDefenseBelow(object def) { return GetDefense() <= ConvertToInt(def); }
     public int GetFlagEffectLabel(object id) { return 0; }
     public bool IsAttributeExcept(object attr) { return !IsAttribute(attr); }
-    public int GetBattlePosition() { return unityCard != null && unityCard.position == CardDisplay.BattlePosition.Defense ? 0x8 : 0x1; }
+    public int GetBattlePosition() { 
+        if (unityCard == null) return 0;
+        if (unityCard.position == CardDisplay.BattlePosition.Attack) return unityCard.isFlipped ? 0x2 : 0x1; // 0x2 = Face-Down Attack (Raro), 0x1 = Face-Up Attack
+        return unityCard.isFlipped ? 0x8 : 0x4; // 0x8 = Face-Down Defense, 0x4 = Face-Up Defense
+    }
     public bool IsRelateToBattle() { return true; }
     public void DeleteGroup() { }
 
@@ -370,7 +377,13 @@ public class LuaCard
     public bool IsAttackAbove(object atk) { return GetAttack() >= ConvertToInt(atk); }
     public bool IsDefenseAbove(object def) { return GetDefense() >= ConvertToInt(def); }
     public int GetAttackedCount() { return 0; }
-    public bool IsCanTurnSet() { return true; }
+    public bool IsCanTurnSet() 
+    { 
+        if (!IsFaceup()) return false; // Já está virado para baixo
+        if (IsType(0x4000)) return false; // TYPE_TOKEN (Tokens não podem ficar face-down)
+        if (IsType(0x4000000)) return false; // TYPE_LINK (Links não existem no DM, mas previne bugs futuros)
+        return true; 
+    }
     public bool IsCanBeSpecialSummoned(object e, object sumtype, object sumplayer, object nocheck, object nolimit, params object[] extraArgs) { return true; }
     public bool IsReleasable() { return true; }
     public bool IsPreviousControler(object p) { return true; }
@@ -378,7 +391,10 @@ public class LuaCard
     public bool IsPreviousPosition(object pos) { return true; }
     public bool IsDefensePos() { return unityCard != null && unityCard.position == CardDisplay.BattlePosition.Defense; }
     public bool IsAttackPos() { return unityCard != null && unityCard.position == CardDisplay.BattlePosition.Attack; }
-    public bool IsPosition(object pos) { return true; } // Stub para checagens múltiplas
+    public bool IsPosition(object pos) { 
+        int p = ConvertToInt(pos);
+        return (GetBattlePosition() & p) != 0;
+    }
     public bool IsSummonable(object ignoreLimit, object param) { return true; }
     public bool IsMSetable(object ignoreLimit, object param) { return true; }
     public bool IsSSetable(params object[] args) { return true; }

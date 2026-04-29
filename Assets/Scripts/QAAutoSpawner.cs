@@ -18,7 +18,7 @@ public class QAAutoSpawner : MonoBehaviour
 
     // --- INTERFACE DRAGGABLE (IMGUI) ---
     private bool showWindow = false;
-    private Rect windowRect = new Rect(20, 20, 380, 500);
+    private Rect windowRect = new Rect(20, 20, 400, 700);
     private Texture2D bgTex;
     private GUIStyle titleStyle;
     private GUIStyle btnStyle;
@@ -123,6 +123,39 @@ public class QAAutoSpawner : MonoBehaviour
             if (GUILayout.Button("🔄 Cópia Nova", btnStyle)) RestartCurrentTest();
             if (GUILayout.Button("Próx. ⏭️", btnStyle)) TestNextCard(true);
             GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
+
+            GUILayout.Space(10);
+            GUILayout.Label("<b>--- CONTROLE DA IA ---</b>", titleStyle);
+            GUILayout.BeginVertical(boxStyle);
+            
+            if (GameManager.Instance != null)
+            {
+                bool isAIActive = OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeSelf;
+                if (GUILayout.Button(isAIActive ? "🤖 IA: LIGADA (Desligar p/ Assumir)" : "🎮 IA: DESLIGADA (Você Controla)", btnStyle))
+                {
+                    if (OpponentAI.Instance != null)
+                    {
+                        bool newState = !isAIActive;
+                        OpponentAI.Instance.gameObject.SetActive(newState);
+                        GameManager.Instance.canPlaceOpponentCards = !newState;
+                        GameManager.Instance.canOpponentDrawFromDeck = !newState;
+                    }
+                }
+
+                bool isHandVisible = GameManager.Instance.showOpponentHand;
+                if (GUILayout.Button(isHandVisible ? "👁️ Mão Inimiga: VISÍVEL" : "👁️ Mão Inimiga: OCULTA", btnStyle))
+                {
+                    GameManager.Instance.showOpponentHand = !isHandVisible;
+                    GameManager.Instance.ToggleOpponentHandVisibility();
+                }
+                
+                bool autoPhases = !GameManager.Instance.disableAutoPhases;
+                if (GUILayout.Button(autoPhases ? "⏳ Fases: AUTOMÁTICAS" : "⏸️ Fases: PAUSADAS", btnStyle))
+                {
+                    GameManager.Instance.disableAutoPhases = autoPhases;
+                }
+            }
             GUILayout.EndVertical();
 
             GUILayout.Space(10);

@@ -10,6 +10,27 @@ using System.Linq;
 // - CardEffectManager.cs: Transfere as chamadas para formar as correntes (ChainManager).
 // - PhaseManager.cs / GameManager.cs: Avisa ao LUA quando turnos, danos e invocações ocorrem.
 // ==============================================================================
+
+public class EventData
+{
+    public object eg;
+    public int ep;
+    public int ev;
+    public LuaEffect re;
+    public int r;
+    public int rp;
+
+    public EventData(object eg, int ep, int ev, LuaEffect re, int r, int rp)
+    {
+        this.eg = eg;
+        this.ep = ep;
+        this.ev = ev;
+        this.re = re;
+        this.r = r;
+        this.rp = rp;
+    }
+}
+
 public class LuaEventManager
 {
     private CardEffectManager core;
@@ -35,8 +56,11 @@ public class LuaEventManager
 
         // Identifica a carta que originou o evento para evitar re-trigger
         LuaCard sourceCard = null;
-        if (triggerArgs is LuaCard lc) sourceCard = lc;
-        else if (triggerArgs is CardDisplay cd) sourceCard = core.EnsureCardScriptLoaded(cd);
+        object actualEg = triggerArgs;
+        if (triggerArgs is EventData ed) actualEg = ed.eg;
+
+        if (actualEg is LuaCard lc) sourceCard = lc;
+        else if (actualEg is CardDisplay cd) sourceCard = core.EnsureCardScriptLoaded(cd);
 
         // 1. Processa efeitos globais e gatilhos passivos registrados na memória
         if (core.luaDuel != null && core.luaDuel.globalEffects != null)
@@ -168,13 +192,15 @@ public class LuaEventManager
         if (fieldEffects.Count > 0)
             core.ApplyAllContinuousEffects();
         
+        EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
+
         var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1100 && (e.type & 0x0001) != 0); // EFFECT_TYPE_SINGLE
         if (singleEffects.Count > 0)
         {
-            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, null));
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, ed));
         }
-        TriggerLuaEvent(1100, lc); // EVENT_SUMMON_SUCCESS
-        core.StartCoroutine(core.OpenFastEffectWindow($"Invocação de {card.CurrentCardData.name}", 1100, lc));
+        TriggerLuaEvent(1100, ed); // EVENT_SUMMON_SUCCESS
+        core.StartCoroutine(core.OpenFastEffectWindow($"Invocação de {card.CurrentCardData.name}", 1100, ed));
     }
     
     public void OnFlip(CardDisplay card)
@@ -182,10 +208,12 @@ public class LuaEventManager
         LuaCard lc = core.EnsureCardScriptLoaded(card);
         if (lc == null) lc = new LuaCard(card);
 
+        EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
+
         var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1013 && (e.type & 0x0020) != 0); // EVENT_FLIP & EFFECT_TYPE_FLIP
         if (singleEffects.Count > 0)
         {
-            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, null));
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, ed));
         }
         // Não abrimos janela de resposta para FLIP, pois é um efeito obrigatório que inicia sua própria corrente.
     }
@@ -195,8 +223,9 @@ public class LuaEventManager
         if (lc == null) lc = new LuaCard(card);
         
         int eventCode = card.CurrentCardData.type.Contains("Monster") ? 1107 : 1108; // 1107: EVENT_MSET, 1108: EVENT_SSET
-        TriggerLuaEvent(eventCode, lc);
-        core.StartCoroutine(core.OpenFastEffectWindow($"Carta Baixada", eventCode, lc));
+        EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
+        TriggerLuaEvent(eventCode, ed);
+        core.StartCoroutine(core.OpenFastEffectWindow($"Carta Baixada", eventCode, ed));
     }
     
     public void OnFlipSummon(CardDisplay card) {
@@ -205,22 +234,25 @@ public class LuaEventManager
 
         // Debug.Log($"<color=orange>[DEBUG LUA]</color> EVENT_FLIP_SUMMON_SUCCESS (1101) acionado para: {card.CurrentCardData.name} | ATK: {card.currentAtk} | Controlador: {lc.GetControler()} | Faceup: {!card.isFlipped} | IsOnField: {card.isOnField}");
         
+        EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
+
         var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1101 && (e.type & 0x0001) != 0); // EFFECT_TYPE_SINGLE
         if (singleEffects.Count > 0)
         {
-            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, null));
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, ed));
         }
 
-        TriggerLuaEvent(1101, lc); // EVENT_FLIP_SUMMON_SUCCESS
-        core.StartCoroutine(core.OpenFastEffectWindow($"Invocação-Virar de {card.CurrentCardData.name}", 1101, lc));
+        TriggerLuaEvent(1101, ed); // EVENT_FLIP_SUMMON_SUCCESS
+        core.StartCoroutine(core.OpenFastEffectWindow($"Invocação-Virar de {card.CurrentCardData.name}", 1101, ed));
     }
 
     public void OnBattlePositionChanged(CardDisplay card) { 
         LuaCard lc = core.EnsureCardScriptLoaded(card);
         if (lc == null) lc = new LuaCard(card);
         
-        TriggerLuaEvent(1016, lc); // EVENT_CHANGE_POS
-        core.StartCoroutine(core.OpenFastEffectWindow($"Mudança de Posição de {card.CurrentCardData.name}", 1016, lc));
+        EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
+        TriggerLuaEvent(1016, ed); // EVENT_CHANGE_POS
+        core.StartCoroutine(core.OpenFastEffectWindow($"Mudança de Posição de {card.CurrentCardData.name}", 1016, ed));
     }
     public void OnDamageDealt(CardDisplay attacker, CardDisplay target, int amount) { }
     public void OnCounterTrapResolved(CardDisplay trap) { }
@@ -234,8 +266,34 @@ public class LuaEventManager
     {
         // Recalcula stats caso uma carta na mão tenha sido descartada
         core.ApplyAllContinuousEffects();
+
+        LuaCard lc = core.EnsureCardScriptLoaded(card);
+        if (lc == null) lc = new LuaCard(card);
+        LuaGroup eg = new LuaGroup(); eg.AddCard(lc);
+        int ep = card.ownerPlayer ? 0 : 1;
+        int rp = causedByOpponent ? (1 - ep) : ep;
+
+        LuaEffect re = null;
+        if (core.chainManager != null && core.chainManager.resolvingLink != null) {
+            rp = core.chainManager.resolvingLink.player;
+            re = core.chainManager.resolvingLink.effect;
+        }
+
+        EventData ed = new EventData(eg, ep, 1, re, 0x40 | 0x4000, rp); // REASON_EFFECT | REASON_DISCARD
+        TriggerLuaEvent(1018, ed); // EVENT_DISCARD
+        core.StartCoroutine(core.OpenFastEffectWindow($"Carta Descartada", 1018, ed));
     }
-    public void OnCardDrawn(CardData card, bool isPlayer) { }
+    public void OnCardDrawn(CardData card, bool isPlayer) 
+    { 
+        int ep = isPlayer ? 0 : 1;
+        LuaCard lc = LuaScriptLoader.LoadScriptForData(card, core.luaEngine);
+        if (lc == null) lc = new LuaCard(card);
+        
+        LuaGroup eg = new LuaGroup(); eg.AddCard(lc);
+        EventData ed = new EventData(eg, ep, 1, null, 0, ep);
+        TriggerLuaEvent(1027, ed); // EVENT_DRAW
+        core.StartCoroutine(core.OpenFastEffectWindow($"Carta Comprada", 1027, ed));
+    }
     public void OnSpecialSummon(CardDisplay card) { 
         LuaCard lc = core.EnsureCardScriptLoaded(card);
         if (lc == null) lc = new LuaCard(card);
@@ -245,32 +303,37 @@ public class LuaEventManager
         if (fieldEffects.Count > 0)
             core.ApplyAllContinuousEffects();
         
+        EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
+
         var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1102 && (e.type & 0x0001) != 0); // EFFECT_TYPE_SINGLE
         if (singleEffects.Count > 0)
         {
-            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, null));
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, ed));
         }
 
-        TriggerLuaEvent(1102, lc); // EVENT_SPSUMMON_SUCCESS
-        core.StartCoroutine(core.OpenFastEffectWindow($"Invocação Especial de {card.CurrentCardData.name}", 1102, lc));
+        TriggerLuaEvent(1102, ed); // EVENT_SPSUMMON_SUCCESS
+        core.StartCoroutine(core.OpenFastEffectWindow($"Invocação Especial de {card.CurrentCardData.name}", 1102, ed));
     }
     public void OnControlSwitched(CardDisplay card) { }
     
     public void OnPhaseStart(GamePhase phase) { 
+        int tp = core.luaDuel.GetTurnPlayer();
+        EventData edPhase = new EventData(null, tp, 0, null, 0, tp);
+
         // Dispara o Gatilho Específico de Fase para o Lua (ex: Fim da Batalha)
         if (phase == GamePhase.Main2 || phase == GamePhase.End) {
-            TriggerLuaEvent(4096 + 128, null); // EVENT_PHASE + PHASE_BATTLE (4224)
+            TriggerLuaEvent(4096 + 128, edPhase); // EVENT_PHASE + PHASE_BATTLE (4224)
             
             // LIMPEZA OFICIAL (OCG): O contexto de ataque cessa de existir ao sair da Battle Phase
             core.luaDuel.currentAttacker = null;
             core.luaDuel.currentAttackTarget = null;
         }
         if (phase == GamePhase.End) {
-            TriggerLuaEvent(4096 + 256, null); // EVENT_PHASE + PHASE_MAIN2 (4352)
+            TriggerLuaEvent(4096 + 256, edPhase); // EVENT_PHASE + PHASE_MAIN2 (4352)
         }
 
-        TriggerLuaEvent(4096, null); // EVENT_PHASE
-        core.StartCoroutine(core.OpenFastEffectWindow($"Início da {phase}", 4096, null));
+        TriggerLuaEvent(4096, edPhase); // EVENT_PHASE
+        core.StartCoroutine(core.OpenFastEffectWindow($"Início da {phase}", 4096, edPhase));
 
         // Executa a limpeza pesada da memória APENAS depois que todos os efeitos do fim do turno se resolverem
         if (phase == GamePhase.End) {
@@ -342,29 +405,69 @@ public class LuaEventManager
         else if (reasonStr == "Discarded") ocgReason = 0x4000 | 0x40; // REASON_DISCARD | REASON_EFFECT
         else if (reasonStr == "Mill") ocgReason = 0x40; // REASON_EFFECT
         else if (reasonStr == "Tribute") ocgReason = 0x2; // REASON_RELEASE
-        lc.currentReason = ocgReason;
 
+        int rp = isOwnerPlayer ? 0 : 1; // Padrão: O próprio dono
+        LuaEffect re = null;
+        if (core.chainManager != null && core.chainManager.resolvingLink != null) {
+            rp = core.chainManager.resolvingLink.player; // Quem ativou o efeito resolvendo agora
+            re = core.chainManager.resolvingLink.effect;
+        } else if (core.luaDuel.currentActivatingEffect != null) {
+            rp = core.luaDuel.currentActivatingEffect.owner.GetControler(); // Quem está ativando um custo
+            re = core.luaDuel.currentActivatingEffect;
+        }
+
+        lc.currentReason = ocgReason;
+        lc.reasonPlayer = rp;
+        lc.reasonEffect = re;
+
+        EventData edSingle = new EventData(lc, tp, 0, re, ocgReason, rp);
         var gyEffects = lc.registeredEffects.FindAll(e => e.code == 1014 && (e.type & 0x0001) != 0); // EVENT_TO_GRAVE
         // Debug.Log($"[Surgical Log] Carta '{card.name}' caiu no GY. Efeitos EVENT_TO_GRAVE (1014) encontrados: {gyEffects.Count}");
         
         foreach(var e in gyEffects)
         {
-            bool canAct = core.CanActivateEffect(lc, e, tp, lc);
+            bool canAct = core.CanActivateEffect(lc, e, tp, edSingle);
             // Debug.Log($"[Surgical Log] CanActivateEffect para {card.name} (chk=0) retornou: {canAct}");
             
             if (canAct)
-                core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, lc, tp, null));
+                core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, edSingle, tp, null));
         }
 
         LuaGroup eg = new LuaGroup();
         eg.AddCard(lc);
+        EventData edGroup = new EventData(eg, tp, 0, re, ocgReason, rp);
 
-        TriggerLuaEvent(1014, eg); 
-        core.StartCoroutine(core.OpenFastEffectWindow($"Queda de {card.name}", 1014, eg));
+        TriggerLuaEvent(1014, edGroup); 
+        core.StartCoroutine(core.OpenFastEffectWindow($"Queda de {card.name}", 1014, edGroup));
     }
 
-    public void OnDamageTaken(bool isPlayer, int amount) { }
-    public void OnLifePointsGained(bool isPlayer, int amount) { }
+    public void OnDamageTaken(bool isPlayer, int amount) 
+    { 
+        int ep = isPlayer ? 0 : 1;
+        int rp = 1 - ep; // Padrão
+        LuaEffect re = null;
+        if (core.chainManager != null && core.chainManager.resolvingLink != null) {
+            rp = core.chainManager.resolvingLink.player;
+            re = core.chainManager.resolvingLink.effect;
+        }
+        EventData ed = new EventData(null, ep, amount, re, 0x40, rp); // REASON_EFFECT
+        TriggerLuaEvent(1025, ed); // EVENT_DAMAGE
+        core.StartCoroutine(core.OpenFastEffectWindow($"Dano Recebido ({amount})", 1025, ed));
+    }
+
+    public void OnLifePointsGained(bool isPlayer, int amount) 
+    { 
+        int ep = isPlayer ? 0 : 1;
+        int rp = 1 - ep;
+        LuaEffect re = null;
+        if (core.chainManager != null && core.chainManager.resolvingLink != null) {
+            rp = core.chainManager.resolvingLink.player;
+            re = core.chainManager.resolvingLink.effect;
+        }
+        EventData ed = new EventData(null, ep, amount, re, 0x40, rp); // REASON_EFFECT
+        TriggerLuaEvent(1026, ed); // EVENT_RECOVER
+        core.StartCoroutine(core.OpenFastEffectWindow($"Vida Restaurada ({amount})", 1026, ed));
+    }
     
     public void OnCardEquipped(CardDisplay equip, CardDisplay target) {
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayEquipEffect(equip, target);
@@ -390,13 +493,15 @@ public class LuaEventManager
         LuaCard lc = core.activeLuaCards.ContainsKey(card) ? core.activeLuaCards[card] : null;
         if (lc == null) lc = new LuaCard(card);
 
+        EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
+
         // Dispara EVENT_LEAVE_FIELD (1015) ANTES da carta perder seus vínculos
         var leaveEffects = lc.registeredEffects.FindAll(e => e.code == 1015 && (e.type & 0x0001) != 0); // EFFECT_TYPE_SINGLE
         if (leaveEffects.Count > 0)
         {
-            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, leaveEffects, lc));
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, leaveEffects, ed));
         }
-        TriggerLuaEvent(1015, lc);
+        TriggerLuaEvent(1015, ed);
 
         if (core.continuousFieldEffects.RemoveAll(e => e.owner == lc) > 0)
         {
@@ -438,11 +543,13 @@ public class LuaEventManager
             LuaCard deadCard = core.EnsureCardScriptLoaded(target);
             if (deadCard == null) deadCard = new LuaCard(target);
 
+            EventData ed = new EventData(deadCard, deadCard.GetControler(), 0, null, 0x20, core.luaDuel.GetTurnPlayer()); // REASON_BATTLE = 0x20
+
             var singleEffects = deadCard.registeredEffects.FindAll(e => e.code == 1010 && (e.type & 0x0001) != 0); 
             if (singleEffects.Count > 0) {
-                core.StartCoroutine(ProcessSingleEffectsRoutine(deadCard, singleEffects, deadCard));
+                core.StartCoroutine(ProcessSingleEffectsRoutine(deadCard, singleEffects, ed));
             }
-            TriggerLuaEvent(1010, deadCard);
+            TriggerLuaEvent(1010, ed);
         }
     }
 }

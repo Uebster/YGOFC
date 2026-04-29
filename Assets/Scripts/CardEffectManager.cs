@@ -206,18 +206,39 @@ public class CardEffectManager : MonoBehaviour
 
     public bool CanActivateEffect(LuaCard luaCard, LuaEffect effect, int tp, object triggerArgs)
     {
-        object eg = WrapTriggerArgs(triggerArgs);
+        object finalEg = triggerArgs;
+        int ep = tp;
+        int ev = 0;
+        LuaEffect re = null;
+        int r = 0;
+        int rp = tp;
+
+        if (triggerArgs is EventData ed)
+        {
+            finalEg = ed.eg;
+            ep = ed.ep;
+            ev = ed.ev;
+            re = ed.re;
+            r = ed.r;
+            rp = ed.rp;
+        }
+        else if (triggerArgs is LuaCard tCard)
+        {
+            ep = tCard.GetControler();
+            rp = ep;
+        }
+
+        object eg = WrapTriggerArgs(finalEg);
         bool expectsCard = (effect.type == 1 || effect.type == 4); // EFFECT_TYPE_SINGLE or EFFECT_TYPE_EQUIP
         object arg2 = expectsCard ? (object)luaCard : (object)tp;
 
-        // Cria um Dummy 're' (Reason Effect) para evitar crashes se a carta tentar ler propriedades da corrente
-        LuaEffect dummyRe = new LuaEffect { owner = luaCard };
+        if (re == null) re = new LuaEffect { owner = luaCard };
 
-        // Captura inteligentemente quem disparou a Invocação ou Batalha para a Trap Hole entender
-        int ep = tp;
-        int rp = tp;
-        if (triggerArgs is LuaCard tCard) { ep = tCard.GetControler(); rp = ep; }
-        else if (eg is LuaGroup g && g.cards.Count > 0) { ep = g.cards[0].GetControler(); rp = ep; }
+        if (!(triggerArgs is EventData) && eg is LuaGroup g && g.cards.Count > 0) 
+        { 
+            ep = g.cards[0].GetControler(); 
+            rp = ep; 
+        }
 
         // 0. Verifica Auras Globais de Bloqueio (Ex: Jinzo, Imperial Order)
         bool isManualActivation = effect.type == 0x0010 || effect.type == 0x0040 || effect.type == 0x0080 || effect.type == 0x0100;
@@ -257,21 +278,21 @@ public class CardEffectManager : MonoBehaviour
         try 
         {
             if (effect.conditionFunc != null) {
-                DynValue res = luaEngine.Call(effect.conditionFunc, effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(rp));
+                DynValue res = luaEngine.Call(effect.conditionFunc, effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(ev), re, DynValue.NewNumber(r), DynValue.NewNumber(rp));
                 if (res.Type == DataType.Boolean && !res.Boolean) {
                     Debug.LogWarning($"<color=yellow>[Lua Validation]</color> Condition falhou para a carta {luaCard.unityData.name}");
                     return false;
                 }
             }
             if (effect.costFunc != null) {
-                DynValue res = luaEngine.Call(effect.costFunc, effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(rp), DynValue.NewNumber(0)); // chk = 0
+                DynValue res = luaEngine.Call(effect.costFunc, effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(ev), re, DynValue.NewNumber(r), DynValue.NewNumber(rp), DynValue.NewNumber(0)); // chk = 0
                 if (res.Type == DataType.Boolean && !res.Boolean) {
                     Debug.LogWarning($"<color=yellow>[Lua Validation]</color> Cost (chk=0) falhou para a carta {luaCard.unityData.name}");
                     return false;
                 }
             }
             if (effect.targetFunc != null) {
-                DynValue res = luaEngine.Call(effect.targetFunc, effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(rp), 0, null); // chk = 0
+                DynValue res = luaEngine.Call(effect.targetFunc, effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(ev), re, DynValue.NewNumber(r), DynValue.NewNumber(rp), 0, null); // chk = 0
                 
                 if (res.Type == DataType.Boolean && !res.Boolean) {
                     // Debug.LogWarning($"<color=yellow>[Lua Validation]</color> Target (chk=0) falhou para a carta {luaCard.unityData.name}!");
@@ -297,16 +318,39 @@ public class CardEffectManager : MonoBehaviour
     {
         lastCoroutineSuccess = true;
         
-        object eg = WrapTriggerArgs(triggerArgs);
+        object finalEg = triggerArgs;
+        int ep = tp;
+        int ev = 0;
+        LuaEffect re = null;
+        int r = 0;
+        int rp = tp;
+
+        if (triggerArgs is EventData ed)
+        {
+            finalEg = ed.eg;
+            ep = ed.ep;
+            ev = ed.ev;
+            re = ed.re;
+            r = ed.r;
+            rp = ed.rp;
+        }
+        else if (triggerArgs is LuaCard tCard)
+        {
+            ep = tCard.GetControler();
+            rp = ep;
+        }
+
+        object eg = WrapTriggerArgs(finalEg);
         bool expectsCard = (effect.type == 1 || effect.type == 4); // EFFECT_TYPE_SINGLE or EFFECT_TYPE_EQUIP
         object arg2 = expectsCard ? (object)(effect.owner ?? new LuaCard(new CardData { id = "0000", name = "Dummy" })) : (object)tp;
         
-        LuaEffect dummyRe = new LuaEffect { owner = effect.owner ?? new LuaCard(new CardData { id = "0000", name = "Dummy" }) };
+        if (re == null) re = new LuaEffect { owner = effect.owner ?? new LuaCard(new CardData { id = "0000", name = "Dummy" }) };
 
-        int ep = tp;
-        int rp = tp;
-        if (triggerArgs is LuaCard tCard) { ep = tCard.GetControler(); rp = ep; }
-        else if (eg is LuaGroup g && g.cards.Count > 0) { ep = g.cards[0].GetControler(); rp = ep; }
+        if (!(triggerArgs is EventData) && eg is LuaGroup g && g.cards.Count > 0) 
+        { 
+            ep = g.cards[0].GetControler(); 
+            rp = ep; 
+        }
 
         activeLuaCoroutine = luaEngine.CreateCoroutine(func);
         DynValue result;
@@ -314,8 +358,8 @@ public class CardEffectManager : MonoBehaviour
         try
         {
             // Assinatura YGOPro: (e, tp, eg, ep, ev, re, r, rp, chk)
-            if (chk >= 0) result = activeLuaCoroutine.Coroutine.Resume(effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(rp), DynValue.NewNumber(chk));
-            else result = activeLuaCoroutine.Coroutine.Resume(effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(0), dummyRe, DynValue.NewNumber(0), DynValue.NewNumber(rp));
+            if (chk >= 0) result = activeLuaCoroutine.Coroutine.Resume(effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(ev), re, DynValue.NewNumber(r), DynValue.NewNumber(rp), DynValue.NewNumber(chk));
+            else result = activeLuaCoroutine.Coroutine.Resume(effect, arg2, eg, DynValue.NewNumber(ep), DynValue.NewNumber(ev), re, DynValue.NewNumber(r), DynValue.NewNumber(rp));
         }
         catch (System.Exception e)
         {

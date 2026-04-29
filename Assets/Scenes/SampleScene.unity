@@ -50986,7 +50986,7 @@ MonoBehaviour:
   enableRightClickPhaseMenu: 1
   confirmBattlePositionChange: 1
   confirmAttackTarget: 0
-  useDirectHandSelection: 0
+  useDirectHandSelection: 1
   confirmHandSelection: 1
   quickSummonFromHand: 0
   quickSpellTrapFromHand: 0

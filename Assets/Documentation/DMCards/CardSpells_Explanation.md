@@ -599,3 +599,230 @@ A carta **"Block Attack"** (Bloquear Ataque) é uma Carta Mágica Normal (Normal
 ### 💡 O grande truque dessa carta:
 No Yu-Gi-Oh!, a grande maioria dos "Boss Monsters" e agressores (Beatsticks) focam todo o seu poder no Ataque, possuindo uma Defesa miserável.
 * **Derrubando Muralhas:** Um *Summoned Skull* tem terríveis 2500 de ATK, mas apenas 1200 de DEF. Um *Jinzo* tem 2400 de ATK e apenas 1500 de DEF. Se você não tem um monstro forte o suficiente para bater de frente com eles, o *Block Attack* os coloca de joelhos, permitindo que monstros mais fracos da sua mão (como *Mystic Tomato* ou *Archfiend Soldier*) passem por cima deles facilmente em batalha!
+
+---
+
+## ID: DM0209 - Blue Medicine (Password: 20871001)
+
+A carta **"Blue Medicine"** (Remédio Azul) é uma Carta Mágica Normal (Normal Spell) clássica, focada em recuperação de Pontos de Vida de forma simples e direta.
+
+> *"Increase your Life Points by 400 points."*
+
+### Como ela funciona na prática:
+
+1. **Ativação:** Por ser uma Magia Normal, você só pode ativá-la durante a sua Main Phase 1 ou Main Phase 2.
+2. **O Efeito:** Ao ser ativada, você ganha imediatamente **400 Pontos de Vida (LP)**.
+
+### 💡 O grande truque dessa carta:
+Em um formato onde o dano pode escalar rapidamente, 400 LP pode não parecer muito, mas em duelos longos e estratégicos, cada ponto conta.
+*   **Sobrevivência Mínima:** Pode ser a diferença entre sobreviver a um ataque direto com 100 LP restantes ou perder o duelo no próximo turno.
+*   **Custo de Ativação:** Em decks que usam cartas com custos de LP (como *Delinquent Duo* ou *Premature Burial*), o *Blue Medicine* ajuda a mitigar esses custos, mantendo você em uma posição ligeiramente mais segura.
+
+---
+
+## ID: DM0224 - Book of Life (Password: 00596051)
+
+A carta **"Book of Life"** (Livro da Vida) é uma Carta Mágica Normal (Normal Spell) com um efeito duplo poderoso, exclusivo para decks de Zumbis, que atua de forma cirúrgica tanto na ofensiva quanto na defensiva.
+
+> *"Target 1 Zombie-Type monster in your Graveyard and 1 monster in your opponent's Graveyard; Special Summon the first target, then banish the second target."*
+
+### Como ela funciona na prática:
+
+1. **Alvo Duplo (Requisito Estrito):** Para ativá-la, duas condições devem ser cumpridas simultaneamente: você deve ter 1 monstro do Tipo **Zumbi (Zombie-Type)** no *seu* Cemitério E o oponente deve ter pelo menos 1 monstro (qualquer tipo) no Cemitério *dele*. Se um dos cemitérios estiver vazio para esses alvos, a carta não pode ser ativada.
+2. **A Ressurreição:** Na resolução, o seu monstro Zumbi escolhido é Invocado por Invocação-Especial para o seu lado do campo.
+3. **O Exílio:** Em seguida, o monstro alvo no cemitério do oponente é **Banido (Removido de Jogo)**.
+
+### 💡 O grande truque dessa carta:
+Esta carta é uma das mágicas de suporte mais mortais do jogo, pois ela gera uma oscilação de recursos (Swing) colossal em uma única jogada.
+
+*   **Ressurreição de Custo Zero:** Diferente do *Premature Burial*, ela não custa LP e não prende o monstro revivido a uma carta frágil no campo. Você pode trazer de volta um Boss Monster como *Vampire Lord* ou *Ryu Kokki* totalmente de graça.
+*   **Controle de Cemitério:** Em formatos clássicos, o cemitério é um segundo baralho. Ao banir a carta do oponente, você desmantela combos inimigos. Você pode banir um monstro *LIGHT* ou *DARK* que ele estava preparando para invocar o *Black Luster Soldier*, ou sumir com a *Sinister Serpent* dele para sempre!
+
+---
+
+## ID: DM0225 - Book of Moon (Password: 14087893)
+
+A carta **"Book of Moon"** (Livro da Lua) é uma das Cartas Mágicas Rápidas (Quick-Play Spell) mais icônicas, flexíveis e táticas de toda a história de Yu-Gi-Oh!.
+
+> *"Target 1 face-up monster on the field; change that target to face-down Defense Position."*
+
+### Como ela funciona na prática:
+
+1. **Alvo Universal:** Você escolhe 1 monstro que esteja virado para cima em qualquer lugar do campo (seu ou do oponente).
+2. **A Ocultação:** O monstro alvo é virado instantaneamente para a **Posição de Defesa Virado para Baixo (Face-down Defense Position)**.
+3. **A Velocidade:** Por ser uma Quick-Play, você pode usá-la da sua mão durante o seu turno, ou deixá-la Setada para surpreender o oponente durante o turno dele (nas fases de Compra, Principal ou de Batalha).
+
+### 💡 O grande truque dessa carta:
+Sua simplicidade a torna um "Canivete Suíço" para quase qualquer situação de jogo imaginável.
+
+*   **Interrupção de Ataque:** O oponente declara um ataque fatal. Você ativa o *Book of Moon* no atacante. Como monstros virados para baixo não podem atacar, o ataque é sumariamente cancelado.
+*   **Silenciando Ameaças:** Monstros com efeitos contínuos perigosos (como *Jinzo*, que bloqueia armadilhas) perdem seus efeitos passivos quando estão virados para baixo. Você vira o *Jinzo* dele para baixo, e suas Armadilhas voltam a funcionar no mesmo instante!
+*   **Reset de Efeitos e Status:** Se o oponente usar *Snatch Steal* para roubar seu monstro, ou *Shrink* para reduzir o ATK dele, você pode usar o *Book of Moon* no seu próprio monstro. Quando ele é virado para baixo, todas as magias de equipamento acopladas a ele são destruídas, e os modificadores de status são "resetados".
+*   **Reutilização de Efeitos FLIP:** Se você ativou o Efeito FLIP de uma *Magician of Faith* e ela sobreviveu à batalha, você pode usar o *Book of Moon* nela durante a Main Phase 2, deixando-a pronta para ser Flipada de novo (virada para cima) no próximo turno e resgatar mais uma Mágica!
+
+---
+
+## ID: DM0226 - Book of Secret Arts (Password: 91595718)
+
+A carta **"Book of Secret Arts"** (Livro das Artes Secretas) é uma Carta Mágica de Equipamento (Equip Spell) fundamental, criada para dar um pequeno, mas útil, impulso aos monstros do tipo Mago.
+
+> *"A Spellcaster-Type monster equipped with this card increases its ATK and DEF by 300 points."*
+
+### Como ela funciona na prática:
+
+1.  **Alvo:** Você só pode equipar esta carta em um monstro do Tipo **Mago (Spellcaster)** que esteja virado para cima no campo.
+2.  **O Efeito:** O monstro equipado ganha um bônus permanente de **+300 pontos tanto no ATK quanto na DEF**.
+
+### 💡 O grande truque dessa carta:
+Embora o bônus pareça modesto, ele é estratégico para superar monstros de nível similar.
+
+*   **Quebrando Limites:** Um monstro como *Skilled Dark Magician* (1900 ATK) passa a ter 2200 ATK, superando a maioria dos monstros de Nível 4 e até alguns de Nível 5.
+*   **Sobrevivência:** O bônus de 300 na DEF pode ser a diferença que impede seu mago de ser destruído em batalha quando está em modo de defesa.
+
+---
+
+## ID: DM0227 - Book of Taiyou (Password: 38699854)
+
+A carta **"Book of Taiyou"** (Livro do Sol) é uma Carta Mágica Normal (Normal Spell) e a contraparte direta do famoso *Book of Moon*. Em vez de ocultar, ela revela.
+
+> *"Flip 1 face-down monster on the field into face-up Attack Position."*
+
+### Como ela funciona na prática:
+
+1.  **Alvo:** Você escolhe 1 monstro que esteja virado para baixo no campo (seu ou do oponente).
+2.  **O Efeito:** O monstro alvo é imediatamente virado para a **Posição de Ataque Virado para Cima (Face-up Attack Position)**.
+
+### 💡 O grande truque dessa carta:
+Sua principal função é acelerar suas próprias jogadas ou expor as fraquezas do oponente.
+
+*   **Ativação de Efeitos FLIP:** É a maneira mais rápida de ativar o efeito de um monstro FLIP seu (como *Magician of Faith* ou *Man-Eater Bug*) durante a sua Main Phase, sem precisar esperar que o oponente o ataque.
+*   **Expondo Armadilhas:** Se o oponente baixou um monstro suspeito, você pode usar o *Book of Taiyou* para forçá-lo a virar para cima. Se for um monstro fraco, você pode destruí-lo facilmente em batalha. Se for um monstro com um efeito FLIP perigoso, você o ativa no seu próprio turno, sob seu controle, em vez de ser pego de surpresa no turno dele.
+
+---
+
+## ID: DM0234 - Brain Control (Password: 87910978)
+
+A carta **"Brain Control"** (Controle Cerebral) é uma das Cartas Mágicas Normais (Normal Spell) mais poderosas e icônicas do formato clássico, permitindo que você "roube" temporariamente um monstro do oponente.
+
+> *"Pay 800 LP, then target 1 face-up monster your opponent controls that can be Normal Summoned/Set; take control of that target until the End Phase."*
+
+### Como ela funciona na prática:
+
+1.  **Custo e Alvo:** Você paga **800 Pontos de Vida** e escolhe 1 monstro virado para cima que o oponente controla.
+2.  **A Restrição:** O monstro alvo precisa ser um que possa ser invocado normalmente (Normal Summoned/Set). Isso significa que você **não pode** roubar a maioria dos monstros de Fusão, Ritual ou monstros com efeitos que dizem "Cannot be Normal Summoned/Set".
+3.  **O Roubo:** Você ganha o controle do monstro até o final do seu turno.
+
+### 💡 O grande truque dessa carta:
+A versatilidade do *Brain Control* é o que a torna lendária.
+
+*   **Remoção e Ataque:** A utilidade mais óbvia é roubar o monstro mais forte do oponente e usá-lo para atacar diretamente ou para destruir outro monstro dele.
+*   **Tributo Perfeito:** A jogada mais devastadora é roubar um monstro do oponente e, na mesma Main Phase, **Tributá-lo** para a sua própria Invocação-Tributo (como para um *Monarch* ou *Jinzo*). O monstro do oponente é removido do campo permanentemente, e você ainda coloca uma ameaça sua na mesa!
+
+---
+
+## ID: DM0238 - Breath of Light (Password: 20101223)
+
+A carta **"Breath of Light"** (Sopro de Luz) é uma Carta Mágica Normal (Normal Spell) de remoção em massa, altamente específica e devastadora contra um determinado Tipo de monstro.
+
+> *"Destroy all face-up Rock-Type monsters on the field."*
+
+### Como ela funciona na prática:
+
+1.  **Ativação:** Ao ser ativada, ela destrói todos os monstros do Tipo **Rocha (Rock)** que estiverem virados para cima no campo, em ambos os lados.
+2.  **Efeito Colateral:** Assim como outras cartas de remoção em massa, ela também destruirá os seus próprios monstros do Tipo Rocha, caso você tenha algum.
+
+### 💡 O grande truque dessa carta:
+Esta é uma carta de "Side Deck" por excelência. Ela é inútil contra a maioria dos baralhos, mas contra um deck focado em Rocha (como os que usam *Giant Rat* para buscar *Gigantes* ou que travam o jogo com *Guardian Sphinx*), ela pode vencer o duelo sozinha ao limpar completamente o campo do oponente.
+
+---
+
+## ID: DM0244 - Burning Land (Password: 24294108)
+
+A carta **"Burning Land"** (Terra em Chamas) é uma Carta Mágica Contínua (Continuous Spell) que serve tanto para remover Magias de Campo quanto para infligir dano constante a ambos os jogadores.
+
+> *"When this card is activated: If there are any Field Spell Cards on the field, destroy them. During each player's Standby Phase: The turn player takes 500 damage."*
+
+### Como ela funciona na prática:
+
+1.  **Anti-Campo:** No momento em que é ativada, seu primeiro efeito verifica se há alguma Magia de Campo na mesa (sua ou do oponente) e a destrói.
+2.  **Dano Contínuo (Burn):** Enquanto permanecer em campo, durante a Standby Phase de **cada jogador**, o jogador do turno atual perde **500 Pontos de Vida**.
+
+### 💡 O grande truque dessa carta:
+É uma ótima ferramenta para estratégias de "Burn" (queima de LP) ou para neutralizar decks que dependem de suas Magias de Campo.
+
+*   **Quebra de Estratégia:** Ativá-la destrói imediatamente cartas como *Necrovalley* ou *A Legendary Ocean*, que são o coração de muitos decks.
+*   **Relógio da Morte:** O dano de 500 LP por turno para ambos os jogadores coloca um "relógio" no duelo, forçando ambos a agirem mais rápido antes que seus Pontos de Vida se esgotem. Em um deck de Burn, onde você já causa dano com outras cartas, *Burning Land* acelera a sua condição de vitória.
+
+---
+
+## ID: DM0245 - Burning Spear (Password: 18937875)
+
+A carta **"Burning Spear"** (Lança em Chamas) é uma Carta Mágica de Equipamento (Equip Spell) clássica, focada em fornecer poder de fogo bruto com uma pequena desvantagem temática.
+
+> *"A FIRE monster equipped with this card increases its ATK by 400 points and decreases its DEF by 200 points."*
+
+### Como ela funciona na prática:
+
+1.  **Alvo Específico:** Só pode ser equipada em um monstro cujo Atributo seja **FOGO (FIRE)**.
+2.  **Troca Equivalente:** O monstro equipado ganha instantaneamente +400 de ATK, mas sacrifica -200 de sua DEF.
+
+### 💡 O grande truque dessa carta:
+Nos primórdios do jogo, bônus de 400 pontos costumavam ser a diferença entre um monstro sobreviver ou dominar a mesa.
+*   **Ofensiva Focada:** Monstros medianos de FOGO atingem valores altos o suficiente para passar por cima de ameaças comuns sem precisar de sacrifícios. A penalidade na defesa raramente é um problema se o seu baralho dita o ritmo de ataque da partida!
+
+---
+
+## ID: DM0247 - Burst Stream of Destruction (Password: 17655904)
+
+A carta **"Burst Stream of Destruction"** (Raio Explosivo de Destruição) é a Carta Mágica Normal (Normal Spell) que materializa o icônico ataque assinatura do lendário *Blue-Eyes White Dragon*.
+
+> *"If you control "Blue-Eyes White Dragon": Destroy all monsters your opponent controls. "Blue-Eyes White Dragon" you control cannot attack the turn you activate this card."*
+
+### Como ela funciona na prática:
+
+1.  **Condição Mítica:** Para ativá-la, você precisa ter um *Blue-Eyes White Dragon* legítimo virado para cima no seu lado do campo.
+2.  **O Raio Absoluto:** Se a condição for cumprida, ela varre o campo adversário como um verdadeiro *Raigeki*, aniquilando absolutamente todos os monstros inimigos.
+3.  **A Fadiga (Restrição):** O preço por esse poder maciço é que nenhum *Blue-Eyes White Dragon* sob o seu controle poderá declarar ataques no turno em que esta mágica foi ativada.
+
+### 💡 O grande truque dessa carta:
+Embora o seu Dragão exausto não possa atacar, isso está longe de significar que o seu turno acabou!
+*   **Ataque Paralelo:** A restrição de ataque se aplica *apenas* à carta com o nome exato "Blue-Eyes White Dragon". Todos os outros monstros guerreiros, magos ou dragões do seu exército têm o caminho completamente livre para atacar os Pontos de Vida desprotegidos do adversário!
+*   **Evasão da Restrição:** Após limpar a mesa, você pode usar o Dragão fadigado no campo como material para Invocação, sacrificando-o (Tributo) ou usando uma *Polymerization* para mesclá-lo no temível *Blue-Eyes Ultimate Dragon*. Esse novo monstro-chefe não carrega a restrição mágica e poderá atacar brutalmente na mesma rodada!
+
+---
+
+## ID: DM0249 - Buster Rancher (Password: 84740193)
+
+A carta **"Buster Rancher"** (Tratador de Bestas) é uma Carta Mágica de Equipamento (Equip Spell) desenhada taticamente para transformar criaturas inofensivas em "Matadoras de Gigantes".
+
+> *"Only a monster with an ATK of 1000 points or less can be equipped with this card. During damage calculation, increase the ATK of the monster equipped with this card by 2500 points if the opponent's monster that battles it is in Attack Position and its ATK is 2500 or more, OR if the opponent's monster that battles it is in Defense Position and its DEF is 2500 or more."*
+
+### Como ela funciona na prática:
+
+1.  **O Fraquinho:** A mágica só obedece monstros muito fracos, exigindo que o alvo de equipamento tenha um ATK nativo de **1000 ou menos**.
+2.  **A Batalha do Chefe:** O equipamento só desperta se o seu monstro for se chocar contra um "Chefão" oponente que possua **2500 ou mais** no atributo de combate pertinente (se estiver em pé: 2500+ de ATK. Se estiver deitado: 2500+ de DEF).
+3.  **O Golpe Matador:** Exclusivamente durante a Etapa de Cálculo de Dano (onde armadilhas raramente funcionam), o seu monstrinho canaliza energia e recebe incríveis **+2500 Pontos de Ataque** para vencer a trocação de espadas!
+
+### 💡 O grande truque dessa carta:
+É o clássico conto de "Davi contra Golias" em forma de cartão.
+*   **Punição ao Metagame:** Oponentes que dependem unicamente de jogar Deuses e Dragões massivos entram em pânico. Um simples *Kuriboh* (300 ATK) equipado com esta carta chega repentinamente a assustadores 2800 de ATK ao colidir de frente com o *Dark Magician* do inimigo, estraçalhando-o!
+*   **Bloqueio Psicológico:** Deixar um monstrinho Setado com esse equipamento força o oponente a gastar uma remoção cara de Mágica (*Mystical Space Typhoon*) em uma criatura que ele considerava inútil.
+
+---
+
+## ID: DM0250 - Butterfly Dagger - Elma (Password: 69243953)
+
+A carta **"Butterfly Dagger - Elma"** (Adaga Borboleta - Elma) é uma Carta Mágica de Equipamento (Equip Spell) lendária, marcada na história como a semente de um dos combos (loops) mais perigosos que obrigaram a Konami a bani-la eternamente do cenário oficial de TCG.
+
+> *"The equipped monster gains 300 ATK. When this card is destroyed and sent to the Graveyard while equipped: You can return this card to the hand."*
+
+### Como ela funciona na prática:
+
+1.  **O Afiar das Lâminas:** Fornece módicos +300 Pontos de ATK ao monstro empunhando a adaga.
+2.  **O Retorno Imortal:** Se esta carta estiver legitimamente equipada em um monstro no campo, e sofrer Destruição (seja porque um oponente a explodiu com *Heavy Storm* ou porque o monstro dela morreu e a levou junto), a adaga ativa no Cemitério: ela recusa a morte e **volta imediatamente para a sua mão**.
+
+### 💡 O grande truque dessa carta (O Motivo de Seu Banimento):
+O retorno à mão desta carta não possui nenhuma limitação de "Apenas uma vez por turno" (Once Per Turn).
+
+*   **O "Gearfried Loop" Infinito:** O monstro clássico *Gearfried the Iron Knight* tem um Efeito Contínuo: qualquer carta de equipamento atrelada a ele é instantaneamente destruída por ele mesmo! O Combo: Você equipa a Adaga Elma no *Gearfried*. Ele quebra a adaga. A adaga percebe que foi "destruída enquanto equipada", aciona o efeito e volta para a sua mão. Você equipa ela nele de novo. Ele quebra de novo. Você gera um **loop inquebrável e infinito** no seu próprio turno.
+*   **A Condição de Vitória (Exodia/Burn):** Se você tiver no campo uma *Royal Magical Library* (que acumula contadores para comprar cartas extras cada vez que uma Mágica é ativada), você pode repetir o loop até comprar o seu Deck inteiro na 1ª Rodada e sacar as 5 peças do *Exodia*. Se você tiver no campo *Morale Boost*, pode ganhar LP infinito; Se tiver uma *Fire Princess*, pode disparar o loop para queimar e reduzir os pontos do oponente de 8000 a 0 usando as faíscas infinitas!

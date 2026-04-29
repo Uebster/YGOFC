@@ -116,6 +116,20 @@ public class LuaEngineCore
                 end
             end
         "));
+
+        auxTable.Table.Set("SpElimFilter", luaEngine.DoString(@"
+            return function(c, mustbe_monster, excludefield)
+                if c == nil then return false end
+                if c:IsMonster() then
+                    if excludefield then return c:IsLocation(LOCATION_GRAVE) end
+                    -- OCGCore: Permite Token no campo, mas tranca monstros reais no GY!
+                    return c:IsLocation(LOCATION_GRAVE) or (c:IsLocation(LOCATION_MZONE) and c:IsFaceup() and c:IsType(TYPE_TOKEN))
+                else
+                    if mustbe_monster then return false end
+                    return c:IsLocation(LOCATION_GRAVE)
+                end
+            end
+        "));
         
         auxTable.Table.Set("AddEquipProcedure", luaEngine.DoString(@"
             return function(c, player, filter, eqlimit, prop, tg, op, con)
@@ -1280,7 +1294,7 @@ public class LuaEngineCore
                     Duel.PayLPCost(tp, amount)
                 end
             end
-
+            
             Core = {}
             function Core.Attack(attacker, target)
                 Duel.RaiseEvent(attacker, 1130, nil, 0, attacker:GetControler(), attacker:GetControler(), 0)

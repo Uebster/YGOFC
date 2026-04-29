@@ -558,24 +558,28 @@ public partial class LuaDuel
 
     public void ReleaseRitualMaterial(object target) { } // O C# assume a destruição física através da UI de Ritual!
 
-    public void RaiseEvent(object triggerCard, object eventCode, object eg, object ep, object ev, object re, object r)
+    public void RaiseEvent(object eg, object code, object re, object r, object rp, object ep, object ev)
     {
         if (CardEffectManager.Instance != null)
-            CardEffectManager.Instance.TriggerLuaEvent(ConvertToInt(eventCode), triggerCard);
+        {
+            EventData ed = new EventData(eg, ConvertToInt(ep), ConvertToInt(ev), re as LuaEffect, ConvertToInt(r), ConvertToInt(rp));
+            CardEffectManager.Instance.TriggerLuaEvent(ConvertToInt(code), ed);
+        }
     }
 
-    public void RaiseSingleEvent(object triggerCard, object eventCode, object e, object ep, object ev, object re, object r)
+    public void RaiseSingleEvent(object ec, object code, object re, object r, object rp, object ep, object ev)
     {
-        if (triggerCard is LuaCard lc && CardEffectManager.Instance != null)
+        if (ec is LuaCard lc && CardEffectManager.Instance != null)
         {
-            int code = ConvertToInt(eventCode);
-            var matchingEffects = lc.registeredEffects.FindAll(eff => eff.code == code);
+            int eventCode = ConvertToInt(code);
+            var matchingEffects = lc.registeredEffects.FindAll(eff => eff.code == eventCode);
+            EventData ed = new EventData(lc, ConvertToInt(ep), ConvertToInt(ev), re as LuaEffect, ConvertToInt(r), ConvertToInt(rp));
             
             foreach(var effect in matchingEffects)
             {
-                if (CardEffectManager.Instance.CanActivateEffect(lc, effect, lc.GetControler(), null))
+                if (CardEffectManager.Instance.CanActivateEffect(lc, effect, lc.GetControler(), ed))
                 {
-                    CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.chainManager.BuildAndResolveChainRoutine(lc, effect, null, lc.GetControler(), null));
+                    CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.chainManager.BuildAndResolveChainRoutine(lc, effect, ed, lc.GetControler(), null));
                 }
             }
         }

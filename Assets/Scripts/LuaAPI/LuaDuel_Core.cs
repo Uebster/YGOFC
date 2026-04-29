@@ -117,26 +117,29 @@ public partial class LuaDuel
     {
         if (PhaseManager.Instance == null) return 0;
         
+        int phaseCode = 0;
         // Tradução direta para a tabela hexadecimal do constant.lua
         switch (PhaseManager.Instance.currentPhase)
         {
-            case GamePhase.Draw: return 0x01;       // PHASE_DRAW
-            case GamePhase.Standby: return 0x02;    // PHASE_STANDBY
-            case GamePhase.Main1: return 0x04;      // PHASE_MAIN1
-            case GamePhase.Battle: return 0x80;     // PHASE_BATTLE
-            case GamePhase.Main2: return 0x100;     // PHASE_MAIN2
-            case GamePhase.End: return 0x200;       // PHASE_END
-            default: return 0;
+            case GamePhase.Draw: phaseCode = 0x01; break; // PHASE_DRAW
+            case GamePhase.Standby: phaseCode = 0x02; break; // PHASE_STANDBY
+            case GamePhase.Main1: phaseCode = 0x04; break; // PHASE_MAIN1
+            case GamePhase.Battle: phaseCode = 0x80; break; // PHASE_BATTLE
+            case GamePhase.Main2: phaseCode = 0x100; break; // PHASE_MAIN2
+            case GamePhase.End: phaseCode = 0x200; break; // PHASE_END
         }
+
+        if (phaseCode == 0x80)
+        {
+            phaseCode |= 0x20; // PHASE_DAMAGE
+            phaseCode |= 0x40; // PHASE_DAMAGE_CAL
+        }
+        return phaseCode;
     }
 
     public bool IsPhase(object phaseObj)
     {
-        int phase = 0;
-        if (phaseObj is double d) phase = (int)d;
-        else if (phaseObj is int i) phase = i;
-        else if (phaseObj is long l) phase = (int)l;
-        return GetCurrentPhase() == phase;
+        return (GetCurrentPhase() & ConvertToInt(phaseObj)) != 0;
     }
 
     public bool CheckLPCost(object player, object cost)

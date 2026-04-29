@@ -31,8 +31,19 @@ public partial class LuaDuel
     public void AddCustomActivityCounter(object counter_id, object activity_type, object filter) { }
     public void EnableGlobalFlag(object flag) { }
 
+    private Dictionary<int, LuaGroup> _opInfoCache = new Dictionary<int, LuaGroup>();
+
     public void SetOperationInfo(object chainc, object category, object target, object count, object player, object param) 
     { 
+        int cat = ConvertToInt(category);
+        if (target is LuaGroup g) _opInfoCache[cat] = g;
+        else if (target is LuaCard c) 
+        {
+            LuaGroup newG = new LuaGroup();
+            newG.AddCard(c);
+            _opInfoCache[cat] = newG;
+        }
+
         int idx = ConvertToInt(chainc);
         if (CardEffectManager.Instance != null && CardEffectManager.Instance.currentChain.Count >= idx && idx > 0)
         {
@@ -52,6 +63,7 @@ public partial class LuaDuel
     { 
         return GetMatchingGroup(null, player, location1, location2, null).GetCount(); 
     }
+
     public bool IsEnvironment(object cardcode) { return false; }
     public bool IsPlayerCanDiscardDeck(object player, object count) { return true; }
     public bool IsPlayerCanRemove(object player) { return true; }
@@ -131,8 +143,21 @@ public partial class LuaDuel
         return group.GetCount() >= ConvertToInt(count); 
     }
     public bool IsPlayerCanDiscardDeckAsCost(object player, object count) { return true; }
-    public DynValue GetOperationInfo(object chainc, object category) { return DynValue.NewTuple(DynValue.NewBoolean(false), UserData.Create(new LuaGroup()), DynValue.NewNumber(0), DynValue.NewNumber(0), DynValue.NewNumber(0)); }
 
+    public DynValue GetOperationInfo(object chainc, object category) 
+    { 
+        int cat = ConvertToInt(category);
+        if (_opInfoCache.ContainsKey(cat))
+        {
+            return DynValue.NewTuple(DynValue.NewBoolean(true), UserData.Create(_opInfoCache[cat]));
+        }
+        return DynValue.NewTuple(DynValue.NewBoolean(false), UserData.Create(new LuaGroup())); 
+    }
+
+    public void ClearOperationInfo() 
+    {
+        _opInfoCache.Clear();
+    }
 
     public bool IsChainNegatable(object chaincount) { return true; }
     public int GetOperationCount(object chainc) { return 0; }
