@@ -171,12 +171,9 @@ public partial class GameManager
                     LuaCard sourceLc = CardEffectManager.Instance.EnsureCardScriptLoaded(auraSource) ?? new LuaCard(auraSource);
                     if (sourceLc != null && sourceLc.registeredEffects != null)
                     {
-                        foreach (var eff in sourceLc.registeredEffects)
+                        foreach (var eff in sourceLc.registeredEffects.Where(e => e.isTypeField || e.isTypeEquip))
                         {
-                            if (eff.type == 2 || eff.type == 4) // EFFECT_TYPE_FIELD (2) ou EFFECT_TYPE_EQUIP (4)
-                            {
-                                activeAuras.Add(eff);
-                            }
+                            activeAuras.Add(eff);
                         }
                     }
                 }
@@ -205,7 +202,7 @@ public partial class GameManager
 
                         if (CardEffectManager.Instance != null)
                         {
-                            var singleEffects = lc.registeredEffects.FindAll(e => e.type == 1); // EFFECT_TYPE_SINGLE
+                            var singleEffects = lc.registeredEffects.FindAll(e => e.isTypeSingle); // EFFECT_TYPE_SINGLE
                             foreach(var eff in singleEffects)
                             {
                                 if (eff.singleRange && (eff.range & lc.GetLocation()) == 0) continue; // EFFECT_FLAG_SINGLE_RANGE
@@ -250,7 +247,7 @@ public partial class GameManager
                         // 4. Aplica modificadores SINGLE Finais
                         if (CardEffectManager.Instance != null)
                         {
-                            var singleEffects = lc.registeredEffects.FindAll(e => e.type == 1); // EFFECT_TYPE_SINGLE
+                            var singleEffects = lc.registeredEffects.FindAll(e => e.isTypeSingle);
                             foreach(var eff in singleEffects)
                             {
                                 if (eff.singleRange && (eff.range & lc.GetLocation()) == 0) continue; // EFFECT_FLAG_SINGLE_RANGE

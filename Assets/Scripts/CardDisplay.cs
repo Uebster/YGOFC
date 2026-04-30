@@ -1632,6 +1632,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         
         // Marca que o atacante concluiu o ataque neste turno
         CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.hasAttackedThisTurn = true;
+        if (CardEffectManager.Instance.luaDuel.currentAttacker.GetControler() == 0) GameManager.Instance.attacksThisTurnPlayer++;
+        else GameManager.Instance.attacksThisTurnOpponent++;
         if (GameManager.Instance != null) GameManager.Instance.RefreshAttackIndicators();
 
         CardEffectManager.Instance.luaDuel.currentAttackTarget = new LuaCard(targetCard);

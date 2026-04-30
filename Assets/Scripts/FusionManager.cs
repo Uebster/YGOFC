@@ -129,7 +129,7 @@ public class FusionManager : MonoBehaviour
         if (sourceCard != null && !disableCost)
         {
             if (sourceCard.CurrentCardData.id != "0707" && sourceCard.CurrentCardData.name != "Fusion Gate") {
-                GameManager.Instance.SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard, CardLocation.Field, 0x40); // REASON_EFFECT
+                GameManager.Instance.SendToGraveyard(sourceCard.CurrentCardData, sourceCard.isPlayerCard, CardLocation.Field, 0x40 | 0x8 | 0x40000); // REASON_EFFECT | REASON_MATERIAL | REASON_FUSION
                 Destroy(sourceCard.gameObject);
             }
         }
@@ -142,7 +142,7 @@ public class FusionManager : MonoBehaviour
             if (handObj != null)
             {
                 if (banishMaterials) GameManager.Instance.RemoveFromPlay(mat, true);
-                else GameManager.Instance.SendToGraveyard(mat, true, CardLocation.Hand, 0x40); // REASON_EFFECT
+                else GameManager.Instance.SendToGraveyard(mat, true, CardLocation.Hand, 0x40 | 0x8 | 0x40000); // REASON_EFFECT | REASON_MATERIAL | REASON_FUSION
                 GameManager.Instance.playerHand.Remove(handObj);
                 Destroy(handObj);
             }
@@ -153,7 +153,7 @@ public class FusionManager : MonoBehaviour
                 {
                     if (banishMaterials) GameManager.Instance.BanishCard(fieldObj);
                     else {
-                        GameManager.Instance.SendToGraveyard(mat, true, CardLocation.Field, 0x40); // REASON_EFFECT
+                        GameManager.Instance.SendToGraveyard(mat, true, CardLocation.Field, 0x40 | 0x8 | 0x40000); // REASON_EFFECT | REASON_MATERIAL | REASON_FUSION
                         fieldObj.transform.SetParent(null);
                         Destroy(fieldObj.gameObject);
                     }

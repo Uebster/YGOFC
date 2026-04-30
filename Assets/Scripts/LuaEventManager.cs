@@ -101,12 +101,12 @@ public class LuaEventManager
 
             // Impede a Engine de auto-ativar cartas Manuais (Spells/Traps) ou Quick Effects. Eles devem ser ativados pelo jogador na Response Window!
             // EXCLUI EFFECT_TYPE_SINGLE (0x0001) para impedir que gatilhos pessoais (ex: EVENT_TO_GRAVE) disparem falsamente quando outra carta morre.
-            var matchingEffects = lc_loop.registeredEffects.FindAll(e => e.code == eventCode && e.type != 0x0010 && e.type != 0x0100 && e.type != 0x0080 && (e.type & 0x0001) == 0);
+            var matchingEffects = lc_loop.registeredEffects.FindAll(e => e.code == eventCode && (e.isTypeTriggerF || e.isTypeQuickF || e.isTypeContinuous));
             foreach(var effect in matchingEffects)
             {
                 if (core.CanActivateEffect(lc_loop, effect, lc_loop.GetControler(), triggerArgs))
                 {
-                    if ((effect.type & 0x0800) != 0) // EFFECT_TYPE_CONTINUOUS
+                    if (effect.isTypeContinuous)
                     {
                         if (effect.operationFunc != null)
                         {
@@ -145,25 +145,15 @@ public class LuaEventManager
         triggerTasks++;
         isProcessingTriggers = true;
         
-        bool missed = false;
-        if (core.chainManager != null && core.chainManager.isChainResolving && core.chainManager.resolvingLink != null && core.chainManager.resolvingLink.chainIndex > 1) {
-            missed = true;
-        }
-
         foreach (var e in effects)
         {
-            if ((e.type & 0x0080) != 0) // É Opcional (TRIGGER_O)
-            {
-                if (missed && !e.delay)
-                {
-                    Debug.Log($"<color=red>[Miss Timing]</color> {lc.unityData.name} perdeu o timing do evento {e.code} por não possuir EFFECT_FLAG_DELAY.");
-                    continue;
-                }
-            }
+            // Esta rotina agora só processa efeitos FORÇADOS e CONTÍNUOS.
+            // Efeitos Opcionais (TRIGGER_O) são capturados pelo GetValidResponses e ResponseWindow.
+            if (e.isTypeTriggerO || e.isTypeQuickO) continue;
 
             if (core.CanActivateEffect(lc, e, lc.GetControler(), triggerArgs))
             {
-                    if ((e.type & 0x0800) != 0) // EFFECT_TYPE_CONTINUOUS
+                    if (e.isTypeContinuous)
                     {
                         if (e.operationFunc != null)
                         {
@@ -184,7 +174,7 @@ public class LuaEventManager
                             core.luaDuel.currentContinuousEffect = null;
                         }
                     }
-                    else
+                    else if (e.isTypeTriggerF || e.isTypeQuickF)
                     {
                         bool chainDone = false;
                         core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, triggerArgs, lc.GetControler(), () => chainDone = true));
@@ -229,7 +219,7 @@ public class LuaEventManager
         
         EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
 
-        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1100 && (e.type & 0x0001) != 0); // EFFECT_TYPE_SINGLE
+        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1100 && e.isTypeSingle); // EFFECT_TYPE_SINGLE
         if (singleEffects.Count > 0)
         {
             core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, ed));
@@ -245,7 +235,7 @@ public class LuaEventManager
 
         EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
 
-        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1001 && (e.type & 0x0020) != 0); // EVENT_FLIP (1001) & EFFECT_TYPE_FLIP
+        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1001 && e.isTypeFlip); // EVENT_FLIP (1001) & EFFECT_TYPE_FLIP
         if (singleEffects.Count > 0)
         {
             core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, ed));
@@ -271,7 +261,7 @@ public class LuaEventManager
         
         EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
 
-        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1101 && (e.type & 0x0001) != 0); // EFFECT_TYPE_SINGLE
+        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1101 && e.isTypeSingle); // EFFECT_TYPE_SINGLE
         if (singleEffects.Count > 0)
         {
             core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, ed));
@@ -346,7 +336,7 @@ public class LuaEventManager
         
         EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
 
-        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1102 && (e.type & 0x0001) != 0); // EFFECT_TYPE_SINGLE
+        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1102 && e.isTypeSingle); // EFFECT_TYPE_SINGLE
         if (singleEffects.Count > 0)
         {
             core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, ed));
@@ -361,7 +351,7 @@ public class LuaEventManager
         
         EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
 
-        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1120 && (e.type & 0x0001) != 0); // 1120 = EVENT_CONTROL_CHANGED
+        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1120 && e.isTypeSingle); // 1120 = EVENT_CONTROL_CHANGED
         if (singleEffects.Count > 0)
         {
             core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, ed));
@@ -412,6 +402,15 @@ public class LuaEventManager
         core.luaDuel.cardFlags.Clear();   // Limpa a memória das cartas no fim do turno
         core.luaDuel.hardOncePerTurnUsages.Clear(); // Limpa os usos "Hard Once per Turn"
         
+        GameManager.Instance.normalSummonsThisTurnPlayer = 0;
+        GameManager.Instance.normalSummonsThisTurnOpponent = 0;
+        GameManager.Instance.specialSummonsThisTurnPlayer = 0;
+        GameManager.Instance.specialSummonsThisTurnOpponent = 0;
+        GameManager.Instance.flipSummonsThisTurnPlayer = 0;
+        GameManager.Instance.flipSummonsThisTurnOpponent = 0;
+        GameManager.Instance.attacksThisTurnPlayer = 0;
+        GameManager.Instance.attacksThisTurnOpponent = 0;
+
         foreach (var lc in core.activeLuaCards.Values)
         {
             foreach (var eff in lc.registeredEffects)
@@ -473,7 +472,7 @@ public class LuaEventManager
         lc.reasonEffect = re;
 
         EventData edSingle = new EventData(lc, tp, 0, re, ocgReason, rp);
-        var gyEffects = lc.registeredEffects.FindAll(e => e.code == 1014 && (e.type & 0x0001) != 0); // EVENT_TO_GRAVE
+        var gyEffects = lc.registeredEffects.FindAll(e => e.code == 1014 && e.isTypeSingle); // EVENT_TO_GRAVE
         
         if (gyEffects.Count > 0)
         {
@@ -531,7 +530,7 @@ public class LuaEventManager
         lc.currentReason = reason; lc.reasonPlayer = rp; lc.reasonEffect = re;
 
         EventData edSingle = new EventData(lc, tp, 0, re, reason, rp);
-        var effects = lc.registeredEffects.FindAll(e => e.code == 1011 && (e.type & 0x0001) != 0); // EVENT_REMOVE (1011)
+        var effects = lc.registeredEffects.FindAll(e => e.code == 1011 && e.isTypeSingle); // EVENT_REMOVE (1011)
         if (effects.Count > 0) {
             core.StartCoroutine(ProcessSingleEffectsRoutine(lc, effects, edSingle));
         }
@@ -557,7 +556,7 @@ public class LuaEventManager
         lc.currentReason = reason; lc.reasonPlayer = rp; lc.reasonEffect = re;
 
         EventData edSingle = new EventData(lc, tp, 0, re, reason, rp);
-        var effects = lc.registeredEffects.FindAll(e => e.code == 1013 && (e.type & 0x0001) != 0); // EVENT_TO_DECK (1013)
+        var effects = lc.registeredEffects.FindAll(e => e.code == 1013 && e.isTypeSingle); // EVENT_TO_DECK (1013)
         if (effects.Count > 0) {
             core.StartCoroutine(ProcessSingleEffectsRoutine(lc, effects, edSingle));
         }
@@ -604,7 +603,7 @@ public class LuaEventManager
         EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
 
         // Dispara EVENT_LEAVE_FIELD (1015) ANTES da carta perder seus vínculos
-        var leaveEffects = lc.registeredEffects.FindAll(e => e.code == 1015 && (e.type & 0x0001) != 0); // EFFECT_TYPE_SINGLE
+        var leaveEffects = lc.registeredEffects.FindAll(e => e.code == 1015 && e.isTypeSingle); // EFFECT_TYPE_SINGLE
         if (leaveEffects.Count > 0)
         {
             core.StartCoroutine(ProcessSingleEffectsRoutine(lc, leaveEffects, ed));

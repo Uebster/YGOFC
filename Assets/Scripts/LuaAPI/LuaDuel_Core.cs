@@ -30,6 +30,7 @@ public partial class LuaDuel
     public Dictionary<string, int> hardOncePerTurnUsages = new Dictionary<string, int>(); // Controle de Usos (Hard Once per Turn)
     public Dictionary<string, int> oathUsages = new Dictionary<string, int>(); // Controle de Usos (Once per Duel)
 
+    public int globalFlags = 0;
     public List<LuaEffect> globalEffects = new List<LuaEffect>();
     public Dictionary<string, int> playerFlags = new Dictionary<string, int>();
     public Dictionary<string, Dictionary<int, int>> cardFlags = new Dictionary<string, Dictionary<int, int>>();

@@ -115,14 +115,12 @@ public class CardEffectManager : MonoBehaviour
         // Se a carta tem um efeito de campo, registra/desregistra e atualiza tudo
         if (luaCard.registeredEffects.Any(e => (e.type & 0x0002) != 0))
         {
-            // A ativação de uma Field Spell remove a anterior. OnCardLeavesField cuidará da remoção do efeito antigo.
-            // Apenas precisamos garantir que a nova seja adicionada.
             continuousFieldEffects.AddRange(luaCard.registeredEffects.Where(e => (e.type & 0x0002) != 0 && !continuousFieldEffects.Contains(e)));
             ApplyAllContinuousEffects();
         }
 
         // Procura por um efeito ativável instantâneo (Magia, Armadilha ou Ignition)
-        LuaEffect activationEffect = luaCard.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0040 || e.type == 0x0080);
+            LuaEffect activationEffect = luaCard.registeredEffects.Find(e => e.isTypeActivate || e.isTypeIgnition || e.isTypeTriggerO);
 
         if (activationEffect != null)
         {
@@ -156,7 +154,7 @@ public class CardEffectManager : MonoBehaviour
 
         // Para cartas já ativas no campo (Face-up), procuramos APENAS por Ignition ou Trigger
         // Ignoramos o 0x0010 (ACTIVATE) para não reativar o efeito de "jogar a carta" de Magias Contínuas!
-        LuaEffect activationEffect = luaCard.registeredEffects.Find(e => e.type == 0x0040 || e.type == 0x0080);
+        LuaEffect activationEffect = luaCard.registeredEffects.Find(e => e.isTypeIgnition || e.isTypeTriggerO);
 
         if (activationEffect != null)
         {
@@ -240,7 +238,7 @@ public class CardEffectManager : MonoBehaviour
         }
 
         // 0. Verifica Auras Globais de Bloqueio (Ex: Jinzo, Imperial Order)
-        bool isManualActivation = effect.type == 0x0010 || effect.type == 0x0040 || effect.type == 0x0080 || effect.type == 0x0100;
+        bool isManualActivation = effect.isTypeActivate || effect.isTypeIgnition || effect.isTypeTriggerO || effect.isTypeQuickO;
         if (isManualActivation && auraManager != null)
         {
             if (auraManager.IsUnderRestriction(luaCard, effect, "CANNOT_ACTIVATE", CardLocation.Hand | CardLocation.Field | CardLocation.Graveyard) ||
@@ -253,12 +251,11 @@ public class CardEffectManager : MonoBehaviour
         }
 
         // Validação de "Once per Turn" (CountLimit)
-        if (effect.hasCountLimit || effect.countLimitMax > 0)
+        if (effect.countLimitMax > 0)
         {
-            int maxLimit = effect.countLimitMax > 0 ? effect.countLimitMax : 1;
             if (effect.countLimitCode == 0)
             {
-                if (effect.currentUsages >= maxLimit) 
+                if (effect.currentUsages >= effect.countLimitMax) 
                 {
                     // Debug.LogWarning($"<color=orange>[OncePerTurn]</color> O efeito de {luaCard.unityData.name} atingiu o limite de usos ({effect.currentUsages}/{effect.countLimitMax}). Bloqueado!");
                     return false;
@@ -267,7 +264,7 @@ public class CardEffectManager : MonoBehaviour
             else
             {
                 string key = $"{tp}_{effect.countLimitCode}";
-                if (luaDuel.hardOncePerTurnUsages.ContainsKey(key) && luaDuel.hardOncePerTurnUsages[key] >= maxLimit) 
+                if (luaDuel.hardOncePerTurnUsages.ContainsKey(key) && luaDuel.hardOncePerTurnUsages[key] >= effect.countLimitMax) 
                 {
                     // Debug.LogWarning($"<color=orange>[OncePerTurn]</color> O efeito HARD de {luaCard.unityData.name} atingiu o limite. Bloqueado!");
                     return false;
@@ -352,7 +349,7 @@ public class CardEffectManager : MonoBehaviour
         }
 
         object eg = WrapTriggerArgs(finalEg);
-        bool expectsCard = (effect.type == 1 || effect.type == 4); // EFFECT_TYPE_SINGLE or EFFECT_TYPE_EQUIP
+        bool expectsCard = effect.isTypeSingle || effect.isTypeEquip;
         object arg2 = expectsCard ? (object)(effect.owner ?? new LuaCard(new CardData { id = "0000", name = "Dummy" })) : (object)tp;
         
         if (re == null) re = new LuaEffect { owner = effect.owner ?? new LuaCard(new CardData { id = "0000", name = "Dummy" }) };
@@ -496,7 +493,7 @@ public class CardEffectManager : MonoBehaviour
 
     public void TriggerLuaEvent(int eventCode, object triggerArgs) => eventManager.TriggerLuaEvent(eventCode, triggerArgs);
 
-    public List<CardDisplay> GetValidResponses(int tp, ChainManager.ChainLink triggerLink, int currentEventCode = 0, object currentEventArg = null, int currentTiming = 0, bool missedTiming = false)
+    public List<CardDisplay> GetValidResponses(int tp, ChainManager.ChainLink triggerLink, int currentEventCode = 0, object currentEventArg = null, int currentTiming = 0)
     {
         List<CardDisplay> responses = new List<CardDisplay>();
         if (GameManager.Instance == null) return responses;
@@ -516,16 +513,15 @@ public class CardEffectManager : MonoBehaviour
             foreach (var eff in lc.registeredEffects)
             {
                 // Filtra para Efeitos Manuais (Ativação de S/T, Quick Effects e Trigger Opcionais)
-                if (eff.type == 0x0010 || eff.type == 0x0100 || eff.type == 0x0080) 
+                if (eff.isTypeActivate || eff.isTypeQuickO || eff.isTypeTriggerO) 
                 {
                     // O Efeito deve reagir ao gatilho atual (ex: 1102) ou ser Corrente Livre (0 - EVENT_FREE_CHAIN)
                     if (eff.code == 0 || eff.code == currentEventCode)
                     {
-                        if (eff.type == 0x0080) // TRIGGER_O (Opcional)
+                        if (eff.isTypeTriggerO)
                         {
                             if (missedTiming && !eff.delay)
                             {
-                                // Debug.Log($"<color=red>[Miss Timing]</color> {cd.CurrentCardData.name} perdeu o timing para o evento {currentEventCode} porque não possui EFFECT_FLAG_DELAY.");
                                 continue; 
                             }
                         }
@@ -537,7 +533,7 @@ public class CardEffectManager : MonoBehaviour
                             bool allowed = false;
                             if (eff.damageStep || eff.damageCal) allowed = true;
                             if ((currentTiming & 0x4000) != 0 && !eff.damageCal) allowed = false; // Em Damage Cal, exige a flag específica (0x8000)
-                            if (cd.CurrentCardData.property == "Counter" && eff.type == 0x0010) allowed = true; // Counter Traps ignoram a restrição
+                            if (cd.CurrentCardData.property == "Counter" && eff.isTypeActivate) allowed = true; // Counter Traps ignoram a restrição
                             if (eff.code == currentEventCode && currentEventCode != 0) allowed = true; // Gatilhos obrigatórios de Batalha passam
                             
                             if (!allowed) continue; // Bloqueado pela restrição da Damage Step!
@@ -619,13 +615,6 @@ public class CardEffectManager : MonoBehaviour
     public IEnumerator OpenFastEffectWindow(string windowName, int eventCode = 0, object eventArg = null, int explicitTiming = 0)
     {
         int timing = explicitTiming;
-
-        bool missed = false;
-        if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.isChainResolving)
-        {
-            var rLink = CardEffectManager.Instance.chainManager.resolvingLink;
-            if (rLink != null && rLink.chainIndex > 1) missed = true; // Aconteceu durante o Elo 2 ou maior!
-        }
         
         // TRADUÇÃO AUTOMÁTICA DE EVENTOS DO TABULEIRO PARA OS SEUS RESPECTIVOS TIMINGS (OCGCore Translation)
         if (timing == 0)
@@ -657,7 +646,7 @@ public class CardEffectManager : MonoBehaviour
         if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle)
             timing |= 0x1000000;
 
-        fastEffectQueue.Enqueue(new FastEffectRequest { name = windowName, eventCode = eventCode, eventArg = eventArg, timing = timing, missedTiming = missed });
+        fastEffectQueue.Enqueue(new FastEffectRequest { name = windowName, eventCode = eventCode, eventArg = eventArg, timing = timing });
         if (fastEffectQueue.Count > 1) yield break; // A rotina já está lidando com a fila
 
         while (fastEffectQueue.Count > 0)
@@ -670,8 +659,8 @@ public class CardEffectManager : MonoBehaviour
             // Aguarda a Unity limpar os GameObjects destruídos do tabuleiro para liberar espaço
             yield return new WaitForEndOfFrame();
 
-            List<CardDisplay> pResponses = GetValidResponses(0, null, req.eventCode, req.eventArg, req.timing, req.missedTiming);
-            List<CardDisplay> oResponses = GetValidResponses(1, null, req.eventCode, req.eventArg, req.timing, req.missedTiming);
+            List<CardDisplay> pResponses = GetValidResponses(0, null, req.eventCode, req.eventArg, req.timing);
+            List<CardDisplay> oResponses = GetValidResponses(1, null, req.eventCode, req.eventArg, req.timing);
 
             if (pResponses.Count > 0 || oResponses.Count > 0)
             {
@@ -879,7 +868,7 @@ public class CardEffectManager : MonoBehaviour
             LuaCard luaEquip = EnsureCardScriptLoaded(equipCard);
             if (luaEquip == null) continue;
 
-            var equipEffects = luaEquip.registeredEffects.FindAll(e => e.type == 0x4); // EFFECT_TYPE_EQUIP
+            var equipEffects = luaEquip.registeredEffects.FindAll(e => e.isTypeEquip); // EFFECT_TYPE_EQUIP
             foreach (var effect in equipEffects)
             {
                 try

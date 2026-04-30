@@ -113,6 +113,26 @@ public class LuaEffect
 
     public int GetActiveType() { return type; }
 
+    // --- ACESSO RÁPIDO PARA A ENGINE C# (EFFECT_TYPE_) ---
+    public bool isTypeSingle => (type & 0x1) != 0;
+    public bool isTypeField => (type & 0x2) != 0;
+    public bool isTypeEquip => (type & 0x4) != 0;
+    public bool isTypeActions => (type & 0x8) != 0;
+    public bool isTypeActivate => (type & 0x10) != 0;
+    public bool isTypeFlip => (type & 0x20) != 0;
+    public bool isTypeIgnition => (type & 0x40) != 0;
+    public bool isTypeTriggerO => (type & 0x80) != 0;
+    public bool isTypeQuickO => (type & 0x100) != 0;
+    
+    // Gatilhos Forçados (SEGOC Prioritário)
+    public bool isTypeTriggerF => (type & 0x200) != 0;
+    public bool isTypeQuickF => (type & 0x400) != 0;
+    
+    public bool isTypeContinuous => (type & 0x800) != 0;
+    public bool isTypeXMaterial => (type & 0x1000) != 0;
+    public bool isTypeGrant => (type & 0x2000) != 0;
+    public bool isTypeTarget => (type & 0x4000) != 0;
+
     // --- ACESSO RÁPIDO PARA A ENGINE C# (EFFECT_FLAG_) ---
     public bool isInitial => (property & 0x1) != 0;
     public bool isFuncValue => (property & 0x2) != 0;

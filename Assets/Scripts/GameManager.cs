@@ -406,6 +406,12 @@ public partial class GameManager : MonoBehaviour
 
     [HideInInspector] public int normalSummonsThisTurnPlayer = 0;
     [HideInInspector] public int normalSummonsThisTurnOpponent = 0;
+    [HideInInspector] public int specialSummonsThisTurnPlayer = 0;
+    [HideInInspector] public int specialSummonsThisTurnOpponent = 0;
+    [HideInInspector] public int flipSummonsThisTurnPlayer = 0;
+    [HideInInspector] public int flipSummonsThisTurnOpponent = 0;
+    [HideInInspector] public int attacksThisTurnPlayer = 0;
+    [HideInInspector] public int attacksThisTurnOpponent = 0;
 
     [HideInInspector] public bool allowAttacks => turnCount > 1;
 

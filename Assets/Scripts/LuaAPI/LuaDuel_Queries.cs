@@ -46,7 +46,7 @@ public partial class LuaDuel
     }
 
     public void AddCustomActivityCounter(object counter_id, object activity_type, object filter) { }
-    public void EnableGlobalFlag(object flag) { }
+    public void EnableGlobalFlag(object flag) { globalFlags |= ConvertToInt(flag); }
 
     public Dictionary<int, ChainManager.OperationInfo> _opInfoCache = new Dictionary<int, ChainManager.OperationInfo>();
 
@@ -108,10 +108,22 @@ public partial class LuaDuel
     public int GetActivityCount(object player, object activity_type, params object[] args) 
     { 
         int type = ConvertToInt(activity_type);
-        if (type == 2 && GameManager.Instance != null) // ACTIVITY_NORMALSUMMON
-        {
-            return IsPlayer(player) ? GameManager.Instance.normalSummonsThisTurnPlayer : GameManager.Instance.normalSummonsThisTurnOpponent;
-        }
+        bool isPlayer = IsPlayer(player);
+        if (GameManager.Instance == null) return 0;
+
+        if (type == 1) // ACTIVITY_SUMMON (All summons)
+            return isPlayer ? GameManager.Instance.normalSummonsThisTurnPlayer + GameManager.Instance.specialSummonsThisTurnPlayer : GameManager.Instance.normalSummonsThisTurnOpponent + GameManager.Instance.specialSummonsThisTurnOpponent;
+        if (type == 2) // ACTIVITY_NORMALSUMMON
+            return isPlayer ? GameManager.Instance.normalSummonsThisTurnPlayer : GameManager.Instance.normalSummonsThisTurnOpponent;
+        if (type == 3) // ACTIVITY_SPSUMMON
+            return isPlayer ? GameManager.Instance.specialSummonsThisTurnPlayer : GameManager.Instance.specialSummonsThisTurnOpponent;
+        if (type == 4) // ACTIVITY_FLIPSUMMON
+            return isPlayer ? GameManager.Instance.flipSummonsThisTurnPlayer : GameManager.Instance.flipSummonsThisTurnOpponent;
+        if (type == 5) // ACTIVITY_ATTACK
+            return isPlayer ? GameManager.Instance.attacksThisTurnPlayer : GameManager.Instance.attacksThisTurnOpponent;
+        if (type == 6) // ACTIVITY_BATTLE_PHASE
+            return (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle) ? 1 : 0;
+
         return 0; 
     }
     public int GetCurrentChain() { return CardEffectManager.Instance != null ? CardEffectManager.Instance.currentChain.Count : 0; }
