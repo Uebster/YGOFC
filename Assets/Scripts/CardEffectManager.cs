@@ -493,7 +493,7 @@ public class CardEffectManager : MonoBehaviour
 
     public void TriggerLuaEvent(int eventCode, object triggerArgs) => eventManager.TriggerLuaEvent(eventCode, triggerArgs);
 
-    public List<CardDisplay> GetValidResponses(int tp, ChainManager.ChainLink triggerLink, int currentEventCode = 0, object currentEventArg = null, int currentTiming = 0)
+    public List<CardDisplay> GetValidResponses(int tp, ChainManager.ChainLink triggerLink, int currentEventCode = 0, object currentEventArg = null, int currentTiming = 0, bool missedTiming = false)
     {
         List<CardDisplay> responses = new List<CardDisplay>();
         if (GameManager.Instance == null) return responses;
@@ -616,6 +616,13 @@ public class CardEffectManager : MonoBehaviour
     {
         int timing = explicitTiming;
         
+        bool missed = false;
+        if (chainManager != null && chainManager.isChainResolving)
+        {
+            var rLink = chainManager.resolvingLink;
+            if (rLink != null && rLink.chainIndex > 1) missed = true;
+        }
+        
         // TRADUÇÃO AUTOMÁTICA DE EVENTOS DO TABULEIRO PARA OS SEUS RESPECTIVOS TIMINGS (OCGCore Translation)
         if (timing == 0)
         {
@@ -646,7 +653,7 @@ public class CardEffectManager : MonoBehaviour
         if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle)
             timing |= 0x1000000;
 
-        fastEffectQueue.Enqueue(new FastEffectRequest { name = windowName, eventCode = eventCode, eventArg = eventArg, timing = timing });
+        fastEffectQueue.Enqueue(new FastEffectRequest { name = windowName, eventCode = eventCode, eventArg = eventArg, timing = timing, missedTiming = missed });
         if (fastEffectQueue.Count > 1) yield break; // A rotina já está lidando com a fila
 
         while (fastEffectQueue.Count > 0)
@@ -659,8 +666,8 @@ public class CardEffectManager : MonoBehaviour
             // Aguarda a Unity limpar os GameObjects destruídos do tabuleiro para liberar espaço
             yield return new WaitForEndOfFrame();
 
-            List<CardDisplay> pResponses = GetValidResponses(0, null, req.eventCode, req.eventArg, req.timing);
-            List<CardDisplay> oResponses = GetValidResponses(1, null, req.eventCode, req.eventArg, req.timing);
+            List<CardDisplay> pResponses = GetValidResponses(0, null, req.eventCode, req.eventArg, req.timing, req.missedTiming);
+            List<CardDisplay> oResponses = GetValidResponses(1, null, req.eventCode, req.eventArg, req.timing, req.missedTiming);
 
             if (pResponses.Count > 0 || oResponses.Count > 0)
             {

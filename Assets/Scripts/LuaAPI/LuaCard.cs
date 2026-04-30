@@ -545,7 +545,16 @@ public class LuaCard
     public void AddMustBeSpecialSummoned(params object[] args) { }
     public void EnableUnsummonable() { }
     public void SetSPSummonOnce(params object[] args) { }
-    public DynValue IsHasEffect(object effectCode) { return DynValue.Nil; }
+    public DynValue IsHasEffect(object effectCode) 
+    { 
+        int code = ConvertToInt(effectCode);
+        var effects = registeredEffects.FindAll(e => e.code == code);
+        if (effects.Count > 0)
+        {
+            return DynValue.NewTuple(effects.Select(e => UserData.Create(e)).ToArray());
+        }
+        return DynValue.Nil; 
+    }
     
     public void ResetFlagEffect(object id) 
     { 
