@@ -853,7 +853,6 @@ public class CardEffectManager : MonoBehaviour
                 else if (effect.code == 200) modType = "NO_BATTLE_DAMAGE";
                 else if (effect.code == 201) modType = "AVOID_BATTLE_DAMAGE";
                 else if (effect.code == 202) modType = "REFLECT_BATTLE_DAMAGE";
-                else if (effect.code == 191) modType = "MUST_ATTACK";
                 else if (effect.code == 193) modType = "ATTACK_ALL";
                 else if (effect.code == 194 || effect.code == 346) modType = "EXTRA_ATTACK";
                 else if (effect.code == 334) modType = "ADD_SETCODE";
@@ -861,9 +860,6 @@ public class CardEffectManager : MonoBehaviour
                 else if (effect.code == 350) modType = "CHANGE_SETCODE";
                 else if (effect.code == 400) modType = "CANNOT_LOSE_DECK";
                 else if (effect.code == 401) modType = "CANNOT_LOSE_LP";                
-                else if (effect.code == 334) modType = "ADD_SETCODE";
-                else if (effect.code == 349) modType = "REMOVE_SETCODE";
-                else if (effect.code == 350) modType = "CHANGE_SETCODE";
 
                 if (!string.IsNullOrEmpty(modType))
                 {

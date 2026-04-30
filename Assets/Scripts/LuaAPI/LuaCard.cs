@@ -337,12 +337,12 @@ public class LuaCard
     public bool CanSummonOrSet(object ignoreLimit, object param) { return true; }
     public LuaCard GetOwner() { return this; }
     public int GetPreviousControler() { return GetControler(); }
-    public void AddCounter(object counterType, object count) { }
-    public void RemoveCounter(object player, object counterType, object count, object reason) { }
+    public void AddCounter(object counterType, object count) { Debug.LogWarning($"[LUA STUB] AddCounter chamado em {unityData?.name}"); }
+    public void RemoveCounter(object player, object counterType, object count, object reason) { Debug.LogWarning($"[LUA STUB] RemoveCounter chamado em {unityData?.name}"); }
     public bool IsCanAddCounter(object counterType, object count) { return true; }
     public int GetFieldID() { return 0; }
     public LuaGroup GetTarget() { return new LuaGroup(); }
-    public void SetMaterial(object g) { }
+    public void SetMaterial(object g) { Debug.LogWarning($"[LUA STUB] SetMaterial chamado em {unityData?.name}"); }
     public LuaGroup GetAdminGroup() { return new LuaGroup(); }
     public bool IsSummonLocation(object loc) { return true; }
     public void SetStatus(object status, object enable) 
@@ -478,8 +478,8 @@ public class LuaCard
     public int GetTurnCounter() { return unityCard != null ? unityCard.turnCounter : 0; }
     public bool IsHasCardTarget(object c) { return false; }
     public LuaCard GetReasonCard() { return SafeDummyCard(); }
-    public void CompleteProcedure() { } // Confirmação de invocações especiais/rituais
-    public void CancelToGrave(params object[] args) { } // Mantém a carta no campo (Ex: Swords of Revealing Light)
+    public void CompleteProcedure() { Debug.LogWarning($"[LUA STUB] CompleteProcedure chamado em {unityData?.name}"); } 
+    public void CancelToGrave(params object[] args) { Debug.LogWarning($"[LUA STUB] CancelToGrave chamado em {unityData?.name}"); }
     public bool IsLevelAbove(object lvl) { return GetLevel() >= ConvertToInt(lvl); }
     public int GetBattledGroupCount() { return 0; }
     public bool IsRitualMonster() { return unityData != null && unityData.type.Contains("Ritual"); }
@@ -495,7 +495,7 @@ public class LuaCard
         return unityCard.isFlipped ? 0x8 : 0x4; // 0x8 = Face-Down Defense, 0x4 = Face-Up Defense
     }
     public bool IsRelateToBattle() { return true; }
-    public void DeleteGroup() { }
+    public void DeleteGroup() { Debug.LogWarning($"[LUA STUB] DeleteGroup chamado em {unityData?.name}"); }
 
     // Stubs para compatibilidade da API Lua
     public bool IsRace(object r) { 
@@ -637,7 +637,7 @@ public class LuaCard
         }
     }
 
-    public void SetCardTarget(object tc) { }
+    public void SetCardTarget(object tc) { Debug.LogWarning($"[LUA STUB] SetCardTarget chamado em {unityData?.name}"); }
     
     public bool IsStatus(object status) 
     { 
@@ -662,14 +662,14 @@ public class LuaCard
         return SafeDummyCard(); 
     }
 
-    public void SetTurnCounter(object ct) { }
+    public void SetTurnCounter(object ct) { Debug.LogWarning($"[LUA STUB] SetTurnCounter chamado em {unityData?.name}"); }
     public int GetLabel() { return 0; }
-    public void SetLabel(object ct) { }
+    public void SetLabel(object ct) { Debug.LogWarning($"[LUA STUB] SetLabel chamado em {unityData?.name}"); }
     
-    public void EnableReviveLimit() { }
-    public void SetUniqueOnField(params object[] args) { }
-    public void EnableCounterPermit(params object[] args) { }
-    public void SetCounterLimit(params object[] args) { }
+    public void EnableReviveLimit() { Debug.LogWarning($"[LUA STUB] EnableReviveLimit chamado em {unityData?.name}"); }
+    public void SetUniqueOnField(params object[] args) { Debug.LogWarning($"[LUA STUB] SetUniqueOnField chamado em {unityData?.name}"); }
+    public void EnableCounterPermit(params object[] args) { Debug.LogWarning($"[LUA STUB] EnableCounterPermit chamado em {unityData?.name}"); }
+    public void SetCounterLimit(params object[] args) { Debug.LogWarning($"[LUA STUB] SetCounterLimit chamado em {unityData?.name}"); }
     public bool IsAbleToRemove() 
     { 
         if (registeredEffects.Exists(e => e.code == 67)) return false; // EFFECT_CANNOT_REMOVE
@@ -678,9 +678,9 @@ public class LuaCard
         }
         return true; 
     }
-    public void AddMustBeSpecialSummoned(params object[] args) { }
-    public void EnableUnsummonable() { }
-    public void SetSPSummonOnce(params object[] args) { }
+    public void AddMustBeSpecialSummoned(params object[] args) { Debug.LogWarning($"[LUA STUB] AddMustBeSpecialSummoned chamado em {unityData?.name}"); }
+    public void EnableUnsummonable() { Debug.LogWarning($"[LUA STUB] EnableUnsummonable chamado em {unityData?.name}"); }
+    public void SetSPSummonOnce(params object[] args) { Debug.LogWarning($"[LUA STUB] SetSPSummonOnce chamado em {unityData?.name}"); }
     public DynValue IsHasEffect(object effectCode) 
     { 
         int code = ConvertToInt(effectCode);
@@ -702,9 +702,9 @@ public class LuaCard
         }
     }
 
-    public void SetFlagEffectLabel(object id, object label) { }
-    public void CreateEffectRelation(object e) { }
-    public void ReleaseEffectRelation(object e) { }
+    public void SetFlagEffectLabel(object id, object label) { Debug.LogWarning($"[LUA STUB] SetFlagEffectLabel chamado em {unityData?.name}"); }
+    public void CreateEffectRelation(object e) { Debug.LogWarning($"[LUA STUB] CreateEffectRelation chamado em {unityData?.name}"); }
+    public void ReleaseEffectRelation(object e) { Debug.LogWarning($"[LUA STUB] ReleaseEffectRelation chamado em {unityData?.name}"); }
     
     public void SetHint(params object[] args) 
     { 
@@ -819,13 +819,23 @@ public class LuaCard
             }
         }
         
-        // TODO: Implementar leitura de Auras de Setcode do AuraManager
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            CardLocation myLoc = (CardLocation)GetLocation();
+            var changeAuras = CardEffectManager.Instance.auraManager.GetAuraValues(this, "CHANGE_SETCODE", myLoc);
+            if (changeAuras.Count > 0) { currentSetcodes.Clear(); currentSetcodes.Add(changeAuras.Last()); }
+            
+            var addAuras = CardEffectManager.Instance.auraManager.GetAuraValues(this, "ADD_SETCODE", myLoc);
+            foreach(var v in addAuras) currentSetcodes.Add(v);
+            
+            var remAuras = CardEffectManager.Instance.auraManager.GetAuraValues(this, "REMOVE_SETCODE", myLoc);
+            foreach(var v in remAuras) currentSetcodes.Remove(v);
+        }
 
         return currentSetcodes;
     }
     
-    public void AddMonsterAttribute(params object[] args) { }
-    public void AddSetcodes(params object[] args) { }
+    public void AddMonsterAttribute(params object[] args) { Debug.LogWarning($"[LUA STUB] AddMonsterAttribute chamado em {unityData?.name}"); }
+    public void AddSetcodes(params object[] args) { Debug.LogWarning($"[LUA STUB] AddSetcodes chamado em {unityData?.name}"); }
 
     public void RegisterEffect(LuaEffect e, bool forced = false)
     {
@@ -881,6 +891,14 @@ public class LuaCard
         {
             int targetCode = ConvertToInt(c);
             if (myId == targetCode) return true;
+            
+            // Fallback de Segurança: Busca no Banco de Dados pelo Nome
+            if (unityData != null && GameManager.Instance != null && GameManager.Instance.cardDatabase != null)
+            {
+                string targetStr = targetCode.ToString();
+                CardData dbCard = GameManager.Instance.cardDatabase.cardDatabase.Find(card => card.password == targetStr || card.id == targetStr || card.password == "0" + targetStr);
+                if (dbCard != null && dbCard.name == unityData.name) return true;
+            }
         }
         return false;
     }

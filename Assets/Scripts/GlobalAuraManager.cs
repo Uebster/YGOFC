@@ -132,6 +132,23 @@ public class GlobalAuraManager : MonoBehaviour
         return finalVal;
     }
 
+    public List<int> GetAuraValues(LuaCard card, string modType, CardLocation location)
+    {
+        List<int> values = new List<int>();
+        foreach (var aura in activeAuras)
+        {
+            if (aura.modifierType == modType && (aura.affectedLocations & location) != 0)
+            {
+                if (location == CardLocation.Field && card.IsFacedown() && !aura.sourceEffect.isSetAvailable) continue;
+                if (aura.filter(card) && !IsImmuneTo(card, aura.sourceEffect))
+                {
+                    values.Add(aura.value);
+                }
+            }
+        }
+        return values;
+    }
+
     /// <summary>
     /// Verifica se uma carta está sob uma restrição específica (ex: "CANNOT_ATTACK").
     /// </summary>
