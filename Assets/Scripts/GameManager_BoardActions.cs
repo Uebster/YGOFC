@@ -428,6 +428,32 @@ public partial class GameManager
         card.previousOwner = (isController ? 0 : 1);
         // Debug.Log($"{logPrefix} | Tracked history: from {card.previousLocation} (owner: {card.previousOwner})");
         
+        // --- REDIRECT LOGIC (Redirecionamento OCGCore) ---
+        if (CardEffectManager.Instance != null && card.isOnField)
+        {
+            LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(card);
+            if (lc != null)
+            {
+                int redirectLoc = 0;
+                var leaveRedirect = lc.registeredEffects.Find(e => e.code == 60); // EFFECT_LEAVE_FIELD_REDIRECT
+                if (leaveRedirect != null) redirectLoc = System.Convert.ToInt32(leaveRedirect.GetValue());
+                
+                if (destination == CardLocation.Hand) { var r = lc.registeredEffects.Find(e=>e.code==61); if(r!=null) redirectLoc=System.Convert.ToInt32(r.GetValue()); }
+                else if (destination == CardLocation.Deck) { var r = lc.registeredEffects.Find(e=>e.code==62); if(r!=null) redirectLoc=System.Convert.ToInt32(r.GetValue()); }
+                else if (destination == CardLocation.Graveyard) { var r = lc.registeredEffects.Find(e=>e.code==63); if(r!=null) redirectLoc=System.Convert.ToInt32(r.GetValue()); }
+                else if (destination == CardLocation.Banished) { var r = lc.registeredEffects.Find(e=>e.code==64); if(r!=null) redirectLoc=System.Convert.ToInt32(r.GetValue()); }
+                
+                if (redirectLoc != 0 && (reason & 0x400) == 0) // Não redireciona se for REASON_RULE
+                {
+                    if ((redirectLoc & 0x20) != 0) destination = CardLocation.Banished;
+                    else if ((redirectLoc & 0x10) != 0) destination = CardLocation.Graveyard;
+                    else if ((redirectLoc & 0x02) != 0) destination = CardLocation.Hand;
+                    else if ((redirectLoc & 0x01) != 0) destination = CardLocation.Deck;
+                    Debug.Log($"<color=yellow>[Redirect]</color> {data.name} foi redirecionado para {destination}!");
+                }
+            }
+        }
+        
         // Declaração unificada de variáveis para evitar erros de escopo
         Vector3 startPos = card.transform.position;
         Quaternion startRot = card.transform.rotation;
@@ -955,11 +981,12 @@ public partial class GameManager
     // Troca de Controle (Change of Heart, Snatch Steal)
     public void SwitchControl(CardDisplay card)
     {
-        // 0207 - Blindly Loyal Goblin
-        if (card.CurrentCardData.id == "0207")
-        {
-            Debug.Log("Blindly Loyal Goblin: Imune a troca de controle.");
-            return;
+        if (CardEffectManager.Instance != null) {
+            LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(card);
+            if (lc != null && lc.IsHasEffect(5).Type != MoonSharp.Interpreter.DataType.Nil) {
+                Debug.Log($"{card.CurrentCardData.name}: Imune a troca de controle (EFFECT_CANNOT_CHANGE_CONTROL).");
+                return;
+            }
         }
 
         bool newOwnerIsPlayer = !card.isPlayerCard;

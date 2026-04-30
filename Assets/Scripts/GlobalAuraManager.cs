@@ -111,6 +111,27 @@ public class GlobalAuraManager : MonoBehaviour
         return total;
     }
 
+    public int ProcessBitwiseModifiers(LuaCard card, int baseVal, string changeMod, string addMod, string removeMod, CardLocation location)
+    {
+        int finalVal = baseVal;
+        foreach (var aura in activeAuras)
+        {
+            if ((aura.affectedLocations & location) == 0) continue;
+            if (location == CardLocation.Field && card.IsFacedown() && !aura.sourceEffect.isSetAvailable) continue;
+            
+            if (aura.modifierType == changeMod || aura.modifierType == addMod || aura.modifierType == removeMod)
+            {
+                if (aura.filter(card) && !IsImmuneTo(card, aura.sourceEffect))
+                {
+                    if (aura.modifierType == changeMod) finalVal = aura.value;
+                    else if (aura.modifierType == addMod) finalVal |= aura.value;
+                    else if (aura.modifierType == removeMod) finalVal &= ~aura.value;
+                }
+            }
+        }
+        return finalVal;
+    }
+
     /// <summary>
     /// Verifica se uma carta está sob uma restrição específica (ex: "CANNOT_ATTACK").
     /// </summary>
@@ -187,6 +208,21 @@ public class GlobalAuraManager : MonoBehaviour
                         catch { }
                     }
                 }
+            }
+        }
+        return false;
+    }
+
+    public bool IsPlayerAffectedBy(int playerIndex, int effectCode)
+    {
+        foreach (var aura in activeAuras)
+        {
+            if (aura.sourceEffect != null && aura.sourceEffect.code == effectCode)
+            {
+                int sourceP = aura.sourceCard != null ? aura.sourceCard.GetControler() : 0;
+                int targetRange = (sourceP == playerIndex) ? aura.sourceEffect.targetRangeSelf : aura.sourceEffect.targetRangeOpponent;
+                if (targetRange != 0 || aura.sourceEffect.isPlayerTarget) return true;
+                return true; // Fallback para auras de controle universal de campo (Field Spells)
             }
         }
         return false;

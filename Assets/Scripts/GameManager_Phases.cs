@@ -213,7 +213,7 @@ public partial class GameManager
                     {
                         var card = zone.GetComponentInChildren<CardDisplay>();
                         if (card != null) {
-                            card.hasAttackedThisTurn = false;
+                            card.attacksThisTurn = 0;
                             card.hasChangedPositionThisTurn = false;
                         }
                     }
@@ -227,7 +227,7 @@ public partial class GameManager
                     {
                         var card = zone.GetComponentInChildren<CardDisplay>();
                         if (card != null) {
-                            card.hasAttackedThisTurn = false;
+                            card.attacksThisTurn = 0;
                             card.hasChangedPositionThisTurn = false;
                         }
                     }

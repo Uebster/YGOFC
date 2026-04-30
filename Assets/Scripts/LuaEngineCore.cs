@@ -1302,15 +1302,20 @@ public class LuaEngineCore
             Core = {}
             function Core.Attack(attacker, target)
                 Duel.RaiseEvent(attacker, 1130, nil, 0, attacker:GetControler(), attacker:GetControler(), 0)
-                coroutine.yield('WaitChain')
-                coroutine.yield('FastEffectWindow_1130')
+                local unstoppable = attacker:IsHasEffect(404)
+                if not unstoppable then
+                    coroutine.yield('WaitChain')
+                    coroutine.yield('FastEffectWindow_1130')
+                end
                 if not attacker:IsOnField() then return false end
                 if target ~= nil and not target:IsOnField() then return false end
                 coroutine.yield('PlayAttackAnimation')
                 if target ~= nil and target:IsFacedown() then coroutine.yield('RevealTarget') end
                 
-                coroutine.yield('FastEffectWindow_DamageStep')
-                coroutine.yield('FastEffectWindow_DamageCal')
+                if not unstoppable then
+                    coroutine.yield('FastEffectWindow_DamageStep')
+                    coroutine.yield('FastEffectWindow_DamageCal')
+                end
                 
                 Duel.CalculateDamage(attacker, target)
                 

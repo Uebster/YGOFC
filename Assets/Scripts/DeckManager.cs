@@ -74,22 +74,10 @@ public class DeckManager : MonoBehaviour
 
     public void DrawCard(bool isPlayer, bool ignoreLimit = false)
     {
-        // 1462 - Protector of the Sanctuary
-        if (GameManager.Instance.duelFieldUI != null) {
-            Transform[] enemyZones = isPlayer ? GameManager.Instance.duelFieldUI.opponentMonsterZones : GameManager.Instance.duelFieldUI.playerMonsterZones;
-            bool hasProtector = false;
-            
-            if (enemyZones != null) {
-                foreach(var z in enemyZones) {
-                    if (z != null && z.childCount > 0) {
-                        var cd = z.GetChild(0).GetComponent<CardDisplay>();
-                        if (cd != null && cd.CurrentCardData != null && cd.CurrentCardData.id == "1462" && !cd.isFlipped) hasProtector = true;
-                    }
-                }
-            }
-            
-            if (hasProtector && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Draw) {
-                Debug.Log("Protector of the Sanctuary: Compra fora da Draw Phase bloqueada.");
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(isPlayer ? 0 : 1, 25)) { // EFFECT_CANNOT_DRAW
+            GamePhase currentPhase = PhaseManager.Instance != null ? PhaseManager.Instance.currentPhase : GamePhase.Draw;
+            if (currentPhase != GamePhase.Draw) {
+                Debug.Log("EFFECT_CANNOT_DRAW: Compra fora da Draw Phase bloqueada por um efeito de carta.");
                 return;
             }
         }
@@ -108,7 +96,13 @@ public class DeckManager : MonoBehaviour
                 else
                 {
                     Debug.LogWarning("Deck vazio! Não é possível comprar mais cartas.");
-                    return;
+                    // Deck Out Condition
+                    if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(0, 400)) {
+                        Debug.Log("Jogador não pode perder por Deck Out!");
+                        return;
+                    }
+                    if (GameManager.Instance != null) GameManager.Instance.EndDuel(false, true);
+                    return; // End duel
                 }
             }
 
@@ -168,7 +162,13 @@ public class DeckManager : MonoBehaviour
                 else
                 {
                     Debug.LogWarning("Deck do oponente vazio! Não é possível comprar mais cartas.");
-                    return;
+                    // Deck Out Condition
+                    if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(1, 400)) {
+                        Debug.Log("Oponente não pode perder por Deck Out!");
+                        return;
+                    }
+                    if (GameManager.Instance != null) GameManager.Instance.EndDuel(true, true);
+                    return; // End duel                
                 }
             }
 

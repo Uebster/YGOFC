@@ -130,7 +130,26 @@ public partial class LuaDuel
     public bool IsAbleToEnterBP() { return true; }
     public bool IsBattlePhase() { return PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle; }
     public bool IsMainPhase() { return PhaseManager.Instance != null && (PhaseManager.Instance.currentPhase == GamePhase.Main1 || PhaseManager.Instance.currentPhase == GamePhase.Main2); }
-    public bool IsPlayerAffectedByEffect(object player, object effect_code) { return false; }
+    public bool IsPlayerAffectedByEffect(object player, object effect_code) 
+    { 
+        int p = ConvertToInt(player);
+        int code = ConvertToInt(effect_code);
+        
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
+        {
+            // Verifica auras globais que afetam o jogador
+            foreach(var eff in CardEffectManager.Instance.luaDuel.globalEffects)
+            {
+                if (eff.code == code) return true;
+            }
+        }
+        
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null)
+        {
+            return CardEffectManager.Instance.auraManager.IsPlayerAffectedBy(p, code);
+        }
+        return false; 
+    }
     public LuaGroup GetFieldGroup(object player, object loc1, object loc2) 
     { 
         return GetMatchingGroup(null, player, loc1, loc2, null); 

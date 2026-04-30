@@ -631,7 +631,7 @@ public partial class GameManager
             if (isBattlePhase && !isFirstTurn)
             {
                 bool isAttacker = CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null && CardEffectManager.Instance.luaDuel.currentAttacker.unityCard == card;
-                bool canAttack = isPlayerTurn && card.position == CardDisplay.BattlePosition.Attack && !card.hasAttackedThisTurn && !isAttacker;
+                bool canAttack = isPlayerTurn && card.position == CardDisplay.BattlePosition.Attack && card.attacksThisTurn < card.maxAttacks && !isAttacker;
                 
                 // Verifica restrição global de ataque (ex: Array of Revealing Light)
                 if (canAttack && CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null)
@@ -657,7 +657,7 @@ public partial class GameManager
         }
 
         bool isMainPhase = currentPhase == GamePhase.Main1 || currentPhase == GamePhase.Main2;
-        bool cannotChangePos = card.hasChangedPositionThisTurn || card.summonedTurnCount == turnCount || card.hasAttackedThisTurn;
+        bool cannotChangePos = card.hasChangedPositionThisTurn || card.summonedTurnCount == turnCount || card.attacksThisTurn > 0;
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.SetCannotChangePosIndicator(card, isHovering && cannotChangePos && isMainPhase);
     }
 
@@ -700,7 +700,7 @@ public partial class GameManager
                         if (isBattlePhase)
                         {
                         bool isAttacker = CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null && CardEffectManager.Instance.luaDuel.currentAttacker.unityCard == card;
-                        bool canAttack = card.position == CardDisplay.BattlePosition.Attack && !card.hasAttackedThisTurn && !isAttacker;
+                        bool canAttack = card.position == CardDisplay.BattlePosition.Attack && card.attacksThisTurn < card.maxAttacks && !isAttacker;
 
                         // Verifica restrição global de ataque
                         if (canAttack && CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null)

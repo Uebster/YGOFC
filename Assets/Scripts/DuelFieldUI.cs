@@ -163,11 +163,38 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
             // Clique esquerdo no campo: Tenta ataque direto se houver atacante selecionado
             if (hasAttacker)
             {
-                if (GameManager.Instance != null && GameManager.Instance.GetMonsterCount(false) > 0)
+                LuaCard attackerLc = CardEffectManager.Instance.EnsureCardScriptLoaded(CardEffectManager.Instance.luaDuel.currentAttacker.unityCard);
+                
+                bool canDirectAttack = attackerLc != null && attackerLc.IsHasEffect(74).Type != MoonSharp.Interpreter.DataType.Nil; // EFFECT_DIRECT_ATTACK
+                bool mustAttackMonsters = GameManager.Instance != null && GameManager.Instance.GetMonsterCount(false) > 0;
+                
+                if (mustAttackMonsters && !canDirectAttack)
                 {
-                        if (GameManager.Instance.showInvalidDirectAttackWarning && UIManager.Instance != null) UIManager.Instance.ShowMessage("Você não pode atacar diretamente enquanto o oponente possuir monstros!");
+                    bool allIgnored = true;
+                    foreach(var z in GameManager.Instance.duelFieldUI.opponentMonsterZones) {
+                        if (z.childCount > 0) {
+                            var m = z.GetComponentInChildren<CardDisplay>();
+                            if (m != null) {
+                                var mlc = CardEffectManager.Instance.EnsureCardScriptLoaded(m);
+                                if (mlc == null || mlc.IsHasEffect(72).Type == MoonSharp.Interpreter.DataType.Nil) { allIgnored = false; break; } // EFFECT_IGNORE_BATTLE_TARGET
+                            }
+                        }
+                    }
+                    if (allIgnored) canDirectAttack = true;
+                }
+
+                if (mustAttackMonsters && !canDirectAttack)
+                {
+                    if (GameManager.Instance.showInvalidDirectAttackWarning && UIManager.Instance != null) UIManager.Instance.ShowMessage("Você não pode atacar diretamente enquanto o oponente possuir monstros!");
                     return;
                 }
+                
+                if (attackerLc != null && attackerLc.IsHasEffect(73).Type != MoonSharp.Interpreter.DataType.Nil) // EFFECT_CANNOT_DIRECT_ATTACK
+                {
+                    if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Este monstro não pode atacar diretamente por um efeito de carta!");
+                    return;
+                }
+
                 if (GameManager.Instance != null && GameManager.Instance.turnCount == 1)
                 {
                     if (GameManager.Instance.showInvalidDirectAttackWarning && UIManager.Instance != null) UIManager.Instance.ShowMessage("Você não pode atacar no primeiro turno do duelo!");
@@ -198,9 +225,9 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
         if (CardEffectManager.Instance == null || CardEffectManager.Instance.luaDuel.currentAttacker == null) return;
 
         // NOVO: Previne clique duplo ou re-ataque se o monstro já iniciou o ataque
-        if (CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.hasAttackedThisTurn) return;
+        if (CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.attacksThisTurn >= CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.maxAttacks) return;
 
-        CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.hasAttackedThisTurn = true;
+        CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.attacksThisTurn++;
         if (GameManager.Instance != null) GameManager.Instance.RefreshAttackIndicators();
 
         var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;

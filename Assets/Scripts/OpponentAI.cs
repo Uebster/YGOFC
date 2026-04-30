@@ -684,58 +684,80 @@ public class OpponentAI : MonoBehaviour
 
     IEnumerator ExecuteBattlePhaseLogic()
     {
-        List<CardDisplay> myMonsters = GetMyMonstersOnField().OrderByDescending(m => m.currentAtk).ToList();
+        List<CardDisplay> myMonsters = GetMyMonstersOnField();
+        
+        // Prioriza monstros que são OBRIGADOS a atacar (EFFECT_MUST_ATTACK)
+        var mustAttackers = myMonsters.Where(m => {
+            var lc = CardEffectManager.Instance.EnsureCardScriptLoaded(m);
+            return lc != null && lc.IsHasEffect(191).Type != MoonSharp.Interpreter.DataType.Nil;
+        }).OrderByDescending(m => m.currentAtk).ToList();
 
-        foreach (var attacker in myMonsters)
+        var otherAttackers = myMonsters.Except(mustAttackers).OrderByDescending(m => m.currentAtk).ToList();
+
+        // Concatena, garantindo que os obrigatórios venham primeiro
+        var attackOrder = mustAttackers.Concat(otherAttackers).ToList();
+
+        foreach (var attacker in attackOrder)        
         {
-            if (attacker == null || attacker.position == CardDisplay.BattlePosition.Defense || attacker.hasAttackedThisTurn) continue;
+            LuaCard atkLc = CardEffectManager.Instance != null ? CardEffectManager.Instance.EnsureCardScriptLoaded(attacker) : null;
+            bool canDefAttack = atkLc != null && atkLc.IsHasEffect(190).Type != MoonSharp.Interpreter.DataType.Nil;
+            
+            if (attacker == null || (attacker.position == CardDisplay.BattlePosition.Defense && !canDefAttack) || attacker.attacksThisTurn >= attacker.maxAttacks) continue;
             
             if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
-                LuaCard cachedCard = CardEffectManager.Instance.EnsureCardScriptLoaded(attacker) ?? new LuaCard(attacker);
+                LuaCard cachedCard = atkLc ?? new LuaCard(attacker);
                 if (CardEffectManager.Instance.auraManager.IsUnderRestriction(cachedCard, null, "CANNOT_ATTACK", CardLocation.Field)) continue;
             }
 
-            // Avalia o melhor alvo para este atacante
-            CardDisplay bestTarget = FindBestTarget(attacker);
-            bool didAttack = false;
+            // Repete o ataque para monstros com múltiplos ataques
+            while(attacker.attacksThisTurn < attacker.maxAttacks)
+            {
+                // Avalia o melhor alvo para este atacante
+                CardDisplay bestTarget = FindBestTarget(attacker);
+                bool didAttack = false;
 
-            if (bestTarget != null) // Encontrou um alvo vantajoso
-            {
-                Debug.Log($"AI: {attacker.CurrentCardData.name} ataca {bestTarget.CurrentCardData.name}!");
-                attacker.hasAttackedThisTurn = true;
-                if (CardEffectManager.Instance != null) {
-                    CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(attacker);
-                    CardEffectManager.Instance.luaDuel.currentAttackTarget = new LuaCard(bestTarget);
-                    var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
-                    yield return StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
-                        CardEffectManager.Instance.luaDuel.currentAttacker, 
-                        CardEffectManager.Instance.luaDuel.currentAttackTarget));
+                if (bestTarget != null) // Encontrou um alvo vantajoso
+                {
+                    Debug.Log($"AI: {attacker.CurrentCardData.name} ataca {bestTarget.CurrentCardData.name}!");
+                    attacker.attacksThisTurn++;
+                    if (CardEffectManager.Instance != null) {
+                        CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(attacker);
+                        CardEffectManager.Instance.luaDuel.currentAttackTarget = new LuaCard(bestTarget);
+                        var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
+                        yield return StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
+                            CardEffectManager.Instance.luaDuel.currentAttacker, 
+                            CardEffectManager.Instance.luaDuel.currentAttackTarget));
+                    }
+                    didAttack = true;
                 }
-                didAttack = true;
-            }
-            else if (GetPlayerMonsterCount() == 0) // Campo aberto
-            {
-                Debug.Log($"AI: {attacker.CurrentCardData.name} ataca diretamente!");
-                attacker.hasAttackedThisTurn = true;
-                if (CardEffectManager.Instance != null) {
-                    CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(attacker);
-                    CardEffectManager.Instance.luaDuel.currentAttackTarget = null;
-                    var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
-                    yield return StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
-                        CardEffectManager.Instance.luaDuel.currentAttacker, 
-                        null));
-                }
-                didAttack = true;
-            }
-            else
-            {
-                Debug.Log($"AI: {attacker.CurrentCardData.name} não encontrou um alvo vantajoso. Não vai atacar.");
-            }
+                else if (GetPlayerMonsterCount() == 0) // Campo aberto
+                {
+                    if (atkLc != null && atkLc.IsHasEffect(73).Type != MoonSharp.Interpreter.DataType.Nil) break; // EFFECT_CANNOT_DIRECT_ATTACK
 
-            if (didAttack)
-            {
-                if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen || GameManager.Instance.pendingVisualTasks > 0);
-                if (!useSimulationFastMode) yield return new WaitForSeconds(actionDelay + 1.0f);
+                    Debug.Log($"AI: {attacker.CurrentCardData.name} ataca diretamente!");
+                    attacker.attacksThisTurn++;
+                    if (CardEffectManager.Instance != null) {
+                        CardEffectManager.Instance.luaDuel.currentAttacker = new LuaCard(attacker);
+                        CardEffectManager.Instance.luaDuel.currentAttackTarget = null;
+                        var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
+                        yield return StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, 
+                            CardEffectManager.Instance.luaDuel.currentAttacker, 
+                            null));
+                    }
+                    didAttack = true;
+                }
+                else
+                {
+                    Debug.Log($"AI: {attacker.CurrentCardData.name} não encontrou um alvo vantajoso. Não vai atacar.");
+                    break; // Sai do loop de múltiplos ataques se não houver alvos bons
+                }
+
+                if (didAttack)
+                {
+                    if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen || GameManager.Instance.pendingVisualTasks > 0);
+                    if (!useSimulationFastMode) yield return new WaitForSeconds(actionDelay + 1.0f);
+                }
+                else break; // Se não atacou, não tenta de novo
             }
         }
     }
@@ -750,12 +772,32 @@ public class OpponentAI : MonoBehaviour
         CardDisplay myBoss = myMonsters.OrderByDescending(m => m.currentAtk).FirstOrDefault();
         bool isBossAttacking = (attacker == myBoss);
 
+        // --- IDENTIFICAÇÃO DE ALVOS OBRIGATÓRIOS (TAUNT) ---
+        List<CardDisplay> mandatoryTargets = new List<CardDisplay>();
+        foreach (var zone in GameManager.Instance.duelFieldUI.playerMonsterZones) {
+            if (zone.childCount > 0) {
+                var defender = zone.GetComponentInChildren<CardDisplay>();
+                if (defender != null) {
+                    LuaCard defLc = CardEffectManager.Instance.EnsureCardScriptLoaded(defender);
+                    if (defLc != null && defLc.IsHasEffect(196).Type != MoonSharp.Interpreter.DataType.Nil) // EFFECT_ONLY_BE_ATTACKED
+                        mandatoryTargets.Add(defender);
+                }
+            }
+        }
+        bool hasMandatoryTarget = mandatoryTargets.Count > 0;
+
         foreach (var zone in GameManager.Instance.duelFieldUI.playerMonsterZones)
         {
             if (zone.childCount > 0)
             {
                 var defender = zone.GetComponentInChildren<CardDisplay>();
                 if (defender == null || defender.CurrentCardData == null) continue;
+                
+                // Se o oponente tem alvos com TAUNT, a IA só pode analisar eles!
+                if (hasMandatoryTarget && !mandatoryTargets.Contains(defender)) continue;
+
+                LuaCard defLc = CardEffectManager.Instance.EnsureCardScriptLoaded(defender);
+                if (defLc != null && defLc.IsHasEffect(70).Type != MoonSharp.Interpreter.DataType.Nil) continue; // EFFECT_CANNOT_BE_BATTLE_TARGET
 
                 float score = 0;
 
@@ -1208,10 +1250,14 @@ public class OpponentAI : MonoBehaviour
     {
         var monsters = GetMyMonstersOnField();
         return monsters.Any(m => {
-            if (m.position != CardDisplay.BattlePosition.Attack || m.hasAttackedThisTurn) return false;
+            LuaCard cachedCard = CardEffectManager.Instance != null ? CardEffectManager.Instance.EnsureCardScriptLoaded(m) : null;
+            bool canDefAttack = cachedCard != null && cachedCard.IsHasEffect(190).Type != MoonSharp.Interpreter.DataType.Nil; // EFFECT_DEFENSE_ATTACK
+            
+            if (m.position != CardDisplay.BattlePosition.Attack && !canDefAttack) return false;
+            if (m.attacksThisTurn >= m.maxAttacks) return false;
+            
             if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
-                LuaCard cachedCard = CardEffectManager.Instance.EnsureCardScriptLoaded(m) ?? new LuaCard(m);
-                if (CardEffectManager.Instance.auraManager.IsUnderRestriction(cachedCard, null, "CANNOT_ATTACK", CardLocation.Field)) return false;
+                if (CardEffectManager.Instance.auraManager.IsUnderRestriction(cachedCard ?? new LuaCard(m), null, "CANNOT_ATTACK", CardLocation.Field)) return false;
             }
             return true;
         });

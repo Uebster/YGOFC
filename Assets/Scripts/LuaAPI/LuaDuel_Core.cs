@@ -67,6 +67,12 @@ public partial class LuaDuel
         int pInt = ConvertToInt(player);
         int aInt = ConvertToInt(amount);
         
+        // EFFECT_REVERSE_DAMAGE (80)
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null) {
+            if (pInt == 0 && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(0, 80)) { Recover(player, amount, reason); return; }
+            if (pInt == 1 && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(1, 80)) { Recover(player, amount, reason); return; }
+        }
+
         if (pInt == 0) GameManager.Instance.DamagePlayer(aInt);
         else if (pInt == 1) GameManager.Instance.DamageOpponent(aInt);
         else if (pInt == 3) { GameManager.Instance.DamagePlayer(aInt); GameManager.Instance.DamageOpponent(aInt); }
@@ -156,6 +162,10 @@ public partial class LuaDuel
     {
         int pInt = ConvertToInt(player);
         int cInt = ConvertToInt(cost);
+        
+        // EFFECT_LPCOST_REPLACE
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(pInt, 171)) return true;
+        
         if (pInt == 0) return GameManager.Instance.playerLP >= cInt;
         if (pInt == 1) return GameManager.Instance.opponentLP >= cInt;
         return false;
@@ -165,6 +175,10 @@ public partial class LuaDuel
     {
         int pInt = ConvertToInt(player);
         int cInt = ConvertToInt(cost);
+        
+        // EFFECT_LPCOST_REPLACE (A dedução mágica será feita direto no código LUA da Aura!)
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(pInt, 171)) return;
+        
         if (pInt == 0) GameManager.Instance.PayLifePoints(true, cInt);
         else if (pInt == 1) GameManager.Instance.PayLifePoints(false, cInt);
         else if (pInt == 3) { GameManager.Instance.PayLifePoints(true, cInt); GameManager.Instance.PayLifePoints(false, cInt); }
@@ -190,6 +204,30 @@ public partial class LuaDuel
         return historicalAttackTarget ?? SafeDummyCard();
     }
     
+    private void ApplyBattleDamage(int takingPlayer, int amount, LuaCard takerCard, LuaCard dealerCard)
+    {
+        if (amount <= 0) return;
+        
+        // EFFECT_NO_BATTLE_DAMAGE (ex: Waboku)
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(takingPlayer, 200)) return;
+        
+        // EFFECT_AVOID_BATTLE_DAMAGE (ex: Kuriboh, invulnerabilidade do monstro)
+        if (takerCard != null && takerCard.IsHasEffect(201).Type != DataType.Nil) return;
+        
+        // EFFECT_REFLECT_BATTLE_DAMAGE (ex: Amazoness Swords Woman)
+        if (takerCard != null && takerCard.IsHasEffect(202).Type != DataType.Nil) {
+            if (takingPlayer == 0) GameManager.Instance.DamageOpponent(amount); else GameManager.Instance.DamagePlayer(amount);
+            return;
+        }
+        
+        // EFFECT_BOTH_BATTLE_DAMAGE (ex: Double-Edged Sword)
+        if ((takerCard != null && takerCard.IsHasEffect(206).Type != DataType.Nil) || (dealerCard != null && dealerCard.IsHasEffect(206).Type != DataType.Nil)) {
+            GameManager.Instance.DamagePlayer(amount); GameManager.Instance.DamageOpponent(amount); return;
+        }
+        
+        if (takingPlayer == 0) GameManager.Instance.DamagePlayer(amount); else GameManager.Instance.DamageOpponent(amount);
+    }
+
     public void CalculateDamage(object attackerObj, object defenderObj)
     {
         LuaCard attacker = attackerObj as LuaCard;
@@ -210,6 +248,15 @@ public partial class LuaDuel
 
         int atkPower = atkCard.currentAtk;
         bool atkIsPlayer = atkCard.isPlayerCard;
+
+        // EFFECT_DEFENSE_ATTACK (ex: Total Defense Shogun, Superheavy Samurai)
+        var atkDefAttEff = attacker.registeredEffects.Find(e => e.code == 190);
+        if (atkDefAttEff != null && atkCard.position == CardDisplay.BattlePosition.Defense) 
+        {
+            object val = atkDefAttEff.GetValue();
+            // No OCG, se o valor for 1, o monstro aplica sua DEF como Dano em vez do ATK.
+            if (val is double d && d == 1) atkPower = atkCard.currentDef;
+        }
         
         if (defCard == null)
         {
@@ -223,8 +270,7 @@ public partial class LuaDuel
         if (defCard == null)
         {
             // Ataque Direto
-            if (atkIsPlayer) GameManager.Instance.DamageOpponent(atkPower);
-            else GameManager.Instance.DamagePlayer(atkPower);
+            ApplyBattleDamage(atkIsPlayer ? 1 : 0, atkPower, null, attacker);
         }
         else
         {
@@ -235,8 +281,7 @@ public partial class LuaDuel
             {
                 if (atkPower > defPower)
                 {
-                    if (defIsPlayer) GameManager.Instance.DamagePlayer(atkPower - defPower);
-                    else GameManager.Instance.DamageOpponent(atkPower - defPower);
+                    ApplyBattleDamage(defIsPlayer ? 0 : 1, atkPower - defPower, defender, attacker);
                     
                     if (!defender.IsIndestructableByBattle())
                     {
@@ -248,8 +293,7 @@ public partial class LuaDuel
                 }
                 else if (atkPower < defPower)
                 {
-                    if (atkIsPlayer) GameManager.Instance.DamagePlayer(defPower - atkPower);
-                    else GameManager.Instance.DamageOpponent(defPower - atkPower);
+                    ApplyBattleDamage(atkIsPlayer ? 0 : 1, defPower - atkPower, attacker, defender);
                     
                     if (!attacker.IsIndestructableByBattle())
                     {
@@ -285,8 +329,7 @@ public partial class LuaDuel
                 {
                     if (atkCard.hasPiercing)
                     {
-                        if (defIsPlayer) GameManager.Instance.DamagePlayer(atkPower - defPower);
-                        else GameManager.Instance.DamageOpponent(atkPower - defPower);
+                        ApplyBattleDamage(defIsPlayer ? 0 : 1, atkPower - defPower, defender, attacker);
                     }
                     
                     if (!defender.IsIndestructableByBattle())
@@ -303,8 +346,7 @@ public partial class LuaDuel
                         DuelFXManager.Instance.PlayAttackFail(atkCard);
                         DuelFXManager.Instance.PlayDefenseSuccessEffect(defCard);
                     }
-                    if (atkIsPlayer) GameManager.Instance.DamagePlayer(defPower - atkPower);
-                    else GameManager.Instance.DamageOpponent(defPower - atkPower);
+                    ApplyBattleDamage(atkIsPlayer ? 0 : 1, defPower - atkPower, attacker, defender);
                 }
                 else
                 {

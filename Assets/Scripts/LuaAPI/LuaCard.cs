@@ -40,6 +40,21 @@ public class LuaCard
         return 0;
     }
     
+    private int ProcessSingleBitwiseModifiers(int baseVal, int changeCode, int addCode, int removeCode)
+    {
+        int finalVal = baseVal;
+        if (registeredEffects != null) {
+            foreach (var eff in registeredEffects.FindAll(e => e.isTypeSingle && (e.code == changeCode || e.code == addCode || e.code == removeCode))) {
+                if (eff.singleRange && (eff.range & GetLocation()) == 0) continue;
+                int val = ConvertToInt(eff.GetValue());
+                if (eff.code == changeCode) finalVal = val;
+                else if (eff.code == addCode) finalVal |= val;
+                else if (eff.code == removeCode) finalVal &= ~val;
+            }
+        }
+        return finalVal;
+    }
+
     // Helper para gerar um dummy seguro e evitar crashes de Null Reference no LUA
     private LuaCard SafeDummyCard() { return new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 }); }
 
@@ -56,7 +71,16 @@ public class LuaCard
     }
     public int GetLevel() { 
         if (assumedProperties.ContainsKey(3)) return assumedProperties[3]; // ASSUME_LEVEL
-        return unityCard != null ? unityCard.currentLevel : (unityData != null ? unityData.level : 0); 
+        int lvl = unityCard != null ? unityCard.currentLevel : (unityData != null ? unityData.level : 0); 
+        if (unityCard == null && registeredEffects != null) {
+            foreach (var eff in registeredEffects.FindAll(e => e.isTypeSingle && (e.code == 130 || e.code == 131))) {
+                if (eff.singleRange && (eff.range & GetLocation()) == 0) continue;
+                int val = ConvertToInt(eff.GetValue());
+                if (eff.code == 130) lvl += val;
+                else if (eff.code == 131) lvl = val;
+            }
+        }
+        return lvl;
     }
     public int GetOriginalLevel() { return unityCard != null ? unityCard.originalLevel : (unityData != null ? unityData.level : 0); }
     public bool IsFaceup() { return unityCard != null ? !unityCard.isFlipped : false; }
@@ -65,6 +89,21 @@ public class LuaCard
 
     public int GetControler()
     {
+        // Se tiver EFFECT_SET_CONTROL ativo, retorna o novo dono!
+        var setControlEffs = registeredEffects.FindAll(e => e.code == 4); // EFFECT_SET_CONTROL
+        if (setControlEffs.Count > 0)
+        {
+            var lastEff = setControlEffs.Last();
+            object valObj = lastEff.GetValue();
+            if (valObj is double || valObj is long || valObj is int) return System.Convert.ToInt32(valObj);
+            else if (valObj is MoonSharp.Interpreter.Closure valClosure && CardEffectManager.Instance != null) {
+                try {
+                    var res = CardEffectManager.Instance.luaEngine.Call(valClosure, lastEff, this);
+                    if (res.Type == MoonSharp.Interpreter.DataType.Number) return (int)res.Number;
+                } catch {}
+            }
+        }
+        
         if (unityCard != null) return unityCard.isPlayerCard ? 0 : 1;
         if (ownerPlayerIndex != -1) return ownerPlayerIndex;
         return 0;
@@ -169,6 +208,11 @@ public class LuaCard
         if (propStr == "FIELD") t |= 0x80000;
         if (propStr == "COUNTER") t |= 0x100000;
         if (typeStr.Contains("TOON")) t |= 0x400000;
+        
+        t = ProcessSingleBitwiseModifiers(t, 117, 115, 116);
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            t = CardEffectManager.Instance.auraManager.ProcessBitwiseModifiers(this, t, "CHANGE_TYPE", "ADD_TYPE", "REMOVE_TYPE", (CardLocation)GetLocation());
+        }
         return t;
     }
 
@@ -177,15 +221,21 @@ public class LuaCard
     public int GetAttribute() { 
         if (assumedProperties.ContainsKey(5)) return assumedProperties[5]; // ASSUME_ATTRIBUTE
         if (unityData == null || string.IsNullOrEmpty(unityData.attribute)) return 0;
+        int attr = 0;
         string a = unityData.attribute.Trim().ToUpperInvariant();
-        if (a.Contains("EARTH")) return 0x01;
-        if (a.Contains("WATER")) return 0x02;
-        if (a.Contains("FIRE")) return 0x04;
-        if (a.Contains("WIND")) return 0x08;
-        if (a.Contains("DARK")) return 0x10;
-        if (a.Contains("LIGHT")) return 0x20;
-        if (a.Contains("DIVINE")) return 0x40;
-        return 0;
+        if (a.Contains("EARTH")) attr |= 0x01;
+        if (a.Contains("WATER")) attr |= 0x02;
+        if (a.Contains("FIRE")) attr |= 0x04;
+        if (a.Contains("WIND")) attr |= 0x08;
+        if (a.Contains("DARK")) attr |= 0x10;
+        if (a.Contains("LIGHT")) attr |= 0x20;
+        if (a.Contains("DIVINE")) attr |= 0x40;
+        
+        attr = ProcessSingleBitwiseModifiers(attr, 127, 125, 126);
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            attr = CardEffectManager.Instance.auraManager.ProcessBitwiseModifiers(this, attr, "CHANGE_ATTRIBUTE", "ADD_ATTRIBUTE", "REMOVE_ATTRIBUTE", (CardLocation)GetLocation());
+        }
+        return attr;
     }
     public int GetTextAttack() { return GetAttack(); }
     public int GetTextDefense() { return GetDefense(); }
@@ -252,7 +302,14 @@ public class LuaCard
 
     public bool IsAbleToGraveAsCost() { return true; }
     public bool IsAbleToRemoveAsCost() { return true; }
-    public bool IsAbleToDeck() { return true; }
+    public bool IsAbleToDeck() 
+    { 
+        if (registeredEffects.Exists(e => e.code == 66)) return false; // EFFECT_CANNOT_TO_DECK
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            if (CardEffectManager.Instance.auraManager.IsUnderRestriction(this, null, "CANNOT_TO_DECK", CardLocation.Field | CardLocation.Graveyard | CardLocation.Hand)) return false;
+        }
+        return true; 
+    }
     public bool IsLevelBelow(object lvl) { return GetLevel() <= ConvertToInt(lvl); }
     public bool IsHasType(object type) { return IsType(type); }
     public int GetAttackAnnouncedCount() { return 0; }
@@ -302,31 +359,37 @@ public class LuaCard
     { 
         if (assumedProperties.ContainsKey(6)) return assumedProperties[6]; // ASSUME_RACE
         if (unityData == null || string.IsNullOrEmpty(unityData.race)) return 0;
+        int rCode = 0;
         string r = unityData.race.Trim().ToUpperInvariant();
-        if (r.Contains("WARRIOR")) return 0x1;
-        if (r.Contains("SPELLCASTER")) return 0x2;
-        if (r.Contains("FAIRY")) return 0x4;
-        if (r.Contains("FIEND")) return 0x8;
-        if (r.Contains("ZOMBIE")) return 0x10;
-        if (r.Contains("MACHINE")) return 0x20;
-        if (r.Contains("AQUA")) return 0x40;
-        if (r.Contains("PYRO")) return 0x80;
-        if (r.Contains("ROCK")) return 0x100;
-        if (r.Contains("WINGED BEAST")) return 0x200;
-        if (r.Contains("PLANT")) return 0x400;
-        if (r.Contains("INSECT")) return 0x800;
-        if (r.Contains("THUNDER")) return 0x1000;
-        if (r.Contains("DRAGON")) return 0x2000;
-        if (r.Contains("BEAST-WARRIOR")) return 0x8000;
-        else if (r.Contains("BEAST")) return 0x4000;
-        if (r.Contains("DINOSAUR")) return 0x10000;
-        if (r.Contains("FISH")) return 0x20000;
-        if (r.Contains("SEA SERPENT")) return 0x40000;
-        if (r.Contains("REPTILE")) return 0x80000;
-        return 0;
+        if (r.Contains("WARRIOR")) rCode |= 0x1;
+        if (r.Contains("SPELLCASTER")) rCode |= 0x2;
+        if (r.Contains("FAIRY")) rCode |= 0x4;
+        if (r.Contains("FIEND")) rCode |= 0x8;
+        if (r.Contains("ZOMBIE")) rCode |= 0x10;
+        if (r.Contains("MACHINE")) rCode |= 0x20;
+        if (r.Contains("AQUA")) rCode |= 0x40;
+        if (r.Contains("PYRO")) rCode |= 0x80;
+        if (r.Contains("ROCK")) rCode |= 0x100;
+        if (r.Contains("WINGED BEAST")) rCode |= 0x200;
+        if (r.Contains("PLANT")) rCode |= 0x400;
+        if (r.Contains("INSECT")) rCode |= 0x800;
+        if (r.Contains("THUNDER")) rCode |= 0x1000;
+        if (r.Contains("DRAGON")) rCode |= 0x2000;
+        if (r.Contains("BEAST-WARRIOR")) rCode |= 0x8000;
+        else if (r.Contains("BEAST")) rCode |= 0x4000;
+        if (r.Contains("DINOSAUR")) rCode |= 0x10000;
+        if (r.Contains("FISH")) rCode |= 0x20000;
+        if (r.Contains("SEA SERPENT")) rCode |= 0x40000;
+        if (r.Contains("REPTILE")) rCode |= 0x80000;
+        
+        rCode = ProcessSingleBitwiseModifiers(rCode, 122, 120, 121);
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            rCode = CardEffectManager.Instance.auraManager.ProcessBitwiseModifiers(this, rCode, "CHANGE_RACE", "ADD_RACE", "REMOVE_RACE", (CardLocation)GetLocation());
+        }
+        return rCode;
     }
     public int GetMaterialCount() { return 0; }
-    public bool IsAbleToDeckAsCost() { return true; }
+    public bool IsAbleToDeckAsCost() { return IsAbleToDeck(); }
     public bool IsSummonPlayer(object player) { return true; }
     public LuaGroup GetAttackableTarget() { return new LuaGroup(); }
     public bool IsAbleToChangeControler() { return true; }
@@ -365,10 +428,26 @@ public class LuaCard
     public int GetPreviousLocation() { return 0; }
 
     public bool CheckFusionMaterial(object group = null, object card = null, object chkf = null) { return true; }
-    public bool IsCanBeFusionMaterial(object card = null) { return true; }
+    public bool IsCanBeFusionMaterial(object card = null) 
+    { 
+        if (registeredEffects.Exists(e => e.code == 235)) return false; // EFFECT_CANNOT_BE_FUSION_MATERIAL
+        return true; 
+    }
+    public bool IsCanBeSynchroMaterial(object card = null) 
+    { 
+        if (registeredEffects.Exists(e => e.code == 236)) return false; // EFFECT_CANNOT_BE_SYNCHRO_MATERIAL
+        return true; 
+    }
 
-    public bool IsCanBeRitualMaterial(object card = null) { return true; }
-    public int GetRitualLevel(object rc = null) { return GetLevel(); }
+    public bool IsCanBeRitualMaterial(object card = null) { 
+        if (registeredEffects.Exists(e => e.code == 248)) return false; // EFFECT_CANNOT_BE_MATERIAL
+        return true; 
+    }
+    public int GetRitualLevel(object rc = null) { 
+        var eff = registeredEffects.Find(e => e.code == 241); // EFFECT_RITUAL_LEVEL
+        if (eff != null) return ConvertToInt(eff.GetValue());
+        return GetLevel(); 
+    }
     
     public LuaCard GetHandler() { return this; }
     public int GetCardTargetCount() { return 0; }
@@ -387,7 +466,14 @@ public class LuaCard
     public int GetTurnID() { return 0; }
     public bool CanChainAttack() { return true; }
     public LuaCard GetPreviousEquipTarget() { return _lastEquipTarget; }
-    public bool IsAbleToGrave() { return true; }
+    public bool IsAbleToGrave() 
+    { 
+        if (registeredEffects.Exists(e => e.code == 68)) return false; // EFFECT_CANNOT_TO_GRAVE
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            if (CardEffectManager.Instance.auraManager.IsUnderRestriction(this, null, "CANNOT_TO_GRAVE", CardLocation.Field | CardLocation.Hand | CardLocation.Deck | CardLocation.Banished)) return false;
+        }
+        return true; 
+    }    
     public bool HasFlagEffect(object id) { return false; }
     public int GetTurnCounter() { return unityCard != null ? unityCard.turnCounter : 0; }
     public bool IsHasCardTarget(object c) { return false; }
@@ -440,19 +526,30 @@ public class LuaCard
         if (!IsFaceup()) return false; // Já está virado para baixo
         if (IsType(0x4000)) return false; // TYPE_TOKEN (Tokens não podem ficar face-down)
         if (IsType(0x4000000)) return false; // TYPE_LINK (Links não existem no DM, mas previne bugs futuros)
+        if (registeredEffects.Exists(e => e.code == 69)) return false; // EFFECT_CANNOT_TURN_SET
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            if (CardEffectManager.Instance.auraManager.IsUnderRestriction(this, null, "CANNOT_TURN_SET", CardLocation.Field)) return false;
+        }
         return true; 
     }
     public bool IsCanBeSpecialSummoned(object e, object sumtype, object sumplayer, object nocheck, object nolimit, params object[] extraArgs) { return true; }
     public bool IsReleasable() 
     { 
-        if (registeredEffects.Exists(e => e.code == 46 || e.code == 43 || e.code == 44)) return false; // EFFECT_CANNOT_RELEASE
+        if (registeredEffects.Exists(e => e.code == 46 || e.code == 43 || e.code == 44 || e.code == 48)) return false; // EFFECT_CANNOT_RELEASE
         if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
             if (CardEffectManager.Instance.auraManager.IsUnderRestriction(this, null, "CANNOT_RELEASE", CardLocation.Field)) return false;
         }
         return true; 
     }
     public bool IsPreviousControler(object p) { return true; }
-    public bool IsAbleToHand() { return true; }
+    public bool IsAbleToHand() 
+    { 
+        if (registeredEffects.Exists(e => e.code == 65)) return false; // EFFECT_CANNOT_TO_HAND
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            if (CardEffectManager.Instance.auraManager.IsUnderRestriction(this, null, "CANNOT_TO_HAND", CardLocation.Field | CardLocation.Graveyard | CardLocation.Deck)) return false;
+        }
+        return true; 
+    }
     public bool IsPreviousPosition(object pos) { return true; }
     public bool IsDefensePos() { return unityCard != null && unityCard.position == CardDisplay.BattlePosition.Defense; }
     public bool IsAttackPos() { return unityCard != null && unityCard.position == CardDisplay.BattlePosition.Attack; }
@@ -498,6 +595,7 @@ public class LuaCard
     }
     public bool CanAttack() { return true; }
     public bool IsDisabled() { 
+        if (IsHasEffect(3).Type != DataType.Nil) return false; // EFFECT_CANNOT_DISABLE
         if (IsStatus(0x1)) return true; // STATUS_DISABLED
         if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
             return CardEffectManager.Instance.auraManager.IsUnderRestriction(this, null, "DISABLE", CardLocation.Field);
@@ -511,10 +609,18 @@ public class LuaCard
     public int GetCode() {
         if (assumedProperties.ContainsKey(1)) return assumedProperties[1]; // ASSUME_CODE
         if (unityData == null) return 0;
-        if (!string.IsNullOrEmpty(unityData.password) && int.TryParse(unityData.password, out int code)) return code;
-        string digits = System.Text.RegularExpressions.Regex.Replace(unityData.id, @"\D", "");
-        if (!string.IsNullOrEmpty(digits) && int.TryParse(digits, out int fallbackCode)) return fallbackCode;
-        return 0;
+        int cCode = 0;
+        if (!string.IsNullOrEmpty(unityData.password) && int.TryParse(unityData.password, out int code)) cCode = code;
+        else {
+            string digits = System.Text.RegularExpressions.Regex.Replace(unityData.id, @"\D", "");
+            if (!string.IsNullOrEmpty(digits) && int.TryParse(digits, out int fallbackCode)) cCode = fallbackCode;
+        }
+        
+        cCode = ProcessSingleBitwiseModifiers(cCode, 114, 113, 118);
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            cCode = CardEffectManager.Instance.auraManager.ProcessBitwiseModifiers(this, cCode, "CHANGE_CODE", "ADD_CODE", "REMOVE_CODE", (CardLocation)GetLocation());
+        }
+        return cCode;
     }
     public int GetOriginalCode() { return GetCode(); }
     
@@ -564,7 +670,14 @@ public class LuaCard
     public void SetUniqueOnField(params object[] args) { }
     public void EnableCounterPermit(params object[] args) { }
     public void SetCounterLimit(params object[] args) { }
-    public bool IsAbleToRemove() { return true; }
+    public bool IsAbleToRemove() 
+    { 
+        if (registeredEffects.Exists(e => e.code == 67)) return false; // EFFECT_CANNOT_REMOVE
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            if (CardEffectManager.Instance.auraManager.IsUnderRestriction(this, null, "CANNOT_REMOVE", CardLocation.Field | CardLocation.Graveyard | CardLocation.Hand | CardLocation.Deck)) return false;
+        }
+        return true; 
+    }
     public void AddMustBeSpecialSummoned(params object[] args) { }
     public void EnableUnsummonable() { }
     public void SetSPSummonOnce(params object[] args) { }
@@ -674,40 +787,41 @@ public class LuaCard
         }
     }
     
-    public bool IsCode(params object[] codes)
+    private static readonly Dictionary<int, string> setcodeMap = new Dictionary<int, string>
     {
-        int myId = GetCode();
-        // Debug.Log($"<color=magenta>[IsCode LOG]</color> O LUA perguntou se '{unityData?.name}' (Meu ID: {myId}) é igual a: {string.Join(", ", codes.Select(c => ConvertToInt(c).ToString()))}");
-        
-        foreach(var c in codes) 
+        {0x4, "Amazoness"}, {0x45, "Archfiend"}, {0x2e, "Gravekeeper"}, {0x2b, "Ninja"},
+        {0x3b, "Red-Eyes"}, {0xdd, "Blue-Eyes"}, {0xa2, "Magician"}, {0x10a2, "Dark Magician"},
+        {0x40, "Exodia"}, {0x52, "Guardian"}, {0x62, "Toon"}, {0x64, "Harpie"},
+        {0x3a, "Ojama"}, {0x8, "HERO"}, {0x28, "Batteryman"}, {0x1048, "Gaia The Fierce Knight"}
+    };
+
+    private HashSet<int> GetSetcodes()
+    {
+        HashSet<int> currentSetcodes = new HashSet<int>();
+        if (unityData == null) return currentSetcodes;
+
+        string baseArchetype = unityData.archetype ?? "";
+        string cardName = unityData.name ?? "";
+        foreach(var kvp in setcodeMap)
         {
-            int targetCode = ConvertToInt(c);
-            if (myId == targetCode) return true;
-            
-            // Fallback Supremo: Busca no Banco de Dados se existe alguma carta com esse Password/ID
-            // e compara pelo NOME. Isso salva a pátria se o nosso ID customizado for "DM0001" 
-            // mas o script LUA estiver procurando "89631139" (Blue-Eyes oficial).
-            if (unityData != null && GameManager.Instance != null && GameManager.Instance.cardDatabase != null)
+            if (baseArchetype.Contains(kvp.Value) || cardName.Contains(kvp.Value))
             {
-                string targetStr = targetCode.ToString();
-                CardData dbCard = GameManager.Instance.cardDatabase.cardDatabase.Find(card => card.password == targetStr || card.id == targetStr || card.password == "0" + targetStr);
-                if (dbCard != null && dbCard.name == unityData.name) return true;
+                currentSetcodes.Add(kvp.Key);
             }
         }
-        return false;
-    }
+        if (registeredEffects != null) {
+            foreach (var eff in registeredEffects.FindAll(e => e.isTypeSingle)) {
+                if (eff.singleRange && (eff.range & GetLocation()) == 0) continue;
+                int val = ConvertToInt(eff.GetValue());
+                if (eff.code == 350) { currentSetcodes.Clear(); currentSetcodes.Add(val); } // CHANGE_SETCODE
+                else if (eff.code == 334) currentSetcodes.Add(val); // ADD_SETCODE
+                else if (eff.code == 349) currentSetcodes.Remove(val); // REMOVE_SETCODE
+            }
+        }
+        
+        // TODO: Implementar leitura de Auras de Setcode do AuraManager
 
-    public bool IsContinuousTrap() { return IsTrap() && unityData != null && unityData.property == "Continuous"; }
-    public int GetEquipCount() { return (CardEffectManager.Instance != null && unityCard != null) ? CardEffectManager.Instance.GetEquippedCards(unityCard).Count : 0; }
-    public bool IsOriginalType(object t) { return IsType(t); }
-    public bool IsOriginalAttribute(object attr) { return IsAttribute(attr); }
-    public bool IsOriginalRace(object race) { return IsRace(race); }
-    public bool IsOriginalCode(params object[] codes) { return IsCode(codes); }
-    public LuaGroup GetEquippedGroup() { 
-        LuaGroup g = new LuaGroup(); 
-        if (CardEffectManager.Instance != null && unityCard != null) 
-            foreach(var c in CardEffectManager.Instance.GetEquippedCards(unityCard)) g.AddCard(new LuaCard(c));
-        return g; 
+        return currentSetcodes;
     }
     
     public void AddMonsterAttribute(params object[] args) { }
@@ -747,58 +861,41 @@ public class LuaCard
         }
     }
 
-    public bool IsSetCard(params object[] setCodes) 
+    public bool IsSetCard(params object[] setCodes)
     { 
-        if (unityData == null || string.IsNullOrEmpty(unityData.name)) return false;
-        string arch = unityData.archetype ?? "";
-        string cardName = unityData.name.ToLowerInvariant();
+        HashSet<int> mySetcodes = GetSetcodes();
+        if (mySetcodes.Count == 0) return false;
         
-        // string codesLog = string.Join(", ", setCodes);
-        // Debug.Log($"<color=magenta>[IsSetCard]</color> O LUA quer saber se '{unityData.name}' (Arquétipo: '{arch}') possui o código: {codesLog}");
-
         foreach(var s in setCodes)
         {
             int code = ConvertToInt(s) & 0xffff; 
-            
-            // 1. Checagem Oficial de Arquétipo (via Banco de Dados / JSON)
-            if (!string.IsNullOrEmpty(arch) && arch != "None")
-            {
-                if (code == 0x04 && arch.Contains("Amazoness")) { /* Debug.Log($"<color=green>[IsSetCard]</color> '{unityData.name}' validado com sucesso como Amazoness (0x04)!"); */ return true; }
-                if (code == 0x45 && arch.Contains("Archfiend")) return true;
-                if (code == 0x2e && arch.Contains("Gravekeeper")) return true;
-                if (code == 0x2b && arch.Contains("Ninja")) return true;
-                if (code == 0x3b && arch.Contains("Red-Eyes")) return true;
-                if (code == 0xdd && arch.Contains("Blue-Eyes")) return true;
-                if (code == 0xa2 && arch.Contains("Magician")) return true;
-                if (code == 0x10a2 && arch.Contains("Dark Magician")) return true;
-                if (code == 0x40 && arch.Contains("Exodia")) return true;
-                if (code == 0x52 && arch.Contains("Guardian")) return true;
-                if (code == 0x62 && arch.Contains("Toon")) return true;
-                if (code == 0x64 && arch.Contains("Harpie")) return true;
-                if (code == 0x3a && arch.Contains("Ojama")) return true;
-                if (code == 0x08 && arch.Contains("HERO")) return true;
-                if (code == 0x28 && arch.Contains("Batteryman")) return true;
-            }
-
-            // 2. Fallback de Segurança (Nome da Carta)
-            if (code == 0x04 && cardName.Contains("amazoness")) return true;
-            if (code == 0x45 && cardName.Contains("archfiend")) return true;
-            if (code == 0x2e && cardName.Contains("gravekeeper")) return true;
-            if (code == 0x2b && cardName.Contains("ninja")) return true;
-            if (code == 0x3b && cardName.Contains("red-eyes")) return true;
-            if (code == 0xdd && cardName.Contains("blue-eyes")) return true;
-            if (code == 0xa2 && cardName.Contains("magician")) return true;
-            if (code == 0x10a2 && cardName.Contains("dark magician")) return true;
-            if (code == 0x40 && (cardName.Contains("exodia") || cardName.Contains("forbidden one"))) return true;
-            if (code == 0x52 && cardName.Contains("guardian")) return true;
-            if (code == 0x62 && cardName.Contains("toon")) return true;
-            if (code == 0x64 && cardName.Contains("harpie")) return true;
-            if (code == 0x3a && cardName.Contains("ojama")) return true;
-            if (code == 0x08 && cardName.Contains("hero")) return true;
-            if (code == 0x28 && cardName.Contains("batteryman")) return true;
+            if (mySetcodes.Contains(code)) return true;
         }
+        return false;
+    }
         
-        return false; // CORRIGIDO: Este fallback era o que quebrava o jogo tratando toda carta como arquétipo!
+    public bool IsCode(params object[] codes)
+    {
+        int myId = GetCode();
+        foreach(var c in codes) 
+        {
+            int targetCode = ConvertToInt(c);
+            if (myId == targetCode) return true;
+        }
+        return false;
+    }
+
+    public bool IsContinuousTrap() { return IsTrap() && unityData != null && unityData.property == "Continuous"; }
+    public int GetEquipCount() { return (CardEffectManager.Instance != null && unityCard != null) ? CardEffectManager.Instance.GetEquippedCards(unityCard).Count : 0; }
+    public bool IsOriginalType(object t) { return IsType(t); }
+    public bool IsOriginalAttribute(object attr) { return IsAttribute(attr); }
+    public bool IsOriginalRace(object race) { return IsRace(race); }
+    public bool IsOriginalCode(params object[] codes) { return IsCode(codes); }
+    public LuaGroup GetEquippedGroup() { 
+        LuaGroup g = new LuaGroup(); 
+        if (CardEffectManager.Instance != null && unityCard != null) 
+            foreach(var c in CardEffectManager.Instance.GetEquippedCards(unityCard)) g.AddCard(new LuaCard(c));
+        return g; 
     }
         
     // Muitos scripts LUA do EDOPro chamam estes métodos em vez de IsSetCard

@@ -189,7 +189,11 @@ public partial class GameManager
                 {
                     // 1. Reseta os valores para a base original
                     cd.ResetStatsToOriginal();
-                    
+                                      
+                    // Reseta contadores de ataque
+                    cd.maxAttacks = 1;
+                    // cd.attacksThisTurn já é resetado na Draw Phase
+
                     if (cd.CurrentCardData.type.Contains("Monster"))
                     {
                         // Puxa o Script do monstro da memória para ler se ele sofreu alguma alteração temporária
@@ -228,12 +232,22 @@ public partial class GameManager
                         cd.currentAtk = baseAtk;
                         cd.currentDef = baseDef;
                         
+                        bool swapBaseAD = activeAuras.Exists(a => a.code == 110 && IsTargetOfAura(a, lc)) || lc.registeredEffects.Exists(e => e.isTypeSingle && e.code == 110);
+                        if (swapBaseAD) {
+                            int temp = cd.currentAtk;
+                            cd.currentAtk = cd.currentDef;
+                            cd.currentDef = temp;
+                        }
+                        
+                        bool reverseUpdate = activeAuras.Exists(a => a.code == 108 && IsTargetOfAura(a, lc)) || lc.registeredEffects.Exists(e => e.isTypeSingle && e.code == 108);
+
                         // 2. Modificadores FIELD (Auras Globais LUA e Equipamentos)
                         foreach (var aura in activeAuras)
                         {
                             if (IsTargetOfAura(aura, lc))
                             {
                                 int val = EvaluateEffectValue(aura, aura.owner, lc);
+                                if (reverseUpdate && (aura.code == 100 || aura.code == 104)) val = -val;
                                 if (aura.code == 100) cd.currentAtk += val;
                                 else if (aura.code == 104) cd.currentDef += val;
                                 else if (aura.code == 101 || aura.code == 102) cd.currentAtk = val;
@@ -258,12 +272,52 @@ public partial class GameManager
                             }
                         }
                         
+                        bool swapAD = activeAuras.Exists(a => a.code == 109 && IsTargetOfAura(a, lc)) || lc.registeredEffects.Exists(e => e.isTypeSingle && e.code == 109);
+                        if (swapAD) {
+                            int temp = cd.currentAtk;
+                            cd.currentAtk = cd.currentDef;
+                            cd.currentDef = temp;
+                        }
+
+                        // 5. Calcula ataques múltiplos
+                        if (lc.IsHasEffect(193).Type != MoonSharp.Interpreter.DataType.Nil) // EFFECT_ATTACK_ALL
+                        {
+                            cd.maxAttacks = GetMonsterCount(!cd.isPlayerCard);
+                            if (cd.maxAttacks == 0) cd.maxAttacks = 1; // Pode atacar direto uma vez
+                        }
+                        var extraAttackEffects = lc.registeredEffects.FindAll(e => e.code == 194 || e.code == 346); // EFFECT_EXTRA_ATTACK / EFFECT_EXTRA_ATTACK_MONSTER
+                        foreach(var eff in extraAttackEffects)
+                        {
+                            // O valor do efeito geralmente é o número de ataques extras
+                            cd.maxAttacks += EvaluateEffectValue(eff, lc, lc);
+                        }
+
                         CardLocation loc = cd.isOnField ? CardLocation.Field : CardLocation.Hand;
                         cd.currentLevel = cd.originalLevel + CardEffectManager.Instance.auraManager.GetStatModifier(lc, "LEVEL", loc);
                     }
                     
                     // 4. Força a atualização dos textos na interface da carta
                     cd.SendMessage("DisplayCardDetails", SendMessageOptions.DontRequireReceiver);
+                }
+            }
+        }
+
+        // 5. Sincroniza a Posse Física (EFFECT_SET_CONTROL)
+        foreach (var go in allCards)
+        {
+            CardDisplay cd = go.GetComponent<CardDisplay>();
+            if (cd != null && cd.isOnField)
+            {
+                LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(cd);
+                if (lc != null)
+                {
+                    int logicalControler = lc.GetControler();
+                    int physicalControler = cd.isPlayerCard ? 0 : 1;
+                    if (logicalControler != physicalControler)
+                    {
+                        Debug.Log($"<color=yellow>[Control Swap Sync]</color> Movendo {cd.CurrentCardData.name} para o jogador {logicalControler} devido a efeito de SetControl!");
+                        GameManager.Instance.SwitchControl(cd);
+                    }
                 }
             }
         }
@@ -362,7 +416,12 @@ public partial class GameManager
         // Atualiza a música baseada na nova situação de vida
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.UpdateBGM(playerLP, opponentLP);
 
-        if (playerLP <= 0) EndDuel(false);
+        if (playerLP <= 0)
+        {
+            // EFFECT_CANNOT_LOSE_LP
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(0, 401)) return;
+            EndDuel(false);
+        }
 
         // Notifica dano (para cartas como Numinous Healer, etc)
         if (CardEffectManager.Instance != null)
@@ -392,8 +451,13 @@ public partial class GameManager
         // Atualiza a música baseada na nova situação de vida
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.UpdateBGM(playerLP, opponentLP);
 
-        if (opponentLP <= 0) EndDuel(true);
-
+        if (opponentLP <= 0)
+        {
+            // EFFECT_CANNOT_LOSE_LP
+            if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(1, 401)) return;
+            EndDuel(true);
+        }
+        
         // Notifica dano
         if (CardEffectManager.Instance != null)
         {

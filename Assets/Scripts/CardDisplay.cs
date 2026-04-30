@@ -103,7 +103,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     private UnityWebRequest currentRequest; // Rastreia a requisição ativa para descarte correto
     private bool isAttackSelected = false; // Rastreia se a carta está selecionada para atacar
-    [HideInInspector] public bool hasAttackedThisTurn = false; // Rastreia se o monstro já atacou
+    [HideInInspector] public int attacksThisTurn = 0; // Rastreia quantos ataques o monstro fez
+    [HideInInspector] public int maxAttacks = 1; // Quantos ataques o monstro pode fazer por turno
 
     [HideInInspector] public int summonedTurnCount = -1; // Rastreia o turno em que a carta foi invocada
     [HideInInspector] public int summonType = 0; // Máscara de bits do tipo de invocação (ex: SUMMON_TYPE_FUSION)
@@ -375,6 +376,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         currentDef = originalDef;
         currentLevel = originalLevel;
         hasPiercing = false;
+        maxAttacks = 1;
         DisplayCardDetails();
     }
 
@@ -684,14 +686,20 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             {
                 if (isFlipped)
                 {
+                    LuaCard lc = CardEffectManager.Instance != null ? CardEffectManager.Instance.EnsureCardScriptLoaded(this) : null;
                     // Regra de Traps: Não podem ser ativadas no turno em que foram setadas
-                    if (CurrentCardData.type.Contains("Trap") && summonedTurnCount == GameManager.Instance.turnCount) return false;
+                    if (CurrentCardData.type.Contains("Trap") && summonedTurnCount == GameManager.Instance.turnCount) {
+                        if (lc != null && lc.IsHasEffect(16).Type != MoonSharp.Interpreter.DataType.Nil) return true; // EFFECT_TRAP_ACT_IN_SET_TURN
+                        return false;
+                    }
                     // Quick-Play Spells também não podem ser ativadas no turno em que foram setadas
-                    if (CurrentCardData.property == "Quick-Play" && summonedTurnCount == GameManager.Instance.turnCount) return false;
+                    if (CurrentCardData.property == "Quick-Play" && summonedTurnCount == GameManager.Instance.turnCount) {
+                        if (lc != null && lc.IsHasEffect(19).Type != MoonSharp.Interpreter.DataType.Nil) return true; // EFFECT_QP_ACT_IN_SET_TURN
+                        return false;
+                    }
 
                     if (CardEffectManager.Instance != null)
                     {
-                        LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(this);
                         LuaEffect eff = lc?.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0080);
                         if (eff != null && CardEffectManager.Instance.CanActivateEffect(lc, eff, 0, null))
                         {
@@ -874,6 +882,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             else if (!isOnField) // NA MÃO
             {
                 if (currentCardData.type.Contains("Monster")) { left = "Summon"; right = "Set"; }
+                else if (currentCardData.type.Contains("Trap")) {
+                    LuaCard lc = CardEffectManager.Instance != null ? CardEffectManager.Instance.EnsureCardScriptLoaded(this) : null;
+                    if (lc != null && lc.IsHasEffect(15).Type != MoonSharp.Interpreter.DataType.Nil) { left = "Activate"; right = "Set"; } // EFFECT_TRAP_ACT_IN_HAND
+                    else { left = ""; right = "Set"; }
+                }
                 else { left = "Activate"; right = "Set"; }
             }
             else // NO CAMPO
@@ -894,7 +907,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 }
                 else if (PhaseManager.Instance.currentPhase == GamePhase.Battle)
                 {
-                    if (currentCardData.type.Contains("Monster") && position == BattlePosition.Attack) 
+                    bool canDefAttack = CardEffectManager.Instance != null && CardEffectManager.Instance.EnsureCardScriptLoaded(this)?.IsHasEffect(190).Type != MoonSharp.Interpreter.DataType.Nil;
+                    if (currentCardData.type.Contains("Monster") && (position == BattlePosition.Attack || canDefAttack)) 
                     { 
                         left = "Attack"; right = "Cancel"; 
                     }
@@ -1382,12 +1396,20 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
             if (PhaseManager.Instance != null && (PhaseManager.Instance.currentPhase == GamePhase.Main1 || PhaseManager.Instance.currentPhase == GamePhase.Main2))
             {
+                if (CardEffectManager.Instance != null) {
+                    LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(this);
+                    if (lc != null && lc.IsHasEffect(14).Type != MoonSharp.Interpreter.DataType.Nil) { // EFFECT_CANNOT_CHANGE_POSITION
+                        if (UIManager.Instance != null && !GameManager.Instance.isSimulating) UIManager.Instance.ShowMessage("O efeito de uma carta te impede de mudar a posição de batalha deste monstro.");
+                        return;
+                    }
+                }
+
                 if (summonedTurnCount == GameManager.Instance.turnCount)
                 {
                     if (UIManager.Instance != null && !GameManager.Instance.isSimulating) UIManager.Instance.ShowMessage("Não pode mudar a posição no turno em que foi invocado.");
                     return;
                 }
-                if (hasAttackedThisTurn)
+                if (attacksThisTurn > 0)
                 {
                     if (UIManager.Instance != null && !GameManager.Instance.isSimulating) UIManager.Instance.ShowMessage("Não pode mudar a posição após atacar neste turno.");
                     return;
@@ -1428,10 +1450,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                     {
                         if (position != BattlePosition.Attack)
                         {
-                            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Monstros em Defesa não podem atacar.");
-                            return;
+                            LuaCard cachedCard = CardEffectManager.Instance != null ? CardEffectManager.Instance.EnsureCardScriptLoaded(this) : null;
+                            if (cachedCard == null || cachedCard.IsHasEffect(190).Type == MoonSharp.Interpreter.DataType.Nil) {
+                                if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Monstros em Defesa não podem atacar.");
+                                return;
+                            }
                         }
-                        if (hasAttackedThisTurn)
+                        if (attacksThisTurn >= maxAttacks)
                         {
                             if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Este monstro já atacou neste turno.");
                             return;
@@ -1463,6 +1488,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 {
                     if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.currentAttacker != null)
                     {
+                        LuaCard targetLc = CardEffectManager.Instance.EnsureCardScriptLoaded(this);
+                        if (targetLc != null && targetLc.IsHasEffect(70).Type != MoonSharp.Interpreter.DataType.Nil) // EFFECT_CANNOT_BE_BATTLE_TARGET
+                        {
+                            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Este monstro não pode ser escolhido como alvo de ataques!");
+                            return;
+                        }
+                        
                         if (GameManager.Instance != null && GameManager.Instance.confirmAttackTarget && UIManager.Instance != null)
                         {
                             if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.LockOn(transform);
@@ -1497,7 +1529,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                                 if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Monstros em Defesa não podem atacar.");
                                 return;
                             }
-                            if (hasAttackedThisTurn)
+                            if (attacksThisTurn >= maxAttacks)
                             {
                                 if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Este monstro já atacou neste turno.");
                                 return;
@@ -1628,10 +1660,10 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (CardEffectManager.Instance == null || CardEffectManager.Instance.luaDuel.currentAttacker == null) return;
         
         // NOVO: Previne clique duplo ou re-ataque se o monstro já iniciou o ataque
-        if (CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.hasAttackedThisTurn) return;
+        if (CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.attacksThisTurn >= CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.maxAttacks) return;
         
         // Marca que o atacante concluiu o ataque neste turno
-        CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.hasAttackedThisTurn = true;
+        CardEffectManager.Instance.luaDuel.currentAttacker.unityCard.attacksThisTurn++;
         if (CardEffectManager.Instance.luaDuel.currentAttacker.GetControler() == 0) GameManager.Instance.attacksThisTurnPlayer++;
         else GameManager.Instance.attacksThisTurnOpponent++;
         if (GameManager.Instance != null) GameManager.Instance.RefreshAttackIndicators();

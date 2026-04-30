@@ -168,11 +168,19 @@ public partial class GameManager
 
         Debug.Log($"[Summon Check] Tentando invocar: {cardName} | Lvl Base: {cardData.level} | Lvl Dinâmico (Auras): {dynamicLevel}");
 
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(isPlayer ? 0 : 1, 20)) {
+            Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: EFFECT_CANNOT_SUMMON ativo.");
+            return false;
+        }
+
         // 0.1 Validação de Limite de Invocação Normal (se não for ignorado por efeito)
+        int extraSummons = 0;
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(isPlayer ? 0 : 1, 29)) extraSummons = 1;
+        
         if (!ignoreLimit && !infiniteNormalSummons)
         {
             int currentSummons = isPlayer ? normalSummonsThisTurnPlayer : normalSummonsThisTurnOpponent;
-            if (currentSummons > 0)
+            if (currentSummons >= 1 + extraSummons)
             {
                 Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: Limite de 1 Invocação Normal por turno atingido.");
                 if (isPlayer && !isSimulating && UIManager.Instance != null) 
@@ -321,6 +329,23 @@ public partial class GameManager
     // Atualizado para suportar Face-Down explicitamente
     public void FinalizeSummon(GameObject cardGO, CardData cardData, bool isDefensePos, bool isPlayer, bool isFaceDown = false, bool isTributeSummon = false, Transform specificZone = null, List<CardData> specialMaterials = null, Vector3? sourcePos = null, CardLocation sourceLoc = CardLocation.Hand, bool? ownerIsPlayer = null, int summonType = 0x10000000)
     {
+        // --- FORCED POSITION CHECK (OCGCore) ---
+        if (CardEffectManager.Instance != null)
+        {
+            int pIdx = isPlayer ? 0 : 1;
+            bool isNormal = (summonType & 0x10000000) != 0;
+            bool isSpecial = (summonType & 0x40000000) != 0;
+
+            if (isNormal && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(pIdx, 426)) { // EFFECT_FORCE_NORMAL_SUMMON_POSITION
+                isDefensePos = true; isFaceDown = false;
+                Debug.Log($"<color=yellow>[Forced Position]</color> {cardData.name} forçado para Posição de Defesa por um efeito.");
+            }
+            if (isSpecial && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(pIdx, 427)) { // EFFECT_FORCE_SPSUMMON_POSITION
+                isDefensePos = true; isFaceDown = false;
+                Debug.Log($"<color=yellow>[Forced Position]</color> {cardData.name} forçado para Posição de Defesa por um efeito.");
+            }
+        }
+
         // 2. Encontrar Zona Livre
         Transform targetZone = specificZone;
         if (targetZone == null) targetZone = GetFreeMonsterZone(isPlayer);
@@ -355,17 +380,8 @@ public partial class GameManager
             display.hasChangedPositionThisTurn = false;
             display.summonType = summonType; // Associa a Máscara da Invocação permanentemente
 
-            if (isFaceDown) display.AddStatus(0x10); // STATUS_SET_TURN
-            else {
-                if (summonType == 0x10000000 || summonType == 0x11000000) display.AddStatus(0x800); // STATUS_SUMMON_TURN
-                else if (summonType == 0x20000000) { display.AddStatus(0x20000000); if (isPlayer) flipSummonsThisTurnPlayer++; else flipSummonsThisTurnOpponent++; }
-                else { display.AddStatus(0x40000000); if (isPlayer) specialSummonsThisTurnPlayer++; else specialSummonsThisTurnOpponent++; }
-                
-                if ((summonType & 0x40000000) != 0 && summonType != 0x40000000) display.AddStatus(0x8); // STATUS_PROC_COMPLETE
-            }
-
-            // 1081 - Light of Intervention
-            if (isFaceDown && IsCardActiveOnField("1081"))
+            // EFFECT_LIGHT_OF_INTERVENTION (38)
+            if (isFaceDown && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(isPlayer ? 0 : 1, 38))
             {
                 isFaceDown = false;
                 Debug.Log("Light of Intervention: Monstro Setado forçado a Face-up Defense.");

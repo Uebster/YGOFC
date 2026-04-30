@@ -807,12 +807,63 @@ public class CardEffectManager : MonoBehaviour
                 if (effect.owner == null || effect.owner.unityCard == null || !effect.owner.unityCard.isOnField || effect.owner.unityCard.isFlipped) continue;
 
                 string modType = "";
-                if (effect.code == 13) modType = "CANNOT_ACTIVATE"; // EFFECT_CANNOT_ACTIVATE
-                else if (effect.code == 24) modType = "CANNOT_TRIGGER"; // EFFECT_CANNOT_TRIGGER
-                else if (effect.code == 30) modType = "DISABLE";                   // EFFECT_DISABLE
-                else if (effect.code == 85) modType = "CANNOT_ATTACK";             // EFFECT_CANNOT_ATTACK
-                else if (effect.code == 104) modType = "IMMUNE";                   // EFFECT_IMMUNE_EFFECT
-                else if (effect.code == 71) modType = "CANNOT_BE_EFFECT_TARGET";   // EFFECT_CANNOT_BE_EFFECT_TARGET
+                if (effect.code == 1) modType = "IMMUNE";
+                else if (effect.code == 2) modType = "DISABLE";
+                else if (effect.code == 3) modType = "CANNOT_DISABLE";
+                else if (effect.code == 4) modType = "SET_CONTROL";
+                else if (effect.code == 6) modType = "CANNOT_ACTIVATE";
+                else if (effect.code == 7) modType = "CANNOT_TRIGGER";
+                else if (effect.code == 8) modType = "DISABLE_EFFECT";
+                else if (effect.code == 9) modType = "DISABLE_CHAIN";
+                else if (effect.code == 10) modType = "DISABLE_TRAPMONSTER";
+                else if (effect.code == 12) modType = "CANNOT_INACTIVATE";
+                else if (effect.code == 13) modType = "CANNOT_DISEFFECT";
+                else if (effect.code == 14 || effect.code == 87) modType = "CANNOT_CHANGE_POSITION";
+                else if (effect.code == 18) modType = "MONSTER_SSET";
+                else if (effect.code == 20) modType = "CANNOT_SUMMON";
+                else if (effect.code == 21) modType = "CANNOT_FLIP_SUMMON";
+                else if (effect.code == 22) modType = "CANNOT_SPECIAL_SUMMON";
+                else if (effect.code == 23) modType = "CANNOT_MSET";
+                else if (effect.code == 24) modType = "CANNOT_SSET";
+                else if (effect.code == 25) modType = "CANNOT_DRAW";
+                else if (effect.code == 26) modType = "CANNOT_DISABLE_SUMMON";
+                else if (effect.code == 27) modType = "CANNOT_DISABLE_SPSUMMON";
+                else if (effect.code == 28) modType = "SET_SUMMON_COUNT_LIMIT";
+                else if (effect.code == 29) modType = "EXTRA_SUMMON_COUNT";
+                else if (effect.code == 38) modType = "LIGHT_OF_INTERVENTION";
+                else if (effect.code == 40) modType = "INDESTRUCTABLE";
+                else if (effect.code == 41) modType = "INDESTRUCTABLE_EFFECT";
+                else if (effect.code == 42) modType = "INDESTRUCTABLE_BATTLE";
+                else if (effect.code == 43 || effect.code == 44 || effect.code == 46 || effect.code == 48) modType = "CANNOT_RELEASE";
+                else if (effect.code == 65) modType = "CANNOT_TO_HAND";
+                else if (effect.code == 66) modType = "CANNOT_TO_DECK";
+                else if (effect.code == 67) modType = "CANNOT_REMOVE";
+                else if (effect.code == 68) modType = "CANNOT_TO_GRAVE";
+                else if (effect.code == 69) modType = "CANNOT_TURN_SET";
+                else if (effect.code == 70) modType = "CANNOT_BE_BATTLE_TARGET";                else if (effect.code == 71) modType = "CANNOT_BE_EFFECT_TARGET";
+                else if (effect.code == 72) modType = "IGNORE_BATTLE_TARGET";
+                else if (effect.code == 73) modType = "CANNOT_DIRECT_ATTACK";
+                else if (effect.code == 74) modType = "DIRECT_ATTACK";
+                else if (effect.code == 85 || effect.code == 86) modType = "CANNOT_ATTACK";
+                else if (effect.code == 183 || effect.code == 185) modType = "CANNOT_BP";
+                else if (effect.code == 184 || effect.code == 186) modType = "CANNOT_M2";
+                else if (effect.code == 190) modType = "DEFENSE_ATTACK";
+                else if (effect.code == 191) modType = "MUST_ATTACK";
+                else if (effect.code == 196) modType = "ONLY_BE_ATTACKED";
+                else if (effect.code == 200) modType = "NO_BATTLE_DAMAGE";
+                else if (effect.code == 201) modType = "AVOID_BATTLE_DAMAGE";
+                else if (effect.code == 202) modType = "REFLECT_BATTLE_DAMAGE";
+                else if (effect.code == 191) modType = "MUST_ATTACK";
+                else if (effect.code == 193) modType = "ATTACK_ALL";
+                else if (effect.code == 194 || effect.code == 346) modType = "EXTRA_ATTACK";
+                else if (effect.code == 334) modType = "ADD_SETCODE";
+                else if (effect.code == 349) modType = "REMOVE_SETCODE";
+                else if (effect.code == 350) modType = "CHANGE_SETCODE";
+                else if (effect.code == 400) modType = "CANNOT_LOSE_DECK";
+                else if (effect.code == 401) modType = "CANNOT_LOSE_LP";                
+                else if (effect.code == 334) modType = "ADD_SETCODE";
+                else if (effect.code == 349) modType = "REMOVE_SETCODE";
+                else if (effect.code == 350) modType = "CHANGE_SETCODE";
 
                 if (!string.IsNullOrEmpty(modType))
                 {
@@ -822,7 +873,7 @@ public class CardEffectManager : MonoBehaviour
                         filterToUse = null; // Será avaliado dinamicamente via GetValue() em IsUnderRestriction
                     }
 
-                    Debug.Log($"<color=green>[AuraManager LOG]</color> Barreira Invisível Registrada: {modType} | Fonte: {effect.owner.unityData.name} | Efeito LUA: {effect.code}");
+                    // Debug.Log($"<color=green>[AuraManager LOG]</color> Barreira Invisível Registrada: {modType} | Fonte: {effect.owner.unityData.name} | Efeito LUA: {effect.code}");
                     auraManager.RegisterAura(effect.owner, effect, filterToUse, modType, 0, CardLocation.Hand | CardLocation.Field | CardLocation.Graveyard);
                 }
             }
@@ -836,19 +887,25 @@ public class CardEffectManager : MonoBehaviour
                 if (auraManager.IsUnderRestriction(effect.owner, effect, "DISABLE", CardLocation.Field)) continue;
 
                 string modType = "";
-                if (effect.code == 100) modType = "ATK";       // EFFECT_UPDATE_ATTACK
-                else if (effect.code == 104) modType = "DEF";  // EFFECT_UPDATE_DEFENSE
-                else if (effect.code == 130) modType = "LEVEL";                     // EFFECT_UPDATE_LEVEL
-                if (effect.code == 6) modType = "CANNOT_ACTIVATE"; // EFFECT_CANNOT_ACTIVATE
-                else if (effect.code == 7) modType = "CANNOT_TRIGGER"; // EFFECT_CANNOT_TRIGGER
-                else if (effect.code == 2) modType = "DISABLE";                   // EFFECT_DISABLE
-                else if (effect.code == 85) modType = "CANNOT_ATTACK";             // EFFECT_CANNOT_ATTACK
-                else if (effect.code == 1) modType = "IMMUNE";                   // EFFECT_IMMUNE_EFFECT
-                else if (effect.code == 71) modType = "CANNOT_BE_EFFECT_TARGET";   // EFFECT_CANNOT_BE_EFFECT_TARGET
-                else if (effect.code == 40) modType = "INDESTRUCTABLE";            // EFFECT_INDESTRUCTABLE
-                else if (effect.code == 41) modType = "INDESTRUCTABLE_EFFECT";     // EFFECT_INDESTRUCTABLE_EFFECT
-                else if (effect.code == 42) modType = "INDESTRUCTABLE_BATTLE";     // EFFECT_INDESTRUCTABLE_BATTLE
-                else if (effect.code == 43 || effect.code == 44 || effect.code == 46) modType = "CANNOT_RELEASE"; // EFFECT_CANNOT_RELEASE
+                if (effect.code == 100 || effect.code == 101 || effect.code == 102) modType = "ATK";       
+                else if (effect.code == 104 || effect.code == 105 || effect.code == 106) modType = "DEF";  
+                else if (effect.code == 130 || effect.code == 131) modType = "LEVEL";
+                else if (effect.code == 108) modType = "REVERSE_UPDATE";
+                else if (effect.code == 109) modType = "SWAP_AD";
+                else if (effect.code == 110) modType = "SWAP_BASE_AD";
+                else if (effect.code == 113) modType = "ADD_CODE";
+                else if (effect.code == 114) modType = "CHANGE_CODE";
+                else if (effect.code == 115) modType = "ADD_TYPE";
+                else if (effect.code == 116) modType = "REMOVE_TYPE";
+                else if (effect.code == 117) modType = "CHANGE_TYPE";
+                else if (effect.code == 118) modType = "REMOVE_CODE";
+                else if (effect.code == 120) modType = "ADD_RACE";
+                else if (effect.code == 121) modType = "REMOVE_RACE";
+                else if (effect.code == 122) modType = "CHANGE_RACE";
+                else if (effect.code == 125) modType = "ADD_ATTRIBUTE";
+                else if (effect.code == 126) modType = "REMOVE_ATTRIBUTE";
+                else if (effect.code == 127) modType = "CHANGE_ATTRIBUTE";
+                else if (effect.code == 171) modType = "LPCOST_REPLACE";
 
                 if (!string.IsNullOrEmpty(modType))
                 {
