@@ -836,9 +836,19 @@ public class CardEffectManager : MonoBehaviour
                 if (auraManager.IsUnderRestriction(effect.owner, effect, "DISABLE", CardLocation.Field)) continue;
 
                 string modType = "";
-                if (effect.code == 1) modType = "ATK";       // EFFECT_UPDATE_ATTACK
-                else if (effect.code == 4) modType = "DEF";  // EFFECT_UPDATE_DEFENSE
-                else if (effect.code == 10) modType = "LEVEL";                     // EFFECT_UPDATE_LEVEL
+                if (effect.code == 100) modType = "ATK";       // EFFECT_UPDATE_ATTACK
+                else if (effect.code == 104) modType = "DEF";  // EFFECT_UPDATE_DEFENSE
+                else if (effect.code == 130) modType = "LEVEL";                     // EFFECT_UPDATE_LEVEL
+                if (effect.code == 6) modType = "CANNOT_ACTIVATE"; // EFFECT_CANNOT_ACTIVATE
+                else if (effect.code == 7) modType = "CANNOT_TRIGGER"; // EFFECT_CANNOT_TRIGGER
+                else if (effect.code == 2) modType = "DISABLE";                   // EFFECT_DISABLE
+                else if (effect.code == 85) modType = "CANNOT_ATTACK";             // EFFECT_CANNOT_ATTACK
+                else if (effect.code == 1) modType = "IMMUNE";                   // EFFECT_IMMUNE_EFFECT
+                else if (effect.code == 71) modType = "CANNOT_BE_EFFECT_TARGET";   // EFFECT_CANNOT_BE_EFFECT_TARGET
+                else if (effect.code == 40) modType = "INDESTRUCTABLE";            // EFFECT_INDESTRUCTABLE
+                else if (effect.code == 41) modType = "INDESTRUCTABLE_EFFECT";     // EFFECT_INDESTRUCTABLE_EFFECT
+                else if (effect.code == 42) modType = "INDESTRUCTABLE_BATTLE";     // EFFECT_INDESTRUCTABLE_BATTLE
+                else if (effect.code == 43 || effect.code == 44 || effect.code == 46) modType = "CANNOT_RELEASE"; // EFFECT_CANNOT_RELEASE
 
                 if (!string.IsNullOrEmpty(modType))
                 {
@@ -895,12 +905,12 @@ public class CardEffectManager : MonoBehaviour
                         }
                     }
 
-                    // OCGCore usa 1 para UPDATE_ATTACK e 4 para UPDATE_DEFENSE
-                    if (effect.code == 1 || effect.code == 100) 
+                    // OCGCore usa 100 para UPDATE_ATTACK e 104 para UPDATE_DEFENSE
+                    if (effect.code == 100) 
                     {
                         newAtk += value;
                     }
-                    else if (effect.code == 4 || effect.code == 104) 
+                    else if (effect.code == 104) 
                     {
                         newDef += value;
                     }

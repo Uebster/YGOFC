@@ -218,10 +218,10 @@ public partial class GameManager
                                     } catch { }
                                 }
 
-                                if (eff.code == 1 || eff.code == 100) baseAtk += val; // UPDATE_ATTACK
-                                else if (eff.code == 4 || eff.code == 104) baseDef += val; // UPDATE_DEFENSE
-                                else if (eff.code == 2) baseAtk = val; // SET_ATTACK
-                                else if (eff.code == 5) baseDef = val; // SET_DEFENSE
+                                if (eff.code == 100) baseAtk += val; // EFFECT_UPDATE_ATTACK
+                                else if (eff.code == 104) baseDef += val; // EFFECT_UPDATE_DEFENSE
+                                else if (eff.code == 101) baseAtk = val; // EFFECT_SET_ATTACK
+                                else if (eff.code == 105) baseDef = val; // EFFECT_SET_DEFENSE
                             }
                         }
 
@@ -234,10 +234,10 @@ public partial class GameManager
                             if (IsTargetOfAura(aura, lc))
                             {
                                 int val = EvaluateEffectValue(aura, aura.owner, lc);
-                                if (aura.code == 1 || aura.code == 100) cd.currentAtk += val;
-                                else if (aura.code == 4 || aura.code == 104) cd.currentDef += val;
-                                else if (aura.code == 2 || aura.code == 101) cd.currentAtk = val;
-                                else if (aura.code == 5 || aura.code == 105) cd.currentDef = val;
+                                if (aura.code == 100) cd.currentAtk += val;
+                                else if (aura.code == 104) cd.currentDef += val;
+                                else if (aura.code == 101 || aura.code == 102) cd.currentAtk = val;
+                                else if (aura.code == 105 || aura.code == 106) cd.currentDef = val;
                                 else if (aura.code == 130) cd.currentLevel += val;
                                 else if (aura.code == 131) cd.currentLevel = val;
                                 else if (aura.code == 203) cd.hasPiercing = true; // EFFECT_PIERCE
@@ -252,8 +252,8 @@ public partial class GameManager
                             {
                                 if (eff.singleRange && (eff.range & lc.GetLocation()) == 0) continue; // EFFECT_FLAG_SINGLE_RANGE
 
-                                if (eff.code == 3 || eff.code == 102) cd.currentAtk = EvaluateEffectValue(eff, lc, lc);
-                                else if (eff.code == 6 || eff.code == 106) cd.currentDef = EvaluateEffectValue(eff, lc, lc);
+                                if (eff.code == 102 || eff.code == 103) cd.currentAtk = EvaluateEffectValue(eff, lc, lc);
+                                else if (eff.code == 106 || eff.code == 107) cd.currentDef = EvaluateEffectValue(eff, lc, lc);
                                 else if (eff.code == 203) cd.hasPiercing = true; // EFFECT_PIERCE
                             }
                         }

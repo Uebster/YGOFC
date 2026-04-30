@@ -114,10 +114,26 @@ public class LuaCard
 
     // --- PERGUNTAS DE STATUS QUE O SCRIPT FAZ À CARTA ---
 
-    public bool IsDestructable() 
+    public bool IsDestructable(object e = null) 
     { 
-        // Regra geral de protótipo: Tudo é destrutível a menos que algum escudo proíba
+        if (registeredEffects.Exists(eff => eff.code == 40)) return false; // EFFECT_INDESTRUCTABLE
+        if (e != null && registeredEffects.Exists(eff => eff.code == 41)) return false; // EFFECT_INDESTRUCTABLE_EFFECT
+        
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            if (CardEffectManager.Instance.auraManager.IsUnderRestriction(this, e as LuaEffect, "INDESTRUCTABLE", CardLocation.Field)) return false;
+            if (e != null && CardEffectManager.Instance.auraManager.IsUnderRestriction(this, e as LuaEffect, "INDESTRUCTABLE_EFFECT", CardLocation.Field)) return false;
+        }
         return true; 
+    }
+
+    public bool IsIndestructableByBattle()
+    {
+        if (registeredEffects.Exists(e => e.code == 40 || e.code == 42)) return true; // 40 = INDESTRUCTABLE, 42 = INDESTRUCTABLE_BATTLE
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            if (CardEffectManager.Instance.auraManager.IsUnderRestriction(this, null, "INDESTRUCTABLE", CardLocation.Field)) return true;
+            if (CardEffectManager.Instance.auraManager.IsUnderRestriction(this, null, "INDESTRUCTABLE_BATTLE", CardLocation.Field)) return true;
+        }
+        return false;
     }
 
     public bool IsSpellTrap()
@@ -322,7 +338,7 @@ public class LuaCard
     { 
         int baseAtk = unityCard != null ? unityCard.originalAtk : (unityData != null ? unityData.atk : 0); 
         if (registeredEffects != null) {
-            var effs = registeredEffects.FindAll(e => e.type == 1 && e.code == 7); // 7 = EFFECT_SET_BASE_ATTACK
+            var effs = registeredEffects.FindAll(e => e.isTypeSingle && e.code == 103); // 103 = EFFECT_SET_BASE_ATTACK
             foreach (var eff in effs) {
                 if (eff.singleRange && (eff.range & GetLocation()) == 0) continue;
                 object valObj = eff.GetValue();
@@ -335,7 +351,7 @@ public class LuaCard
     { 
         int baseDef = unityCard != null ? unityCard.originalDef : (unityData != null ? unityData.def : 0); 
         if (registeredEffects != null) {
-            var effs = registeredEffects.FindAll(e => e.type == 1 && e.code == 8); // 8 = EFFECT_SET_BASE_DEFENSE
+            var effs = registeredEffects.FindAll(e => e.isTypeSingle && e.code == 107); // 107 = EFFECT_SET_BASE_DEFENSE
             foreach (var eff in effs) {
                 if (eff.singleRange && (eff.range & GetLocation()) == 0) continue;
                 object valObj = eff.GetValue();
@@ -427,7 +443,14 @@ public class LuaCard
         return true; 
     }
     public bool IsCanBeSpecialSummoned(object e, object sumtype, object sumplayer, object nocheck, object nolimit, params object[] extraArgs) { return true; }
-    public bool IsReleasable() { return true; }
+    public bool IsReleasable() 
+    { 
+        if (registeredEffects.Exists(e => e.code == 46 || e.code == 43 || e.code == 44)) return false; // EFFECT_CANNOT_RELEASE
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null) {
+            if (CardEffectManager.Instance.auraManager.IsUnderRestriction(this, null, "CANNOT_RELEASE", CardLocation.Field)) return false;
+        }
+        return true; 
+    }
     public bool IsPreviousControler(object p) { return true; }
     public bool IsAbleToHand() { return true; }
     public bool IsPreviousPosition(object pos) { return true; }

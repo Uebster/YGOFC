@@ -1016,7 +1016,19 @@ public partial class LuaDuel
             if (c != null && c.isOnField)
             {
                 LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(c);
-                if (lc != null) lc.currentReason = reason;
+                if (lc != null) 
+                {
+                    LuaEffect reasonEffect = null;
+                    if (CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.resolvingLink != null)
+                        reasonEffect = CardEffectManager.Instance.chainManager.resolvingLink.effect;
+                        
+                    if (!lc.IsDestructable(reasonEffect)) 
+                    {
+                        Debug.Log($"<color=cyan>[Destroy]</color> {c.CurrentCardData.name} foi protegido contra destruição!");
+                        continue; 
+                    }
+                    lc.currentReason = reason;
+                }
 
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(c);
                 GameManager.Instance.MoveCard(c, CardLocation.Graveyard, reason);

@@ -238,32 +238,45 @@ public partial class LuaDuel
                     if (defIsPlayer) GameManager.Instance.DamagePlayer(atkPower - defPower);
                     else GameManager.Instance.DamageOpponent(atkPower - defPower);
                     
-                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
-                    defender.currentReason = 0x20; // REASON_BATTLE
-                    if (defender.unityCard != null) defender.unityCard.AddStatus(0x4000); // STATUS_BATTLE_DESTROYED
-                    GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, 0x20);
+                    if (!defender.IsIndestructableByBattle())
+                    {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
+                        defender.currentReason = 0x20; // REASON_BATTLE
+                        if (defender.unityCard != null) defender.unityCard.AddStatus(0x4000); // STATUS_BATTLE_DESTROYED
+                        GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, 0x20);
+                    }
                 }
                 else if (atkPower < defPower)
                 {
                     if (atkIsPlayer) GameManager.Instance.DamagePlayer(defPower - atkPower);
                     else GameManager.Instance.DamageOpponent(defPower - atkPower);
                     
-                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(atkCard);
-                    attacker.currentReason = 0x20;
-                    if (attacker.unityCard != null) attacker.unityCard.AddStatus(0x4000); // STATUS_BATTLE_DESTROYED
-                    GameManager.Instance.MoveCard(atkCard, CardLocation.Graveyard, 0x20);
+                    if (!attacker.IsIndestructableByBattle())
+                    {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(atkCard);
+                        attacker.currentReason = 0x20;
+                        if (attacker.unityCard != null) attacker.unityCard.AddStatus(0x4000); // STATUS_BATTLE_DESTROYED
+                        GameManager.Instance.MoveCard(atkCard, CardLocation.Graveyard, 0x20);
+                    }
                 }
                 else
                 {
-                    if (DuelFXManager.Instance != null) {
-                        DuelFXManager.Instance.PlayDestruction(atkCard);
-                        DuelFXManager.Instance.PlayDestruction(defCard);
+                    bool atkDies = !attacker.IsIndestructableByBattle();
+                    bool defDies = !defender.IsIndestructableByBattle();
+
+                    if (atkDies && DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(atkCard);
+                    if (defDies && DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
+
+                    if (atkDies) {
+                        attacker.currentReason = 0x20; 
+                        if (attacker.unityCard != null) attacker.unityCard.AddStatus(0x4000);
+                        GameManager.Instance.MoveCard(atkCard, CardLocation.Graveyard, 0x20);
                     }
-                    attacker.currentReason = 0x20; defender.currentReason = 0x20;
-                    if (attacker.unityCard != null) attacker.unityCard.AddStatus(0x4000); // STATUS_BATTLE_DESTROYED
-                    if (defender.unityCard != null) defender.unityCard.AddStatus(0x4000); // STATUS_BATTLE_DESTROYED
-                    GameManager.Instance.MoveCard(atkCard, CardLocation.Graveyard, 0x20);
-                    GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, 0x20);
+                    if (defDies) {
+                        defender.currentReason = 0x20;
+                        if (defender.unityCard != null) defender.unityCard.AddStatus(0x4000);
+                        GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, 0x20);
+                    }
                 }
             }
             else // Defesa
@@ -275,10 +288,14 @@ public partial class LuaDuel
                         if (defIsPlayer) GameManager.Instance.DamagePlayer(atkPower - defPower);
                         else GameManager.Instance.DamageOpponent(atkPower - defPower);
                     }
-                    if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
-                    defender.currentReason = 0x20;
-                    if (defender.unityCard != null) defender.unityCard.AddStatus(0x4000); // STATUS_BATTLE_DESTROYED
-                    GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, 0x20);
+                    
+                    if (!defender.IsIndestructableByBattle())
+                    {
+                        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(defCard);
+                        defender.currentReason = 0x20;
+                        if (defender.unityCard != null) defender.unityCard.AddStatus(0x4000); // STATUS_BATTLE_DESTROYED
+                        GameManager.Instance.MoveCard(defCard, CardLocation.Graveyard, 0x20);
+                    }
                 }
                 else if (atkPower < defPower)
                 {
