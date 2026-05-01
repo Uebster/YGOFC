@@ -186,6 +186,16 @@ public class LuaEffect
     public int GetProperty() { return property; }
     public int GetCode() { return code; }
     
+    public bool IsActivatable(object player)
+    {
+        int tp = ConvertToInt(player);
+        if (CardEffectManager.Instance != null && owner != null)
+        {
+            return CardEffectManager.Instance.CanActivateEffect(owner, this, tp, null);
+        }
+        return false;
+    }
+
     public void SetLabelObject(object o) { 
         _labelObject = o; 
         Debug.Log($"<color=magenta>[LuaEffect LOG]</color> SetLabelObject chamado! Ponte criada com o objeto LUA.");

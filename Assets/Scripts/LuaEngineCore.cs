@@ -130,6 +130,27 @@ public class LuaEngineCore
                 end
             end
         "));
+
+        auxTable.Table.Set("CheckStealEquip", luaEngine.DoString(@"
+            return function(c, e, tp) return c:IsControlerCanBeChanged() and c:IsFaceup() end
+        "));
+
+        auxTable.Table.Set("ChkfMMZ", luaEngine.DoString(@"
+            return function(count) return function(sg, e, tp, mg) return Duel.GetLocationCount(tp, 4) >= count end end
+        "));
+
+        // UX Adapter: O utility.lua nativo força um loop de selecionar uma carta por vez (YGOPro UX).
+        // Nós sobrescrevemos isso aqui para injetar a UI moderna da Unity de "Múltipla Escolha" de uma vez só.
+        auxTable.Table.Set("SelectUnselectGroup", luaEngine.DoString(@"
+            return function(g, e, tp, minc, maxc, rescon, chk, sel_tp, hintmsg, cancelcon, breakcon, cancelable)
+                if chk == 0 then return g and g:GetCount() >= minc end
+                if sel_tp == nil then sel_tp = tp end
+                if hintmsg == nil then hintmsg = 0 end
+                Duel.Hint(3, sel_tp, hintmsg)
+                local filter = function(c) return g:IsExists(function(tc) return tc == c end, 1, nil) end
+                return Duel.SelectMatchingCard(sel_tp, filter, sel_tp, 0x7E, 0x7E, minc, maxc, nil)
+            end
+        "));
         
         auxTable.Table.Set("AddEquipProcedure", luaEngine.DoString(@"
             return function(c, player, filter, eqlimit, prop, tg, op, con)

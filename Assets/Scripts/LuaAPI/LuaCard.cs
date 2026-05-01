@@ -436,6 +436,19 @@ public class LuaCard
     public bool IsCanBeSynchroMaterial(object card = null) 
     { 
         if (registeredEffects.Exists(e => e.code == 236)) return false; // EFFECT_CANNOT_BE_SYNCHRO_MATERIAL
+        // [FUTURO] Implementar lógica avançada de Synchro Summon (Tuner, Níveis)
+        return true; 
+    }
+    public bool IsCanBeXyzMaterial(object card = null) 
+    { 
+        if (registeredEffects.Exists(e => e.code == 238)) return false; // EFFECT_CANNOT_BE_XYZ_MATERIAL
+        // [FUTURO] Implementar lógica avançada de Xyz Summon (Ranks, Overlays)
+        return true; 
+    }
+    public bool IsCanBeLinkMaterial(object card = null) 
+    { 
+        if (registeredEffects.Exists(e => e.code == 239)) return false; // EFFECT_CANNOT_BE_LINK_MATERIAL
+        // [FUTURO] Implementar lógica avançada de Link Summon (Link Markers, Ratings)
         return true; 
     }
 
@@ -448,6 +461,18 @@ public class LuaCard
         if (eff != null) return ConvertToInt(eff.GetValue());
         return GetLevel(); 
     }
+    public int GetSynchroLevel(object rc = null) { 
+        var eff = registeredEffects.Find(e => e.code == 240); // EFFECT_SYNCHRO_LEVEL
+        if (eff != null) return ConvertToInt(eff.GetValue());
+        // [FUTURO] Retornar Múltiplos Níveis se o monstro tiver a propriedade (ex: Nível 3 e 4)
+        return GetLevel(); 
+    }
+    public int GetXyzLevel(object rc = null) { 
+        var eff = registeredEffects.Find(e => e.code == 242); // EFFECT_XYZ_LEVEL
+        if (eff != null) return ConvertToInt(eff.GetValue());
+        // [FUTURO] Retornar Múltiplos Níveis
+        return GetLevel(); 
+    }
     
     public LuaCard GetHandler() { return this; }
     public int GetCardTargetCount() { return 0; }
@@ -456,9 +481,9 @@ public class LuaCard
     public int GetLocation() { return unityCard != null && unityCard.isOnField ? (unityData.type.Contains("Spell") || unityData.type.Contains("Trap") ? 0x08 : 0x04) : 0x02; }
     public int GetDestination() { return 0; }
     public int GetLeaveFieldDest() { return 0; }
-    public LuaGroup GetColumnGroup() { return new LuaGroup(); }
-    public LuaGroup GetOverlayGroup() { return new LuaGroup(); }
-    public int GetOverlayCount() { return 0; }
+    public LuaGroup GetColumnGroup() { return new LuaGroup(); } // [FUTURO] Importante para Link Monsters
+    public LuaGroup GetOverlayGroup() { return new LuaGroup(); } // [FUTURO] Importante para Xyz Monsters (Materiais acoplados)
+    public int GetOverlayCount() { return 0; } // [FUTURO] Importante para Xyz Monsters
     public LuaGroup GetCardTarget() { return new LuaGroup(); }
     public bool HasNonZeroAttack() { return GetAttack() > 0; }
     public bool HasNonZeroDefense() { return GetDefense() > 0; }
@@ -904,6 +929,7 @@ public class LuaCard
     }
 
     public bool IsContinuousTrap() { return IsTrap() && unityData != null && unityData.property == "Continuous"; }
+    public bool IsNormalTrap() { return IsTrap() && unityData != null && (unityData.property == "Normal" || string.IsNullOrEmpty(unityData.property)); }
     public int GetEquipCount() { return (CardEffectManager.Instance != null && unityCard != null) ? CardEffectManager.Instance.GetEquippedCards(unityCard).Count : 0; }
     public bool IsOriginalType(object t) { return IsType(t); }
     public bool IsOriginalAttribute(object attr) { return IsAttribute(attr); }
@@ -920,6 +946,15 @@ public class LuaCard
     public bool IsHasSetcode(params object[] setCodes) { return IsSetCard(setCodes); }
     public bool IsHasSetCard(params object[] setCodes) { return IsSetCard(setCodes); }
     
+    public LuaEffect GetActivateEffect()
+    {
+        if (registeredEffects != null)
+        {
+            return registeredEffects.Find(e => e.isTypeActivate); // EFFECT_TYPE_ACTIVATE (0x0010)
+        }
+        return null;
+    }
+
     public LuaEffect CheckActivateResult(object b) 
     { 
         return new LuaEffect { 

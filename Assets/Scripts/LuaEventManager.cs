@@ -622,11 +622,6 @@ public class LuaEventManager
             core.StartCoroutine(DestroyEquipDelayed(link.source));
         }
         
-        if (core.blockedZonesByCard.ContainsKey(card)) {
-            if (GameManager.Instance.duelFieldUI != null) foreach (var z in core.blockedZonesByCard[card]) GameManager.Instance.duelFieldUI.UnblockZone(z);
-            core.blockedZonesByCard.Remove(card);
-        }
-        
         foreach (var link in allLinks) {
             if (link.source == card || link.target == card) {
                 if (link != null && link.gameObject != null) GameObject.Destroy(link.gameObject);

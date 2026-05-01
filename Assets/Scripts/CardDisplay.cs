@@ -730,9 +730,16 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 }
             }
         }
+        else if (!isOnField && isPlayerCard)
+        {
+            if (CurrentCardData.type.Contains("Monster"))
+            {
+                LuaCard lc = CardEffectManager.Instance != null ? CardEffectManager.Instance.EnsureCardScriptLoaded(this) : null;
+                if (lc != null && lc.IsHasEffect(34).Type != MoonSharp.Interpreter.DataType.Nil) return true; // EFFECT_SPSUMMON_PROC
+            }
+        }
         return false;
     }
-
 
     public void OnPointerEnter(PointerEventData eventData)
     {
@@ -881,7 +888,11 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             }
             else if (!isOnField) // NA MÃO
             {
-                if (currentCardData.type.Contains("Monster")) { left = "Summon"; right = "Set"; }
+                if (currentCardData.type.Contains("Monster")) {
+                    LuaCard lc = CardEffectManager.Instance != null ? CardEffectManager.Instance.EnsureCardScriptLoaded(this) : null;
+                    if (lc != null && lc.IsHasEffect(34).Type != MoonSharp.Interpreter.DataType.Nil) { left = "Sp. Summon"; right = "Set"; } // EFFECT_SPSUMMON_PROC
+                    else { left = "Summon"; right = "Set"; }
+                }
                 else if (currentCardData.type.Contains("Trap")) {
                     LuaCard lc = CardEffectManager.Instance != null ? CardEffectManager.Instance.EnsureCardScriptLoaded(this) : null;
                     if (lc != null && lc.IsHasEffect(15).Type != MoonSharp.Interpreter.DataType.Nil) { left = "Activate"; right = "Set"; } // EFFECT_TRAP_ACT_IN_HAND

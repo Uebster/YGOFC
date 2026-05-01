@@ -22,7 +22,10 @@ using System;
     public static void AddContactProc(params object[] args) { }
     public static void RegisterSummonEff(params object[] args) { }
 }
-[MoonSharpUserData] public class Synchro { }
+[MoonSharpUserData] public class Synchro { 
+    // [FUTURO] Implementar lógicas de Synchro Summon (AddProcedure, etc)
+    public static void AddProcedure(params object[] args) { }
+}
 [MoonSharpUserData] public class Spirit { 
     // Emula a função Spirit.AddProcedure(c, ...) que os monstros Spirit usam.
     // A lógica real de retornar para a mão é tratada no C# (PhaseManager),
@@ -47,7 +50,10 @@ using System;
     public static void AddProcEqualCode(params object[] args) { }
     public static void RegisterSummonEff(params object[] args) { }
 }
-[MoonSharpUserData] public class Xyz { }
+[MoonSharpUserData] public class Xyz { 
+    // [FUTURO] Implementar lógicas de Xyz Summon (AddProcedure, etc)
+    public static void AddProcedure(params object[] args) { }
+}
 
 // ==============================================================================
 // 6. STUBS FOR PYTHON ANALYZER

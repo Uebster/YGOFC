@@ -337,9 +337,17 @@ public partial class GameManager
             yield break;
         }
 
-        // Verifica Infinite Cards (0942)
         int currentLimit = handLimit;
-        if (IsCardActiveOnField("Infinite Cards") || IsCardActiveOnField("0942")) currentLimit = 99;
+        
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null)
+        {
+            int pIdx = isPlayerTurn ? 0 : 1;
+            var limitAuras = CardEffectManager.Instance.auraManager.GetAuraValuesByPlayer(pIdx, "HAND_LIMIT");
+            if (limitAuras.Count > 0)
+            {
+                currentLimit = limitAuras.Last(); 
+            }
+        }
 
         List<GameObject> hand = isPlayerTurn ? playerHand : opponentHand;
         

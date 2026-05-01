@@ -537,8 +537,42 @@ public partial class LuaDuel
 
     public DynValue SelectDisableField(object player, object count, object locSelf, object locOpp, object filter)
     {
+        int pInt = ConvertToInt(player);
+        int cInt = ConvertToInt(count);
+        int lSelf = ConvertToInt(locSelf);
+        int lOpp = ConvertToInt(locOpp);
+        
+        int selectedMask = 0;
+        int selectedCount = 0;
+
+        if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null)
+        {
+            bool isPlayer = pInt == 0;
+            
+            System.Action<Transform[], int, bool> CheckZones = (zones, typeShift, isMyZ) => {
+                for (int i = 0; i < zones.Length; i++)
+                {
+                    if (selectedCount >= cInt) return;
+                    if (zones[i].childCount == 0 && !GameManager.Instance.duelFieldUI.IsZoneBlocked(zones[i]))
+                    {
+                        int bitIndex = i;
+                        if (typeShift == 0x08) bitIndex += 8; 
+                        if (!isMyZ) bitIndex += 16; 
+                        
+                        selectedMask |= (1 << bitIndex);
+                        selectedCount++;
+                    }
+                }
+            };
+
+            if ((lSelf & 0x04) != 0) CheckZones(isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones, 0x04, true);
+            if ((lOpp & 0x04) != 0) CheckZones(!isPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones, 0x04, false);
+            if ((lSelf & 0x08) != 0) CheckZones(isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones, 0x08, true);
+            if ((lOpp & 0x08) != 0) CheckZones(!isPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones, 0x08, false);
+        }
+
         CardEffectManager.Instance.isWaitingForLuaYield = true;
-        CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(0);
+        CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(selectedMask);
         CardEffectManager.Instance.isWaitingForLuaYield = false;
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SelectDisableField") });
     }

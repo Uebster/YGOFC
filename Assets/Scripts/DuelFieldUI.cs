@@ -257,6 +257,27 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
         }
     }
 
+    public void ClearAllBlocks()
+    {
+        foreach (var block in activeBlocks.Values)
+        {
+            if (block != null) Destroy(block);
+        }
+        activeBlocks.Clear();
+    }
+
+    public void ApplyDisableFieldMask(int mask, int auraController)
+    {
+        bool isPlayer = auraController == 0;
+        for (int i = 0; i < 5; i++)
+        {
+            if ((mask & (1 << i)) != 0) BlockZone(isPlayer ? playerMonsterZones[i] : opponentMonsterZones[i]);
+            if ((mask & (1 << (i + 8))) != 0) BlockZone(isPlayer ? playerSpellZones[i] : opponentSpellZones[i]);
+            if ((mask & (1 << (i + 16))) != 0) BlockZone(!isPlayer ? playerMonsterZones[i] : opponentMonsterZones[i]);
+            if ((mask & (1 << (i + 24))) != 0) BlockZone(!isPlayer ? playerSpellZones[i] : opponentSpellZones[i]);
+        }
+    }
+
     public bool IsZoneBlocked(Transform zone)
     {
         return activeBlocks.ContainsKey(zone);

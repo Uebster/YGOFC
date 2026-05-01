@@ -139,8 +139,8 @@ public partial class GameManager
         foreach (var link in links) Destroy(link.gameObject);
 
         // Desbloqueia as zonas presas por efeitos (ex: Ojama)
-        if (CardEffectManager.Instance != null)
-            CardEffectManager.Instance.blockedZonesByCard.Clear();
+        if (duelFieldUI != null)
+            duelFieldUI.ClearAllBlocks();
 
         // Limpa listas de dados
         playerGraveyard.Clear();

@@ -22,6 +22,8 @@ public class GlobalAuraManager : MonoBehaviour
 
     private List<Aura> activeAuras = new List<Aura>();
 
+    public List<Aura> GetActiveAuras() { return activeAuras; }
+
     void Awake()
     {
         Instance = this;
@@ -149,6 +151,23 @@ public class GlobalAuraManager : MonoBehaviour
         return values;
     }
 
+    public List<int> GetAuraValuesByPlayer(int playerIndex, string modType)
+    {
+        List<int> values = new List<int>();
+        foreach (var aura in activeAuras)
+        {
+            if (aura.modifierType == modType)
+            {
+                int sourceP = aura.sourceCard != null ? aura.sourceCard.GetControler() : 0;
+                int targetRange = (sourceP == playerIndex) ? aura.sourceEffect.targetRangeSelf : aura.sourceEffect.targetRangeOpponent;
+                if (targetRange != 0 || aura.sourceEffect.isPlayerTarget || aura.affectedLocations == CardLocation.Unknown) 
+                {
+                    values.Add(aura.value);
+                }
+            }
+        }
+        return values;
+    }
     /// <summary>
     /// Verifica se uma carta está sob uma restrição específica (ex: "CANNOT_ATTACK").
     /// </summary>

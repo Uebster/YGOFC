@@ -1041,4 +1041,75 @@ public partial class LuaDuel
         CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(count);
         CardEffectManager.Instance.isWaitingForLuaYield = false;
     }
+
+    // --- REGRAS DE VITÓRIA E BATALHA FORÇADA (Para cartas como Last Turn) ---
+    public void Win(object player, object reason)
+    {
+        int p = ConvertToInt(player);
+        int r = ConvertToInt(reason);
+        
+        string reasonStr = "Desconhecido";
+        switch (r)
+        {
+            case 0x10: reasonStr = "Exodia the Forbidden One"; break;
+            case 0x11: reasonStr = "Final Countdown"; break;
+            case 0x12: reasonStr = "Vennominaga, the Deity of Poisonous Snakes"; break;
+            case 0x13: reasonStr = "Holactie the Creator of Light"; break;
+            case 0x14: reasonStr = "Exodius the Ultimate Forbidden Lord"; break;
+            case 0x15: reasonStr = "Destiny Board"; break;
+            case 0x16: reasonStr = "Last Turn"; break;
+            case 0x17: reasonStr = "Number 88: Gimmick Puppet of Leo"; break;
+            case 0x18: reasonStr = "Number C88: Gimmick Puppet Disaster Leo"; break;
+            case 0x19: reasonStr = "Jackpot 7"; break;
+            case 0x1a: reasonStr = "Relay Soul"; break;
+            case 0x1b: reasonStr = "Ghostrick Angel of Mischief"; break;
+            case 0x1c: reasonStr = "Phantasm Spiral Assault"; break;
+            case 0x1d: reasonStr = "F.A. Winners"; break;
+            case 0x1e: reasonStr = "Flying Elephant"; break;
+            case 0x1f: reasonStr = "Exodia, the Legendary Defender"; break;
+            case 0x21: reasonStr = "True Exodia"; break;
+            case 0x22: reasonStr = "Final Draw"; break;
+            case 0x30: reasonStr = "Creator Miracle"; break;
+            case 0x52: reasonStr = "Number iC1000: Numerounius Numerounia"; break;
+            case 0x53: reasonStr = "Zero Gate of the Void"; break;
+            case 0x54: reasonStr = "Deuce"; break;
+            case 0x56: reasonStr = "Deck Master (Perda do Deck Master)"; break;
+            case 0x57: reasonStr = "Draw of Fate"; break;
+            case 0x58: reasonStr = "Musical Sumo Dice Games"; break;
+            case 0x59: reasonStr = "Summer Schoolwork"; break;
+            default: reasonStr = $"Vitória Customizada LUA ({r})"; break;
+        }
+
+        string playerStr = p == 0 ? "Jogador (Você)" : (p == 1 ? "Oponente (IA)" : "Empate (Draw)");
+        Debug.Log($"<color=yellow>[Vitória Especial OCGCore]</color> Condição Atingida! Vencedor: {playerStr} | Motivo: {reasonStr}");
+
+        // [FUTURO] O GameManager.EndDuel hoje aceita apenas (bool playerWon). Futuramente, poderemos passar o "reasonStr" para acionar telas UI específicas de Vitória (Ex: Tela do Destiny Board).
+        if (p == 0) GameManager.Instance.EndDuel(true);
+        else if (p == 1) GameManager.Instance.EndDuel(false);
+        else GameManager.Instance.EndDuel(false); // OCGCore manda p=2 para Draw (Empate). O GameManager hoje assume False como derrota. No futuro, crie lógica de Empate!
+    }
+
+    public DynValue ForceAttack(object attacker, object target)
+    {
+        LuaCard atk = attacker as LuaCard;
+        LuaCard def = target as LuaCard;
+        if (atk != null && def != null && CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.isWaitingForLuaYield = true;
+            CardEffectManager.Instance.yieldReturnValue = null;
+            CardEffectManager.Instance.StartCoroutine(ForceAttackRoutine(atk, def));
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("ForceAttack") });
+        }
+        return DynValue.Nil;
+    }
+
+    private IEnumerator ForceAttackRoutine(LuaCard atk, LuaCard def)
+    {
+        CardEffectManager.Instance.luaDuel.currentAttacker = atk;
+        CardEffectManager.Instance.luaDuel.currentAttackTarget = def;
+        var func = CardEffectManager.Instance.luaEngine.Globals.Get("Core").Table.Get("Attack").Function;
+        yield return CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, atk, def));
+        CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
+    }
 }

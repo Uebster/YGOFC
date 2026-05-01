@@ -16,9 +16,6 @@ public class CardEffectManager : MonoBehaviour
     public List<LuaEffect> continuousFieldEffects = new List<LuaEffect>();
     public enum TargetType { Monster, Spell, Trap, Any }
 
-    // Dicionário de zonas físicas bloqueadas (ex: Ojama King)
-    public Dictionary<CardDisplay, List<Transform>> blockedZonesByCard = new Dictionary<CardDisplay, List<Transform>>();
-
     public LuaEngineCore engineCore;
     public LuaEventManager eventManager;
     public GlobalAuraManager auraManager;
@@ -119,6 +116,19 @@ public class CardEffectManager : MonoBehaviour
             ApplyAllContinuousEffects();
         }
 
+        // Tratamento Exclusivo para Boss Monsters com Procedimentos Especiais (Ex: Dark Necrofear)
+        LuaEffect spSummonProc = luaCard.registeredEffects.Find(e => e.code == 34); // EFFECT_SPSUMMON_PROC
+        if (spSummonProc != null && !card.isOnField)
+        {
+            int tp = luaCard.GetControler();
+            if (spSummonProc.conditionFunc != null) {
+                var res = luaEngine.Call(spSummonProc.conditionFunc, spSummonProc, luaCard);
+                if (res.Type == DataType.Boolean && !res.Boolean) return; // Requisitos não atingidos
+            }
+            StartCoroutine(ResolveSpSummonProcRoutine(luaCard, spSummonProc, tp));
+            return; // Termina aqui, a rotina faz o Special Summon!
+        }
+
         // Procura por um efeito ativável instantâneo (Magia, Armadilha ou Ignition)
             LuaEffect activationEffect = luaCard.registeredEffects.Find(e => e.isTypeActivate || e.isTypeIgnition || e.isTypeTriggerO);
 
@@ -151,6 +161,19 @@ public class CardEffectManager : MonoBehaviour
     {
         LuaCard luaCard = EnsureCardScriptLoaded(card);
         if (luaCard == null) return false;
+
+        // 0. Verifica SpSummonProc (One-Click)
+        LuaEffect spSummonProc = luaCard.registeredEffects.Find(e => e.code == 34); // EFFECT_SPSUMMON_PROC
+        if (spSummonProc != null && !card.isOnField)
+        {
+            int tp = luaCard.GetControler();
+            if (spSummonProc.conditionFunc != null) {
+                var res = luaEngine.Call(spSummonProc.conditionFunc, spSummonProc, luaCard);
+                if (res.Type == DataType.Boolean && !res.Boolean) return false;
+            }
+            StartCoroutine(ResolveSpSummonProcRoutine(luaCard, spSummonProc, tp));
+            return true;
+        }
 
         // Para cartas já ativas no campo (Face-up), procuramos APENAS por Ignition ou Trigger
         // Ignoramos o 0x0010 (ACTIVATE) para não reativar o efeito de "jogar a carta" de Magias Contínuas!
@@ -489,6 +512,45 @@ public class CardEffectManager : MonoBehaviour
             luaDuel.currentAttackTarget = null;
         }
         if (GameManager.Instance != null) GameManager.Instance.RefreshAttackIndicators();
+    }
+
+    public IEnumerator ResolveSpSummonProcRoutine(LuaCard lc, LuaEffect eff, int tp)
+    {
+        isWaitingForLuaYield = false;
+        
+        // Passo 1: Executa a Seleção de Alvos/Custo (O Target do SpSummonProc)
+        if (eff.targetFunc != null && eff.targetFunc != dummyClosureTrue)
+        {
+            activeLuaCoroutine = luaEngine.CreateCoroutine(eff.targetFunc);
+            DynValue res;
+            try { res = activeLuaCoroutine.Coroutine.Resume(eff, DynValue.NewNumber(tp), DynValue.Nil, DynValue.NewNumber(tp), DynValue.NewNumber(0), DynValue.Nil, DynValue.NewNumber(0), DynValue.NewNumber(tp), lc); }
+            catch (System.Exception e) { Debug.LogError($"[SpSummonProc] Target Crash: {e.Message}"); yield break; }
+
+            while (activeLuaCoroutine.Coroutine.State == CoroutineState.Suspended) {
+                while (isWaitingForLuaYield) yield return null;
+                if (activeLuaCoroutine.Coroutine.State != CoroutineState.Suspended) break;
+                try { res = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue ?? DynValue.Nil); } catch { yield break; }
+            }
+        }
+
+        // Passo 2: Paga o Custo Real (Ex: Banir as Cartas Selecionadas)
+        if (eff.operationFunc != null && eff.operationFunc != dummyClosureTrue)
+        {
+            activeLuaCoroutine = luaEngine.CreateCoroutine(eff.operationFunc);
+            DynValue res;
+            try { res = activeLuaCoroutine.Coroutine.Resume(eff, DynValue.NewNumber(tp), DynValue.Nil, DynValue.NewNumber(tp), DynValue.NewNumber(0), DynValue.Nil, DynValue.NewNumber(0), DynValue.NewNumber(tp), lc); }
+            catch (System.Exception e) { Debug.LogError($"[SpSummonProc] Op Crash: {e.Message}"); yield break; }
+
+            while (activeLuaCoroutine.Coroutine.State == CoroutineState.Suspended) {
+                while (isWaitingForLuaYield) yield return null;
+                if (activeLuaCoroutine.Coroutine.State != CoroutineState.Suspended) break;
+                try { res = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue ?? DynValue.Nil); } catch { yield break; }
+            }
+        }
+
+        // Passo 3: Executa a Invocação Visual no Tabuleiro
+        if (GameManager.Instance != null && lc.unityCard != null)
+            GameManager.Instance.PerformSpecialSummon(lc.unityCard.gameObject, lc.unityData);
     }
 
     public void TriggerLuaEvent(int eventCode, object triggerArgs) => eventManager.TriggerLuaEvent(eventCode, triggerArgs);
@@ -855,6 +917,11 @@ public class CardEffectManager : MonoBehaviour
                 else if (effect.code == 202) modType = "REFLECT_BATTLE_DAMAGE";
                 else if (effect.code == 193) modType = "ATTACK_ALL";
                 else if (effect.code == 194 || effect.code == 346) modType = "EXTRA_ATTACK";
+                else if (effect.code == 260) modType = "DISABLE_FIELD";
+                else if (effect.code == 270) modType = "HAND_LIMIT";
+                // [FUTURO] Adicionar auras para EFFECT_UPDATE_RANK (132), CHANGE_RANK (133)
+                // [FUTURO] Adicionar auras para PENDULUM (LSCALE 134, RSCALE 136)
+                // [FUTURO] Adicionar auras para LINK (UPDATE_LINK 420, ADD_LINKMARKER 423)
                 else if (effect.code == 334) modType = "ADD_SETCODE";
                 else if (effect.code == 349) modType = "REMOVE_SETCODE";
                 else if (effect.code == 350) modType = "CHANGE_SETCODE";
@@ -905,12 +972,23 @@ public class CardEffectManager : MonoBehaviour
 
                 if (!string.IsNullOrEmpty(modType))
                 {
-                    int val = 0;
-                    object valObj = effect.GetValue();
-                    if (valObj is double || valObj is long) val = System.Convert.ToInt32(valObj);
+                    int val = EvaluateEffectValue(effect, effect.owner, effect.owner);
                     
                     // Registra a aura passando a função de alvo (filter) original do script LUA
                     auraManager.RegisterAura(effect.owner, effect, effect.targetFunc, modType, val, CardLocation.Hand | CardLocation.Field);
+                }
+            }
+        }
+
+        if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null && auraManager != null)
+        {
+            GameManager.Instance.duelFieldUI.ClearAllBlocks();
+            foreach (var aura in auraManager.GetActiveAuras())
+            {
+                if (aura.modifierType == "DISABLE_FIELD")
+                {
+                    int pIdx = aura.sourceCard != null ? aura.sourceCard.GetControler() : 0;
+                    GameManager.Instance.duelFieldUI.ApplyDisableFieldMask(aura.value, pIdx);
                 }
             }
         }
@@ -981,23 +1059,20 @@ public class CardEffectManager : MonoBehaviour
         // Debug.Log($"[RecalculateStats] Status de {monster.CurrentCardData.name} atualizado para ATK {newAtk} / DEF {newDef}");
     }
 
-    private int GetEffectValue(LuaEffect effect, CardDisplay target)
+    public int EvaluateEffectValue(LuaEffect eff, LuaCard sourceCard, LuaCard targetCard)
     {
-        int value = 0;
-        object valObj = effect.GetValue();
-        if (valObj is double || valObj is long)
+        int val = 0;
+        object valObj = eff.GetValue();
+        if (valObj is double || valObj is long) val = System.Convert.ToInt32(valObj);
+        else if (valObj is MoonSharp.Interpreter.Closure valClosure)
         {
-            value = System.Convert.ToInt32(valObj);
+            try {
+                var res = luaEngine.Call(valClosure, eff, targetCard);
+                if (res.Type == MoonSharp.Interpreter.DataType.Number) val = (int)res.Number;
+                else if (res.Type == MoonSharp.Interpreter.DataType.Boolean && res.Boolean) val = 1;
+            } catch { }
         }
-        else if (valObj is Closure valClosure)
-        {
-            DynValue result = luaEngine.Call(valClosure, effect, new LuaCard(target));
-            if (result.Type == DataType.Number)
-            {
-                value = (int)result.Number;
-            }
-        }
-        return value;
+        return val;
     }
 
     // --- HOOKS DE BATALHA ---

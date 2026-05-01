@@ -550,9 +550,6 @@ public class FullTestManager : MonoBehaviour
         CardLink[] links = FindObjectsByType<CardLink>(FindObjectsSortMode.None);
         foreach (var link in links) Destroy(link.gameObject);
 
-        if (CardEffectManager.Instance != null)
-            CardEffectManager.Instance.blockedZonesByCard.Clear();
-
         if (GameManager.Instance != null)
         {
             GameManager.Instance.GetPlayerGraveyard().Clear();
