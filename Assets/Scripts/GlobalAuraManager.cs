@@ -42,7 +42,17 @@ public class GlobalAuraManager : MonoBehaviour
             sourceCard = sourceCard,
             sourceEffect = sourceEffect,
             filter = (card) => {
-                // Se o LUA não definiu um filtro (alvo específico), afeta todas as cartas!
+                // 1. Validação Espacial Absoluta OCGCore (Self vs Opponent)
+                if (!sourceEffect.ignoreRange)
+                {
+                    int sourceP = sourceCard.GetControler();
+                    int targetP = card.GetControler();
+                    int allowedLocs = sourceP == targetP ? sourceEffect.targetRangeSelf : sourceEffect.targetRangeOpponent;
+                    if (sourceEffect.bothSide) allowedLocs = sourceEffect.targetRangeSelf | sourceEffect.targetRangeOpponent;
+                    if ((allowedLocs & card.GetLocation()) == 0) return false;
+                }
+
+                // 2. Filtro customizado LUA                
                 if (filterFunc == null) return true; 
                 try {
                     // YGOPro Target functions geralmente esperam (e, c)
@@ -167,6 +177,26 @@ public class GlobalAuraManager : MonoBehaviour
             }
         }
         return values;
+    }
+
+    public List<LuaEffect> GetEffectsTargetingCard(LuaCard card, int effectCode, CardLocation location)
+    {
+        List<LuaEffect> list = new List<LuaEffect>();
+        foreach (var aura in activeAuras)
+        {
+            if (aura.sourceEffect != null && aura.sourceEffect.code == effectCode)
+            {
+                if ((aura.affectedLocations & location) != 0)
+                {
+                    if (location == CardLocation.Field && card.IsFacedown() && !aura.sourceEffect.isSetAvailable) continue;
+                    if (aura.filter(card) && !IsImmuneTo(card, aura.sourceEffect))
+                    {
+                        list.Add(aura.sourceEffect);
+                    }
+                }
+            }
+        }
+        return list;
     }
     /// <summary>
     /// Verifica se uma carta está sob uma restrição específica (ex: "CANNOT_ATTACK").

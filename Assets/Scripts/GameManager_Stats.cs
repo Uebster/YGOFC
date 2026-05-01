@@ -19,6 +19,8 @@ public partial class GameManager
     // Status de Batalha
     // ==============================================================================
 
+    private bool isAdjusting = false;
+
     public bool PayLifePoints(bool isPlayer, int amount)
     {
         int currentLP = isPlayer ? playerLP : opponentLP;
@@ -320,6 +322,14 @@ public partial class GameManager
                     }
                 }
             }
+        }
+        
+        // --- DISPARA EVENT_ADJUST PARA A ENGINE LUA ---
+        if (!isAdjusting && CardEffectManager.Instance != null && CardEffectManager.Instance.eventManager != null)
+        {
+            isAdjusting = true;
+            CardEffectManager.Instance.TriggerLuaEvent(1040, null); // EVENT_ADJUST
+            isAdjusting = false;
         }
     }
 

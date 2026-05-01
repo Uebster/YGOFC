@@ -31,6 +31,7 @@ public partial class LuaDuel
     public Dictionary<string, int> oathUsages = new Dictionary<string, int>(); // Controle de Usos (Once per Duel)
 
     public int globalFlags = 0;
+    public Dictionary<CardData, LuaCard> persistentCards = new Dictionary<CardData, LuaCard>(); // Memória para cartas no Deck/GY
     public List<LuaEffect> globalEffects = new List<LuaEffect>();
     public Dictionary<string, int> playerFlags = new Dictionary<string, int>();
     public Dictionary<string, Dictionary<int, int>> cardFlags = new Dictionary<string, Dictionary<int, int>>();

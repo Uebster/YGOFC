@@ -429,9 +429,15 @@ public partial class LuaDuel
             {
                 returns.Add(DynValue.NewTable(CardEffectManager.Instance.luaEngine));
             }
-            else if (arg == 11 || arg == 12) // DISABLE_REASON, DISABLE_PLAYER
+            else if (arg == 11) // CHAININFO_DISABLE_REASON
             {
-                returns.Add(DynValue.NewNumber(0));
+                LuaEffect de = targetLink != null ? targetLink.disableReason : null;
+                returns.Add(de != null ? UserData.Create(de) : DynValue.Nil);
+            }
+            else if (arg == 12) // CHAININFO_DISABLE_PLAYER
+            {
+                int dp = targetLink != null ? targetLink.disablePlayer : 0;
+                returns.Add(DynValue.NewNumber(dp));
             }
             else
             {

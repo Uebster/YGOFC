@@ -192,7 +192,6 @@ public class PythonAnalyzerStubs
     public void NOT() {}
     public void Equal() {}
     public void MoveToDeckTop() {}
-    public void MoveToField() {}
     public void SummonEffTG() {}
     public void SummonEffOP() {}
     public void SkipPhase() {}
@@ -207,7 +206,6 @@ public class PythonAnalyzerStubs
     public void CheckUnionEquip() {}
     public void SetUnionState() {}
     public void GetActivateLocation() {}
-    public void ReverseInDeck() {}
     public void IsChainSolving() {}
     public void ForceAttack() {}
     public void RegisterClientHint() {}

@@ -26,6 +26,8 @@ public class ChainManager
         public LuaGroup targetGroup;
         public int targetPlayer;
         public int targetParam;
+        public LuaEffect disableReason;
+        public int disablePlayer;
         public Dictionary<int, OperationInfo> opInfo = new Dictionary<int, OperationInfo>();
     }
 
@@ -317,7 +319,7 @@ public class ChainManager
         }
     }
 
-    public bool NegateChainLink(int chainIndex, bool isActivation = true)
+    public bool NegateChainLink(int chainIndex, bool isActivation = true, LuaEffect reasonEffect = null, int reasonPlayer = 0)
     {
         if (chainIndex == 0 && resolvingLink != null)
         {
@@ -330,6 +332,8 @@ public class ChainManager
             if (isActivation) resolvingLink.isActivationNegated = true;
             else resolvingLink.isNegated = true;
 
+            resolvingLink.disableReason = reasonEffect;
+            resolvingLink.disablePlayer = reasonPlayer;
             if (resolvingLink.card != null && resolvingLink.card.unityCard != null) resolvingLink.card.unityCard.AddStatus(0x40000); // STATUS_ACTIVATE_DISABLED
             return true;
         }
@@ -345,6 +349,8 @@ public class ChainManager
             if (isActivation) link.isActivationNegated = true;
             else link.isNegated = true;
             
+            link.disableReason = reasonEffect;
+            link.disablePlayer = reasonPlayer;
             if (link.card != null && link.card.unityCard != null) link.card.unityCard.AddStatus(0x40000); // STATUS_ACTIVATE_DISABLED
             return true; 
         }

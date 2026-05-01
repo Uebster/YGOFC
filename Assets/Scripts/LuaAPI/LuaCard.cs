@@ -18,9 +18,20 @@ public class LuaCard
     public CardDisplay unityCard;
     public CardData unityData;
     public List<LuaEffect> registeredEffects = new List<LuaEffect>();
+    public Dictionary<int, int> flagEffectLabels = new Dictionary<int, int>();
 
-    public LuaCard(CardDisplay card) { unityCard = card; unityData = card?.CurrentCardData; }
-    public LuaCard(CardData data) { unityData = data; unityCard = null; }
+    public LuaCard(CardDisplay card) { 
+        unityCard = card; 
+        unityData = card?.CurrentCardData; 
+        if (unityData != null && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
+            CardEffectManager.Instance.luaDuel.persistentCards[unityData] = this;
+    }
+    public LuaCard(CardData data) { 
+        unityData = data; 
+        unityCard = null; 
+        if (unityData != null && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
+            CardEffectManager.Instance.luaDuel.persistentCards[unityData] = this;
+    }
 
     private int ConvertToInt(object obj)
     {
@@ -512,7 +523,6 @@ public class LuaCard
     public bool IsPublic() { return true; }
     public int GetOwnerTargetCount() { return 0; }    public bool IsFusionSummoned() { return false; }
     public bool IsDefenseBelow(object def) { return GetDefense() <= ConvertToInt(def); }
-    public int GetFlagEffectLabel(object id) { return 0; }
     public bool IsAttributeExcept(object attr) { return !IsAttribute(attr); }
     public int GetBattlePosition() { 
         if (unityCard == null) return 0;
@@ -710,6 +720,14 @@ public class LuaCard
     { 
         int code = ConvertToInt(effectCode);
         var effects = registeredEffects.FindAll(e => e.code == code);
+        
+        // Integração OCGCore: Busca por Auras Globais concedidas por Mágicas de Campo/Contínuas
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null)
+        {
+            var globalAuras = CardEffectManager.Instance.auraManager.GetEffectsTargetingCard(this, code, (CardLocation)GetLocation());
+            effects.AddRange(globalAuras);
+        }
+
         if (effects.Count > 0)
         {
             return DynValue.NewTuple(effects.Select(e => UserData.Create(e)).ToArray());
@@ -720,6 +738,8 @@ public class LuaCard
     public void ResetFlagEffect(object id) 
     { 
         int flagId = ConvertToInt(id);
+        if (flagEffectLabels.ContainsKey(flagId)) flagEffectLabels.Remove(flagId);
+        
         if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
         {
             string key = GetCardUniqueKey();
@@ -727,9 +747,27 @@ public class LuaCard
         }
     }
 
-    public void SetFlagEffectLabel(object id, object label) { Debug.LogWarning($"[LUA STUB] SetFlagEffectLabel chamado em {unityData?.name}"); }
+    public void SetFlagEffectLabel(object id, object label) 
+    { 
+        flagEffectLabels[ConvertToInt(id)] = ConvertToInt(label); 
+    }
+
+    public DynValue GetFlagEffectLabel(object id) 
+    { 
+        int key = ConvertToInt(id);
+        if (flagEffectLabels.ContainsKey(key)) return DynValue.NewNumber(flagEffectLabels[key]);
+        return DynValue.Nil;
+    }
+
     public void CreateEffectRelation(object e) { Debug.LogWarning($"[LUA STUB] CreateEffectRelation chamado em {unityData?.name}"); }
     public void ReleaseEffectRelation(object e) { Debug.LogWarning($"[LUA STUB] ReleaseEffectRelation chamado em {unityData?.name}"); }
+    public void ClearEffectRelation() { Debug.LogWarning($"[LUA STUB] ClearEffectRelation chamado em {unityData?.name}"); }
+    
+    public void ReverseInDeck() 
+    { 
+        Debug.Log($"<color=green>[Parasite Paracide]</color> {unityData?.name} ativou ReverseInDeck (Ficará virado para cima no baralho)!");
+        // [FUTURO] Adicionar flag na UI do Deck para mostrar esta carta caso o jogador visualize o Deck.
+    }
     
     public void SetHint(params object[] args) 
     { 

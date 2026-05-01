@@ -21,6 +21,12 @@ public partial class GameManager
 
     public CardDisplay SpecialSummonFromData(CardData cardData, bool isPlayer, int zoneIndex = -1, bool inAttackPosition = true, bool faceDown = false, Vector3? sourcePos = null, CardLocation sourceLoc = CardLocation.Graveyard, bool? ownerIsPlayer = null, int summonType = 0x40000000)
     {
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(isPlayer ? 0 : 1, 22)) 
+        { // EFFECT_CANNOT_SPECIAL_SUMMON
+            Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardData?.name}: EFFECT_CANNOT_SPECIAL_SUMMON ativo.");
+            return null;
+        }
+
         if (cardData == null)
         {
             return null;
@@ -170,6 +176,12 @@ public partial class GameManager
 
         if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(isPlayer ? 0 : 1, 20)) {
             Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: EFFECT_CANNOT_SUMMON ativo.");
+            return false;
+        }
+        
+        if (isSet && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(isPlayer ? 0 : 1, 23)) { // EFFECT_CANNOT_MSET
+            Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: EFFECT_CANNOT_MSET ativo.");
+            if (isPlayer && !isSimulating && UIManager.Instance != null) UIManager.Instance.ShowMessage("Você não pode Baixar (Set) monstros neste turno!");
             return false;
         }
 

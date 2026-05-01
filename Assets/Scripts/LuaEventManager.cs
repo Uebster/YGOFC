@@ -317,11 +317,24 @@ public class LuaEventManager
     public void OnCardDrawn(CardData card, bool isPlayer) 
     { 
         int ep = isPlayer ? 0 : 1;
-        LuaCard lc = LuaScriptLoader.LoadScriptForData(card, core.luaEngine);
+        LuaCard lc = null;
+        
+        // RESGATE DE IDENTIDADE: Busca a instância persistente que pode conter efeitos "presos" (Ex: Parasite Paracide)
+        if (core.luaDuel != null && core.luaDuel.persistentCards.ContainsKey(card))
+            lc = core.luaDuel.persistentCards[card];
+        else
+            lc = LuaScriptLoader.LoadScriptForData(card, core.luaEngine);
+            
         if (lc == null) lc = new LuaCard(card);
         
         LuaGroup eg = new LuaGroup(); eg.AddCard(lc);
         EventData ed = new EventData(eg, ep, 1, null, 0, ep);
+        
+        var singleEffects = lc.registeredEffects.FindAll(e => e.code == 1110 && e.isTypeSingle); // EVENT_DRAW
+        if (singleEffects.Count > 0) {
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, singleEffects, ed));
+        }
+        
         TriggerLuaEvent(1110, ed); // 1110 = EVENT_DRAW
         core.StartCoroutine(core.OpenFastEffectWindow($"Carta Comprada", 1110, ed));
     }

@@ -164,6 +164,8 @@ public class LuaEffect
     public bool continuousTarget => (property & 0x8000000) != 0;
     public bool limitZone => (property & 0x10000000) != 0;
     public bool immediatelyApply => ((uint)property & 0x80000000) != 0;
+    
+    public bool IsActivated() { return (type & 0x07F0) != 0; }
 
     // --- ACESSO RÁPIDO PARA A ENGINE C# (EFFECT_FLAG2_) ---
     public bool continuousEquip => (propertyExt & 0x1) != 0;

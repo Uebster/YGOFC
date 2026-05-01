@@ -862,12 +862,21 @@ public class CardEffectManager : MonoBehaviour
         {
             auraManager.ClearAllAuras(); // Limpa as auras velhas
 
-            // PASSO 1: Registra as Auras de Bloqueio (Floodgates) como Jinzo e Skill Drain primeiro!
+            // Junta as auras Físicas e as auras Flutuantes (Fantasmas/Limbo)
+            List<LuaEffect> activeContinuous = new List<LuaEffect>();
             foreach (var effect in continuousFieldEffects)
             {
-                // Só aplica o Aura se a carta geradora estiver ativa no campo e virada para cima!
                 if (effect.owner == null || effect.owner.unityCard == null || !effect.owner.unityCard.isOnField || effect.owner.unityCard.isFlipped) continue;
+                activeContinuous.Add(effect);
+            }
+            if (engineCore.luaDuel != null && engineCore.luaDuel.globalEffects != null)
+            {
+                activeContinuous.AddRange(engineCore.luaDuel.globalEffects);
+            }
 
+            // PASSO 1: Registra as Auras de Bloqueio (Floodgates) como Jinzo e Skill Drain primeiro!
+            foreach (var effect in activeContinuous)
+            {
                 string modType = "";
                 if (effect.code == 1) modType = "IMMUNE";
                 else if (effect.code == 2) modType = "DISABLE";
@@ -925,6 +934,8 @@ public class CardEffectManager : MonoBehaviour
                 else if (effect.code == 334) modType = "ADD_SETCODE";
                 else if (effect.code == 349) modType = "REMOVE_SETCODE";
                 else if (effect.code == 350) modType = "CHANGE_SETCODE";
+                else if (effect.code == 291) modType = "NECRO_VALLEY";
+                else if (effect.code == 293) modType = "NECRO_VALLEY_IM";
                 else if (effect.code == 400) modType = "CANNOT_LOSE_DECK";
                 else if (effect.code == 401) modType = "CANNOT_LOSE_LP";                
 
@@ -942,12 +953,10 @@ public class CardEffectManager : MonoBehaviour
             }
 
             // PASSO 2: Registra os modificadores de Status (ATK, DEF, LEVEL) respeitando as restrições do Passo 1!
-            foreach (var effect in continuousFieldEffects)
+            foreach (var effect in activeContinuous)
             {
-                if (effect.owner == null || effect.owner.unityCard == null || !effect.owner.unityCard.isOnField || effect.owner.unityCard.isFlipped) continue;
-
                 // OCGCore: Ignora a aplicação se a própria carta geradora estiver sob um efeito "DISABLE" (Ex: Jinzo silenciando uma Armadilha Contínua)
-                if (auraManager.IsUnderRestriction(effect.owner, effect, "DISABLE", CardLocation.Field)) continue;
+                if (effect.owner != null && effect.owner.IsOnField() && auraManager.IsUnderRestriction(effect.owner, effect, "DISABLE", CardLocation.Field)) continue;
 
                 string modType = "";
                 if (effect.code == 100 || effect.code == 101 || effect.code == 102) modType = "ATK";       

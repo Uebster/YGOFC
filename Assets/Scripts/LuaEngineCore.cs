@@ -611,6 +611,10 @@ public class LuaEngineCore
         luaEngine.Globals["CARD_HARPIE_LADY_SISTERS"] = 12206212;
         luaEngine.Globals["CARD_NECROVALLEY"] = 47355498;
         luaEngine.Globals["CARD_BLUEEYES_SPIRIT"] = 89399912;
+        luaEngine.Globals["CARD_DARK_SANCTUARY"] = 82432018;
+        luaEngine.Globals["SET_SPIRIT_MESSAGE"] = 0x4c;
+        
+        luaEngine.DoString("CARDS_SPIRIT_MESSAGE = { 31894809, 94212877, 30170981, 67287533, 94772232 }");
 
         // Constantes de Status Oficiais do OCGCore
         luaEngine.Globals["EFFECT_IMMUNE_EFFECT"] = 1;

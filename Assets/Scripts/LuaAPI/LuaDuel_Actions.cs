@@ -628,13 +628,36 @@ public partial class LuaDuel
 
     // Stubs vitais capturados pelo relatório (Counter Traps e UX)
     public bool NegateActivation(object chainc) 
-    { 
-        if (CardEffectManager.Instance != null) return CardEffectManager.Instance.NegateChainLink(ConvertToInt(chainc), true);
+    {
+        int cIdx = ConvertToInt(chainc);
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null)
+        {
+            var resolvingEff = CardEffectManager.Instance.chainManager.resolvingLink?.effect;
+            int rp = CardEffectManager.Instance.chainManager.resolvingLink?.player ?? 0;
+            bool success = CardEffectManager.Instance.chainManager.NegateChainLink(cIdx, true, resolvingEff, rp);
+            if (success)
+            {
+                var targetLink = CardEffectManager.Instance.chainManager.currentChain.Find(l => l.chainIndex == cIdx);
+                if (targetLink != null) {
+                    EventData ed = new EventData(targetLink.card, targetLink.player, cIdx, resolvingEff, 0, rp);
+                    CardEffectManager.Instance.TriggerLuaEvent(1024, ed); // EVENT_CHAIN_NEGATED
+                }
+            }
+            return success;
+        }
         return true; 
     }
     public bool NegateEffect(object chainc) 
     { 
-        if (CardEffectManager.Instance != null) return CardEffectManager.Instance.NegateChainLink(ConvertToInt(chainc), false);
+        int cIdx = ConvertToInt(chainc);
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null)
+        {
+            var resolvingEff = CardEffectManager.Instance.chainManager.resolvingLink?.effect;
+            int rp = CardEffectManager.Instance.chainManager.resolvingLink?.player ?? 0;
+            bool success = CardEffectManager.Instance.chainManager.NegateChainLink(cIdx, false, resolvingEff, rp);
+            // EVENT_CHAIN_DISABLED raramente é ouvido diretamente, mas caso precise no futuro, seria 1025.
+            return success;
+        }
         return true; 
     }
     public void ChangeChainOperation(object chainc, object op) { }
@@ -757,8 +780,10 @@ public partial class LuaDuel
                 }
                 else if (c.unityData != null)
                 {
-                    bool wasPlayerPile; RemoveDataFromAllPiles(c.unityData, out wasPlayerPile);
-                    GameManager.Instance.SpecialSummonFromData(c.unityData, isPlayerSummoning, -1, true, inDefense, null, CardLocation.Graveyard, wasPlayerPile, sumTypeInt);
+                    bool wasPlayerPile; 
+                    CardLocation sLoc = RemoveDataFromAllPiles(c.unityData, out wasPlayerPile);
+                    Vector3 sPos = GetPilePosition(sLoc, wasPlayerPile);
+                    GameManager.Instance.SpecialSummonFromData(c.unityData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, wasPlayerPile, sumTypeInt);
                 }
             }
             // Debug.Log($"[Lua] Duel.SpecialSummon(Grupo)");
@@ -783,8 +808,10 @@ public partial class LuaDuel
             }
             else if (card.unityData != null)
             {
-                bool wasPlayerPile; RemoveDataFromAllPiles(card.unityData, out wasPlayerPile);
-                GameManager.Instance.SpecialSummonFromData(card.unityData, isPlayerSummoning, -1, true, inDefense, null, CardLocation.Graveyard, wasPlayerPile, sumTypeInt);
+                bool wasPlayerPile; 
+                CardLocation sLoc = RemoveDataFromAllPiles(card.unityData, out wasPlayerPile);
+                Vector3 sPos = GetPilePosition(sLoc, wasPlayerPile);
+                GameManager.Instance.SpecialSummonFromData(card.unityData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, wasPlayerPile, sumTypeInt);
                 // Debug.Log($"[Lua] Duel.SpecialSummon({card.unityData.name} - Token)");
                 return true;
             }
@@ -1111,5 +1138,92 @@ public partial class LuaDuel
         yield return CardEffectManager.Instance.StartCoroutine(CardEffectManager.Instance.RunGenericLuaCoroutine(func, atk, def));
         CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
         CardEffectManager.Instance.isWaitingForLuaYield = false;
+    }
+
+    // --- MINIGAMES DE TABULEIRO (Magical Hats) ---
+    public DynValue ShuffleSetCard(object target)
+    {
+        if (target is LuaGroup group && group.cards.Count > 1)
+        {
+            CardEffectManager.Instance.isWaitingForLuaYield = true;
+            CardEffectManager.Instance.yieldReturnValue = null;
+            CardEffectManager.Instance.StartCoroutine(ShuffleSetCardRoutine(group));
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("ShuffleSetCard") });
+        }
+        return DynValue.Nil;
+    }
+
+    private IEnumerator ShuffleSetCardRoutine(LuaGroup group)
+    {
+        List<CardDisplay> cardsToShuffle = new List<CardDisplay>();
+        List<Transform> currentZones = new List<Transform>();
+
+        foreach (var lc in group.cards)
+        {
+            // Garante que só embaralha cartas que estão fisicamente Face-Down no tabuleiro
+            if (lc.unityCard != null && lc.unityCard.isOnField && lc.unityCard.isFlipped)
+            {
+                cardsToShuffle.Add(lc.unityCard);
+                currentZones.Add(lc.unityCard.transform.parent);
+            }
+        }
+
+        if (cardsToShuffle.Count > 1)
+        {
+            // Algoritmo de Embaralhamento de Zonas (Fisher-Yates)
+            for (int i = 0; i < currentZones.Count; i++) {
+                Transform temp = currentZones[i]; int randomIndex = UnityEngine.Random.Range(i, currentZones.Count);
+                currentZones[i] = currentZones[randomIndex]; currentZones[randomIndex] = temp;
+            }
+            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.shuffleSound);
+            // Realiza a troca física de Pais (Zonas)
+            for (int i = 0; i < cardsToShuffle.Count; i++) { cardsToShuffle[i].transform.SetParent(currentZones[i], false); cardsToShuffle[i].transform.localPosition = Vector3.zero; }
+            if (GameManager.Instance != null && !GameManager.Instance.isSimulating) yield return new WaitForSeconds(0.8f); // Pausa para o suspense
+        }
+
+        CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
+    }
+
+    public bool MoveToField(object card, object move_player, object target_player, object dest, object pos, object enable)
+    {
+        LuaCard lc = card as LuaCard;
+        if (lc == null) return false;
+
+        int tPlayer = ConvertToInt(target_player);
+        int destLoc = ConvertToInt(dest);
+        int posInt = ConvertToInt(pos);
+        bool faceUp = (posInt & 0x1) != 0 || (posInt & 0x4) != 0 || (posInt & 0x5) != 0;
+
+        if (lc.unityCard != null)
+        {
+            if (destLoc == 0x08 || destLoc == 0x400) // LOCATION_SZONE
+                GameManager.Instance.PlaySpellTrap(lc.unityCard.gameObject, lc.unityData, !faceUp);
+            else if (destLoc == 0x04) // LOCATION_MZONE
+                GameManager.Instance.TrySummonMonster(lc.unityCard.gameObject, lc.unityData, !faceUp);
+            return true;
+        }
+        else if (lc.unityData != null)
+        {
+            bool wasPlayerPile;
+            CardLocation sLoc = RemoveDataFromAllPiles(lc.unityData, out wasPlayerPile);
+            
+            if (destLoc == 0x08 || destLoc == 0x400) // LOCATION_SZONE
+            {
+                Transform zone = GameManager.Instance.GetFreeSpellZone(tPlayer == 0);
+                if (zone != null)
+                {
+                    int zoneIdx = -1;
+                    var zones = tPlayer == 0 ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
+                    for (int i = 0; i < zones.Length; i++) if (zones[i] == zone) zoneIdx = i;
+                    
+                    if (zoneIdx != -1) GameManager.Instance.SetSpellTrapFromData(lc.unityData, tPlayer == 0, zoneIdx, faceUp);
+                }
+            }
+            else if (destLoc == 0x04) // LOCATION_MZONE
+                GameManager.Instance.SpecialSummonFromData(lc.unityData, tPlayer == 0, -1, faceUp, !faceUp, null, sLoc, wasPlayerPile);
+            return true;
+        }
+        return false;
     }
 }
