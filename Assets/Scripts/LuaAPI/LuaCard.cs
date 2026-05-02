@@ -328,7 +328,6 @@ public class LuaCard
     public int GetAttackAnnouncedCount() { return 0; }
     public int GetReasonPlayer() { return reasonPlayer != -1 ? reasonPlayer : GetControler(); }
     public LuaEffect GetReasonEffect() { return reasonEffect; }
-    public int GetCounter(object counterType) { return 0; }
     public bool IsFacedown() { return unityCard != null ? unityCard.isFlipped : false; }
     public bool IsTributeSummoned() { return false; }
     public int GetPreviousPosition() { return GetBattlePosition(); }

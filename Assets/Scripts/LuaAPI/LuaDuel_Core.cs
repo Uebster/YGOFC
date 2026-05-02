@@ -57,6 +57,38 @@ public partial class LuaDuel
         return 0;
     }
 
+    // --- CARREGADOR DE BIBLIOTECAS OCGCORE (LoadScript) ---
+    public bool LoadScript(object filename)
+    {
+        string name = filename.ToString();
+        
+        // Procura a biblioteca na pasta SupportLua dentro de StreamingAssets ou DataPath
+        string path1 = System.IO.Path.Combine(Application.dataPath, "SupportLua", name);
+        string path2 = System.IO.Path.Combine(Application.streamingAssetsPath, "SupportLua", name);
+        
+        string finalPath = System.IO.File.Exists(path1) ? path1 : (System.IO.File.Exists(path2) ? path2 : null);
+
+        if (finalPath != null)
+        {
+            try
+            {
+                string scriptContent = System.IO.File.ReadAllText(finalPath);
+                if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaEngine != null)
+                {
+                    CardEffectManager.Instance.luaEngine.DoString(scriptContent);
+                    Debug.Log($"<color=green>[LuaDuel]</color> Biblioteca Oficial Carregada: {name}");
+                    return true;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"<color=red>[LuaDuel]</color> Erro ao compilar biblioteca {name}: {ex.Message}");
+            }
+        }
+        Debug.LogWarning($"<color=yellow>[LuaDuel]</color> Biblioteca solicitada não encontrada: {name}");
+        return false;
+    }
+
     // Utilitário de Conversão: 0 = Human Player, 1 = AI Opponent
     public bool IsPlayer(object playerIndex)
     {

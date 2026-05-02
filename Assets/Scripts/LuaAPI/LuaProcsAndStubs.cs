@@ -5,61 +5,10 @@ using System.Collections.Generic;
 using System;
 
 // ==============================================================================
-// 5. CLASSES DE PROCEDIMENTO (FUSÃO, SYNCHRO, ETC)
-// Onde a Mágica Acontece: Fornece classes vazias exigidas pela sintaxe do EDOPro.
-// Tratativas Críticas & Dependências: 
-// - OCGCore: Cartas invocam 'Fusion.AddProcMix' ou 'Spirit.AddProcedure', que não devem quebrar a Unity.
-// ==============================================================================
-[MoonSharpUserData] public class Fusion { 
-    public static void AddProcMix(params object[] args) { Debug.LogWarning("[LUA STUB] Fusion.AddProcMix chamado"); } 
-    public static void AddProcMixN(params object[] args) { Debug.LogWarning("[LUA STUB] Fusion.AddProcMixN chamado"); } 
-    public static void AddProcMixRep(params object[] args) { Debug.LogWarning("[LUA STUB] Fusion.AddProcMixRep chamado"); } 
-    public static void AddProcCode2(params object[] args) { Debug.LogWarning("[LUA STUB] Fusion.AddProcCode2 chamado"); } 
-    public static void AddProcCode3(params object[] args) { Debug.LogWarning("[LUA STUB] Fusion.AddProcCode3 chamado"); } 
-    public static void AddProcCode4(params object[] args) { Debug.LogWarning("[LUA STUB] Fusion.AddProcCode4 chamado"); } 
-    public static void AddProcCodeRep(params object[] args) { Debug.LogWarning("[LUA STUB] Fusion.AddProcCodeRep chamado"); } 
-    public static void AddProcFunRep(params object[] args) { Debug.LogWarning("[LUA STUB] Fusion.AddProcFunRep chamado"); } 
-    public static void AddContactProc(params object[] args) { Debug.LogWarning("[LUA STUB] Fusion.AddContactProc chamado"); }
-    public static void RegisterSummonEff(params object[] args) { Debug.LogWarning("[LUA STUB] Fusion.RegisterSummonEff chamado"); }
-}
-[MoonSharpUserData] public class Synchro { 
-    // [FUTURO] Implementar lógicas de Synchro Summon (AddProcedure, etc)
-    public static void AddProcedure(params object[] args) { Debug.LogWarning("[LUA STUB] Synchro.AddProcedure chamado"); }
-}
-[MoonSharpUserData] public class Spirit { 
-    // Emula a função Spirit.AddProcedure(c, ...) que os monstros Spirit usam.
-    // A lógica real de retornar para a mão é tratada no C# (PhaseManager),
-    // mas o script precisa que esta função exista para registrar o efeito.
-    public static void AddProcedure(LuaCard c, params object[] args)
-    {
-        if (c == null) return;
-
-        // Registra um efeito customizado para que a engine C# saiba que esta é uma carta Spirit.
-        LuaEffect e = LuaEffect.CreateEffect(c);
-        e.SetType(0x0001); // EFFECT_TYPE_SINGLE
-        e.SetCode(511002963); // Código customizado para "É um monstro Spirit"
-        e.SetProperty(32); // EFFECT_FLAG_CANNOT_DISABLE
-        e.SetReset(0x1000 | 0x200); // RESET_EVENT + PHASE_END
-        c.RegisterEffect(e, false);
-    }
-}
-[MoonSharpUserData] public class Ritual { 
-    public static void AddProcGreater(params object[] args) { Debug.LogWarning("[LUA STUB] Ritual.AddProcGreater chamado"); }
-    public static void AddProcEqual(params object[] args) { Debug.LogWarning("[LUA STUB] Ritual.AddProcEqual chamado"); }
-    public static void AddProcGreaterCode(params object[] args) { Debug.LogWarning("[LUA STUB] Ritual.AddProcGreaterCode chamado"); }
-    public static void AddProcEqualCode(params object[] args) { Debug.LogWarning("[LUA STUB] Ritual.AddProcEqualCode chamado"); }
-    public static void RegisterSummonEff(params object[] args) { Debug.LogWarning("[LUA STUB] Ritual.RegisterSummonEff chamado"); }
-}
-[MoonSharpUserData] public class Xyz { 
-    // [FUTURO] Implementar lógicas de Xyz Summon (AddProcedure, etc)
-    public static void AddProcedure(params object[] args) { Debug.LogWarning("[LUA STUB] Xyz.AddProcedure chamado"); }
-}
-
-// ==============================================================================
-// 6. STUBS FOR PYTHON ANALYZER
-// Essa classe serve unicamente para enganar a Regex do seu script Python,
-// declarando todos os MissingMethods do seu CSV como se existissem nativamente,
-// garantindo um Report perfeito e poupando alertas desnecessários.
+// STUBS FOR PYTHON ANALYZER
+// Essa classe serve unicamente para enganar a Regex do seu script Python.
+// Todas as lógicas de Ritual, Fusão, etc., agora são carregadas nativamente 
+// através dos arquivos .lua originais na pasta SupportLua!
 // ==============================================================================
 public class PythonAnalyzerStubs
 {
