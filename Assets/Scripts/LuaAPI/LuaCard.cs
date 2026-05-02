@@ -19,6 +19,8 @@ public class LuaCard
     public CardData unityData;
     public List<LuaEffect> registeredEffects = new List<LuaEffect>();
     public Dictionary<int, int> flagEffectLabels = new Dictionary<int, int>();
+    public Dictionary<int, int> counters = new Dictionary<int, int>();
+    public bool isProcComplete = false;
 
     public LuaCard(CardDisplay card) { 
         unityCard = card; 
@@ -348,8 +350,26 @@ public class LuaCard
     public bool CanSummonOrSet(object ignoreLimit, object param) { return true; }
     public LuaCard GetOwner() { return this; }
     public int GetPreviousControler() { return GetControler(); }
-    public void AddCounter(object counterType, object count) { Debug.LogWarning($"[LUA STUB] AddCounter chamado em {unityData?.name}"); }
-    public void RemoveCounter(object player, object counterType, object count, object reason) { Debug.LogWarning($"[LUA STUB] RemoveCounter chamado em {unityData?.name}"); }
+    public void AddCounter(object counterType, object count) 
+    { 
+        int type = ConvertToInt(counterType);
+        int amt = ConvertToInt(count);
+        if (counters.ContainsKey(type)) counters[type] += amt;
+        else counters[type] = amt;
+        Debug.Log($"<color=cyan>[Contadores]</color> Adicionado {amt} contador(es) do tipo {type} em {unityData?.name}. Total: {counters[type]}");
+        if (GameManager.Instance != null) GameManager.Instance.RefreshAllCardsVisuals();
+    }
+    public void RemoveCounter(object player, object counterType, object count, object reason) 
+    { 
+        int type = ConvertToInt(counterType);
+        int amt = ConvertToInt(count);
+        if (counters.ContainsKey(type)) {
+            counters[type] -= amt;
+            if (counters[type] < 0) counters[type] = 0;
+            Debug.Log($"<color=cyan>[Contadores]</color> Removido {amt} contador(es) do tipo {type} em {unityData?.name}. Restam: {counters[type]}");
+            if (GameManager.Instance != null) GameManager.Instance.RefreshAllCardsVisuals();
+        }
+    }
     public bool IsCanAddCounter(object counterType, object count) { return true; }
     public int GetFieldID() { return 0; }
     public LuaGroup GetTarget() { return new LuaGroup(); }
@@ -364,6 +384,11 @@ public class LuaCard
         
         if (en) unityCard.AddStatus(s);
         else unityCard.RemoveStatus(s);
+    }
+    public int GetCounter(object counterType) 
+    { 
+        int type = ConvertToInt(counterType);
+        return counters.ContainsKey(type) ? counters[type] : 0;
     }
     
     public int GetRace() 
@@ -406,7 +431,11 @@ public class LuaCard
     public bool IsAbleToChangeControler() { return true; }
     public bool IsSummonableCard() { return true; }
     public LuaGroup GetMaterial() { return new LuaGroup(); }
-    public int GetEffectCount(object code) { return 0; }
+    public int GetEffectCount(object code) 
+    { 
+        int targetCode = ConvertToInt(code);
+        return registeredEffects.Count(e => e.code == targetCode); 
+    }
     
     public int GetBaseAttack() 
     { 
@@ -514,7 +543,12 @@ public class LuaCard
     public int GetTurnCounter() { return unityCard != null ? unityCard.turnCounter : 0; }
     public bool IsHasCardTarget(object c) { return false; }
     public LuaCard GetReasonCard() { return SafeDummyCard(); }
-    public void CompleteProcedure() { Debug.LogWarning($"[LUA STUB] CompleteProcedure chamado em {unityData?.name}"); } 
+    public void CompleteProcedure() 
+    { 
+        isProcComplete = true;
+        if (unityCard != null) unityCard.AddStatus(0x8); // STATUS_PROC_COMPLETE
+        Debug.Log($"<color=green>[Proc Complete]</color> {unityData?.name} concluiu seu procedimento de invocação oficial!");
+    }
     public void CancelToGrave(params object[] args) { Debug.LogWarning($"[LUA STUB] CancelToGrave chamado em {unityData?.name}"); }
     public bool IsLevelAbove(object lvl) { return GetLevel() >= ConvertToInt(lvl); }
     public int GetBattledGroupCount() { return 0; }
@@ -567,7 +601,29 @@ public class LuaCard
         }
         return true; 
     }
-    public bool IsCanBeSpecialSummoned(object e, object sumtype, object sumplayer, object nocheck, object nolimit, params object[] extraArgs) { return true; }
+    public bool IsCanBeSpecialSummoned(object e, object sumtype, object sumplayer, object nocheck, object nolimit, params object[] extraArgs) 
+    { 
+        bool ignoreLimit = ConvertToInt(nolimit) != 0;
+        
+        if (!ignoreLimit)
+        {
+            bool hasReviveLimit = registeredEffects.Exists(eff => eff.code == 31); // EFFECT_REVIVE_LIMIT
+            if (hasReviveLimit)
+            {
+                int loc = GetLocation();
+                if ((loc & 0x30) != 0) // LOCATION_GRAVE | LOCATION_REMOVED
+                {
+                    if (!isProcComplete) return false; // Bloqueado, precisa ter o Certificado de Nascimento!
+                }
+                else if ((loc & 0x43) != 0) // LOCATION_DECK | LOCATION_HAND | LOCATION_EXTRA
+                {
+                    // Monstros no Deck/Mão/Extra com Revive Limit NUNCA podem ser invocados genericamente
+                    return false;
+                }
+            }
+        }
+        return true; 
+    }
     public bool IsReleasable() 
     { 
         if (registeredEffects.Exists(e => e.code == 46 || e.code == 43 || e.code == 44 || e.code == 48)) return false; // EFFECT_CANNOT_RELEASE
@@ -677,6 +733,7 @@ public class LuaCard
     public bool IsStatus(object status) 
     { 
         int s = ConvertToInt(status);
+        if (s == 0x8 && isProcComplete) return true;
         if (unityCard != null) return unityCard.HasStatus(s);
         return false; 
     }

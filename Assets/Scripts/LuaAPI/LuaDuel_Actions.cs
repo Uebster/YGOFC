@@ -421,6 +421,8 @@ public partial class LuaDuel
             foreach (var c in group.cards)
             {
                 c.currentReason = ocgReason;
+                c.isProcComplete = false; // Perde o certificado ao voltar pro deck
+                c.counters.Clear(); // Perde todos os contadores
                 if (c.unityData != null) cardsToAnimate.Add(c.unityData);
 
                 bool targetDeckIsPlayer = true;
@@ -476,6 +478,8 @@ public partial class LuaDuel
         else if (target is LuaCard card)
         {
             card.currentReason = ocgReason;
+            card.isProcComplete = false;
+            card.counters.Clear();
             if (card.unityData != null) cardsToAnimate.Add(card.unityData);
             bool targetDeckIsPlayer = true;
             bool sFaceUp = true;
@@ -699,6 +703,8 @@ public partial class LuaDuel
         foreach (var c in cardsToProcess)
         {
             c.currentReason = ocgReason;
+            c.isProcComplete = false; // Perde o certificado ao voltar pra mão
+            c.counters.Clear(); // Perde todos os contadores
             if (c.unityCard != null)
             {
                 GameManager.Instance.ReturnToHand(c.unityCard);
