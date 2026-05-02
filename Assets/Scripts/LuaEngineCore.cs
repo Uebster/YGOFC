@@ -612,6 +612,8 @@ public class LuaEngineCore
         luaEngine.Globals["CARD_NECROVALLEY"] = 47355498;
         luaEngine.Globals["CARD_BLUEEYES_SPIRIT"] = 89399912;
         luaEngine.Globals["CARD_DARK_SANCTUARY"] = 82432018;
+        luaEngine.Globals["CARD_SUMMONED_SKULL"] = 70781052;
+        luaEngine.Globals["CARD_DARK_MAGICIAN"] = 46986414;
         luaEngine.Globals["SET_SPIRIT_MESSAGE"] = 0x4c;
         
         luaEngine.DoString("CARDS_SPIRIT_MESSAGE = { 31894809, 94212877, 30170981, 67287533, 94772232 }");
@@ -926,6 +928,7 @@ public class LuaEngineCore
 
         luaEngine.Globals["COUNTER_WITHOUT_PERMIT"] = 0x1000;
         luaEngine.Globals["COUNTER_NEED_ENABLE"] = 0x2000;
+        luaEngine.Globals["COUNTER_SPELL"] = 0x1;
 
         luaEngine.Globals["PLAYER_NONE"] = 2;
         luaEngine.Globals["PLAYER_ALL"] = 3;

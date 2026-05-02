@@ -701,7 +701,12 @@ public class LuaCard
     public int GetLabel() { return 0; }
     public void SetLabel(object ct) { Debug.LogWarning($"[LUA STUB] SetLabel chamado em {unityData?.name}"); }
     
-    public void EnableReviveLimit() { Debug.LogWarning($"[LUA STUB] EnableReviveLimit chamado em {unityData?.name}"); }
+    public void EnableReviveLimit() 
+    { 
+        // Adiciona a restrição oficial (EFFECT_REVIVE_LIMIT = 31)
+        LuaEffect e = new LuaEffect { owner = this, type = 0x0001, code = 31, property = 0x40000 }; // 0x40000 = EFFECT_FLAG_UNCOPYABLE
+        registeredEffects.Add(e);
+    }
     public void SetUniqueOnField(params object[] args) { Debug.LogWarning($"[LUA STUB] SetUniqueOnField chamado em {unityData?.name}"); }
     public void EnableCounterPermit(params object[] args) { Debug.LogWarning($"[LUA STUB] EnableCounterPermit chamado em {unityData?.name}"); }
     public void SetCounterLimit(params object[] args) { Debug.LogWarning($"[LUA STUB] SetCounterLimit chamado em {unityData?.name}"); }

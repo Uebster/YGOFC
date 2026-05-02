@@ -14,7 +14,7 @@ public class QAAutoSpawner : MonoBehaviour
     
     // Rastreia a linha atual para facilitar o "Próximo"
     private static int currentLineIndex = -1;
-    private static bool filterReviewOnly = false; // Alterna a busca
+    private static int filterState = 0; // 0 = PENDENTES, 1 = REVISÃO, 2 = APROVADOS
 
     // --- INTERFACE DRAGGABLE (IMGUI) ---
     private bool showWindow = false;
@@ -90,13 +90,21 @@ public class QAAutoSpawner : MonoBehaviour
         GUILayout.Space(5);
         GUILayout.BeginHorizontal();
         GUILayout.Label("Filtro de Busca:", GUILayout.Width(100));
-        if (GUILayout.Button(filterReviewOnly ? "<color=orange>⚠️ APENAS REVISÃO [R]</color>" : "<color=white>✅ PENDENTES [ ]</color>", btnStyle)) { filterReviewOnly = !filterReviewOnly; currentLineIndex = -1; }
+        
+        string filterBtnText = "<color=white>✅ PENDENTES [ ]</color>";
+        if (filterState == 1) filterBtnText = "<color=orange>⚠️ APENAS REVISÃO [R]</color>";
+        else if (filterState == 2) filterBtnText = "<color=green>🏆 APROVADOS [x]</color>";
+
+        if (GUILayout.Button(filterBtnText, btnStyle)) { filterState = (filterState + 1) % 3; currentLineIndex = -1; }
         GUILayout.EndHorizontal();
 
         GUILayout.Space(5);
         if (string.IsNullOrEmpty(currentTestCardId))
         {
-            GUILayout.Label(filterReviewOnly ? "Procurando cartas com tag [R]..." : "Procurando cartas com tag [ ]...", titleStyle);
+            string searchMsg = "Procurando cartas com tag [ ]...";
+            if (filterState == 1) searchMsg = "Procurando cartas com tag [R]...";
+            else if (filterState == 2) searchMsg = "Procurando cartas com tag [x]...";
+            GUILayout.Label(searchMsg, titleStyle);
             GUILayout.Space(10);
             if (GUILayout.Button("INICIAR BATERIA DE TESTES", btnStyle))
                 TestNextCard();
@@ -236,7 +244,11 @@ public class QAAutoSpawner : MonoBehaviour
 
         for (int i = startIndex; i < lines.Length; i++)
         {
-            bool isMatch = filterReviewOnly ? lines[i].Contains("- [R]") : lines[i].Contains("- [ ]");
+            bool isMatch = false;
+            if (filterState == 0) isMatch = lines[i].Contains("- [ ]");
+            else if (filterState == 1) isMatch = lines[i].Contains("- [R]");
+            else if (filterState == 2) isMatch = lines[i].Contains("- [x]");
+
             if (isMatch)
             {
                 int idStart = lines[i].IndexOf('`') + 1;
@@ -288,7 +300,11 @@ public class QAAutoSpawner : MonoBehaviour
 
         for (int i = startIndex; i >= 0; i--)
         {
-            bool isMatch = filterReviewOnly ? lines[i].Contains("- [R]") : lines[i].Contains("- [ ]");
+            bool isMatch = false;
+            if (filterState == 0) isMatch = lines[i].Contains("- [ ]");
+            else if (filterState == 1) isMatch = lines[i].Contains("- [R]");
+            else if (filterState == 2) isMatch = lines[i].Contains("- [x]");
+            
             if (isMatch && lines[i].Contains("`"))
             {
                 int idStart = lines[i].IndexOf('`') + 1;

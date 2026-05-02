@@ -45,7 +45,7 @@ public partial class LuaDuel
         return count;
     }
 
-    public void AddCustomActivityCounter(object counter_id, object activity_type, object filter) { }
+    public void AddCustomActivityCounter(object counter_id, object activity_type, object filter) { Debug.LogWarning("[LUA STUB] AddCustomActivityCounter chamado"); }
     public void EnableGlobalFlag(object flag) { globalFlags |= ConvertToInt(flag); }
 
     public Dictionary<int, ChainManager.OperationInfo> _opInfoCache = new Dictionary<int, ChainManager.OperationInfo>();

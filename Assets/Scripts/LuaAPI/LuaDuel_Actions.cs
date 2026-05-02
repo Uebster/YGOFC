@@ -592,7 +592,7 @@ public partial class LuaDuel
         }
     }
 
-    public void ReleaseRitualMaterial(object target) { } // O C# assume a destruição física através da UI de Ritual!
+    public void ReleaseRitualMaterial(object target) { Debug.LogWarning("[LUA STUB] ReleaseRitualMaterial chamado (O C# assume a destruição física através da UI de Ritual!)"); }
 
     public void RaiseEvent(object eg, object code, object re, object r, object rp, object ep, object ev)
     {
@@ -660,9 +660,9 @@ public partial class LuaDuel
         }
         return true; 
     }
-    public void ChangeChainOperation(object chainc, object op) { }
+    public void ChangeChainOperation(object chainc, object op) { Debug.LogWarning("[LUA STUB] ChangeChainOperation chamado"); }
 
-    public void SetPossibleOperationInfo(params object[] args) { }
+    public void SetPossibleOperationInfo(params object[] args) { Debug.LogWarning("[LUA STUB] SetPossibleOperationInfo chamado"); }
     public void SetTargetPlayer(object p) { targetPlayer = ConvertToInt(p); }
 
     public void RegisterEffect(LuaEffect e, object player = null)

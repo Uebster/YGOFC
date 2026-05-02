@@ -668,6 +668,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         if (PhaseManager.Instance == null || (PhaseManager.Instance.currentPhase != GamePhase.Main1 && PhaseManager.Instance.currentPhase != GamePhase.Main2)) return false;
         if (CardEffectManager.Instance != null && (CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isFastEffectWindowOpen)) return false;
 
+        if (CurrentCardData == null || string.IsNullOrEmpty(CurrentCardData.type)) return false;
+
         if (isOnField && isPlayerCard)
         {
             if (CurrentCardData.type.Contains("Monster") && CurrentCardData.type.Contains("Effect") && !isFlipped)
