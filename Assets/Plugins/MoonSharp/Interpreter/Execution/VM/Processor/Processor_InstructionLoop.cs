@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter.DataStructs;
@@ -1144,6 +1144,27 @@ namespace MoonSharp.Interpreter.Execution.VM
 					return ip;
 				else if (r.Type == DataType.Table)
 					m_ValueStack.Push(DynValue.NewNumber(r.Table.Length));
+				else if (r.Type == DataType.UserData)
+				{
+					// OCGCore Compatibility: Allow '#' operator to return GetCount() or Count for UserData
+					var userData = r.UserData.Object;
+					var getCountMethod = userData.GetType().GetMethod("GetCount");
+					if (getCountMethod != null)
+					{
+						object count = getCountMethod.Invoke(userData, null);
+						m_ValueStack.Push(DynValue.NewNumber(System.Convert.ToDouble(count)));
+					}
+					else
+					{
+						var countProp = userData.GetType().GetProperty("Count");
+						if (countProp != null)
+						{
+							object count = countProp.GetValue(userData, null);
+							m_ValueStack.Push(DynValue.NewNumber(System.Convert.ToDouble(count)));
+						}
+						else throw ScriptRuntimeException.LenOnInvalidType(r);
+					}
+				}
 
 				else throw ScriptRuntimeException.LenOnInvalidType(r);
 			}

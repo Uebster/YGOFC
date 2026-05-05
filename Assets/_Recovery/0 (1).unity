@@ -7505,52 +7505,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 82258833}
   m_CullTransparentMesh: 1
---- !u!1 &83105049
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 83105051}
-  - component: {fileID: 83105050}
-  m_Layer: 0
-  m_Name: AutoTestRunner
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &83105050
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 83105049}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 09d95fce1bb37e443a209c1f4ae4a813, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AutoTestRunner
-  runOnStart: 0
-  cardsPerFrame: 2500
---- !u!4 &83105051
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 83105049}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1173.0094, y: 630.43665, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &83894950
 GameObject:
   m_ObjectHideFlags: 0
@@ -13825,7 +13779,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 154084960}
-  - component: {fileID: 154084961}
   m_Layer: 0
   m_Name: OpponentAI
   m_TagString: Untagged
@@ -13848,25 +13801,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &154084961
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 154084959}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d34a1f6117d8c8249ad96b70dee5de9b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::OpponentAI
-  currentPersonality: 0
-  actionDelay: 1.2
-  actionScoreThreshold: 10
-  isThinking: 0
-  fearScore: 0
-  boardValue: 0
-  panicThreshold: 1000
 --- !u!1 &154155608
 GameObject:
   m_ObjectHideFlags: 0
@@ -60065,7 +59999,7 @@ MonoBehaviour:
   btnDice: {fileID: 907266722}
   btnClock: {fileID: 974409371}
   btnSpawnCard: {fileID: 1015931289}
-  btnSpawnCardOpponent: {fileID: 1673293433}
+  btnSpawnCardOpponent: {fileID: 0}
   btnExodiaWin: {fileID: 968343252}
   btnDestinyBoardWin: {fileID: 541427586}
   btnSimulateAttack: {fileID: 1623934795}
@@ -199004,7 +198938,6 @@ SceneRoots:
   - {fileID: 154084960}
   - {fileID: 1369670912}
   - {fileID: 1909080227}
-  - {fileID: 83105051}
   - {fileID: 789548235}
   - {fileID: 662697293295998134}
   - {fileID: 704591518}

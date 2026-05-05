@@ -126,8 +126,10 @@ HTML_UI = """
         <p id="info">Sistema Ocioso e Pronto.</p>
         
         <div id="log">
-            <div style="color: var(--purple);">[ OCGCORE DIAGNOSTIC WEB V7.0 (ULTIMATE) ]</div>
+            <div style="color: var(--purple);">[ OCGCORE DIAGNOSTIC WEB (TRUE GLOBAL LINTER - PATCHED) ]</div>
             <div>- Interface Web Ativada</div>
+            <div>- Motor de Análise Linha a Linha Pronto</div>
+            <div>- Verificador de Dependências (LoadScript) Ativado</div>
             <div>Aguardando seleção de pastas...</div>
         </div>
     </div>
@@ -210,7 +212,7 @@ def audit_executor(project_dir, lua_dir, support_dir):
 
     support_lua_dir = Path(support_dir) if support_dir else None
 
-    progresso["log"].append("=== INICIANDO AUDITORIA PROFUNDA V7 ===")
+    progresso["log"].append("=== INICIANDO AUDITORIA PROFUNDA ===")
     progresso["log"].append(f"-> Escaneando Engine C# em: {assets_dir}")
     progresso["log"].append(f"-> Escaneando Cartas LUA em: {lua_cards_dir}")
     if support_lua_dir and support_lua_dir.exists():
@@ -222,6 +224,12 @@ def audit_executor(project_dir, lua_dir, support_dir):
     
     defined_constants = set()
     used_constants = set()
+    linter_errors = []
+    
+    available_lua_files = set()
+    load_script_requests = {}
+    library_exported_globals = set()
+    missing_libs = {}
 
     scanned_cs_files = set()
     scanned_lib_files = set()
@@ -254,6 +262,12 @@ def audit_executor(project_dir, lua_dir, support_dir):
                 if len(progresso["log"]) > 60: progresso["log"].pop(0)
                 
                 content = cs_file.read_text(encoding='utf-8', errors='ignore')
+                
+                for match in re.finditer(r'(?:Duel|luaDuel)\.LoadScript\(\s*["\']([^"\']+\.lua)["\']\s*\)', content):
+                    req_file = match.group(1)
+                    if req_file not in load_script_requests: load_script_requests[req_file] = set()
+                    load_script_requests[req_file].add(cs_file.name)
+                
                 for match in method_pattern.finditer(content):
                     cs_methods[cat].add(match.group(1))
                     
@@ -285,7 +299,19 @@ def audit_executor(project_dir, lua_dir, support_dir):
             if cancel_task: return
             try:
                 scanned_lib_files.add(lua_file.name)
+                available_lua_files.add(lua_file.name)
                 content = lua_file.read_text(encoding='utf-8', errors='ignore')
+                
+                # Captura tabelas globais exportadas e namespaces (Ex: Fusion = {} ou function Ritual.AddProc)
+                for m in re.finditer(r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*\{', content, re.MULTILINE):
+                    library_exported_globals.add(m.group(1))
+                for m in re.finditer(r'function\s+([a-zA-Z_][a-zA-Z0-9_]*)\.', content):
+                    library_exported_globals.add(m.group(1))
+                
+                for match in re.finditer(r'Duel\.LoadScript\(\s*["\']([^"\']+\.lua)["\']\s*\)', content):
+                    req_file = match.group(1)
+                    if req_file not in load_script_requests: load_script_requests[req_file] = set()
+                    load_script_requests[req_file].add(lua_file.name)
                 
                 # Padrão amplo para capturar: function aux.nome() E aux.nome = function()
                 aux_funcs = set(re.findall(r'function\s+aux\.([a-zA-Z0-9_]+)', content))
@@ -309,6 +335,7 @@ def audit_executor(project_dir, lua_dir, support_dir):
             if lua_file.name.startswith("c") and len(lua_file.name) > 2 and lua_file.name[1].isdigit(): continue 
             try:
                 scanned_lib_files.add(lua_file.name)
+                available_lua_files.add(lua_file.name)
                 content = lua_file.read_text(encoding='utf-8', errors='ignore')
                 aux_funcs = set(re.findall(r'function\s+aux\.([a-zA-Z0-9_]+)', content))
                 aux_funcs.update(re.findall(r'aux\.([a-zA-Z0-9_]+)\s*=\s*(?:function|{)', content))
@@ -319,6 +346,11 @@ def audit_executor(project_dir, lua_dir, support_dir):
                 # NOVO: Escaneia constantes USADAS dentro das bibliotecas para não deixar passar NADA!
                 for m in re.finditer(r'\b([A-Z_][A-Z0-9_]{2,})\b', content):
                     used_constants.add(m.group(1))
+                    
+                for match in re.finditer(r'Duel\.LoadScript\(\s*["\']([^"\']+\.lua)["\']\s*\)', content):
+                    req_file = match.group(1)
+                    if req_file not in load_script_requests: load_script_requests[req_file] = set()
+                    load_script_requests[req_file].add(lua_file.name)
             except: pass
 
     progresso["log"].append(f"\n-> Analisando scripts de cartas em: {lua_cards_dir}...")
@@ -341,9 +373,53 @@ def audit_executor(project_dir, lua_dir, support_dir):
             
         try:
             content = lua_file.read_text(encoding='utf-8', errors='ignore')
+            available_lua_files.add(lua_file.name)
+            
+            for match in re.finditer(r'Duel\.LoadScript\(\s*["\']([^"\']+\.lua)["\']\s*\)', content):
+                req_file = match.group(1)
+                if req_file not in load_script_requests: load_script_requests[req_file] = set()
+                load_script_requests[req_file].add(lua_file.name)
             
             # Identifica constantes locais criadas na própria carta (Ex: ATTRIBUTE_EARTH_WATER_FIRE)
             local_consts = set(re.findall(r'^\s*(?:local\s+)?([A-Z_][A-Z0-9_]+)\s*=', content, re.MULTILINE))
+            
+            # TRUE GLOBAL LINTER: Analisador Linha-a-Linha de Escopo Completo
+            lines = content.split('\n')
+            lua_keywords = {'and', 'break', 'do', 'else', 'elseif', 'end', 'false', 'for', 'function', 'if', 'in', 'local', 'nil', 'not', 'or', 'repeat', 'return', 'then', 'true', 'until', 'while', 'goto'}
+            safe_globals = {'Duel', 'Card', 'Effect', 'Group', 'Auxiliary', 'aux', 'bit', 'bit32', 'math', 'string', 'table', 'coroutine', 'os', 'Debug', 'GetID', 'Cost', 'Core', 'Log', 'ipairs', 'pairs', 'type', 'tonumber', 'tostring', 'next', 'print', 'error', 'assert', 'select', 'pcall', 'xpcall', 'unpack', 'require', 'setmetatable', 'getmetatable', 'rawget', 'rawset'}
+            local_vars = set(['c', 'e', 'tp', 'eg', 'ep', 'ev', 're', 'r', 'rp', 'chk', 'chkc', 's', 'id', 'tc', 'g', 'sg', 'mg', 'mat', 'p', 'd', 'val', 'code', 'loc', 'seq', 'pos', 'reason', 'self'])
+            
+            # Extrai parâmetros de funções do script (Incluindo Anônimas)
+            for m in re.finditer(r'function\s*(?:[\w_.:]+\s*)?\((.*?)\)', content):
+                for p in m.group(1).split(','): local_vars.add(p.strip())
+                
+            # Extrai variáveis locais declaradas e loops for globalmente no arquivo
+            for m in re.finditer(r'\blocal\s+([\w, ]+)', content):
+                val = m.group(1).strip()
+                if not val.startswith('function'):
+                    for v in val.split(','): 
+                        if v.strip(): local_vars.add(v.strip())
+            
+            for m in re.finditer(r'\blocal\s+function\s+([a-zA-Z0-9_]+)', content):
+                local_vars.add(m.group(1).strip())
+                
+            for m in re.finditer(r'\bfor\s+([\w, ]+)\s+in\b', content):
+                for v in m.group(1).split(','): local_vars.add(v.strip())
+                
+            for line_num, raw_line in enumerate(lines, 1):
+                clean_line = raw_line.split('--')[0].strip()
+                if not clean_line: continue
+                
+                # Remove strings ("exemplo") para não validar texto livre
+                clean_line = re.sub(r'(["\'])(?:(?=(\\?))\2.)*?\1', '""', clean_line)
+                
+                # Pega qualquer palavra isolada que não seja precedida de '.' ou ':'
+                words = re.findall(r'(?<![:.])\b([a-zA-Z_][a-zA-Z0-9_]*)\b', clean_line)
+                for w in words:
+                    if (w not in lua_keywords and w not in safe_globals and w not in local_vars and 
+                        w not in defined_constants and w not in library_exported_globals and 
+                        w not in cs_methods.get("aux", set()) and w not in local_consts):
+                        linter_errors.append(f"[{lua_file.name} : Linha {line_num}] Global Desconhecida '{w}'. Risco de 'nil value'!")
             
             content = re.sub(r'--\[\[.*?\]\]', '', content, flags=re.DOTALL)
             content = re.sub(r'--.*', '', content)
@@ -396,8 +472,14 @@ def audit_executor(project_dir, lua_dir, support_dir):
     for const in used_constants:
         if const not in defined_constants and const not in ["TRUE", "FALSE", "MIN_ID", "AND", "NOT"]:
             missing_constants.append(const)
+            
+    for req_lib, requesters in load_script_requests.items():
+        if req_lib not in available_lua_files:
+            missing_libs[req_lib] = requesters
+            for r in requesters:
+                linter_errors.append(f"[ERRO CRÍTICO] Biblioteca '{req_lib}' ausente (Requisitada por: {r})")
 
-    report_path = Path(project_dir) / "Diagnostic_Report_V7.md"
+    report_path = Path(project_dir) / "Diagnostic_Report.md"
     report_file_path = str(report_path)
     
     if not cancel_task:
@@ -440,12 +522,26 @@ def audit_executor(project_dir, lua_dir, support_dir):
                 f.write("\n")
 
             f.write(f"## ⚠️ Constantes LUA Ausentes ({len(missing_constants)})\n")
-            f.write("> As constantes abaixo foram usadas nas cartas, mas não foram definidas via `luaEngine.Globals` no C# nem encontradas no `constant.lua`.\n\n")
+            f.write("> As constantes abaixo foram usadas nas cartas, mas não foram definidas via `luaEngine.Globals` no C# nem encontradas nas bibliotecas LUA (SupportLua).\n\n")
             if not missing_constants:
                 f.write("*Todas as constantes estão declaradas!*\n\n")
             else:
                 for const in sorted(missing_constants):
                     f.write(f"- [ ] `{const}`\n")
+            f.write("\n")
+
+            f.write(f"## ☠️ Erros Críticos de Sintaxe / Valores Nulos (Deep Linter) ({len(linter_errors)})\n")
+            f.write("> O analisador linha-a-linha identificou chamadas perigosas e variáveis não declaradas que resultarão em `attempt to index a nil value` ou crashes na Unity.\n\n")
+            if missing_libs:
+                f.write("### 🚨 Dependências de Biblioteca Faltantes\n")
+                for lib, reqs in sorted(missing_libs.items()):
+                    f.write(f"- 🔴 **`{lib}`** não foi encontrado! (Exigido por: `{', '.join(reqs)}`)\n")
+                f.write("\n")
+            if not linter_errors:
+                f.write("*Nenhum erro letal de indexação encontrado!*\n\n")
+            else:
+                for err in linter_errors:
+                    f.write(f"- 🔴 `{err}`\n")
             f.write("\n")
 
         progresso["log"].append(f"=== AUDITORIA FINALIZADA ===")

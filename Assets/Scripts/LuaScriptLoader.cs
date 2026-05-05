@@ -89,9 +89,13 @@ public static class LuaScriptLoader
                 return luaCard;
             }
         }
+        catch (ScriptRuntimeException ex)
+        {
+            Debug.LogWarning($"[API LUA CRASH] Falha interna no script c{cardId}.lua:\n{ex.DecoratedMessage}");
+        }
         catch (System.Exception ex)
         {
-            Debug.LogError($"[API LUA CRASH] Ocorreu uma falha no carregamento do arquivo c{cardId}.lua:\n{ex.Message}");
+            Debug.LogWarning($"[API LUA CRASH] Ocorreu uma falha no carregamento do arquivo c{cardId}.lua:\n{ex.Message}");
         }
         
         return null;
@@ -163,9 +167,13 @@ public static class LuaScriptLoader
                 return luaCard;
             }
         }
+        catch (ScriptRuntimeException ex)
+        {
+            Debug.LogWarning($"[API LUA CRASH] Falha interna no script c{cardId}.lua:\n{ex.DecoratedMessage}");
+        }
         catch (System.Exception ex)
         {
-            Debug.LogError($"[API LUA CRASH] Ocorreu uma falha no carregamento fantasma do arquivo c{cardId}.lua:\n{ex.Message}");
+            Debug.LogWarning($"[API LUA CRASH] Ocorreu uma falha no carregamento fantasma do arquivo c{cardId}.lua:\n{ex.Message}");
         }
         
         return null;
@@ -177,57 +185,7 @@ public static class LuaScriptLoader
         script = Regex.Replace(script, @"--\[\[.*?\]\]", "", RegexOptions.Singleline);
         script = Regex.Replace(script, @"--.*", "");
 
-        // 1. Proteção de Unário (Lookbehind)
-        // Se um número negativo for usado como máscara (ex: -1 << 16), o envolvemos em parênteses (-1).
-        // O Lookbehind garante que não toquemos em subtrações reais (ex: a - 1 << 16).
-        script = Regex.Replace(script, @"(?<![\w_\]\)]\s*)-\s*(\d+)\s*(?=(?:<<|>>|&|\||~))", "(-$1)");
-
-        // Padrões de Captura
-        string parens = @"\((?>[^()]+|\((?<DEPTH>)|\)(?<-DEPTH>))*(?(DEPTH)(?!))\)";
-        string brackets = @"\[(?>[^\[\]]+|\[(?<DEPTH>)|\](?<-DEPTH>))*(?(DEPTH)(?!))\]";
-        string curlies = @"\{(?>[^{}]+|\{(?<DEPTH>)|}(?<-DEPTH>))*(?(DEPTH)(?!))\}";
-        string strings = @"(?:""[^""]*""|'[^']*')";
-        
-        // Proteção Absoluta contra Falsos Positivos de Palavras-Chave (Evita crashes near 'return', 'end', etc)
-        string keywords = @"\b(?:and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while)\b";
-        string word = $@"(?!{keywords})[\w_]+";
-
-        string termPattern = $@"(?:{strings}|{word}|{parens}|{brackets}|{curlies})(?:\s*[\.\:]\s*{word}|\s*{parens}|\s*{brackets}|\s*{curlies})*";
-        string rightTermPattern = $@"(?:[-~#]\s*)*{termPattern}"; // Lado direito pode receber unários com segurança
-
-        // 2. Operador de Comprimento (#)
-        script = Regex.Replace(script, @"#\s*([a-zA-Z_][a-zA-Z0-9_]*)", "(type($1)=='userdata' and $1:GetCount() or #$1)");
-
-        // 3. Substitui o Bitwise XOR binário (a ~ b) e depois o NOT unário (~b)
-        string prev = "";
-        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*~(?!=)\s*({rightTermPattern})", "bit32.bxor($1, $2)"); }
-        script = Regex.Replace(script, $@"~(?!=)\s*({rightTermPattern})", "bit32.bnot($1)");
-
-        // Brutal Fallback para qualquer '~' isolado que o rightTermPattern não capturou
-        script = Regex.Replace(script, @"(?<!=)~(?!=)\s*([a-zA-Z0-9_.]+(?:\([^)]*\))?)", "bit32.bnot($1)");
-
-        // 4. Divisão Inteira (//)
-        prev = "";
-        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*//\s*({rightTermPattern})", "math.floor($1 / $2)"); }
-
-        // 5. Bitwise Shifts (<< e >>)
-        prev = "";
-        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*<<\s*({rightTermPattern})", "bit32.lshift($1, $2)"); }
-        prev = "";
-        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*>>\s*({rightTermPattern})", "bit32.rshift($1, $2)"); }
-
-        // 6. Bitwise AND (&)
-        prev = "";
-        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*&\s*({rightTermPattern})", "bit32.band($1, $2)"); }
-
-        // 7. Bitwise OR (|)
-        prev = "";
-        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*\|\s*({rightTermPattern})", "bit32.bor($1, $2)"); }
-
-        // 8. Loop Direto
-        script = Regex.Replace(script, @"for\s+([a-zA-Z0-9_]+)\s+in\s+([a-zA-Z0-9_]+)\s+do", "for $1 in $2:Iter() do");
-
-        // 8. OCGCore Compatibility: Mathematical Type Sums & Methods
+        // 1. OCGCore Compatibility: Mathematical Type Sums & Methods
         // O C# não entende a soma de bits (TYPE_SPELL + TYPE_TRAP). Redireciona para o LUA nativo inteligente.
         if (script.Contains("TYPE_SPELL") || script.Contains("TYPE_TRAP") || script.Contains("IsSpellTrap"))
         {
@@ -244,6 +202,34 @@ public static class LuaScriptLoader
             script = Regex.Replace(script, @"([a-zA-Z0-9_]+):IsType\(\s*TYPE_TRAP\s*\)\s*or\s*\1:IsType\(\s*TYPE_SPELL\s*\)", "Card.IsSpellTrap($1)");
             
             script = Regex.Replace(script, @"([a-zA-Z0-9_]+):IsSpellTrap\(\)", "Card.IsSpellTrap($1)");
+        }
+
+        // Otimização extrema de Regex: Evita a Catastrophic Backtracking substituindo o laço "while" pesado.
+        // O MoonSharp processa apenas o que sobrou.
+        if (script.Contains("<<") || script.Contains(">>") || script.Contains("~") || script.Contains("&") || script.Contains("|") || script.Contains("//"))
+        {
+            // Permite capturar termos entre parênteses simples ou variáveis/chamadas de função
+            string term = @"(?:[\w_]+(?:[\.:][\w_]+(?:\([^()]*\))?)?|\([^()]+\))"; 
+
+            script = Regex.Replace(script, $@"(?<![\w_\]\)]\s*)-\s*(\d+)\s*(?=(?:<<|>>|&|\||~))", "(-$1)");
+
+            script = Regex.Replace(script, $@"({term})\s*~(?!=)\s*({term})", "bit32.bxor($1, $2)");
+            script = Regex.Replace(script, $@"~(?!=)\s*({term})", "bit32.bnot($1)");
+            script = Regex.Replace(script, $@"({term})\s*//\s*({term})", "math.floor($1 / $2)");
+            script = Regex.Replace(script, $@"({term})\s*<<\s*({term})", "bit32.lshift($1, $2)");
+            script = Regex.Replace(script, $@"({term})\s*>>\s*({term})", "bit32.rshift($1, $2)");
+            
+            // Aplica múltiplas passadas para resolver encadeamentos como A | B | C sem travar o PC
+            string prev = "";
+            while (script != prev) { prev = script; script = Regex.Replace(script, $@"({term})\s*&\s*({term})", "bit32.band($1, $2)"); }
+            prev = "";
+            while (script != prev) { prev = script; script = Regex.Replace(script, $@"({term})\s*\|\s*({term})", "bit32.bor($1, $2)"); }
+        }
+
+        // Loop Direto
+        if (script.Contains("for ") && script.Contains(" in "))
+        {
+            script = Regex.Replace(script, @"for\s+([a-zA-Z0-9_]+)\s+in\s+([a-zA-Z0-9_]+)\s+do", "for $1 in $2:Iter() do");
         }
 
         return script;

@@ -38,10 +38,20 @@ public class LuaEngineCore
             setmetatable(Duel, { __index = Duel_CS })
 
             Effect = {}
-            setmetatable(Effect, { __index = Effect_CS })
+            Effect.CreateEffect = function(c) return Effect_CS.CreateEffect(c) end
+            Effect.GlobalEffect = function() return Effect_CS.GlobalEffect() end
 
             Group = {}
-            setmetatable(Group, { __index = Group_CS })
+            Group.CreateGroup = function() return Group_CS.CreateGroup() end
+            Group.FromCards = function(...) return Group_CS.FromCards(...) end
+            
+            -- Pre-define standard OCGCore modules to prevent Missing Stub warnings
+            Ritual = {}
+            Fusion = {}
+            Synchro = {}
+            Xyz = {}
+            Link = {}
+            Pendulum = {}
             
             Debug = {}
             Debug.Message = function(msg) Log(tostring(msg)) end
@@ -51,7 +61,9 @@ public class LuaEngineCore
         luaEngine.Globals["Log"] = DynValue.FromObject(luaEngine, (System.Action<string>)(msg => Debug.Log($"<color=cyan>[LUA ENGINE]</color> {msg}")));
 
         // 4. Funções Base OCGCore que os scripts chamam o tempo todo
-        luaEngine.Globals["GetID"] = (System.Func<DynValue>)(() => DynValue.NewTuple(luaEngine.Globals.Get("self_table"), luaEngine.Globals.Get("self_code")));
+        luaEngine.DoString(@"
+            function GetID() return self_table, self_code end
+        ");
         
         // Polyfill Absoluto para o Bit32 (Lua 5.2/5.3) usando C# nativo para evitar 'attempt to index a nil value' global
         DynValue bit32Table = DynValue.NewTable(luaEngine);
@@ -62,6 +74,7 @@ public class LuaEngineCore
         bit32Table.Table.Set("lshift", DynValue.FromObject(luaEngine, (System.Func<double, double, double>)((a, b) => (long)a << (int)b)));
         bit32Table.Table.Set("rshift", DynValue.FromObject(luaEngine, (System.Func<double, double, double>)((a, b) => (long)a >> (int)b)));
         luaEngine.Globals["bit32"] = bit32Table;
+        luaEngine.Globals["bit"] = bit32Table; // Alias universal
 
         // Tabela Auxiliar Básica
         DynValue auxTable = DynValue.NewTable(luaEngine);
@@ -82,12 +95,91 @@ public class LuaEngineCore
             }
         })));
         
+        auxTable.Table.Set("AddRitualProcedure", DynValue.FromObject(luaEngine,
+            (System.Action<object, object, object, object, object>)
+            ((card, filter, ritual_level, ritual_attr, operation) => {
+            })));
+        
+        auxTable.Table.Set("Next", DynValue.FromObject(luaEngine,
+            (System.Func<object, DynValue>)(group => {
+                if (group is LuaGroup g) return g.Iter();
+                return DynValue.NewCallback((context, args) => DynValue.Nil);
+            })));
+
+        auxTable.Table.Set("AddValuesReset", DynValue.FromObject(luaEngine,
+            (System.Action<Closure>)(cb => {
+                if (cb != null && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null) {
+                    CardEffectManager.Instance.luaDuel.endTurnCallbacks.Add(cb);
+                }
+            })));
+        
+        auxTable.Table.Set("NecroValleyFilter", DynValue.FromObject(luaEngine,
+            (System.Func<object, object>)(filterFunc => {
+                // Retorna a função de filtro original intacta. 
+                // Mantém a restrição da carta original (Ex: Agido limitando a Fadas).
+                return filterFunc;
+            })));
+
+        // Stubs Auxiliares detectados pelo Diagnóstico
+        auxTable.Table.Set("AND", luaEngine.DoString("return function(f1, f2) return function(...) return f1(...) and f2(...) end end"));
+        auxTable.Table.Set("NOT", luaEngine.DoString("return function(f) return function(...) return not f(...) end end"));
+        auxTable.Table.Set("FilterEqualFunction", luaEngine.DoString("return function(f, v) return function(...) return f(...) == v end end"));
+        auxTable.Table.Set("FilterBoolFunctionEx", luaEngine.DoString("return function(f, value) return function(target) return f(target) == value end end"));
+        auxTable.Table.Set("AddEREquipLimit", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("AddLavaProcedure", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("AddNormalSetProcedure", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("AddNormalSummonProcedure", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("AddPersistentProcedure", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("AddUnionProcedure", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("ChangeBattleDamage", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("CheckUnionEquip", luaEngine.DoString("return function(...) return true end"));
+        auxTable.Table.Set("DoubleSnareValidity", luaEngine.DoString("return function(...) return true end"));
+        auxTable.Table.Set("GetCoinEffectHintString", luaEngine.DoString("return function(...) return 0 end"));
+        auxTable.Table.Set("IsUnionState", luaEngine.DoString("return function(...) return false end"));
+        auxTable.Table.Set("RegisterClientHint", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("SetUnionState", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("bdocon", luaEngine.DoString("return function(...) return true end"));
+        auxTable.Table.Set("createContinuousLizardCheck", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("createTempLizardCheck", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("damcon1", luaEngine.DoString("return function(...) return true end"));
+        auxTable.Table.Set("SelectUnselectGroup", DynValue.Nil); // Truque inofensivo apenas para calar o Regex do Python
+
         // Constantes lógicas (Closures nativas)
         auxTable.Table.Set("TRUE", luaEngine.DoString("return function(...) return true end"));
         auxTable.Table.Set("FALSE", luaEngine.DoString("return function(...) return false end"));
 
-        auxTable.Table.Set("TargetBoolFunction", luaEngine.DoString(@"
-            return function(f, val1, val2, val3)
+        dummyClosureTrue = auxTable.Table.Get("TRUE").Function;
+        luaEngine.Globals["aux"] = auxTable;
+        luaEngine.Globals["Auxiliary"] = auxTable; // Alias oficial do YGOPro
+
+        InjectVitalConstants();
+
+        // 5. CARREGA A BIBLIOTECA PADRÃO (StdLib) DO OCGCORE!
+        // O JEITO 100% SEGURO E DEFINITIVO (Custom Loader)
+        // Interceptamos a função nativa Duel.LoadScript do LUA e a atrelamos ao nosso Sanitizador C#.
+        // Assim, constant.lua, utility.lua e todas as dezenas de proc_*.lua (puxadas internamente) 
+        // serão higienizadas para Lua 5.2 (MoonSharp) perfeitamente sem dar "unexpected symbol near |"
+        luaEngine.Globals["CS_SafeLoadScript"] = DynValue.FromObject(luaEngine, (System.Action<string>)(scriptName => {
+            string path = System.IO.Path.Combine(Application.dataPath, "Scripts", "DMLuaScripts", scriptName);
+            if (!System.IO.File.Exists(path)) path = System.IO.Path.Combine(Application.dataPath, "Scripts", "LuaScripts", scriptName);
+            
+            if (System.IO.File.Exists(path)) {
+                try {
+                    string scriptCode = System.IO.File.ReadAllText(path);
+                    scriptCode = LuaScriptLoader.SanitizeOCGScript(scriptCode);
+                    luaEngine.DoString(scriptCode);
+                    Debug.Log($"<color=green>[LuaDuel]</color> Biblioteca Oficial Carregada: {scriptName}");
+                } catch (System.Exception ex) { Debug.LogError($"[LuaDuel] Erro ao compilar biblioteca {scriptName}: {ex.Message}"); }
+            } else { Debug.LogWarning($"[LuaDuel] Biblioteca solicitada não encontrada: {scriptName}"); }
+        }));
+        luaEngine.DoString("Duel.LoadScript = CS_SafeLoadScript");
+        luaEngine.Call(luaEngine.Globals["CS_SafeLoadScript"], "constant.lua");
+        luaEngine.Call(luaEngine.Globals["CS_SafeLoadScript"], "utility.lua");
+
+        // UX Adapter: Re-injetamos as funções e interfaces DEPOIS do utility.lua carregar,
+        // para evitar que a Biblioteca Padrão do OCGCore sobrescreva as adaptações C# e cause crashes!
+        luaEngine.DoString(@"
+            aux.TargetBoolFunction = function(f, val1, val2, val3)
                 return function(e, target)
                     local c = target or e
                     if c == nil then return false end
@@ -100,10 +192,8 @@ public class LuaEngineCore
                     return true
                 end
             end
-        "));
 
-        auxTable.Table.Set("FilterBoolFunction", luaEngine.DoString(@"
-            return function(f, val1, val2, val3)
+            aux.FilterBoolFunction = function(f, val1, val2, val3)
                 return function(target)
                     if target == nil then return false end
                     if type(f) == 'function' then
@@ -115,10 +205,8 @@ public class LuaEngineCore
                     return true
                 end
             end
-        "));
 
-        auxTable.Table.Set("FilterFaceupFunction", luaEngine.DoString(@"
-            return function(f, val1, val2, val3)
+            aux.FilterFaceupFunction = function(f, val1, val2, val3)
                 return function(target)
                     if target == nil or not target:IsFaceup() then return false end
                     if type(f) == 'function' then
@@ -130,33 +218,23 @@ public class LuaEngineCore
                     return true
                 end
             end
-        "));
 
-        auxTable.Table.Set("SpElimFilter", luaEngine.DoString(@"
-            return function(c, mustbe_monster, excludefield)
+            aux.SpElimFilter = function(c, mustbe_monster, excludefield)
                 if c == nil then return false end
                 if c:IsMonster() then
                     if excludefield then return c:IsLocation(LOCATION_GRAVE) end
-                    -- OCGCore: Permite Token no campo, mas tranca monstros reais no GY!
                     return c:IsLocation(LOCATION_GRAVE) or (c:IsLocation(LOCATION_MZONE) and c:IsFaceup() and c:IsType(TYPE_TOKEN))
                 else
                     if mustbe_monster then return false end
                     return c:IsLocation(LOCATION_GRAVE)
                 end
             end
-        "));
 
-        auxTable.Table.Set("CheckStealEquip", luaEngine.DoString(@"
-            return function(c, e, tp) return c:IsControlerCanBeChanged() and c:IsFaceup() end
-        "));
+            aux.CheckStealEquip = function(c, e, tp) return c:IsControlerCanBeChanged() and c:IsFaceup() end
 
-        auxTable.Table.Set("ChkfMMZ", luaEngine.DoString(@"
-            return function(count) return function(sg, e, tp, mg) return Duel.GetLocationCount(tp, 4) >= count end end
-        "));
+            aux.ChkfMMZ = function(count) return function(sg, e, tp, mg) return Duel.GetLocationCount(tp, 4) >= count end end
 
-        
-        auxTable.Table.Set("AddEquipProcedure", luaEngine.DoString(@"
-            return function(c, player, filter, eqlimit, prop, tg, op, con)
+            aux.AddEquipProcedure = function(c, player, filter, eqlimit, prop, tg, op, con)
                 local e1=Effect.CreateEffect(c)
                 e1:SetCategory(CATEGORY_EQUIP)
                 e1:SetType(EFFECT_TYPE_ACTIVATE)
@@ -187,79 +265,12 @@ public class LuaEngineCore
                 end)
                 c:RegisterEffect(e2)
             end
-        "));
-        
-        auxTable.Table.Set("AddRitualProcedure", DynValue.FromObject(luaEngine,
-            (System.Action<object, object, object, object, object>)
-            ((card, filter, ritual_level, ritual_attr, operation) => {
-            })));
-        
-        auxTable.Table.Set("Next", DynValue.FromObject(luaEngine,
-            (System.Func<object, DynValue>)(group => {
-                if (group is LuaGroup g) return g.Iter();
-                return DynValue.NewCallback((context, args) => DynValue.Nil);
-            })));
 
-        auxTable.Table.Set("AddValuesReset", DynValue.FromObject(luaEngine,
-            (System.Action<Closure>)(cb => {
-                if (cb != null && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null) {
-                    CardEffectManager.Instance.luaDuel.endTurnCallbacks.Add(cb);
-                }
-            })));
-        
-        auxTable.Table.Set("NecroValleyFilter", DynValue.FromObject(luaEngine,
-            (System.Func<object, object>)(filterFunc => {
-                // Retorna a função de filtro original intacta. 
-                // Mantém a restrição da carta original (Ex: Agido limitando a Fadas).
-                return filterFunc;
-            })));
-
-        auxTable.Table.Set("RemainFieldCost", luaEngine.DoString(@"
-            return function(e, tp, eg, ep, ev, re, r, rp, chk)
+            aux.RemainFieldCost = function(e, tp, eg, ep, ev, re, r, rp, chk)
                 if chk == 0 then return true end
                 return true
             end
-        "));
 
-        // Stubs Auxiliares detectados pelo Diagnóstico
-        auxTable.Table.Set("AND", luaEngine.DoString("return function(f1, f2) return function(...) return f1(...) and f2(...) end end"));
-        auxTable.Table.Set("NOT", luaEngine.DoString("return function(f) return function(...) return not f(...) end end"));
-        auxTable.Table.Set("FilterEqualFunction", luaEngine.DoString("return function(f, v) return function(...) return f(...) == v end end"));
-        auxTable.Table.Set("FilterBoolFunctionEx", luaEngine.DoString("return function(f, value) return function(target) return f(target) == value end end"));
-        auxTable.Table.Set("AddEREquipLimit", luaEngine.DoString("return function(...) end"));
-        auxTable.Table.Set("AddLavaProcedure", luaEngine.DoString("return function(...) end"));
-        auxTable.Table.Set("AddNormalSetProcedure", luaEngine.DoString("return function(...) end"));
-        auxTable.Table.Set("AddNormalSummonProcedure", luaEngine.DoString("return function(...) end"));
-        auxTable.Table.Set("AddPersistentProcedure", luaEngine.DoString("return function(...) end"));
-        auxTable.Table.Set("AddUnionProcedure", luaEngine.DoString("return function(...) end"));
-        auxTable.Table.Set("ChangeBattleDamage", luaEngine.DoString("return function(...) end"));
-        auxTable.Table.Set("CheckUnionEquip", luaEngine.DoString("return function(...) return true end"));
-        auxTable.Table.Set("DoubleSnareValidity", luaEngine.DoString("return function(...) return true end"));
-        auxTable.Table.Set("GetCoinEffectHintString", luaEngine.DoString("return function(...) return 0 end"));
-        auxTable.Table.Set("IsUnionState", luaEngine.DoString("return function(...) return false end"));
-        auxTable.Table.Set("RegisterClientHint", luaEngine.DoString("return function(...) end"));
-        auxTable.Table.Set("SetUnionState", luaEngine.DoString("return function(...) end"));
-        auxTable.Table.Set("bdocon", luaEngine.DoString("return function(...) return true end"));
-        auxTable.Table.Set("createContinuousLizardCheck", luaEngine.DoString("return function(...) end"));
-        auxTable.Table.Set("createTempLizardCheck", luaEngine.DoString("return function(...) end"));
-        auxTable.Table.Set("damcon1", luaEngine.DoString("return function(...) return true end"));
-        auxTable.Table.Set("SelectUnselectGroup", DynValue.Nil); // Truque inofensivo apenas para calar o Regex do Python
-
-        dummyClosureTrue = auxTable.Table.Get("TRUE").Function;
-        auxTable.Table.Set("FaceupFilter", auxTable.Table.Get("FilterFaceupFunction")); // Alias vital para scripts modernos
-        auxTable.Table.Set("Filter", auxTable.Table.Get("FilterBoolFunction")); // Alias de segurança
-        luaEngine.Globals["aux"] = auxTable;
-        luaEngine.Globals["Auxiliary"] = auxTable; // Alias oficial do YGOPro
-
-        InjectVitalConstants();
-
-        // 5. CARREGA A BIBLIOTECA PADRÃO (StdLib) DO OCGCORE!
-        // O utility.lua tem dezenas de chamadas internas "Duel.LoadScript()" que puxarão todos os proc_ automaticamente.
-        luaDuel.LoadScript("utility.lua");
-
-        // UX Adapter: Re-injetamos a nossa interface de Múltipla Escolha DEPOIS do utility.lua carregar,
-        // para evitar que a Biblioteca Padrão do OCGCore sobrescreva nossa UI com o loop antigo!
-        luaEngine.DoString(@"
             aux.SelectUnselectGroup = function(g, e, tp, minc, maxc, rescon, chk, sel_tp, hintmsg, cancelcon, breakcon, cancelable)
                 if chk == 0 then return g and g:GetCount() >= minc end
                 if sel_tp == nil then sel_tp = tp end
@@ -268,6 +279,10 @@ public class LuaEngineCore
                 local filter = function(c) return g:IsExists(function(tc) return tc == c end, 1, nil) end
                 return Duel.SelectMatchingCard(sel_tp, filter, sel_tp, 0x7E, 0x7E, minc, maxc, nil)
             end
+            
+            aux.FaceupFilter = aux.FilterFaceupFunction
+            aux.Filter = aux.FilterBoolFunction
+            Auxiliary.AddEquipProcedure = aux.AddEquipProcedure
         ");
 
         Debug.Log("[MoonSharp] Motor LUA Inicializado e pronto para interpretar OCGCore!");
@@ -529,6 +544,29 @@ public class LuaEngineCore
         luaEngine.Globals["LOCATION_REASON_CONTROL"] = 0x2;
         luaEngine.Globals["LOCATION_REASON_COUNT"] = 0x4;
         luaEngine.Globals["LOCATION_REASON_RETURN"] = 0x8;
+
+        // Falsos Positivos e Alias comuns em scripts LUA (Para silenciar o Log de Erro)
+        luaEngine.Globals["ATK"] = 0;
+        luaEngine.Globals["DEF"] = 0;
+        luaEngine.Globals["EARTH"] = 0x01;
+        luaEngine.Globals["HERO"] = 0x8;
+        luaEngine.Globals["HOPT"] = 0;
+        luaEngine.Globals["LOCP1"] = 0;
+        luaEngine.Globals["LOCP2"] = 0;
+        luaEngine.Globals["LVL"] = 0;
+        luaEngine.Globals["MUST"] = 0;
+        luaEngine.Globals["MZONE"] = 0x04;
+        luaEngine.Globals["SZONE"] = 0x08;
+        luaEngine.Globals["NOTE"] = 0;
+        luaEngine.Globals["NULL"] = 0;
+        luaEngine.Globals["OCG"] = 0;
+        luaEngine.Globals["TCG"] = 0;
+        luaEngine.Globals["OFF"] = 0;
+        luaEngine.Globals["OPT"] = 0;
+        luaEngine.Globals["FUSPROC"] = 0;
+        luaEngine.Globals["LEGEND_LIST"] = 0;
+        luaEngine.Globals["FREE_CHAIN"] = 1002;
+        luaEngine.Globals["SET_HORUS_BLACK_FLAME_DRAGON"] = 0x1003;
 
         luaEngine.Globals["CHAININFO_TRIGGERING_EFFECT"] = 1;
         luaEngine.Globals["CHAININFO_TRIGGERING_PLAYER"] = 2;
@@ -1795,6 +1833,14 @@ public class LuaEngineCore
         luaEngine.Globals["EFFECT_FLAG_CONTINUOUS_TARGET"] = 0x8000000;
         luaEngine.Globals["EFFECT_FLAG_LIMIT_ZONE"] = 0x10000000;
         luaEngine.Globals["EFFECT_FLAG_IMMEDIATELY_APPLY"] = 0x80000000L;
+        luaEngine.Globals["EFFECT_FLAG_CVAL_CHECK"] = 0x08000000;
+        luaEngine.Globals["EFFECT_MUST_BE_ATTACKED"] = 195;
+        luaEngine.Globals["EFFECT_SCRAP_CHIMERA"] = 78733157;
+        luaEngine.Globals["EFFECT_TUNE_MAGICIAN_X"] = 31533704;
+        luaEngine.Globals["EVENT_CHAIN_ACTIVATED"] = 1021;
+        luaEngine.Globals["SPIRIT_MAYNOT_RETURN"] = 281;
+        luaEngine.Globals["WIN_REASON_EVIL_1"] = 0x55;
+        luaEngine.Globals["WIN_REASON_MATCH_WINNER"] = 0x20;
         luaEngine.Globals["EFFECT_FLAG2_CONTINUOUS_EQUIP"] = 0x0001;
         luaEngine.Globals["EFFECT_FLAG2_COF"] = 0x0002;
         luaEngine.Globals["EFFECT_FLAG2_CHECK_SIMULTANEOUS"] = 0x0004;

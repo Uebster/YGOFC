@@ -10,6 +10,23 @@ using System;
 // Todas as lógicas de Ritual, Fusão, etc., agora são carregadas nativamente 
 // através dos arquivos .lua originais na pasta SupportLua!
 // ==============================================================================
+// ==============================================================================
+
+// Permite que o Lua injete dados dinâmicos vitais de material durante as Invocações Especiais!
+public partial class LuaCard
+{
+    public int material_count { get; set; } = 0;
+    public MoonSharp.Interpreter.Closure material { get; set; }
+    public int synchro_type { get; set; } = 0;
+    public int xyz_type { get; set; } = 0;
+    public int link_type { get; set; } = 0;
+}
+
+public partial class LuaGroup
+{
+    public int GetOriginalCode() { return 0; }
+}
+
 public class PythonAnalyzerStubs
 {
     // Mapeamento invisível para a Ferramenta de Diagnóstico Python (Não apague!)

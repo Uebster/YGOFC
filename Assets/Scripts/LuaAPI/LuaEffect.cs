@@ -85,7 +85,6 @@ public partial class LuaEffect
     { 
         if (args != null && args.Length > 0) countLimitMax = ConvertToInt(args[0]); 
         if (args != null && args.Length > 1) countLimitCode = ConvertToInt(args[1]); 
-        Debug.Log($"<color=orange>[LuaEffect]</color> SetCountLimit registrado! Máx: {countLimitMax} | Código: {countLimitCode}");
     }
     
     public void SetHintTiming(params object[] args) 
@@ -106,7 +105,6 @@ public partial class LuaEffect
     
     public void SetLabel(params object[] args) { 
         if (args != null && args.Length > 0) _label = ConvertToInt(args[0]); 
-        Debug.Log($"<color=magenta>[LuaEffect LOG]</color> SetLabel chamado! Memória armazenada: {_label} (Efeito ID: {code})");
     }
     
     public int GetLabel() { 
@@ -190,7 +188,12 @@ public partial class LuaEffect
     public Closure GetOperation() { return operationFunc != null ? operationFunc : CardEffectManager.Instance.dummyClosureTrue; }
     
     public int GetCategory() { return category; }
-    public int GetProperty() { return property; }
+    
+    // OCGCore Compatibility: Retorna uma Tupla Múltipla contendo a Propriedade Base e a Estendida (FLAG2)
+    public DynValue GetProperty() { 
+        return DynValue.NewTuple(DynValue.NewNumber(property), DynValue.NewNumber(propertyExt)); 
+    }
+    
     public int GetCode() { return code; }
     
     public bool IsActivatable(object player)
@@ -205,12 +208,10 @@ public partial class LuaEffect
 
     public void SetLabelObject(object o) { 
         _labelObject = o; 
-        Debug.Log($"<color=magenta>[LuaEffect LOG]</color> SetLabelObject chamado! Ponte criada com o objeto LUA.");
     }
     
     public object GetLabelObject() { 
-        if (_labelObject != null) return _labelObject;
-        return new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 }); 
+        return _labelObject; 
     }
 
     public LuaEffect Clone()
