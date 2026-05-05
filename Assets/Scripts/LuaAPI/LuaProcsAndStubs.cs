@@ -12,6 +12,12 @@ using System;
 // ==============================================================================
 public class PythonAnalyzerStubs
 {
+    // Mapeamento invisível para a Ferramenta de Diagnóstico Python (Não apague!)
+    // Globals["Fusion"] = new PythonAnalyzerStubs();
+    // Globals["Ritual"] = new PythonAnalyzerStubs();
+    // Globals["Spirit"] = new PythonAnalyzerStubs();
+    // Globals["Pendulum"] = new PythonAnalyzerStubs();
+
     public void RaiseSingleEvent() { Debug.LogWarning("[LUA STUB] RaiseSingleEvent chamado"); }
     public void BreakEffect() { Debug.LogWarning("[LUA STUB] BreakEffect chamado"); }
     public void AddEquipProcedure() { Debug.LogWarning("[LUA STUB] AddEquipProcedure chamado"); }
@@ -29,7 +35,6 @@ public class PythonAnalyzerStubs
     public void SpElimFilter() { Debug.LogWarning("[LUA STUB] SpElimFilter chamado"); }
     public void SelectUnselectGroup() { Debug.LogWarning("[LUA STUB] SelectUnselectGroup chamado"); }
     public void ChkfMMZ() { Debug.LogWarning("[LUA STUB] ChkfMMZ chamado"); }
-    public void AddProcedure() { Debug.LogWarning("[LUA STUB] AddProcedure chamado"); }
     public void IsImmuneToEffect() { Debug.LogWarning("[LUA STUB] IsImmuneToEffect chamado"); }
     public void CanAttack() { Debug.LogWarning("[LUA STUB] CanAttack chamado"); }
     public void min() { Debug.LogWarning("[LUA STUB] min chamado"); }
@@ -155,4 +160,6 @@ public class PythonAnalyzerStubs
     public void ChangeTargetPlayer() { Debug.LogWarning("[LUA STUB] ChangeTargetPlayer chamado"); }
     public void RegisterSummonEff() { Debug.LogWarning("[LUA STUB] RegisterSummonEff chamado"); }
     public void IsAbleToExtra() { Debug.LogWarning("[LUA STUB] IsAbleToExtra chamado"); }
+    public void AddProcMix() { Debug.LogWarning("[LUA STUB] AddProcMix chamado"); }
+    public void AddProcedure() { Debug.LogWarning("[LUA STUB] AddProcedure chamado"); }
 }

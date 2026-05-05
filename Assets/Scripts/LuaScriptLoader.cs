@@ -67,6 +67,7 @@ public static class LuaScriptLoader
                 luaEngine.Globals["self_code"] = numericId;
                 luaEngine.Globals["c" + numericId] = selfTable;
                 luaEngine.Globals[cardId] = selfTable;
+                luaEngine.Globals["c" + cardId] = selfTable; // FIX: Cria a tabela OCGCore Exata com Letras (ex: cDM1410)
 
                 string scriptCode = System.IO.File.ReadAllText(scriptPath);
                 scriptCode = SanitizeOCGScript(scriptCode);
@@ -141,6 +142,7 @@ public static class LuaScriptLoader
                 luaEngine.Globals["self_code"] = numericId;
                 luaEngine.Globals["c" + numericId] = selfTable;
                 luaEngine.Globals[cardId] = selfTable;
+                luaEngine.Globals["c" + cardId] = selfTable; // FIX: Cria a tabela OCGCore Exata com Letras (ex: cDM1410)
 
                 string scriptCode = System.IO.File.ReadAllText(scriptPath);
                 scriptCode = SanitizeOCGScript(scriptCode);

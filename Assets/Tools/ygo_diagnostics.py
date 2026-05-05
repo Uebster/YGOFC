@@ -297,6 +297,10 @@ def audit_executor(project_dir, lua_dir, support_dir):
                 
                 const_matches = re.findall(r'^\s*([A-Z][A-Z0-9_]{2,})\s*=', content, re.MULTILINE)
                 defined_constants.update(const_matches)
+
+                # NOVO: Escaneia constantes USADAS dentro das bibliotecas para não deixar passar NADA!
+                for m in re.finditer(r'\b([A-Z_][A-Z0-9_]{2,})\b', content):
+                    used_constants.add(m.group(1))
             except: pass
     else:
         progresso["log"].append("\n-> Nenhuma pasta de Bibliotecas selecionada. Buscando libs espalhadas...")
@@ -311,6 +315,10 @@ def audit_executor(project_dir, lua_dir, support_dir):
                 if aux_funcs: cs_methods["aux"].update(aux_funcs)
                 const_matches = re.findall(r'^\s*([A-Z][A-Z0-9_]{2,})\s*=', content, re.MULTILINE)
                 defined_constants.update(const_matches)
+
+                # NOVO: Escaneia constantes USADAS dentro das bibliotecas para não deixar passar NADA!
+                for m in re.finditer(r'\b([A-Z_][A-Z0-9_]{2,})\b', content):
+                    used_constants.add(m.group(1))
             except: pass
 
     progresso["log"].append(f"\n-> Analisando scripts de cartas em: {lua_cards_dir}...")

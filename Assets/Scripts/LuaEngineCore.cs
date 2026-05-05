@@ -29,13 +29,22 @@ public class LuaEngineCore
         // 3. Injeta as instâncias globais na memória do Lua
         luaDuel = new LuaDuel();
         luaEngine.Globals["Duel_CS"] = luaDuel;
-        luaEngine.Globals["Effect"] = UserData.CreateStatic<LuaEffect>(); 
-        luaEngine.Globals["Group"] = UserData.CreateStatic<LuaGroup>();        
+        luaEngine.Globals["Effect_CS"] = UserData.CreateStatic<LuaEffect>(); 
+        luaEngine.Globals["Group_CS"] = UserData.CreateStatic<LuaGroup>();        
 
         // Tabelas de Proxy: Deixa o Lua nativamente resolver a herança C# sem pcall!
         luaEngine.DoString(@"
             Duel = {}
             setmetatable(Duel, { __index = Duel_CS })
+
+            Effect = {}
+            setmetatable(Effect, { __index = Effect_CS })
+
+            Group = {}
+            setmetatable(Group, { __index = Group_CS })
+            
+            Debug = {}
+            Debug.Message = function(msg) Log(tostring(msg)) end
         ");
 
         // Sistema de Log LUA Nativo
@@ -240,6 +249,7 @@ public class LuaEngineCore
         auxTable.Table.Set("FaceupFilter", auxTable.Table.Get("FilterFaceupFunction")); // Alias vital para scripts modernos
         auxTable.Table.Set("Filter", auxTable.Table.Get("FilterBoolFunction")); // Alias de segurança
         luaEngine.Globals["aux"] = auxTable;
+        luaEngine.Globals["Auxiliary"] = auxTable; // Alias oficial do YGOPro
 
         InjectVitalConstants();
 
@@ -599,6 +609,7 @@ public class LuaEngineCore
         luaEngine.Globals["RACE_DINOSAUR"] = 0x10000;
         luaEngine.Globals["RACE_FISH"] = 0x20000;
         luaEngine.Globals["RACE_SEA_SERPENT"] = 0x40000;
+        luaEngine.Globals["RACE_SEASERPENT"] = 0x40000;
         luaEngine.Globals["RACE_REPTILE"] = 0x80000;
         luaEngine.Globals["RACE_PSYCHIC"] = 0x100000;
         luaEngine.Globals["RACE_DIVINE"] = 0x200000;
@@ -633,6 +644,7 @@ public class LuaEngineCore
             SET_GENEX_ALLY                    = 0x2002
             SET_HORUS                         = 0x3
             SET_HORUS_THE_BLACK_FLAME_DRAGON  = 0x1003
+            SET_HORUS_BLACK_FLAME_DRAGON      = 0x1003
             SET_AMAZONESS                     = 0x4
             SET_ARCANA_FORCE                  = 0x5
             SET_DARK_WORLD                    = 0x6
@@ -2029,6 +2041,7 @@ public class LuaEngineCore
         luaEngine.Globals["DUEL_MODE_MR4"] = 0x800 | 0x2000 | 0x40000 | 0x10000 | 0x80000;
         luaEngine.Globals["DUEL_MODE_MR5"] = 0x800 | 0x2000 | 0x4000 | 0x8000 | 0x20000;
         luaEngine.Globals["DUEL_OBSOLETE_RULING"] = luaEngine.Globals["DUEL_MODE_MR1"];
+        luaEngine.Globals["DUEL_INVERTED_QUICK_PRIORITY"] = 0x40;
 
         luaEngine.Globals["OPCODE_ADD"] = 0x4000000000000000L;
         luaEngine.Globals["OPCODE_SUB"] = 0x4000000100000000L;
