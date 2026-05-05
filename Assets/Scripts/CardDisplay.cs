@@ -119,6 +119,9 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     private List<CardDisplay> linkedCardsToHighlight = new List<CardDisplay>();
     private List<GameObject> activeConnectionLines = new List<GameObject>();
 
+    // FIX: Cache Global de Texturas para evitar o "quadrado branco" nas explosões e melhorar performance massivamente!
+    private static Dictionary<string, Texture2D> sharedArtCache = new Dictionary<string, Texture2D>();
+
     void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
@@ -250,12 +253,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             currentRequest = null;
         }
         StopAllCoroutines(); // Para carregamentos anteriores
-        // Limpa textura anterior para liberar memória
-        if (frontTexture != null)
-        {
-            Destroy(frontTexture);
-            frontTexture = null;
-        }
 
         currentCardData = card;
         backTexture = cardBackTexture;
@@ -297,6 +294,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         ApplyRoundedCorners();
         UpdateTurnClockVisual(); // Garante que o relógio suma se resetar
     }
+    
+    public static void ClearArtCache()
+    {
+        foreach (var tex in sharedArtCache.Values)
+            if (tex != null) Destroy(tex);
+        sharedArtCache.Clear();
+    }
 
     public void SetCardBackOnly(Texture2D cardBackTexture)
     {
@@ -306,11 +310,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             currentRequest = null;
         }
         StopAllCoroutines();
-        if (frontTexture != null)
-        {
-            Destroy(frontTexture);
-            frontTexture = null;
-        }
 
         backTexture = cardBackTexture;
         if (cardImage != null && backTexture != null)
@@ -383,6 +382,14 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     IEnumerator LoadCardFrontTexture(string imagePath)
     {
         if (string.IsNullOrEmpty(imagePath)) yield break;
+        
+        if (sharedArtCache.TryGetValue(imagePath, out Texture2D cachedTex) && cachedTex != null)
+        {
+            frontTexture = cachedTex;
+            // Só aplica a textura da frente se a carta NÃO estiver virada (isFlipped == false)
+            if (!isFlipped && cardImage != null) cardImage.texture = frontTexture;
+            yield break;
+        }
 
         string fullPath = Path.Combine(Application.streamingAssetsPath, imagePath);
 
@@ -406,6 +413,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             frontTexture = DownloadHandlerTexture.GetContent(request);
             frontTexture.filterMode = FilterMode.Trilinear;
+            sharedArtCache[imagePath] = frontTexture;
 
             if (cardImage == null)
             {
@@ -1789,11 +1797,6 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             currentRequest.Dispose();
             currentRequest = null;
-        }
-        if (frontTexture != null)
-        {
-            Destroy(frontTexture);
-            frontTexture = null;
         }
         ClearConnectionLines();
     }

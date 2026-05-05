@@ -155,6 +155,8 @@ public partial class GameManager
         // Atualiza visuais das pilhas e limpa o viewer
         UpdatePileVisuals();
         ClearCardViewer();
+        
+        CardDisplay.ClearArtCache();
     }
 
     List<CardData> InitializePlayerDeck()
