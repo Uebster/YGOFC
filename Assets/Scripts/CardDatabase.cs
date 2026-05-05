@@ -17,7 +17,7 @@ public class CardDatabase : MonoBehaviour
     void LoadCardDatabase()
     {
         // O caminho para o nosso arquivo JSON dentro da pasta especial StreamingAssets
-        string path = Path.Combine(Application.streamingAssetsPath, "cards.json");
+        string path = Path.Combine(Application.streamingAssetsPath, "cardsDM.json");
 
         if (File.Exists(path))
         {
@@ -38,7 +38,7 @@ public class CardDatabase : MonoBehaviour
         else
         {
             // Envia uma mensagem de erro se o arquivo não for encontrado
-            Debug.LogError("ERRO: Arquivo 'cards.json' não encontrado em Assets/StreamingAssets!");
+            Debug.LogError("ERRO: Arquivo 'cardsDM.json' não encontrado em Assets/StreamingAssets!");
         }
     }
 

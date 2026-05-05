@@ -1148,4 +1148,9 @@ public partial class LuaDuel
 
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("TossDice") });
     }
+
+    public DynValue SelectFusionMaterial(object player, object card, object mg, object gc, object chkf)
+    {
+        return InternalSelectMatchingCard(player, null, player, 0x0E, 0, 1, 99, null, HighlightCategory.Fusion, null);
+    }
 }

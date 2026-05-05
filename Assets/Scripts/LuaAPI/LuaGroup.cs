@@ -14,7 +14,7 @@ using System.Linq;
 // - OpponentAI.cs: Intercepta a seleção de grupos se o jogador chamador for a IA.
 // ==============================================================================
 [MoonSharpUserData]
-public class LuaGroup
+public partial class LuaGroup
 {
     public List<LuaCard> cards = new List<LuaCard>();
     private int _iterIndex = 0;
@@ -44,6 +44,8 @@ public class LuaGroup
         foreach (var arg in args) if (arg is LuaCard lc) g.AddCard(lc);
         return g;
     }
+
+    public LuaGroup AddMaximumCheck() { return this; } // Stub seguro para ignorar lógica de Maximum Rush Duel
 
     public static LuaGroup CreateGroup() { return new LuaGroup(); }
 
@@ -202,50 +204,83 @@ public class LuaGroup
 
     public DynValue SelectWithSumEqual(object player, object func, object targetSum, object count, object maxCount, params object[] extraArgs)
     {
-        if (CardEffectManager.Instance != null) CardEffectManager.Instance.isWaitingForLuaYield = false;
-        LuaGroup selected = new LuaGroup();
+        int tp = ConvertToInt(player);
         int target = ConvertToInt(targetSum);
-        int current = 0;
-        foreach(var c in cards) {
-            int val = 0;
-            if (func is Closure closure) {
-                List<object> callArgs = new List<object> { c };
-                if (extraArgs != null && extraArgs.Length > 0) callArgs.AddRange(extraArgs);
-                try { DynValue res = closure.Call(callArgs.ToArray()); if (res.Type == DataType.Number) val = (int)res.Number; } catch {}
-            }
-            if (current < target) { selected.AddCard(c); current += val; }
-            if (current == target) break;
-        }
-        return UserData.Create(selected);
+        int min = ConvertToInt(count);
+        int max = ConvertToInt(maxCount);
+
+        LuaGroup selectedGroup = new LuaGroup();
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+        
+        CardEffectManager.Instance.StartCoroutine(OpenSumSelectionUI(tp, func, target, min, max, extraArgs, true, selectedGroup));
+
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("Group.SelectWithSumEqual") });
     }
 
     public DynValue SelectWithSumGreater(object player, object func, object targetSum, params object[] extraArgs)
     {
-        if (CardEffectManager.Instance != null) CardEffectManager.Instance.isWaitingForLuaYield = false;
-        LuaGroup selected = new LuaGroup();
+        int tp = ConvertToInt(player);
         int target = ConvertToInt(targetSum);
-        int current = 0;
-        foreach(var c in cards) {
-            int val = 0;
-            if (func is Closure closure) {
-                List<object> callArgs = new List<object> { c };
-                if (extraArgs != null && extraArgs.Length > 0) callArgs.AddRange(extraArgs);
-                try { DynValue res = closure.Call(callArgs.ToArray()); if (res.Type == DataType.Number) val = (int)res.Number; } catch {}
+
+        LuaGroup selectedGroup = new LuaGroup();
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+
+        CardEffectManager.Instance.StartCoroutine(OpenSumSelectionUI(tp, func, target, 1, 99, extraArgs, false, selectedGroup));
+
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("Group.SelectWithSumGreater") });
+    }
+
+    private IEnumerator OpenSumSelectionUI(int tp, object funcObj, int targetSum, int minCount, int maxCount, object[] extraArgs, bool exactMath, LuaGroup outGroup)
+    {
+        List<CardData> validCards = new List<CardData>();
+        foreach (var c in cards) if (c.unityData != null) validCards.Add(c.unityData);
+
+        bool selectionDone = false;
+
+        if (tp == 1 && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
+        {
+            int currentSum = 0;
+            foreach (var c in cards) {
+                if (currentSum >= targetSum) break;
+                int val = EvaluateFuncAsInt(funcObj, c, extraArgs);
+                if (val > 0) { currentSum += val; outGroup.AddCard(c); }
             }
-            if (current < target) { selected.AddCard(c); current += val; }
-            if (current >= target) break;
+            selectionDone = true;
         }
-        return UserData.Create(selected);
+        else
+        {
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowCardSelection(validCards, $"Selecione Cartas para somar {(exactMath ? "exatamente" : "pelo menos")} {targetSum}", minCount, maxCount, (selected) => {
+                    if (selected != null) {
+                        foreach (var selData in selected) {
+                            var match = cards.Find(c => c.unityData == selData);
+                            if (match != null) outGroup.AddCard(match);
+                        }
+                    }
+                    selectionDone = true;
+                });
+            }
+            else selectionDone = true;
+        }
+
+        yield return new WaitUntil(() => selectionDone);
+
+        CardEffectManager.Instance.yieldReturnValue = UserData.Create(outGroup);
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
     }
     
-    public int FilterCount(params object[] args)
+    public int FilterCount(object filterFunc, object excluded, params object[] extraArgs)
     {
-        return 0; // Stub rápido para Dry-Run não quebrar
+        return Filter(filterFunc, excluded, extraArgs).GetCount();
     }
     
-    public DynValue FilterSelect(params object[] args)
+    public DynValue FilterSelect(object player, object filterFunc, object min, object max, object excluded, params object[] extraArgs)
     {
-        return UserData.Create(new LuaGroup()); // Stub blindado
+        LuaGroup filtered = Filter(filterFunc, excluded, extraArgs);
+        return filtered.Select(player, min, max, null);
     }
 
     private int ConvertToInt(object obj)
@@ -405,6 +440,14 @@ public class LuaGroup
             return DynValue.Nil;
         });
     }
+}
+
+// ==============================================================================
+// STUBS FOR DIAGNOSTIC REPORT (GROUP)
+// ==============================================================================
+public partial class LuaGroup
+{
+    public bool Match(params object[] args) { Debug.LogWarning("[LUA STUB] Match"); return false; }
 }
 
 // ==============================================================================

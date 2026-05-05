@@ -96,7 +96,6 @@ public class PythonAnalyzerStubs
     public void op() { Debug.LogWarning("[LUA STUB] op chamado"); }
     public void IsReleasableByEffect() { Debug.LogWarning("[LUA STUB] IsReleasableByEffect chamado"); }
     public void ClearEffectRelation() { Debug.LogWarning("[LUA STUB] ClearEffectRelation chamado"); }
-    public void GetCardEffect() { Debug.LogWarning("[LUA STUB] GetCardEffect chamado"); }
     public void insert() { Debug.LogWarning("[LUA STUB] insert chamado"); }
     public void GetSum() { Debug.LogWarning("[LUA STUB] GetSum chamado"); }
     public void NegateSummon() { Debug.LogWarning("[LUA STUB] NegateSummon chamado"); }
@@ -114,7 +113,6 @@ public class PythonAnalyzerStubs
     public void SelectWithSumEqual() { Debug.LogWarning("[LUA STUB] SelectWithSumEqual chamado"); }
     public void CheckWithSumEqual() { Debug.LogWarning("[LUA STUB] CheckWithSumEqual chamado"); }
     public void IsLevelBetween() { Debug.LogWarning("[LUA STUB] IsLevelBetween chamado"); }
-    public void SelectFusionMaterial() { Debug.LogWarning("[LUA STUB] SelectFusionMaterial chamado"); }
     public void UseCountLimit() { Debug.LogWarning("[LUA STUB] UseCountLimit chamado"); }
     public void SelectEffectYesNo() { Debug.LogWarning("[LUA STUB] SelectEffectYesNo chamado"); }
     public void IsRaceExcept() { Debug.LogWarning("[LUA STUB] IsRaceExcept chamado"); }

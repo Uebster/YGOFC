@@ -14,7 +14,7 @@ public class CharacterDatabase : MonoBehaviour
 
     void LoadCharacterDatabase()
     {
-        string path = Path.Combine(Application.streamingAssetsPath, "characters.json");
+        string path = Path.Combine(Application.streamingAssetsPath, "charactersDM.json");
         if (File.Exists(path))
         {
             string jsonText = File.ReadAllText(path);
@@ -26,7 +26,7 @@ public class CharacterDatabase : MonoBehaviour
         }
         else
         {
-            Debug.LogError("ERRO: Arquivo 'characters.json' não encontrado!");
+            Debug.LogError("ERRO: Arquivo 'charactersDM.json' não encontrado!");
         }
     }
 

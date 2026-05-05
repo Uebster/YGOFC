@@ -169,43 +169,60 @@ public static class LuaScriptLoader
         return null;
     }
 
-    private static string SanitizeOCGScript(string script)
+    public static string SanitizeOCGScript(string script)
     {
         // 0. Remove comentários para evitar falsos positivos
         script = Regex.Replace(script, @"--\[\[.*?\]\]", "", RegexOptions.Singleline);
         script = Regex.Replace(script, @"--.*", "");
 
-        // Padrão Avançado: Captura variáveis, arrays e métodos sem Catastrophic Backtracking
+        // 1. Proteção de Unário (Lookbehind)
+        // Se um número negativo for usado como máscara (ex: -1 << 16), o envolvemos em parênteses (-1).
+        // O Lookbehind garante que não toquemos em subtrações reais (ex: a - 1 << 16).
+        script = Regex.Replace(script, @"(?<![\w_\]\)]\s*)-\s*(\d+)\s*(?=(?:<<|>>|&|\||~))", "(-$1)");
+
+        // Padrões de Captura
         string parens = @"\((?>[^()]+|\((?<DEPTH>)|\)(?<-DEPTH>))*(?(DEPTH)(?!))\)";
         string brackets = @"\[(?>[^\[\]]+|\[(?<DEPTH>)|\](?<-DEPTH>))*(?(DEPTH)(?!))\]";
         string curlies = @"\{(?>[^{}]+|\{(?<DEPTH>)|}(?<-DEPTH>))*(?(DEPTH)(?!))\}";
-        string termPattern = $@"(?:[\w_]+|{parens}|{brackets}|{curlies})(?:\s*[\.\:]\s*[\w_]+|\s*{parens}|\s*{brackets}|\s*{curlies})*";
+        string strings = @"(?:""[^""]*""|'[^']*')";
+        
+        // Proteção Absoluta contra Falsos Positivos de Palavras-Chave (Evita crashes near 'return', 'end', etc)
+        string keywords = @"\b(?:and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while)\b";
+        string word = $@"(?!{keywords})[\w_]+";
 
-        // 1. Substitui o Bitwise NOT unário (~)
-        script = Regex.Replace(script, $@"~(?!=)\s*({termPattern})", "bit32.bnot($1)");
+        string termPattern = $@"(?:{strings}|{word}|{parens}|{brackets}|{curlies})(?:\s*[\.\:]\s*{word}|\s*{parens}|\s*{brackets}|\s*{curlies})*";
+        string rightTermPattern = $@"(?:[-~#]\s*)*{termPattern}"; // Lado direito pode receber unários com segurança
 
-        // 2. Divisão Inteira (//) para math.floor()
-        string prev = "";
-        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*//\s*({termPattern})", "math.floor($1 / $2)"); }
-
-        // 3. Bitwise Shifts (<< e >>)
-        prev = "";
-        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*<<\s*({termPattern})", "bit32.lshift($1, $2)"); }
-        prev = "";
-        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*>>\s*({termPattern})", "bit32.rshift($1, $2)"); }
-
-        // 4. Bitwise AND (&)
-        prev = "";
-        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*&\s*({termPattern})", "bit32.band($1, $2)"); }
-
-        // 5. Bitwise OR (|)
-        prev = "";
-        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*\|\s*({termPattern})", "bit32.bor($1, $2)"); }
-
-        // 6. Operador de Comprimento (#) para userdata
+        // 2. Operador de Comprimento (#)
         script = Regex.Replace(script, @"#\s*([a-zA-Z_][a-zA-Z0-9_]*)", "(type($1)=='userdata' and $1:GetCount() or #$1)");
 
-        // 7. Loop Direto sobre Userdata (Iterador)
+        // 3. Substitui o Bitwise XOR binário (a ~ b) e depois o NOT unário (~b)
+        string prev = "";
+        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*~(?!=)\s*({rightTermPattern})", "bit32.bxor($1, $2)"); }
+        script = Regex.Replace(script, $@"~(?!=)\s*({rightTermPattern})", "bit32.bnot($1)");
+
+        // Brutal Fallback para qualquer '~' isolado que o rightTermPattern não capturou
+        script = Regex.Replace(script, @"(?<!=)~(?!=)\s*([a-zA-Z0-9_.]+(?:\([^)]*\))?)", "bit32.bnot($1)");
+
+        // 4. Divisão Inteira (//)
+        prev = "";
+        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*//\s*({rightTermPattern})", "math.floor($1 / $2)"); }
+
+        // 5. Bitwise Shifts (<< e >>)
+        prev = "";
+        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*<<\s*({rightTermPattern})", "bit32.lshift($1, $2)"); }
+        prev = "";
+        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*>>\s*({rightTermPattern})", "bit32.rshift($1, $2)"); }
+
+        // 6. Bitwise AND (&)
+        prev = "";
+        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*&\s*({rightTermPattern})", "bit32.band($1, $2)"); }
+
+        // 7. Bitwise OR (|)
+        prev = "";
+        while (script != prev) { prev = script; script = Regex.Replace(script, $@"({termPattern})\s*\|\s*({rightTermPattern})", "bit32.bor($1, $2)"); }
+
+        // 8. Loop Direto
         script = Regex.Replace(script, @"for\s+([a-zA-Z0-9_]+)\s+in\s+([a-zA-Z0-9_]+)\s+do", "for $1 in $2:Iter() do");
 
         // 8. OCGCore Compatibility: Mathematical Type Sums & Methods

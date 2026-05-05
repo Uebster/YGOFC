@@ -45,6 +45,28 @@ public partial class LuaDuel
         return count;
     }
 
+    public int GetLocationCountFromEx(object player, object target_player, object group, object scard, object zone = null)
+    {
+        // Retorna a contagem de zonas livres considerando a Extra Monster Zone (Regra Master Rule 4+)
+        int p = ConvertToInt(target_player);
+        if (GameManager.Instance == null || GameManager.Instance.duelFieldUI == null) return 0;
+        // Fallback simplificado: Conta as zonas MZONE normais para garantir compatibilidade com as invocações
+        return GetLocationCount(p, 0x04);
+    }
+
+    public int GetUsableMZoneCount(object player, object uzone = null)
+    {
+        int p = ConvertToInt(player);
+        return GetLocationCount(p, 0x04);
+    }
+
+    public int GetTributeCount(object card, object group = null, object zone = null)
+    {
+        LuaCard lc = card as LuaCard;
+        if (lc != null && lc.IsHasEffect(150).Type != DataType.Nil) return 2; // EFFECT_DOUBLE_TRIBUTE
+        return 1;
+    }
+
     public void AddCustomActivityCounter(object counter_id, object activity_type, object filter) { Debug.LogWarning("[LUA STUB] AddCustomActivityCounter chamado"); }
     public void EnableGlobalFlag(object flag) { globalFlags |= ConvertToInt(flag); }
 
@@ -99,6 +121,7 @@ public partial class LuaDuel
     { 
         return GetMatchingGroup(null, player, location1, location2, null).GetCount(); 
     }
+    public int GetPlayersCount(object p) { return 2; }
 
     public bool IsEnvironment(object cardcode) { return false; }
     public bool IsPlayerCanDiscardDeck(object player, object count) { return true; }
@@ -630,6 +653,25 @@ public partial class LuaDuel
         return group;
     }
 
+    public LuaCard GetFirstMatchingCard(object filterFunc, object player, object locSelf, object locOpp, object excluded, params object[] extraArgs)
+    {
+        LuaGroup group = GetMatchingGroup(filterFunc, player, locSelf, locOpp, excluded, extraArgs);
+        return (group != null && group.GetCount() > 0) ? group.GetFirst() : null;
+    }
+
+    public LuaGroup GetFusionMaterial(object player)
+    {
+        Debug.LogWarning("[LUA STUB] Duel.GetFusionMaterial chamado");
+        int tp = ConvertToInt(player);
+        return GetMatchingGroup(null, tp, 0x02 | 0x04, 0, null); // Mão + Campo
+    }
+
+    public DynValue GetEnvironment()
+    {
+        Debug.LogWarning("[LUA STUB] Duel.GetEnvironment chamado");
+        return DynValue.Nil;
+    }
+
     public bool IsExistingMatchingCard(object filterFunc, object player, object locSelf, object locOpp, object count, object excluded, params object[] extraArgs)
     {
         LuaGroup group = GetMatchingGroup(filterFunc, player, locSelf, locOpp, excluded, extraArgs);
@@ -642,6 +684,83 @@ public partial class LuaDuel
     public bool IsExistingTarget(object filterFunc, object player, object locSelf, object locOpp, object count, object excluded, params object[] extraArgs)
     {
         return IsExistingMatchingCard(filterFunc, player, locSelf, locOpp, count, excluded, extraArgs);
+    }
+
+    // ==============================================================================
+    // STUBS FOR DIAGNOSTIC REPORT (DUEL)
+    // ==============================================================================
+    public void ActivateFieldSpell(params object[] args) { Debug.LogWarning("[LUA STUB] ActivateFieldSpell"); }
+    public bool AddNoTributeCheck(params object[] args) { Debug.LogWarning("[LUA STUB] AddNoTributeCheck"); return false; }
+    public void AdjustInstantly(params object[] args) { Debug.LogWarning("[LUA STUB] AdjustInstantly"); }
+    public void AnnounceAnotherAttribute(params object[] args) { Debug.LogWarning("[LUA STUB] AnnounceAnotherAttribute"); }
+    public void AnnounceAnotherRace(params object[] args) { Debug.LogWarning("[LUA STUB] AnnounceAnotherRace"); }
+    public void AnnounceCoin(params object[] args) { Debug.LogWarning("[LUA STUB] AnnounceCoin"); }
+    public DynValue AnnounceNumberRange(params object[] args) { Debug.LogWarning("[LUA STUB] AnnounceNumberRange"); return DynValue.NewNumber(0); }
+    public void AskAny(params object[] args) { Debug.LogWarning("[LUA STUB] AskAny"); }
+    public void AskEveryone(params object[] args) { Debug.LogWarning("[LUA STUB] AskEveryone"); }
+    public bool AttackCostPaid(params object[] args) { Debug.LogWarning("[LUA STUB] AttackCostPaid"); return true; }
+    public DynValue CallCoin(params object[] args) { Debug.LogWarning("[LUA STUB] CallCoin"); return DynValue.NewNumber(0); }
+    public void ChainAttack(params object[] args) { Debug.LogWarning("[LUA STUB] ChainAttack"); }
+    public void ChangeAttackTarget(params object[] args) { Debug.LogWarning("[LUA STUB] ChangeAttackTarget"); }
+    public void ChangeTargetCard(params object[] args) { Debug.LogWarning("[LUA STUB] ChangeTargetCard"); }
+    public void ChangeTargetPlayer(params object[] args) { Debug.LogWarning("[LUA STUB] ChangeTargetPlayer"); }
+    public void ChangeToFaceupAttackOrFacedownDefense(params object[] args) { Debug.LogWarning("[LUA STUB] ChangeToFaceupAttackOrFacedownDefense"); }
+    public bool CheckChainTarget(params object[] args) { Debug.LogWarning("[LUA STUB] CheckChainTarget"); return false; }
+    public bool CheckLocation(params object[] args) { Debug.LogWarning("[LUA STUB] CheckLocation"); return false; }
+    public bool CheckPendulumZones(params object[] args) { Debug.LogWarning("[LUA STUB] CheckPendulumZones"); return false; }
+    public bool CheckPhaseActivity(params object[] args) { Debug.LogWarning("[LUA STUB] CheckPhaseActivity"); return false; }
+    public bool CheckReleaseGroupSummon(params object[] args) { Debug.LogWarning("[LUA STUB] CheckReleaseGroupSummon"); return false; }
+    public DynValue CountHeads(params object[] args) { Debug.LogWarning("[LUA STUB] CountHeads"); return DynValue.NewNumber(0); }
+    public DynValue CountTails(params object[] args) { Debug.LogWarning("[LUA STUB] CountTails"); return DynValue.NewNumber(0); }
+    public void EnableUnofficialAttribute(params object[] args) { Debug.LogWarning("[LUA STUB] EnableUnofficialAttribute"); }
+    public void EnableUnofficialRace(params object[] args) { Debug.LogWarning("[LUA STUB] EnableUnofficialRace"); }
+    public void EquipComplete(params object[] args) { Debug.LogWarning("[LUA STUB] EquipComplete"); }
+    public int GetCardSetcodeFromCode(params object[] args) { Debug.LogWarning("[LUA STUB] GetCardSetcodeFromCode"); return 0; }
+    public int GetCardTypeFromCode(params object[] args) { Debug.LogWarning("[LUA STUB] GetCardTypeFromCode"); return 0; }
+    public int GetFieldGroupCountRush(params object[] args) { Debug.LogWarning("[LUA STUB] GetFieldGroupCountRush"); return 0; }
+    public int GetLinkedZone(params object[] args) { Debug.LogWarning("[LUA STUB] GetLinkedZone"); return 0; }
+    public int GetMasterRule(params object[] args) { Debug.LogWarning("[LUA STUB] GetMasterRule"); return 4; }
+    public int GetMatchingGroupCountRush(params object[] args) { Debug.LogWarning("[LUA STUB] GetMatchingGroupCountRush"); return 0; }
+    public LuaGroup GetMatchingGroupRush(params object[] args) { Debug.LogWarning("[LUA STUB] GetMatchingGroupRush"); return new LuaGroup(); }
+    public LuaGroup GetOperatedGroup(params object[] args) { Debug.LogWarning("[LUA STUB] GetOperatedGroup"); return new LuaGroup(); }
+    public DynValue GetPossibleOperationInfo(params object[] args) { Debug.LogWarning("[LUA STUB] GetPossibleOperationInfo"); return DynValue.Nil; }
+    public LuaGroup GetStartingHand(params object[] args) { Debug.LogWarning("[LUA STUB] GetStartingHand"); return new LuaGroup(); }
+    public LuaGroup GetTargetGroup(params object[] args) { Debug.LogWarning("[LUA STUB] GetTargetGroup"); return new LuaGroup(); }
+    public int GetZoneWithLinkedCount(params object[] args) { Debug.LogWarning("[LUA STUB] GetZoneWithLinkedCount"); return 0; }
+    public void GoatConfirm(params object[] args) { Debug.LogWarning("[LUA STUB] GoatConfirm"); }
+    public void HintSelection(params object[] args) { Debug.LogWarning("[LUA STUB] HintSelection"); }
+    public bool IsAttackCostPaid(params object[] args) { Debug.LogWarning("[LUA STUB] IsAttackCostPaid"); return true; }
+    public bool IsChainSolving(params object[] args) { Debug.LogWarning("[LUA STUB] IsChainSolving"); return false; }
+    public bool IsDamageCalculated(params object[] args) { Debug.LogWarning("[LUA STUB] IsDamageCalculated"); return false; }
+    public bool IsDamageStep(params object[] args) { Debug.LogWarning("[LUA STUB] IsDamageStep"); return false; }
+    public bool IsPlayerCanAdditionalTributeSummon(params object[] args) { Debug.LogWarning("[LUA STUB] IsPlayerCanAdditionalTributeSummon"); return false; }
+    public bool IsSummonCancelable(params object[] args) { Debug.LogWarning("[LUA STUB] IsSummonCancelable"); return false; }
+    public void LoadCardScript(params object[] args) { Debug.LogWarning("[LUA STUB] LoadCardScript"); }
+    public void LoadCardScriptAlias(params object[] args) { Debug.LogWarning("[LUA STUB] LoadCardScriptAlias"); }
+    public void MoveSequence(params object[] args) { Debug.LogWarning("[LUA STUB] MoveSequence"); }
+    public void MoveToDeckBottom(params object[] args) { Debug.LogWarning("[LUA STUB] MoveToDeckBottom"); }
+    public void MoveToDeckTop(params object[] args) { Debug.LogWarning("[LUA STUB] MoveToDeckTop"); }
+    public void NegateAttack(params object[] args) { Debug.LogWarning("[LUA STUB] NegateAttack"); }
+    public void NegateRelatedChain(params object[] args) { Debug.LogWarning("[LUA STUB] NegateRelatedChain"); }
+    public void NegateSummon(params object[] args) { Debug.LogWarning("[LUA STUB] NegateSummon"); }
+    public void RDComplete(params object[] args) { Debug.LogWarning("[LUA STUB] RDComplete"); }
+    public void Readjust(params object[] args) { Debug.LogWarning("[LUA STUB] Readjust"); }
+    public void RemoveCards(params object[] args) { Debug.LogWarning("[LUA STUB] RemoveCards"); }
+    public DynValue SelectEffectYesNo(params object[] args) { Debug.LogWarning("[LUA STUB] SelectEffectYesNo"); return DynValue.NewBoolean(false); }
+    public DynValue SelectFieldZone(params object[] args) { Debug.LogWarning("[LUA STUB] SelectFieldZone"); return DynValue.NewNumber(0); }
+    public LuaGroup SelectReleaseGroupSummon(params object[] args) { Debug.LogWarning("[LUA STUB] SelectReleaseGroupSummon"); return new LuaGroup(); }
+    public LuaGroup SelectTribute(params object[] args) { Debug.LogWarning("[LUA STUB] SelectTribute"); return new LuaGroup(); }
+    public void Sendto(params object[] args) { Debug.LogWarning("[LUA STUB] Sendto"); }
+    public void SetChainLimit(params object[] args) { Debug.LogWarning("[LUA STUB] SetChainLimit"); }
+    public void SetChainLimitTillChainEnd(params object[] args) { Debug.LogWarning("[LUA STUB] SetChainLimitTillChainEnd"); }
+    public void SetFusionMaterial(params object[] args) { Debug.LogWarning("[LUA STUB] SetFusionMaterial"); }
+    public void SetLP(params object[] args) { Debug.LogWarning("[LUA STUB] SetLP"); }
+    public void SetSelectedCard(params object[] args) { Debug.LogWarning("[LUA STUB] SetSelectedCard"); }
+    public void ShuffleExtra(params object[] args) { Debug.LogWarning("[LUA STUB] ShuffleExtra"); }
+    public void SkipPhase(params object[] args) { Debug.LogWarning("[LUA STUB] SkipPhase"); }
+    public void SummonOrSet(params object[] args) { Debug.LogWarning("[LUA STUB] SummonOrSet"); }
+    public void SwapControl(params object[] args) { Debug.LogWarning("[LUA STUB] SwapControl"); }
+    public void TagSwap(params object[] args) { Debug.LogWarning("[LUA STUB] TagSwap"); 
     }
 
     public int GetTargetPlayer() { 

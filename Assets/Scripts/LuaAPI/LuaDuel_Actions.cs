@@ -1232,4 +1232,38 @@ public partial class LuaDuel
         }
         return false;
     }
+
+    public void Overlay(object xyzCard, object materials)
+    {
+        Debug.LogWarning("[LUA STUB] Duel.Overlay chamado");
+        // [FUTURO] Implementar lógica de adicionar Overlay Materials
+    }
+
+    // --- FUNÇÕES OBSOLETAS E WORKAROUNDS (YGOPro Legacy) ---
+    public void SwapSequence(object c1, object c2)
+    {
+        LuaCard card1 = c1 as LuaCard;
+        LuaCard card2 = c2 as LuaCard;
+        if (card1 != null && card2 != null && card1.unityCard != null && card2.unityCard != null)
+        {
+            Transform parent1 = card1.unityCard.transform.parent;
+            Transform parent2 = card2.unityCard.transform.parent;
+            
+            card1.unityCard.transform.SetParent(parent2, false);
+            card2.unityCard.transform.SetParent(parent1, false);
+            
+            card1.unityCard.transform.localPosition = Vector3.zero;
+            card2.unityCard.transform.localPosition = Vector3.zero;
+            Debug.Log($"<color=cyan>[Workaround]</color> Posições trocadas entre {card1.unityData?.name} e {card2.unityData?.name}.");
+        }
+    }
+
+    public void SwapDeckAndGrave(object player)
+    {
+        int p = ConvertToInt(player);
+        Debug.LogWarning($"<color=yellow>[LUA STUB]</color> Duel.SwapDeckAndGrave chamado para o jogador {p} (Exchange of the Spirit)!");
+        // [FUTURO] Inverter fisicamente as listas playerMainDeck e playerGraveyard no GameManager.
+    }
+    
+    public void ReturnToField(object card, params object[] args) { Debug.LogWarning("[LUA STUB] Duel.ReturnToField chamado"); }
 }

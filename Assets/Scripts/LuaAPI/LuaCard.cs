@@ -13,7 +13,7 @@ using System.Linq;
 // - GameManager.cs: Verifica pilhas, zonas e propriedades da partida para filtros.
 // ==============================================================================
 [MoonSharpUserData]
-public class LuaCard
+public partial class LuaCard
 {
     public CardDisplay unityCard;
     public CardData unityData;
@@ -21,6 +21,19 @@ public class LuaCard
     public Dictionary<int, int> flagEffectLabels = new Dictionary<int, int>();
     public Dictionary<int, int> counters = new Dictionary<int, int>();
     public bool isProcComplete = false;
+
+    // --- CAMPOS DINÂMICOS LUA (Evita 'cannot access field' do MoonSharp) ---
+    public DynValue fit_monster { get; set; } = DynValue.Nil;
+    public DynValue ritual_custom_condition { get; set; } = DynValue.Nil;
+    public DynValue ritual_custom_operation { get; set; } = DynValue.Nil;
+    public DynValue ritual_custom_check { get; set; } = DynValue.Nil;
+    public DynValue mat_filter { get; set; } = DynValue.Nil;
+    
+    public DynValue __index 
+    { 
+        get { return GetMetatable(); } 
+        set { } 
+    }
 
     public LuaCard(CardDisplay card) { 
         unityCard = card; 
@@ -73,6 +86,7 @@ public class LuaCard
 
     private Dictionary<int, int> assumedProperties = new Dictionary<int, int>();
     public void AssumeProperty(object assumeCode, object value) { assumedProperties[ConvertToInt(assumeCode)] = ConvertToInt(value); }
+    public void ClearAssumptions() { assumedProperties.Clear(); }
 
     public int GetAttack() { 
         if (assumedProperties.ContainsKey(7)) return assumedProperties[7]; // ASSUME_ATTACK
@@ -490,6 +504,12 @@ public class LuaCard
         // [FUTURO] Implementar lógica avançada de Link Summon (Link Markers, Ratings)
         return true; 
     }
+    
+    public bool IsSummonCode(object scard, object sumtype, object tp, params object[] codes) { return IsCode(codes); }
+    public bool IsNotTuner(object scard = null, object tp = null) { return !IsType(0x1000); } // TYPE_TUNER
+    public bool CheckFusionSubstitute(object fc) { return registeredEffects.Exists(e => e.code == 234); } // EFFECT_FUSION_SUBSTITUTE
+    public bool CheckUniqueOnField(object tp) { return true; } // Stub seguro
+    public bool IsXyzLevel(object xyz, object lv) { return GetLevel() == ConvertToInt(lv); }
 
     public bool IsCanBeRitualMaterial(object card = null) { 
         if (registeredEffects.Exists(e => e.code == 248)) return false; // EFFECT_CANNOT_BE_MATERIAL
@@ -714,6 +734,13 @@ public class LuaCard
     }
     public int GetOriginalCode() { return GetCode(); }
     
+    public DynValue GetOriginalCodeRule() { return DynValue.NewTuple(DynValue.NewNumber(GetOriginalCode())); }
+    public DynValue GetCodeRule() { return DynValue.NewTuple(DynValue.NewNumber(GetCode())); }
+    public DynValue GetFusionCode() { return DynValue.NewTuple(DynValue.NewNumber(GetCode())); }
+    public DynValue GetLinkCode() { return DynValue.NewTuple(DynValue.NewNumber(GetCode())); }
+    public DynValue GetSynchroCode() { return DynValue.NewTuple(DynValue.NewNumber(GetCode())); }
+    public DynValue GetRitualCode() { return DynValue.NewTuple(DynValue.NewNumber(GetCode())); }
+
     public void RegisterFlagEffect(params object[] args) 
     { 
         if (args == null || args.Length == 0) return;
@@ -824,6 +851,47 @@ public class LuaCard
     public void ReleaseEffectRelation(object e) { Debug.LogWarning($"[LUA STUB] ReleaseEffectRelation chamado em {unityData?.name}"); }
     public void ClearEffectRelation() { Debug.LogWarning($"[LUA STUB] ClearEffectRelation chamado em {unityData?.name}"); }
     
+    public DynValue GetMetatable()
+    {
+        if (CardEffectManager.Instance != null && unityData != null)
+        {
+            DynValue table = CardEffectManager.Instance.luaEngine.Globals.Get("c" + GetOriginalCode());
+            if (!table.IsNil() && table.Type == DataType.Table) return table;
+        }
+        Debug.LogWarning($"[LUA STUB] GetMetatable chamado em {unityData?.name}, mas a tabela não foi encontrada.");
+        return DynValue.NewTable(CardEffectManager.Instance?.luaEngine);
+    }
+
+    public DynValue GetCardEffect(object code)
+    {
+        int targetCode = ConvertToInt(code);
+        var effects = registeredEffects.FindAll(e => e.code == targetCode);
+
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.auraManager != null)
+        {
+            var globalAuras = CardEffectManager.Instance.auraManager.GetEffectsTargetingCard(this, targetCode, (CardLocation)GetLocation());
+            effects.AddRange(globalAuras);
+        }
+
+        if (effects.Count == 0) return DynValue.Nil;
+        if (effects.Count == 1) return UserData.Create(effects[0]);
+        return DynValue.NewTuple(effects.Select(e => UserData.Create(e)).ToArray());
+    }
+
+    public DynValue GetOwnEffects()
+    {
+        if (registeredEffects == null || registeredEffects.Count == 0) return DynValue.Nil;
+        if (registeredEffects.Count == 1) return UserData.Create(registeredEffects[0]);
+        return DynValue.NewTuple(registeredEffects.Select(e => UserData.Create(e)).ToArray());
+    }
+    
+    // --- PREVENÇÃO PARA A ERA LINK E POSICIONAMENTO ---
+    public int GetColumnZone(object loc, object seq = null) { return 0; }
+    public LuaGroup GetMutualLinkedGroup() { return new LuaGroup(); }
+    public LuaGroup GetLinkedGroup() { return new LuaGroup(); }
+    public bool IsLinkState() { return false; }
+    public bool IsLinkMarker(object dir) { return false; }
+
     public void ReverseInDeck() 
     { 
         Debug.Log($"<color=green>[Parasite Paracide]</color> {unityData?.name} ativou ReverseInDeck (Ficará virado para cima no baralho)!");
@@ -1078,6 +1146,96 @@ public class LuaCard
         if (a != null && a != b) g.AddCard(a);
         return g;
     }
+}
+
+// ==============================================================================
+// STUBS FOR DIAGNOSTIC REPORT (CARD)
+// ==============================================================================
+public partial class LuaCard
+{
+    public void AddMonsterAttributeComplete(params object[] args) { Debug.LogWarning("[LUA STUB] AddMonsterAttributeComplete"); }
+    public void AnnounceAnotherAttribute(params object[] args) { Debug.LogWarning("[LUA STUB] AnnounceAnotherAttribute"); }
+    public bool CheckActivateEffect(params object[] args) { Debug.LogWarning("[LUA STUB] CheckActivateEffect"); return false; }
+    public bool CheckCountLimit(params object[] args) { Debug.LogWarning("[LUA STUB] CheckCountLimit"); return true; }
+    public bool CheckDifferentPropertyBinary(params object[] args) { Debug.LogWarning("[LUA STUB] CheckDifferentPropertyBinary"); return false; }
+    public bool CheckEquipTarget(params object[] args) { Debug.LogWarning("[LUA STUB] CheckEquipTarget"); return true; }
+    public bool CheckRemoveOverlayCard(params object[] args) { Debug.LogWarning("[LUA STUB] CheckRemoveOverlayCard"); return false; }
+    public bool CheckUnionTarget(params object[] args) { Debug.LogWarning("[LUA STUB] CheckUnionTarget"); return true; }
+    public void Cover(params object[] args) { Debug.LogWarning("[LUA STUB] Cover"); }
+    public void CreateRelation(params object[] args) { Debug.LogWarning("[LUA STUB] CreateRelation"); }
+    public bool Equal(params object[] args) { Debug.LogWarning("[LUA STUB] Equal"); return false; }
+    public void EquipByEffectAndLimitRegister(params object[] args) { Debug.LogWarning("[LUA STUB] EquipByEffectAndLimitRegister"); }
+    public void ForEach(params object[] args) { Debug.LogWarning("[LUA STUB] ForEach"); }
+    public int GetActivateLocation(params object[] args) { Debug.LogWarning("[LUA STUB] GetActivateLocation"); return 0; }
+    public int GetBitwiseOr(params object[] args) { Debug.LogWarning("[LUA STUB] GetBitwiseOr"); return 0; }
+    public int GetCardID(params object[] args) { Debug.LogWarning("[LUA STUB] GetCardID"); return 0; }
+    public int GetLeftScale(params object[] args) { Debug.LogWarning("[LUA STUB] GetLeftScale"); return 0; }
+    public LuaCard GetLink(params object[] args) { Debug.LogWarning("[LUA STUB] GetLink"); return null; }
+    public int GetLinkMarker(params object[] args) { Debug.LogWarning("[LUA STUB] GetLinkMarker"); return 0; }
+    public int GetLinkedZone(params object[] args) { Debug.LogWarning("[LUA STUB] GetLinkedZone"); return 0; }
+    public int GetMaximumAttack(params object[] args) { Debug.LogWarning("[LUA STUB] GetMaximumAttack"); return 0; }
+    public int GetMutualLinkedGroupCount(params object[] args) { Debug.LogWarning("[LUA STUB] GetMutualLinkedGroupCount"); return 0; }
+    public int GetOriginalRank(params object[] args) { Debug.LogWarning("[LUA STUB] GetOriginalRank"); return 0; }
+    public int GetOriginalType(params object[] args) { Debug.LogWarning("[LUA STUB] GetOriginalType"); return 0; }
+    public int GetPosition(params object[] args) { Debug.LogWarning("[LUA STUB] GetPosition"); return GetBattlePosition(); }
+    public int GetPreviousAttackOnField(params object[] args) { Debug.LogWarning("[LUA STUB] GetPreviousAttackOnField"); return 0; }
+    public int GetPreviousAttributeOnField(params object[] args) { Debug.LogWarning("[LUA STUB] GetPreviousAttributeOnField"); return 0; }
+    public int GetPreviousDefenseOnField(params object[] args) { Debug.LogWarning("[LUA STUB] GetPreviousDefenseOnField"); return 0; }
+    public int GetPreviousLevelOnField(params object[] args) { Debug.LogWarning("[LUA STUB] GetPreviousLevelOnField"); return 0; }
+    public int GetPreviousRankOnField(params object[] args) { Debug.LogWarning("[LUA STUB] GetPreviousRankOnField"); return 0; }
+    public int GetPreviousSequence(params object[] args) { Debug.LogWarning("[LUA STUB] GetPreviousSequence"); return 0; }
+    public int GetPreviousTypeOnField(params object[] args) { Debug.LogWarning("[LUA STUB] GetPreviousTypeOnField"); return 0; }
+    public int GetRange(params object[] args) { Debug.LogWarning("[LUA STUB] GetRange"); return 0; }
+    public int GetRank(params object[] args) { Debug.LogWarning("[LUA STUB] GetRank"); return 0; }
+    public int GetRealFieldID(params object[] args) { Debug.LogWarning("[LUA STUB] GetRealFieldID"); return 0; }
+    public int GetRightScale(params object[] args) { Debug.LogWarning("[LUA STUB] GetRightScale"); return 0; }
+    public int GetScale(params object[] args) { Debug.LogWarning("[LUA STUB] GetScale"); return 0; }
+    public int GetSummonPhase(params object[] args) { Debug.LogWarning("[LUA STUB] GetSummonPhase"); return 0; }
+    public int GetSummonPlayer(params object[] args) { Debug.LogWarning("[LUA STUB] GetSummonPlayer"); return 0; }
+    public int GetTargetRange(params object[] args) { Debug.LogWarning("[LUA STUB] GetTargetRange"); return 0; }
+    public int GetTributeRequirement(params object[] args) { Debug.LogWarning("[LUA STUB] GetTributeRequirement"); return 0; }
+    public int GetUnionCount(params object[] args) { Debug.LogWarning("[LUA STUB] GetUnionCount"); return 0; }
+    public bool HasDefense(params object[] args) { Debug.LogWarning("[LUA STUB] HasDefense"); return true; }
+    public bool HasRank(params object[] args) { Debug.LogWarning("[LUA STUB] HasRank"); return false; }
+    public bool HasRemainFieldCost(params object[] args) { Debug.LogWarning("[LUA STUB] HasRemainFieldCost"); return false; }
+    public bool HasSelfChangePositionCost(params object[] args) { Debug.LogWarning("[LUA STUB] HasSelfChangePositionCost"); return false; }
+    public bool Includes(params object[] args) { Debug.LogWarning("[LUA STUB] Includes"); return false; }
+    public bool IsAbleToExtra(params object[] args) { Debug.LogWarning("[LUA STUB] IsAbleToExtra"); return true; }
+    public bool IsAbleToExtraAsCost(params object[] args) { Debug.LogWarning("[LUA STUB] IsAbleToExtraAsCost"); return true; }
+    public bool IsAbleToHandAsCost(params object[] args) { Debug.LogWarning("[LUA STUB] IsAbleToHandAsCost"); return true; }
+    public bool IsContinuousSpell(params object[] args) { Debug.LogWarning("[LUA STUB] IsContinuousSpell"); return false; }
+    public bool IsDeleted(params object[] args) { Debug.LogWarning("[LUA STUB] IsDeleted"); return false; }
+    public bool IsGeminiStatus(params object[] args) { Debug.LogWarning("[LUA STUB] IsGeminiStatus"); return false; }
+    public bool IsLevelBetween(params object[] args) { Debug.LogWarning("[LUA STUB] IsLevelBetween"); return false; }
+    public bool IsLinkBelow(params object[] args) { Debug.LogWarning("[LUA STUB] IsLinkBelow"); return false; }
+    public bool IsLinkMonster(params object[] args) { Debug.LogWarning("[LUA STUB] IsLinkMonster"); return false; }
+    public bool IsMaximumMode(params object[] args) { Debug.LogWarning("[LUA STUB] IsMaximumMode"); return false; }
+    public bool IsMaximumModeCenter(params object[] args) { Debug.LogWarning("[LUA STUB] IsMaximumModeCenter"); return false; }
+    public bool IsMaximumModeLeft(params object[] args) { Debug.LogWarning("[LUA STUB] IsMaximumModeLeft"); return false; }
+    public bool IsMaximumModeSide(params object[] args) { Debug.LogWarning("[LUA STUB] IsMaximumModeSide"); return false; }
+    public bool IsNegatableMonster(params object[] args) { Debug.LogWarning("[LUA STUB] IsNegatableMonster"); return true; }
+    public bool IsNegatableSpellTrap(params object[] args) { Debug.LogWarning("[LUA STUB] IsNegatableSpellTrap"); return true; }
+    public bool IsNonEffectMonster(params object[] args) { Debug.LogWarning("[LUA STUB] IsNonEffectMonster"); return false; }
+    public bool IsNormalSpell(params object[] args) { Debug.LogWarning("[LUA STUB] IsNormalSpell"); return false; }
+    public bool IsPlusOrMinus(params object[] args) { Debug.LogWarning("[LUA STUB] IsPlusOrMinus"); return false; }
+    public bool IsRankBelow(params object[] args) { Debug.LogWarning("[LUA STUB] IsRankBelow"); return false; }
+    public bool IsRelateToChain(params object[] args) { Debug.LogWarning("[LUA STUB] IsRelateToChain"); return true; }
+    public bool IsReleasableByEffect(params object[] args) { Debug.LogWarning("[LUA STUB] IsReleasableByEffect"); return true; }
+    public bool IsSequence(params object[] args) { Debug.LogWarning("[LUA STUB] IsSequence"); return false; }
+    public bool IsTrapCard(params object[] args) { Debug.LogWarning("[LUA STUB] IsTrapCard"); return false; }
+    public bool ListsCodeAsMaterial(params object[] args) { Debug.LogWarning("[LUA STUB] ListsCodeAsMaterial"); return false; }
+    public void MoveAdjacent(params object[] args) { Debug.LogWarning("[LUA STUB] MoveAdjacent"); }
+    public void RemoveOverlayCard(params object[] args) { Debug.LogWarning("[LUA STUB] RemoveOverlayCard"); }
+    public void ResetEffect(params object[] args) { Debug.LogWarning("[LUA STUB] ResetEffect"); }
+    public void RestoreCountLimit(params object[] args) { Debug.LogWarning("[LUA STUB] RestoreCountLimit"); }
+    public DynValue SelectUnselect(params object[] args) { Debug.LogWarning("[LUA STUB] SelectUnselect"); return DynValue.Nil; }
+    public DynValue Split(params object[] args) { Debug.LogWarning("[LUA STUB] Split"); return DynValue.Nil; }
+    public void UseCountLimit(params object[] args) { Debug.LogWarning("[LUA STUB] UseCountLimit"); }
+    public bool WasMaximumMode(params object[] args) { Debug.LogWarning("[LUA STUB] WasMaximumMode"); return false; }
+    public void AddMustBeSpecialSummonedByDarkFusion(params object[] args) { Debug.LogWarning("[LUA STUB] AddMustBeSpecialSummonedByDarkFusion"); }
+    public bool IsNouvellesSummoned(params object[] args) { Debug.LogWarning("[LUA STUB] IsNouvellesSummoned"); return false; }
+    public bool IsReincarnationSummoned(params object[] args) { Debug.LogWarning("[LUA STUB] IsReincarnationSummoned"); return false; }
+    public bool IsRikkaReleasable(params object[] args) { Debug.LogWarning("[LUA STUB] IsRikkaReleasable"); return true; }
 }
 
 // ==============================================================================

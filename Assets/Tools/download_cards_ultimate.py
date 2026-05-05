@@ -353,12 +353,15 @@ HTML_UI = """
         }
 
         function sendTaskRequest(type, imgPrefix, luaPrefix) {
+            let eraVal = document.getElementById('era_preset').value;
+            if (eraVal === 'CUSTOM' || eraVal === 'MD') eraVal = ""; // Evita sufixos indesejados para misturas modernas
             const data = {
                 type: type,
                 folder: document.getElementById('folder').value || "Ultimate_Assets",
                 start: document.getElementById('start').value,
                 end: document.getElementById('end').value,
                 region: document.getElementById('region').value,
+                era_prefix: eraVal,
                 txt_cols: {
                     id: document.getElementById('col_id').checked,
                     name: document.getElementById('col_name').checked,
@@ -413,7 +416,7 @@ HTML_UI = """
 </html>
 """
 
-def task_executor(tipo, folder, start, end, region, txt_cols=None, img_prefix="", lua_prefix=""):
+def task_executor(tipo, folder, start, end, region, txt_cols=None, img_prefix="", lua_prefix="", era_prefix=""):
     global progresso, cancel_task
     cancel_task = False
     progresso = {"atual": 0, "total": 0, "status": "Iniciando...", "card": "", "log": []}
@@ -766,7 +769,8 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None, img_prefix=""
 
                 final_db.append(card_obj)
 
-            path_json = os.path.join(folder, "cards_ultimate.json")
+            filename_json = f"cards{era_prefix}.json" if era_prefix else "cards.json"
+            path_json = os.path.join(folder, filename_json)
             with open(path_json, "w", encoding="utf-8") as f:
                 json_lib.dump(final_db, f, indent=2, ensure_ascii=False)
             if not cancel_task: progresso["log"].append("✓ JSON Completo gerado!")
@@ -790,21 +794,37 @@ def task_executor(tipo, folder, start, end, region, txt_cols=None, img_prefix=""
             progresso["status"] = "Baixando Scripts Lua (Multi-Thread)..."
             os.makedirs(lua_dir, exist_ok=True)
 
-            # Baixa os arquivos base (A "Bíblia" de Constantes e Utilitários)
+            # --- BAIXAR BIBLIOTECAS BASE (SupportLua) ---
+            support_lua_dir = os.path.join(folder, "SupportLua")
+            os.makedirs(support_lua_dir, exist_ok=True)
+
+            core_libraries = [
+                "constant.lua", "utility.lua", "debug_utility.lua", 
+                "cards_specific_functions.lua", "proc_fusion.lua", 
+                "proc_fusion_spell.lua", "proc_ritual.lua", "proc_synchro.lua", 
+                "proc_xyz.lua", "proc_pendulum.lua", "proc_link.lua", 
+                "proc_union.lua", "proc_gemini.lua", "proc_spirit.lua", 
+                "proc_equip.lua", "proc_persistent.lua", "proc_normal.lua", 
+                "proc_workaround.lua", "proc_skill.lua", "deprecated_functions.lua",
+                "archetype_setcode_constants.lua", "card_counter_constants.lua",
+                "proc_maximum.lua", "proc_rush.lua", "proc_unofficial.lua"
+            ]
+
             try:
-                const_url = "https://raw.githubusercontent.com/ProjectIgnis/CardScripts/master/constant.lua"
-                r_const = requests.get(const_url, timeout=10)
-                if r_const.status_code == 200:
-                    with open(os.path.join(folder, "constant.lua"), 'w', encoding='utf-8') as f: f.write(r_const.text)
-                    progresso["log"].append("✓ constant.lua (Docs) atualizado!")
-                
-                util_url = "https://raw.githubusercontent.com/ProjectIgnis/CardScripts/master/utility.lua"
-                r_util = requests.get(util_url, timeout=10)
-                if r_util.status_code == 200:
-                    with open(os.path.join(folder, "utility.lua"), 'w', encoding='utf-8') as f: f.write(r_util.text)
-                    progresso["log"].append("✓ utility.lua (Docs) atualizado!")
+                for lib in core_libraries:
+                    if cancel_task: break
+                    repo_path = f"Unofficial/{lib}" if lib == "proc_unofficial.lua" else lib
+                    lib_url = f"https://raw.githubusercontent.com/ProjectIgnis/CardScripts/master/{repo_path}"
+                    r_lib = requests.get(lib_url, timeout=10)
+                    if r_lib.status_code == 200:
+                        with open(os.path.join(support_lua_dir, lib), 'w', encoding='utf-8') as f: f.write(r_lib.text)
+                        progresso["log"].append(f"✓ {lib} atualizado!")
+                    else:
+                        warnings_list.append(f"Aviso: Biblioteca não encontrada no repo: {lib}")
+                    
+                    while len(progresso["log"]) > 15: progresso["log"].pop(0)
             except Exception as e:
-                warnings_list.append(f"Falha ao baixar arquivos base (constant.lua / utility.lua): {e}")
+                warnings_list.append(f"Falha ao baixar bibliotecas base: {e}")
 
             completed = 0
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
@@ -966,7 +986,7 @@ def cancel():
 @app.route('/start', methods=['POST'])
 def start():
     d = request.json
-    threading.Thread(target=task_executor, args=(d['type'], d['folder'], d['start'], d['end'], d['region'], d.get('txt_cols', {}), d.get('img_prefix', ''), d.get('lua_prefix', ''))).start()
+    threading.Thread(target=task_executor, args=(d['type'], d['folder'], d['start'], d['end'], d['region'], d.get('txt_cols', {}), d.get('img_prefix', ''), d.get('lua_prefix', ''), d.get('era_prefix', ''))).start()
     return jsonify({"ok": True})
 
 @app.route('/status')

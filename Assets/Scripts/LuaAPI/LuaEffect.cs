@@ -13,7 +13,7 @@ using System;
 //   que serão disparados posteriormente pelo CardEffectManager e ChainManager.
 // ==============================================================================
 [MoonSharpUserData]
-public class LuaEffect
+public partial class LuaEffect
 {
     public LuaCard owner;
     public int code;
@@ -62,6 +62,11 @@ public class LuaEffect
     public static LuaEffect CreateEffect(object c)
     {
         return new LuaEffect { owner = c as LuaCard };
+    }
+
+    public static LuaEffect GlobalEffect()
+    {
+        return new LuaEffect { owner = null }; // Efeito Global não tem dono específico
     }
 
     public void SetType(object t) { type = ConvertToInt(t); }
@@ -248,6 +253,16 @@ public class LuaEffect
     // Retorna a quem o efeito pertence blindado contra Nulos!
     public LuaCard GetHandler() { return owner ?? new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 }); }
     public LuaCard GetOwner() { return owner ?? new LuaCard(new CardData { id = "0000", type = "Monster", name = "Dummy", atk = 0, def = 0, level = 1 }); }
+}
+
+// ==============================================================================
+// STUBS FOR DIAGNOSTIC REPORT (EFFECT)
+// ==============================================================================
+public partial class LuaEffect
+{
+    public int GetCountLimit(params object[] args) { Debug.LogWarning("[LUA STUB] GetCountLimit"); return countLimitMax; }
+    public void Reset(params object[] args) { Debug.LogWarning("[LUA STUB] Reset"); }
+    public void SetReason(params object[] args) { Debug.LogWarning("[LUA STUB] SetReason"); }
 }
 
 // ==============================================================================

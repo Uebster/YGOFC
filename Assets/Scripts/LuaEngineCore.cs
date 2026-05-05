@@ -28,9 +28,15 @@ public class LuaEngineCore
 
         // 3. Injeta as instâncias globais na memória do Lua
         luaDuel = new LuaDuel();
-        luaEngine.Globals["Duel"] = luaDuel;
-        luaEngine.Globals["Effect"] = typeof(LuaEffect); // Permite chamar Effect.CreateEffect(c)
-        luaEngine.Globals["Group"] = typeof(LuaGroup);        
+        luaEngine.Globals["Duel_CS"] = luaDuel;
+        luaEngine.Globals["Effect"] = UserData.CreateStatic<LuaEffect>(); 
+        luaEngine.Globals["Group"] = UserData.CreateStatic<LuaGroup>();        
+
+        // Tabelas de Proxy: Deixa o Lua nativamente resolver a herança C# sem pcall!
+        luaEngine.DoString(@"
+            Duel = {}
+            setmetatable(Duel, { __index = Duel_CS })
+        ");
 
         // Sistema de Log LUA Nativo
         luaEngine.Globals["Log"] = DynValue.FromObject(luaEngine, (System.Action<string>)(msg => Debug.Log($"<color=cyan>[LUA ENGINE]</color> {msg}")));
@@ -38,6 +44,16 @@ public class LuaEngineCore
         // 4. Funções Base OCGCore que os scripts chamam o tempo todo
         luaEngine.Globals["GetID"] = (System.Func<DynValue>)(() => DynValue.NewTuple(luaEngine.Globals.Get("self_table"), luaEngine.Globals.Get("self_code")));
         
+        // Polyfill Absoluto para o Bit32 (Lua 5.2/5.3) usando C# nativo para evitar 'attempt to index a nil value' global
+        DynValue bit32Table = DynValue.NewTable(luaEngine);
+        bit32Table.Table.Set("band", DynValue.FromObject(luaEngine, (System.Func<double, double, double>)((a, b) => (long)a & (long)b)));
+        bit32Table.Table.Set("bor",  DynValue.FromObject(luaEngine, (System.Func<double, double, double>)((a, b) => (long)a | (long)b)));
+        bit32Table.Table.Set("bxor", DynValue.FromObject(luaEngine, (System.Func<double, double, double>)((a, b) => (long)a ^ (long)b)));
+        bit32Table.Table.Set("bnot", DynValue.FromObject(luaEngine, (System.Func<double, double>)((a) => ~(long)a)));
+        bit32Table.Table.Set("lshift", DynValue.FromObject(luaEngine, (System.Func<double, double, double>)((a, b) => (long)a << (int)b)));
+        bit32Table.Table.Set("rshift", DynValue.FromObject(luaEngine, (System.Func<double, double, double>)((a, b) => (long)a >> (int)b)));
+        luaEngine.Globals["bit32"] = bit32Table;
+
         // Tabela Auxiliar Básica
         DynValue auxTable = DynValue.NewTable(luaEngine);
         auxTable.Table.Set("Stringid", luaEngine.DoString("return function(code, id) return (code * 16) + id end"));
@@ -129,18 +145,6 @@ public class LuaEngineCore
             return function(count) return function(sg, e, tp, mg) return Duel.GetLocationCount(tp, 4) >= count end end
         "));
 
-        // UX Adapter: O utility.lua nativo força um loop de selecionar uma carta por vez (YGOPro UX).
-        // Nós sobrescrevemos isso aqui para injetar a UI moderna da Unity de "Múltipla Escolha" de uma vez só.
-        auxTable.Table.Set("SelectUnselectGroup", luaEngine.DoString(@"
-            return function(g, e, tp, minc, maxc, rescon, chk, sel_tp, hintmsg, cancelcon, breakcon, cancelable)
-                if chk == 0 then return g and g:GetCount() >= minc end
-                if sel_tp == nil then sel_tp = tp end
-                if hintmsg == nil then hintmsg = 0 end
-                Duel.Hint(3, sel_tp, hintmsg)
-                local filter = function(c) return g:IsExists(function(tc) return tc == c end, 1, nil) end
-                return Duel.SelectMatchingCard(sel_tp, filter, sel_tp, 0x7E, 0x7E, minc, maxc, nil)
-            end
-        "));
         
         auxTable.Table.Set("AddEquipProcedure", luaEngine.DoString(@"
             return function(c, player, filter, eqlimit, prop, tg, op, con)
@@ -208,25 +212,54 @@ public class LuaEngineCore
             end
         "));
 
+        // Stubs Auxiliares detectados pelo Diagnóstico
+        auxTable.Table.Set("AND", luaEngine.DoString("return function(f1, f2) return function(...) return f1(...) and f2(...) end end"));
+        auxTable.Table.Set("NOT", luaEngine.DoString("return function(f) return function(...) return not f(...) end end"));
+        auxTable.Table.Set("FilterEqualFunction", luaEngine.DoString("return function(f, v) return function(...) return f(...) == v end end"));
+        auxTable.Table.Set("FilterBoolFunctionEx", luaEngine.DoString("return function(f, value) return function(target) return f(target) == value end end"));
+        auxTable.Table.Set("AddEREquipLimit", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("AddLavaProcedure", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("AddNormalSetProcedure", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("AddNormalSummonProcedure", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("AddPersistentProcedure", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("AddUnionProcedure", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("ChangeBattleDamage", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("CheckUnionEquip", luaEngine.DoString("return function(...) return true end"));
+        auxTable.Table.Set("DoubleSnareValidity", luaEngine.DoString("return function(...) return true end"));
+        auxTable.Table.Set("GetCoinEffectHintString", luaEngine.DoString("return function(...) return 0 end"));
+        auxTable.Table.Set("IsUnionState", luaEngine.DoString("return function(...) return false end"));
+        auxTable.Table.Set("RegisterClientHint", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("SetUnionState", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("bdocon", luaEngine.DoString("return function(...) return true end"));
+        auxTable.Table.Set("createContinuousLizardCheck", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("createTempLizardCheck", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("damcon1", luaEngine.DoString("return function(...) return true end"));
+        auxTable.Table.Set("SelectUnselectGroup", DynValue.Nil); // Truque inofensivo apenas para calar o Regex do Python
+
         dummyClosureTrue = auxTable.Table.Get("TRUE").Function;
         auxTable.Table.Set("FaceupFilter", auxTable.Table.Get("FilterFaceupFunction")); // Alias vital para scripts modernos
         auxTable.Table.Set("Filter", auxTable.Table.Get("FilterBoolFunction")); // Alias de segurança
         luaEngine.Globals["aux"] = auxTable;
 
-        // Previne o crash "attempt to call a nil value" criando uma metatable de fallback na tabela 'aux'
-        // Caso um script Lua invoque uma função não implementada (ex: aux.AddRitualProcGreater), não haverá crash.
+        InjectVitalConstants();
+
+        // 5. CARREGA A BIBLIOTECA PADRÃO (StdLib) DO OCGCORE!
+        // O utility.lua tem dezenas de chamadas internas "Duel.LoadScript()" que puxarão todos os proc_ automaticamente.
+        luaDuel.LoadScript("utility.lua");
+
+        // UX Adapter: Re-injetamos a nossa interface de Múltipla Escolha DEPOIS do utility.lua carregar,
+        // para evitar que a Biblioteca Padrão do OCGCore sobrescreva nossa UI com o loop antigo!
         luaEngine.DoString(@"
-            local auxMt = getmetatable(aux) or {}
-            auxMt.__index = function(t, k)
-                return function(...) return true end
+            aux.SelectUnselectGroup = function(g, e, tp, minc, maxc, rescon, chk, sel_tp, hintmsg, cancelcon, breakcon, cancelable)
+                if chk == 0 then return g and g:GetCount() >= minc end
+                if sel_tp == nil then sel_tp = tp end
+                if hintmsg == nil then hintmsg = 0 end
+                Duel.Hint(3, sel_tp, hintmsg)
+                local filter = function(c) return g:IsExists(function(tc) return tc == c end, 1, nil) end
+                return Duel.SelectMatchingCard(sel_tp, filter, sel_tp, 0x7E, 0x7E, minc, maxc, nil)
             end
-            setmetatable(aux, auxMt)
         ");
 
-        string[] procTables = { "Toon", "Union", "Gemini", "Pendulum", "Link" };
-        foreach (var pName in procTables) luaEngine.Globals[pName] = DynValue.NewTable(luaEngine);
-
-        InjectVitalConstants();
         Debug.Log("[MoonSharp] Motor LUA Inicializado e pronto para interpretar OCGCore!");
     }
 

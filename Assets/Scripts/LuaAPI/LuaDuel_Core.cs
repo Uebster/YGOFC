@@ -73,6 +73,11 @@ public partial class LuaDuel
             try
             {
                 string scriptContent = System.IO.File.ReadAllText(finalPath);
+                
+                // OCGCore Standard Libraries (utility.lua, proc_xyz.lua, etc) usam sintaxe Lua 5.3 (Operadores Bitwise como | e &).
+                // MoonSharp roda Lua 5.2. Precisamos passar o conteúdo da lib pelo mesmo sanitizador que usamos para as cartas!
+                scriptContent = LuaScriptLoader.SanitizeOCGScript(scriptContent);
+
                 if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaEngine != null)
                 {
                     CardEffectManager.Instance.luaEngine.DoString(scriptContent);
@@ -83,6 +88,7 @@ public partial class LuaDuel
             catch (System.Exception ex)
             {
                 Debug.LogError($"<color=red>[LuaDuel]</color> Erro ao compilar biblioteca {name}: {ex.Message}");
+                return false;
             }
         }
         Debug.LogWarning($"<color=yellow>[LuaDuel]</color> Biblioteca solicitada não encontrada: {name}");
@@ -418,5 +424,30 @@ public partial class LuaDuel
             }
         }
         return null;
+    }
+
+    public LuaEffect GetReasonEffect()
+    {
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.resolvingLink != null)
+            return CardEffectManager.Instance.chainManager.resolvingLink.effect;
+        return currentActivatingEffect;
+    }
+
+    public int GetReasonPlayer()
+    {
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.resolvingLink != null)
+            return CardEffectManager.Instance.chainManager.resolvingLink.player;
+        return GetTurnPlayer();
+    }
+
+    public void AssumeReset()
+    {
+        if (CardEffectManager.Instance != null)
+        {
+            foreach (var lc in CardEffectManager.Instance.activeLuaCards.Values)
+            {
+                lc.ClearAssumptions();
+            }
+        }
     }
 }
