@@ -233,6 +233,13 @@ public class ChainManager
             }
             
             core.CleanChainExpiredModifiers();
+
+            // FASE 28: Atualiza todos os visuais APÓS a corrente inteira terminar de resolver,
+            // garantindo que equipamentos e buffs dinâmicos estejam 100% sincronizados na tela.
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.RefreshAllCardsVisuals();
+            }
         }
 
         activeChainTasks--;

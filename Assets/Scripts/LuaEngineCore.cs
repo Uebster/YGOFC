@@ -283,6 +283,28 @@ public class LuaEngineCore
             aux.FaceupFilter = aux.FilterFaceupFunction
             aux.Filter = aux.FilterBoolFunction
             Auxiliary.AddEquipProcedure = aux.AddEquipProcedure
+
+            -- Escudo Universal de UI: Blinda crashes de casting (Double vs Int) da Unity 
+            -- e força o congelamento da corrotina garantindo que seus modais sempre abram!
+            local uifuncs = {'SelectOption', 'AnnounceRace', 'AnnounceAttribute', 'AnnounceLevel', 'AnnounceCard', 'SelectTarget', 'SelectPosition'}
+            for _, fname in ipairs(uifuncs) do
+                local orig = Duel[fname]
+                if orig then
+                    Duel[fname] = function(...)
+                        local args = {...}
+                        for i, v in ipairs(args) do if type(v) == 'number' then args[i] = math.floor(v) end end
+                        
+                        local success, res = pcall(orig, unpack(args))
+                        if not success then
+                            Log('<color=orange>[UI FALLBACK]</color> ' .. fname .. ' exigiu conversão forçada. Congelando Engine.')
+                            res = nil
+                        end
+
+                        if res == nil then res = coroutine.yield('UI_Wait') end
+                        return res
+                    end
+                end
+            end
         ");
 
         Debug.Log("[MoonSharp] Motor LUA Inicializado e pronto para interpretar OCGCore!");
@@ -2260,17 +2282,40 @@ public class LuaEngineCore
                             if k == 'IsLevelBelow' then return c:GetLevel() <= select(1, ...) end
                             if k == 'IsLevelAbove' then return c:GetLevel() >= select(1, ...) end
                             if k == 'IsSummonPlayer' then return c:GetControler() == select(1, ...) end
+                            if k == 'IsControlerCanBeChanged' then return true end
 
-                            -- Fallbacks cruciais para a Janela de Batalha e Cemitério (EVENT_TO_GRAVE)
+                            -- Tradutor Exato OCGCore para Cemitério (Impede amnésia em cartas mortas)
                             if k == 'GetPreviousLevelOnField' then return c:GetLevel() end
                             if k == 'GetPreviousAttackOnField' then return c:GetAttack() end
                             if k == 'GetPreviousDefenseOnField' then return c:GetDefense() end
                             if k == 'GetPreviousAttributeOnField' then return c:GetAttribute() end
                             if k == 'GetPreviousRaceOnField' then return c:GetRace() end
-                            if k == 'GetPreviousLocation' then return c:GetLocation() end
-                            if k == 'GetPreviousControler' then return c:GetControler() end
-                            if k == 'IsPreviousLocation' then return c:IsLocation(select(1, ...)) end
-                            if k == 'IsPreviousControler' then return c:GetControler() == select(1, ...) end
+                            if k == 'GetPreviousLocation' then return c.previousLocation end
+                            if k == 'GetPreviousControler' then return c.ownerPlayerIndex end
+                            if k == 'IsPreviousControler' then return c.ownerPlayerIndex == select(1, ...) end
+                            if k == 'IsPreviousLocation' then 
+                                local loc = select(1, ...)
+                                local pStr = tostring(c.previousLocation)
+                                local isField = string.match(pStr, 'Field') or pStr == '4'
+                                local isHand = string.match(pStr, 'Hand') or pStr == '1'
+                                local isDeck = string.match(pStr, 'Deck') or pStr == '2'
+                                local isGrave = string.match(pStr, 'Graveyard') or pStr == '16'
+                                local isExtra = string.match(pStr, 'ExtraDeck') or pStr == '8'
+                                local isBanished = string.match(pStr, 'Banished') or pStr == '32'
+                                
+                                if isField and (bit32.band(loc, LOCATION_ONFIELD) ~= 0 or bit32.band(loc, LOCATION_MZONE) ~= 0 or bit32.band(loc, LOCATION_SZONE) ~= 0) then return true end
+                                if isHand and bit32.band(loc, LOCATION_HAND) ~= 0 then return true end
+                                if isDeck and bit32.band(loc, LOCATION_DECK) ~= 0 then return true end
+                                if isGrave and bit32.band(loc, LOCATION_GRAVE) ~= 0 then return true end
+                                if isExtra and bit32.band(loc, LOCATION_EXTRA) ~= 0 then return true end
+                                if isBanished and bit32.band(loc, LOCATION_REMOVED) ~= 0 then return true end
+                                return false
+                            end
+                            if k == 'IsReason' then return bit32.band(c.currentReason or 0, select(1, ...)) ~= 0 end
+                            if k == 'GetReason' then return c.currentReason or 0 end
+                            if k == 'GetReasonPlayer' then return c.reasonPlayer or 0 end
+                            if k == 'GetReasonEffect' then return c.reasonEffect end
+                            if k == 'GetPreviousTypeOnField' then return c:GetType() end
                         end
                         return false
                     end

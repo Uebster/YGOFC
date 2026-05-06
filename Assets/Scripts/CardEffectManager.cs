@@ -424,6 +424,10 @@ public class CardEffectManager : MonoBehaviour
                     
                     yield return StartCoroutine(OpenFastEffectWindow("Evento LUA", eventCode, null, explicitTiming));
                 }
+                else if (yieldCmd == "UI_Wait")
+                {
+                    while (isWaitingForLuaYield) yield return null;
+                }
             }
             
             // Re-check state before resuming - coroutine may have completed during yield
@@ -487,6 +491,10 @@ public class CardEffectManager : MonoBehaviour
                 
                 yield return StartCoroutine(OpenFastEffectWindow("Evento (Batalha)", eventCode, storedAttacker, explicitTiming));
             }
+                else if (yieldCmd == "UI_Wait")
+                {
+                    while (isWaitingForLuaYield) yield return null;
+                }
                 else if (yieldCmd == "PlayAttackAnimation")
                 {
                     // Esconde a espada de "mira" exatamente na transição para a espada voadora
@@ -636,9 +644,10 @@ public class CardEffectManager : MonoBehaviour
                         int effTiming = (tp == luaDuel.GetTurnPlayer()) ? eff.hintTimingSelf : eff.hintTimingOpponent;
                         
                         // OCGCore UX: Restaura a restrição de HintTiming para cartas Free Chain (code == 0).
-                        // Isso impede que a UI trave o jogo a cada segundo perguntando se você quer ativar Armadilhas genéricas,
-                        // mas garante que as de reposta a ataque continuem abrindo por interceptação de evento!
-                        if (currentTiming > 0 && (effTiming & currentTiming) == 0) { continue; }
+                        // Exceção de Ouro: Se a carta tiver uma Condição LUA Específica (Ex: A Deal with Dark Ruler), ela fura a fila!
+                        bool hasCustomCondition = (eff.conditionFunc != null && eff.conditionFunc != dummyClosureTrue);
+
+                        if (!hasCustomCondition && currentTiming > 0 && (effTiming & currentTiming) == 0) { continue; }
                     }
 
                         if (CanActivateEffect(lc, eff, tp, argsToPass))
@@ -1038,60 +1047,12 @@ public class CardEffectManager : MonoBehaviour
     {
         if (monster == null || monster.CurrentCardData == null || !monster.CurrentCardData.type.Contains("Monster")) return;
 
-        // Os stats de base agora são os current, que já foram modificados pelos efeitos de campo
-        int newAtk = monster.currentAtk;
-        int newDef = monster.currentDef;
-
-        // Encontra os equipamentos
-        List<CardDisplay> equippedCards = GetEquippedCards(monster);
-
-        foreach (var equipCard in equippedCards)
+        // Delega para o sistema unificado do GameManager para recalcular TODOS os status a partir da base original.
+        // Isso previne o bug gravíssimo de duplo acúmulo (double counting) de Equipamentos.
+        if (GameManager.Instance != null)
         {
-            if (equipCard == null) continue;
-            LuaCard luaEquip = EnsureCardScriptLoaded(equipCard);
-            if (luaEquip == null) continue;
-
-            var equipEffects = luaEquip.registeredEffects.FindAll(e => e.isTypeEquip); // EFFECT_TYPE_EQUIP
-            foreach (var effect in equipEffects)
-            {
-                try
-                {
-                    int value = 0;
-                    object valObj = effect.GetValue();
-                    if (valObj is double || valObj is long)
-                    {
-                        value = System.Convert.ToInt32(valObj);
-                    }
-                    else if (valObj is Closure valClosure)
-                    {
-                        DynValue result = luaEngine.Call(valClosure, effect, new LuaCard(monster));
-                        if (result.Type == DataType.Number)
-                        {
-                            value = (int)result.Number;
-                        }
-                    }
-
-                    // OCGCore usa 100 para UPDATE_ATTACK e 104 para UPDATE_DEFENSE
-                    if (effect.code == 100) 
-                    {
-                        newAtk += value;
-                    }
-                    else if (effect.code == 104) 
-                    {
-                        newDef += value;
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogWarning($"[RecalculateStats] Erro ao aplicar o efeito de {equipCard.CurrentCardData.name}: {ex.Message}");
-                }
-            }
+            GameManager.Instance.RefreshAllCardsVisuals();
         }
-
-        monster.currentAtk = newAtk;
-        monster.currentDef = newDef;
-
-        // Debug.Log($"[RecalculateStats] Status de {monster.CurrentCardData.name} atualizado para ATK {newAtk} / DEF {newDef}");
     }
 
     public int EvaluateEffectValue(LuaEffect eff, LuaCard sourceCard, LuaCard targetCard)

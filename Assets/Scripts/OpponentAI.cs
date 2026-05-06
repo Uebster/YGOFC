@@ -7,7 +7,15 @@ public class OpponentAI : MonoBehaviour
 {
     public static OpponentAI Instance;
 
-    public enum AIPersonality { Balanced, Aggressive, Defensive, Combo }
+    public enum AIPersonality { Balanced, Aggressive, Defensive, Combo, Fearful, Gambler, Controller, Chaotic }
+    public enum AIDynamicState { Aggressive, Cautious, Critical } // Estados A, B, C
+
+    public struct PersonalityWeights {
+        public float wGain;
+        public float wLoss;
+        public float wLife;
+        public float wCA; // Card Advantage
+    }
 
     [Header("Configuração da IA")]
     public AIPersonality currentPersonality = AIPersonality.Balanced;
@@ -29,6 +37,19 @@ public class OpponentAI : MonoBehaviour
     public int fearScore = 0;           // Quantidade de S/T setadas pelo jogador
     public float boardValue = 0f;       // Quem está ganhando a mesa? (+ = IA, - = Jogador)
     public int panicThreshold = 1000;   // Limite de LP para parar de pagar custos
+    public AIDynamicState currentState = AIDynamicState.Cautious; // Estado dinâmico de risco
+    
+    [Header("Pesos Calculados")]
+    public PersonalityWeights currentWeights;
+
+    [Header("Memória de Curto Prazo")]
+    public Dictionary<int, string> knownCards = new Dictionary<int, string>();
+
+    // Sementes para a personalidade Chaotic
+    private float chaoticGain = 1f;
+    private float chaoticLoss = 1f;
+    private float chaoticLife = 1f;
+    private float chaoticCA = 1f;
 
     // Classe interna para representar uma jogada e sua pontuação
     private class AIAction
@@ -36,6 +57,7 @@ public class OpponentAI : MonoBehaviour
         public System.Action Execute { get; set; }
         public float Score { get; set; }
         public string Description { get; set; }
+        public int CardInstanceID { get; set; }
     }
 
     void Awake()
@@ -52,60 +74,72 @@ public class OpponentAI : MonoBehaviour
     public IEnumerator AITurnRoutine(bool switchTurn = true)
     {
         isThinking = true;
-        Debug.Log("AI: --- INÍCIO DO TURNO ---");
-
-        // Sincroniza a IA com o avanço automático de fases visual (Draw -> Standby -> Main1)
-        float timeout = 0f;
-        while (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Main1 && timeout < 10f)
+        try        
         {
-            if (CardEffectManager.Instance != null && (CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isFastEffectWindowOpen || CardEffectManager.Instance.isWaitingForLuaYield))
-                timeout = 0f; // Reseta timeout se tiver cadeia rolando
-            timeout += Time.deltaTime;
-            yield return null;
-        }
+            Debug.Log("AI: --- INÍCIO DO TURNO ---");
 
-        if (!useSimulationFastMode)
-            yield return new WaitForSeconds(actionDelay);
+            // Fixa a semente caótica para este turno (evita troca de personalidade a cada frame)
+            chaoticGain = Random.Range(0.5f, 1.5f);
+            chaoticLoss = Random.Range(0.5f, 1.5f);
+            chaoticLife = Random.Range(0.5f, 1.5f);
+            chaoticCA = Random.Range(0.5f, 1.5f);
 
-        EvaluateBoardState();
+            // Sincroniza a IA com o avanço automático de fases visual (Draw -> Standby -> Main1)
+            float timeout = 0f;
+            while (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase != GamePhase.Main1 && timeout < 10f)
+            {
+                if (CardEffectManager.Instance != null && (CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isFastEffectWindowOpen || CardEffectManager.Instance.isWaitingForLuaYield))
+                    timeout = 0f; // Reseta timeout se tiver cadeia rolando
+                timeout += Time.deltaTime;
+                yield return null;
+            }
 
-        // --- MAIN PHASE 1 ---
-        yield return StartCoroutine(ExecuteMainPhaseLogic());
+            if (!useSimulationFastMode)
+                yield return new WaitForSeconds(actionDelay);
 
-        // --- BATTLE PHASE ---
-        if (CanEnterBattlePhase() && HasAttackCapableMonsters())
-        {
-            PhaseManager.Instance.ChangePhase(GamePhase.Battle);
+            EvaluateBoardState();
+
+            // --- MAIN PHASE 1 ---
+            yield return StartCoroutine(ExecuteMainPhaseLogic());
+
+            // --- BATTLE PHASE ---
+            if (CanEnterBattlePhase() && HasAttackCapableMonsters())
+            {
+                PhaseManager.Instance.ChangePhase(GamePhase.Battle);
+                if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen);
+                
+                if (!useSimulationFastMode)
+                    yield return new WaitForSeconds(actionDelay);
+                    
+                yield return StartCoroutine(ExecuteBattlePhaseLogic());
+            }
+
+            // --- MAIN PHASE 2 ---
+            PhaseManager.Instance.ChangePhase(GamePhase.Main2);
+            if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen);
+
+            yield return StartCoroutine(ExecuteMainPhaseLogic()); 
+
+            yield return StartCoroutine(ExecuteMainPhaseLogic()); 
+
+            // --- END PHASE ---
+            PhaseManager.Instance.ChangePhase(GamePhase.End);
             if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen);
             
             if (!useSimulationFastMode)
                 yield return new WaitForSeconds(actionDelay);
-                
-            yield return StartCoroutine(ExecuteBattlePhaseLogic());
+
+            Debug.Log("AI: --- FIM DO TURNO ---");
+            
+            if (switchTurn)
+            {
+                GameManager.Instance.SwitchTurn();
+            }
         }
-
-        // --- MAIN PHASE 2 ---
-        PhaseManager.Instance.ChangePhase(GamePhase.Main2);
-        if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen);
-
-        yield return StartCoroutine(ExecuteMainPhaseLogic()); 
-
-        EvaluateBoardState(); 
-
-        // --- END PHASE ---
-        PhaseManager.Instance.ChangePhase(GamePhase.End);
-        if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isFastEffectWindowOpen);
-        
-        if (!useSimulationFastMode)
-            yield return new WaitForSeconds(actionDelay);
-
-        Debug.Log("AI: --- FIM DO TURNO ---");
-        
-        if (switchTurn)
+        finally
         {
-            GameManager.Instance.SwitchTurn();
+            isThinking = false;
         }
-        isThinking = false;
     }
 
     // O "cérebro" principal da IA durante as Main Phases
@@ -165,6 +199,9 @@ public class OpponentAI : MonoBehaviour
                 
             bestAction.Execute();
             
+            if (useSimulationFastMode && bestAction.CardInstanceID != 0)
+                usedCardsThisTurn.Add(bestAction.CardInstanceID);
+            
             // Pausa base para a engine gráfica iniciar a animação da jogada
             yield return new WaitForSeconds(0.6f);
             
@@ -184,107 +221,10 @@ public class OpponentAI : MonoBehaviour
     private List<AIAction> EvaluateDumbActions()
     {
         var actions = new List<AIAction>();
-        var hand = GameManager.Instance.opponentHand;
-        
-        // Separa cartas por tipo (EXCLUINDO cartas já usadas neste turno)
-        var monsters = hand.Where(go => {
-            var cd = go.GetComponent<CardDisplay>();
-            return cd != null && cd.CurrentCardData != null && cd.CurrentCardData.type.Contains("Monster") && !cd.CurrentCardData.type.Contains("Ritual") && !cd.CurrentCardData.type.Contains("Fusion") && !cd.CurrentCardData.type.Contains("Synchro") && !cd.CurrentCardData.type.Contains("Xyz") && !cd.CurrentCardData.type.Contains("Link") && !usedCardsThisTurn.Contains(cd.GetInstanceID());
-        }).ToList();
-        
-        var spells = hand.Where(go => {
-            var cd = go.GetComponent<CardDisplay>();
-            return cd != null && cd.CurrentCardData != null && cd.CurrentCardData.type.Contains("Spell") && !cd.CurrentCardData.type.Contains("Trap") && !usedCardsThisTurn.Contains(cd.GetInstanceID());
-        }).ToList();
-        
-        var traps = hand.Where(go => {
-            var cd = go.GetComponent<CardDisplay>();
-            return cd != null && cd.CurrentCardData != null && cd.CurrentCardData.type.Contains("Trap") && !usedCardsThisTurn.Contains(cd.GetInstanceID());
-        }).ToList();
 
-        // === MONSTROS: Invoca normal summon (máximo 1 por turno) ===
-        if (GameManager.Instance.normalSummonsThisTurnOpponent == 0)
-        {
-            var bestMonster = monsters.FirstOrDefault(); // Pega primeiro disponível
-            if (bestMonster != null)
-            {
-                var cd = bestMonster.GetComponent<CardDisplay>();
-                if (cd != null)
-                {
-                    bool isDef = Random.value > 0.6f; // 40% chance de defesa
-                    var cardGO = bestMonster;
-                    var cardData = cd.CurrentCardData;
-                    int cardInstanceID = cd.GetInstanceID();
-                    
-                    actions.Add(new AIAction {
-                        Score = cd.CurrentCardData.atk + Random.value * 100f,
-                        Description = $"Invocar {cd.CurrentCardData.name} em {(isDef ? "Defesa" : "Ataque")}",
-                        Execute = () => {
-                            bool success = GameManager.Instance.TrySummonMonster(cardGO, cardData, isDef, false);
-                            if (success)
-                                usedCardsThisTurn.Add(cardInstanceID); // Marca como usada APENAS se sucesso
-                        }
-                    });
-                }
-            }
-        }
-
-        // === SPELLS: Ativa cartas de magia (máximo 1 por turno simples na simulação) ===
-        if (spells.Count > 0)
-        {
-            var bestSpell = spells.FirstOrDefault();
-            if (bestSpell != null)
-            {
-                var cd = bestSpell.GetComponent<CardDisplay>();
-                if (cd != null)
-                {
-                    var cardGO = bestSpell;
-                    var cardData = cd.CurrentCardData;
-                    int cardInstanceID = cd.GetInstanceID();
-                    bool isField = cd.CurrentCardData.property == "Field";
-                    
-                    // Spells contínuos e Fields geralmente não consomem a ação (apenas set)
-                    bool isContinuous = cd.CurrentCardData.type.Contains("Continuous");
-                    
-                    actions.Add(new AIAction {
-                        Score = (isContinuous ? 100f : 50f) + (isField ? 50f : 0f),
-                        Description = $"Ativar {cd.CurrentCardData.name}",
-                        Execute = () => {
-                            bool success = GameManager.Instance.PlaySpellTrap(cardGO, cardData, false); // false = ativa, não set
-                            if (success)
-                                usedCardsThisTurn.Add(cardInstanceID);
-                        }
-                    });
-                }
-            }
-        }
-
-        // === TRAPS: Baixa (será ativada por trigger depois) ===
-        if (traps.Count > 0)
-        {
-            var bestTrap = traps.FirstOrDefault();
-            if (bestTrap != null)
-            {
-                var cd = bestTrap.GetComponent<CardDisplay>();
-                if (cd != null)
-                {
-                    var cardGO = bestTrap;
-                    var cardData = cd.CurrentCardData;
-                    int cardInstanceID = cd.GetInstanceID();
-                    
-                    actions.Add(new AIAction {
-                        Score = 30f,
-                        Description = $"Baixar {cd.CurrentCardData.name}",
-                        Execute = () => {
-                            bool success = GameManager.Instance.PlaySpellTrap(cardGO, cardData, true); // true = set
-                            if (success)
-                                usedCardsThisTurn.Add(cardInstanceID);
-                        }
-                    });
-                }
-            }
-        }
-
+        actions.AddRange(EvaluateSummonActions().Where(a => a.Score > 0).Take(1));
+        actions.AddRange(EvaluateSpellActions().Where(a => a.Score > 50).Take(2));
+        actions.AddRange(EvaluateSetActions().Where(a => a.Score > 0).Take(2));
         return actions;
     }
 
@@ -321,6 +261,8 @@ public class OpponentAI : MonoBehaviour
             {
                 var cd = z.GetComponentInChildren<CardDisplay>();
                 if (cd != null) boardValue -= Mathf.Max(cd.currentAtk, cd.currentDef);
+                    // MEMÓRIA FOTOGRÁFICA: Anota o ID de todas as cartas inimigas que a IA "viu" viradas para cima!
+                    if (!cd.isFlipped && cd.CurrentCardData != null) knownCards[cd.GetInstanceID()] = cd.CurrentCardData.id;
             }
         }
         Debug.Log($"[AI] Board Value: {boardValue}");
@@ -331,7 +273,51 @@ public class OpponentAI : MonoBehaviour
             string diff = GameManager.Instance.currentOpponent.difficulty != null ? GameManager.Instance.currentOpponent.difficulty.ToLower() : "";
             if (diff.Contains("aggressive")) currentPersonality = AIPersonality.Aggressive;
             else if (diff.Contains("defensive")) currentPersonality = AIPersonality.Defensive;
+            else if (diff.Contains("combo") || diff.Contains("tactician")) currentPersonality = AIPersonality.Combo;
+            else if (diff.Contains("fearful") || diff.Contains("stall")) currentPersonality = AIPersonality.Fearful;
+            else if (diff.Contains("gambler")) currentPersonality = AIPersonality.Gambler;
+            else if (diff.Contains("control")) currentPersonality = AIPersonality.Controller;
+            else if (diff.Contains("chaotic") || diff.Contains("random")) currentPersonality = AIPersonality.Chaotic;
         }
+
+        // 3. Determinar Estado Dinâmico (A, B ou C)
+        float lpPercentage = (float)GameManager.Instance.opponentLP / 8000f;
+        if (lpPercentage >= 0.5f || boardValue >= 1500f) currentState = AIDynamicState.Aggressive; // Estado A
+        else if (lpPercentage >= 0.25f) currentState = AIDynamicState.Cautious; // Estado B
+        else currentState = AIDynamicState.Critical; // Estado C
+
+        currentWeights = GetCurrentWeights();
+        Debug.Log($"[AI] Estado Atual: {currentState} | Pers: {currentPersonality} | Pesos: G:{currentWeights.wGain:F1} L:{currentWeights.wLoss:F1} V:{currentWeights.wLife:F1} CA:{currentWeights.wCA:F1}");
+    }
+
+    private PersonalityWeights GetCurrentWeights()
+    {
+        PersonalityWeights w = new PersonalityWeights();
+        
+        switch(currentState)
+        {
+            case AIDynamicState.Aggressive: w = new PersonalityWeights { wGain = 1.0f, wLoss = 0.3f, wLife = 0.1f, wCA = 0.8f }; break;
+            case AIDynamicState.Cautious:   w = new PersonalityWeights { wGain = 0.6f, wLoss = 0.8f, wLife = 0.5f, wCA = 1.2f }; break;
+            case AIDynamicState.Critical:   w = new PersonalityWeights { wGain = 0.2f, wLoss = 1.5f, wLife = 3.0f, wCA = 0.5f }; break;
+        }
+
+        switch(currentPersonality)
+        {
+            case AIPersonality.Aggressive: w.wGain *= 1.5f; w.wLoss *= 0.6f; w.wLife *= 0.5f; w.wCA *= 0.7f; break;
+            case AIPersonality.Defensive:  w.wGain *= 0.6f; w.wLoss *= 1.5f; w.wLife *= 1.8f; w.wCA *= 1.0f; break;
+            case AIPersonality.Balanced:   w.wGain *= 0.9f; w.wLoss *= 1.2f; w.wLife *= 1.2f; w.wCA *= 1.1f; break;
+            case AIPersonality.Fearful:    w.wGain *= 0.4f; w.wLoss *= 2.0f; w.wLife *= 2.5f; w.wCA *= 0.9f; break;
+            case AIPersonality.Combo:      w.wGain *= 1.2f; w.wLoss *= 1.0f; w.wLife *= 0.9f; w.wCA *= 1.4f; break;
+            case AIPersonality.Gambler:    w.wGain *= 1.8f; w.wLoss *= 0.8f; w.wLife *= 0.4f; w.wCA *= 0.6f; break;
+            case AIPersonality.Controller: w.wGain *= 0.7f; w.wLoss *= 1.4f; w.wLife *= 1.5f; w.wCA *= 1.5f; break;
+            case AIPersonality.Chaotic:    
+                w.wGain *= chaoticGain; w.wLoss *= chaoticLoss; 
+                w.wLife *= chaoticLife; w.wCA *= chaoticCA; break;
+        }
+
+        // FOG OF WAR: Oponentes com muitas cartas setadas aumentam o peso da perda
+        w.wLoss *= (1.0f + (fearScore * 0.25f));
+        return w;
     }
 
     // Reúne todas as avaliações
@@ -343,8 +329,51 @@ public class OpponentAI : MonoBehaviour
         actions.AddRange(EvaluateSpellActions());
         actions.AddRange(EvaluateSetActions());
         actions.AddRange(EvaluateFieldMonsterActions());
-        // Futuramente: actions.AddRange(EvaluatePositionChangeActions());
+        actions.AddRange(EvaluateChangePositionActions());
 
+        return actions;
+    }
+
+    private List<AIAction> EvaluateChangePositionActions()
+    {
+        var actions = new List<AIAction>();
+        foreach (var monster in GetMyMonstersOnField())
+        {
+            if (monster.attacksThisTurn > 0 || monster.hasChangedPositionThisTurn || monster.summonedTurnCount == GameManager.Instance.turnCount) continue;
+            
+            bool shouldChange = false;
+            string desc = "";
+            float score = 0;
+
+            if (currentState == AIDynamicState.Critical && monster.position == CardDisplay.BattlePosition.Attack)
+            {
+                shouldChange = true;
+                desc = $"Virar {monster.CurrentCardData.name} para Defesa (Estado Crítico)";
+                score = 200 * currentWeights.wLife;
+            }
+            else if (currentPersonality == AIPersonality.Defensive && monster.position == CardDisplay.BattlePosition.Attack)
+            {
+                shouldChange = true;
+                desc = $"Virar {monster.CurrentCardData.name} para Defesa (Defensivo)";
+                score = 150 * currentWeights.wLoss;
+            }
+            else if (currentState == AIDynamicState.Aggressive && monster.position == CardDisplay.BattlePosition.Defense && monster.currentAtk > monster.currentDef)
+            {
+                shouldChange = true;
+                desc = $"Virar {monster.CurrentCardData.name} para Ataque (Agressivo)";
+                score = 150 * currentWeights.wGain;
+            }
+
+            if (shouldChange)
+            {
+                actions.Add(new AIAction {
+                    Score = score,
+                    Description = desc,
+                    Execute = () => { monster.hasChangedPositionThisTurn = true; monster.ChangePosition(); },
+                    CardInstanceID = monster.GetInstanceID()
+                });
+            }
+        }
         return actions;
     }
 
@@ -375,6 +404,12 @@ public class OpponentAI : MonoBehaviour
             // --- LÓGICA DE TRIBUTO: MP1 vs MP2 ---
             if (tributesNeeded > 0)
             {
+                // REGRA DO ESTADO C: Nunca tributar no estado crítico. Preservar monstros para defesa.
+                if (currentState == AIDynamicState.Critical && currentPersonality != AIPersonality.Gambler)
+                {
+                    continue;
+                }
+
                 // Regra da Isca (Baiting)
                 if (fearScore >= 2 && currentPersonality != AIPersonality.Aggressive)
                 {
@@ -402,23 +437,39 @@ public class OpponentAI : MonoBehaviour
 
             // Avalia invocar em Ataque
             float attackScore = baseScore + monster.CurrentCardData.atk - playerStrongestATK;
-            if (playerStrongestATK == 0) attackScore += 500; // Bônus por campo aberto
-            if (tributesNeeded > 0) attackScore -= tributeCost; // Subtrai o custo inteligente
+            if (playerStrongestATK == 0) attackScore += 500 * currentWeights.wGain; // Bônus por campo aberto
+            if (tributesNeeded > 0) attackScore -= (tributeCost * currentWeights.wLoss) + (tributesNeeded * 500 * currentWeights.wCA); // Custo e desvantagem de cartas
             
             // Na MP2, invocar em ataque é menos útil a menos que seja uma parede muito forte
             if (PhaseManager.Instance.currentPhase == GamePhase.Main2 && monster.CurrentCardData.atk < playerStrongestATK) 
                 attackScore -= 1000;
             
+            // TABELA VERDADE: Invocação em Posição de Ataque
+            if (currentState == AIDynamicState.Critical)
+            {
+                // C: Nunca invoca em ataque se for mais fraco que a ameaça. Foco na Defesa!
+                if (monster.CurrentCardData.atk <= playerStrongestATK && currentPersonality != AIPersonality.Gambler) attackScore -= 5000;
+                else attackScore += 1000 * currentWeights.wLife; // Se puder virar o jogo e salvar a vida
+            }
+            else if (currentState == AIDynamicState.Cautious)
+            {
+                // B: Só invoca em ataque se tiver bom ATK para bater de frente
+                if (monster.CurrentCardData.atk < 1800 && monster.CurrentCardData.atk <= playerStrongestATK) attackScore -= 1500;
+            }
+            
+            if (currentPersonality == AIPersonality.Fearful) attackScore -= 1000 * currentWeights.wLoss;
+
             actions.Add(new AIAction {
                 Score = attackScore,
                 Description = $"Invocar {monster.CurrentCardData.name} em Ataque.",
-                Execute = () => GameManager.Instance.TrySummonMonster(monster.gameObject, monster.CurrentCardData, false)
-            });
+                Execute = () => GameManager.Instance.TrySummonMonster(monster.gameObject, monster.CurrentCardData, false),
+                CardInstanceID = monster.GetInstanceID()            
+                });
 
             // Avalia invocar em Defesa (Set)
             float defenseScore = baseScore + monster.CurrentCardData.def - playerStrongestATK;
             if (monster.CurrentCardData.def > 2000) defenseScore += 500; // Bônus por ser uma boa parede
-            if (tributesNeeded > 0) defenseScore -= tributeCost;
+            if (tributesNeeded > 0) defenseScore -= (tributeCost * currentWeights.wLoss) + (tributesNeeded * 500 * currentWeights.wCA);
 
             // TÁTICA DE SOBREVIVÊNCIA: Se nosso campo está aberto, SETAR um monstro é vital para não tomar OTK!
             if (myMonsterCount == 0 && playerStrongestATK > 0)
@@ -437,6 +488,23 @@ public class OpponentAI : MonoBehaviour
                 if (myMonsterCount > 0) defenseScore -= 600; 
             }
             
+            // TABELA VERDADE: Invocação em Posição de Defesa (Set)
+            if (currentState == AIDynamicState.Critical)
+            {
+                // C: Obrigatório. Ganha um boost imenso para garantir a parede de proteção.
+                defenseScore += 3000 * currentWeights.wLife;
+            }
+            else if (currentState == AIDynamicState.Cautious)
+            {
+                // B: Preferencial para não arriscar muito.
+                defenseScore += 800 * currentWeights.wLoss;
+            }
+            else if (currentState == AIDynamicState.Aggressive)
+            {
+                // A: Raro. Em estado agressivo a IA quer bater, só recua se for inútil em ataque.
+                if (monster.CurrentCardData.atk >= 1500) defenseScore -= 2000;
+            }
+
             actions.Add(new AIAction {
                 Score = defenseScore,
                 Description = $"Baixar (Set) {monster.CurrentCardData.name} em Defesa.",
@@ -522,8 +590,17 @@ public class OpponentAI : MonoBehaviour
                     else if (desc.Contains("monster"))
                     {
                         int playerMonsters = GetPlayerMonsterCount();
-                        score += playerMonsters * 600;
+                        int playerStrongestAtk = GetPlayerStrongestAtk();
+                        // REGRA DA DESTRUIÇÃO (Raigeki/Dark Hole) baseada no Estado
                         if (playerMonsters == 0) score -= 5000;
+                        else if (currentState == AIDynamicState.Critical) score += 5000 * currentWeights.wLife; // C: Usa imediato para evitar morte                        
+                        else if (playerStrongestAtk < 2000 && currentPersonality != AIPersonality.Gambler && currentPersonality != AIPersonality.Aggressive)
+                        {
+                            // ECONOMIA DE REMOÇÃO: Não gasta mágicas proativas fortes (Raigeki/Fissure) em monstros fracos!
+                            score -= 3000 * currentWeights.wCA;
+                        }
+                        else if (desc.Contains("all monsters") && currentState == AIDynamicState.Aggressive && playerMonsters < 3 && currentPersonality != AIPersonality.Gambler) score -= 2000 * currentWeights.wLoss; // A: Segura pra ter mais valor
+                        else score += (playerMonsters * 600) * currentWeights.wGain;
                     }
                     else 
                     {
@@ -533,33 +610,47 @@ public class OpponentAI : MonoBehaviour
                 }
                 if ((cat & 0x200) != 0) // CATEGORY_SPECIAL_SUMMON
                 {
-                    score += 1000; // Reviver/Summon é sempre bom
+                    CardData bestGyMonster = GetBestGraveyardMonster();
+                    score += 1000 + (bestGyMonster != null ? (bestGyMonster.atk * currentWeights.wGain) : 0);
                 }
                 if ((cat & 0x10000) != 0) // CATEGORY_DRAW
                 {
                     if (GameManager.Instance.GetOpponentMainDeck().Count <= 3) score -= 5000; // Previne suicídio por Deck Out
-                    else score += 1500;
+                    else score += 1500 * currentWeights.wCA; // Alta prioridade para CA
                 }
                 if ((cat & 0x8) != 0) // CATEGORY_TOHAND
                 {
-                    score += 500;
+                    score += 500 * currentWeights.wGain;
                 }
                 if ((cat & 0x80000) != 0) // CATEGORY_DAMAGE
                 {
-                    score += 600;
+                    score += 600 * currentWeights.wGain;
                 }
                 if ((cat & 0x100000) != 0) // CATEGORY_RECOVER
                 {
-                    score += 300;
+                    score += 300 * currentWeights.wLife;
+                }
+                if ((cat & 0x1000) != 0) // CATEGORY_CONTROL
+                {
+                    int playerMonsters = GetPlayerMonsterCount();
+                    score += playerMonsters * 1500 * currentWeights.wGain;
+                    if (playerMonsters == 0) score -= 5000;
+                }
+                if ((cat & 0x80) != 0) // CATEGORY_HANDES
+                {
+                    int playerHand = GameManager.Instance.playerHand.Count;
+                    score += playerHand * 1000 * currentWeights.wCA; // Vantagem de cartas pura
+                    if (playerHand == 0) score -= 5000;
                 }
 
                 description = $"Ativar Magia {cd.CurrentCardData.name} [Categorias LUA avaliadas]";
                 execution = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, false);
 
-                // Fallback para tipos persistentes não cobertos bem por categorias simples
-                if (cd.CurrentCardData.property == "Equip")
+                // Lógica de Equipamento baseada no Estado
+                if (score <= 0 && cd.CurrentCardData.property == "Equip")
                 {
-                    if (cd.CurrentCardData.property == "Equip")
+                    if (currentState == AIDynamicState.Critical && currentPersonality != AIPersonality.Gambler) score -= 5000; // C: Guarda equipamento, não desperdiça recursos agressivos
+                    else
                     {
                         // Regra de Ouro: Tall vs Wide
                         var myMonsters = GetMyMonstersOnField().Where(m => !m.isFlipped).OrderByDescending(m => m.currentAtk).ToList();
@@ -567,11 +658,18 @@ public class OpponentAI : MonoBehaviour
                         
                         int playerMaxAtk = GetPlayerStrongestAtk();
                         int myMaxAtk = myMonsters.Count > 0 ? myMonsters[0].currentAtk : 0;
+                        int estimatedBoost = 500; // Bônus médio de equipamento
                         
-                        if (playerMaxAtk > myMaxAtk && myMonsters.Count > 0) {
+                        // Estado Cauteloso: Não equipa se ainda assim o monstro for mais fraco que a ameaça do oponente
+                        if (currentState == AIDynamicState.Cautious && (myMaxAtk + estimatedBoost < playerMaxAtk))
+                        {
+                            score -= 5000;
+                        }
+                        else if (playerMaxAtk > myMaxAtk && myMonsters.Count > 0) {
                             bestTargetToEquip = myMonsters[0]; // Tall: Concentra no mais forte para tentar passar o boss inimigo
                         } else if (myMonsters.Count > 1) {
-                            bestTargetToEquip = myMonsters[myMonsters.Count - 1]; // Wide: Espalha força no mais fraco para dividir riscos
+                            if (myMaxAtk >= 2500) bestTargetToEquip = myMonsters[myMonsters.Count - 1]; // Wide: Espalha força no mais fraco para dividir riscos
+                            else bestTargetToEquip = myMonsters[0];
                         } else if (myMonsters.Count == 1) {
                             bestTargetToEquip = myMonsters[0];
                         }
@@ -586,7 +684,22 @@ public class OpponentAI : MonoBehaviour
                 }
                 else if (cd.CurrentCardData.property == "Field" || cd.CurrentCardData.type.Contains("Continuous"))
                 {
-                    score += 300;
+                    bool isDefensive = (cat & 0x2000) != 0 || (cat & 0x800) != 0 || cd.CurrentCardData.description.ToLower().Contains("attack");
+                    
+                    // TABELA VERDADE: Mágicas Contínuas e Campo
+                    if (currentState == AIDynamicState.Critical && !isDefensive)
+                    {
+                        score -= 5000 * currentWeights.wLoss; // C: Não gasta carta à toa se não salva vida ou bloqueia ataque
+                    }
+                    else if (currentState == AIDynamicState.Cautious && PhaseManager.Instance.currentPhase == GamePhase.Main1)
+                    {
+                        score += 100 * currentWeights.wLoss; // B: Cauteloso. Segura para jogar apenas na MP2 para evitar limpezas
+                    }
+                    else
+                    {
+                        score += 300 * currentWeights.wGain; // A: Joga no início do turno para estabelecer pressão
+                    }
+                    
                     execution = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, false);
                 }
             }
@@ -599,7 +712,7 @@ public class OpponentAI : MonoBehaviour
 
             if (execution != null)
             {
-                actions.Add(new AIAction { Score = score, Description = description, Execute = execution });
+                actions.Add(new AIAction { Score = score, Description = description, Execute = execution, CardInstanceID = cd.GetInstanceID() });
             }
         }
         return actions;
@@ -614,7 +727,16 @@ public class OpponentAI : MonoBehaviour
         int occupiedZones = 0;
         foreach(var z in GameManager.Instance.duelFieldUI.opponentSpellZones) if(z.childCount > 0) occupiedZones++;
         
-        int maxSafeSets = (currentPersonality == AIPersonality.Defensive) ? 3 : 2;
+        int maxSafeSets = 2;
+        switch(currentPersonality) {
+            case AIPersonality.Defensive: maxSafeSets = 4; break;
+            case AIPersonality.Fearful: maxSafeSets = 5; break;
+            case AIPersonality.Controller: maxSafeSets = 3; break;
+            case AIPersonality.Aggressive: maxSafeSets = 1; break; // Agressivo prefere não setar mágicas
+        }
+        if (currentState == AIDynamicState.Critical) maxSafeSets = 5; // C: Dane-se a prudência, baixe tudo que pode nos salvar!
+        if (currentPersonality == AIPersonality.Gambler) maxSafeSets = Random.Range(1, 6);
+        
         if (occupiedZones >= maxSafeSets) return actions; // Previne tempestade
 
         foreach (var go in hand)
@@ -636,16 +758,17 @@ public class OpponentAI : MonoBehaviour
                     if (quickEffect != null)
                     {
                         int cat = quickEffect.category;
-                        if ((cat & 0x1) != 0) score += 500; // Destrói
-                        if ((cat & 0x10000000) != 0) score += 600; // Nega (CATEGORY_NEGATE)
-                        if ((cat & 0x200) != 0) score += 400; // Special Summon
+                        if ((cat & 0x1) != 0) score += 500 * currentWeights.wGain; // Destrói
+                        if ((cat & 0x10000000) != 0) score += 600 * (currentPersonality == AIPersonality.Controller ? 2f : 1f); // Nega
+                        if ((cat & 0x200) != 0) score += 400 * currentWeights.wCA; // Special Summon
                     }
                     
                     actions.Add(new AIAction {
                         Score = score,
                         Description = $"Baixar (Set) Armadilha {cd.CurrentCardData.name}.",
-                        Execute = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, true)
-                    });
+                        Execute = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, true),
+                        CardInstanceID = cd.GetInstanceID()                    
+                        });
                 }
                 else if (cd.CurrentCardData.type.Contains("Spell"))
                 {
@@ -655,8 +778,9 @@ public class OpponentAI : MonoBehaviour
                         actions.Add(new AIAction {
                             Score = 400,
                             Description = $"Baixar (Set) Quick-Play Spell {cd.CurrentCardData.name}.",
-                            Execute = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, true)
-                        });
+                            Execute = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, true),
+                            CardInstanceID = cd.GetInstanceID()                        
+                            });
                     }
                     // Blefe (Bluff) se estivermos perdendo terreno e quisermos assustar o jogador
                     else if (fearScore < 1 && PhaseManager.Instance.currentPhase == GamePhase.Main2 && boardValue < -1000)
@@ -664,14 +788,16 @@ public class OpponentAI : MonoBehaviour
                         actions.Add(new AIAction {
                             Score = 150, // Melhor setar como Blefe do que tomar OTK sem dar medo
                             Description = $"Baixar (Set) Magia de Blefe {cd.CurrentCardData.name}.",
-                            Execute = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, true)
+                            Execute = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, true),
+                            CardInstanceID = cd.GetInstanceID()                        
                         });
                     }
                 }
             }
         }
-        // Pega apenas a melhor armadilha para baixar, para não encher o campo à toa
-        return actions.OrderByDescending(a => a.Score).Take(1).ToList();
+        
+        int allowedSets = Mathf.Max(0, maxSafeSets - occupiedZones);
+        return actions.OrderByDescending(a => a.Score).Take(allowedSets).ToList();
     }
 
     #endregion
@@ -733,6 +859,24 @@ public class OpponentAI : MonoBehaviour
                 else if (GetPlayerMonsterCount() == 0) // Campo aberto
                 {
                     if (atkLc != null && atkLc.IsHasEffect(73).Type != MoonSharp.Interpreter.DataType.Nil) break; // EFFECT_CANNOT_DIRECT_ATTACK
+
+                    // REGRA DO RELATÓRIO TÉCNICO: Ataque Direto vs Estado Dinâmico
+                    bool isLethal = GameManager.Instance.playerLP <= attacker.currentAtk;
+                    if (currentPersonality == AIPersonality.Fearful && fearScore > 0 && !isLethal)
+                    {
+                        Debug.Log($"AI: {attacker.CurrentCardData.name} cancela ataque direto (Personalidade Medrosa). Risco inaceitável.");
+                        break;
+                    }
+                    if (currentState == AIDynamicState.Critical && !isLethal && fearScore > 0 && currentPersonality != AIPersonality.Gambler)
+                    {
+                        Debug.Log($"AI: {attacker.CurrentCardData.name} cancela ataque direto (Estado Crítico). Medo de ativação de armadilha fatal.");
+                        break;
+                    }
+                    else if (currentState == AIDynamicState.Cautious && fearScore >= 2 && !isLethal && currentPersonality != AIPersonality.Aggressive)
+                    {
+                        Debug.Log($"AI: {attacker.CurrentCardData.name} recua do ataque direto (Estado Cauteloso). Alto risco de armadilhas.");
+                        break;
+                    }
 
                     Debug.Log($"AI: {attacker.CurrentCardData.name} ataca diretamente!");
                     attacker.attacksThisTurn++;
@@ -810,24 +954,55 @@ public class OpponentAI : MonoBehaviour
                 // --- SCOUTING (Lidar com Face-Down) ---
                 if (defender.isFlipped) // Monstro Setado (Face-down)
                 {
-                    if (isBossAttacking) {
-                        // REGRA DE OURO (Scouting): Não bater com o Boss se houver iscas.
-                        // PORÉM, forçamos o ataque se: 1) É o único monstro da IA; 2) Vantagem de campo clara; 3) Oponente sem Traps (Fear = 0); 4) Personalidade Agressiva
-                        if (myMonsters.Count == 1 || boardValue >= 1500 || fearScore == 0 || currentPersonality == AIPersonality.Aggressive) {
-                            score += 200; // O risco é aceitável, força o ataque para testar o terreno
-                        } else {
-                            score -= 5000; // Recua e espera um lacaio para testar (Evita Man-Eater Bug)
+                    // A IA lembra dessa carta? (Memória Fotográfica)
+                    bool isKnown = knownCards.ContainsKey(defender.GetInstanceID());
+                    
+                    if (isKnown)
+                    {
+                        CardData knownData = GameManager.Instance.cardDatabase.GetCardById(knownCards[defender.GetInstanceID()]);
+                        if (knownData != null)
+                        {
+                            if (attacker.currentAtk > knownData.def)
+                            {
+                                if (knownData.description.Contains("FLIP:") || knownData.type.Contains("Effect")) score += 500 * currentWeights.wGain;
+                                else score += 50 + knownData.def;
+                            }
+                            else score -= 5000; // Bater numa parede que a gente já conhece é suicídio burro
                         }
-                    } else {
-                        score += 500; // Lacaios ganham bônus massivo para atacar face-downs e revelar armadilhas
+                    }
+                    else
+                    {
+                        // CARTA DESCONHECIDA!
+                        if (currentPersonality == AIPersonality.Fearful) {
+                            score -= 5000;
+                        } else if (myMonsters.Count >= 2) {
+                            // TÁTICA DO BOSS VANGUARD: Se temos 2+ monstros, o Boss deve bater primeiro no Face-Down para quebrar a parede e abrir o campo pro Lacaio!
+                            if (isBossAttacking) score += 600 * currentWeights.wGain;
+                            else score -= 1000; // Lacaios aguardam o Boss agir
+                        } else if (currentState == AIDynamicState.Critical && currentPersonality != AIPersonality.Gambler) {
+                            score -= 5000 * currentWeights.wLoss; // C: Só temos 1 monstro. Atacar e morrer pro MEB nos deixa vulneráveis a um Ataque Direto letal. Recua.
+                        } else if (currentState == AIDynamicState.Aggressive || currentPersonality == AIPersonality.Aggressive) {
+                            score += 500 * currentWeights.wGain;
+                        } else {
+                            // B (Cauteloso):
+                            int estimatedDef = 1500;
+                            if (attacker.currentAtk > estimatedDef + 500) score += 200;
+                            else score -= 1000;
+                        }
                     }
                 }
                 else if (defender.position == CardDisplay.BattlePosition.Attack)
                 {
                     if (attacker.currentAtk > defender.currentAtk)
                     {
-                        // Prioriza destruir o monstro mais forte que consegue vencer
-                        score += 100 + defender.currentAtk; 
+                        // RANK DE AMEAÇA: Decide qual monstro é mais perigoso destruir
+                        float threatScore = ComputeThreatScore(defender);
+                        
+                        // Estado Crítico prioriza remover dano puro da mesa. A/B priorizam engines (efeitos).
+                        if (currentState == AIDynamicState.Critical)
+                            score += (100 + defender.currentAtk) * currentWeights.wLife; 
+                        else
+                            score += (100 + (threatScore * 10f)) * currentWeights.wGain; 
                     }
                     else
                     {
@@ -836,8 +1011,12 @@ public class OpponentAI : MonoBehaviour
                         bool isFloater = floaters.Contains(attacker.CurrentCardData.id);
                         int damageToTake = defender.currentAtk - attacker.currentAtk;
                         
-                        // Só se suicida se não for tomar muito dano e a vida permitir
-                        if (isFloater && (GameManager.Instance.opponentLP - damageToTake > panicThreshold) && damageToTake <= 1500)
+                        if (currentState == AIDynamicState.Critical && currentPersonality != AIPersonality.Gambler)
+                        {
+                            score -= 5000; // C: NUNCA ataca monstros mais fortes. Prioridade é sobreviver.
+                        }
+                        // Só se suicida em estado Agressivo se a vida permitir
+                        else if (isFloater && (GameManager.Instance.opponentLP - damageToTake > panicThreshold) && damageToTake <= 1500 && (currentState == AIDynamicState.Aggressive || currentPersonality == AIPersonality.Combo))
                         {
                             score += 300; // Bônus por sacrificar Sangan pra buscar carta chave
                         }
@@ -999,6 +1178,8 @@ public class OpponentAI : MonoBehaviour
                         targetPower = target.position == CardDisplay.BattlePosition.Attack ? target.currentAtk : target.currentDef;
                     }
 
+                    bool isLethal = GameManager.Instance.opponentLP <= attackerAtk;
+
                     // Se a IA for o alvo e for ganhar a batalha, ela NÃO gasta armadilha (guarda recurso)
                     if (target != null && targetPower > attackerAtk && !target.isFlipped) {
                         score -= 5000;
@@ -1012,12 +1193,35 @@ public class OpponentAI : MonoBehaviour
                         }
                         else
                         {
-                            if (attackerAtk >= 1500 || target == null) {
-                                score += attackerAtk; // Usa remoção em ataques fortes ou ataques diretos ao HP
-                            }                        }
+                            if (currentState == AIDynamicState.Critical || isLethal || currentPersonality == AIPersonality.Fearful) {
+                                score += 5000 * currentWeights.wLife; // C: Usa imediatamente no primeiro ataque (Questão de Vida ou Morte)
+                            } else if (currentState == AIDynamicState.Cautious || currentPersonality == AIPersonality.Controller) {
+                                if (attackerAtk >= 2000 || target == null) score += attackerAtk * currentWeights.wGain; // B: Guarda para ataque grande
+                                else score -= 500;
+                            } else {
+                                // Agressivo: Só usa se for para salvar um monstro seu ou evitar muito dano
+                                if (target != null || attackerAtk >= 2500) score += attackerAtk * currentWeights.wGain;
+                                else score -= 1000;
+                            }
+                        }
                     }
-                    else {
-                        score -= 500; // Guarda para ameaças piores
+                    else // Outras armadilhas de resposta a ataque (ex: Waboku, Negate Attack, Roar)
+                    {
+                        if (attacker != null && !attacker.isPlayerCard)
+                        {
+                            score -= 9000;
+                        }
+                        else
+                        {
+                            if (currentState == AIDynamicState.Critical || isLethal || currentPersonality == AIPersonality.Fearful) {
+                                score += 4000 * currentWeights.wLife; // C: Usa no primeiro ataque garantido
+                            } else if (currentState == AIDynamicState.Cautious || currentPersonality == AIPersonality.Defensive) {
+                                if (attackerAtk >= 2000 || target == null) score += 500 * currentWeights.wLife; // B: Guarda para bloquear dano grande
+                                else score -= 1000;
+                            } else {
+                                score -= 1000; // A: Guarda recurso, não liga pra dano menor
+                            }
+                        }
                     }
                 }
                 else if (eventCode == 1100 || eventCode == 1101 || eventCode == 1105) // SUMMON_SUCCESS, FLIP_SUMMON, SPSUMMON
@@ -1069,8 +1273,10 @@ public class OpponentAI : MonoBehaviour
                         }
                         else
                         {
-                            if (summonedAtk >= 1500) score += summonedAtk;
-                            else if (isLifeOrDeath) score += 1000; 
+                            if (currentState == AIDynamicState.Critical || isLifeOrDeath || currentPersonality == AIPersonality.Fearful) {
+                                score += 5000 * currentWeights.wLife; // C: Usa imediatamente para evitar que QUALQUER monstro ataque
+                            }
+                            else if (summonedAtk >= 1500) score += summonedAtk * currentWeights.wGain; // A/B: Espera valer a pena
                             else if (preventingTribute) score += 500; 
                             else if (protectingTributeFodder) score += 800;
                             else score -= 5000;
@@ -1081,7 +1287,11 @@ public class OpponentAI : MonoBehaviour
                 {
                     if ((cat & 0x10000000) != 0) // CATEGORY_NEGATE (Solemn Judgment, Magic Jammer, Dark Bribe)
                     {
-                        score += 1500;
+                        if (GameManager.Instance.opponentLP <= panicThreshold && currentPersonality != AIPersonality.Gambler)
+                        {
+                            score -= 5000; // Não gasta LP em negações arriscadas se a vida estiver no limiar de pânico
+                        }
+                        score += 1500 * (currentPersonality == AIPersonality.Controller ? 2f : 1f);
                     }
                 }
             }
@@ -1116,6 +1326,7 @@ public class OpponentAI : MonoBehaviour
             bool isField = c.IsLocation(0x04) || c.IsLocation(0x08); // Campo
             bool isGrave = c.IsLocation(0x10); // Cemitério
             bool isHand = c.IsLocation(0x02); // Mão
+            bool isSpellTrap = c.IsSpellTrap();
             
             LuaEffect currentEff = null;
             if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
@@ -1126,8 +1337,34 @@ public class OpponentAI : MonoBehaviour
                     currentEff = CardEffectManager.Instance.luaDuel.currentActivatingEffect;
             }
 
+            bool isPositiveEffect = false;
+            bool isNegativeEffect = false;
+            bool isCost = false;
+
             if (currentEff != null)
             {
+                int cat = currentEff.category;
+                
+                if ((cat & 0x40000) != 0 || (cat & 0x200000) != 0 || (cat & 0x400000) != 0 || (cat & 0x100000) != 0 || currentEff.isTypeEquip || (currentEff.owner != null && currentEff.owner.unityData != null && currentEff.owner.unityData.property == "Equip"))
+                    isPositiveEffect = true; 
+                    
+                if ((cat & 0x1) != 0 || (cat & 0x4) != 0 || (cat & 0x8) != 0 || (cat & 0x10) != 0 || (cat & 0x20) != 0 || (cat & 0x10000000) != 0 || (cat & 0x2000) != 0)
+                    isNegativeEffect = true; 
+                    
+                if ((cat & 0x1000) != 0) // CATEGORY_CONTROL (Snatch Steal, Change of Heart)
+                {
+                    isPositiveEffect = false;
+                    isNegativeEffect = true;
+                }
+                
+                if ((cat & 0x80) != 0) // CATEGORY_HANDES (Confiscation, Delinquent Duo)
+                {
+                    isNegativeEffect = true;
+                }
+
+                if (CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.activeChainTasks > 0 && !CardEffectManager.Instance.isChainResolving)
+                    isCost = true; // Chk=0/Chk=1 da ativação (pagando tributos, descartando da própria mão)
+
                 // --- ESTRATÉGIA ESPECÍFICA PARA A CARTA "ANTE" ---
                 if (currentEff.owner != null && currentEff.owner.unityData != null && (currentEff.owner.unityData.id == "11324436" || currentEff.owner.unityData.id == "DM0070" || currentEff.owner.unityData.name == "Ante"))
                 {
@@ -1153,22 +1390,64 @@ public class OpponentAI : MonoBehaviour
                 }
             }
 
-            if (!isMine && isField && c.GetAttack() > 0) score += 10000 + c.GetAttack(); // Matar o monstro mais forte do player
-            else if (!isMine && c.IsSpellTrap()) score += 8000; // Destruir S/T do player
-            else if (isMine && isGrave) score += 5000 + c.GetAttack(); // Reviver o próprio monstro mais forte do GY
-            else if (isMine && isField) 
+            if (isCost && isMine)
             {
-                bool isEquipOrBuff = false;
-                if (currentEff != null && currentEff.owner != null && currentEff.owner.unityData != null && currentEff.owner.unityData.property == "Equip") isEquipOrBuff = true;
-                if (currentEff != null && ((currentEff.category & 0x800) != 0 || (currentEff.category & 0x40000) != 0)) isEquipOrBuff = true;
-                
-                if (isEquipOrBuff) score += c.GetAttack(); // Queremos buffar o monstro mais forte
-                else score -= c.GetAttack(); // Se for custo/tributo, escolhe o lacaio mais fraco
+                if (isHand) score -= (c.GetAttack() + c.GetLevel() * 100) * currentWeights.wLoss;
+                else if (isField) score -= c.GetAttack() * currentWeights.wLoss;
+                return score;
             }
-            else if (isMine && isHand)
+
+            if (isNegativeEffect)
             {
-                // Se o jogo está pedindo pra selecionar carta da mão por um efeito genérico:
-                score -= c.GetAttack(); // Descarta o mais fraco
+                if (!isMine)
+                {
+                    if (isField && !isSpellTrap) 
+                    {
+                        float targetThreat = c.GetAttack() + c.GetDefense();
+                        
+                        // ECONOMIA DE DANO E PROTEÇÃO: Se estamos apanhando na Battle Phase e temos que destruir alguém,
+                        // nós punimos drasticamente a prioridade de destruir monstros que JÁ ATACARAM neste turno, mirando nos que ainda vão bater!
+                        if (c.unityCard != null && c.unityCard.attacksThisTurn > 0 && PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle)
+                        {
+                            targetThreat *= 0.3f; 
+                        }
+                        
+                        score += (10000 + targetThreat) * currentWeights.wGain;
+                    }
+                    else if (isField && isSpellTrap) score += 8000 * currentWeights.wGain;
+                    else if (isHand) 
+                    {
+                        if (isSpellTrap) score += 9000 * currentWeights.wCA;
+                        else score += (5000 + c.GetAttack()) * currentWeights.wCA;
+                    }
+                    else if (isGrave) score += (5000 + c.GetAttack()) * currentWeights.wGain;
+                }
+                else
+                {
+                    if (isField && !isSpellTrap) score -= c.GetAttack() * currentWeights.wLoss;
+                    else if (isHand) score -= (c.GetAttack() + c.GetLevel() * 100) * currentWeights.wLoss;
+                }
+            }
+            else if (isPositiveEffect)
+            {
+                if (isMine)
+                {
+                    if (isField && !isSpellTrap) score += (10000 + c.GetAttack()) * currentWeights.wGain;
+                    else if (isGrave && !isSpellTrap) score += (5000 + c.GetAttack()) * currentWeights.wGain;
+                }
+                else
+                {
+                    score -= c.GetAttack() * currentWeights.wLoss;
+                }
+            }
+            else
+            {
+                if (!isMine && isField && !isSpellTrap) score += (10000 + c.GetAttack()) * currentWeights.wGain;
+                else if (!isMine && isSpellTrap) score += 8000 * currentWeights.wGain;
+                else if (isMine && isGrave && !isSpellTrap) score += (5000 + c.GetAttack()) * currentWeights.wGain;
+                else if (isMine && isField) score -= c.GetAttack() * currentWeights.wLoss;
+                else if (isMine && isHand) score -= c.GetAttack() * currentWeights.wLoss;
+                else if (!isMine && isHand) score += c.GetAttack() * currentWeights.wGain; 
             }
             
             return score;
@@ -1312,6 +1591,34 @@ public class OpponentAI : MonoBehaviour
                 power += myMonsters[i].currentAtk;
         }
         return power;
+    }
+
+    private float ComputeThreatScore(CardDisplay card)
+    {
+        if (card == null || card.CurrentCardData == null) return 0;
+        
+        float score = 0;
+        float atkPwr = Mathf.Max(card.currentAtk, 0);
+        
+        // 1. Poder Destrutivo Base (ATK)
+        score += (atkPwr / 100f) * 2.5f * currentWeights.wGain;
+
+        // 2. Potencial de Virada / Engine
+        if (card.CurrentCardData.type.Contains("Effect"))
+        {
+            score += 15f * currentWeights.wGain; // Bônus considerável para monstros de efeito
+            if (card.CurrentCardData.level >= 4 && card.CurrentCardData.level <= 6) score += 10f * currentWeights.wCA; // Motores do deck
+        }
+        
+        // 3. Subtrai o "peso" do Custo
+        int tributes = 0;
+        if (card.CurrentCardData.level >= 5 && card.CurrentCardData.level <= 6) tributes = 1;
+        if (card.CurrentCardData.level >= 7) tributes = 2;
+        score -= (tributes * 5f * currentWeights.wCA);
+        
+        if (card.CurrentCardData.level >= 7) score -= 15f * currentWeights.wLoss; // Monstro enorme exige recursos e é vulnerável a remoção simples
+        
+        return score;
     }
 
     List<CardDisplay> GetMyMonstersOnField()
