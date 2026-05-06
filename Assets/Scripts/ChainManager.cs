@@ -215,6 +215,9 @@ public class ChainManager
                 }
 
                 CleanupSpellTrapAfterResolution(link.card);
+                
+                // Aguarda as animações de resolução visual deste Link (ex: Dano, Cura, Explosão) terminarem
+                yield return new WaitWhile(() => GameManager.Instance != null && GameManager.Instance.pendingVisualTasks > 0);
             }
 
             currentChain.Clear();

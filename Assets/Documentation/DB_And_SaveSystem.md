@@ -4,10 +4,10 @@ Este documento centraliza toda a arquitetura de armazenamento de dados do jogo, 
 
 ---
 
-## 2.1 Banco de Dados de Cartas (`cards.json`)
+## 2.1 Banco de Dados de Cartas (Padrão Prefixo: `cardsDM.json`)
 
 ### 2.1.1 Estrutura Técnica e JSON (`CardData`)
-Todas as cartas do jogo estão armazenadas em um arquivo JSON (`StreamingAssets/cards.json`). O jogo carrega este arquivo na inicialização através do `CardDatabase.cs`.
+Todas as cartas do jogo estão armazenadas em arquivos JSON modulares utilizando prefixos de era (ex: `StreamingAssets/cardsDM.json` e `charactersDM.json`). O jogo carrega esses arquivos na inicialização através do `CardDatabase.cs`.
 
 Cada carta é um objeto com os seguintes campos:
 
@@ -74,10 +74,10 @@ O sistema classifica todas as cartas em 25 níveis de poder/raridade (de **1.1**
     *   **Dicionários Estritos:** Utiliza `PREDEFINED_POOLS` (ex: Exodia, Relinquished, Staples antigas) para forçar tiers fixos de forma inquestionável, e analisa a `BANLIST` para impor tetos de poder (Forbidden = 5.5, Limited = 4.5, Semi = 3.5).
     *   **Heurística Pente Fino:** Se não estiver fixada, analisa ATK, DEF, Taxa de Tributo (Nível vs Status) e Palavras-chave (ex: "destroy all", "draw 2") para dar um "chute" lógico na coluna `Suggested_Pool`.
 2.  **Edição Humana:** O desenvolvedor avalia o CSV no Excel/Sheets e preenche a coluna `Final_Pool` (apenas caso discorde da IA).
-3.  **`apply_pools_to_json.py`:** Lê o CSV. Prioriza `Final_Pool` (se preenchido) sobre `Suggested_Pool`. Valida a sintaxe "X.Y" em fallback (padrão 1.1) e injeta a propriedade `"pool"` de volta no JSON mestre (`cards.json`).
+*(Nota: A antiga ferramenta `apply_pools_to_json.py` foi removida/absorvida pelo pipeline principal, simplificando o processo de compilação).*
 
 ### 2.3.2 Geração Mestra (`generate_assets.py`)
-O script-mestre central de construção do `cards.json`. Flexível e multi-formato:
+O script-mestre central de construção do banco de dados (ex: `cardsDM.json`). Flexível e multi-formato:
 *   **Detecção de Formato:** Lê nativamente TSV (separado por tabulação), listas antigas do *Power of Chaos* (`-- NOME -- [ID]`) e *Forbidden Memories*.
 *   **Limpeza de Dados:** Extrai corretamente a diferença entre `attribute` (para monstros) e `property` (para mágicas/armadilhas) que vêm fundidos das APIs originais. Preserva subtipos exatos (ex: "Monster (Fusion)").
 *   **Mapeamento de Imagem:** Numera e linka as imagens sequenciais baseadas na ordem alfabética das cartas.
@@ -87,12 +87,12 @@ A aquisição de dados brutos foi centralizada em uma única e poderosa ferramen
 
 *   **Interface Web (UI):** Ao ser executado, o script inicia um servidor em `http://localhost:5000` que renderiza uma interface gráfica no navegador. A partir dela, o desenvolvedor pode configurar e disparar diferentes tarefas de extração.
 *   **Preparação Multi-Eras:** Inclui presets automáticos de datas para fatiar o banco de dados oficial em eras exatas (Clássica/DM, GX, 5D's, ZEXAL, ARC-V, VRAINS, MR5). O banco agora suporta Syncros, Xyz e Links intactos, caso desejado.
-*   **Prefixo Inteligente de Imagens:** Através de um botão nativo do Explorer, o usuário seleciona a pasta alvo (ex: `DMCardImages`). A ferramenta extrai o prefixo automaticamente e injeta direto no JSON, blindando a engine C# contra problemas de quebra de diretório (salvando como `DMCardImages/0001 - Carta.jpg`).
+*   **Sistematização de Prefixos (O Padrão DM):** Ao extrair os dados, a ferramenta agora gera os arquivos com seus prefixos oficiais integrados (ex: `cardsDM.json` e `charactersDM.json`), organizando a base para futuras expansões modulares. Através do diretório alvo de imagens (ex: `DMCardImages`), ela também extrai o prefixo e o aplica rigidamente em cada rota salva (`DMCardImages/0001 - Carta.jpg`), blindando a Engine C# contra caminhos quebrados.
 *   **Multi-Funcionalidade ("Ultimate Extractor"):** A ferramenta pode executar uma variedade de tarefas de forma independente:
     *   **Gerar TXT/CSV:** Cria listas de cartas formatadas com colunas selecionáveis (incluindo as novas opções como Typeline Cru e Link Markers).
     *   **Gerar JSON Master:** Produz o `cards_ultimate.json`, uma versão mais completa e estruturada que a usada pelo jogo, servindo como uma base de dados crua.
     *   **Baixar Imagens (HD):** Utiliza Multi-Threading para baixar rapidamente todas as imagens de alta resolução da API, incluindo artes alternativas.
-    *   **Baixar Scripts LUA:** Busca os scripts de efeito de múltiplos repositórios do YGOPro (ProjectIgnis, etc.) para garantir a maior cobertura possível.
+    *   **Baixar Scripts LUA e Bibliotecas OCGCore (StdLib):** Busca os scripts de efeito (`cXXXX.lua`) de múltiplos repositórios. **Obrigatório:** O script agora baixa/atualiza automaticamente o pacote nativo de bibliotecas do OCGCore (`archetype_setcode_constants.lua`, `card_counter_constants.lua`, `cards_specific_functions.lua`, `constant.lua`, `debug_utility.lua`, `deprecated_functions.lua`, `proc_equip.lua`, `proc_fusion.lua`, `proc_fusion_spell.lua`, `proc_gemini.lua`, `proc_link.lua`, `proc_maximum.lua`, `proc_normal.lua`, `proc_pendulum.lua`, `proc_persistent.lua`, `proc_ritual.lua`, `proc_rush.lua`, `proc_skill.lua`, `proc_spirit.lua`, `proc_synchro.lua`, `proc_union.lua`, `proc_workaround.lua`, `proc_xyz.lua`, `utility.lua`), garantindo compatibilidade total com o interpretador MoonSharp e chamadas dependentes em cascata.
     *   **Auditoria:** Varre as pastas de destino e gera um relatório `audit_report.txt` com todas as imagens e scripts LUA que estão faltando.
     *   **Repetir Erros:** Analisa um `error_log.txt` para tentar baixar novamente apenas os arquivos que falharam em uma execução anterior.
     *   **Backup (ZIP):** Compacta toda a base de dados gerada em um único arquivo `.zip`.
@@ -113,9 +113,11 @@ A aquisição de dados brutos foi centralizada em uma única e poderosa ferramen
     *   **Fatiamento de Tiers:** Junta as 120 cartas de todas as variantes de Decks (A, B e C), limpa as duplicatas, ordena por poder e divide percentualmente: S (Top 15%), B (Mid 25%), C (Low 30%) e D (Fodder 30%).
     *   **Preenchimento Inteligente:** Caso a soma dos decks do personagem não alcance 120 cartas, o algoritmo buscará na `cards_by_pool` preenchimentos genéricos ("fillers") nivelados ao Ato atual do personagem.
 
-### 2.3.5 Validadores Externos
-*   **`test_card_viewer.py`:** Visualizador ágil em *Pygame*. Permite navegar (Setas Esq/Dir) e renderizar a arte e texto lidos do JSON localmente, poupando a lentidão de compilar no Editor da Unity.
-*   **`test_deck_system.py`:** Importa o núcleo (`duel_core`) para simular a criação, embaralhamento e compra de uma mão de 5 cartas de um bot no console Python.
+### 2.3.5 Ferramentas de Pesquisa, Diagnóstico e Validadores
+*   **`ygo_search.py`:** Uma poderosa ferramenta de busca rápida por linha de comando (CLI). Lê a base (`cardsDM.json`) instantaneamente, permitindo ao desenvolvedor buscar cartas por ID, nome, arquétipo ou descrições sem precisar abrir a Unity.
+*   **`ygo_diagnostics.py`:** Ferramenta médica analítica do ecossistema. Varre a pasta inteira checando a integridade das imagens, acusa quebras de links, avalia a ausência de scripts LUA para cartas de Efeito e relata problemas lógicos no banco de dados.
+*   **`test_card_viewer.py`:** Visualizador ágil em *Pygame*. Renderiza a arte e o texto extraídos dos novos arquivos prefixados (`cardsDM.json`), poupando tempo de compilação no Editor.
+*   **`test_deck_system.py`:** Ambiente de simulação lógica. Importa o núcleo (`duel_core`) para criar, misturar e testar a mão inicial (5 cartas) com base na mecânica de Tiers/Pools, validando a aleatoriedade e coerência dos baralhos no console.
 *   **`generate_fields.py`:** Converte a lista de textos em `fields.json` para o sistema de arenas.
 
 ### 2.3.6 Ferramentas de Editor Unity (`HierarchyDumper.cs`, `InspectorDumper.cs`, `VFXOptimizer.cs`, `VFXBuilder.cs`)

@@ -48,7 +48,9 @@ public class DamagePopupManager : MonoBehaviour
             if (spawnPoint == null) spawnPoint = transform;
         }
 
-        GameObject go = Instantiate(damagePopupPrefab, spawnPoint.position, Quaternion.identity, spawnPoint);
+        // Adiciona um pequeno espalhamento aleatório (Scatter) para que múltiplos popups fiquem visíveis e fluidos
+        Vector3 randomOffset = new Vector3(Random.Range(-30f, 30f), Random.Range(-20f, 20f), 0);
+        GameObject go = Instantiate(damagePopupPrefab, spawnPoint.position + randomOffset, Quaternion.identity, spawnPoint);
         DamagePopup popup = go.GetComponent<DamagePopup>();
         
         if (popup != null)

@@ -51,11 +51,11 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **2.2.1** Classificação de Monstros (Tier 0 a 4)
     *   **2.2.2** Classificação de Magias e Armadilhas (Pool A, B, C)
 *   **2.3.** Ferramentas e Pipeline de Dados (Python & Unity)
-    *   **2.3.1** Sistema de Pools (Heurística, Banlist e Template CSV, `generate_pool_template.py` / `apply_pools_to_json.py`)
+    *   **2.3.1** Sistema de Pools (Heurística, Banlist e Template CSV, `generate_pool_template.py`)
     *   **2.3.2** Geração Mestra (Conversão TSV/PoC/FM e Lazy Loading, `generate_assets.py`)
-    *   **2.3.3** Aquisição e Scrapers (`download_cards_ultimate.py`, UI Flask, Multi-Task)
+    *   **2.3.3** Aquisição e Scrapers (`download_cards_ultimate.py`, UI Flask, Prefixos DM, Multi-Task)
     *   **2.3.4** Geradores de Personagens e Bots (Temas, Cores, Dependências e Escalamento A/B/C, `generate_characters.py`, `generate_character_decks.py`, `generate_character_rewards.py`)
-    *   **2.3.5** Validadores Externos (`test_card_viewer.py`, Pygame Viewer, `test_deck_system.py`, `generate_fields.py`)
+    *   **2.3.5** Validadores, Busca e Diagnóstico (`ygo_search.py`, `ygo_diagnostics.py`, `test_card_viewer.py`, `test_deck_system.py`)
     *   **2.3.6** Ferramentas de Editor Unity (`HierarchyDumper.cs`, `InspectorDumper.cs`, `VFXOptimizer.cs`)
     *   **2.3.7** Debug In-Game (`InGameDebugConsole.cs`, Ctrl+Shift+D)
     *   **2.3.8** Analisador Estático de Scripts Lua (`cardslua_analyzer.py`)
@@ -82,6 +82,7 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **3.4.1** A Regra de Ouro (Padrão `While-Yield`)
     *   **3.4.2** API de Modais da Engine (`ShowConfirmation`, `StartTargetSelection`, `OpenCardMultiSelection`, `GlobalCardSearchUI`, `MultipleChoiceUI`, `NumericSelectionUI`, `ReorderCardsUI`)
     *   **3.4.3** Comportamento sob Simulação (O Bypass `isSimulating`)
+    *   **3.4.4** Fila Visual e Cadência Estrita (Visual Queue, LP Roll & Game Feel)
 
 ### 4. ⚔️ `Rules_Combat_And_Board.md` (As Regras de Combate e Tabuleiro)
 *   **4.1.** A Matemática Oculta do Combate (Fluxo de Batalha C# -> Lua)
@@ -110,7 +111,7 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
 *   **5.1.** Arquitetura do Sistema de Efeitos (`CardEffectManager` e MoonSharp)
     *   **5.1.1** Estrutura de Arquivos e Componentes (A Ponte C# <-> LUA)
     *   **5.1.2** O Fluxo de Execução e o Sistema `chk` (Validação Silenciosa -> Ativação -> Corrente -> Resolução)
-    *   **5.1.3** A Supremacia do `LuaEngineCore` e as Constantes
+    *   **5.1.3** A Supremacia do `LuaEngineCore` e as Bibliotecas Oficiais OCGCore (StdLib Completa: `constant`, `utility`, `proc_*`, etc.)
 *   **5.2.** Referência de Gatilhos C# e Escutas LUA (Event Listeners)
     *   **5.2.1** Hooks de Fases e Turno (`OnPhaseStart`, `OnPreDrawPhase`)
     *   **5.2.2** Hooks de Batalha (Iniciados pela UI, `Core.Attack` em Lua, `EVENT_ATTACK_ANNOUNCE`)
@@ -138,12 +139,13 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **5.6.2** Tipos de Modais Oficiais da Engine (`ShowConfirmation`, `ShowCardSelection`, etc.)
     *   **5.6.3** O Bypass de IA e Simulação
     *   **5.6.4** Minigames de Sorte
-*   **5.7.** Ferramenta de Validação em Massa (Mass Validator)
-    *   **5.7.1** Como Executar
+*   **5.7.** Ferramenta de Validação em Massa (`AutoTestRunner.cs`)
+    *   **5.7.1** Como Executar (Mass Dry-Run)
     *   **5.7.2** As Duas Fases de Validação (Compile-Time e Runtime)
-    *   **5.7.3** O Relatório Agrupado
+    *   **5.7.3** O Relatório Blindado de Crash Logs (`AutoTestRunner_Report.txt`)
 *   **5.8.** Casos de Estudo e Soluções Arquiteturais (Breakthroughs)
     *   **5.8.16** O Brilho Universal no Cemitério (Ghostbusters)
+    *   **5.8.17** O Fim do Lag de Regex e Hack do Motor LUA (Bitwise & Length Operator)
 *   **5.9.** Core Pillars e A Regra Brutal das Constantes (Metatable Interceptor)
 *   **5.10.** Dicionário OCGCore: A Anatomia das Variáveis LUA (e, tp, eg, chk, etc)
 
@@ -201,8 +203,10 @@ Abaixo está o mapa exato e estruturado hierarquicamente de onde encontrar cada 
     *   **9.5.3** Painel de Desenvolvedor (`FullTestManager.cs`, Toggles, Dev Card Menu, Ctrl+T)
     *   **9.5.4** In-Game Debug Console (`InGameDebugConsole.cs`, Ctrl+Shift+D)
 *   **9.5.5** Laboratório de Teste de Efeitos (`EffectTestManager.cs`, Ctrl+E, Extração Cinemática, Contexto de Teste Dinâmico)
-    *   **9.5.6** Gerador de Checklist QA (`generate_qa_checklist.py`, Python Tool)
+    *   **9.5.6** Gerador de Checklist QA (`generate_qa_checklist.py`, Python Tool, Multi-Eras, Asset Shield)
     *   **9.5.7** Bloco de Notas do Desenvolvedor (`NotepadWindow.cs`, Ctrl+G)
+    *   **9.5.8** Scanner de Raio-X de UI (`UIScanner.cs`)
+    *   **9.5.9** Auto Test Runner (`AutoTestRunner.cs`, Validador LUA In-Game)
 *   **9.6.** Simulador de Caos (`SimulationManager.cs`, Bypass de UI, Visual Mode 1.5x, Fast Mode 50x)
 *   **9.7.** Sistema de Temas de Duelo (`DuelThemeManager.cs`, `DuelTheme`)
     *   **9.7.1** Arquitetura de Temas (Console e Cartuchos)
@@ -228,6 +232,8 @@ Para preservar a integridade desta "Bíblia" arquitetural e impedir a perda de c
     *   `GameManager` está fragmentado em: `_BoardActions`, `_Decks`, `_Stats`, `_Summons`, `_Selections`, `_Phases`.
     *   `DuelFXManager` está fragmentado em: `_Combat`, `_Effects`, `_Flights`, `_Summons`.
     *   `LuaDuel` está fragmentado em: `_Core`, `_Actions`, `_Queries`, `_UI`, `_Stubs`.
+*   **Proteção de Interface (Game Feel):** O LUA é absurdamente rápido. A engine C# DEVE ditar o tempo usando a Fila Visual (`pendingVisualTasks`). Jamais permita que o C# processe múltiplos danos ou invocações simultâneas sem respeitar a cadência da tela e o tempo de leitura do jogador.
+*   **Respeito às Bibliotecas Oficiais:** O LUA deve carregar o pacote **COMPLETO** de bibliotecas padrão do YGOPro via Custom Loader C#. A ferramenta de Python (`download_cards_ultimate.py`) deve sempre atualizar todo este pacote nativo (StdLib), que inclui obrigatoriamente as 24 bibliotecas base: `archetype_setcode_constants.lua`, `card_counter_constants.lua`, `cards_specific_functions.lua`, `constant.lua`, `debug_utility.lua`, `deprecated_functions.lua`, `proc_equip.lua`, `proc_fusion.lua`, `proc_fusion_spell.lua`, `proc_gemini.lua`, `proc_link.lua`, `proc_maximum.lua`, `proc_normal.lua`, `proc_pendulum.lua`, `proc_persistent.lua`, `proc_ritual.lua`, `proc_rush.lua`, `proc_skill.lua`, `proc_spirit.lua`, `proc_synchro.lua`, `proc_union.lua`, `proc_workaround.lua`, `proc_xyz.lua` e `utility.lua`. Jamais edite esses arquivos oficiais na raiz; qualquer adaptação estrutural deve ser injetada de forma segura na `LuaEngineCore.cs` **após** o carregamento das originais.
 
 ### 6.2. A Lei de Ouro da Programação de Cartas (Análise LUA)
 Ao introduzir ou debugar o efeito de uma carta, a IA deve cumprir este ritual estrito:

@@ -12,6 +12,9 @@ public class QAAutoSpawner : MonoBehaviour
     public static string currentTestCardName = "";
     public static string currentStatus = "N/A";
     
+    public static string currentEraPrefix = "DM";
+    private static bool prefsLoaded = false;
+    
     // Rastreia a linha atual para facilitar o "Próximo"
     private static int currentLineIndex = -1;
     private static int filterState = 0; // 0 = PENDENTES, 1 = REVISÃO, 2 = APROVADOS
@@ -82,11 +85,28 @@ public class QAAutoSpawner : MonoBehaviour
 
     void DrawQAWindow(int windowID)
     {
+        if (!prefsLoaded) { currentEraPrefix = PlayerPrefs.GetString("QASpawner_EraPrefix", "DM"); prefsLoaded = true; }
+
         GUI.DrawTexture(new Rect(0, 0, windowRect.width, windowRect.height), bgTex);
         
         GUILayout.Space(5);
         GUILayout.Label("🛠️ QA Auto-Spawner (Ctrl+Q Ocultar)", titleStyle);
         
+        GUILayout.Space(5);
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Prefixo da Era:", GUILayout.Width(100));
+        
+        string newPrefix = GUILayout.TextField(currentEraPrefix, GUILayout.Width(50));
+        if (newPrefix != currentEraPrefix)
+        {
+            currentEraPrefix = newPrefix;
+            PlayerPrefs.SetString("QASpawner_EraPrefix", currentEraPrefix);
+            PlayerPrefs.Save();
+            currentLineIndex = -1; // Reseta a busca ao trocar de Era
+            currentTestCardId = ""; // Limpa a carta atual do painel
+        }
+        GUILayout.EndHorizontal();
+
         GUILayout.Space(5);
         GUILayout.BeginHorizontal();
         GUILayout.Label("Filtro de Busca:", GUILayout.Width(100));
@@ -223,9 +243,35 @@ public class QAAutoSpawner : MonoBehaviour
         GUI.DragWindow(new Rect(0, 0, 10000, 10000));
     }
 
+    private static string GetChecklistPath()
+    {
+        string fileName = string.IsNullOrEmpty(currentEraPrefix) ? "QA_Card_Checklist.md" : $"QA_Card_Checklist_{currentEraPrefix}.md";
+        return Path.Combine(Application.dataPath, "Support", fileName);
+    }
+
+    private static bool PassesAssetShield()
+    {
+        string luaDir = string.IsNullOrEmpty(currentEraPrefix) ? "LuaScripts" : $"{currentEraPrefix}LuaScripts";
+        string luaPath = Path.Combine(Application.dataPath, "Scripts", luaDir);
+        
+        string imgDir = string.IsNullOrEmpty(currentEraPrefix) ? "CardImages" : $"{currentEraPrefix}CardImages";
+        string imgPath = Path.Combine(Application.streamingAssetsPath, imgDir);
+
+        if (!Directory.Exists(luaPath)) {
+            Debug.LogError($"<color=red>🛑 [QA Asset Shield]</color> BLOQUEADO: A pasta de scripts '{luaDir}' não existe no projeto. Importe a Era '{currentEraPrefix}' primeiro!");
+            return false;
+        }
+        if (!Directory.Exists(imgPath)) {
+            Debug.LogError($"<color=red>🛑 [QA Asset Shield]</color> BLOQUEADO: A pasta de imagens '{imgDir}' não existe no projeto. Importe a Era '{currentEraPrefix}' primeiro!");
+            return false;
+        }
+        return true;
+    }
+
     public static void TestNextCard(bool skipCurrent = false)
     {
-        string path = Path.Combine(Application.dataPath, "Support", "QA_Card_Checklist.md");
+        if (!PassesAssetShield()) return;
+        string path = GetChecklistPath();
         if (!File.Exists(path))
         {
             Debug.LogError("[QA] Arquivo de Checklist não encontrado em: " + path);
@@ -285,7 +331,8 @@ public class QAAutoSpawner : MonoBehaviour
 
     public static void TestPreviousCard()
     {
-        string path = Path.Combine(Application.dataPath, "Support", "QA_Card_Checklist.md");
+        if (!PassesAssetShield()) return;
+        string path = GetChecklistPath();
         if (!File.Exists(path)) return;
 
         string[] lines = File.ReadAllLines(path);
@@ -368,7 +415,7 @@ public class QAAutoSpawner : MonoBehaviour
     {
         if (string.IsNullOrEmpty(currentTestCardId)) return;
 
-        string path = Path.Combine(Application.dataPath, "Support", "QA_Card_Checklist.md");
+        string path = GetChecklistPath();
         if (!File.Exists(path)) return;
 
         string[] lines = File.ReadAllLines(path);

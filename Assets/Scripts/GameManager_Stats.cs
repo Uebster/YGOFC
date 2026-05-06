@@ -21,6 +21,11 @@ public partial class GameManager
 
     private bool isAdjusting = false;
 
+    [HideInInspector] public int visualPlayerLP = 8000;
+    [HideInInspector] public int visualOpponentLP = 8000;
+    private Queue<IEnumerator> visualEventQueue = new Queue<IEnumerator>();
+    private bool isProcessingVisualEvents = false;
+
     public bool PayLifePoints(bool isPlayer, int amount)
     {
         int currentLP = isPlayer ? playerLP : opponentLP;
@@ -35,18 +40,13 @@ public partial class GameManager
             lpPaidThisTurnOpponent += amount;
         }
 
-        UpdateLPUI();
         Debug.Log($"{(isPlayer ? "Player" : "Oponente")} pagou {amount} LP.");
+        EnqueueVisualEvent(AnimateLPChangeRoutine(isPlayer, amount, false, true));
 
         if (CardEffectManager.Instance != null)
         {
             EventData ed = new EventData(null, isPlayer ? 0 : 1, amount, null, 0, isPlayer ? 0 : 1);
             CardEffectManager.Instance.TriggerLuaEvent(1201, ed); // EVENT_PAY_LPCOST
-        }
-
-        if (enableDamagePopups && DamagePopupManager.Instance != null && amount > 0)
-        {
-            DamagePopupManager.Instance.ShowPopup(amount, false, isPlayer);
         }
 
         return true;
@@ -57,13 +57,8 @@ public partial class GameManager
         if (isPlayer) playerLP += amount;
         else opponentLP += amount;
 
-        UpdateLPUI();
-        
-        if (enableDamagePopups && DamagePopupManager.Instance != null && amount > 0)
-        {
-            DamagePopupManager.Instance.ShowPopup(amount, true, isPlayer);
-        }
-        
+        EnqueueVisualEvent(AnimateLPChangeRoutine(isPlayer, amount, true, false));
+
         Debug.Log($"{(isPlayer ? "Player" : "Oponente")} ganhou {amount} LP.");
 
         // Notifica sistema de efeitos (Ex: Fire Princess)
@@ -159,6 +154,8 @@ public partial class GameManager
             if (duelFieldUI.opponentMonsterZones != null) foreach (var z in duelFieldUI.opponentMonsterZones) if (z != null && z.childCount > 0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
             if (duelFieldUI.playerSpellZones != null) foreach (var z in duelFieldUI.playerSpellZones) if (z != null && z.childCount > 0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
             if (duelFieldUI.opponentSpellZones != null) foreach (var z in duelFieldUI.opponentSpellZones) if (z != null && z.childCount > 0) { var cd = z.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+            if (duelFieldUI.playerFieldSpell != null && duelFieldUI.playerFieldSpell.childCount > 0) { var cd = duelFieldUI.playerFieldSpell.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
+            if (duelFieldUI.opponentFieldSpell != null && duelFieldUI.opponentFieldSpell.childCount > 0) { var cd = duelFieldUI.opponentFieldSpell.GetComponentInChildren<CardDisplay>(); if (cd != null) allCards.Add(cd.gameObject); }
         }
 
         // COLETAR TODAS AS AURAS ATIVAS NO CAMPO (FIELD e EQUIP)
@@ -409,12 +406,8 @@ public partial class GameManager
 
         playerLP -= amount;
         if (playerLP < 0) playerLP = 0;
-        UpdateLPUI();
 
-        if (enableDamagePopups && DamagePopupManager.Instance != null && amount > 0)
-        {
-            DamagePopupManager.Instance.ShowPopup(amount, false, true);
-        }
+        EnqueueVisualEvent(AnimateLPChangeRoutine(true, amount, false, false));
 
         if (DuelScoreManager.Instance != null) DuelScoreManager.Instance.RecordDamageTaken(amount);
         Debug.Log($"Player tomou {amount} de dano. LP Restante: {playerLP}");
@@ -430,7 +423,7 @@ public partial class GameManager
         {
             // EFFECT_CANNOT_LOSE_LP
             if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(0, 401)) return;
-            EndDuel(false);
+            EnqueueVisualEvent(CheckDeathRoutine(true));
         }
 
         // Notifica dano (para cartas como Numinous Healer, etc)
@@ -444,12 +437,7 @@ public partial class GameManager
     {
         opponentLP -= amount;
         if (opponentLP < 0) opponentLP = 0;
-        UpdateLPUI();
-
-        if (enableDamagePopups && DamagePopupManager.Instance != null && amount > 0)
-        {
-            DamagePopupManager.Instance.ShowPopup(amount, false, false);
-        }
+        EnqueueVisualEvent(AnimateLPChangeRoutine(false, amount, false, false));
 
         if (DuelScoreManager.Instance != null) DuelScoreManager.Instance.RecordDamageDealt(amount);
         Debug.Log($"Oponente tomou {amount} de dano. LP Restante: {opponentLP}");
@@ -465,7 +453,7 @@ public partial class GameManager
         {
             // EFFECT_CANNOT_LOSE_LP
             if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(1, 401)) return;
-            EndDuel(true);
+            EnqueueVisualEvent(CheckDeathRoutine(false));
         }
         
         // Notifica dano
@@ -475,10 +463,77 @@ public partial class GameManager
         }
     }
 
+    public void EnqueueVisualEvent(IEnumerator routine)
+    {
+        visualEventQueue.Enqueue(routine);
+        if (!isProcessingVisualEvents && gameObject.activeInHierarchy)
+            StartCoroutine(ProcessVisualEventQueue());
+    }
+
+    private IEnumerator ProcessVisualEventQueue()
+    {
+        isProcessingVisualEvents = true;
+        pendingVisualTasks++; // Ativa a trava master: O LUA vai dormir!
+
+        while (visualEventQueue.Count > 0)
+        {
+            yield return StartCoroutine(visualEventQueue.Dequeue());
+        }
+        
+        pendingVisualTasks--; // Libera a trava apenas quando a fila estiver 100% vazia!
+        isProcessingVisualEvents = false;
+    }
+
+    private IEnumerator AnimateLPChangeRoutine(bool isPlayer, int amount, bool isHeal, bool isPay)
+    {
+        if (!isPay && enableDamagePopups && DamagePopupManager.Instance != null && amount > 0)
+        {
+            DamagePopupManager.Instance.ShowPopup(amount, isHeal, isPlayer);
+        }
+
+        if (!isHeal && !isPay && DuelFXManager.Instance != null) DuelFXManager.Instance.UpdateBGM(playerLP, opponentLP);
+
+        int startLP = isPlayer ? visualPlayerLP : visualOpponentLP;
+        int targetLP = isHeal ? startLP + amount : startLP - amount;
+        if (targetLP < 0) targetLP = 0;
+
+        float duration = 0.5f; // Meio segundo rolando os números do placar
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            int currentLP = Mathf.RoundToInt(Mathf.Lerp(startLP, targetLP, elapsed / duration));
+            
+            if (isPlayer) { visualPlayerLP = currentLP; if (duelFieldUI != null && duelFieldUI.playerLPText != null) duelFieldUI.playerLPText.text = currentLP.ToString(); }
+            else { visualOpponentLP = currentLP; if (duelFieldUI != null && duelFieldUI.opponentLPText != null) duelFieldUI.opponentLPText.text = currentLP.ToString(); }
+
+            yield return null;
+        }
+
+        if (isPlayer) { visualPlayerLP = targetLP; if (duelFieldUI != null && duelFieldUI.playerLPText != null) duelFieldUI.playerLPText.text = targetLP.ToString(); }
+        else { visualOpponentLP = targetLP; if (duelFieldUI != null && duelFieldUI.opponentLPText != null) duelFieldUI.opponentLPText.text = targetLP.ToString(); }
+
+        yield return new WaitForSeconds(0.2f); // Pausa de cadência para separar danos/curas seguidas (Ex: Jackpot 7)
+    }
+
+    private IEnumerator CheckDeathRoutine(bool playerDied)
+    {
+        int currentLP = playerDied ? playerLP : opponentLP;
+        if (currentLP <= 0)
+        {
+            EndDuel(!playerDied);
+        }
+        yield break;
+    }
+
     private void UpdateLPUI()
     {
         if (duelFieldUI != null)
         {
+            visualPlayerLP = playerLP;
+            visualOpponentLP = opponentLP;
+
             if (duelFieldUI.playerLPText != null) 
                 duelFieldUI.playerLPText.text = playerLP.ToString();
             else 
@@ -663,7 +718,13 @@ public partial class GameManager
         
         if (aura.targetFunc != null && CardEffectManager.Instance != null && aura.targetFunc != CardEffectManager.Instance.dummyClosureTrue)
         {
-            try { var res = CardEffectManager.Instance.luaEngine.Call(aura.targetFunc, aura, targetCard); if (res.Type == MoonSharp.Interpreter.DataType.Boolean && !res.Boolean) return false; } catch { return false; }
+            try { 
+                var res = CardEffectManager.Instance.luaEngine.Call(aura.targetFunc, aura, targetCard); 
+                if (res.Type != MoonSharp.Interpreter.DataType.Boolean)
+                    res = CardEffectManager.Instance.luaEngine.Call(aura.targetFunc, targetCard);
+                
+                if (res.Type == MoonSharp.Interpreter.DataType.Boolean && !res.Boolean) return false; 
+            } catch { return false; }
         } return true;
     }
 }

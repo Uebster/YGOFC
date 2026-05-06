@@ -1,3 +1,5 @@
+import re
+
 from flask import Flask, render_template_string, request, jsonify
 import os
 import json
@@ -210,6 +212,12 @@ HTML_UI = """
                 return;
             }
 
+            // Extrai o prefixo da Era do nome do arquivo JSON
+            const jsonFilename = data.json_path.split(/[\\/]/).pop();
+            const match = jsonFilename.match(/cards([A-Z0-9]*)\.json/);
+            data.era_prefix = match ? match[1] : "";
+            console.log("Era Prefix Detected:", data.era_prefix);
+
             fetch('/precheck', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })
             .then(r => r.json()).then(d => {
                 if(d.error) {
@@ -262,8 +270,13 @@ HTML_UI = """
                     id: document.getElementById('chk_id').checked,
                     name: document.getElementById('chk_name').checked,
                     status: document.getElementById('chk_status').checked
-                }
+                },
+                era_prefix: "" // Será preenchido no backend
             };
+            const jsonFilename = data.json_path.split(/[\\/]/).pop();
+            const match = jsonFilename.match(/cards([A-Z0-9]*)\.json/);
+            data.era_prefix = match ? match[1] : "";
+
             fetch('/start', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
             if(interval) clearInterval(interval);
             interval = setInterval(update, 500);
@@ -352,18 +365,34 @@ def select_folder():
 def precheck():
     data = request.json
     json_path = data.get('json_path')
-    lua_dir = data.get('lua_dir')
+    lua_dir_base = data.get('lua_dir')
+    era_prefix = data.get('era_prefix', '')
     
     if not os.path.exists(json_path):
         return jsonify({"error": "O arquivo cards.json não foi encontrado neste caminho."})
-    if not os.path.exists(lua_dir):
-        return jsonify({"error": "A pasta LuaScripts informada não existe!"})
-        
+    
     try:
         with open(json_path, 'r', encoding='utf-8') as f:
             cards_db = json.load(f)
     except Exception as e:
         return jsonify({"error": f"Erro de leitura no JSON: {e}"})
+
+    # Fallback Inteligente: Tenta ler o prefixo direto do ID das cartas dentro do JSON
+    if not era_prefix:
+        for card in cards_db:
+            card_id = str(card.get("id", ""))
+            match = re.match(r'^([A-Za-z]+)', card_id)
+            if match:
+                era_prefix = match.group(1).upper()
+                break
+
+    # Determina a pasta LUA específica da era
+    lua_dir = os.path.join(os.path.dirname(lua_dir_base), f"{era_prefix}LuaScripts") if era_prefix else lua_dir_base
+    if not os.path.exists(lua_dir):
+        # Fallback para o nome da pasta selecionada diretamente
+        lua_dir = lua_dir_base
+    if not os.path.exists(lua_dir):
+        return jsonify({"error": "A pasta LuaScripts informada não existe!"})
         
     existing_lua_files = {f.lower() for f in os.listdir(lua_dir) if f.endswith('.lua')}
     
@@ -406,7 +435,7 @@ def precheck():
             
     return jsonify({"expected": expected, "found": found, "missing": missing})
 
-def generate_task(json_path, lua_dir, out_dir, options):
+def generate_task(json_path, lua_dir_base, out_dir, options, era_prefix):
     global progresso, cancel_task, report_file_path
     cancel_task = False
     progresso = {"atual": 0, "total": 0, "status": "Iniciando...", "card": "", "log": []}
@@ -415,6 +444,22 @@ def generate_task(json_path, lua_dir, out_dir, options):
         with open(json_path, 'r', encoding='utf-8') as f:
             cards_db = json.load(f)
             
+        # Fallback Inteligente: Tenta ler o prefixo direto do ID das cartas dentro do JSON
+        if not era_prefix:
+            for card in cards_db:
+                card_id = str(card.get("id", ""))
+                match = re.match(r'^([A-Za-z]+)', card_id)
+                if match:
+                    era_prefix = match.group(1).upper()
+                    break
+
+        # Determina a pasta LUA específica da era
+        lua_dir = os.path.join(os.path.dirname(lua_dir_base), f"{era_prefix}LuaScripts") if era_prefix else lua_dir_base
+        if not os.path.exists(lua_dir):
+            # Fallback para o nome da pasta selecionada diretamente
+            lua_dir = lua_dir_base
+        progresso["log"].append(f"Usando pasta LUA: {lua_dir}")
+
         existing_lua_files = {f.lower() for f in os.listdir(lua_dir) if f.endswith('.lua')}
         
         spells, traps, effect_monsters, all_items = [], [], [], []
@@ -483,7 +528,8 @@ def generate_task(json_path, lua_dir, out_dir, options):
             effect_monsters.sort(key=lambda x: x[0])
             all_items.sort(key=lambda x: x[0])
             
-        output_path = os.path.join(out_dir, "QA_Card_Checklist.md")
+        filename = f"QA_Card_Checklist_{era_prefix}.md" if era_prefix else "QA_Card_Checklist.md"
+        output_path = os.path.join(out_dir, filename)
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write("# 🧪 Checklist de Homologação de Efeitos LUA (QA)\n")
             f.write("> Utilize este documento para rastrear o progresso de testes dos scripts LUA das cartas.\n\n")
@@ -513,7 +559,7 @@ def cancel():
 @app.route('/start', methods=['POST'])
 def start():
     d = request.json
-    threading.Thread(target=generate_task, args=(d['json_path'], d['lua_dir'], d['out_dir'], d['options'])).start()
+    threading.Thread(target=generate_task, args=(d['json_path'], d['lua_dir'], d['out_dir'], d['options'], d.get('era_prefix', ''))).start()
     return jsonify({"ok": True})
 
 @app.route('/open_report', methods=['POST'])

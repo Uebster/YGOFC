@@ -75,6 +75,7 @@ public class LuaEventManager
                         bool opDone = false;
                         core.StartCoroutine(RunCoroutineAndSetDone(core.RunLuaCoroutine(effect.operationFunc, effect, 0, triggerArgs, -1), () => opDone = true));
                         yield return new WaitUntil(() => opDone);
+                        yield return new WaitWhile(() => GameManager.Instance != null && GameManager.Instance.pendingVisualTasks > 0);
                     }
                 }
             }
@@ -101,7 +102,7 @@ public class LuaEventManager
 
             // Impede a Engine de auto-ativar cartas Manuais (Spells/Traps) ou Quick Effects. Eles devem ser ativados pelo jogador na Response Window!
             // EXCLUI EFFECT_TYPE_SINGLE (0x0001) para impedir que gatilhos pessoais (ex: EVENT_TO_GRAVE) disparem falsamente quando outra carta morre.
-            var matchingEffects = lc_loop.registeredEffects.FindAll(e => e.code == eventCode && (e.isTypeTriggerF || e.isTypeQuickF || e.isTypeContinuous));
+            var matchingEffects = lc_loop.registeredEffects.FindAll(e => e.code == eventCode && !e.isTypeSingle && (e.isTypeTriggerF || e.isTypeQuickF || e.isTypeContinuous));
             foreach(var effect in matchingEffects)
             {
                 if (core.CanActivateEffect(lc_loop, effect, lc_loop.GetControler(), triggerArgs))
@@ -125,6 +126,7 @@ public class LuaEventManager
                             core.StartCoroutine(RunCoroutineAndSetDone(core.RunLuaCoroutine(effect.operationFunc, effect, lc_loop.GetControler(), triggerArgs, -1), () => opDone = true));
                             yield return new WaitUntil(() => opDone);
                             core.luaDuel.currentContinuousEffect = null;
+                            yield return new WaitWhile(() => GameManager.Instance != null && GameManager.Instance.pendingVisualTasks > 0);
                         }
                     }
                     else
@@ -147,10 +149,6 @@ public class LuaEventManager
         
         foreach (var e in effects)
         {
-            // Esta rotina agora só processa efeitos FORÇADOS e CONTÍNUOS.
-            // Efeitos Opcionais (TRIGGER_O) são capturados pelo GetValidResponses e ResponseWindow.
-            if (e.isTypeTriggerO || e.isTypeQuickO) continue;
-
             if (core.CanActivateEffect(lc, e, lc.GetControler(), triggerArgs))
             {
                     if (e.isTypeContinuous)
@@ -172,6 +170,7 @@ public class LuaEventManager
                             core.StartCoroutine(RunCoroutineAndSetDone(core.RunLuaCoroutine(e.operationFunc, e, lc.GetControler(), triggerArgs, -1), () => opDone = true));
                             yield return new WaitUntil(() => opDone);
                             core.luaDuel.currentContinuousEffect = null;
+                            yield return new WaitWhile(() => GameManager.Instance != null && GameManager.Instance.pendingVisualTasks > 0);
                         }
                     }
                     else if (e.isTypeTriggerF || e.isTypeQuickF)
@@ -179,6 +178,38 @@ public class LuaEventManager
                         bool chainDone = false;
                         core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, triggerArgs, lc.GetControler(), () => chainDone = true));
                         yield return new WaitUntil(() => chainDone);
+                    }
+                    else if (e.isTypeTriggerO || e.isTypeQuickO)
+                    {
+                        bool activate = false;
+                        bool answered = false;
+
+                        if (GameManager.Instance.isSimulating || lc.GetControler() != 0 || (OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeSelf && lc.GetControler() == 1))
+                        {
+                            // IA ou Simulador sempre aceita ativar efeitos benéficos de cemitério/campo
+                            activate = true;
+                            answered = true;
+                        }
+                        else if (UIManager.Instance != null)
+                        {
+                            UIManager.Instance.ShowConfirmation($"Ativar o efeito de {lc.unityData.name}?", 
+                                () => { activate = true; answered = true; }, 
+                                () => { activate = false; answered = true; });
+                        }
+                        else
+                        {
+                            activate = true;
+                            answered = true;
+                        }
+
+                        yield return new WaitUntil(() => answered);
+
+                        if (activate)
+                        {
+                            bool chainDone = false;
+                            core.StartCoroutine(core.chainManager.BuildAndResolveChainRoutine(lc, e, triggerArgs, lc.GetControler(), () => chainDone = true));
+                            yield return new WaitUntil(() => chainDone);
+                        }
                     }
             }
         }

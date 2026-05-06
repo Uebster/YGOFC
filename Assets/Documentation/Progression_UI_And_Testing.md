@@ -189,9 +189,12 @@ O "Laboratório Cirúrgico" para testar e comparar efeitos visuais (VFX) e sonor
 
 ### 9.5.6 Gerador de Checklist QA LUA (`generate_qa_checklist.py`)
 Ferramenta independente em Python localizada na pasta `Assets/Tools/`.
-*   **Atalho:** Execute `python generate_qa_checklist.py` no seu terminal.
-*   **Funcionalidade:** Lê seu `cards.json` nativamente e injeta o arquivo `QA_Card_Checklist.md` na pasta segura `Assets/Support/` ignorada pelo Git.
-*   **Integração (QA Auto-Spawner):** Aliado ao script `QAAutoSpawner.cs`, permite que o botão do desenvolvedor leia a próxima carta vazia da lista `[ ]`, limpe a mesa, coloque inimigos para apanhar no campo e injete a carta na sua mão. Após aprovação, ele escreve o `[x]` diretamente no arquivo de texto sem sair da Unity.
+*   **Inteligência de Era:** A ferramenta agora é "inteligente". Ao selecionar o arquivo de banco de dados (ex: `cardsDM.json`), ela extrai automaticamente o prefixo da Era ("DM").
+*   **Geração Modular:** Com base no prefixo, ela gera um arquivo de checklist dedicado (ex: `QA_Card_Checklist_DM.md`), evitando que uma nova geração para a era "GX" sobrescreva o progresso da era "DM".
+*   **Validação de Ativos:** A ferramenta realiza uma pré-análise. Ela verifica se a pasta de scripts LUA correspondente à era (ex: `DMLuaScripts`) existe e contém os arquivos necessários, alertando o desenvolvedor sobre inconsistências antes de gerar o checklist.
+*   **Integração C# (QA Auto-Spawner Inteligente):** O script de *Homologação In-Game* `QAAutoSpawner.cs` foi atualizado para suportar módulos. A solução para evitar duplicar o script é simples e elegante: o `QAAutoSpawner.cs` agora possui um campo público no Inspector da Unity chamado `Era Prefix`. O desenvolvedor simplesmente digita "DM", "GX", etc., neste campo para dizer ao spawner qual checklist ele deve ler.
+*   **Leitura Direcionada:** Ao ser ativado, o spawner usa o prefixo para montar o caminho do arquivo dinamicamente (ex: `Assets/Support/QA_Card_Checklist_DM.md`) e começa a ler a primeira carta não marcada `[ ]`.
+*   **Blindagem de Ativos (Asset Shield):** Antes de tentar invocar qualquer carta, o spawner realiza uma verificação de segurança crucial. Ele checa se as pastas de assets para a era selecionada (`[PREFIX]LuaScripts` e `[PREFIX]CardImages`) existem dentro do projeto Unity. Se as pastas não forem encontradas, o spawner se recusa a continuar e emite um `Debug.LogError` no console, protegendo o desenvolvedor de tentar testar uma era cujos recursos ainda não foram importados para o projeto. Isso garante a integridade do fluxo de QA sem restringir a criação dos checklists.
 
 ### 9.5.7 Bloco de Notas do Desenvolvedor (`NotepadWindow.cs`)
 Ferramenta de Editor localizada em `Assets/Scripts/Editor/`.

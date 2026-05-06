@@ -29,7 +29,7 @@ public class CardEffectManager : MonoBehaviour
     public DynValue yieldReturnValue = null;
     public bool lastCoroutineSuccess = true;
     public bool isFastEffectWindowOpen = false;
-    public bool isBusy => isChainResolving || isWaitingForLuaYield || isFastEffectWindowOpen || (eventManager != null && eventManager.isProcessingTriggers) || fastEffectQueueCount > 0 || (chainManager != null && chainManager.activeChainTasks > 0);
+    public bool isBusy => isChainResolving || isWaitingForLuaYield || isFastEffectWindowOpen || (eventManager != null && eventManager.isProcessingTriggers) || fastEffectQueueCount > 0 || (chainManager != null && chainManager.activeChainTasks > 0) || (GameManager.Instance != null && GameManager.Instance.pendingVisualTasks > 0);
 
     // --- SUBSISTEMAS LÓGICOS ---
     public ChainManager chainManager;
@@ -401,7 +401,30 @@ public class CardEffectManager : MonoBehaviour
 
         while (activeLuaCoroutine.Coroutine.State == CoroutineState.Suspended)
         {
-            while (isWaitingForLuaYield) yield return null;
+            if (result.Type == DataType.YieldRequest)
+            {
+                while (isWaitingForLuaYield) yield return null;
+            }
+            else if (result.Type == DataType.String)
+            {
+                string yieldCmd = result.String;
+                if (yieldCmd == "WaitChain")
+                {
+                    yield return new WaitWhile(() => chainManager.activeChainTasks > 0 || eventManager.isProcessingTriggers);
+                }
+                else if (yieldCmd.StartsWith("FastEffectWindow"))
+                {
+                    int eventCode = 0;
+                    int explicitTiming = 0;
+                    
+                    if (yieldCmd == "FastEffectWindow_DamageStep") explicitTiming = 0x2000;
+                    else if (yieldCmd == "FastEffectWindow_DamageCal") explicitTiming = 0x4000;
+                    else if (yieldCmd == "FastEffectWindow_BattleStepEnd") explicitTiming = 0x4000000;
+                    else if (yieldCmd.Contains("_")) int.TryParse(yieldCmd.Split('_')[1], out eventCode);
+                    
+                    yield return StartCoroutine(OpenFastEffectWindow("Evento LUA", eventCode, null, explicitTiming));
+                }
+            }
             
             // Re-check state before resuming - coroutine may have completed during yield
             if (activeLuaCoroutine.Coroutine.State != CoroutineState.Suspended)
@@ -409,7 +432,7 @@ public class CardEffectManager : MonoBehaviour
             
             try
             {
-                result = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue);
+                result = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue ?? DynValue.Nil);
             }
             catch (System.Exception e)
             {
@@ -612,11 +635,10 @@ public class CardEffectManager : MonoBehaviour
                         // FILTRO DEFINITIVO DE TIMING: (O Respeito Absoluto ao OCGCore)
                         int effTiming = (tp == luaDuel.GetTurnPlayer()) ? eff.hintTimingSelf : eff.hintTimingOpponent;
                         
-                        // Se a engine está emitindo um Timing (e.g. TIMING_BATTLE_START), a carta TEM que ter esse bit na máscara!
-                        if (currentTiming > 0 && (effTiming & currentTiming) == 0)
-                        {
-                            continue; // A carta não possui Hint para ser avisada agora. Ignora.
-                        }
+                        // OCGCore UX: Restaura a restrição de HintTiming para cartas Free Chain (code == 0).
+                        // Isso impede que a UI trave o jogo a cada segundo perguntando se você quer ativar Armadilhas genéricas,
+                        // mas garante que as de reposta a ataque continuem abrindo por interceptação de evento!
+                        if (currentTiming > 0 && (effTiming & currentTiming) == 0) { continue; }
                     }
 
                         if (CanActivateEffect(lc, eff, tp, argsToPass))
@@ -788,7 +810,11 @@ public class CardEffectManager : MonoBehaviour
                 if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDestruction(c);
                 GameManager.Instance.SendToGraveyard(c.CurrentCardData, isPlayer, CardLocation.Field, 0x40); // REASON_EFFECT
                 Destroy(c.gameObject);
-                yield return new WaitForSeconds(0.8f); // Tempo da cura subir na tela
+                
+                // A Cadência Perfeita: Espera o cemitério LUA processar e a vida terminar de rolar fisicamente no placar!
+                yield return new WaitWhile(() => GameManager.Instance.pendingVisualTasks > 0 || eventManager.isProcessingTriggers);
+                
+                yield return new WaitForSeconds(0.15f); // Pequeno respiro de Game Feel antes da próxima explosão
             }
         }
 
@@ -1109,6 +1135,19 @@ public class CardEffectManager : MonoBehaviour
     public bool Effect_PayLP(CardDisplay source, int amount)
     {
         return GameManager.Instance.PayLifePoints(source.isPlayerCard, amount);
+    }
+
+    // --- NOVAS FUNÇÕES PREPARADAS PARA RECEBER O JOGADOR ALVO EXATO DO LUA ---
+    public void Effect_DirectDamage(int targetPlayerIndex, int amount)
+    {
+        if (targetPlayerIndex == 0) GameManager.Instance.DamagePlayer(amount);
+        else GameManager.Instance.DamageOpponent(amount);
+        if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayDamageEffect(Vector3.zero);
+    }
+
+    public void Effect_GainLP(int targetPlayerIndex, int amount)
+    {
+        GameManager.Instance.GainLifePoints(targetPlayerIndex == 0, amount);
     }
 
     public List<CardDisplay> GetEquippedCards(CardDisplay target)

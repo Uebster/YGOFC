@@ -2176,6 +2176,81 @@ public class LuaEngineCore
                             if k == 'IsCanBeEffectTarget' then return true end
                             if k == 'IsFacedown' then return not c:IsFaceup() end
                             if k == 'IsOnField' then return c:IsLocation(LOCATION_ONFIELD) end
+
+                            -- [CORREÇÃO NUCLEAR] Substituição dos Métodos de Tipagem
+                            if k == 'IsAttribute' then 
+                                local attr = select(1, ...)
+                                local c_attr = c.unityData.attribute
+                                if not c_attr then return false end
+                                if bit32.band(attr, ATTRIBUTE_EARTH) ~= 0 and string.match(c_attr, 'EARTH') then return true end
+                                if bit32.band(attr, ATTRIBUTE_WATER) ~= 0 and string.match(c_attr, 'WATER') then return true end
+                                if bit32.band(attr, ATTRIBUTE_FIRE) ~= 0 and string.match(c_attr, 'FIRE') then return true end
+                                if bit32.band(attr, ATTRIBUTE_WIND) ~= 0 and string.match(c_attr, 'WIND') then return true end
+                                if bit32.band(attr, ATTRIBUTE_DARK) ~= 0 and string.match(c_attr, 'DARK') then return true end
+                                if bit32.band(attr, ATTRIBUTE_LIGHT) ~= 0 and string.match(c_attr, 'LIGHT') then return true end
+                                if bit32.band(attr, ATTRIBUTE_DIVINE) ~= 0 and string.match(c_attr, 'DIVINE') then return true end
+                                return false
+                            end
+
+                            if k == 'IsRace' then
+                                local race = select(1, ...)
+                                local c_race = c.unityData.race
+                                if not c_race then return false end
+                                if bit32.band(race, RACE_WARRIOR) ~= 0 and string.match(c_race, 'Warrior') then return true end
+                                if bit32.band(race, RACE_SPELLCASTER) ~= 0 and string.match(c_race, 'Spellcaster') then return true end
+                                if bit32.band(race, RACE_FAIRY) ~= 0 and string.match(c_race, 'Fairy') then return true end
+                                if bit32.band(race, RACE_FIEND) ~= 0 and string.match(c_race, 'Fiend') then return true end
+                                if bit32.band(race, RACE_ZOMBIE) ~= 0 and string.match(c_race, 'Zombie') then return true end
+                                if bit32.band(race, RACE_MACHINE) ~= 0 and string.match(c_race, 'Machine') then return true end
+                                if bit32.band(race, RACE_AQUA) ~= 0 and string.match(c_race, 'Aqua') then return true end
+                                if bit32.band(race, RACE_PYRO) ~= 0 and string.match(c_race, 'Pyro') then return true end
+                                if bit32.band(race, RACE_ROCK) ~= 0 and string.match(c_race, 'Rock') then return true end
+                                if bit32.band(race, RACE_WINGEDBEAST) ~= 0 and string.match(c_race, 'Winged Beast') then return true end
+                                if bit32.band(race, RACE_PLANT) ~= 0 and string.match(c_race, 'Plant') then return true end
+                                if bit32.band(race, RACE_INSECT) ~= 0 and string.match(c_race, 'Insect') then return true end
+                                if bit32.band(race, RACE_THUNDER) ~= 0 and string.match(c_race, 'Thunder') then return true end
+                                if bit32.band(race, RACE_DRAGON) ~= 0 and string.match(c_race, 'Dragon') then return true end
+                                if bit32.band(race, RACE_BEAST) ~= 0 and string.match(c_race, 'Beast') then return true end
+                                if bit32.band(race, RACE_BEASTWARRIOR) ~= 0 and string.match(c_race, 'Beast%-Warrior') then return true end
+                                if bit32.band(race, RACE_DINOSAUR) ~= 0 and string.match(c_race, 'Dinosaur') then return true end
+                                if bit32.band(race, RACE_FISH) ~= 0 and string.match(c_race, 'Fish') then return true end
+                                if bit32.band(race, RACE_SEASERPENT) ~= 0 and string.match(c_race, 'Sea Serpent') then return true end
+                                if bit32.band(race, RACE_REPTILE) ~= 0 and string.match(c_race, 'Reptile') then return true end
+                                return false
+                            end
+
+                            if k == 'IsType' then
+                                local typ = select(1, ...)
+                                local c_type = c.unityData.type
+                                if not c_type then return false end
+                                local c_prop = c.unityData.property
+                                local match = false
+                                if bit32.band(typ, TYPE_MONSTER) ~= 0 and string.match(c_type, 'Monster') then match = true end
+                                if bit32.band(typ, TYPE_SPELL) ~= 0 and string.match(c_type, 'Spell') then match = true end
+                                if bit32.band(typ, TYPE_TRAP) ~= 0 and string.match(c_type, 'Trap') then match = true end
+                                if bit32.band(typ, TYPE_NORMAL) ~= 0 and (string.match(c_type, 'Normal') or (c_prop and string.match(c_prop, 'Normal'))) then match = true end
+                                if bit32.band(typ, TYPE_EFFECT) ~= 0 and string.match(c_type, 'Effect') then match = true end
+                                if bit32.band(typ, TYPE_FUSION) ~= 0 and string.match(c_type, 'Fusion') then match = true end
+                                if bit32.band(typ, TYPE_RITUAL) ~= 0 and (string.match(c_type, 'Ritual') or (c_prop and string.match(c_prop, 'Ritual'))) then match = true end
+                                if bit32.band(typ, TYPE_QUICKPLAY) ~= 0 and c_prop and string.match(c_prop, 'Quick%-Play') then match = true end
+                                if bit32.band(typ, TYPE_CONTINUOUS) ~= 0 and c_prop and string.match(c_prop, 'Continuous') then match = true end
+                                if bit32.band(typ, TYPE_EQUIP) ~= 0 and c_prop and string.match(c_prop, 'Equip') then match = true end
+                                if bit32.band(typ, TYPE_FIELD) ~= 0 and c_prop and string.match(c_prop, 'Field') then match = true end
+                                if bit32.band(typ, TYPE_COUNTER) ~= 0 and c_prop and string.match(c_prop, 'Counter') then match = true end
+                                return match
+                            end
+
+                            if k == 'IsCode' then
+                                local c_pass = tonumber(c.unityData.password)
+                                if not c_pass then 
+                                    local digits = string.match(c.unityData.id, '%d+')
+                                    c_pass = tonumber(digits)
+                                end
+                                for i=1, select('#', ...) do 
+                                    if c_pass == select(i, ...) then return true end 
+                                end
+                                return false
+                            end
                             
                             -- Stat & State Checks
                             if k == 'IsDefenseBelow' then return c:GetDefense() <= select(1, ...) end
@@ -2185,6 +2260,17 @@ public class LuaEngineCore
                             if k == 'IsLevelBelow' then return c:GetLevel() <= select(1, ...) end
                             if k == 'IsLevelAbove' then return c:GetLevel() >= select(1, ...) end
                             if k == 'IsSummonPlayer' then return c:GetControler() == select(1, ...) end
+
+                            -- Fallbacks cruciais para a Janela de Batalha e Cemitério (EVENT_TO_GRAVE)
+                            if k == 'GetPreviousLevelOnField' then return c:GetLevel() end
+                            if k == 'GetPreviousAttackOnField' then return c:GetAttack() end
+                            if k == 'GetPreviousDefenseOnField' then return c:GetDefense() end
+                            if k == 'GetPreviousAttributeOnField' then return c:GetAttribute() end
+                            if k == 'GetPreviousRaceOnField' then return c:GetRace() end
+                            if k == 'GetPreviousLocation' then return c:GetLocation() end
+                            if k == 'GetPreviousControler' then return c:GetControler() end
+                            if k == 'IsPreviousLocation' then return c:IsLocation(select(1, ...)) end
+                            if k == 'IsPreviousControler' then return c:GetControler() == select(1, ...) end
                         end
                         return false
                     end
