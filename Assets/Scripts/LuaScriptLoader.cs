@@ -89,7 +89,7 @@ public static class LuaScriptLoader
                 return luaCard;
             }
         }
-        catch (ScriptRuntimeException ex)
+        catch (InterpreterException ex)
         {
             Debug.LogWarning($"[API LUA CRASH] Falha interna no script c{cardId}.lua:\n{ex.DecoratedMessage}");
         }
@@ -167,7 +167,7 @@ public static class LuaScriptLoader
                 return luaCard;
             }
         }
-        catch (ScriptRuntimeException ex)
+        catch (InterpreterException ex)
         {
             Debug.LogWarning($"[API LUA CRASH] Falha interna no script c{cardId}.lua:\n{ex.DecoratedMessage}");
         }
@@ -208,19 +208,26 @@ public static class LuaScriptLoader
         // O MoonSharp processa apenas o que sobrou.
         if (script.Contains("<<") || script.Contains(">>") || script.Contains("~") || script.Contains("&") || script.Contains("|") || script.Contains("//"))
         {
-            // Permite capturar termos entre parênteses simples ou variáveis/chamadas de função
-            string term = @"(?:[\w_]+(?:[\.:][\w_]+(?:\([^()]*\))?)?|\([^()]+\))"; 
+            // Expressão Regular Poderosa para capturar variáveis, números, parênteses balanceados e cadeias de métodos OCGCore (ex: e:GetHandler():GetCode())
+            string balancedParens = @"\((?>[^()]+|\((?<DEPTH>)|\)(?<-DEPTH>))*(?(DEPTH)(?!))\)";
+            string termBase = $@"(?:[\w_]+|{balancedParens})";
+            string termModifier = $@"(?:[\.:][\w_]+|\s*{balancedParens})";
+            string term = $@"(?:{termBase}{termModifier}*)";
 
             script = Regex.Replace(script, $@"(?<![\w_\]\)]\s*)-\s*(\d+)\s*(?=(?:<<|>>|&|\||~))", "(-$1)");
 
-            script = Regex.Replace(script, $@"({term})\s*~(?!=)\s*({term})", "bit32.bxor($1, $2)");
-            script = Regex.Replace(script, $@"~(?!=)\s*({term})", "bit32.bnot($1)");
-            script = Regex.Replace(script, $@"({term})\s*//\s*({term})", "math.floor($1 / $2)");
-            script = Regex.Replace(script, $@"({term})\s*<<\s*({term})", "bit32.lshift($1, $2)");
-            script = Regex.Replace(script, $@"({term})\s*>>\s*({term})", "bit32.rshift($1, $2)");
-            
-            // Aplica múltiplas passadas para resolver encadeamentos como A | B | C sem travar o PC
+            // Aplica múltiplas passadas priorizadas para resolver encadeamentos como A | (B & ~C) perfeitamente
             string prev = "";
+            while (script != prev) { prev = script; script = Regex.Replace(script, $@"({term})\s*~(?!=)\s*({term})", "bit32.bxor($1, $2)"); }
+            prev = "";
+            while (script != prev) { prev = script; script = Regex.Replace(script, $@"~(?!=)\s*({term})", "bit32.bnot($1)"); }
+            prev = "";
+            while (script != prev) { prev = script; script = Regex.Replace(script, $@"({term})\s*//\s*({term})", "math.floor($1 / $2)"); }
+            prev = "";
+            while (script != prev) { prev = script; script = Regex.Replace(script, $@"({term})\s*<<\s*({term})", "bit32.lshift($1, $2)"); }
+            prev = "";
+            while (script != prev) { prev = script; script = Regex.Replace(script, $@"({term})\s*>>\s*({term})", "bit32.rshift($1, $2)"); }
+            prev = "";
             while (script != prev) { prev = script; script = Regex.Replace(script, $@"({term})\s*&\s*({term})", "bit32.band($1, $2)"); }
             prev = "";
             while (script != prev) { prev = script; script = Regex.Replace(script, $@"({term})\s*\|\s*({term})", "bit32.bor($1, $2)"); }

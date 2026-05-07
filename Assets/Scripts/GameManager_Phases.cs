@@ -75,6 +75,13 @@ public partial class GameManager
         {
             DuelScoreManager.Instance.StartDuelTracking();
         }
+        
+        // Carrega a memória neural do Oponente específico
+        if (OpponentAI.Instance != null)
+        {
+            string profile = currentOpponent != null ? currentOpponent.id : "Generic";
+            OpponentAI.Instance.InitializeMemoryForDuel(profile);
+        }
 
         // Aplica o tema visual (se estivermos em um duelo de campanha ou tivermos um índice válido)
         if (campaignDatabase != null && DuelThemeManager.Instance != null)
@@ -510,6 +517,13 @@ public partial class GameManager
         }
 
         // 3. Calcula pontuação e recompensas
+        
+        // O Juízo Final da Inteligência Artificial
+        if (OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy)
+        {
+            OpponentAI.Instance.ProcessEndOfDuelMemory(!playerWon);
+        }
+        
         if (DuelScoreManager.Instance != null)
         {
             DuelScoreManager.Instance.StopDuelTracking(playerWon, isDeckOut, playerLP);

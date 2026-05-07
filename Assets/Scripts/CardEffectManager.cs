@@ -394,7 +394,8 @@ public class CardEffectManager : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[API LUA CRASH] O efeito falhou graciosamente sem travar a engine: {e.Message}");
+            if (e.Message.Contains("UI_CANCEL")) Debug.Log($"<color=orange>[Lua API]</color> Ativação abortada pelo jogador (Custo/Alvo cancelado).");
+            else Debug.LogError($"[API LUA CRASH] O efeito falhou graciosamente sem travar a engine: {e.Message}");
             lastCoroutineSuccess = false;
             yield break; // Aborta apenas este efeito, o jogo continua!
         }
@@ -436,11 +437,14 @@ public class CardEffectManager : MonoBehaviour
             
             try
             {
-                result = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue ?? DynValue.Nil);
+                DynValue resumeVal = yieldReturnValue ?? DynValue.Nil;
+                yieldReturnValue = null; // Limpa para evitar consumo de dados velhos em yields subsequentes
+                result = activeLuaCoroutine.Coroutine.Resume(resumeVal);
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"[API LUA CRASH] Falha ao continuar o yield: {e.Message}");
+                if (e.Message.Contains("UI_CANCEL")) Debug.Log($"<color=orange>[Lua API]</color> Ativação abortada pelo jogador na interface.");
+                else Debug.LogError($"[API LUA CRASH] Falha ao continuar o yield: {e.Message}");
                 lastCoroutineSuccess = false;
                 yield break;
             }
@@ -523,10 +527,16 @@ public class CardEffectManager : MonoBehaviour
             if (activeLuaCoroutine.Coroutine.State != CoroutineState.Suspended) break;
             
             // Passa um valor seguro caso o yieldReturnValue tenha sido consumido
-            try { result = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue ?? DynValue.Nil); }
+            try 
+            { 
+                DynValue resumeVal = yieldReturnValue ?? DynValue.Nil;
+                yieldReturnValue = null; // Limpa para evitar lixo de memória
+                result = activeLuaCoroutine.Coroutine.Resume(resumeVal); 
+            }
             catch (System.Exception e)
             {
-                Debug.LogError($"[API LUA CRASH] Falha ao continuar o yield: {e.Message}");
+                if (e.Message.Contains("UI_CANCEL")) Debug.Log($"<color=orange>[Lua API]</color> Ação cancelada pelo jogador.");
+                else Debug.LogError($"[API LUA CRASH] Falha ao continuar o yield: {e.Message}");
                 yield break;
             }
         }
@@ -555,12 +565,22 @@ public class CardEffectManager : MonoBehaviour
             activeLuaCoroutine = luaEngine.CreateCoroutine(eff.targetFunc);
             DynValue res;
             try { res = activeLuaCoroutine.Coroutine.Resume(eff, DynValue.NewNumber(tp), DynValue.Nil, DynValue.NewNumber(tp), DynValue.NewNumber(0), DynValue.Nil, DynValue.NewNumber(0), DynValue.NewNumber(tp), lc); }
-            catch (System.Exception e) { Debug.LogError($"[SpSummonProc] Target Crash: {e.Message}"); yield break; }
+            catch (System.Exception e) { 
+                if (!e.Message.Contains("UI_CANCEL")) Debug.LogError($"[SpSummonProc] Target Crash: {e.Message}"); 
+                yield break; 
+            }
 
             while (activeLuaCoroutine.Coroutine.State == CoroutineState.Suspended) {
                 while (isWaitingForLuaYield) yield return null;
                 if (activeLuaCoroutine.Coroutine.State != CoroutineState.Suspended) break;
-                try { res = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue ?? DynValue.Nil); } catch { yield break; }
+                try { 
+                    DynValue resumeVal = yieldReturnValue ?? DynValue.Nil;
+                    yieldReturnValue = null;
+                    res = activeLuaCoroutine.Coroutine.Resume(resumeVal); 
+                } catch (System.Exception e) { 
+                    if (!e.Message.Contains("UI_CANCEL")) Debug.LogError($"[SpSummonProc] Yield Crash: {e.Message}"); 
+                    yield break; 
+                }
             }
         }
 
@@ -575,7 +595,11 @@ public class CardEffectManager : MonoBehaviour
             while (activeLuaCoroutine.Coroutine.State == CoroutineState.Suspended) {
                 while (isWaitingForLuaYield) yield return null;
                 if (activeLuaCoroutine.Coroutine.State != CoroutineState.Suspended) break;
-                try { res = activeLuaCoroutine.Coroutine.Resume(yieldReturnValue ?? DynValue.Nil); } catch { yield break; }
+                try { 
+                    DynValue resumeVal = yieldReturnValue ?? DynValue.Nil;
+                    yieldReturnValue = null;
+                    res = activeLuaCoroutine.Coroutine.Resume(resumeVal); 
+                } catch { yield break; }
             }
         }
 
@@ -608,8 +632,8 @@ public class CardEffectManager : MonoBehaviour
                 // Filtra para Efeitos Manuais (Ativação de S/T, Quick Effects e Trigger Opcionais)
                 if (eff.isTypeActivate || eff.isTypeQuickO || eff.isTypeTriggerO) 
                 {
-                    // O Efeito deve reagir ao gatilho atual (ex: 1102) ou ser Corrente Livre (0 - EVENT_FREE_CHAIN)
-                    if (eff.code == 0 || eff.code == currentEventCode)
+                    // O Efeito deve reagir ao gatilho atual (ex: 1102) ou ser Corrente Livre (0 ou 1002 - EVENT_FREE_CHAIN)
+                    if (eff.code == 0 || eff.code == 1002 || eff.code == currentEventCode)
                     {
                         if (eff.isTypeTriggerO)
                         {
@@ -627,12 +651,12 @@ public class CardEffectManager : MonoBehaviour
                             if (eff.damageStep || eff.damageCal) allowed = true;
                             if ((currentTiming & 0x4000) != 0 && !eff.damageCal) allowed = false; // Em Damage Cal, exige a flag específica (0x8000)
                             if (cd.CurrentCardData.property == "Counter" && eff.isTypeActivate) allowed = true; // Counter Traps ignoram a restrição
-                            if (eff.code == currentEventCode && currentEventCode != 0) allowed = true; // Gatilhos obrigatórios de Batalha passam
+                            if (eff.code == currentEventCode && currentEventCode != 0 && currentEventCode != 1002) allowed = true; // Gatilhos obrigatórios de Batalha passam
                             
                             if (!allowed) continue; // Bloqueado pela restrição da Damage Step!
                         }
 
-                    if (eff.code == 0)
+                    if (eff.code == 0 || eff.code == 1002)
                     {
                         string cardType = cd.CurrentCardData.type ?? "";
                         string cardProperty = cd.CurrentCardData.property ?? "";
@@ -645,7 +669,8 @@ public class CardEffectManager : MonoBehaviour
                         
                         // OCGCore UX: Restaura a restrição de HintTiming para cartas Free Chain (code == 0).
                         // Exceção de Ouro: Se a carta tiver uma Condição LUA Específica (Ex: A Deal with Dark Ruler), ela fura a fila!
-                        bool hasCustomCondition = (eff.conditionFunc != null && eff.conditionFunc != dummyClosureTrue);
+                        bool hasCustomCondition = (eff.conditionFunc != null && eff.conditionFunc != dummyClosureTrue) || 
+                                                  (eff.targetFunc != null && eff.targetFunc != dummyClosureTrue);
 
                         if (!hasCustomCondition && currentTiming > 0 && (effTiming & currentTiming) == 0) { continue; }
                     }
@@ -745,6 +770,8 @@ public class CardEffectManager : MonoBehaviour
         // Injeta TIMING_BATTLE_PHASE globalmente se estivermos na Fase de Batalha
         if (PhaseManager.Instance != null && PhaseManager.Instance.currentPhase == GamePhase.Battle)
             timing |= 0x1000000;
+            
+        Debug.Log($"<color=green>[TIMING LOG]</color> Janela: <b>{windowName}</b> | EventCode: {eventCode} | Timing (Dec): {timing} | Hex: 0x{timing:X}");
 
         fastEffectQueue.Enqueue(new FastEffectRequest { name = windowName, eventCode = eventCode, eventArg = eventArg, timing = timing, missedTiming = missed });
         if (fastEffectQueue.Count > 1) yield break; // A rotina já está lidando com a fila

@@ -33,7 +33,13 @@ public partial class LuaGroup
     public void Clear() { cards.Clear(); }
     public int GetCount() { return cards.Count; }
     
-    public bool IsContains(object card) { return true; }
+    public bool IsContains(object card) { 
+        if (card is LuaCard lc) 
+        {
+            return cards.Exists(c => c.unityData == lc.unityData);
+        }
+        return false; 
+    }
     public LuaGroup Clone() { return new LuaGroup { cards = new List<LuaCard>(this.cards) }; }
     public LuaGroup Sub(LuaGroup g) { return new LuaGroup { cards = new List<LuaCard>(this.cards) }; }
     public LuaGroup Add(LuaGroup g) { return new LuaGroup { cards = new List<LuaCard>(this.cards) }; }

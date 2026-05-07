@@ -477,7 +477,6 @@ public class LuaEventManager
             foreach (var cb in callbacksToRun) {
                 try { core.luaEngine.Call(cb); } catch (System.Exception e) { Debug.LogWarning($"Erro no AddValuesReset: {e.Message}"); }
             }
-            core.luaDuel.endTurnCallbacks.Clear();
         }
     }
     

@@ -450,7 +450,7 @@ public partial class GameManager
                         DuelFXManager.Instance.PlaySummonAura(display);
                         if (CardEffectManager.Instance != null) {
                             if (isFaceDown) CardEffectManager.Instance.OnSet(display);
-                            else if (cardData.type.Contains("Fusion") || cardData.type.Contains("Ritual") || cardData.type.Contains("Synchro") || cardData.type.Contains("Xyz") || cardData.type.Contains("Link"))
+                            else if ((summonType & 0x40000000) != 0) // Verifica a TAG real de TYPE_SPSUMMON!
                             {
                                 // Auto-completa o procedimento apenas se a invocação for a correta (ex: Fusion Summon, não Special Summon genérico via Monster Reborn)
                                 bool isProperSummon = summonType == 0x43000000 || summonType == 0x45000000 || summonType == 0x46000000 || summonType == 0x49000000 || summonType == 0x4c000000;
@@ -480,8 +480,15 @@ public partial class GameManager
                     if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayPlacementAura(display);
                     if (CardEffectManager.Instance != null) {
                         if (isFaceDown) CardEffectManager.Instance.OnSet(display);
-                        else if (cardData.type.Contains("Fusion") || cardData.type.Contains("Ritual") || cardData.type.Contains("Synchro") || cardData.type.Contains("Xyz") || cardData.type.Contains("Link")) 
+                        else if ((summonType & 0x40000000) != 0) // TYPE_SPSUMMON
+                        {
+                            bool isProperSummon = summonType == 0x43000000 || summonType == 0x45000000 || summonType == 0x46000000 || summonType == 0x49000000 || summonType == 0x4c000000;
+                            if (isProperSummon) {
+                                LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(display);
+                                if (lc != null) lc.CompleteProcedure();
+                            }
                             CardEffectManager.Instance.OnSpecialSummon(display);
+                        }
                         else CardEffectManager.Instance.OnSummon(display);
                     }
                 }

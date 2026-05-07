@@ -17,6 +17,19 @@ public class OpponentAI : MonoBehaviour
         public float wCA; // Card Advantage
     }
 
+    [System.Serializable]
+    public class AIMemoryRecord
+    {
+        public string actionId;
+        public float weight;
+    }
+
+    [System.Serializable]
+    public class AIMemoryData
+    {
+        public List<AIMemoryRecord> records = new List<AIMemoryRecord>();
+    }
+
     [Header("Configuração da IA")]
     public AIPersonality currentPersonality = AIPersonality.Balanced;
     [Tooltip("Tempo em segundos que a IA espera entre ações para simular pensamento.")]
@@ -45,6 +58,12 @@ public class OpponentAI : MonoBehaviour
     [Header("Memória de Curto Prazo")]
     public Dictionary<int, string> knownCards = new Dictionary<int, string>();
 
+    [Header("Machine Learning (Memória Heurística)")]
+    public AIMemoryData aiMemory = new AIMemoryData();
+    private Dictionary<string, float> activeMemoryWeights = new Dictionary<string, float>();
+    public List<string> actionsTakenThisDuel = new List<string>();
+    private string currentMemoryProfile = "Generic";
+
     // Sementes para a personalidade Chaotic
     private float chaoticGain = 1f;
     private float chaoticLoss = 1f;
@@ -58,11 +77,82 @@ public class OpponentAI : MonoBehaviour
         public float Score { get; set; }
         public string Description { get; set; }
         public int CardInstanceID { get; set; }
+        public string MemoryID { get; set; }
     }
 
     void Awake()
     {
         Instance = this;
+    }
+
+    // --- MACHINE LEARNING E MEMÓRIA ---
+    public void InitializeMemoryForDuel(string profileId)
+    {
+        currentMemoryProfile = string.IsNullOrEmpty(profileId) ? "Generic" : profileId;
+        actionsTakenThisDuel.Clear();
+        knownCards.Clear();
+        activeMemoryWeights.Clear();
+
+        string path = System.IO.Path.Combine(Application.persistentDataPath, $"AI_Memory_{currentMemoryProfile}.json");
+        if (System.IO.File.Exists(path))
+        {
+            try {
+                string json = System.IO.File.ReadAllText(path);
+                aiMemory = JsonUtility.FromJson<AIMemoryData>(json);
+                foreach (var record in aiMemory.records) activeMemoryWeights[record.actionId] = record.weight;
+                Debug.Log($"<color=magenta>[AI Memory]</color> Cérebro carregado para '{currentMemoryProfile}'. ({activeMemoryWeights.Count} sinapses).");
+            } catch { Debug.LogWarning($"[AI Memory] Falha ao ler memória de '{currentMemoryProfile}'."); }
+        }
+        else
+        {
+            aiMemory = new AIMemoryData();
+            Debug.Log($"<color=magenta>[AI Memory]</color> Criando novo cérebro em branco para '{currentMemoryProfile}'.");
+        }
+    }
+
+    public void SaveMemory()
+    {
+        aiMemory.records.Clear();
+        foreach (var kvp in activeMemoryWeights) aiMemory.records.Add(new AIMemoryRecord { actionId = kvp.Key, weight = kvp.Value });
+        string json = JsonUtility.ToJson(aiMemory, true);
+        string path = System.IO.Path.Combine(Application.persistentDataPath, $"AI_Memory_{currentMemoryProfile}.json");
+        System.IO.File.WriteAllText(path, json);
+        Debug.Log($"<color=magenta>[AI Memory]</color> Cérebro salvo com sucesso! ({path})");
+    }
+
+    public float GetMemoryWeight(string actionId)
+    {
+        if (activeMemoryWeights.TryGetValue(actionId, out float weight)) return weight;
+        return 1.0f; // Valor neutro base
+    }
+
+    public void RecordAction(string actionId)
+    {
+        if (!actionsTakenThisDuel.Contains(actionId))
+        {
+            actionsTakenThisDuel.Add(actionId);
+            Debug.Log($"<color=magenta>[AI Memory]</color> Ação anotada na caderneta de curto prazo: {actionId}");
+        }
+    }
+
+    public void ProcessEndOfDuelMemory(bool aiWon)
+    {
+        if (actionsTakenThisDuel.Count == 0) return;
+        Debug.Log($"<color=magenta>[AI Memory]</color> Processando o Juízo Final de '{currentMemoryProfile}'. A IA venceu? {aiWon}");
+
+        foreach (string action in actionsTakenThisDuel)
+        {
+            float currentWeight = GetMemoryWeight(action);
+            // Se ganhou, aumenta em 5% o peso da jogada. Se perdeu, diminui em 10% (pune os erros severamente).
+            if (aiWon) currentWeight += 0.05f;
+            else currentWeight -= 0.1f;
+            
+            // Clampa os pesos para a IA não enlouquecer e ficar bitolada (Entre 0.1x e 3.0x de preferência)
+            currentWeight = Mathf.Clamp(currentWeight, 0.1f, 3.0f);
+            activeMemoryWeights[action] = currentWeight;
+        }
+        actionsTakenThisDuel.Clear();
+        SaveMemory();
     }
 
     public void StartAITurn(bool switchTurn = true)
@@ -198,6 +288,9 @@ public class OpponentAI : MonoBehaviour
                 Debug.Log($"AI AÇÃO (Score: {bestAction.Score}): {bestAction.Description}");
                 
             bestAction.Execute();
+            
+            if (!string.IsNullOrEmpty(bestAction.MemoryID) && !useSimulationFastMode)
+                RecordAction(bestAction.MemoryID); // Anota na Caderneta que tomou essa decisão
             
             if (useSimulationFastMode && bestAction.CardInstanceID != 0)
                 usedCardsThisTurn.Add(bestAction.CardInstanceID);
@@ -459,11 +552,15 @@ public class OpponentAI : MonoBehaviour
             
             if (currentPersonality == AIPersonality.Fearful) attackScore -= 1000 * currentWeights.wLoss;
 
+            // MACHINE LEARNING: Consulta se fomos punidos no passado por sermos gulosos com invocações ofensivas
+            string memIdAtk = $"SUM_ATK_{monster.CurrentCardData.id}";
+            attackScore *= GetMemoryWeight(memIdAtk);
+
             actions.Add(new AIAction {
                 Score = attackScore,
                 Description = $"Invocar {monster.CurrentCardData.name} em Ataque.",
                 Execute = () => GameManager.Instance.TrySummonMonster(monster.gameObject, monster.CurrentCardData, false),
-                CardInstanceID = monster.GetInstanceID()            
+                CardInstanceID = monster.GetInstanceID(), MemoryID = memIdAtk
                 });
 
             // Avalia invocar em Defesa (Set)
@@ -505,10 +602,16 @@ public class OpponentAI : MonoBehaviour
                 if (monster.CurrentCardData.atk >= 1500) defenseScore -= 2000;
             }
 
+            if (currentPersonality == AIPersonality.Fearful) defenseScore += 1500 * currentWeights.wLife;
+            
+            string memIdDef = $"SUM_DEF_{monster.CurrentCardData.id}";
+            defenseScore *= GetMemoryWeight(memIdDef);
+
             actions.Add(new AIAction {
                 Score = defenseScore,
                 Description = $"Baixar (Set) {monster.CurrentCardData.name} em Defesa.",
-                Execute = () => GameManager.Instance.TrySummonMonster(monster.gameObject, monster.CurrentCardData, true)
+                Execute = () => GameManager.Instance.TrySummonMonster(monster.gameObject, monster.CurrentCardData, true),
+                CardInstanceID = monster.GetInstanceID(), MemoryID = memIdDef
             });
         }
         return actions;
@@ -712,7 +815,11 @@ public class OpponentAI : MonoBehaviour
 
             if (execution != null)
             {
-                actions.Add(new AIAction { Score = score, Description = description, Execute = execution, CardInstanceID = cd.GetInstanceID() });
+                // MACHINE LEARNING: Multiplica a nota pelo sucesso histórico de usar essa Mágica específica
+                string memIdSpell = $"ACT_{cd.CurrentCardData.id}";
+                score *= GetMemoryWeight(memIdSpell);
+                
+                actions.Add(new AIAction { Score = score, Description = description, Execute = execution, CardInstanceID = cd.GetInstanceID(), MemoryID = memIdSpell });
             }
         }
         return actions;
@@ -763,11 +870,14 @@ public class OpponentAI : MonoBehaviour
                         if ((cat & 0x200) != 0) score += 400 * currentWeights.wCA; // Special Summon
                     }
                     
+                    string memIdTrap = $"SET_{cd.CurrentCardData.id}";
+                    score *= GetMemoryWeight(memIdTrap);
+
                     actions.Add(new AIAction {
                         Score = score,
                         Description = $"Baixar (Set) Armadilha {cd.CurrentCardData.name}.",
                         Execute = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, true),
-                        CardInstanceID = cd.GetInstanceID()                    
+                        CardInstanceID = cd.GetInstanceID(), MemoryID = memIdTrap
                         });
                 }
                 else if (cd.CurrentCardData.type.Contains("Spell"))
@@ -775,21 +885,26 @@ public class OpponentAI : MonoBehaviour
                     // Baixa Spells Rápidas (Quick-Play) na MP2 para usar como defesa no turno do inimigo
                     if (cd.CurrentCardData.property == "Quick-Play" && PhaseManager.Instance.currentPhase == GamePhase.Main2)
                     {
+                        string memIdSet = $"SET_{cd.CurrentCardData.id}";
+                        float setScore = 400 * GetMemoryWeight(memIdSet);
+
                         actions.Add(new AIAction {
-                            Score = 400,
+                            Score = setScore,
                             Description = $"Baixar (Set) Quick-Play Spell {cd.CurrentCardData.name}.",
                             Execute = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, true),
-                            CardInstanceID = cd.GetInstanceID()                        
+                            CardInstanceID = cd.GetInstanceID(), MemoryID = memIdSet
                             });
                     }
                     // Blefe (Bluff) se estivermos perdendo terreno e quisermos assustar o jogador
                     else if (fearScore < 1 && PhaseManager.Instance.currentPhase == GamePhase.Main2 && boardValue < -1000)
                     {
+                        float bluffScore = 150 * GetMemoryWeight("TACTIC_BLUFF");
+
                         actions.Add(new AIAction {
-                            Score = 150, // Melhor setar como Blefe do que tomar OTK sem dar medo
+                            Score = bluffScore, // Melhor setar como Blefe do que tomar OTK sem dar medo
                             Description = $"Baixar (Set) Magia de Blefe {cd.CurrentCardData.name}.",
                             Execute = () => GameManager.Instance.PlaySpellTrap(go, cd.CurrentCardData, true),
-                            CardInstanceID = cd.GetInstanceID()                        
+                            CardInstanceID = cd.GetInstanceID(), MemoryID = "TACTIC_BLUFF"
                         });
                     }
                 }
@@ -844,6 +959,12 @@ public class OpponentAI : MonoBehaviour
 
                 if (bestTarget != null) // Encontrou um alvo vantajoso
                 {
+                    // MACHINE LEARNING (Anotação de Traumas): A IA atacou um monstro que ela NÃO SABIA O QUE ERA?
+                    if (bestTarget.isFlipped && !knownCards.ContainsKey(bestTarget.GetInstanceID()))
+                    {
+                        RecordAction("ATTACK_UNKNOWN_FACEDOWN");
+                    }
+
                     Debug.Log($"AI: {attacker.CurrentCardData.name} ataca {bestTarget.CurrentCardData.name}!");
                     attacker.attacksThisTurn++;
                     if (CardEffectManager.Instance != null) {
@@ -989,6 +1110,8 @@ public class OpponentAI : MonoBehaviour
                             if (attacker.currentAtk > estimatedDef + 500) score += 200;
                             else score -= 1000;
                         }
+                        
+                        score *= GetMemoryWeight("ATTACK_UNKNOWN_FACEDOWN"); // MACHINE LEARNING: Aplica o Trauma caso já tenha sido explodida muito por atacar Face-Downs
                     }
                 }
                 else if (defender.position == CardDisplay.BattlePosition.Attack)
@@ -1302,6 +1425,7 @@ public class OpponentAI : MonoBehaviour
         var best = scoredResponses.FirstOrDefault();
         if (best != null && best.Score > 0)
         {
+            RecordAction($"RESPOND_{best.Card.CurrentCardData.id}"); // MACHINE LEARNING: Anota o trauma/vitória dessa resposta
             return best.Card;
         }
         return null;

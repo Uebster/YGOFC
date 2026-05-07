@@ -25,6 +25,8 @@ public class LuaEngineCore
         UserData.RegisterType<LuaCard>();
         UserData.RegisterType<LuaEffect>();
         UserData.RegisterType<LuaGroup>();
+        UserData.RegisterType<CardData>();
+        UserData.RegisterType<CardDisplay>();
 
         // 3. Injeta as instâncias globais na memória do Lua
         luaDuel = new LuaDuel();
@@ -45,13 +47,21 @@ public class LuaEngineCore
             Group.CreateGroup = function() return Group_CS.CreateGroup() end
             Group.FromCards = function(...) return Group_CS.FromCards(...) end
             
-            -- Pre-define standard OCGCore modules to prevent Missing Stub warnings
-            Ritual = {}
-            Fusion = {}
-            Synchro = {}
-            Xyz = {}
-            Link = {}
-            Pendulum = {}
+            local dummyFunc = function() return Effect_CS.GlobalEffect() end
+
+            local moduleMt = {
+                __index = function(t, k)
+                    Log('<color=red>[LUA MISSING STUB]</color> A Função ' .. tostring(k) .. ' não está definida no módulo! Retornando Dummy.')
+                    return dummyFunc
+                end
+            }
+            
+            Ritual = setmetatable({}, moduleMt)
+            Fusion = setmetatable({}, moduleMt)
+            Synchro = setmetatable({}, moduleMt)
+            Xyz = setmetatable({}, moduleMt)
+            Link = setmetatable({}, moduleMt)
+            Pendulum = setmetatable({}, moduleMt)
             
             Debug = {}
             Debug.Message = function(msg) Log(tostring(msg)) end
@@ -284,23 +294,180 @@ public class LuaEngineCore
             aux.Filter = aux.FilterBoolFunction
             Auxiliary.AddEquipProcedure = aux.AddEquipProcedure
 
-            -- Escudo Universal de UI: Blinda crashes de casting (Double vs Int) da Unity 
-            -- e força o congelamento da corrotina garantindo que seus modais sempre abram!
-            local uifuncs = {'SelectOption', 'AnnounceRace', 'AnnounceAttribute', 'AnnounceLevel', 'AnnounceCard', 'SelectTarget', 'SelectPosition'}
-            for _, fname in ipairs(uifuncs) do
-                local orig = Duel[fname]
-                if orig then
-                    Duel[fname] = function(...)
-                        local args = {...}
-                        for i, v in ipairs(args) do if type(v) == 'number' then args[i] = math.floor(v) end end
-                        
-                        local success, res = pcall(orig, unpack(args))
-                        if not success then
-                            Log('<color=orange>[UI FALLBACK]</color> ' .. fname .. ' exigiu conversão forçada. Congelando Engine.')
-                            res = nil
-                        end
+            -- Escudo Universal Definitivo: Blinda crashes da Unity, congela a corrotina para Modais,
+            -- e PREVINE que funções de Grupo retornem NIL (evitando o crash 'attempt to get length of a nil value' em #g)
+            local function createFakeEmptyGroup()
+                local fg = {}
+                function fg:GetCount() return 0 end
+                function fg:GetFirst() return nil end
+                function fg:GetNext() return nil end
+                function fg:Iter() return function() return nil end end
+                function fg:IsExists() return false end
+                function fg:Filter() return fg end
+                function fg:FilterCount() return 0 end
+                function fg:AddCard() end
+                function fg:RemoveCard() end
+                function fg:KeepAlive() end
+                setmetatable(fg, { __len = function() return 0 end, __call = function() return nil end })
+                return fg
+            end
 
-                        if res == nil then res = coroutine.yield('UI_Wait') end
+            local uifuncs = {
+                {name='SelectOption', retGroup=false}, 
+                {name='AnnounceRace', retGroup=false}, 
+                {name='AnnounceAttribute', retGroup=false}, 
+                {name='AnnounceLevel', retGroup=false}, 
+                {name='AnnounceCard', retGroup=false}, 
+                {name='SelectPosition', retGroup=false},
+                {name='SelectTarget', retGroup=true}, 
+                {name='SelectMatchingCard', retGroup=true},
+                {name='SelectTribute', retGroup=true},
+                {name='SelectReleaseGroup', retGroup=true},
+                {name='SelectReleaseGroupEx', retGroup=true},
+                {name='SelectYesNo', retGroup=false},
+                {name='SelectCards', retGroup=true}
+            }
+            
+            for _, item in ipairs(uifuncs) do
+                local fname = item.name
+                local success, orig = pcall(function() return Duel[fname] end)
+                if success and type(orig) == 'function' then
+                    Duel[fname] = function(...)
+                        local n = select('#', ...)
+                        local args = {...}
+                        for i = 1, n do if type(args[i]) == 'number' then args[i] = math.floor(args[i]) end end
+                        
+                        local unpack_fn = table.unpack or unpack
+                        
+                        -- Dispara a chamada para abrir a interface na Unity
+                        pcall(orig, unpack_fn(args, 1, n))
+                        
+                        -- Pausa o script LUA até que o jogador conclua a ação na tela
+                        local res = coroutine.yield('UI_Wait') 
+                        
+                        -- Tratamento de Cancelamentos Opcionais
+                        if res == nil then
+                            if fname == 'SelectYesNo' then return false end
+                            if fname == 'SelectOption' then return 0 end
+                            if fname == 'SelectPosition' then return 1 end
+                        end
+                        
+                        local min = -1
+                        if fname == 'SelectMatchingCard' or fname == 'SelectTarget' or fname == 'SelectCards' then
+                            min = args[6] or 1
+                        elseif fname == 'SelectTribute' or fname == 'SelectReleaseGroup' or fname == 'SelectReleaseGroupEx' then
+                            min = args[3] or 1
+                        end
+                        
+                        -- ABORTO GRACIOSO: Se a escolha era obrigatória e o jogador cancelou (retornou vazio), abortamos!
+                        if min > 0 then
+                            local is_canceled = false
+                            if res == nil then is_canceled = true 
+                            elseif type(res) == 'number' and res < min then is_canceled = true 
+                            elseif type(res) == 'userdata' and res.GetCount and res:GetCount() < min then is_canceled = true end
+                            
+                            if is_canceled then error('UI_CANCEL') end
+                        end
+                        
+                        -- FIX ANTI-CRASH: Para escolhas opcionais vazias ou falsos-positivos numéricos
+                        if res == nil or type(res) == 'number' then
+                            if item.retGroup then return createFakeEmptyGroup() end
+                            if res == nil then return nil end
+                        end
+                        return res
+                    end
+                end
+            end
+
+            -- [SISTEMA DE RECICLAGEM FÍSICA E DIAGNÓSTICO PROFUNDO]
+            -- Restaura o corpo 3D (unityCard) de cartas que estão mortas no Cemitério/Banidas
+            -- garantindo que o C# nativo consiga animar o voo delas para o Deck ou Mão.
+            local function RestorePhysicalBody(tc)
+                if tc and tc.unityCard == nil and tc.unityData ~= nil then
+                    local ok, display = pcall(function() return Duel_CS:FindCardDisplayInPiles(tc.unityData) end)
+                    if ok and display then
+                        tc.unityCard = display
+                        Log('<color=cyan>[LUA SHIELD]</color> Corpo físico restaurado para: ' .. tostring(tc.unityData.name))
+                    end
+                end
+            end
+
+            local function HandleTargetsForRestore(targets)
+                if type(targets) == 'userdata' then
+                    local success, _ = pcall(function() return targets:GetCount() end)
+                    if success then
+                        local tc = targets:GetFirst()
+                        while tc do RestorePhysicalBody(tc); tc = targets:GetNext() end
+                    else 
+                        RestorePhysicalBody(targets) 
+                    end
+                end
+            end
+
+            local orig_SendtoDeck = Duel.SendtoDeck
+            if orig_SendtoDeck then
+                Duel.SendtoDeck = function(targets, player, seq, reason)
+                    Log('<color=magenta>[LUA LOG]</color> Duel.SendtoDeck Chamado! Iniciando resgate físico...')
+                    HandleTargetsForRestore(targets)
+                    return orig_SendtoDeck(targets, player, seq, reason)
+                end
+            end
+
+            local orig_SendtoHand = Duel.SendtoHand
+            if orig_SendtoHand then
+                Duel.SendtoHand = function(targets, player, reason)
+                    HandleTargetsForRestore(targets)
+                    return orig_SendtoHand(targets, player, reason)
+                end
+            end
+
+            -- Polyfill de DiscardHand: O C# nativo não pausa (isWaitingForLuaYield), atropelando UIs.
+            -- Substituímos a chamada por SelectMatchingCard, que possui a trava perfeita de tempo e aborto!
+            Duel.DiscardHand = function(player, filter, min, max, reason, exclude, ...)
+                Duel.Hint(HINT_SELECTMSG, player, HINTMSG_DISCARD)
+                local f = filter
+                if type(f) ~= 'function' then f = aux.TRUE end
+                local min_count = min or 1
+                local max_count = max or min_count
+                local sg = Duel.SelectMatchingCard(player, f, player, LOCATION_HAND, 0, min_count, max_count, exclude, ...)
+                if sg and #sg > 0 then
+                    return Duel.SendtoGrave(sg, reason or bit32.bor(0x80, 0x4000))
+                end
+                return 0
+            end
+            
+            -- Escudo de Acesso C# a Grupos Vazios: Intercepta retornos nativos que poderiam causar IndexOutOfRangeException no C#
+            local groupProviders = {
+                'GetMatchingGroup', 'GetFieldGroup', 'GetDecktopGroup', 'GetReleaseGroup', 'GetTributeGroup', 'GetOperatedGroup'
+            }
+            for _, fname in ipairs(groupProviders) do
+                local success, orig = pcall(function() return Duel[fname] end)
+                if success and type(orig) == 'function' then
+                    Duel[fname] = function(...)
+                        local g = orig(...)
+                        if g and type(g) == 'userdata' and g.GetCount and g:GetCount() == 0 then
+                            return createFakeEmptyGroup()
+                        end
+                        return g
+                    end
+                end
+            end
+
+            -- Escudo de Dados Operacionais: Blinda funções nativas instáveis usando pcall de segurança
+            local datafuncs = {
+                {name='GetFirstTarget', isGroup=false},
+                {name='GetTargets', isGroup=true},
+                {name='SetOperationInfo', isGroup=false}
+            }
+            for _, item in ipairs(datafuncs) do
+                local success, orig = pcall(function() return Duel[item.name] end)
+                if success and type(orig) == 'function' then
+                    Duel[item.name] = function(...)
+                        local success2, res = pcall(orig, ...)
+                        if not success2 then 
+                            Log('<color=orange>[LUA SHIELD]</color> Duel.' .. item.name .. ' interceptou um crash nativo (IndexOutOfRange).')
+                            if item.isGroup then return createFakeEmptyGroup() else return nil end
+                        end
                         return res
                     end
                 end
@@ -2167,6 +2334,18 @@ public class LuaEngineCore
                     return grp:GetNext()
                 end
                 gm.__iterator = function(grp) return grp:Iter() end
+                gm.__len = function(grp) return grp:GetCount() end
+                
+                local orig_select = gm.Select
+                if orig_select then
+                    -- Polyfill de Group:Select garantindo a trava de UI e o cancelamento perfeito
+                    gm.Select = function(grp, player, min, max, ex)
+                        local min_req = min or 1
+                        local max_req = max or min_req
+                        local f = function(c) return grp:IsExists(function(tc) return tc == c end, 1, nil) end
+                        return Duel.SelectMatchingCard(player, f, player, LOCATION_ALL, LOCATION_ALL, min_req, max_req, ex)
+                    end
+                end
             end
             
             Card = {}
@@ -2193,7 +2372,7 @@ public class LuaEngineCore
                             end
                             
                             -- Fallbacks Vitais: Ensina a Engine C# a responder aos filtros clássicos do OCGCore
-                            if k == 'IsDestructable' or k == 'IsAbleToHand' or k == 'IsAbleToGrave' or k == 'IsAbleToRemove' or k == 'IsAbleToHandAsCost' then return true end
+                            if k == 'IsDestructable' or k == 'IsAbleToHand' or k == 'IsAbleToGrave' or k == 'IsAbleToRemove' or k == 'IsAbleToHandAsCost' or k == 'IsCanBeSpecialSummoned' or k == 'IsAbleToDeck' or k == 'IsAbleToExtra' or k == 'IsAbleToDeckAsCost' then return true end
                             if k == 'IsRelateToEffect' then return true end
                             if k == 'IsCanBeEffectTarget' then return true end
                             if k == 'IsFacedown' then return not c:IsFaceup() end

@@ -49,6 +49,14 @@ public partial class LuaDuel
 
     // --- MOVIMENTAÇÃO DE CARTAS ---
 
+    private void RestorePhysicalBodyIfMissing(LuaCard card)
+    {
+        if (card != null && card.unityCard == null && card.unityData != null && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
+        {
+            card.unityCard = CardEffectManager.Instance.luaDuel.FindCardDisplayInPiles(card.unityData);
+        }
+    }
+
     public DynValue Draw(object player, object amount, object reason)
     {
         int amt = ConvertToInt(amount);
@@ -122,6 +130,7 @@ public partial class LuaDuel
 
         foreach (var c in cardsToProcess)
         {
+            RestorePhysicalBodyIfMissing(c);
             c.currentReason = ocgReason;
             if (c.unityCard != null)
             {
@@ -209,6 +218,7 @@ public partial class LuaDuel
 
         foreach (var c in cardsToProcess)
         {
+            RestorePhysicalBodyIfMissing(c);
             c.currentReason = ocgReason;
             if (c.unityCard != null)
             {
@@ -420,6 +430,7 @@ public partial class LuaDuel
         {
             foreach (var c in group.cards)
             {
+                RestorePhysicalBodyIfMissing(c);
                 c.currentReason = ocgReason;
                 c.isProcComplete = false; // Perde o certificado ao voltar pro deck
                 c.counters.Clear(); // Perde todos os contadores
@@ -477,6 +488,7 @@ public partial class LuaDuel
         }
         else if (target is LuaCard card)
         {
+            RestorePhysicalBodyIfMissing(card);
             card.currentReason = ocgReason;
             card.isProcComplete = false;
             card.counters.Clear();
@@ -702,6 +714,7 @@ public partial class LuaDuel
 
         foreach (var c in cardsToProcess)
         {
+            RestorePhysicalBodyIfMissing(c);
             c.currentReason = ocgReason;
             c.isProcComplete = false; // Perde o certificado ao voltar pra mão
             c.counters.Clear(); // Perde todos os contadores
