@@ -663,10 +663,13 @@ public partial class LuaDuel
                     int pLvl = pCard.CurrentCardData.type.Contains("Monster") ? pCard.originalLevel : 0;
                     int oLvl = oCard.CurrentCardData.type.Contains("Monster") ? oCard.originalLevel : 0;
 
+                    string pStatStr = pCard.CurrentCardData.type.Contains("Monster") ? $"LVL {pLvl}" : "S/T (0)";
+                    string oStatStr = oCard.CurrentCardData.type.Contains("Monster") ? $"LVL {oLvl}" : "S/T (0)";
+
                     CardComparisonUI.Instance.ShowVersus(
                         pCard, oCard,
                         "LEVEL CLASH!",
-                        $"LVL {pLvl}", $"LVL {oLvl}",
+                        pStatStr, oStatStr,
                         pLvl, oLvl,
                         () => {
                             CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;

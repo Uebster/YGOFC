@@ -56053,7 +56053,7 @@ MonoBehaviour:
     - plasma
     - necrovalley
     - dark world
-    overlayColor: {r: 0, g: 0, b: 0, a: 0.7882353}
+    overlayColor: {r: 0, g: 0, b: 0, a: 0.92156863}
     intensity: 1
   - themeName: Forest
     keywords:

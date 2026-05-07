@@ -430,7 +430,7 @@ public class LuaEngineCore
             end
 
             -- Bloqueio de Sincronia de Ações: Força o Lua a aguardar as animações do C# terminarem antes de prosseguir!
-            local actionfuncs = { 'Destroy', 'Draw', 'SendtoGrave', 'Remove', 'ChangePosition', 'TossCoin', 'TossDice' }
+            local actionfuncs = { 'Destroy', 'Draw', 'SendtoGrave', 'Remove', 'ChangePosition', 'TossCoin', 'TossDice', 'ConfirmCards' }
             for _, fname in ipairs(actionfuncs) do
                 local success, orig = pcall(function() return Duel[fname] end)
                 if success and type(orig) == 'function' then

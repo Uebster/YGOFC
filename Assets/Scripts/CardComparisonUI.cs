@@ -76,22 +76,76 @@ public class CardComparisonUI : MonoBehaviour
     {
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.spellSound);
 
-        // 1. ANIMAÇÃO DE VOO (Das mãos para o Painel)
-        Vector3 pStart = GameManager.Instance != null ? GameManager.Instance.playerHandLayoutGroup.position : Vector3.zero;
-        Vector3 oStart = GameManager.Instance != null ? GameManager.Instance.opponentHandLayoutGroup.position : Vector3.zero;
+        // 1. ANIMAÇÃO DE VOO (Cartas físicas para o Painel)
+        if (pCard != null) {
+            LayoutElement pLe = pCard.GetComponent<LayoutElement>();
+            if (pLe == null) pLe = pCard.gameObject.AddComponent<LayoutElement>();
+            pLe.ignoreLayout = true;
+            pCard.isGhostImage = true; // Previne o hover e interações indesejadas
+            pCard.transform.SetParent(playerCardImage.transform, true);
+            pCard.transform.SetAsFirstSibling(); // Garante que fica atrás dos textos (WIN/LOSE)
+        }
+        if (oCard != null) {
+            LayoutElement oLe = oCard.GetComponent<LayoutElement>();
+            if (oLe == null) oLe = oCard.gameObject.AddComponent<LayoutElement>();
+            oLe.ignoreLayout = true;
+            oCard.isGhostImage = true; // Previne o hover e interações indesejadas
+            oCard.transform.SetParent(opponentCardImage.transform, true);
+            oCard.transform.SetAsFirstSibling(); // Garante que fica atrás dos textos (WIN/LOSE)
+        }
 
-        StartCoroutine(FlyAndFlipGhost(pStart, playerCardImage.rectTransform, pCard));
-        StartCoroutine(FlyAndFlipGhost(oStart, opponentCardImage.rectTransform, oCard));
+        Vector3 pStart = pCard != null ? pCard.transform.position : Vector3.zero;
+        Vector3 oStart = oCard != null ? oCard.transform.position : Vector3.zero;
+        Vector3 pTarget = playerCardImage.transform.position;
+        Vector3 oTarget = opponentCardImage.transform.position;
 
-        yield return new WaitForSeconds(0.6f); // Espera o voo terminar
+        CardFlightSettings settings = DuelFXManager.Instance != null ? DuelFXManager.Instance.flightCardComparisonUI : new CardFlightSettings();
+        float duration = settings.duration > 0 ? settings.duration : 0.6f;
+        float flyT = 0;
+        Vector3 targetScale = GameManager.Instance != null ? GameManager.Instance.fieldCardScale * 1.5f : Vector3.one * 1.5f;
+        float spawnTrailTimer = 0f;
 
-        // Revela as cartas no painel
-        playerCardImage.texture = pCard.GetFrontTexture() ?? pCard.cardImage.texture;
-        opponentCardImage.texture = oCard.GetFrontTexture() ?? oCard.cardImage.texture;
-        playerCardImage.color = Color.white;
-        opponentCardImage.color = Color.white;
+        while (flyT < 1f)
+        {
+            flyT += Time.deltaTime / duration;
+            float smooth = Mathf.SmoothStep(0, 1, flyT);
+            
+            float scaleMultiplier = 1f + Mathf.Sin(smooth * Mathf.PI) * (settings.flightScale - 1f);
+            
+            if (pCard != null) {
+                Vector3 currentPos = Vector3.Lerp(pStart, pTarget, smooth);
+                currentPos.y += Mathf.Sin(smooth * Mathf.PI) * 100f; // Arco Parabólico
+                pCard.transform.position = currentPos;
+                pCard.transform.localScale = Vector3.Lerp(GameManager.Instance.handCardScale, targetScale, smooth) * scaleMultiplier;
+                pCard.transform.rotation = Quaternion.Lerp(Quaternion.Euler(0,0,0), Quaternion.identity, smooth);
+            }
+            if (oCard != null) {
+                Vector3 currentPos = Vector3.Lerp(oStart, oTarget, smooth);
+                currentPos.y += Mathf.Sin(smooth * Mathf.PI) * 100f; // Arco Parabólico
+                oCard.transform.position = currentPos;
+                oCard.transform.localScale = Vector3.Lerp(GameManager.Instance.handCardScale, targetScale, smooth) * scaleMultiplier;
+                oCard.transform.rotation = Quaternion.Lerp(Quaternion.Euler(0,0,180f), Quaternion.identity, smooth);
+            }
+            
+            if (settings.useTrail) {
+                spawnTrailTimer -= Time.deltaTime;
+                if (spawnTrailTimer <= 0) {
+                    spawnTrailTimer = 0.04f;
+                    if (pCard != null) SpawnTrailGhost(pCard.GetComponent<RectTransform>(), pCard.GetFrontTexture() ?? pCard.cardImage.texture, settings.trailColor, 0.3f);
+                    if (oCard != null) SpawnTrailGhost(oCard.GetComponent<RectTransform>(), oCard.GetFrontTexture() ?? oCard.cardImage.texture, settings.trailColor, 0.3f);
+                }
+            }
+            yield return null;
+        }
 
-        // Acende o Outline (Hover) apenas após as cartas pousarem
+        // Revela as cartas no painel (Flip 3D)
+        bool pFlipped = false; bool oFlipped = false;
+        if (pCard != null && pCard.isFlipped) pCard.ShowFront(true, () => pFlipped = true); else pFlipped = true;
+        if (oCard != null && oCard.isFlipped) oCard.ShowFront(true, () => oFlipped = true); else oFlipped = true;
+        
+        yield return new WaitUntil(() => pFlipped && oFlipped);
+
+        // Acende o Outline (Hover) apenas após as cartas pousarem e virarem
         if (playerOutline != null) playerOutline.enabled = true;
         if (opponentOutline != null) opponentOutline.enabled = true;
 
@@ -137,20 +191,19 @@ public class CardComparisonUI : MonoBehaviour
 
         if (DuelFXManager.Instance != null && DuelFXManager.Instance.explosionVFX != null)
         {
-            if (!pWin) // Se empatou, os dois explodem! Se perdeu, só ele explode.
+            if (!pWin && pCard != null) 
             {
-                DuelFXManager.Instance.SpawnVFXPublic(DuelFXManager.Instance.explosionVFX, playerCardImage.transform.position);
-                playerCardImage.color = Color.clear; // Evapora a carta (Deixa o espaço vazio)
+                DuelFXManager.Instance.PlayDestruction(pCard);
+                pCard.SetVisibility(false); // O Fantasma gerado vai explodir, a carta real fica invisível
             }
-            if (!oWin)
+            if (!oWin && oCard != null)
             {
-                DuelFXManager.Instance.SpawnVFXPublic(DuelFXManager.Instance.explosionVFX, opponentCardImage.transform.position);
-                opponentCardImage.color = Color.clear; // Evapora a carta
+                DuelFXManager.Instance.PlayDestruction(oCard);
+                oCard.SetVisibility(false); // O Fantasma gerado vai explodir, a carta real fica invisível
             }
-            if (!pWin || !oWin) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.destroySound);
         }
 
-        yield return new WaitForSeconds(0.5f); // Pausa dramática encurtada (fecha a janela logo após a explosão começar)
+        yield return new WaitForSeconds(0.6f); 
 
         // 5. FADE OUT E FIM
         float fadeT = 0;
@@ -165,95 +218,6 @@ public class CardComparisonUI : MonoBehaviour
         onComplete?.Invoke();
     }
 
-    private IEnumerator FlyAndFlipGhost(Vector3 startPos, RectTransform targetRT, CardDisplay realCard)
-    {
-        CardFlightSettings settings = DuelFXManager.Instance != null ? DuelFXManager.Instance.flightCardComparisonUI : new CardFlightSettings();
-        
-        GameObject ghost = new GameObject("VersusGhost", typeof(RectTransform), typeof(RawImage));
-        ghost.transform.SetParent(transform, false);
-        ghost.transform.SetAsLastSibling();
-
-        RectTransform rt = ghost.GetComponent<RectTransform>();
-        rt.position = startPos;
-        rt.sizeDelta = targetRT.sizeDelta;
-        rt.pivot = targetRT.pivot;
-
-        RawImage ri = ghost.GetComponent<RawImage>();
-        ri.texture = GameManager.Instance != null ? GameManager.Instance.GetCardBackTexture() : null;
-
-        float duration = settings.duration > 0 ? settings.duration : 0.6f;
-        float t = 0;
-        bool flipped = false;
-        
-        Vector3 baseStartScale = rt.localScale * settings.startScaleMult;
-        Vector3 baseEndScale = rt.localScale * settings.endScaleMult;
-        
-        GameObject lineObj = null; RectTransform lineRT = null; Image lineImg = null;
-        if (settings.useTrail && settings.trailType == AttackTrailType.ContinuousLine) {
-            lineObj = new GameObject("FlightLineTrail", typeof(RectTransform), typeof(Image));
-            lineObj.transform.SetParent(ghost.transform.parent, false);
-            lineObj.transform.SetSiblingIndex(ghost.transform.GetSiblingIndex());
-            lineRT = lineObj.GetComponent<RectTransform>();
-            lineRT.pivot = new Vector2(0, 0.5f); lineRT.position = startPos;
-            lineImg = lineObj.GetComponent<Image>(); lineImg.color = settings.trailColor;
-        }
-        float spawnTrailTimer = 0f;
-
-        while (t < 1f)
-        {
-            t += Time.deltaTime / duration;
-            float smooth = Mathf.SmoothStep(0, 1, t);
-
-            // Arco parabólico
-            Vector3 currentPos = Vector3.Lerp(startPos, targetRT.position, smooth);
-            currentPos.y += Mathf.Sin(smooth * Mathf.PI) * 100f; 
-            rt.position = currentPos;
-
-            // Aplica Parábola de Voo + Multiplicadores de Início/Fim
-            float scaleMultiplier = 1f + Mathf.Sin(smooth * Mathf.PI) * (settings.flightScale - 1f);
-            Vector3 currentBaseScale = Vector3.Lerp(baseStartScale, baseEndScale, smooth) * scaleMultiplier;
-            
-            // Rotação de Flip no meio do voo
-            if (t >= 0.4f && t <= 0.6f)
-            {
-                float flipP = (t - 0.4f) / 0.2f;
-                float scaleX = Mathf.Cos(flipP * Mathf.PI);
-                rt.localScale = new Vector3(currentBaseScale.x * Mathf.Abs(scaleX), currentBaseScale.y, currentBaseScale.z);
-
-                if (flipP >= 0.5f && !flipped)
-                {
-                    flipped = true;
-                    ri.texture = realCard.GetFrontTexture() ?? realCard.cardImage.texture;
-                }
-            }
-            else
-            {
-                rt.localScale = currentBaseScale;
-            }
-            
-            if (settings.useTrail) {
-                if (settings.trailType == AttackTrailType.Shadows || settings.trailType == AttackTrailType.SmoothShadows) {
-                    spawnTrailTimer -= Time.deltaTime; 
-                    float interval = settings.trailType == AttackTrailType.SmoothShadows ? 0.015f : 0.04f;
-                    if (spawnTrailTimer <= 0) { 
-                        spawnTrailTimer = interval; 
-                        SpawnTrailGhost(rt, ri.texture, settings.trailColor, settings.trailType == AttackTrailType.SmoothShadows ? 0.15f : 0.3f); 
-                    }
-                } else if (settings.trailType == AttackTrailType.ContinuousLine && lineObj != null) {
-                    Vector3 dirToCurrent = currentPos - startPos;
-                    float dist = dirToCurrent.magnitude; float canvasScale = lineObj.transform.lossyScale.x;
-                    if (canvasScale > 0) lineRT.sizeDelta = new Vector2(dist / canvasScale, settings.trailWidth);
-                    lineRT.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(dirToCurrent.y, dirToCurrent.x) * Mathf.Rad2Deg);
-                }
-            }
-
-            yield return null;
-        }
-
-        if (lineObj != null) Destroy(lineObj);
-        Destroy(ghost);
-    }
-    
     private void SpawnTrailGhost(RectTransform sourceRT, Texture tex, Color color, float duration)
     {
         GameObject ghost = new GameObject("CardTrailGhost", typeof(RectTransform), typeof(RawImage));

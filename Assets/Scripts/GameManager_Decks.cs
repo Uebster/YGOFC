@@ -465,11 +465,53 @@ public void ShuffleDeck(bool isPlayer)
     public void ShuffleHand(bool isPlayer)
     {
         List<GameObject> hand = isPlayer ? playerHand : opponentHand;
-        if (hand == null || hand.Count <= 1) return;
+        if (hand == null || hand.Count == 0) return;
 
-        // 1. Salva as posições físicas originais antes de bagunçar a lista
-        List<Vector3> originalPositions = new List<Vector3>();
-        for (int i = 0; i < hand.Count; i++) originalPositions.Add(hand[i].transform.position);
+        Transform layoutTransform = isPlayer ? playerHandLayoutGroup : opponentHandLayoutGroup;
+        HorizontalLayoutGroup layoutGroup = layoutTransform.GetComponent<HorizontalLayoutGroup>();
+        
+        bool useAnim = false;
+        if (DuelFXManager.Instance != null)
+        {
+            useAnim = isPlayer ? DuelFXManager.Instance.useHandShuffleAnimation : DuelFXManager.Instance.useOpponentHandShuffleAnimation;
+        }
+        
+        bool needsReturnAnim = false;
+        foreach (var go in hand) {
+            if (go.transform.parent != layoutTransform) {
+                needsReturnAnim = true;
+                go.transform.SetParent(layoutTransform, true);
+                LayoutElement le = go.GetComponent<LayoutElement>();
+                if (le != null) le.ignoreLayout = false;
+            }
+            
+            CardDisplay cd = go.GetComponent<CardDisplay>();
+            if (cd != null) 
+            {
+                cd.isGhostImage = false; // Garante que a carta volte a ser interativa
+                
+                // Restaura a face correta da carta ao voltar para a mão (Sincronizado com o voo)
+                if (!isPlayer && !showOpponentHand) cd.ShowBack(useAnim && !isSimulating);
+                else cd.ShowFront(useAnim && !isSimulating);
+            }
+        }
+
+        if (hand.Count <= 1 && !needsReturnAnim) return;
+
+        // Força o Layout a calcular os slots corretos para o retorno/shuffle
+        if (needsReturnAnim) LayoutRebuilder.ForceRebuildLayoutImmediate(layoutTransform as RectTransform);
+        
+        List<Vector3> currentPhysicalPositions = new List<Vector3>();
+        for (int i = 0; i < hand.Count; i++) currentPhysicalPositions.Add(hand[i].transform.position);
+
+        foreach (var go in hand) { LayoutElement le = go.GetComponent<LayoutElement>(); if (le != null) le.ignoreLayout = false; }
+        LayoutRebuilder.ForceRebuildLayoutImmediate(layoutTransform as RectTransform);
+
+        List<Vector3> targetLayoutPositions = new List<Vector3>();
+        for (int i = 0; i < hand.Count; i++) targetLayoutPositions.Add(hand[i].transform.position);
+
+        // Restaura as posições físicas para não haver snap visual
+        for (int i = 0; i < hand.Count; i++) hand[i].transform.position = currentPhysicalPositions[i];
 
         // 2. Embaralha a lista lógica (Matemática: Fisher-Yates)
         for (int i = 0; i < hand.Count; i++)
@@ -481,38 +523,46 @@ public void ShuffleDeck(bool isPlayer)
         }
 
         // 3. Executa a Animação Visual ou Atualização Direta
-        bool useAnim = false;
-        if (DuelFXManager.Instance != null)
-        {
-            useAnim = isPlayer ? DuelFXManager.Instance.useHandShuffleAnimation : DuelFXManager.Instance.useOpponentHandShuffleAnimation;
-        }
-
         if (useAnim && !isSimulating)
         {
-            StartCoroutine(HandShuffleRoutine(isPlayer, hand, originalPositions));
+            StartCoroutine(HandShuffleRoutine(isPlayer, hand, currentPhysicalPositions, targetLayoutPositions, needsReturnAnim));
         }
         else
         {
             // Se não tiver animação, apenas ajusta os índices na hora
             for (int i = 0; i < hand.Count; i++) hand[i].transform.SetSiblingIndex(i);
-            
-            if (!isPlayer && !showOpponentHand)
-            {
-                foreach (var go in hand) {
-                    var cd = go.GetComponent<CardDisplay>();
-                    if (cd != null) cd.ShowBack(false); // sem animação
-                }
-            }
         }
     }
 
-    private IEnumerator HandShuffleRoutine(bool isPlayer, List<GameObject> hand, List<Vector3> targetPositions)
+    private IEnumerator HandShuffleRoutine(bool isPlayer, List<GameObject> hand, List<Vector3> startPositions, List<Vector3> targetPositions, bool needsReturnAnim)
     {
         Transform layoutTransform = isPlayer ? playerHandLayoutGroup : opponentHandLayoutGroup;
         HorizontalLayoutGroup layoutGroup = layoutTransform.GetComponent<HorizontalLayoutGroup>();
         
         // Desliga o LayoutGroup para que as cartas fiquem livres para voar
         if (layoutGroup != null) layoutGroup.enabled = false;
+
+        if (needsReturnAnim)
+        {
+            float retDur = 0.3f;
+            float tRet = 0;
+            while (tRet < 1f) {
+                tRet += Time.deltaTime / retDur;
+                float smooth = Mathf.SmoothStep(0, 1, tRet);
+                for(int i = 0; i < hand.Count; i++) {
+                    hand[i].transform.position = Vector3.Lerp(startPositions[i], targetPositions[i], smooth);
+                    hand[i].transform.localScale = Vector3.Lerp(hand[i].transform.localScale, GameManager.Instance.handCardScale, smooth);
+                    hand[i].transform.localRotation = Quaternion.Lerp(hand[i].transform.localRotation, Quaternion.Euler(0,0, isPlayer ? 0 : 180f), smooth);
+                }
+                yield return null;
+            }
+            startPositions = new List<Vector3>(targetPositions);
+        }
+        
+        if (hand.Count <= 1) {
+            if (layoutGroup != null) { layoutGroup.enabled = true; LayoutRebuilder.ForceRebuildLayoutImmediate(layoutTransform as RectTransform); }
+            yield break;
+        }
 
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.shuffleSound);
 
@@ -526,8 +576,8 @@ public void ShuffleDeck(bool isPlayer)
 
         for (int cycle = 0; cycle < cycles; cycle++)
         {
-            List<Vector3> startPositions = new List<Vector3>();
-            foreach (var card in hand) startPositions.Add(card.transform.position);
+            List<Vector3> cycleStartPositions = new List<Vector3>();
+            foreach (var card in hand) cycleStartPositions.Add(card.transform.position);
 
             List<Vector3> currentTargetPositions = new List<Vector3>(targetPositions);
             if (cycle < cycles - 1)
@@ -553,7 +603,7 @@ public void ShuffleDeck(bool isPlayer)
                 {
                     elapsed += Time.deltaTime;
                     float t = Mathf.SmoothStep(0, 1, elapsed / halfDuration);
-                    for (int i = 0; i < hand.Count; i++) { if (hand[i] != null) hand[i].transform.position = Vector3.Lerp(startPositions[i], centerPos, t); }
+                    for (int i = 0; i < hand.Count; i++) { if (hand[i] != null) hand[i].transform.position = Vector3.Lerp(cycleStartPositions[i], centerPos, t); }
                     yield return null;
                 }
                 
@@ -579,7 +629,7 @@ public void ShuffleDeck(bool isPlayer)
                     for (int i = 0; i < hand.Count; i++)
                     {
                         if (hand[i] == null) continue;
-                        Vector3 start = startPositions[i]; Vector3 end = currentTargetPositions[i];
+                        Vector3 start = cycleStartPositions[i]; Vector3 end = currentTargetPositions[i];
                         Vector3 currentPos = Vector3.Lerp(start, end, t);
                         
                         // A Parábola Cross-Swap
