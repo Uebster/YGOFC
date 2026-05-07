@@ -324,7 +324,7 @@ public partial class DuelFXManager
 
     private IEnumerator DelayedRestoreDefaultColorRoutine()
     {
-        yield return new WaitForSeconds(0.3f); // Aguarda o pulso de uma nova magia que possa estar entrando
+        yield return new WaitForSeconds(0.6f); // Aguarda o pulso de uma nova magia que possa estar entrando
         yield return TransitionBoardColorRoutine(boardBackgroundImage.color, defaultBoardColor, 0.25f);
     }
 
