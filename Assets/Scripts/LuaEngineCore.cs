@@ -384,10 +384,15 @@ public class LuaEngineCore
             -- garantindo que o C# nativo consiga animar o voo delas para o Deck ou Mão.
             local function RestorePhysicalBody(tc)
                 if tc and tc.unityCard == nil and tc.unityData ~= nil then
-                    local ok, display = pcall(function() return Duel_CS:FindCardDisplayInPiles(tc.unityData) end)
-                    if ok and display then
-                        tc.unityCard = display
-                        Log('<color=cyan>[LUA SHIELD]</color> Corpo físico restaurado para: ' .. tostring(tc.unityData.name))
+                    -- Usa a ponte direta nativa para evitar que o pcall engula a requisição C#
+                    local display = Duel_CS:FindCardDisplayInPiles(tc.unityData)
+                    if display and type(display) == 'userdata' then
+                        -- Tenta acessar uma propriedade simples para provar que o objeto Unity está vivo
+                        local is_alive = pcall(function() return display.isOnField end)
+                        if is_alive then
+                            tc.unityCard = display
+                            Log('<color=cyan>[LUA SHIELD]</color> Corpo físico restaurado para: ' .. tostring(tc.unityData.name))
+                        end
                     end
                 end
             end
@@ -417,7 +422,24 @@ public class LuaEngineCore
             if orig_SendtoHand then
                 Duel.SendtoHand = function(targets, player, reason)
                     HandleTargetsForRestore(targets)
-                    return orig_SendtoHand(targets, player, reason)
+                    local res = orig_SendtoHand(targets, player, reason)
+                    local yres = coroutine.yield('UI_Wait')
+                    if yres ~= nil then return yres end
+                    return res
+                end
+            end
+
+            -- Bloqueio de Sincronia de Ações: Força o Lua a aguardar as animações do C# terminarem antes de prosseguir!
+            local actionfuncs = { 'Destroy', 'Draw', 'SendtoGrave', 'Remove', 'ChangePosition', 'TossCoin', 'TossDice' }
+            for _, fname in ipairs(actionfuncs) do
+                local success, orig = pcall(function() return Duel[fname] end)
+                if success and type(orig) == 'function' then
+                    Duel[fname] = function(...)
+                        local res = orig(...)
+                        local yres = coroutine.yield('UI_Wait')
+                        if yres ~= nil then return yres end
+                        return res
+                    end
                 end
             end
 
@@ -471,6 +493,18 @@ public class LuaEngineCore
                         return res
                     end
                 end
+            end
+
+            -- [FIX CIRÚRGICO]: Polyfill para Duel.SelectTarget
+            -- A Engine C# não possui SelectTarget nativo. Usamos SelectMatchingCard para abrir a UI
+            -- e, crucialmente, registramos a escolha via SetTargetCard para não perdermos o vínculo na resolução!
+            Duel.SelectTarget = function(...)
+                local sg = Duel.SelectMatchingCard(...)
+                if sg and type(sg) == 'userdata' then
+                    local success, count = pcall(function() return sg:GetCount() end)
+                    if success and count > 0 then Duel.SetTargetCard(sg) end
+                end
+                return sg
             end
         ");
 

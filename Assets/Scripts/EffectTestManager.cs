@@ -851,6 +851,15 @@ public class EffectTestManager : MonoBehaviour
             });
         });
 
+        AddExt("Graveyard -> Deck", () => {
+            Vector3 sPos = p ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position;
+            Vector3 ePos = p ? GameManager.Instance.playerDeckDisplay.transform.position : GameManager.Instance.opponentDeckDisplay.transform.position;
+            float mult = DuelFXManager.Instance.extractionCinematic.useScaleEffect ? DuelFXManager.Instance.extractionCinematic.graveyard.peakScaleMult : DuelFXManager.Instance.extractionCinematic.graveyard.startScaleMult;
+            DuelFXManager.Instance.PlayExtractionCinematic(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), p, CardLocation.Graveyard, sPos, true, false, (ghost, pos) => {
+                DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, false, pos, ePos, GameManager.Instance.fieldCardScale * mult, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightGraveyardToDeck, false, null, ghost);
+            });
+        });
+
         AddExt("Banish -> Deck", () => {
             Vector3 sPos = p ? GameManager.Instance.playerRemovedDisplay.transform.position : GameManager.Instance.opponentRemovedDisplay.transform.position;
             Vector3 ePos = p ? GameManager.Instance.playerDeckDisplay.transform.position : GameManager.Instance.opponentDeckDisplay.transform.position;

@@ -27,6 +27,9 @@ public class PileDisplay : MonoBehaviour, IPointerClickHandler
         currentBackTexture = backTexture;
         int targetCount = cards.Count;
 
+        // Limpa referências nulas caso as cartas da pilha tenham sido destruídas externamente (Ex: Caça-Fantasmas do Lua)
+        activeCards.RemoveAll(item => item == null);
+
         // 1. Ajusta o número de objetos visuais (Pool simples: cria ou destrói conforme necessário)
         while (activeCards.Count < targetCount && activeCards.Count < maxVisualCards)
         {

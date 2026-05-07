@@ -486,7 +486,11 @@ public partial class LuaDuel
     public LuaGroup GetTargetCards(object e)
     {
         if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.resolvingLink != null)
-            return CardEffectManager.Instance.chainManager.resolvingLink.targetGroup ?? new LuaGroup();
+        {
+            var grp = CardEffectManager.Instance.chainManager.resolvingLink.targetGroup;
+            if (grp != null && grp.cards.Count > 0) return grp;
+        }
+            
         return currentTargetGroup != null ? currentTargetGroup : new LuaGroup();
     }
 
