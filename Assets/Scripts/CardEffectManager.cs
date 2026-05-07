@@ -910,8 +910,49 @@ public class CardEffectManager : MonoBehaviour
     public bool HasActiveDiceReRoll(out bool isPlayerCard) { isPlayerCard = false; return false; }
     public void ConsumeDiceReRoll(bool isPlayer) { }
 
-    public void OnCardLeavesField(CardDisplay card) => eventManager.OnCardLeavesField(card);
+    public void OnCardLeavesField(CardDisplay card)
+    {
+        eventManager.OnCardLeavesField(card);
+        
+        if (continuousFieldEffects.RemoveAll(e => e.owner == null || e.owner.unityCard == null || e.owner.unityCard == card || !e.owner.unityCard.isOnField) > 0)
+        {
+            ApplyAllContinuousEffects();
+        }
 
+        // --- RESTAURAÇÃO DA COR DO TABULEIRO ---
+        // Se a carta destruída era uma Field Spell, verifica se o tabuleiro deve voltar à cor neutra
+        bool isFieldSpell = card != null && card.CurrentCardData != null && ((card.CurrentCardData.type != null && card.CurrentCardData.type.ToLowerInvariant().Contains("field")) || (card.CurrentCardData.property != null && card.CurrentCardData.property.ToLowerInvariant().Contains("field")));
+        if (isFieldSpell)
+        {
+            if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null && DuelFXManager.Instance != null && DuelFXManager.Instance.boardBackgroundImage != null)
+            {
+                bool fieldStillActive = false;
+                CardDisplay activeFieldCard = null;
+                
+                if (GameManager.Instance.duelFieldUI.playerFieldSpell != null)
+                {
+                    foreach (Transform child in GameManager.Instance.duelFieldUI.playerFieldSpell)
+                        if (child.gameObject != card.gameObject) { fieldStillActive = true; activeFieldCard = child.GetComponent<CardDisplay>(); }
+                }
+                
+                if (GameManager.Instance.duelFieldUI.opponentFieldSpell != null)
+                {
+                    foreach (Transform child in GameManager.Instance.duelFieldUI.opponentFieldSpell)
+                        if (child.gameObject != card.gameObject) { fieldStillActive = true; activeFieldCard = child.GetComponent<CardDisplay>(); }
+                }
+
+                if (!fieldStillActive)
+                {
+                    DuelFXManager.Instance.RestoreDefaultBoardColor();
+                }
+                else if (activeFieldCard != null && activeFieldCard.CurrentCardData != null)
+                {
+                    DuelFXManager.Instance.TransitionToFieldSpellColor(activeFieldCard.CurrentCardData.name);
+                }
+            }
+        }
+    }
+    
     public IEnumerator RecalculateStatsNextFrame(CardDisplay monster)
     {
         yield return null; // Aguarda 1 frame

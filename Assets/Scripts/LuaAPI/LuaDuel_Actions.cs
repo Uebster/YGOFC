@@ -985,6 +985,7 @@ public partial class LuaDuel
             {
                 c.position = isAttackTarget ? CardDisplay.BattlePosition.Attack : CardDisplay.BattlePosition.Defense;
                 c.transform.localRotation = Quaternion.Euler(0, 0, isAttackTarget ? (c.isPlayerCard ? 0f : 180f) : (c.isPlayerCard ? 90f : -90f));
+                if (GameManager.Instance != null) GameManager.Instance.RefreshAllCardsVisuals();
             }
 
             if (isFaceUpTarget && c.isFlipped)

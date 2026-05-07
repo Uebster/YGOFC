@@ -251,10 +251,9 @@ public partial class DuelFXManager
 
             if (ghost != null) Destroy(ghost);
 
-            if (isFieldSpell && colorizeBoardByFieldSpell && boardBackgroundImage != null)
+            if (isFieldSpell)
             {
-                Color targetColor = GetFieldSpellColor(card.CurrentCardData.name);
-                StartCoroutine(TransitionBoardColorRoutine(boardBackgroundImage.color, targetColor, 0.6f));
+                TransitionToFieldSpellColor(card.CurrentCardData.name);
             }
 
             // Fase 2: Descida
@@ -277,10 +276,9 @@ public partial class DuelFXManager
         else
         {
             // Se o Pulse estiver desativado, processa a Field Spell imediatamente e dá um pequeno delay visual
-            if (isFieldSpell && colorizeBoardByFieldSpell && boardBackgroundImage != null)
+            if (isFieldSpell)
             {
-                Color targetColor = GetFieldSpellColor(card.CurrentCardData.name);
-                StartCoroutine(TransitionBoardColorRoutine(boardBackgroundImage.color, targetColor, 0.6f));
+                TransitionToFieldSpellColor(card.CurrentCardData.name);
             }
             
             if (useActivationPrefab) 
@@ -303,6 +301,33 @@ public partial class DuelFXManager
         return defaultBoardColor;
     }
     
+    private Coroutine boardColorCoroutine;
+    
+    public void TransitionToFieldSpellColor(string cardName)
+    {
+        if (colorizeBoardByFieldSpell && boardBackgroundImage != null)
+        {
+            Color targetColor = GetFieldSpellColor(cardName);
+            if (boardColorCoroutine != null) StopCoroutine(boardColorCoroutine);
+            boardColorCoroutine = StartCoroutine(TransitionBoardColorRoutine(boardBackgroundImage.color, targetColor, 0.25f));
+        }
+    }
+    
+    public void RestoreDefaultBoardColor()
+    {
+        if (colorizeBoardByFieldSpell && boardBackgroundImage != null)
+        {
+            if (boardColorCoroutine != null) StopCoroutine(boardColorCoroutine);
+            boardColorCoroutine = StartCoroutine(DelayedRestoreDefaultColorRoutine());
+        }
+    }
+
+    private IEnumerator DelayedRestoreDefaultColorRoutine()
+    {
+        yield return new WaitForSeconds(0.3f); // Aguarda o pulso de uma nova magia que possa estar entrando
+        yield return TransitionBoardColorRoutine(boardBackgroundImage.color, defaultBoardColor, 0.25f);
+    }
+
     private IEnumerator TransitionBoardColorRoutine(Color startColor, Color endColor, float duration)
     {
         float t = 0;
@@ -314,6 +339,7 @@ public partial class DuelFXManager
             yield return null;
         }
     }
+    
     public void PlayFlipEffect(CardDisplay card)
     {
         // Debug.Log($"[VFX] > [CHAMADA] PlayFlipEffect");

@@ -528,6 +528,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             isFlipped = false;
             TriggerTextureChange(frontTexture, true, animate, onComplete);
+            if (GameManager.Instance != null && isOnField) GameManager.Instance.RefreshAllCardsVisuals();
         }
         else { onComplete?.Invoke(); }
     }
@@ -550,6 +551,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             isFlipped = true;
             TriggerTextureChange(backTexture, false, animate, onComplete);
+            if (GameManager.Instance != null && isOnField) GameManager.Instance.RefreshAllCardsVisuals();
         }
         else { onComplete?.Invoke(); }
     }
@@ -564,6 +566,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             // Se estava virado para cima, continua virado para cima (Defesa Face-Up)
             // Se estava virado para baixo (Set), continua virado para baixo (Defesa Face-Down)
             if (GameManager.Instance != null) GameManager.Instance.OnBattlePositionChanged(this);
+            GameManager.Instance.RefreshAllCardsVisuals();
         }
         else
         {
@@ -580,11 +583,13 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                         GameManager.Instance.OnFlipSummon(this);
                     }
                 });
+                    if (GameManager.Instance != null) GameManager.Instance.RefreshAllCardsVisuals();
             }
             else
             {
                 if (GameManager.Instance != null) {
                     GameManager.Instance.OnBattlePositionChanged(this);
+                        GameManager.Instance.RefreshAllCardsVisuals();
                 }
             }
         }

@@ -185,6 +185,13 @@ public static class LuaScriptLoader
         script = Regex.Replace(script, @"--\[\[.*?\]\]", "", RegexOptions.Singleline);
         script = Regex.Replace(script, @"--.*", "");
 
+        // 0.5. Protege as strings literais para que o conversor não altere símbolos dentro de textos!
+        List<string> stringLiterals = new List<string>();
+        script = Regex.Replace(script, @"""(?:\\.|[^""])*""|'(?:\\.|[^'])*'|\[\[[\s\S]*?\]\]", match => {
+            stringLiterals.Add(match.Value);
+            return $"__STR_LITERAL_{stringLiterals.Count - 1}__";
+        });
+
         // 1. OCGCore Compatibility: Mathematical Type Sums & Methods
         // O C# não entende a soma de bits (TYPE_SPELL + TYPE_TRAP). Redireciona para o LUA nativo inteligente.
         if (script.Contains("TYPE_SPELL") || script.Contains("TYPE_TRAP") || script.Contains("IsSpellTrap"))
@@ -237,6 +244,11 @@ public static class LuaScriptLoader
         if (script.Contains("for ") && script.Contains(" in "))
         {
             script = Regex.Replace(script, @"for\s+([a-zA-Z0-9_]+)\s+in\s+([a-zA-Z0-9_]+)\s+do", "for $1 in $2:Iter() do");
+        }
+
+        // Fim: Restaura as strings literais protegidas intactas
+        for (int i = 0; i < stringLiterals.Count; i++) {
+            script = script.Replace($"__STR_LITERAL_{i}__", stringLiterals[i]);
         }
 
         return script;
