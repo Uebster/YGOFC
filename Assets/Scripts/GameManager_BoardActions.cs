@@ -521,7 +521,7 @@ public partial class GameManager
                     {
                         Vector3 endPos = isOwner ? playerDeckDisplay.transform.position : opponentDeckDisplay.transform.position;
                         Quaternion endRot = isOwner ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
-                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
+                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, false, startPos, endPos, 
                             wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
                             startRot, endRot, flightSettings, false, null);
                     }
@@ -579,7 +579,7 @@ public partial class GameManager
                     {
                         Vector3 endPos = isOwner ? playerExtraDeckDisplay.transform.position : opponentExtraDeckDisplay.transform.position;
                         Quaternion endRot = isOwner ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
-                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, true, startPos, endPos, 
+                        DuelFXManager.Instance.PlayCardFlight(data, cardBackTexture, !card.isFlipped, false, startPos, endPos, 
                             wasOnField ? fieldCardScale : handCardScale, fieldCardScale, 
                             startRot, endRot, flightSettings, false, null);
                     }

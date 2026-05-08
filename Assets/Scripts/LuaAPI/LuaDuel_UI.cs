@@ -1040,6 +1040,12 @@ public partial class LuaDuel
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
 
+        CardEffectManager.Instance.StartCoroutine(DiscardHandRoutine(player, filter, min, max, reason, extraArgs));
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("DiscardHand") });
+    }
+
+    private IEnumerator DiscardHandRoutine(object player, object filter, object min, object max, object reason, object[] extraArgs)
+    {
         bool isPlayer = IsPlayer(player);
         int minAmt = ConvertToInt(min);
         int maxAmt = ConvertToInt(max);
@@ -1092,15 +1098,22 @@ public partial class LuaDuel
                 }
             }
             this.lastCostGroup = autoDiscardedGroup;
+            
+            // Aguarda o voo do descarte se não estiver no modo visualização rápida
+            if (countToDiscard > 0 && GameManager.Instance != null && !GameManager.Instance.isSimulating)
+                yield return new WaitForSeconds(0.4f * countToDiscard);
+
             CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(countToDiscard);
             CardEffectManager.Instance.isWaitingForLuaYield = false;
-            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("DiscardHand") });
+            yield break;
         }
 
         if (GameManager.Instance != null)
         {
+            bool selectionDone = false;
+            int discardedCount = 0;
+
             GameManager.Instance.OpenCardMultiSelection(validCards, $"Discard between {minAmt} and {maxAmt} card(s)", minAmt, maxAmt, (selectedCards) => {
-                int discardedCount = 0;
                 LuaGroup selectedGroup = new LuaGroup();
                 if (selectedCards != null)
                 {
@@ -1116,12 +1129,18 @@ public partial class LuaDuel
                     }
                 }
                 this.lastCostGroup = selectedGroup;
-                CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(discardedCount);
-                CardEffectManager.Instance.isWaitingForLuaYield = false;
+                selectionDone = true;
             }, HighlightCategory.GenericTarget, false, canCancel);
-        }
 
-        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("DiscardHand") });
+            yield return new WaitUntil(() => selectionDone);
+
+            // Aguarda o voo do descarte
+            if (discardedCount > 0 && GameManager.Instance != null && !GameManager.Instance.isSimulating)
+                yield return new WaitForSeconds(0.4f * discardedCount);
+
+            CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(discardedCount);
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+        }
     }
 
     public DynValue TossCoin(object player, object count)

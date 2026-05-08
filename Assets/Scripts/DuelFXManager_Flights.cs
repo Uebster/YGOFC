@@ -566,8 +566,15 @@ public partial class DuelFXManager
 
         if (isPile && extractionCinematic.enableExtraction)
         {
+            ExtractionPileSettings pileSettings = extractionCinematic.deck;
+            if (sourceLoc == CardLocation.Graveyard) pileSettings = extractionCinematic.graveyard;
+            else if (sourceLoc == CardLocation.ExtraDeck) pileSettings = extractionCinematic.extraDeck;
+            else if (sourceLoc == CardLocation.Banished) pileSettings = extractionCinematic.banished;
+            
+            bool currentFaceUp = pileSettings.flipDuringExtraction ? false : startFaceUp;
+
             PlayExtractionCinematic(data, GameManager.Instance.GetCardBackTexture(), isPlayer, sourceLoc, sPos, startFaceUp, false, (ghost, pos) => {
-                PlayCardFlight(data, GameManager.Instance.GetCardBackTexture(), false, false, pos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, startRot, endRot, settings, false, onComplete, ghost);
+                PlayCardFlight(data, GameManager.Instance.GetCardBackTexture(), currentFaceUp, false, pos, ePos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, startRot, endRot, settings, false, onComplete, ghost);
             });
         }
         else
@@ -878,8 +885,10 @@ public partial class DuelFXManager
         if (!isTopCard)
         {
             ghost.transform.SetParent(pile.contentParent, false);
-            int targetIndex = Mathf.Max(0, pile.contentParent.childCount - 2); 
-            ghost.transform.SetSiblingIndex(targetIndex);
+            // FIX: Coloca o fantasma no fundo absoluto da pilha visual (índice 0).
+            // Isso previne que ele passe pela frente do monstro do topo caso a Unity atrase 
+            // a destruição dos GameObjects velhos durante o UpdatePileVisuals!
+            ghost.transform.SetAsFirstSibling();
             
             ghost.transform.position = startPos;
             ghost.transform.localScale = Vector3.one;

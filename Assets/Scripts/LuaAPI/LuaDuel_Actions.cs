@@ -165,7 +165,7 @@ public partial class LuaDuel
                         if (c.unityCard != null)
                         {
                             bool animDone = false;
-                            DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, rot, rot, flightSettings, false, () => animDone = true, c.unityCard.gameObject);
+                            DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), !c.unityCard.isFlipped, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, rot, rot, flightSettings, false, () => animDone = true, c.unityCard.gameObject);
                             yield return new WaitUntil(() => animDone);
                         }
                         else if (excavatedGhost != null)
@@ -177,15 +177,24 @@ public partial class LuaDuel
                         else if (isPile && DuelFXManager.Instance.extractionCinematic.enableExtraction)
                         {
                             bool startFaceUp = sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.Banished;
+                            
+                            var pileSettings = DuelFXManager.Instance.extractionCinematic.deck;
+                            if (sourceLoc == CardLocation.Graveyard) pileSettings = DuelFXManager.Instance.extractionCinematic.graveyard;
+                            else if (sourceLoc == CardLocation.ExtraDeck) pileSettings = DuelFXManager.Instance.extractionCinematic.extraDeck;
+                            else if (sourceLoc == CardLocation.Banished) pileSettings = DuelFXManager.Instance.extractionCinematic.banished;
+                            
+                            bool currentFaceUp = pileSettings.flipDuringExtraction ? true : startFaceUp;
+
                             bool animDone = false;
                             DuelFXManager.Instance.PlayExtractionCinematic(c.unityData, GameManager.Instance.GetCardBackTexture(), wasPlayerPile, sourceLoc, startPos, startFaceUp, true, (ghost, pos) => {
-                                DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, true, pos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, rot, rot, flightSettings, false, () => animDone = true, ghost);
+                                DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), currentFaceUp, true, pos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, rot, rot, flightSettings, false, () => animDone = true, ghost);
                             });
                             yield return new WaitUntil(() => animDone);
                         }
                         else
                         {
-                            DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, rot, rot, flightSettings, true, null);
+                            bool startFaceUp = sourceLoc == CardLocation.Graveyard || sourceLoc == CardLocation.Banished;
+                            DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), startFaceUp, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, rot, rot, flightSettings, true, null);
                         }
                     }
                     else
@@ -333,9 +342,16 @@ public partial class LuaDuel
     {
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.spellSound);
         
+        bool isTopCard = true;
+        if (cd.transform.parent != null)
+        {
+            isTopCard = (cd.transform.GetSiblingIndex() == cd.transform.parent.childCount - 1);
+        }
+
         if (cd.isInPile)
         {
-            cd.transform.SetAsLastSibling(); 
+            // Se ela estiver no fundo do GY, apenas brilha nas sombras em vez de varar a carta do topo!
+            if (isTopCard) cd.transform.SetAsLastSibling(); 
             if (cd.isFlipped) cd.ShowFront(false);
         }
 
@@ -352,10 +368,18 @@ public partial class LuaDuel
         outline.effectDistance = new Vector2(8, -8);
         outline.enabled = true;
 
-        while(t < 1f) { t += Time.deltaTime / dur; cd.transform.localScale = Vector3.Lerp(origScale, peakScale, Mathf.SmoothStep(0, 1, t)); yield return null; }
+        while(t < 1f) { 
+            t += Time.deltaTime / dur; 
+            if (isTopCard) cd.transform.localScale = Vector3.Lerp(origScale, peakScale, Mathf.SmoothStep(0, 1, t)); 
+            yield return null; 
+        }
         t = 0;
-        while(t < 1f) { t += Time.deltaTime / dur; cd.transform.localScale = Vector3.Lerp(peakScale, origScale, Mathf.SmoothStep(0, 1, t)); yield return null; }
-        cd.transform.localScale = origScale;
+        while(t < 1f) { 
+            t += Time.deltaTime / dur; 
+            if (isTopCard) cd.transform.localScale = Vector3.Lerp(peakScale, origScale, Mathf.SmoothStep(0, 1, t)); 
+            yield return null; 
+        }
+        if (isTopCard) cd.transform.localScale = origScale;
         
         if (!hadOutline) GameObject.Destroy(outline);
         else { outline.effectColor = origColor; outline.enabled = false; }
@@ -398,9 +422,20 @@ public partial class LuaDuel
             Vector3 endPos = wasPlayerPile ? GameManager.Instance.playerRemovedDisplay.transform.position : GameManager.Instance.opponentRemovedDisplay.transform.position;
             Quaternion rot = wasPlayerPile ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
             
+            bool startFaceUpFlight = true;
+            if (sourceLoc == CardLocation.Deck || sourceLoc == CardLocation.ExtraDeck) 
+            {
+                if (DuelFXManager.Instance != null && DuelFXManager.Instance.extractionCinematic.enableExtraction)
+                {
+                    var pileSettings = sourceLoc == CardLocation.Deck ? DuelFXManager.Instance.extractionCinematic.deck : DuelFXManager.Instance.extractionCinematic.extraDeck;
+                    if (!pileSettings.flipDuringExtraction) startFaceUpFlight = false;
+                }
+                else startFaceUpFlight = false;
+            }
+
             bool flightDone = false;
             
-            DuelFXManager.Instance.PlayCardFlight(cData, GameManager.Instance.GetCardBackTexture(), true, true, pos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, rot, rot, flightSettings, false, () => {
+            DuelFXManager.Instance.PlayCardFlight(cData, GameManager.Instance.GetCardBackTexture(), startFaceUpFlight, true, pos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, rot, rot, flightSettings, false, () => {
                 flightDone = true;
             }, ghost);
             
@@ -636,26 +671,47 @@ public partial class LuaDuel
         }
     }
 
-    public void Release(object target, object reason)
+    public DynValue Release(object target, object reason)
     {
-        int ocgReason = ConvertToInt(reason) | 0x2; // REASON_RELEASE
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+        CardEffectManager.Instance.StartCoroutine(ReleaseRoutine(target, reason));
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("Release") });
+    }
+
+    private IEnumerator ReleaseRoutine(object target, object reason)
+    {
+        int ocgReason = ConvertToInt(reason) | 0x2; 
+        int count = 0;
+
         if (target is LuaGroup group)
         {
-            this.lastCostGroup = group; // Armazena o grupo para exclusão de alvo
+            this.lastCostGroup = group; 
             foreach (var c in group.cards)
             {
                 c.currentReason = ocgReason;
-                if (c.unityCard != null) GameManager.Instance.TributeCard(c.unityCard, ocgReason);
+                if (c.unityCard != null) {
+                    GameManager.Instance.TributeCard(c.unityCard, ocgReason);
+                    count++;
+                }
             }
         }
         else if (target is LuaCard card && card.unityCard != null)
         {
             LuaGroup tempGroup = new LuaGroup();
             tempGroup.AddCard(card);
-            this.lastCostGroup = tempGroup; // Armazena a carta para exclusão de alvo
+            this.lastCostGroup = tempGroup; 
             card.currentReason = ocgReason;
             GameManager.Instance.TributeCard(card.unityCard, ocgReason);
+            count++;
         }
+
+        // A Poeira Tática: LUA agora espera as partículas de sacrifício sumirem e os monstros caírem no GY!
+        if (count > 0 && GameManager.Instance != null && !GameManager.Instance.isSimulating)
+            yield return new WaitForSeconds(0.6f);
+
+        CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(count);
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
     }
 
     public void ReleaseRitualMaterial(object target) { Debug.LogWarning("[LUA STUB] ReleaseRitualMaterial chamado (O C# assume a destruição física através da UI de Ritual!)"); }

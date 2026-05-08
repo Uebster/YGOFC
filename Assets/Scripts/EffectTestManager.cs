@@ -871,7 +871,8 @@ public class EffectTestManager : MonoBehaviour
             Vector3 ePos = p ? GameManager.Instance.playerHandLayoutGroup.position : GameManager.Instance.opponentHandLayoutGroup.position;
             float m = DuelFXManager.Instance.extractionCinematic.useScaleEffect ? DuelFXManager.Instance.extractionCinematic.deck.peakScaleMult : DuelFXManager.Instance.extractionCinematic.deck.startScaleMult;
             DuelFXManager.Instance.PlayExtractionCinematic(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), p, CardLocation.Deck, sPos, false, true, (ghost, pos) => {
-                DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, true, pos, ePos, GameManager.Instance.fieldCardScale * m, GameManager.Instance.handCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightDeckToHand, false, null, ghost);
+                bool currentFaceUp = DuelFXManager.Instance.extractionCinematic.deck.flipDuringExtraction ? true : false;
+                DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), currentFaceUp, true, pos, ePos, GameManager.Instance.fieldCardScale * m, GameManager.Instance.handCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightDeckToHand, false, null, ghost);
             });
         });
 
@@ -880,7 +881,8 @@ public class EffectTestManager : MonoBehaviour
             Vector3 ePos = p ? GameManager.Instance.playerHandLayoutGroup.position : GameManager.Instance.opponentHandLayoutGroup.position;
             float m = DuelFXManager.Instance.extractionCinematic.useScaleEffect ? DuelFXManager.Instance.extractionCinematic.deck.peakScaleMult : DuelFXManager.Instance.extractionCinematic.deck.startScaleMult;
             DuelFXManager.Instance.PlayExtractionCinematic(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), p, CardLocation.Deck, sPos, false, false, (ghost, pos) => {
-                DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), false, false, pos, ePos, GameManager.Instance.fieldCardScale * m, GameManager.Instance.handCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightDeckToHand, false, null, ghost);
+                bool currentFaceUp = DuelFXManager.Instance.extractionCinematic.deck.flipDuringExtraction ? false : false;
+                DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), currentFaceUp, false, pos, ePos, GameManager.Instance.fieldCardScale * m, GameManager.Instance.handCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightDeckToHand, false, null, ghost);
             });
         });
 
@@ -889,7 +891,8 @@ public class EffectTestManager : MonoBehaviour
             ClearFieldForTesting(); EnsureContextMonster(p); var m = p ? playerMonster : opponentMonster;
             float mult = DuelFXManager.Instance.extractionCinematic.useScaleEffect ? DuelFXManager.Instance.extractionCinematic.extraDeck.peakScaleMult : DuelFXManager.Instance.extractionCinematic.extraDeck.startScaleMult;
             DuelFXManager.Instance.PlayExtractionCinematic(m.CurrentCardData, GameManager.Instance.GetCardBackTexture(), p, CardLocation.ExtraDeck, sPos, false, true, (ghost, pos) => {
-                DuelFXManager.Instance.PlayCardFlight(m.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, pos, m.transform.position, GameManager.Instance.fieldCardScale * mult, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightExtraToField, false, null, ghost);
+                bool currentFaceUp = DuelFXManager.Instance.extractionCinematic.extraDeck.flipDuringExtraction ? true : false;
+                DuelFXManager.Instance.PlayCardFlight(m.CurrentCardData, GameManager.Instance.GetCardBackTexture(), currentFaceUp, true, pos, m.transform.position, GameManager.Instance.fieldCardScale * mult, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightExtraToField, false, null, ghost);
             });
         });
 
@@ -898,7 +901,8 @@ public class EffectTestManager : MonoBehaviour
             ClearFieldForTesting(); EnsureContextMonster(p); var m = p ? playerMonster : opponentMonster;
             float mult = DuelFXManager.Instance.extractionCinematic.useScaleEffect ? DuelFXManager.Instance.extractionCinematic.graveyard.peakScaleMult : DuelFXManager.Instance.extractionCinematic.graveyard.startScaleMult;
             DuelFXManager.Instance.PlayExtractionCinematic(m.CurrentCardData, GameManager.Instance.GetCardBackTexture(), p, CardLocation.Graveyard, sPos, true, true, (ghost, pos) => {
-                DuelFXManager.Instance.PlayCardFlight(m.CurrentCardData, GameManager.Instance.GetCardBackTexture(), true, true, pos, m.transform.position, GameManager.Instance.fieldCardScale * mult, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightGraveyardToField, false, null, ghost);
+                bool currentFaceUp = DuelFXManager.Instance.extractionCinematic.graveyard.flipDuringExtraction ? true : true;
+                DuelFXManager.Instance.PlayCardFlight(m.CurrentCardData, GameManager.Instance.GetCardBackTexture(), currentFaceUp, true, pos, m.transform.position, GameManager.Instance.fieldCardScale * mult, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightGraveyardToField, false, null, ghost);
             });
         });
 
@@ -907,7 +911,8 @@ public class EffectTestManager : MonoBehaviour
             Vector3 ePos = p ? GameManager.Instance.playerDeckDisplay.transform.position : GameManager.Instance.opponentDeckDisplay.transform.position;
             float mult = DuelFXManager.Instance.extractionCinematic.useScaleEffect ? DuelFXManager.Instance.extractionCinematic.graveyard.peakScaleMult : DuelFXManager.Instance.extractionCinematic.graveyard.startScaleMult;
             DuelFXManager.Instance.PlayExtractionCinematic(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), p, CardLocation.Graveyard, sPos, true, false, (ghost, pos) => {
-                DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, false, pos, ePos, GameManager.Instance.fieldCardScale * mult, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightGraveyardToDeck, false, null, ghost);
+                bool currentFaceUp = DuelFXManager.Instance.extractionCinematic.graveyard.flipDuringExtraction ? false : true;
+                DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), currentFaceUp, false, pos, ePos, GameManager.Instance.fieldCardScale * mult, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightGraveyardToDeck, false, null, ghost);
             });
         });
 
@@ -916,7 +921,8 @@ public class EffectTestManager : MonoBehaviour
             Vector3 ePos = p ? GameManager.Instance.playerDeckDisplay.transform.position : GameManager.Instance.opponentDeckDisplay.transform.position;
             float mult = DuelFXManager.Instance.extractionCinematic.useScaleEffect ? DuelFXManager.Instance.extractionCinematic.banished.peakScaleMult : DuelFXManager.Instance.extractionCinematic.banished.startScaleMult;
             DuelFXManager.Instance.PlayExtractionCinematic(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), p, CardLocation.Banished, sPos, true, false, (ghost, pos) => {
-                DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), true, false, pos, ePos, GameManager.Instance.fieldCardScale * mult, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightBanishToDeck, false, null, ghost);
+                bool currentFaceUp = DuelFXManager.Instance.extractionCinematic.banished.flipDuringExtraction ? false : true;
+                DuelFXManager.Instance.PlayCardFlight(GameManager.Instance.cardDatabase.cardDatabase[0], GameManager.Instance.GetCardBackTexture(), currentFaceUp, false, pos, ePos, GameManager.Instance.fieldCardScale * mult, GameManager.Instance.fieldCardScale, Quaternion.identity, Quaternion.identity, DuelFXManager.Instance.flightBanishToDeck, false, null, ghost);
             });
         });
 

@@ -279,11 +279,18 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             cardImage.texture = backTexture;
         }
-        else if (!isFlipped && cardImage != null && backTexture != null)
+        else if (!isFlipped && cardImage != null)
         {
-            // FIX: Coloca a textura do verso temporariamente para não mostrar um bloco branco
-            // enquanto a textura real da carta está sendo baixada na corrotina.
-            cardImage.texture = backTexture;
+            // FIX: Se já estiver no cache, aplica a arte instantaneamente para a carta não piscar o verso no 1º frame do voo!
+            if (!string.IsNullOrEmpty(card.image_filename) && sharedArtCache.TryGetValue(card.image_filename, out Texture2D cachedTex) && cachedTex != null)
+            {
+                frontTexture = cachedTex;
+                cardImage.texture = frontTexture;
+            }
+            else if (backTexture != null)
+            {
+                cardImage.texture = backTexture;
+            }
         }
 
         // FIX: Verifica se o objeto está ativo antes de iniciar a corrotina para evitar erro
