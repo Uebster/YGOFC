@@ -1171,7 +1171,12 @@ public class CardEffectManager : MonoBehaviour
 
     public bool Effect_PayLP(CardDisplay source, int amount)
     {
-        return GameManager.Instance.PayLifePoints(source.isPlayerCard, amount);
+        bool success = GameManager.Instance.PayLifePoints(source.isPlayerCard, amount);
+        if (success && DamagePopupManager.Instance != null)
+        {
+            DamagePopupManager.Instance.ShowPopup(amount, false, source.isPlayerCard);
+        }
+        return success;
     }
 
     // --- NOVAS FUNÇÕES PREPARADAS PARA RECEBER O JOGADOR ALVO EXATO DO LUA ---
@@ -1185,6 +1190,16 @@ public class CardEffectManager : MonoBehaviour
     public void Effect_GainLP(int targetPlayerIndex, int amount)
     {
         GameManager.Instance.GainLifePoints(targetPlayerIndex == 0, amount);
+    }
+
+    public bool Effect_PayLP(int targetPlayerIndex, int amount)
+    {
+        bool success = GameManager.Instance.PayLifePoints(targetPlayerIndex == 0, amount);
+        if (success && DamagePopupManager.Instance != null)
+        {
+            DamagePopupManager.Instance.ShowPopup(amount, false, targetPlayerIndex == 0);
+        }
+        return success;
     }
 
     public List<CardDisplay> GetEquippedCards(CardDisplay target)

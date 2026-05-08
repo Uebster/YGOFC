@@ -101,21 +101,34 @@ public partial class LuaDuel
         return ConvertToInt(playerIndex) == 0;
     }
 
-    public void Damage(object player, object amount, object reason)
+    public DynValue Damage(object player, object amount, object reason)
     {
         int pInt = ConvertToInt(player);
         int aInt = ConvertToInt(amount);
         
         // EFFECT_REVERSE_DAMAGE (80)
         if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null) {
-            if (pInt == 0 && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(0, 80)) { Recover(player, amount, reason); return; }
-            if (pInt == 1 && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(1, 80)) { Recover(player, amount, reason); return; }
+            if (pInt == 0 && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(0, 80)) { return Recover(player, amount, reason); }
+            if (pInt == 1 && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(1, 80)) { return Recover(player, amount, reason); }
         }
 
-        if (pInt == 0) GameManager.Instance.DamagePlayer(aInt);
-        else if (pInt == 1) GameManager.Instance.DamageOpponent(aInt);
-        else if (pInt == 3) { GameManager.Instance.DamagePlayer(aInt); GameManager.Instance.DamageOpponent(aInt); }
-        else return; // PLAYER_NONE (2) ou inválido
+        if (pInt == 0) {
+            GameManager.Instance.DamagePlayer(aInt);
+            if (DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating) DamagePopupManager.Instance.ShowPopup(aInt, false, true);
+        }
+        else if (pInt == 1) {
+            GameManager.Instance.DamageOpponent(aInt);
+            if (DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating) DamagePopupManager.Instance.ShowPopup(aInt, false, false);
+        }
+        else if (pInt == 3) {
+            GameManager.Instance.DamagePlayer(aInt);
+            GameManager.Instance.DamageOpponent(aInt);
+            if (DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating) {
+                DamagePopupManager.Instance.ShowPopup(aInt, false, true);
+                DamagePopupManager.Instance.ShowPopup(aInt, false, false);
+            }
+        }
+        else return DynValue.Nil; // PLAYER_NONE (2) ou inválido
 
         // Feedback Visual e Sonoro de Dano de Efeito (Burn)
         if (DuelFXManager.Instance != null && GameManager.Instance != null && !GameManager.Instance.isSimulating && aInt > 0)
@@ -135,17 +148,48 @@ public partial class LuaDuel
             }
             DuelFXManager.Instance.PlayDamageEffect(vfxPos);
         }
+        
+        if (CardEffectManager.Instance != null && GameManager.Instance != null && !GameManager.Instance.isSimulating)
+        {
+            CardEffectManager.Instance.isWaitingForLuaYield = true;
+            CardEffectManager.Instance.yieldReturnValue = null;
+            CardEffectManager.Instance.StartCoroutine(WaitVisualTasksRoutine());
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("UI_Wait") });
+        }
+        return DynValue.Nil;
     }
 
-    public void Recover(object player, object amount, object reason)
+    public DynValue Recover(object player, object amount, object reason)
     {
         // Debug.Log($"[Surgical Log] Duel.Recover! Jogador_Raw: {player} | Amount_Raw: {amount}");
         int pInt = ConvertToInt(player);
         int aInt = ConvertToInt(amount);
         // Debug.Log($"[Surgical Log] Convertido para C# -> Jogador: {pInt} | Cura: {aInt}");
-        if (pInt == 0) GameManager.Instance.GainLifePoints(true, aInt);
-        else if (pInt == 1) GameManager.Instance.GainLifePoints(false, aInt);
-        else if (pInt == 3) { GameManager.Instance.GainLifePoints(true, aInt); GameManager.Instance.GainLifePoints(false, aInt); }
+        if (pInt == 0) {
+            GameManager.Instance.GainLifePoints(true, aInt);
+            if (DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating) DamagePopupManager.Instance.ShowPopup(aInt, true, true);
+        }
+        else if (pInt == 1) {
+            GameManager.Instance.GainLifePoints(false, aInt);
+            if (DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating) DamagePopupManager.Instance.ShowPopup(aInt, true, false);
+        }
+        else if (pInt == 3) {
+            GameManager.Instance.GainLifePoints(true, aInt);
+            GameManager.Instance.GainLifePoints(false, aInt);
+            if (DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating) {
+                DamagePopupManager.Instance.ShowPopup(aInt, true, true);
+                DamagePopupManager.Instance.ShowPopup(aInt, true, false);
+            }
+        }
+        
+        if (CardEffectManager.Instance != null && GameManager.Instance != null && !GameManager.Instance.isSimulating)
+        {
+            CardEffectManager.Instance.isWaitingForLuaYield = true;
+            CardEffectManager.Instance.yieldReturnValue = null;
+            CardEffectManager.Instance.StartCoroutine(WaitVisualTasksRoutine());
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("UI_Wait") });
+        }
+        return DynValue.Nil;
     }
 
     // --- STATUS BASE (Resgatados das requisições LUA) ---
@@ -210,17 +254,49 @@ public partial class LuaDuel
         return false;
     }
 
-    public void PayLPCost(object player, object cost)
+    public DynValue PayLPCost(object player, object cost)
     {
         int pInt = ConvertToInt(player);
         int cInt = ConvertToInt(cost);
         
         // EFFECT_LPCOST_REPLACE (A dedução mágica será feita direto no código LUA da Aura!)
-        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(pInt, 171)) return;
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(pInt, 171)) return DynValue.Nil;
         
-        if (pInt == 0) GameManager.Instance.PayLifePoints(true, cInt);
-        else if (pInt == 1) GameManager.Instance.PayLifePoints(false, cInt);
-        else if (pInt == 3) { GameManager.Instance.PayLifePoints(true, cInt); GameManager.Instance.PayLifePoints(false, cInt); }
+        if (pInt == 0) {
+            if (GameManager.Instance.PayLifePoints(true, cInt) && DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating)
+                DamagePopupManager.Instance.ShowPopup(cInt, false, true);
+        }
+        else if (pInt == 1) {
+            if (GameManager.Instance.PayLifePoints(false, cInt) && DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating)
+                DamagePopupManager.Instance.ShowPopup(cInt, false, false);
+        }
+        else if (pInt == 3) {
+            bool s1 = GameManager.Instance.PayLifePoints(true, cInt);
+            bool s2 = GameManager.Instance.PayLifePoints(false, cInt);
+            if (s1 && DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating) DamagePopupManager.Instance.ShowPopup(cInt, false, true);
+            if (s2 && DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating) DamagePopupManager.Instance.ShowPopup(cInt, false, false);
+        }
+        
+        if (CardEffectManager.Instance != null && GameManager.Instance != null && !GameManager.Instance.isSimulating)
+        {
+            CardEffectManager.Instance.isWaitingForLuaYield = true;
+            CardEffectManager.Instance.yieldReturnValue = null;
+            CardEffectManager.Instance.StartCoroutine(WaitVisualTasksRoutine());
+            return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("UI_Wait") });
+        }
+        return DynValue.Nil;
+    }
+
+    public IEnumerator WaitVisualTasksRoutine()
+    {
+        if (GameManager.Instance != null)
+            yield return new WaitWhile(() => GameManager.Instance.pendingVisualTasks > 0);
+            
+        if (CardEffectManager.Instance != null)
+        {
+            CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+            CardEffectManager.Instance.isWaitingForLuaYield = false;
+        }
     }
 
     public LuaCard GetAttacker()

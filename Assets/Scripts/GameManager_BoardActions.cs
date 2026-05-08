@@ -184,23 +184,23 @@ public partial class GameManager
         }
     }
 
-    public void SetSpellTrapFromData(CardData cardData, bool isPlayer, int zoneIndex, bool faceUp = false)
+    public CardDisplay SetSpellTrapFromData(CardData cardData, bool isPlayer, int zoneIndex, bool faceUp = false)
     {
         if (cardData == null || (!cardData.type.Contains("Spell") && !cardData.type.Contains("Trap")))
         {
             Debug.LogError("[GameManager] SetSpellTrapFromData: Card is not a Spell or Trap.");
-            return;
+            return null;
         }
         
-        if (duelFieldUI == null) return;
+        if (duelFieldUI == null) return null;
         Transform[] spellZones = isPlayer ? duelFieldUI.playerSpellZones : duelFieldUI.opponentSpellZones;
-        if (zoneIndex < 0 || zoneIndex >= spellZones.Length) return;
+        if (zoneIndex < 0 || zoneIndex >= spellZones.Length) return null;
 
         Transform zone = spellZones[zoneIndex];
         if (zone.childCount > 0)
         {
             Debug.LogWarning($"[GameManager] SetSpellTrapFromData: Zona {zoneIndex} já está ocupada.");
-            return;
+            return null;
         }
 
         GameObject cardGO = Instantiate(cardPrefab, zone);
@@ -216,6 +216,8 @@ public partial class GameManager
         cardGO.transform.localRotation = Quaternion.Euler(0, 0, isPlayer ? 0f : 180f);
 
         if (!faceUp) cardDisplay.AddStatus(0x10); // STATUS_SET_TURN
+        
+        return cardDisplay;
     }
 
 

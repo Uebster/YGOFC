@@ -14,6 +14,21 @@ public partial class DuelFXManager
         // Debug.Log($"[VFX] > [CHAMADA] PlayEquipEffect");
         if (!enableAnimations || source == null || target == null) return; // FIX: Removida a exigência desnecessária do boardCenter
         
+        StartCoroutine(EquipDelayWrapper(source, target));
+    }
+
+    private IEnumerator EquipDelayWrapper(CardDisplay source, CardDisplay target)
+    {
+        // FIX: Espera o monstro alvo "nascer" e ficar visível antes de atirar a magia de equipamento nele!
+        if (target != null)
+        {
+            CanvasGroup targetCG = target.GetComponent<CanvasGroup>();
+            if (targetCG != null) yield return new WaitUntil(() => targetCG.alpha > 0f);
+            yield return new WaitForEndOfFrame(); // Garante que a Unity processou os layouts finais da zona
+        }
+
+        if (target == null || source == null) yield break;
+
         if (useEquipPrefab && equipImpactVFX != null)
         {
             SpawnVFXPublic(equipImpactVFX, target.transform.position);

@@ -770,7 +770,7 @@ public void ShuffleDeck(bool isPlayer)
     }
 
     // Atualiza todos os visuais de pilhas (Decks e Cemitérios)
-    void UpdatePileVisuals()
+    public void UpdatePileVisuals()
     {
         if (DeckManager.Instance != null) DeckManager.Instance.UpdateDeckVisuals();
         if (playerGraveyardDisplay != null) playerGraveyardDisplay.UpdatePile(playerGraveyard, cardBackTexture);

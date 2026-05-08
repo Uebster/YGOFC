@@ -622,6 +622,8 @@ public partial class LuaCard
     }
     public bool IsCanBeSpecialSummoned(object e, object sumtype, object sumplayer, object nocheck, object nolimit, params object[] extraArgs) 
     { 
+        if (!IsMonster()) return false; // Uma Magia ou Armadilha nunca pode ser invocada como monstro!
+
         bool ignoreLimit = ConvertToInt(nolimit) != 0;
         
         if (!ignoreLimit)
@@ -760,7 +762,25 @@ public partial class LuaCard
     { 
         int s = ConvertToInt(status);
         if (s == 0x8 && isProcComplete) return true;
-        if (unityCard != null) return unityCard.HasStatus(s);
+        if (unityCard != null) 
+        {
+            // Verifica flags de enjoo de invocação (Summon Sickness) vitais para o OCGCore
+            if (GameManager.Instance != null && unityCard.summonedTurnCount == GameManager.Instance.turnCount)
+            {
+                int myStatus = 0;
+                
+                int sSummon = CardEffectManager.Instance != null ? (int)CardEffectManager.Instance.luaEngine.Globals.Get("STATUS_SUMMON_TURN").Number : 0x800;
+                int sFlip = CardEffectManager.Instance != null ? (int)CardEffectManager.Instance.luaEngine.Globals.Get("STATUS_FLIP_SUMMON_TURN").Number : 0x20000000;
+                int sSp = CardEffectManager.Instance != null ? (int)CardEffectManager.Instance.luaEngine.Globals.Get("STATUS_SPSUMMON_TURN").Number : 0x40000000;
+
+                if ((unityCard.summonType & 0x10000000) != 0) myStatus |= sSummon; 
+                if ((unityCard.summonType & 0x20000000) != 0) myStatus |= sFlip; 
+                if ((unityCard.summonType & 0x40000000) != 0) myStatus |= sSp; 
+                
+                if ((s & myStatus) != 0) return true;
+            }
+            return unityCard.HasStatus(s);
+        }
         return false; 
     }
     
