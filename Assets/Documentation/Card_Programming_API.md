@@ -416,6 +416,20 @@ Emulando o YGOPro, cartas nunca mandam remover seus próprios efeitos. Elas rece
 *   **`Duel.GetChainInfo(chainc, ...)`:** O C# rastreia até 30 parâmetros diferentes (desde Nível e ATK da carta que ativou a corrente, até Zonas e Jogadores alvo). A API não estilhaça em sub-requisições; um *Switch Case* expansivo varre as propriedades da cápsula `ChainLink` cacheada e envia os dados (em Inteiros, Objetos ou Tabelas) de volta para o LUA usar em suas matemáticas.
 *   **Atores Múltiplos (`PLAYER_`):** A Engine abandonou a limitação "Jogador vs CPU". Variáveis como `PLAYER_ALL (3)` são lidas de forma matemática pelo C#. Funções ativas como `Duel.Draw(PLAYER_ALL, 1, REASON_EFFECT)` executam as corrotinas de compra simetricamente, em sequência para ambos os lados, garantindo fidelidade 100% aos efeitos de cartas nativas do OCG sem necessidade de refatorar os scripts base.
 
+### 5.14 O Teatro da Escavação (ConfirmDecktop e Espionagem)
+Quando o LUA chama funções como `Duel.ConfirmDecktop` (ex: *Archfiend's Oath* ou *Cyber Jar*), a engine C# possui um roteador triplo no `LuaDuel_UI.cs`.
+*   **A Ponte C# / LUA:** O interpretador LUA cede (`yieldReq`) aguardando a interação da UI de Escavação. 
+*   **Consumo Físico:** Se o resultado for `SendtoGrave` ou `SendtoHand`, as funções LUA do `LuaDuel_Actions` escaneiam se a carta requerida está atualmente "flutuando" na interface (via `CardExcavatedUI.Instance.GetAndConsumeGhost`). Em caso positivo, em vez de arrancar uma nova carta fechada do deck, o C# assume a posição do fantasma 3D existente e continua o voo da tela direto para o cemitério ou mão, criando uma sensação fluida e tátil.
+
+### 5.15 Painel de Testes de Efeitos Visuais (EffectTestManager)
+Para agilizar a homologação de cinemáticas, voos e mecânicas visuais sem a necessidade de construir Decks e entrar em Duelos reais, a Engine possui o `EffectTestManager`.
+*   **Ativação:** Durante o *Play Mode*, pressione `Ctrl + E`.
+*   **Funcionalidades Principais:**
+    *   **Auras de Pouso:** Permite simular a cor do brilho gerado quando um monstro normal, de fusão ou mágica toca o campo.
+    *   **Voo de Cartas (Flights) e Extrações (Pop-out):** Testa a trajetória parabólica, velocidade, scale e rastros de sombra (`AttackTrailType`) de todas as rotas possíveis (ex: `Hand -> Field`, `GY -> Deck`).
+    *   **Escavação Dinâmica:** Testa a interface de Top Deck/Side Panel configurando um *Slider* com a quantidade de cartas desejada para simular o *Cyber Jar*.
+*   **Contexto Alternado:** O botão `Jogador/Oponente` inverte as lógicas espaciais, garantindo que você teste se as cartas inimigas nascem com a rotação de 180º correta.
+
 ### 5.9.2 Protocolo de Resolução e Mitigação
 *   **Monitoramento Implacável:** Se o Console da Unity gritar `<color=red>[LUA MISSING CONSTANT] NOME_DA_VARIAVEL</color>`, a prioridade máxima e imediata do desenvolvedor é abrir o arquivo original `constant.lua` do YGOPro (incluído no projeto como referência/cheat sheet), descobrir o valor numérico ou hexadecimal daquela constante, e injetá-la imediatamente no método `InjectVitalConstants()` da classe `LuaEngineCore.cs`.
 *   **Mitigação de Stubs (Funções Vazias):** Da mesma forma, se a engine alertar `<color=red>[LUA MISSING STUB] NomeDaClasse</color>` (ex: uma carta chamou `Coin.Toss()`), significa que uma classe de procedimento nativa em C# não foi exportada para o Lua. A Engine C# agora devolve uma tabela inofensiva (`dummyTable`) blindada contra crasches. No entanto, a prioridade do projeto é **diminuir a quantidade de Stubs Vazios**. Verifique o que a classe ausente estava tentando fazer e mapeie o comportamento visual ou lógico corretamente na Unity!

@@ -212,8 +212,18 @@ O controle de tempo da *Standby Phase* apresentou dois sintomas distintos que ma
 - **Correção Aplicada:** O `HoverAnimationRoutine` no `CardDisplay` estava memorizando e forçando a posição absoluta nos eixos X e Y (`basePosition`). Como a Mão usa um *Horizontal Layout Group* (que controla o X dinamicamente), ocorria uma "briga" entre a animação e o Layout. A corrotina foi alterada para interpolar estritamente o eixo Y (`anchoredPosition.y`), deixando o eixo X livre para a Unity deslizar a carta suavemente para os lados durante o Hover.
 
 
+## [Data Atual] - Sistema Híbrido de Escavação (Excavation e Voo de UI)
 
-# Lista de Logs (Log Library)
+**O Abismo Invisível do Cemitério e o Crash de Flight**
+* **Sintoma:** O envio da carta escavada para o cemitério resultava em `NullReferenceException` na `CardFlightRoutine` ou em uma carta sumindo no ar.
+* **A Causa Raiz:** O Painel de Escavação (`CardExcavatedUI`) criava "Fantasmas Burros" (objetos de UI apenas com RawImage) para otimizar a performance. O `LuaDuel_Actions` mandava esse fantasma burro para a rotina de voo `DuelFXManager`, mas o VFX tentava acessar o componente `CardDisplay` do fantasma para aplicar a textura do verso/frente, causando Crash. A invisibilidade ocorria porque o fantasma tentava voar na raiz da Cena em vez do Canvas UI.
+* **Solução:** Implementado o método inteligente `GetAndConsumeGhost()`. Agora o `CardExcavatedUI` clona um `CardPrefab` legítimo na mesma coordenada, destrói o fantasma burro, garante o aninhamento dentro do Canvas Master e entrega a carta de verdade para a rotina de voo.
 
-**SaveLoadMenu**
-        Debug.Log($"[SaveLoadMenu - {menuType}] Awake: Iniciando auto-configuração.");
+**O Pouso no Topo Real da Pilha (Deck Scaling)**
+* **Sintoma:** Quando o deck possuía 50 cartas, a animação de escavação parecia brotar flutuando muito acima da caixa do deck ou atravessando as cartas de baixo.
+* **A Causa Raiz:** O ponto de spawn (`startPos`) da animação referia-se à coordenada absoluta do GameObject pai `PlayerDeckDisplay`. Como a pilha cresce em Y (criando uma escadinha 3D falsa), o ponto base visual ficava lá no fundo.
+* **Solução:** O código agora procura qual é o último filho instanciado na árvore visual (`contentParent.childCount - 1`). O holograma nasce com perfeição absoluta colado nas costas da última carta do baralho.
+
+**Limpeza Fervorosa no Painel de Testes (ClearFieldForTesting)**
+* **Sintoma:** O uso repetitivo do botão "Testar Escavação" no EffectTestManager congelava as sombras (`CardTrailGhost`) permanentemente na tela e poluía a cena.
+* **Solução:** Introduzido o `ClearCards()` no `CardExcavatedUI`. A função aplica um *Kill Switch* (`StopAllCoroutines`), aniquila qualquer GameObject com prefixo `ExcavatedGhost` ou `TrailGhost` do Canvas, limpando o lixo visual dos testes e prevenindo memory leaks.

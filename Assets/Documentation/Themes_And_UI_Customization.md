@@ -61,3 +61,21 @@ O sistema `DuelFXManager` permite customizar o feedback visual tátil nas cartas
 ### 4.2 Ativação Preditiva 1-Click (Effect Activation Hover)
 *   **Contexto:** Ao ativar a opção `activateEffectsWithOneClick` no `GameManager`, o jogo desabilita a necessidade de abrir o submenu (`DuelActionMenu`) para ativar efeitos em campo.
 *   **Customização:** Para instruir visualmente o jogador sobre o que pode ser clicado, o `DuelFXManager` -> `--- EFFECT ACTIVATION (HOVER) ---` instanciará automaticamente o Prefab configurado (Ex: um balão pulsante com o texto "Activate") sempre que o cursor passar por cima de uma carta válida. O jogador clica com o botão esquerdo e o efeito explode em velocidade máxima.
+
+---
+
+## 5. Sistema de Escavação e Espionagem (Excavation)
+O jogo conta com um sistema cinemático dedicado para cartas que revelam o topo do deck (ex: *Archfiend's Oath*, *Cyber Jar*). O modo visual pode ser alterado no **GameManager** (`Excavation Mode`), e os detalhes gráficos são refinados no **DuelFXManager**.
+
+### 5.1 Modos de Escavação (`GameManager.ExcavationMode`)
+*   **`TopOfDeck`:** A carta "brota" do deck, levita no próprio eixo, dá um Flip 3D (mostrando a face para a tela) e aguarda. É a opção mais limpa e imersiva para escavações de alvo único.
+*   **`SidePanel`:** A carta sai do deck em um arco parabólico e pousa em uma "bandeja" lateral (`CardExcavatedUI`). Ideal para enfileirar múltiplas cartas lidas de uma só vez (ex: 5 cartas do *Cyber Jar*).
+*   **`ModalWindow`:** Abre a janela clássica e opaca de seleção no meio da tela (`CardSelectionUI`). Útil para ler textos longos, remetendo aos jogos clássicos de GBA/PC.
+
+### 5.2 Customização no DuelFXManager (`ExcavationSettings`)
+Em `DuelFXManager` -> `--- ESCAVAÇÃO (REVEAL) ---`, há dois perfis isolados (`excavationTopOfDeck` e `excavationSidePanel`).
+*   **`duration`**: Tempo de voo e revelação.
+*   **`popOffset` (X, Y)**: A distância que a carta viaja em relação ao topo físico do deck. No `TopOfDeck`, um valor de Y pequeno faz a carta pular suavemente.
+*   **`startScaleMult` / `endScaleMult`**: Tamanho inicial e final da carta projetada na tela.
+*   **`flipScaleMult`**: O "esmagamento 3D". É a escala no eixo X e Y que a carta atinge no pico do ar, no exato momento em que vira, criando a ilusão matemática de profundidade tridimensional.
+*   **`useTrail` / `trailType`**: Adiciona rastros de luz ou clones espectrais (Shadows) para acompanhar o voo parabólico.

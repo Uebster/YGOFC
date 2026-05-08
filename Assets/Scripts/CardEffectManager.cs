@@ -406,14 +406,14 @@ public class CardEffectManager : MonoBehaviour
             {
                 while (isWaitingForLuaYield) yield return null;
             }
-            else if (result.Type == DataType.String)
+            else if (result.Type == DataType.String || result.Type == DataType.Tuple)
             {
-                string yieldCmd = result.String;
+                string yieldCmd = result.Type == DataType.String ? result.String : (result.Tuple.Length > 0 ? result.Tuple[0].String : "");
                 if (yieldCmd == "WaitChain")
                 {
                     yield return new WaitWhile(() => chainManager.activeChainTasks > 0 || eventManager.isProcessingTriggers);
                 }
-                else if (yieldCmd.StartsWith("FastEffectWindow"))
+                else if (yieldCmd != null && yieldCmd.StartsWith("FastEffectWindow"))
                 {
                     int eventCode = 0;
                     int explicitTiming = 0;
@@ -426,6 +426,10 @@ public class CardEffectManager : MonoBehaviour
                     yield return StartCoroutine(OpenFastEffectWindow("Evento LUA", eventCode, null, explicitTiming));
                 }
                 else if (yieldCmd == "UI_Wait")
+                {
+                    while (isWaitingForLuaYield) yield return null;
+                }
+                else
                 {
                     while (isWaitingForLuaYield) yield return null;
                 }
@@ -476,14 +480,14 @@ public class CardEffectManager : MonoBehaviour
             {
                 while (isWaitingForLuaYield) yield return null;
             }
-            else if (result.Type == DataType.String)
+            else if (result.Type == DataType.String || result.Type == DataType.Tuple)
             {
-                string yieldCmd = result.String;
+                string yieldCmd = result.Type == DataType.String ? result.String : (result.Tuple.Length > 0 ? result.Tuple[0].String : "");
                 if (yieldCmd == "WaitChain")
                 {
                     yield return new WaitWhile(() => chainManager.activeChainTasks > 0 || eventManager.isProcessingTriggers);
                 }
-            else if (yieldCmd.StartsWith("FastEffectWindow"))
+            else if (yieldCmd != null && yieldCmd.StartsWith("FastEffectWindow"))
             {
                 int eventCode = 0;
                 int explicitTiming = 0;
@@ -521,6 +525,10 @@ public class CardEffectManager : MonoBehaviour
                         storedTarget.unityCard.RevealCard(true, true);
                         yield return new WaitForSeconds(0.8f); // Pausa pra ver o flip dramático
                     }
+                }
+                else
+                {
+                    while (isWaitingForLuaYield) yield return null;
                 }
             }
             
