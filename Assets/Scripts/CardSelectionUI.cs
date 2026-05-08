@@ -337,6 +337,12 @@ public class CardSelectionUI : MonoBehaviour
 
     void CancelSelection()
     {
+        if (!gameObject.activeInHierarchy)
+        {
+            FinishClose(false);
+            return;
+        }
+
         if (isAnimating) return;
         if (!canCancelSelection)
         {
@@ -373,16 +379,28 @@ public class CardSelectionUI : MonoBehaviour
 
         if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null && sourceList != null && sourceList.Count > 0)
         {
-            if (GameManager.Instance.GetPlayerMainDeck().Contains(sourceList[0]) && GameManager.Instance.duelFieldUI.playerDeck != null)
-            {
-                deckSourcePos = GameManager.Instance.duelFieldUI.playerDeck.position;
-                isPlayerSource = true;
-            }
-            else if (GameManager.Instance.GetOpponentMainDeck().Contains(sourceList[0]) && GameManager.Instance.duelFieldUI.opponentDeck != null)
-            {
-                deckSourcePos = GameManager.Instance.duelFieldUI.opponentDeck.position;
-                isPlayerSource = false;
-            }
+            CardData firstCard = sourceList[0];
+            bool foundPile = false;
+
+            System.Action<List<CardData>, PileDisplay, bool> CheckPile = (pileList, pileDisplay, isPlayer) => {
+                if (!foundPile && pileList != null && pileList.Contains(firstCard) && pileDisplay != null) {
+                    deckSourcePos = pileDisplay.transform.position;
+                    if (pileDisplay.contentParent != null && pileDisplay.contentParent.childCount > 0) {
+                        deckSourcePos = pileDisplay.contentParent.GetChild(pileDisplay.contentParent.childCount - 1).position;
+                    }
+                    isPlayerSource = isPlayer;
+                    foundPile = true;
+                }
+            };
+
+            CheckPile(GameManager.Instance.GetPlayerMainDeck(), GameManager.Instance.playerDeckDisplay, true);
+            CheckPile(GameManager.Instance.GetOpponentMainDeck(), GameManager.Instance.opponentDeckDisplay, false);
+            CheckPile(GameManager.Instance.GetPlayerGraveyard(), GameManager.Instance.playerGraveyardDisplay, true);
+            CheckPile(GameManager.Instance.GetOpponentGraveyard(), GameManager.Instance.opponentGraveyardDisplay, false);
+            CheckPile(GameManager.Instance.GetPlayerExtraDeck(), GameManager.Instance.playerExtraDeckDisplay, true);
+            CheckPile(GameManager.Instance.GetOpponentExtraDeck(), GameManager.Instance.opponentExtraDeckDisplay, false);
+            CheckPile(GameManager.Instance.GetPlayerRemoved(), GameManager.Instance.playerRemovedDisplay, true);
+            CheckPile(GameManager.Instance.GetOpponentRemoved(), GameManager.Instance.opponentRemovedDisplay, false);
         }
 
         // PLAYER: Da Esquerda para a Direita (0 -> N)
@@ -400,7 +418,7 @@ public class CardSelectionUI : MonoBehaviour
             
             if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.spellSound);
             
-            StartCoroutine(FlyGhostCard(deckSourcePos, targetPos, true, realCard.GetComponent<CanvasGroup>(), settings));
+            StartCoroutine(FlyGhostCard(deckSourcePos, targetPos, true, realCard.GetComponent<CanvasGroup>(), settings, realCard.GetComponent<CardDisplay>().CurrentCardData));
             yield return new WaitForSeconds(0.15f); // Intervalo de cascata
         }
 
@@ -430,7 +448,7 @@ public class CardSelectionUI : MonoBehaviour
             if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.spellSound);
             
             CardFlightSettings settings = DuelFXManager.Instance != null ? DuelFXManager.Instance.flightCardSelectionUI : new CardFlightSettings();
-            StartCoroutine(FlyGhostCard(startPos, deckSourcePos, false, cg, settings));
+            StartCoroutine(FlyGhostCard(startPos, deckSourcePos, false, cg, settings, realCard.GetComponent<CardDisplay>().CurrentCardData));
             yield return new WaitForSeconds(0.15f);
         }
 
@@ -439,7 +457,17 @@ public class CardSelectionUI : MonoBehaviour
         FinishClose(isConfirm);
     }
 
-    private IEnumerator FlyGhostCard(Vector3 start, Vector3 end, bool isIntro, CanvasGroup realCardCG, CardFlightSettings settings)
+    private IEnumerator LoadTextureForGhost(RawImage ri, CardData cData)
+    {
+        string url = "file://" + System.IO.Path.Combine(Application.streamingAssetsPath, cData.image_filename);
+        try { url = new System.Uri(System.IO.Path.Combine(Application.streamingAssetsPath, cData.image_filename)).AbsoluteUri; } catch { }
+        using (UnityEngine.Networking.UnityWebRequest request = UnityEngine.Networking.UnityWebRequestTexture.GetTexture(url)) {
+            yield return request.SendWebRequest();
+            if (request.result == UnityEngine.Networking.UnityWebRequest.Result.Success && ri != null) ri.texture = UnityEngine.Networking.DownloadHandlerTexture.GetContent(request);
+        }
+    }
+
+    private IEnumerator FlyGhostCard(Vector3 start, Vector3 end, bool isIntro, CanvasGroup realCardCG, CardFlightSettings settings, CardData cData)
     {
         if (settings == null) settings = new CardFlightSettings();
 
@@ -527,7 +555,8 @@ public class CardSelectionUI : MonoBehaviour
                     flipped = true;
                     if (isIntro) {
                         if (frontTex == null && realCD != null) frontTex = realCD.GetFrontTexture();
-                        ri.texture = frontTex != null ? frontTex : backTex;
+                        if (frontTex != null) ri.texture = frontTex;
+                        else StartCoroutine(LoadTextureForGhost(ri, cData));
                     } else {
                         ri.texture = backTex; // Se tiver saindo, vira pro verso
                     }

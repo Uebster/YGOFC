@@ -147,6 +147,9 @@ public partial class LuaDuel
                 
                 if (DuelFXManager.Instance != null && !GameManager.Instance.isSimulating && sourceLoc != CardLocation.Unknown)
                 {
+                    GameObject excavatedGhost = CardExcavatedUI.Instance != null ? CardExcavatedUI.Instance.GetAndConsumeGhost(c.unityData) : null;
+                    Vector3 startPos = c.unityCard != null ? c.unityCard.transform.position : (excavatedGhost != null ? excavatedGhost.transform.position : GetPilePosition(sourceLoc, wasPlayerPile));
+
                     CardFlightSettings flightSettings = null;
                     if (sourceLoc == CardLocation.Deck) flightSettings = DuelFXManager.Instance.flightDeckToGraveyard;
                     else if (sourceLoc == CardLocation.ExtraDeck) flightSettings = DuelFXManager.Instance.flightExtraToGraveyard;
@@ -154,7 +157,6 @@ public partial class LuaDuel
 
                     if (flightSettings != null && flightSettings.enableFlight)
                     {
-                        Vector3 startPos = c.unityCard != null ? c.unityCard.transform.position : GetPilePosition(sourceLoc, wasPlayerPile);
                         Vector3 endPos = wasPlayerPile ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position;
                         Quaternion rot = wasPlayerPile ? Quaternion.identity : Quaternion.Euler(0, 0, 180f);
                         
@@ -164,6 +166,12 @@ public partial class LuaDuel
                         {
                             bool animDone = false;
                             DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, rot, rot, flightSettings, false, () => animDone = true, c.unityCard.gameObject);
+                            yield return new WaitUntil(() => animDone);
+                        }
+                        else if (excavatedGhost != null)
+                        {
+                            bool animDone = false;
+                            DuelFXManager.Instance.PlayCardFlight(c.unityData, GameManager.Instance.GetCardBackTexture(), true, true, startPos, endPos, GameManager.Instance.fieldCardScale, GameManager.Instance.fieldCardScale, rot, rot, flightSettings, false, () => animDone = true, excavatedGhost);
                             yield return new WaitUntil(() => animDone);
                         }
                         else if (isPile && DuelFXManager.Instance.extractionCinematic.enableExtraction)
@@ -756,8 +764,13 @@ public partial class LuaDuel
             {
                 bool wasPlayerPile;
                 CardLocation sLoc = RemoveDataFromAllPiles(c.unityData, out wasPlayerPile);
-                GameManager.Instance.AddCardToHand(c.unityData, wasPlayerPile, null, sLoc, false, wasPlayerPile);
+
+                GameObject excavatedGhost = CardExcavatedUI.Instance != null ? CardExcavatedUI.Instance.GetAndConsumeGhost(c.unityData) : null;
+                Vector3? customStartPos = excavatedGhost != null ? excavatedGhost.transform.position : null;
+
+                GameManager.Instance.AddCardToHand(c.unityData, wasPlayerPile, customStartPos, sLoc, false, wasPlayerPile);
                 
+                if (excavatedGhost != null) GameObject.Destroy(excavatedGhost);
                 if (c.unityCard != null) GameObject.Destroy(c.unityCard.gameObject);
                 count++;
                 if (GameManager.Instance == null || !GameManager.Instance.isSimulating)

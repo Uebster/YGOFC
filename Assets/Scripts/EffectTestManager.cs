@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -35,6 +36,8 @@ public class EffectTestManager : MonoBehaviour
     private List<string> extNames = new List<string>();
     private List<System.Action> extActions = new List<System.Action>();
     private bool extInitialized = false;
+
+    private int excavateAmount = 5;
 
     private Rect windowRect = new Rect(20, 20, 400, 650);
 
@@ -242,6 +245,24 @@ public class EffectTestManager : MonoBehaviour
         
         if (GUILayout.Button("► INICIAR EXTRAÇÃO", btnStyle)) { 
             extActions[selectedExtIndex]?.Invoke(); 
+        }
+
+        GUILayout.Space(5);
+        GUILayout.Label("<color=cyan><b>ESCAVAÇÃO (REVEAL TOP DECK)</b></color>");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button(GameManager.Instance.excavationMode == GameManager.ExcavationMode.TopOfDeck ? "[X] Topo" : "[ ] Topo", btnStyle)) GameManager.Instance.excavationMode = GameManager.ExcavationMode.TopOfDeck;
+        if (GUILayout.Button(GameManager.Instance.excavationMode == GameManager.ExcavationMode.SidePanel ? "[X] Lateral" : "[ ] Lateral", btnStyle)) GameManager.Instance.excavationMode = GameManager.ExcavationMode.SidePanel;
+        if (GUILayout.Button(GameManager.Instance.excavationMode == GameManager.ExcavationMode.ModalWindow ? "[X] Modal" : "[ ] Modal", btnStyle)) GameManager.Instance.excavationMode = GameManager.ExcavationMode.ModalWindow;
+        GUILayout.EndHorizontal();
+        
+        GUILayout.BeginHorizontal();
+        GUILayout.Label($"Quantidade: {excavateAmount}", GUILayout.Width(100));
+        excavateAmount = (int)GUILayout.HorizontalSlider(excavateAmount, 1, 10);
+        GUILayout.EndHorizontal();
+
+        if (GUILayout.Button($"► TESTAR ESCAVAÇÃO ({excavateAmount} CARTAS)", btnStyle)) {
+            ClearFieldForTesting();
+            TestExcavation(testAsOpponent ? 1 : 0);
         }
 
         GUILayout.Space(5);
@@ -609,6 +630,35 @@ public class EffectTestManager : MonoBehaviour
         GUI.DragWindow(new Rect(0, 0, 10000, 30)); // Torna a janela arrastável pelo topo
     }
 
+    private void TestExcavation(int playerInt)
+    {
+        List<CardData> cardsToShow = new List<CardData>();
+        List<CardData> deck = playerInt == 0 ? GameManager.Instance.GetPlayerMainDeck() : GameManager.Instance.GetOpponentMainDeck();
+        
+        for (int i = 0; i < excavateAmount; i++)
+        {
+            if (deck != null && deck.Count > i)
+                cardsToShow.Add(deck[i]);
+            else if (GameManager.Instance.cardDatabase.cardDatabase.Count > i)
+                cardsToShow.Add(GameManager.Instance.cardDatabase.cardDatabase[i]);
+        }
+
+        if (GameManager.Instance.excavationMode == GameManager.ExcavationMode.TopOfDeck || GameManager.Instance.excavationMode == GameManager.ExcavationMode.SidePanel)
+        {
+            if (CardExcavatedUI.Instance == null)
+                CardExcavatedUI.Instance = Resources.FindObjectsOfTypeAll<CardExcavatedUI>().FirstOrDefault(x => x.gameObject.scene.IsValid());
+
+            if (CardExcavatedUI.Instance != null)
+            {
+                CardExcavatedUI.Instance.ShowExcavatedCards(cardsToShow, playerInt == 0, () => { Debug.Log("Escavação concluída!"); });
+            }
+        }
+        else
+        {
+            GameManager.Instance.OpenCardMultiSelection(cardsToShow, "Top Deck Cards", 0, 0, (selected) => { Debug.Log("Escavação modal concluída!"); }, HighlightCategory.GenericTarget, true);
+        }
+    }
+
     // Wrapper para executar uma ação de teste, limpando o campo antes.
     private void TestAction(string buttonText, System.Action testAction, bool clearField = true)
     {
@@ -641,6 +691,7 @@ public class EffectTestManager : MonoBehaviour
         }
 
         if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
+        if (CardExcavatedUI.Instance != null) CardExcavatedUI.Instance.ClearCards();
 
         // Destrói os GameObjects e anula as referências
         if (playerMonster != null && playerMonster.gameObject != null) Destroy(playerMonster.gameObject);

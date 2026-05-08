@@ -59,18 +59,32 @@ public partial class LuaDuel
         CardEffectManager.Instance.isWaitingForLuaYield = true;
         CardEffectManager.Instance.yieldReturnValue = null;
 
+        int pInt = ConvertToInt(player);
         LuaGroup topCards = GetDecktopGroup(player, count);
         List<CardData> cardsToShow = topCards.cards.Select(c => c.unityData).Where(d => d != null).ToList();
 
-        string cardNames = string.Join(", ", cardsToShow.Select(c => c.name));
-        // Debug.Log($"<color=magenta>[LuaDuel LOG]</color> LUA pediu ConfirmDecktop. Revelando: {cardNames}");
-
         if (cardsToShow.Count > 0 && GameManager.Instance != null && !GameManager.Instance.isSimulating)
         {
+            if (GameManager.Instance.excavationMode == GameManager.ExcavationMode.TopOfDeck || GameManager.Instance.excavationMode == GameManager.ExcavationMode.SidePanel)
+            {
+                if (CardExcavatedUI.Instance == null)
+                    CardExcavatedUI.Instance = Resources.FindObjectsOfTypeAll<CardExcavatedUI>().FirstOrDefault(x => x.gameObject.scene.IsValid());
+
+                if (CardExcavatedUI.Instance != null)
+                {
+                    CardExcavatedUI.Instance.ShowExcavatedCards(cardsToShow, pInt == 0, () => {
+                        CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
+                        CardEffectManager.Instance.isWaitingForLuaYield = false;
+                    });
+                    return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("ConfirmDecktop") });
+                }
+            }
+
+            // Fallback para a janela antiga
             GameManager.Instance.OpenCardMultiSelection(cardsToShow, "Top Deck Cards", 0, 0, (selected) => {
                 CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
-            }, HighlightCategory.GenericTarget, true); // Force modal for deck view
+            }, HighlightCategory.GenericTarget, true);
         }
         else
         {

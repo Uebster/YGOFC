@@ -19,6 +19,13 @@ public partial class GameManager
     // Manipulações de Decks
     // ==============================================================================
 
+    public enum ExcavationMode { TopOfDeck, SidePanel, ModalWindow }
+
+    [Header("Escavação & Espionagem")]
+    public ExcavationMode excavationMode = ExcavationMode.TopOfDeck;
+    public bool autoExcavateFlow = true;
+    public float excavateAutoDelay = 1.5f;
+
     public void AddCardToHand(CardData cardData, bool isPlayer, Vector3? customStartPos = null, CardLocation sourceLoc = CardLocation.Deck, bool isFromFieldSpellZone = false, bool? originalOwner = null, bool isDraw = false)
     {
         // Tokens não podem existir na mão. Evaporam.

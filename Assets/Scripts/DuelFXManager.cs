@@ -188,6 +188,22 @@ public class CardFlightSettings
 }
 
 [System.Serializable]
+public class ExcavationSettings
+{
+    public float duration = 0.4f;
+    public Vector2 popOffset = new Vector2(0f, 15f);
+    public float startScaleMult = 1.0f;
+    public float flipScaleMult = 1.1f;
+    public float endScaleMult = 1.0f;
+    public float sidePanelSpacing = 90f;
+    public float sidePanelArcHeight = 100f;
+    public bool useTrail = false;
+    public AttackTrailType trailType = AttackTrailType.Shadows;
+    public float trailWidth = 15f;
+    public Color trailColor = new Color(0f, 1f, 1f, 0.5f);
+}
+
+[System.Serializable]
 public class ConnectionLineSettings
 {
     public bool drawLine = true;
@@ -359,6 +375,10 @@ public partial class DuelFXManager : MonoBehaviour
 
     [Header("--- EXTRAÇÃO CINEMÁTICA ---")]
     public ExtractionCinematicSettings extractionCinematic = new ExtractionCinematicSettings();
+
+    [Header("--- ESCAVAÇÃO (REVEAL) ---")]
+    public ExcavationSettings excavationTopOfDeck = new ExcavationSettings { duration = 0.4f, popOffset = new Vector2(0f, 15f), startScaleMult = 1.0f, flipScaleMult = 1.05f, endScaleMult = 1.0f, useTrail = false };
+    public ExcavationSettings excavationSidePanel = new ExcavationSettings { duration = 0.4f, popOffset = Vector2.zero, startScaleMult = 1.0f, sidePanelSpacing = 90f, sidePanelArcHeight = 100f, flipScaleMult = 1.3f, endScaleMult = 1.0f, useTrail = true, trailType = AttackTrailType.Shadows };
 
     [Header("--- MOVIMENTAÇÃO DE CARTAS (FLIGHT) ---")]
     public CardFlightSettings flightHandToField = new CardFlightSettings { enableFlight = true, duration = 0.3f, flightScale = 1.3f, useTrail = true, trailColor = new Color(0.5f, 1f, 0.5f, 0.5f) };
@@ -667,6 +687,7 @@ public partial class DuelFXManager : MonoBehaviour
     public AudioClip defenseSound;
     public AudioClip shuffleSound;
     public AudioClip monsterEffectSound;
+    public AudioClip drawSound;
 
     // Variáveis de BGM do Tema Atual
     private AudioClip currentBgmNormal;
