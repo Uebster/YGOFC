@@ -945,8 +945,14 @@ public partial class LuaDuel
                     if (c.unityCard != null) { sPos = c.unityCard.transform.position; sLoc = c.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand; }
                     else { sLoc = CardLocation.Graveyard; sPos = isPlayerSummoning ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position; }
                     
-                    GameManager.Instance.SpecialSummonFromData(c.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, originalOwner, sumTypeInt);
+                    CardDisplay newDisplay = GameManager.Instance.SpecialSummonFromData(c.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, originalOwner, sumTypeInt);
+                    
+                    if (CardEffectManager.Instance.activeLuaCards.ContainsKey(c.unityCard))
+                        CardEffectManager.Instance.activeLuaCards.Remove(c.unityCard);
                     GameObject.Destroy(c.unityCard.gameObject);
+                    
+                    c.unityCard = newDisplay;
+                    CardEffectManager.Instance.activeLuaCards[newDisplay] = c;
                 }
                 else if (c.unityData != null)
                 {
@@ -955,8 +961,13 @@ public partial class LuaDuel
                     Vector3 sPos = c.unityCard != null ? c.unityCard.transform.position : GetPilePosition(sLoc, wasPlayerPile);
                     CardDisplay newDisplay = GameManager.Instance.SpecialSummonFromData(c.unityData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, wasPlayerPile, sumTypeInt);
                     
-                    if (c.unityCard != null && c.unityCard != newDisplay) GameObject.Destroy(c.unityCard.gameObject);
+                    if (c.unityCard != null && c.unityCard != newDisplay) {
+                        if (CardEffectManager.Instance.activeLuaCards.ContainsKey(c.unityCard))
+                            CardEffectManager.Instance.activeLuaCards.Remove(c.unityCard);
+                        GameObject.Destroy(c.unityCard.gameObject);
+                    }
                     c.unityCard = newDisplay;
+                    CardEffectManager.Instance.activeLuaCards[newDisplay] = c;
                 }
             }
             // Debug.Log($"[Lua] Duel.SpecialSummon(Grupo)");
@@ -974,9 +985,14 @@ public partial class LuaDuel
                 if (card.unityCard != null) { sPos = card.unityCard.transform.position; sLoc = card.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand; }
                 else { sLoc = CardLocation.Graveyard; sPos = isPlayerSummoning ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position; }
                 
-                GameManager.Instance.SpecialSummonFromData(card.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, originalOwner, sumTypeInt);
+                CardDisplay newDisplay = GameManager.Instance.SpecialSummonFromData(card.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, originalOwner, sumTypeInt);
+                
+                if (CardEffectManager.Instance.activeLuaCards.ContainsKey(card.unityCard))
+                    CardEffectManager.Instance.activeLuaCards.Remove(card.unityCard);
                 GameObject.Destroy(card.unityCard.gameObject);
-                // Debug.Log($"[Lua] Duel.SpecialSummon({card.unityCard.CurrentCardData.name})");
+                
+                card.unityCard = newDisplay;
+                CardEffectManager.Instance.activeLuaCards[newDisplay] = card;
                 return true;
             }
             else if (card.unityData != null)
@@ -986,8 +1002,13 @@ public partial class LuaDuel
                 Vector3 sPos = card.unityCard != null ? card.unityCard.transform.position : GetPilePosition(sLoc, wasPlayerPile);
                 CardDisplay newDisplay = GameManager.Instance.SpecialSummonFromData(card.unityData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, wasPlayerPile, sumTypeInt);
                 
-                if (card.unityCard != null && card.unityCard != newDisplay) GameObject.Destroy(card.unityCard.gameObject);
+                if (card.unityCard != null && card.unityCard != newDisplay) {
+                    if (CardEffectManager.Instance.activeLuaCards.ContainsKey(card.unityCard))
+                        CardEffectManager.Instance.activeLuaCards.Remove(card.unityCard);
+                    GameObject.Destroy(card.unityCard.gameObject);
+                }
                 card.unityCard = newDisplay;
+                CardEffectManager.Instance.activeLuaCards[newDisplay] = card;
                 return true;
             }
         }

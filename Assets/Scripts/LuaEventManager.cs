@@ -645,6 +645,14 @@ public class LuaEventManager
 
         EventData ed = new EventData(lc, lc.GetControler(), 0, null, 0, lc.GetControler());
 
+        // Dispara EVENT_LEAVE_FIELD_P (1019) ANTES da carta perder seus vínculos
+        var leavePEffects = lc.registeredEffects.FindAll(e => e.code == 1019 && e.isTypeSingle); // EFFECT_TYPE_SINGLE
+        if (leavePEffects.Count > 0)
+        {
+            core.StartCoroutine(ProcessSingleEffectsRoutine(lc, leavePEffects, ed));
+        }
+        TriggerLuaEvent(1019, ed);
+
         // Dispara EVENT_LEAVE_FIELD (1015) ANTES da carta perder seus vínculos
         var leaveEffects = lc.registeredEffects.FindAll(e => e.code == 1015 && e.isTypeSingle); // EFFECT_TYPE_SINGLE
         if (leaveEffects.Count > 0)

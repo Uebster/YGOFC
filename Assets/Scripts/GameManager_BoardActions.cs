@@ -452,6 +452,13 @@ public partial class GameManager
         CardData data = card.CurrentCardData;
         string logPrefix = $"[MoveCard] {data.name} ({(isOwner ? "Player" : "Opponent")})";
 
+        // FIX: Garante que a Alma (LuaCard) saiba o motivo exato da morte ANTES dos gatilhos de saída do campo!
+        if (CardEffectManager.Instance != null)
+        {
+            LuaCard cachedLc = CardEffectManager.Instance.EnsureCardScriptLoaded(card);
+            if (cachedLc != null) cachedLc.currentReason = reason;
+        }
+
         // FIX: Respeita o comando CancelToGrave (Apenas para o destino Graveyard)
         if (destination == CardLocation.Graveyard && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
         {

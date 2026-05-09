@@ -198,8 +198,8 @@ public class ChainManager
                 resolvingLink = link; // Avisa o C# qual cápsula está sendo aberta agora
                 if (link.isDummy) continue; // Pula a execução física do dummy (apenas ancora a corrente)
 
-                // Dispara EVENT_CHAIN_SOLVING (1019) para permitir que Jinzo e afins neguem a resolução!
-                yield return core.StartCoroutine(core.eventManager.ProcessTriggersRoutine(1019, link.card));
+                // Dispara EVENT_CHAIN_SOLVING (1020) para permitir que Jinzo e afins neguem a resolução!
+                yield return core.StartCoroutine(core.eventManager.ProcessTriggersRoutine(1020, link.card));
 
                 if (link.isActivationNegated || link.isNegated)
                 {

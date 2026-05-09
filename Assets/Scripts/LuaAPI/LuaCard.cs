@@ -22,6 +22,7 @@ public partial class LuaCard
     public Dictionary<int, int> counters = new Dictionary<int, int>();
     public bool isProcComplete = false;
     public bool isCanceledToGrave = false;
+    public List<LuaCard> cardTargets = new List<LuaCard>();
 
     // --- CAMPOS DINÂMICOS LUA (Evita 'cannot access field' do MoonSharp) ---
     public DynValue fit_monster { get; set; } = DynValue.Nil;
@@ -535,7 +536,6 @@ public partial class LuaCard
     }
     
     public LuaCard GetHandler() { return this; }
-    public int GetCardTargetCount() { return 0; }
     public bool IsOriginalCodeRule(params object[] codes) { return IsCode(codes); }
     public bool IsFieldSpell() { return IsType(0x80000); }
     
@@ -559,7 +559,6 @@ public partial class LuaCard
     public LuaGroup GetColumnGroup() { return new LuaGroup(); } // [FUTURO] Importante para Link Monsters
     public LuaGroup GetOverlayGroup() { return new LuaGroup(); } // [FUTURO] Importante para Xyz Monsters (Materiais acoplados)
     public int GetOverlayCount() { return 0; } // [FUTURO] Importante para Xyz Monsters
-    public LuaGroup GetCardTarget() { return new LuaGroup(); }
     public bool HasNonZeroAttack() { return GetAttack() > 0; }
     public bool HasNonZeroDefense() { return GetDefense() > 0; }
     public bool IsCanChangePosition() { return true; }
@@ -785,7 +784,63 @@ public partial class LuaCard
         }
     }
 
-    public void SetCardTarget(object tc) { Debug.LogWarning($"[LUA STUB] SetCardTarget chamado em {unityData?.name}"); }
+    public void SetCardTarget(object tc) 
+    { 
+        List<LuaCard> added = new List<LuaCard>();
+        if (tc is LuaCard card && !cardTargets.Contains(card)) { cardTargets.Add(card); added.Add(card); }
+        else if (tc is LuaGroup group) { foreach(var c in group.cards) if (!cardTargets.Contains(c)) { cardTargets.Add(c); added.Add(c); } }
+
+        if (unityCard != null && unityCard.isOnField && GameManager.Instance != null)
+        {
+            foreach (var targetCard in added)
+            {
+                if (targetCard.unityCard != null && targetCard.unityCard.isOnField)
+                {
+                    // 1 = Targeting / Continuous Link (Apenas cria o fio conector, sem lógica de Equip)
+                    GameManager.Instance.CreateCardLink(unityCard, targetCard.unityCard, (CardLink.LinkType)1);
+                    
+                    // Chama a animação visual isoladamente
+                    if (DuelFXManager.Instance != null)
+                    {
+                        DuelFXManager.Instance.PlayEquipEffect(unityCard, targetCard.unityCard);
+                    }
+                }
+            }
+        }
+    }
+    public void CancelCardTarget(object tc) 
+    { 
+        List<LuaCard> removed = new List<LuaCard>();
+        if (tc is LuaCard card && cardTargets.Contains(card)) { cardTargets.Remove(card); removed.Add(card); }
+        else if (tc is LuaGroup group) { foreach(var c in group.cards) if (cardTargets.Contains(c)) { cardTargets.Remove(c); removed.Add(c); } }
+
+        if (unityCard != null && GameManager.Instance != null)
+        {
+            CardLink[] links = UnityEngine.Object.FindObjectsByType<CardLink>(UnityEngine.FindObjectsSortMode.None);
+            foreach (var rCard in removed)
+            {
+                if (rCard.unityCard != null)
+                    foreach(var link in links)
+                        if (link.source == unityCard && link.target == rCard.unityCard && (int)link.type == 1)
+                            UnityEngine.Object.Destroy(link.gameObject);
+            }
+        }
+    }
+    public void ClearCardTarget() 
+    { 
+        if (unityCard != null && GameManager.Instance != null)
+        {
+            CardLink[] links = UnityEngine.Object.FindObjectsByType<CardLink>(UnityEngine.FindObjectsSortMode.None);
+            foreach(var rCard in cardTargets)
+            {
+                if (rCard.unityCard != null)
+                    foreach(var link in links)
+                        if (link.source == unityCard && link.target == rCard.unityCard && (int)link.type == 1)
+                            UnityEngine.Object.Destroy(link.gameObject);
+            }
+        }
+        cardTargets.Clear(); 
+    }
     
     public bool IsStatus(object status) 
     { 
@@ -820,6 +875,8 @@ public partial class LuaCard
     
     public LuaCard GetFirstCardTarget() 
     { 
+        if (cardTargets.Count > 0) return cardTargets[0];
+        
         // Emulamos GetFirstCardTarget para Equip Spells retornando o alvo do equipamento
         if (unityData != null && (unityData.type.Contains("Equip") || unityData.property == "Equip"))
             return GetEquipTarget();
@@ -833,6 +890,9 @@ public partial class LuaCard
 
         return SafeDummyCard(); 
     }
+
+    public LuaGroup GetCardTarget() { LuaGroup g = new LuaGroup(); g.cards.AddRange(cardTargets); return g; }
+    public int GetCardTargetCount() { return cardTargets.Count; }
 
     public void SetTurnCounter(object ct) { Debug.LogWarning($"[LUA STUB] SetTurnCounter chamado em {unityData?.name}"); }
     public int GetLabel() { return 0; }
