@@ -269,9 +269,25 @@ public partial class LuaGroup
         }
         else
         {
-            if (UIManager.Instance != null)
+            if (GameManager.Instance != null)
             {
-                UIManager.Instance.ShowCardSelection(validCards, $"Selecione Cartas para somar {(exactMath ? "exatamente" : "pelo menos")} {targetSum}", minCount, maxCount, (selected) => {
+                System.Func<List<CardData>, bool> sumValidator = (selectedList) => {
+                    List<int> values = new List<int>();
+                    foreach (var d in selectedList) {
+                        var match = cards.Find(c => c.unityData == d);
+                        if (match != null) values.Add(EvaluateFuncAsInt(funcObj, match, extraArgs));
+                    }
+                    if (exactMath) return SubsetSumRecursive(values, targetSum, minCount, maxCount, true, 0, 0, 0);
+                    else return SubsetSumGreaterRecursive(values, targetSum, 0, new List<int>());
+                };
+
+                HighlightCategory cat = HighlightCategory.Tribute;
+                if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.resolvingLink != null) {
+                    var eff = CardEffectManager.Instance.chainManager.resolvingLink.effect;
+                    if (eff != null && eff.owner != null && eff.owner.unityData != null && eff.owner.unityData.type.Contains("Ritual")) cat = HighlightCategory.Ritual;
+                }
+
+                GameManager.Instance.StartDirectSelection(validCards, minCount, maxCount, sumValidator, $"Selecione Tributos (Soma {(exactMath ? "exata de" : "mínima de")} {targetSum})", (selected) => {
                     if (selected != null) {
                         foreach (var selData in selected) {
                             var match = cards.Find(c => c.unityData == selData);
@@ -279,7 +295,7 @@ public partial class LuaGroup
                         }
                     }
                     selectionDone = true;
-                });
+                }, cat);
             }
             else selectionDone = true;
         }
@@ -465,7 +481,30 @@ public partial class LuaGroup
 // ==============================================================================
 public partial class LuaGroup
 {
-    public bool Match(params object[] args) { Debug.LogWarning("[LUA STUB] Match"); return false; }
+    public void Match(object filterFunc, object excluded, params object[] extraArgs)
+    {
+        List<LuaCard> toRemove = new List<LuaCard>();
+        foreach (var c in cards)
+        {
+            if (excluded != null)
+            {
+                if (excluded is LuaCard excCard && c == excCard) { toRemove.Add(c); continue; }
+                if (excluded is LuaGroup excGroup && excGroup.cards.Contains(c)) { toRemove.Add(c); continue; }
+            }
+
+            if (filterFunc is Closure closure)
+            {
+                List<object> callArgs = new List<object> { c };
+                if (extraArgs != null && extraArgs.Length > 0) callArgs.AddRange(extraArgs);
+                try {
+                    DynValue res = closure.Call(callArgs.ToArray());
+                    if (res.Type == DataType.Boolean && !res.Boolean) toRemove.Add(c);
+                    else if (res.IsNil()) toRemove.Add(c);
+                } catch { toRemove.Add(c); }
+            }
+        }
+        foreach (var c in toRemove) cards.Remove(c);
+    }
 }
 
 // ==============================================================================

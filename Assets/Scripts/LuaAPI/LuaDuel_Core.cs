@@ -38,6 +38,7 @@ public partial class LuaDuel
     public List<Closure> endTurnCallbacks = new List<Closure>();
     public string lastHintMsg = "Select a target";
     public bool nextShuffleDisabled = false;
+    public long duelType = 0x400000000L | 0x4 | 0x8 | 0x20 | 0x8000000 | 0x10000000 | 0x20000000 | 0x40000000 | 0x80000000 | 0x100000000L | 0x200000000L; // Goat Format Flags
 
     private int ConvertToInt(object obj)
     {
@@ -190,7 +191,15 @@ public partial class LuaDuel
         return 0; // Fallback para PLAYER_ALL/PLAYER_NONE
     }
     public int GetBattleDamage(object player) { return 0; }
-    public bool IsDuelType(object type) { return true; }
+    public bool IsDuelType(object type) 
+    { 
+        long t = 0;
+        if (type is MoonSharp.Interpreter.DynValue dv && dv.Type == DataType.Number) t = (long)dv.Number;
+        else if (type is double d) t = (long)d;
+        else if (type is long l) t = l;
+        else if (type is int i) t = i;
+        return (duelType & t) != 0; 
+    }
 
     public int GetTurnPlayer()
     {

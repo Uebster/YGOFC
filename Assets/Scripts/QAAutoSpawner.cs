@@ -529,7 +529,7 @@ public class QAAutoSpawner : MonoBehaviour
         CardData dummyMonster = GameManager.Instance.cardDatabase.cardDatabase.FirstOrDefault(c => c.name.Contains("Blue-Eyes White Dragon") || (c.type.Contains("Monster") && c.atk >= 2500));
         if (dummyMonster != null) 
         {
-            GameManager.Instance.SpecialSummonFromData(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(dummyMonster)), isPlayer, -1, true, false, null, CardLocation.Unknown, isPlayer);
+            GameManager.Instance.SpecialSummonFromData(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(dummyMonster)), isPlayer, -1, true, false, null, CardLocation.Unknown, isPlayer, 0x40000000);
             Debug.Log($"<color=cyan>➕ [QA] Monstro de Teste injetado para o {(isPlayer ? "Jogador" : "Oponente")}.</color>");
         }
     }

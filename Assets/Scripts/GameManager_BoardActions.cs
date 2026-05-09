@@ -861,8 +861,7 @@ public partial class GameManager
                     }
 
                     System.Action onActivationComplete = () => {
-                        if (cardData.property == "Ritual") BeginRitualSummon(display);
-                        else if (cardData.name == "Polymerization" || cardData.name.Contains("Fusion")) BeginFusionSummon(display);
+                        if (cardData.name == "Polymerization" || cardData.name.Contains("Fusion")) BeginFusionSummon(display);
                         else if (CardEffectManager.Instance != null) CardEffectManager.Instance.ActivateCard(display, null, null);
                         
                         RefreshAllCardsVisuals();
@@ -967,11 +966,7 @@ public partial class GameManager
 
         System.Action onActivationComplete = () => {
             // Integração com Interfaces Customizadas e LUA
-            if (cardData.property == "Ritual")
-            {
-                BeginRitualSummon(display);
-            }
-            else if (cardData.name == "Polymerization" || cardData.name.Contains("Fusion"))
+            if (cardData.name == "Polymerization" || cardData.name.Contains("Fusion"))
             {
                 BeginFusionSummon(display);
             }

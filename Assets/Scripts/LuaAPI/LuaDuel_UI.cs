@@ -1033,6 +1033,19 @@ public partial class LuaDuel
             int combinedLoc = ConvertToInt(locSelf) | ConvertToInt(locOpp);
             bool forceModal = (combinedLoc & (0x01 | 0x10 | 0x20 | 0x40)) != 0;
 
+            if (category == HighlightCategory.GenericTarget)
+            {
+                if (CardEffectManager.Instance != null && CardEffectManager.Instance.chainManager != null && CardEffectManager.Instance.chainManager.resolvingLink != null)
+                {
+                    var eff = CardEffectManager.Instance.chainManager.resolvingLink.effect;
+                    if (eff != null && eff.owner != null && eff.owner.unityData != null)
+                    {
+                        if (eff.owner.unityData.type.Contains("Ritual")) category = HighlightCategory.Ritual;
+                        else if (eff.owner.unityData.type.Contains("Fusion")) category = HighlightCategory.Fusion;
+                    }
+                }
+            }
+
             GameManager.Instance.OpenCardMultiSelection(selectableData, promptTitle, ConvertToInt(min), ConvertToInt(max), (selectedList) => {
                 LuaGroup selectedGroup = new LuaGroup();
                 foreach (var data in selectedList)

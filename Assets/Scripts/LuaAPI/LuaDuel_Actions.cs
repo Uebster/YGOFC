@@ -718,7 +718,18 @@ public partial class LuaDuel
         CardEffectManager.Instance.isWaitingForLuaYield = false;
     }
 
-    public void ReleaseRitualMaterial(object target) { Debug.LogWarning("[LUA STUB] ReleaseRitualMaterial chamado (O C# assume a destruição física através da UI de Ritual!)"); }
+    public DynValue ReleaseRitualMaterial(object target) 
+    { 
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+        if (target is LuaGroup group && RitualManager.Instance != null)
+        {
+            this.lastCostGroup = group;
+            CardEffectManager.Instance.StartCoroutine(RitualManager.Instance.ReleaseRitualMaterialRoutine(group));
+        }
+        else { CardEffectManager.Instance.isWaitingForLuaYield = false; CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(0); }
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("ReleaseRitualMaterial") });
+    }
 
     public void RaiseEvent(object eg, object code, object re, object r, object rp, object ep, object ev)
     {
@@ -922,101 +933,104 @@ public partial class LuaDuel
         return CardLocation.Unknown;
     }
 
-    public bool SpecialSummon(object target, object sumtype, object sumplayer, object player, object nocheck, object nolimit, object pos)
+    public DynValue SpecialSummon(object target, object sumtype, object sumplayer, object player, object nocheck, object nolimit, object pos)
+    {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
+        CardEffectManager.Instance.StartCoroutine(SpecialSummonRoutine(target, sumtype, sumplayer, player, nocheck, nolimit, pos));
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SpecialSummon") });
+    }
+
+    private IEnumerator SpecialSummonRoutine(object target, object sumtype, object sumplayer, object player, object nocheck, object nolimit, object pos)
     {
         bool isPlayerSummoning = IsPlayer(player);
         int posInt = ConvertToInt(pos);
-        bool inDefense = (posInt & 0x8) != 0 || (posInt & 0xA) != 0; // Verifica se tem flag de defesa
-
         int sumTypeInt = ConvertToInt(sumtype);
-        if (sumTypeInt == 0) sumTypeInt = 0x40000000; // Fallback garantido para SUMMON_TYPE_SPECIAL
+        if (sumTypeInt == 0) sumTypeInt = 0x40000000;
 
-        if (target is LuaGroup group && group.cards.Count > 0)
+        List<LuaCard> cardsToSummon = new List<LuaCard>();
+        if (target is LuaGroup group) cardsToSummon.AddRange(group.cards);
+        else if (target is LuaCard card) cardsToSummon.Add(card);
+
+        int count = 0;
+
+        foreach (var c in cardsToSummon)
         {
-            foreach (var c in group.cards)
+            bool inDefense = false;
+            bool faceDown = false;
+            bool posDecided = false;
+
+            if (posInt == 0x5) // POS_FACEUP
             {
-                if (c.unityCard != null && !c.unityCard.isInPile)
+                if (UIManager.Instance != null && isPlayerSummoning && !GameManager.Instance.isSimulating)
                 {
-                    bool originalOwner = c.unityCard.ownerPlayer;
-                    if (GameManager.Instance.playerHand.Contains(c.unityCard.gameObject)) GameManager.Instance.playerHand.Remove(c.unityCard.gameObject);
-                    else if (GameManager.Instance.opponentHand.Contains(c.unityCard.gameObject)) GameManager.Instance.opponentHand.Remove(c.unityCard.gameObject);
-                    
-                    Vector3? sPos = null; CardLocation sLoc = CardLocation.Unknown;
-                    if (c.unityCard != null) { sPos = c.unityCard.transform.position; sLoc = c.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand; }
-                    else { sLoc = CardLocation.Graveyard; sPos = isPlayerSummoning ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position; }
-                    
-                    CardDisplay newDisplay = GameManager.Instance.SpecialSummonFromData(c.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, originalOwner, sumTypeInt);
-                    
+                    CardData data = c.unityCard != null ? c.unityCard.CurrentCardData : c.unityData;
+                    UIManager.Instance.ShowPositionSelection(data, (selectedPos) => {
+                        inDefense = (selectedPos == CardDisplay.BattlePosition.Defense);
+                        faceDown = false;
+                        posDecided = true;
+                    });
+                    yield return new WaitUntil(() => posDecided);
+                }
+                else { inDefense = false; faceDown = false; }
+            }
+            else
+            {
+                inDefense = (posInt & 0x8) != 0 || (posInt & 0xA) != 0;
+                faceDown = (posInt & 0xA) != 0 || (posInt & 0x2) != 0;
+            }
+
+            bool originalOwner = c.unityCard != null ? c.unityCard.ownerPlayer : (c.ownerPlayerIndex == 0);
+            
+            List<CardData> spMats = null;
+            if ((sumTypeInt & 0x45000000) == 0x45000000 && RitualManager.Instance != null && RitualManager.Instance.lastRitualTributes != null)
+            {
+                spMats = new List<CardData>();
+                foreach(var mat in RitualManager.Instance.lastRitualTributes.cards) if (mat.unityData != null) spMats.Add(mat.unityData);
+            }
+
+            if (c.unityCard != null && !c.unityCard.isInPile)
+            {
+                if (GameManager.Instance.playerHand.Contains(c.unityCard.gameObject)) GameManager.Instance.playerHand.Remove(c.unityCard.gameObject);
+                else if (GameManager.Instance.opponentHand.Contains(c.unityCard.gameObject)) GameManager.Instance.opponentHand.Remove(c.unityCard.gameObject);
+                
+                Vector3? sPos = c.unityCard.transform.position; 
+                CardLocation sLoc = c.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand;
+                
+                CardDisplay newDisplay = GameManager.Instance.SpecialSummonFromData(c.unityCard.CurrentCardData, isPlayerSummoning, -1, !inDefense, faceDown, sPos, sLoc, originalOwner, sumTypeInt, spMats);
+                
+                if (CardEffectManager.Instance.activeLuaCards.ContainsKey(c.unityCard))
+                    CardEffectManager.Instance.activeLuaCards.Remove(c.unityCard);
+                GameObject.Destroy(c.unityCard.gameObject);
+                
+                c.unityCard = newDisplay;
+                CardEffectManager.Instance.activeLuaCards[newDisplay] = c;
+                count++;
+            }
+            else if (c.unityData != null)
+            {
+                bool wasPlayerPile; 
+                CardLocation sLoc = RemoveDataFromAllPiles(c, out wasPlayerPile);
+                Vector3 sPos = c.unityCard != null ? c.unityCard.transform.position : GetPilePosition(sLoc, wasPlayerPile);
+
+                CardDisplay newDisplay = GameManager.Instance.SpecialSummonFromData(c.unityData, isPlayerSummoning, -1, !inDefense, faceDown, sPos, sLoc, wasPlayerPile, sumTypeInt, spMats);
+                
+                if (c.unityCard != null && c.unityCard != newDisplay) {
                     if (CardEffectManager.Instance.activeLuaCards.ContainsKey(c.unityCard))
                         CardEffectManager.Instance.activeLuaCards.Remove(c.unityCard);
                     GameObject.Destroy(c.unityCard.gameObject);
-                    
-                    c.unityCard = newDisplay;
-                    CardEffectManager.Instance.activeLuaCards[newDisplay] = c;
                 }
-                else if (c.unityData != null)
-                {
-                    bool wasPlayerPile; 
-                    CardLocation sLoc = RemoveDataFromAllPiles(c, out wasPlayerPile);
-                    Vector3 sPos = c.unityCard != null ? c.unityCard.transform.position : GetPilePosition(sLoc, wasPlayerPile);
-                    CardDisplay newDisplay = GameManager.Instance.SpecialSummonFromData(c.unityData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, wasPlayerPile, sumTypeInt);
-                    
-                    if (c.unityCard != null && c.unityCard != newDisplay) {
-                        if (CardEffectManager.Instance.activeLuaCards.ContainsKey(c.unityCard))
-                            CardEffectManager.Instance.activeLuaCards.Remove(c.unityCard);
-                        GameObject.Destroy(c.unityCard.gameObject);
-                    }
-                    c.unityCard = newDisplay;
-                    CardEffectManager.Instance.activeLuaCards[newDisplay] = c;
-                }
-            }
-            // Debug.Log($"[Lua] Duel.SpecialSummon(Grupo)");
-            return true;
-        }
-        else if (target is LuaCard card)
-        {
-            if (card.unityCard != null && !card.unityCard.isInPile)
-            {
-                bool originalOwner = card.unityCard.ownerPlayer;
-                if (GameManager.Instance.playerHand.Contains(card.unityCard.gameObject)) GameManager.Instance.playerHand.Remove(card.unityCard.gameObject);
-                else if (GameManager.Instance.opponentHand.Contains(card.unityCard.gameObject)) GameManager.Instance.opponentHand.Remove(card.unityCard.gameObject);
-                
-                Vector3? sPos = null; CardLocation sLoc = CardLocation.Unknown;
-                if (card.unityCard != null) { sPos = card.unityCard.transform.position; sLoc = card.unityCard.isOnField ? CardLocation.Field : CardLocation.Hand; }
-                else { sLoc = CardLocation.Graveyard; sPos = isPlayerSummoning ? GameManager.Instance.playerGraveyardDisplay.transform.position : GameManager.Instance.opponentGraveyardDisplay.transform.position; }
-                
-                CardDisplay newDisplay = GameManager.Instance.SpecialSummonFromData(card.unityCard.CurrentCardData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, originalOwner, sumTypeInt);
-                
-                if (CardEffectManager.Instance.activeLuaCards.ContainsKey(card.unityCard))
-                    CardEffectManager.Instance.activeLuaCards.Remove(card.unityCard);
-                GameObject.Destroy(card.unityCard.gameObject);
-                
-                card.unityCard = newDisplay;
-                CardEffectManager.Instance.activeLuaCards[newDisplay] = card;
-                return true;
-            }
-            else if (card.unityData != null)
-            {
-                bool wasPlayerPile; 
-                CardLocation sLoc = RemoveDataFromAllPiles(card, out wasPlayerPile);
-                Vector3 sPos = card.unityCard != null ? card.unityCard.transform.position : GetPilePosition(sLoc, wasPlayerPile);
-                CardDisplay newDisplay = GameManager.Instance.SpecialSummonFromData(card.unityData, isPlayerSummoning, -1, true, inDefense, sPos, sLoc, wasPlayerPile, sumTypeInt);
-                
-                if (card.unityCard != null && card.unityCard != newDisplay) {
-                    if (CardEffectManager.Instance.activeLuaCards.ContainsKey(card.unityCard))
-                        CardEffectManager.Instance.activeLuaCards.Remove(card.unityCard);
-                    GameObject.Destroy(card.unityCard.gameObject);
-                }
-                card.unityCard = newDisplay;
-                CardEffectManager.Instance.activeLuaCards[newDisplay] = card;
-                return true;
+                c.unityCard = newDisplay;
+                CardEffectManager.Instance.activeLuaCards[newDisplay] = c;
+                count++;
             }
         }
-        
-        return false;
+
+        CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(count);
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
     }
-    
-    public bool SpecialSummonStep(object target, object sumtype, object sumplayer, object player, object nocheck, object nolimit, object pos)
+
+    public DynValue SpecialSummonStep(object target, object sumtype, object sumplayer, object player, object nocheck, object nolimit, object pos)
     {
         return SpecialSummon(target, sumtype, sumplayer, player, nocheck, nolimit, pos);
     }

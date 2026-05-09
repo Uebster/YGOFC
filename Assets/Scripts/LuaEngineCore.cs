@@ -172,12 +172,19 @@ public class LuaEngineCore
         // Assim, constant.lua, utility.lua e todas as dezenas de proc_*.lua (puxadas internamente) 
         // serão higienizadas para Lua 5.2 (MoonSharp) perfeitamente sem dar "unexpected symbol near |"
         luaEngine.Globals["CS_SafeLoadScript"] = DynValue.FromObject(luaEngine, (System.Action<string>)(scriptName => {
-            string path = System.IO.Path.Combine(Application.dataPath, "Scripts", "DMLuaScripts", scriptName);
-            if (!System.IO.File.Exists(path)) path = System.IO.Path.Combine(Application.dataPath, "Scripts", "LuaScripts", scriptName);
+            string path1 = System.IO.Path.Combine(Application.dataPath, "SupportLua", scriptName);
+            string path2 = System.IO.Path.Combine(Application.streamingAssetsPath, "SupportLua", scriptName);
+            string path3 = System.IO.Path.Combine(Application.dataPath, "Scripts", "DMLuaScripts", scriptName);
+            string path4 = System.IO.Path.Combine(Application.dataPath, "Scripts", "LuaScripts", scriptName);
             
-            if (System.IO.File.Exists(path)) {
+            string finalPath = System.IO.File.Exists(path1) ? path1 : 
+                              (System.IO.File.Exists(path2) ? path2 : 
+                              (System.IO.File.Exists(path3) ? path3 : 
+                              (System.IO.File.Exists(path4) ? path4 : null)));
+            
+            if (finalPath != null) {
                 try {
-                    string scriptCode = System.IO.File.ReadAllText(path);
+                    string scriptCode = System.IO.File.ReadAllText(finalPath);
                     scriptCode = LuaScriptLoader.SanitizeOCGScript(scriptCode);
                     luaEngine.DoString(scriptCode);
                     Debug.Log($"<color=green>[LuaDuel]</color> Biblioteca Oficial Carregada: {scriptName}");
@@ -432,7 +439,7 @@ public class LuaEngineCore
             end
 
             -- Bloqueio de Sincronia de Ações: Força o Lua a aguardar as animações do C# terminarem antes de prosseguir!
-            local actionfuncs = { 'Destroy', 'Draw', 'SendtoGrave', 'Remove', 'ChangePosition', 'TossCoin', 'TossDice', 'ConfirmCards' }
+            local actionfuncs = { 'Destroy', 'Draw', 'SendtoGrave', 'Remove', 'ChangePosition', 'TossCoin', 'TossDice', 'ConfirmCards', 'SpecialSummon', 'SpecialSummonStep' }
             for _, fname in ipairs(actionfuncs) do
                 local success, orig = pcall(function() return Duel[fname] end)
                 if success and type(orig) == 'function' then

@@ -19,7 +19,7 @@ public partial class GameManager
     // SUMMONS
     // ==============================================================================
 
-    public CardDisplay SpecialSummonFromData(CardData cardData, bool isPlayer, int zoneIndex = -1, bool inAttackPosition = true, bool faceDown = false, Vector3? sourcePos = null, CardLocation sourceLoc = CardLocation.Graveyard, bool? ownerIsPlayer = null, int summonType = 0x40000000)
+    public CardDisplay SpecialSummonFromData(CardData cardData, bool isPlayer, int zoneIndex = -1, bool inAttackPosition = true, bool faceDown = false, Vector3? sourcePos = null, CardLocation sourceLoc = CardLocation.Graveyard, bool? ownerIsPlayer = null, int summonType = 0x40000000, List<CardData> specialMaterials = null)
     {
         if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel.IsPlayerAffectedByEffect(isPlayer ? 0 : 1, 22)) 
         { // EFFECT_CANNOT_SPECIAL_SUMMON
@@ -93,11 +93,33 @@ public partial class GameManager
                 cardGO.transform.localPosition += new Vector3(0, adjustment, 0);
             }
 
-            if (CardEffectManager.Instance != null)
+            bool isFusion = cardData.type.Contains("Fusion");
+            bool isRitual = cardData.type.Contains("Ritual");
+            bool useCinematic = false;
+            if (isFusion) useCinematic = enableFusionCinematic && !isSimulating && !faceDown;
+            else if (isRitual) useCinematic = enableRitualCinematic && !isSimulating && !faceDown;
+            else useCinematic = enableSummonCinematics && !isSimulating && !faceDown && (summonType == 0x11000000); // Tribute
+            
+            if (useCinematic && DuelFXManager.Instance != null)
             {
-                CardEffectManager.Instance.OnSpecialSummon(cardDisplay);
+                cardDisplay.SetVisibility(false);
+                GameManager.Instance.pendingVisualTasks++;
+                System.Action onCinematicComplete = () => {
+                    cardDisplay.SetVisibility(true);
+                    DuelFXManager.Instance.PlaySummonAura(cardDisplay);
+                    if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnSpecialSummon(cardDisplay);
+                    GameManager.Instance.pendingVisualTasks--;
+                };
+
+                if (isFusion) DuelFXManager.Instance.PlayFusionCinematic(cardDisplay, specialMaterials, null, onCinematicComplete);
+                else if (isRitual) DuelFXManager.Instance.PlayRitualCinematic(cardDisplay, null, onCinematicComplete);
+                else DuelFXManager.Instance.PlaySummonCinematic(cardDisplay, true, false, onCinematicComplete);
             }
-            if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayPlacementAura(cardDisplay);
+            else
+            {
+                if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlayPlacementAura(cardDisplay);
+                if (CardEffectManager.Instance != null) CardEffectManager.Instance.OnSpecialSummon(cardDisplay);
+            }
         };
 
         if (sourcePos.HasValue && DuelFXManager.Instance != null && !isSimulating)

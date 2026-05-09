@@ -47,7 +47,6 @@ public class PythonAnalyzerStubs
     public void TargetBoolFunction() { Debug.LogWarning("[LUA STUB] TargetBoolFunction chamado"); }
     public void DoubleSnareValidity() { Debug.LogWarning("[LUA STUB] DoubleSnareValidity chamado"); }
     public void PayLP() { Debug.LogWarning("[LUA STUB] PayLP chamado"); }
-    public void Match() { Debug.LogWarning("[LUA STUB] Match chamado"); }
     public void FaceupFilter() { Debug.LogWarning("[LUA STUB] FaceupFilter chamado"); }
     public void SpElimFilter() { Debug.LogWarning("[LUA STUB] SpElimFilter chamado"); }
     public void SelectUnselectGroup() { Debug.LogWarning("[LUA STUB] SelectUnselectGroup chamado"); }

@@ -23,6 +23,7 @@ public partial class LuaCard
     public bool isProcComplete = false;
     public bool isCanceledToGrave = false;
     public List<LuaCard> cardTargets = new List<LuaCard>();
+    private LuaGroup _materialGroup = new LuaGroup();
 
     // --- CAMPOS DINÂMICOS LUA (Evita 'cannot access field' do MoonSharp) ---
     public DynValue fit_monster { get; set; } = DynValue.Nil;
@@ -388,7 +389,11 @@ public partial class LuaCard
     public bool IsCanAddCounter(object counterType, object count) { return true; }
     public int GetFieldID() { return 0; }
     public LuaGroup GetTarget() { return new LuaGroup(); }
-    public void SetMaterial(object g) { Debug.LogWarning($"[LUA STUB] SetMaterial chamado em {unityData?.name}"); }
+    public void SetMaterial(object g) 
+    { 
+        if (g is LuaGroup group) _materialGroup = group;
+        else if (g is LuaCard c) { _materialGroup = new LuaGroup(); _materialGroup.AddCard(c); }
+    }
     public LuaGroup GetAdminGroup() { return new LuaGroup(); }
     public bool IsSummonLocation(object loc) { return true; }
     public void SetStatus(object status, object enable) 
@@ -445,7 +450,7 @@ public partial class LuaCard
     public LuaGroup GetAttackableTarget() { return new LuaGroup(); }
     public bool IsAbleToChangeControler() { return true; }
     public bool IsSummonableCard() { return true; }
-    public LuaGroup GetMaterial() { return new LuaGroup(); }
+    public LuaGroup GetMaterial() { return _materialGroup ?? new LuaGroup(); }
     public int GetEffectCount(object code) 
     { 
         int targetCode = ConvertToInt(code);

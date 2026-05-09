@@ -211,7 +211,7 @@ public partial class GameManager
 
     // --- LÓGICA DE SELEÇÃO DIRETA DA MÃO ---
 
-    private void StartDirectSelection(List<CardData> candidates, int min, int max, System.Func<List<CardData>, bool> validator, string title, System.Action<List<CardData>> callback, HighlightCategory category = HighlightCategory.GenericTarget, bool canCancel = true)
+    public void StartDirectSelection(List<CardData> candidates, int min, int max, System.Func<List<CardData>, bool> validator, string title, System.Action<List<CardData>> callback, HighlightCategory category = HighlightCategory.GenericTarget, bool canCancel = true)
     {
         isSelectingFromHand = true;
         handSelectionCandidates = candidates;

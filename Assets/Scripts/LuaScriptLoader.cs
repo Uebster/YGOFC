@@ -181,19 +181,20 @@ public static class LuaScriptLoader
 
     public static string SanitizeOCGScript(string script)
     {
-        // 0. Remove comentários para evitar falsos positivos
-        script = Regex.Replace(script, @"--\[\[.*?\]\]", "", RegexOptions.Singleline);
-        script = Regex.Replace(script, @"--.*", "");
+        // 0.1 Remove Block Comments: --[[ ... ]]
+        script = Regex.Replace(script, @"--\[(?<eq>=*)\[[\s\S]*?\]\k<eq>\]", "", RegexOptions.Singleline);
 
-        // 0.5. Protege as strings literais para que o conversor não altere símbolos dentro de textos!
+        // 0.2 Extrai Strings Literais (incluindo string blocks [[ ]]) antes do removedor de linha única!
         List<string> stringLiterals = new List<string>();
-        script = Regex.Replace(script, @"""(?:\\.|[^""])*""|'(?:\\.|[^'])*'|\[\[[\s\S]*?\]\]", match => {
+        script = Regex.Replace(script, @"""(?:\\.|[^""])*""|'(?:\\.|[^'])*'|\[(?<eq>=*)\[[\s\S]*?\]\k<eq>\]", match => {
             stringLiterals.Add(match.Value);
             return $"__STR_LITERAL_{stringLiterals.Count - 1}__";
         });
 
+        // 0.3 Remove Single-Line Comments (Seguro agora que as strings estão protegidas)
+        script = Regex.Replace(script, @"--.*", "");
+        
         // 1. OCGCore Compatibility: Mathematical Type Sums & Methods
-        // O C# não entende a soma de bits (TYPE_SPELL + TYPE_TRAP). Redireciona para o LUA nativo inteligente.
         if (script.Contains("TYPE_SPELL") || script.Contains("TYPE_TRAP") || script.Contains("IsSpellTrap"))
         {
             // Padrão 1: Soma Tradicional (O que já tínhamos)
@@ -215,29 +216,50 @@ public static class LuaScriptLoader
         // O MoonSharp processa apenas o que sobrou.
         if (script.Contains("<<") || script.Contains(">>") || script.Contains("~") || script.Contains("&") || script.Contains("|") || script.Contains("//"))
         {
-            // Expressão Regular Poderosa para capturar variáveis, números, parênteses balanceados e cadeias de métodos OCGCore (ex: e:GetHandler():GetCode())
             string balancedParens = @"\((?>[^()]+|\((?<DEPTH>)|\)(?<-DEPTH>))*(?(DEPTH)(?!))\)";
-            string termBase = $@"(?:[\w_]+|{balancedParens})";
-            string termModifier = $@"(?:[\.:][\w_]+|\s*{balancedParens})";
-            string term = $@"(?:{termBase}{termModifier}*)";
+            string balancedBrackets = @"\[(?>[^\[\]]+|\[(?<DEPTH>)|\](?<-DEPTH>))*(?(DEPTH)(?!))\]";
+            string balancedBraces = @"\{(?>[^{}]+|\{(?<DEPTH>)|\}(?<-DEPTH>))*(?(DEPTH)(?!))\}";
 
-            script = Regex.Replace(script, $@"(?<![\w_\]\)]\s*)-\s*(\d+)\s*(?=(?:<<|>>|&|\||~))", "(-$1)");
+            string unaryOp = @"(?:-|#|not\s+)";
+            string luaNumber = @"(?:0x[0-9a-fA-F]+|\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)";
+            string termBase = $@"(?:(?:{unaryOp})*\s*(?:[a-zA-Z_]\w*|{luaNumber}|\s*{balancedParens}|\s*{balancedBraces}))";
+            string termModifier = $@"(?:[\.:][a-zA-Z_]\w*|\s*{balancedParens}|\s*{balancedBrackets})";
+            string singleTerm = $@"(?:{termBase}{termModifier}*)";
 
-            // Aplica múltiplas passadas priorizadas para resolver encadeamentos como A | (B & ~C) perfeitamente
-            string prev = "";
-            while (script != prev) { prev = script; script = Regex.Replace(script, $@"({term})\s*~(?!=)\s*({term})", "bit32.bxor($1, $2)"); }
-            prev = "";
-            while (script != prev) { prev = script; script = Regex.Replace(script, $@"~(?!=)\s*({term})", "bit32.bnot($1)"); }
-            prev = "";
-            while (script != prev) { prev = script; script = Regex.Replace(script, $@"({term})\s*//\s*({term})", "math.floor($1 / $2)"); }
-            prev = "";
-            while (script != prev) { prev = script; script = Regex.Replace(script, $@"({term})\s*<<\s*({term})", "bit32.lshift($1, $2)"); }
-            prev = "";
-            while (script != prev) { prev = script; script = Regex.Replace(script, $@"({term})\s*>>\s*({term})", "bit32.rshift($1, $2)"); }
-            prev = "";
-            while (script != prev) { prev = script; script = Regex.Replace(script, $@"({term})\s*&\s*({term})", "bit32.band($1, $2)"); }
-            prev = "";
-            while (script != prev) { prev = script; script = Regex.Replace(script, $@"({term})\s*\|\s*({term})", "bit32.bor($1, $2)"); }
+            string mathOp = @"(?:\+|-|\*|/|%|\^|\.\.)";
+            string expr = $@"(?:{singleTerm}(?:\s*{mathOp}\s*{singleTerm})*)";
+            
+            string opOrKw = @"(^|[-+*/%^=<>&|~,\(\[\{;:\n\r]|\b(?:return|and|or|not|if|elseif|then|do|while|repeat|until)\b)";
+
+            // LOOP GLOBAL: Resolve a matemática de dentro para fora respeitando a Precedência Estrita do Lua 5.3!
+            string prevGlobal = "";
+            while (script != prevGlobal)
+            {
+                prevGlobal = script;
+                
+                string prev = "";
+                while (script != prev) { prev = script; script = Regex.Replace(script, $@"({singleTerm})\s*//\s*({singleTerm})", "math.floor($1 / $2)"); }
+                
+                prev = "";
+                // Unary NOT (Robusto contra keywords e operadores binários)
+                while (script != prev) { prev = script; script = Regex.Replace(script, $@"{opOrKw}\s*~(?!=)\s*({singleTerm})", "$1bit32.bnot($2)"); }
+
+                prev = "";
+                while (script != prev) { prev = script; script = Regex.Replace(script, $@"({expr})\s*<<\s*({expr})", "bit32.lshift($1, $2)"); }
+                
+                prev = "";
+                while (script != prev) { prev = script; script = Regex.Replace(script, $@"({expr})\s*>>\s*({expr})", "bit32.rshift($1, $2)"); }
+                
+                prev = "";
+                while (script != prev) { prev = script; script = Regex.Replace(script, $@"({expr})\s*&\s*({expr})", "bit32.band($1, $2)"); }
+                
+                prev = "";
+                // Binary XOR
+                while (script != prev) { prev = script; script = Regex.Replace(script, $@"({expr})\s*~(?!=)\s*({expr})", "bit32.bxor($1, $2)"); }
+                
+                prev = "";
+                while (script != prev) { prev = script; script = Regex.Replace(script, $@"({expr})\s*\|\s*({expr})", "bit32.bor($1, $2)"); }
+            }
         }
 
         // Loop Direto

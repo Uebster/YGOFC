@@ -205,15 +205,30 @@ public partial class LuaDuel
     }
 
     public bool IsPlayerCanSpecialSummon(object player) { return true; }
-    public int GetMZoneCount(object player) { return 5; }
+    
+    public int GetMZoneCount(object player, object releasedGroup = null, object reasonPlayer = null) 
+    { 
+        int p = ConvertToInt(player);
+        int count = GetLocationCount(p, 0x04);
+        
+        if (releasedGroup is LuaGroup rg)
+        {
+            foreach (var c in rg.cards)
+            {
+                if (c.unityCard != null && c.unityCard.isOnField && c.GetControler() == p && c.IsLocation(0x04))
+                    count++; // A engine adivinha que a zona vai abrir espaço!
+            }
+        }
+        return count; 
+    }
     public bool IsCanAddCounter(object player, object counterType, object count, object card) { return true; }
     public LuaGroup GetReleaseGroup(object player, object hand = null) { return new LuaGroup(); }
     public LuaGroup GetTributeGroup(object card) { return new LuaGroup(); }
 
     public LuaGroup GetRitualMaterial(object player, object nocheck = null)
     {
-        // Stub blindado: Retorna a Mão (0x02) e o Campo (0x04) do jogador para o proc_ritual.lua aprovar o chk=0 da ativação.
-        return GetMatchingGroup(null, player, 0x02 | 0x04, 0, null);
+        if (RitualManager.Instance != null) return RitualManager.Instance.GetRitualMaterial(ConvertToInt(player), nocheck);
+        return new LuaGroup();
     }
 
     public int GetMatchingGroupCount(object filterFunc, object player, object locSelf, object locOpp, object excluded, params object[] extraArgs) 
@@ -289,6 +304,14 @@ public partial class LuaDuel
         if (target is LuaGroup g) currentTargetGroup.cards.AddRange(g.cards);
         else if (target is LuaCard c) currentTargetGroup.AddCard(c);
     }
+    
+    public LuaGroup _selectedCardGroup;
+    public void SetSelectedCard(object target) {
+        _selectedCardGroup = new LuaGroup();
+        if (target is LuaGroup g) _selectedCardGroup.cards.AddRange(g.cards);
+        else if (target is LuaCard c) _selectedCardGroup.AddCard(c);
+    }
+    
     public void ClearTargetCard() { 
         currentTargetGroup = new LuaGroup(); 
     }
@@ -766,7 +789,6 @@ public partial class LuaDuel
     public void SetChainLimitTillChainEnd(params object[] args) { Debug.LogWarning("[LUA STUB] SetChainLimitTillChainEnd"); }
     public void SetFusionMaterial(params object[] args) { Debug.LogWarning("[LUA STUB] SetFusionMaterial"); }
     public void SetLP(params object[] args) { Debug.LogWarning("[LUA STUB] SetLP"); }
-    public void SetSelectedCard(params object[] args) { Debug.LogWarning("[LUA STUB] SetSelectedCard"); }
     public void ShuffleExtra(params object[] args) { Debug.LogWarning("[LUA STUB] ShuffleExtra"); }
     public void SkipPhase(params object[] args) { Debug.LogWarning("[LUA STUB] SkipPhase"); }
     public void SummonOrSet(params object[] args) { Debug.LogWarning("[LUA STUB] SummonOrSet"); }
