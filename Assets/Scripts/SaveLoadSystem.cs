@@ -204,7 +204,7 @@ public class SaveLoadSystem : MonoBehaviour
         foreach (string id in ids)
         {
             CardData c = GameManager.Instance.cardDatabase.GetCardById(id);
-            if (c != null) cards.Add(c);
+            if (c != null) cards.Add(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(c)));
         }
         return cards;
     }

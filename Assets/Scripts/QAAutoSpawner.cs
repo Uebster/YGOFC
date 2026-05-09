@@ -392,7 +392,7 @@ public class QAAutoSpawner : MonoBehaviour
         
         CardData testCard = GameManager.Instance.cardDatabase.GetCardById(currentTestCardId);
         if (testCard != null) {
-            GameManager.Instance.AddCardToHand(testCard, true);
+            GameManager.Instance.AddCardToHand(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(testCard)), true);
             Debug.Log($"<color=cyan>➕ [QA] Cópia extra de {testCard.name} adicionada à mão.</color>");
         }
     }
@@ -515,8 +515,7 @@ public class QAAutoSpawner : MonoBehaviour
         CardData dummyMonster = GameManager.Instance.cardDatabase.cardDatabase.FirstOrDefault(c => c.name.Contains("Blue-Eyes White Dragon") || (c.type.Contains("Monster") && c.atk >= 2500));
         if (dummyMonster != null) 
         {
-            // Garante que o dono da carta é o jogador/oponente correto (Evita bugs de cemitério)
-            GameManager.Instance.SpecialSummonFromData(dummyMonster, isPlayer, -1, true, false, null, CardLocation.Unknown, isPlayer);
+            GameManager.Instance.SpecialSummonFromData(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(dummyMonster)), isPlayer, -1, true, false, null, CardLocation.Unknown, isPlayer);
             Debug.Log($"<color=cyan>➕ [QA] Monstro de Teste injetado para o {(isPlayer ? "Jogador" : "Oponente")}.</color>");
         }
     }
@@ -535,7 +534,7 @@ public class QAAutoSpawner : MonoBehaviour
                 
                 if (zoneIdx != -1)
                 {
-                    GameManager.Instance.SetSpellTrapFromData(dummySpell, isPlayer, zoneIdx, false);
+                    GameManager.Instance.SetSpellTrapFromData(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(dummySpell)), isPlayer, zoneIdx, false);
                     Debug.Log($"<color=cyan>➕ [QA] Magia Setada injetada para o {(isPlayer ? "Jogador" : "Oponente")}.</color>");
                 }
             }
@@ -585,7 +584,7 @@ public class QAAutoSpawner : MonoBehaviour
         // 2. Injeta a carta a ser testada na mão do jogador
         CardData testCard = GameManager.Instance.cardDatabase.GetCardById(cardId);
         if (testCard != null) {
-            GameManager.Instance.AddCardToHand(testCard, true);
+            GameManager.Instance.AddCardToHand(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(testCard)), true);
             Debug.Log($"<color=cyan>🧪 [QA] Injetando {testCard.name} ({cardId}) para Homologação.</color>");
             GameManager.Instance.Dev_InjectDependencies(testCard);
         } else Debug.LogError($"[QA] Carta {cardId} não encontrada no banco de dados!");

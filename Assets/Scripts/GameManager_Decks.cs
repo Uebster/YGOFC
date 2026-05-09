@@ -188,10 +188,10 @@ public partial class GameManager
 
                 Debug.Log($"[DevMode] Usando Deck Variante do Jogador: {variant}");
 
-                if (selectedMain != null) foreach (string id in selectedMain) { CardData c = cardDatabase.GetCardById(id); if (c != null) devDeck.Add(c); }
+                if (selectedMain != null) foreach (string id in selectedMain) { CardData c = cardDatabase.GetCardById(id); if (c != null) devDeck.Add(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(c))); }
                 
                 playerExtraDeck.Clear();
-                if (selectedExtra != null) foreach (string id in selectedExtra) { CardData c = cardDatabase.GetCardById(id); if (c != null) playerExtraDeck.Add(c); }
+                if (selectedExtra != null) foreach (string id in selectedExtra) { CardData c = cardDatabase.GetCardById(id); if (c != null) playerExtraDeck.Add(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(c))); }
 
                 playerMainDeck = devDeck;
                 
@@ -233,7 +233,7 @@ public partial class GameManager
 
             foreach (var card in generatedDeck)
             {
-                newDeck.Add(card);
+                newDeck.Add(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(card)));
                 // Adiciona ao Trunk também para que o jogador "possua" a carta
                 if (!playerTrunk.Contains(card.id))
                 {
@@ -344,7 +344,7 @@ public partial class GameManager
                     if (c != null) {
                         // Pente-Fino: Se a carta for proibida e o jogo não permitir trapaça da IA, ela é removida e a de respaldo assume seu lugar!
                         if (!allowForbiddenCards && !disableBanlist && c.goat_banlist == "Banned") continue;
-                        newDeck.Add(c); 
+                        newDeck.Add(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(c))); 
                     } else Debug.LogWarning($"[GameManager] Carta ID '{id}' não encontrada no DB para o oponente {currentOpponent.name}."); 
                 }
             }
@@ -366,7 +366,7 @@ public partial class GameManager
                     foreach (string id in selectedMain)
                     {
                         CardData c = cardDatabase.GetCardById(id);
-                        if (c != null) newDeck.Add(c);
+                        if (c != null) newDeck.Add(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(c)));
                     }
                 }
             }
@@ -377,7 +377,7 @@ public partial class GameManager
                 CardData c = cardDatabase.GetCardById(id); 
                 if (c != null) {
                     if (!allowForbiddenCards && !disableBanlist && c.goat_banlist == "Banned") continue;
-                    opponentExtraDeck.Add(c); 
+                    opponentExtraDeck.Add(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(c))); 
                 } 
             }
         }
@@ -396,7 +396,7 @@ public partial class GameManager
                 }
                 else
                 {
-                    newDeck.Add(card);
+                    newDeck.Add(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(card)));
                 }
             }
         }
@@ -412,7 +412,7 @@ public partial class GameManager
             {
                 if (validCards.Count == 0) break;
                 CardData randomCard = validCards[Random.Range(0, validCards.Count)];
-                newDeck.Add(randomCard);
+                newDeck.Add(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(randomCard)));
             }
         }
 

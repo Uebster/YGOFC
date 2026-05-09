@@ -684,13 +684,18 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         
     public bool CanBeActivatedNow()
     {
-        if (GameManager.Instance == null || !GameManager.Instance.isPlayerTurn) return false;
+        if (GameManager.Instance == null) return false;
+        bool isOpponentTurnManual = !GameManager.Instance.isPlayerTurn && GameManager.Instance.canPlaceOpponentCards;
+        if (!GameManager.Instance.isPlayerTurn && !isOpponentTurnManual) return false;
         if (PhaseManager.Instance == null || (PhaseManager.Instance.currentPhase != GamePhase.Main1 && PhaseManager.Instance.currentPhase != GamePhase.Main2)) return false;
         if (CardEffectManager.Instance != null && (CardEffectManager.Instance.isWaitingForLuaYield || CardEffectManager.Instance.isChainResolving || CardEffectManager.Instance.isFastEffectWindowOpen)) return false;
 
         if (CurrentCardData == null || string.IsNullOrEmpty(CurrentCardData.type)) return false;
 
-        if (isOnField && isPlayerCard)
+        bool canControlThisCard = isPlayerCard || (!isPlayerCard && GameManager.Instance.canPlaceOpponentCards);
+        int myPlayerIndex = isPlayerCard ? 0 : 1;
+
+        if (isOnField && canControlThisCard)
         {
             if (CurrentCardData.type.Contains("Monster") && CurrentCardData.type.Contains("Effect") && !isFlipped)
             {
@@ -698,7 +703,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 {
                     LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(this);
                     LuaEffect eff = lc?.registeredEffects.Find(e => e.type == 0x0040 || e.type == 0x0080);
-                    if (eff != null && CardEffectManager.Instance.CanActivateEffect(lc, eff, 0, null))
+                    if (eff != null && CardEffectManager.Instance.CanActivateEffect(lc, eff, myPlayerIndex, null))
                     {
                         return true;
                     }
@@ -723,7 +728,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                     if (CardEffectManager.Instance != null)
                     {
                         LuaEffect eff = lc?.registeredEffects.Find(e => e.type == 0x0010 || e.type == 0x0080);
-                        if (eff != null && CardEffectManager.Instance.CanActivateEffect(lc, eff, 0, null))
+                        if (eff != null && CardEffectManager.Instance.CanActivateEffect(lc, eff, myPlayerIndex, null))
                         {
                             return true;
                         }
@@ -743,7 +748,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                     {
                         LuaCard lc = CardEffectManager.Instance.EnsureCardScriptLoaded(this);
                         LuaEffect eff = lc?.registeredEffects.Find(e => e.type == 0x0040); // IGNITION
-                        if (eff != null && CardEffectManager.Instance.CanActivateEffect(lc, eff, 0, null))
+                        if (eff != null && CardEffectManager.Instance.CanActivateEffect(lc, eff, myPlayerIndex, null))
                         {
                             return true;
                         }
@@ -752,7 +757,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 }
             }
         }
-        else if (!isOnField && isPlayerCard)
+        else if (!isOnField && canControlThisCard)
         {
             if (CurrentCardData.type.Contains("Monster"))
             {
@@ -1425,7 +1430,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         // Clique Direito: Mudar Posição (se no campo)
         if (eventData.button == PointerEventData.InputButton.Right && isOnField && currentCardData.type.Contains("Monster"))
         {
-            if (!isPlayerCard && !GameManager.Instance.devMode) return; // Só pode mudar os seus próprios monstros
+            bool canControlThisCard = isPlayerCard || (!isPlayerCard && GameManager.Instance.canPlaceOpponentCards);
+            if (!canControlThisCard && !GameManager.Instance.devMode) return; // Só pode mudar monstros que pode controlar
 
             if (PhaseManager.Instance != null && (PhaseManager.Instance.currentPhase == GamePhase.Main1 || PhaseManager.Instance.currentPhase == GamePhase.Main2))
             {
@@ -1549,8 +1555,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
             }
             else // Turno do Oponente (Controle Manual)
             {
-                // Apenas em modo de teste e com IA desligada
-                if (GameManager.Instance.fullTestMode && OpponentAI.Instance != null && !OpponentAI.Instance.gameObject.activeSelf)
+                if (GameManager.Instance.canPlaceOpponentCards)
                 {
                     if (isOnField && !isPlayerCard && currentCardData.type.Contains("Monster"))
                     {
@@ -1652,7 +1657,7 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         }
 
         // Lógica para cartas no CAMPO (Spells/Traps Setadas ou Monstros Ativando Efeito)
-        if (isOnField && isPlayerCard)
+        if (isOnField && (isPlayerCard || (!isPlayerCard && GameManager.Instance.canPlaceOpponentCards)))
         {
             bool isLeftClick = eventData.button == PointerEventData.InputButton.Left;
 

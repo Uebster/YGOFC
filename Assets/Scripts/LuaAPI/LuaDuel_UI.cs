@@ -607,6 +607,7 @@ public partial class LuaDuel
         List<CardData> offFieldCards = new List<CardData>();
         List<CardDisplay> handCardsPlayer = new List<CardDisplay>();
         List<CardDisplay> handCardsOpponent = new List<CardDisplay>();
+        List<CardDisplay> fieldCardsToRevert = new List<CardDisplay>();
 
         if (targets is LuaGroup group)
         {
@@ -619,7 +620,11 @@ public partial class LuaDuel
                     else handCardsOpponent.Add(c.unityCard);
                 }
 
-                if (c.unityCard != null && c.unityCard.isFlipped && c.unityCard.isOnField) c.unityCard.ShowFront();
+                if (c.unityCard != null && c.unityCard.isFlipped && c.unityCard.isOnField) 
+                {
+                    c.unityCard.ShowFront();
+                    fieldCardsToRevert.Add(c.unityCard);
+                }
                 else if (c.unityCard == null && c.unityData != null) offFieldCards.Add(c.unityData);
             }
         }
@@ -632,7 +637,11 @@ public partial class LuaDuel
                 else handCardsOpponent.Add(card.unityCard);
             }
 
-            if (card.unityCard != null && card.unityCard.isFlipped && card.unityCard.isOnField) card.unityCard.ShowFront();
+            if (card.unityCard != null && card.unityCard.isFlipped && card.unityCard.isOnField) 
+            {
+                card.unityCard.ShowFront();
+                fieldCardsToRevert.Add(card.unityCard);
+            }
             else if (card.unityCard == null && card.unityData != null) offFieldCards.Add(card.unityData);
         }
 
@@ -718,7 +727,7 @@ public partial class LuaDuel
             GameManager.Instance.OpenCardMultiSelection(offFieldCards, "Revealed Top Deck Cards", 0, 0, (selected) => {
                 if (handCardsPlayer.Count > 0 || handCardsOpponent.Count > 0)
                 {
-                    CardEffectManager.Instance.StartCoroutine(RevealHandCardsRoutine(handCardsPlayer, handCardsOpponent, 1.5f, ConvertToInt(player)));
+                    CardEffectManager.Instance.StartCoroutine(RevealHandCardsRoutine(handCardsPlayer, handCardsOpponent, 1.5f, ConvertToInt(player), fieldCardsToRevert));
                 }
                 else
                 {
@@ -730,7 +739,7 @@ public partial class LuaDuel
         else if (handCardsPlayer.Count > 0 || handCardsOpponent.Count > 0)
         {
             if (GameManager.Instance != null && !GameManager.Instance.isSimulating) {
-                CardEffectManager.Instance.StartCoroutine(RevealHandCardsRoutine(handCardsPlayer, handCardsOpponent, 1.5f, ConvertToInt(player)));
+                CardEffectManager.Instance.StartCoroutine(RevealHandCardsRoutine(handCardsPlayer, handCardsOpponent, 1.5f, ConvertToInt(player), fieldCardsToRevert));
             } else {
                 CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
                 CardEffectManager.Instance.isWaitingForLuaYield = false;
@@ -738,13 +747,13 @@ public partial class LuaDuel
         }
         else
         {
-            CardEffectManager.Instance.StartCoroutine(ConfirmCardsRoutine(1.2f));
+            CardEffectManager.Instance.StartCoroutine(ConfirmCardsRoutine(1.2f, fieldCardsToRevert));
         }
         
         return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("ConfirmCards") });
     }
 
-    private IEnumerator RevealHandCardsRoutine(List<CardDisplay> pHand, List<CardDisplay> oHand, float delay, int viewingPlayer)
+    private IEnumerator RevealHandCardsRoutine(List<CardDisplay> pHand, List<CardDisplay> oHand, float delay, int viewingPlayer, List<CardDisplay> fieldCardsToRevert)
     {
         if (DuelFXManager.Instance != null) DuelFXManager.Instance.PlaySound(DuelFXManager.Instance.flipSound);
 
@@ -763,6 +772,14 @@ public partial class LuaDuel
         CardEffectManager.Instance.isWaitingForLuaYield = false;
 
         yield return new WaitForSeconds(delay);
+
+        if (fieldCardsToRevert != null && fieldCardsToRevert.Count > 0)
+        {
+            foreach (var c in fieldCardsToRevert)
+            {
+                if (c != null && !c.isFlipped && c.isOnField) c.ShowBack();
+            }
+        }
 
         // Aguarda a seleção e confirmação do jogador (se houver alguma ativa) antes de fechar a mão
         if (GameManager.Instance != null)
@@ -801,13 +818,22 @@ public partial class LuaDuel
         }
     }
 
-    private IEnumerator ConfirmCardsRoutine(float delay)
+    private IEnumerator ConfirmCardsRoutine(float delay, List<CardDisplay> fieldCardsToRevert)
     {
+        yield return new WaitForSeconds(delay);
+        
+        if (fieldCardsToRevert != null && fieldCardsToRevert.Count > 0)
+        {
+            foreach (var c in fieldCardsToRevert)
+            {
+                if (c != null && !c.isFlipped && c.isOnField) c.ShowBack();
+            }
+            yield return new WaitForSeconds(0.4f); // Aguarda a animação visual do Flip de volta
+        }
+
         CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
         CardEffectManager.Instance.isWaitingForLuaYield = false;
 
-        yield return new WaitForSeconds(delay);
-        
         if (GameManager.Instance != null)
         {
             yield return new WaitWhile(() => GameManager.Instance.isSelectingFromHand || (CardSelectionUI.Instance != null && CardSelectionUI.Instance.gameObject.activeSelf));

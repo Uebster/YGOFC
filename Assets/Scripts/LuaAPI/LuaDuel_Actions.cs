@@ -482,10 +482,12 @@ public partial class LuaDuel
         return CardLocation.Unknown;
     }
 
-    public int SendtoDeck(object target, object player, object seq, object reason)
+    public DynValue SendtoDeck(object target, object player, object seq, object reason)
     {
+        CardEffectManager.Instance.isWaitingForLuaYield = true;
+        CardEffectManager.Instance.yieldReturnValue = null;
         CardEffectManager.Instance.StartCoroutine(SendtoDeckRoutine(target, player, seq, reason));
-        return 1; // Retorna um valor síncrono, mas a animação roda em background
+        return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("SendtoDeck") });
     }
 
     private IEnumerator SendtoDeckRoutine(object target, object player, object seq, object reason)
@@ -651,6 +653,8 @@ public partial class LuaDuel
                 if (isOwnerList.Contains(false)) GameManager.Instance.ShuffleDeck(false);
             }
         }
+        CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(count);
+        CardEffectManager.Instance.isWaitingForLuaYield = false;
     }
 
     public void ShuffleDeck(object player)
@@ -720,18 +724,36 @@ public partial class LuaDuel
     {
         if (CardEffectManager.Instance != null)
         {
-            EventData ed = new EventData(eg, ConvertToInt(ep), ConvertToInt(ev), re as LuaEffect, ConvertToInt(r), ConvertToInt(rp));
+            object actualEg = eg;
+            if (eg is DynValue dv) {
+                if (dv.Type == DataType.UserData) actualEg = dv.UserData.Object;
+                else if (dv.IsNil()) actualEg = null;
+            }
+
+            LuaEffect actualRe = re as LuaEffect;
+            if (re is DynValue dvRe && dvRe.Type == DataType.UserData) actualRe = dvRe.UserData.Object as LuaEffect;
+
+            EventData ed = new EventData(actualEg, ConvertToInt(ep), ConvertToInt(ev), actualRe, ConvertToInt(r), ConvertToInt(rp));
             CardEffectManager.Instance.TriggerLuaEvent(ConvertToInt(code), ed);
         }
     }
 
     public void RaiseSingleEvent(object ec, object code, object re, object r, object rp, object ep, object ev)
     {
-        if (ec is LuaCard lc && CardEffectManager.Instance != null)
+        object actualEc = ec;
+        if (ec is DynValue dv) {
+            if (dv.Type == DataType.UserData) actualEc = dv.UserData.Object;
+            else if (dv.IsNil()) actualEc = null;
+        }
+
+        LuaEffect actualRe = re as LuaEffect;
+        if (re is DynValue dvRe && dvRe.Type == DataType.UserData) actualRe = dvRe.UserData.Object as LuaEffect;
+
+        if (actualEc is LuaCard lc && CardEffectManager.Instance != null)
         {
             int eventCode = ConvertToInt(code);
             var matchingEffects = lc.registeredEffects.FindAll(eff => eff.code == eventCode);
-            EventData ed = new EventData(lc, ConvertToInt(ep), ConvertToInt(ev), re as LuaEffect, ConvertToInt(r), ConvertToInt(rp));
+            EventData ed = new EventData(lc, ConvertToInt(ep), ConvertToInt(ev), actualRe, ConvertToInt(r), ConvertToInt(rp));
             
             foreach(var effect in matchingEffects)
             {
@@ -992,7 +1014,8 @@ public partial class LuaDuel
         if (GameManager.Instance != null && GameManager.Instance.cardDatabase != null)
         {
             string strCode = cardCode.ToString();
-            tokenData = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.password == strCode);
+            CardData dbData = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.password == strCode);
+            if (dbData != null) tokenData = JsonUtility.FromJson<CardData>(JsonUtility.ToJson(dbData));
         }
 
         // Fallback robusto se a API do site não nos enviou o token
@@ -1079,13 +1102,26 @@ public partial class LuaDuel
 
             if (targetPos == 0 || targetPos == currentPos) continue;
 
-            bool isAttackTarget = (targetPos == 1 || targetPos == 2);
-            bool isFaceUpTarget = (targetPos == 1 || targetPos == 4);
+            bool isAttackTarget = c.position == CardDisplay.BattlePosition.Attack;
+            if ((targetPos & 3) != 0 && (targetPos & 12) == 0) isAttackTarget = true;
+            else if ((targetPos & 12) != 0 && (targetPos & 3) == 0) isAttackTarget = false;
+
+            bool isFaceUpTarget = !c.isFlipped;
+            if ((targetPos & 5) != 0 && (targetPos & 10) == 0) isFaceUpTarget = true;
+            else if ((targetPos & 10) != 0 && (targetPos & 5) == 0) isFaceUpTarget = false;
 
             if ((isAttackTarget && c.position == CardDisplay.BattlePosition.Defense) || (!isAttackTarget && c.position == CardDisplay.BattlePosition.Attack))
             {
                 c.position = isAttackTarget ? CardDisplay.BattlePosition.Attack : CardDisplay.BattlePosition.Defense;
-                c.transform.localRotation = Quaternion.Euler(0, 0, isAttackTarget ? (c.isPlayerCard ? 0f : 180f) : (c.isPlayerCard ? 90f : -90f));
+                
+                if (c.CurrentCardData != null && (c.CurrentCardData.type.Contains("Spell") || c.CurrentCardData.type.Contains("Trap")))
+                {
+                    c.transform.localRotation = Quaternion.Euler(0, 0, c.isPlayerCard ? 0f : 180f);
+                }
+                else
+                {
+                    c.transform.localRotation = Quaternion.Euler(0, 0, isAttackTarget ? (c.isPlayerCard ? 0f : 180f) : (c.isPlayerCard ? 90f : -90f));
+                }
                 if (GameManager.Instance != null) GameManager.Instance.RefreshAllCardsVisuals();
             }
 

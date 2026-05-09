@@ -21,6 +21,7 @@ public partial class LuaCard
     public Dictionary<int, int> flagEffectLabels = new Dictionary<int, int>();
     public Dictionary<int, int> counters = new Dictionary<int, int>();
     public bool isProcComplete = false;
+    public bool isCanceledToGrave = false;
 
     // --- CAMPOS DINÂMICOS LUA (Evita 'cannot access field' do MoonSharp) ---
     public DynValue fit_monster { get; set; } = DynValue.Nil;
@@ -568,7 +569,20 @@ public partial class LuaCard
         if (unityCard != null) unityCard.AddStatus(0x8); // STATUS_PROC_COMPLETE
         Debug.Log($"<color=green>[Proc Complete]</color> {unityData?.name} concluiu seu procedimento de invocação oficial!");
     }
-    public void CancelToGrave(params object[] args) { Debug.LogWarning($"[LUA STUB] CancelToGrave chamado em {unityData?.name}"); }
+    
+    public void CancelToGrave(params object[] args) 
+    { 
+        bool cancel = true;
+        if (args != null && args.Length > 0)
+        {
+            if (args[0] is bool b) cancel = b;
+            else if (args[0] is DynValue dv && dv.Type == DataType.Boolean) cancel = dv.Boolean;
+            else cancel = ConvertToInt(args[0]) != 0;
+        }
+        isCanceledToGrave = cancel;
+        // Debug.Log($"<color=cyan>[LuaCard]</color> CancelToGrave({cancel}) chamado em {unityData?.name}");
+    }
+
     public bool IsLevelAbove(object lvl) { return GetLevel() >= ConvertToInt(lvl); }
     public int GetBattledGroupCount() { return 0; }
     public bool IsRitualMonster() { return unityData != null && unityData.type.Contains("Ritual"); }
@@ -779,6 +793,11 @@ public partial class LuaCard
                 
                 if ((s & myStatus) != 0) return true;
             }
+            
+            // FIX: STATUS_SET_TURN (0x10) só é verdadeiro se for no mesmo turno que a carta entrou
+            if (s == 0x10 && GameManager.Instance != null && unityCard.summonedTurnCount != GameManager.Instance.turnCount) 
+                return false;
+                
             return unityCard.HasStatus(s);
         }
         return false; 

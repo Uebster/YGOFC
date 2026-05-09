@@ -259,11 +259,12 @@ public class FullTestManager : MonoBehaviour
             GlobalCardSearchUI.Instance.Show("Gerar Carta na Mão (ID ou Nome)", (data) => {
                 if (data != null)
                 {
-                    GameManager.Instance.AddCardToHand(data, true);
+                    CardData clone = JsonUtility.FromJson<CardData>(JsonUtility.ToJson(data));
+                    GameManager.Instance.AddCardToHand(clone, true);
                     Debug.Log($"[TestMode] {data.name} adicionada à mão do jogador.");
 
                     // INJEÇÃO INTELIGENTE DE DEPENDÊNCIAS:
-                    GameManager.Instance.Dev_InjectDependencies(data);
+                    GameManager.Instance.Dev_InjectDependencies(clone);
                 }
             });
         }
@@ -283,9 +284,10 @@ public class FullTestManager : MonoBehaviour
             GlobalCardSearchUI.Instance.Show("Gerar Carta para o Oponente", (data) => {
                 if (data != null)
                 {
-                    GameManager.Instance.AddCardToHand(data, false);
+                    CardData clone = JsonUtility.FromJson<CardData>(JsonUtility.ToJson(data));
+                    GameManager.Instance.AddCardToHand(clone, false);
                     Debug.Log($"[TestMode] {data.name} adicionada à mão do oponente.");
-                    GameManager.Instance.Dev_InjectDependencies(data);
+                    GameManager.Instance.Dev_InjectDependencies(clone);
                 }
             });
         }
@@ -306,7 +308,7 @@ public class FullTestManager : MonoBehaviour
         string[] names = { "Exodia the Forbidden One", "Right Arm of the Forbidden One", "Left Arm of the Forbidden One", "Right Leg of the Forbidden One", "Left Leg of the Forbidden One" };
         foreach(var n in names) {
             CardData data = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == n);
-            if (data != null) GameManager.Instance.AddCardToHand(data, true);
+            if (data != null) GameManager.Instance.AddCardToHand(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(data)), true);
         }
         
         GameManager.Instance.CheckExodiaWin();
@@ -329,7 +331,8 @@ public class FullTestManager : MonoBehaviour
             CardData data = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.name == letters[i]);
             if (data != null)
             {
-                GameManager.Instance.SetSpellTrapFromData(data, true, i, true); // True = Face-up
+                CardData clone = JsonUtility.FromJson<CardData>(JsonUtility.ToJson(data));
+                GameManager.Instance.SetSpellTrapFromData(clone, true, i, true); // True = Face-up
                 
                 if (GameManager.Instance.turnClockUI != null)
                 {
@@ -364,11 +367,11 @@ public class FullTestManager : MonoBehaviour
 
         if (gaia != null && curse != null && poly != null && fusionMon != null)
         {
-            if (!GameManager.Instance.GetPlayerExtraDeck().Contains(fusionMon))
-                GameManager.Instance.GetPlayerExtraDeck().Add(fusionMon);
-            GameManager.Instance.AddCardToHand(gaia, true);
-            GameManager.Instance.AddCardToHand(curse, true);
-            GameManager.Instance.AddCardToHand(poly, true);
+            if (!GameManager.Instance.GetPlayerExtraDeck().Exists(c => c.name == fusionMon.name))
+                GameManager.Instance.GetPlayerExtraDeck().Add(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(fusionMon)));
+            GameManager.Instance.AddCardToHand(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(gaia)), true);
+            GameManager.Instance.AddCardToHand(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(curse)), true);
+            GameManager.Instance.AddCardToHand(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(poly)), true);
             StartCoroutine(ActivateSpellAfterDelay("Polymerization"));
         }
     }
@@ -384,9 +387,9 @@ public class FullTestManager : MonoBehaviour
 
         if (relinquished != null && ritualSpell != null && tributeFodder != null)
         {
-            GameManager.Instance.AddCardToHand(relinquished, true);
-            GameManager.Instance.AddCardToHand(tributeFodder, true);
-            GameManager.Instance.AddCardToHand(ritualSpell, true);
+            GameManager.Instance.AddCardToHand(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(relinquished)), true);
+            GameManager.Instance.AddCardToHand(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(tributeFodder)), true);
+            GameManager.Instance.AddCardToHand(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(ritualSpell)), true);
             StartCoroutine(ActivateSpellAfterDelay("Black Illusion Ritual"));
         }
     }
@@ -406,10 +409,10 @@ public class FullTestManager : MonoBehaviour
         if (axeRaider != null && equipSpell != null)
         {
             // 1. Invoca o monstro no campo do JOGADOR para testar o equipamento em um alvo próprio.
-            CardDisplay monsterDisplay = GameManager.Instance.SpecialSummonFromData(axeRaider, true, 2, true, false);
+            CardDisplay monsterDisplay = GameManager.Instance.SpecialSummonFromData(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(axeRaider)), true, 2, true, false);
             
             // 2. Coloca a magia na mão do jogador
-            GameManager.Instance.AddCardToHand(equipSpell, true);
+            GameManager.Instance.AddCardToHand(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(equipSpell)), true);
             
             // 3. Força a transição para a Main Phase 1 para que o Activate seja legal
             if (PhaseManager.Instance != null)
@@ -448,18 +451,18 @@ public class FullTestManager : MonoBehaviour
 
         // Invoca monstros para o jogador
         CardData p_monster1_data = GameManager.Instance.cardDatabase.GetCardById("0001") ?? GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.type.Contains("Monster") && c.atk >= 2500);
-        if (p_monster1_data != null) GameManager.Instance.SpecialSummonFromData(p_monster1_data, true, 0, true, false);
+        if (p_monster1_data != null) GameManager.Instance.SpecialSummonFromData(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(p_monster1_data)), true, 0, true, false);
 
         yield return new WaitForSeconds(0.1f);
 
         // Invoca monstros para o oponente
         CardData o_monster1_data = GameManager.Instance.cardDatabase.GetCardById("0005") ?? GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.type.Contains("Monster") && c.atk >= 2000 && c.atk < 2500);
-        if (o_monster1_data != null) GameManager.Instance.SpecialSummonFromData(o_monster1_data, false, 0, true, false);
+        if (o_monster1_data != null) GameManager.Instance.SpecialSummonFromData(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(o_monster1_data)), false, 0, true, false);
         
         yield return new WaitForSeconds(0.1f);
 
         CardData o_monster2_data = GameManager.Instance.cardDatabase.GetCardById("0010") ?? GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.type.Contains("Monster") && c.def >= 2000);
-        if (o_monster2_data != null) GameManager.Instance.SpecialSummonFromData(o_monster2_data, false, 1, true, true); // Em defesa na Zona 1
+        if (o_monster2_data != null) GameManager.Instance.SpecialSummonFromData(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(o_monster2_data)), false, 1, true, true); // Em defesa na Zona 1
 
         Debug.Log("[TestMode] Cenário de batalha pronto. É o turno do jogador. Mude para a Battle Phase para atacar.");
     }
@@ -499,7 +502,7 @@ public class FullTestManager : MonoBehaviour
         if (trapData != null)
         {
             // Setamos a armadilha para o OPONENTE (False) para testarmos se a Inteligência Artificial reage!
-            GameManager.Instance.SetSpellTrapFromData(trapData, false, 2, false); 
+            GameManager.Instance.SetSpellTrapFromData(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(trapData)), false, 2, false); 
             Debug.Log($"[TestMode] {trapData.name} setada para o Oponente.");
         }
 
@@ -515,7 +518,7 @@ public class FullTestManager : MonoBehaviour
         CardData pMon = GameManager.Instance.cardDatabase.cardDatabase.Find(c => c.type.Contains("Monster") && c.atk >= 1500); 
         if (pMon != null)
         {
-            GameManager.Instance.SpecialSummonFromData(pMon, true, 2, true, false); // true = Invocado pro Jogador
+            GameManager.Instance.SpecialSummonFromData(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(pMon)), true, 2, true, false); // true = Invocado pro Jogador
         }
     }
 

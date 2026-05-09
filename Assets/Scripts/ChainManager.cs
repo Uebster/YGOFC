@@ -249,6 +249,7 @@ public class ChainManager
     private IEnumerator ResponseWindowRoutine(int priorityPlayer, ChainLink triggerLink, EventData edChaining, System.Action<bool> onComplete)
     {
         bool isHuman = (priorityPlayer == 0); // 0 = Player, 1 = Opponent(IA)
+        bool isManualOpponent = !isHuman && GameManager.Instance != null && GameManager.Instance.canPlaceOpponentCards;
         int eventCode = 1027; // EVENT_CHAINING
         List<CardDisplay> validResponses = core.GetValidResponses(priorityPlayer, triggerLink, eventCode, edChaining);
 
@@ -257,11 +258,12 @@ public class ChainManager
         bool decisionMade = false;
         CardDisplay chosenCard = null;
 
-        if (isHuman && UIManager.Instance != null && (!GameManager.Instance.isSimulating))
+        if ((isHuman || isManualOpponent) && UIManager.Instance != null && (!GameManager.Instance.isSimulating))
         {
             bool autoPass = false;
             // Se o gatilho for uma carta do próprio jogador durante o turno dele, não perguntar se quer acorrentar (evita spam de janelas na Main Phase)
-            if (GameManager.Instance.isPlayerTurn && triggerLink != null && triggerLink.player == 0 && !triggerLink.isDummy)
+            bool isCurrentTurnPlayer = (priorityPlayer == 0 && GameManager.Instance.isPlayerTurn) || (priorityPlayer == 1 && !GameManager.Instance.isPlayerTurn);
+            if (isCurrentTurnPlayer && triggerLink != null && triggerLink.player == priorityPlayer && !triggerLink.isDummy)
             {
                 autoPass = true;
             }
@@ -281,7 +283,7 @@ public class ChainManager
             }
             while (!decisionMade) yield return null;
         }
-        else if (!isHuman && OpponentAI.Instance != null && (!GameManager.Instance.isSimulating))
+        else if (!isHuman && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy && (!GameManager.Instance.isSimulating))
         {
             yield return new WaitForSeconds(0.8f); // Delay para a IA "pensar" durante as interrupções, dando tempo das animações prévias assentarem
             chosenCard = OpponentAI.Instance.ChooseBestResponse(validResponses, triggerLink);

@@ -80,14 +80,14 @@ public partial class GameManager
             {
                 if (dependency.type.Contains("Fusion") || dependency.type.Contains("Synchro") || dependency.type.Contains("Xyz") || dependency.type.Contains("Link"))
                 {
-                    if (!playerExtraDeck.Contains(dependency)) playerExtraDeck.Add(dependency);
+                    if (!playerExtraDeck.Exists(c => c.name == dependency.name)) playerExtraDeck.Add(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(dependency)));
                     Debug.Log($"<color=orange>🔗 [QA] Dependência detectada: Adicionada 1 cópia de '{dependency.name}' ao Extra Deck. (Novo tamanho do Extra Deck: {playerExtraDeck.Count})</color>");
                 }
                 else
                 {
-                    GetPlayerMainDeck().Add(dependency);
-                    GetPlayerMainDeck().Add(dependency);
-                    GetPlayerMainDeck().Add(dependency);
+                    GetPlayerMainDeck().Add(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(dependency)));
+                    GetPlayerMainDeck().Add(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(dependency)));
+                    GetPlayerMainDeck().Add(JsonUtility.FromJson<CardData>(JsonUtility.ToJson(dependency)));
                     Debug.Log($"<color=orange>🔗 [QA] Dependência detectada: Adicionadas 3 cópias de '{dependency.name}' ao Baralho Principal. (Novo tamanho do Deck: {GetPlayerMainDeck().Count})</color>");
                 }
             }

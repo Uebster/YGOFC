@@ -106,7 +106,8 @@ public class DuelActionMenu : MonoBehaviour
                 bool canSet = true;
                 
                 // Regra 1: Limite de 1 Normal Summon
-                if (GameManager.Instance != null && GameManager.Instance.normalSummonsThisTurnPlayer > 0 && !GameManager.Instance.infiniteNormalSummons)
+                int normalSummons = card.isPlayerCard ? GameManager.Instance.normalSummonsThisTurnPlayer : GameManager.Instance.normalSummonsThisTurnOpponent;
+                if (GameManager.Instance != null && normalSummons > 0 && !GameManager.Instance.infiniteNormalSummons)
                 {
                     canSummon = false;
                     canSet = false;
@@ -125,7 +126,7 @@ public class DuelActionMenu : MonoBehaviour
                 if (dynamicLevel >= 5 && dynamicLevel <= 6) tributes = 1;
                 if (dynamicLevel >= 7) tributes = 2;
 
-                if (GameManager.Instance != null && GameManager.Instance.GetMonsterCount(true) < tributes && !GameManager.Instance.disableTributeRequirements)
+                if (GameManager.Instance != null && GameManager.Instance.GetMonsterCount(card.isPlayerCard) < tributes && !GameManager.Instance.disableTributeRequirements)
                 {
                     canSummon = false;
                     canSet = false;
@@ -143,7 +144,8 @@ public class DuelActionMenu : MonoBehaviour
                 // Regra de Magia de Ritual: Deve ter monstro Ritual COMPATÍVEL na mão
                 if (card.CurrentCardData.property == "Ritual" && GameManager.Instance != null && RitualManager.Instance != null)
                 {
-                    var possibleRituals = RitualManager.Instance.GetPossibleRitualMonsters(card.CurrentCardData, GameManager.Instance.GetPlayerHandData());
+                    var handData = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+                    var possibleRituals = RitualManager.Instance.GetPossibleRitualMonsters(card.CurrentCardData, handData);
                     if (possibleRituals.Count == 0) canActivate = false;
                 }
 
@@ -151,14 +153,17 @@ public class DuelActionMenu : MonoBehaviour
                 if ((card.CurrentCardData.name == "Polymerization" || card.CurrentCardData.name.Contains("Fusion")) && GameManager.Instance != null && FusionManager.Instance != null)
                 {
                     List<CardData> availableMats = new List<CardData>();
-                    availableMats.AddRange(GameManager.Instance.GetPlayerHandData().Where(c => c.type.Contains("Monster")));
-                    foreach (var z in GameManager.Instance.duelFieldUI.playerMonsterZones) {
+                    var handData = card.isPlayerCard ? GameManager.Instance.GetPlayerHandData() : GameManager.Instance.GetOpponentHandData();
+                    availableMats.AddRange(handData.Where(c => c.type.Contains("Monster")));
+                    Transform[] mZones = card.isPlayerCard ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
+                    foreach (var z in mZones) {
                         if (z.childCount > 0) {
                             var cd = z.GetComponentInChildren<CardDisplay>();
                             if (cd != null && !cd.isFlipped) availableMats.Add(cd.CurrentCardData);
                         }
                     }
-                    var fusions = GameManager.Instance.GetPlayerExtraDeck().Where(c => c.type.Contains("Fusion")).ToList();
+                    var extraDeckData = card.isPlayerCard ? GameManager.Instance.GetPlayerExtraDeck() : GameManager.Instance.GetOpponentExtraDeck();
+                    var fusions = extraDeckData.Where(c => c.type.Contains("Fusion")).ToList();
                     bool canFuse = fusions.Any(f => FusionManager.Instance.CanBeFusionSummoned(f, availableMats));
                     if (!canFuse) canActivate = false;
                 }
@@ -169,7 +174,7 @@ public class DuelActionMenu : MonoBehaviour
         }
         else // No Campo
         {
-            bool isMyTurn = GameManager.Instance != null && GameManager.Instance.isPlayerTurn;
+            bool isMyTurn = GameManager.Instance != null && ((card.isPlayerCard && GameManager.Instance.isPlayerTurn) || (!card.isPlayerCard && !GameManager.Instance.isPlayerTurn));
             bool isMainPhase = PhaseManager.Instance != null && (PhaseManager.Instance.currentPhase == GamePhase.Main1 || PhaseManager.Instance.currentPhase == GamePhase.Main2);
 
             if (card.CurrentCardData.type.Contains("Monster") && card.CurrentCardData.type.Contains("Effect") && !card.isFlipped)

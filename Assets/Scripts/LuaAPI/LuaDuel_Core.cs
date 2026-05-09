@@ -114,19 +114,13 @@ public partial class LuaDuel
 
         if (pInt == 0) {
             GameManager.Instance.DamagePlayer(aInt);
-            if (DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating) DamagePopupManager.Instance.ShowPopup(aInt, false, true);
         }
         else if (pInt == 1) {
             GameManager.Instance.DamageOpponent(aInt);
-            if (DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating) DamagePopupManager.Instance.ShowPopup(aInt, false, false);
         }
         else if (pInt == 3) {
             GameManager.Instance.DamagePlayer(aInt);
             GameManager.Instance.DamageOpponent(aInt);
-            if (DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating) {
-                DamagePopupManager.Instance.ShowPopup(aInt, false, true);
-                DamagePopupManager.Instance.ShowPopup(aInt, false, false);
-            }
         }
         else return DynValue.Nil; // PLAYER_NONE (2) ou inválido
 
@@ -167,19 +161,13 @@ public partial class LuaDuel
         // Debug.Log($"[Surgical Log] Convertido para C# -> Jogador: {pInt} | Cura: {aInt}");
         if (pInt == 0) {
             GameManager.Instance.GainLifePoints(true, aInt);
-            if (DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating) DamagePopupManager.Instance.ShowPopup(aInt, true, true);
         }
         else if (pInt == 1) {
             GameManager.Instance.GainLifePoints(false, aInt);
-            if (DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating) DamagePopupManager.Instance.ShowPopup(aInt, true, false);
         }
         else if (pInt == 3) {
             GameManager.Instance.GainLifePoints(true, aInt);
             GameManager.Instance.GainLifePoints(false, aInt);
-            if (DamagePopupManager.Instance != null && !GameManager.Instance.isSimulating) {
-                DamagePopupManager.Instance.ShowPopup(aInt, true, true);
-                DamagePopupManager.Instance.ShowPopup(aInt, true, false);
-            }
         }
         
         if (CardEffectManager.Instance != null && GameManager.Instance != null && !GameManager.Instance.isSimulating)

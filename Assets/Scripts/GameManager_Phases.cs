@@ -334,8 +334,9 @@ public partial class GameManager
         // Verifica se a regra está ativa
         if (!enableHandLimit)
         {
-            // Se for turno do jogador, troca o turno automaticamente (já que não haverá descarte)
-            if (isPlayerTurn && !isSimulating)
+            // Troca o turno automaticamente (exceto se a IA estiver rodando, pois ela mesma chama SwitchTurn)
+            bool aiRunningEarly = !isPlayerTurn && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy;
+            if (!aiRunningEarly && !isSimulating)
             {
                 if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isBusy);
                 yield return new WaitForSeconds(0.5f);
@@ -371,7 +372,7 @@ public partial class GameManager
                 }
                 else
                 {
-                    yield return StartCoroutine(PlayerDiscardHandLimit(toDiscard));
+                    yield return StartCoroutine(DiscardHandLimitRoutine(true, toDiscard));
                 }
             }
             else
@@ -382,6 +383,10 @@ public partial class GameManager
                     OpponentAI.Instance.PerformHandLimitDiscard(toDiscard);
                     yield return new WaitForSeconds(1.0f); // Tempo para visualização
                 }
+                else if (canPlaceOpponentCards && !isSimulating)
+                {
+                    yield return StartCoroutine(DiscardHandLimitRoutine(false, toDiscard));
+                }
                 else if (isSimulating)
                 {
                     for (int i = 0; i < toDiscard; i++) DiscardCard(opponentHand[0].GetComponent<CardDisplay>());
@@ -389,9 +394,9 @@ public partial class GameManager
             }
         }
 
-        // Se for turno do jogador, troca o turno automaticamente após processar a End Phase e Limite de Mão
-        // (A IA troca o turno no final da rotina dela, então não precisamos chamar aqui para ela)
-        if (isPlayerTurn && !isSimulating)
+        // Troca o turno automaticamente após processar a End Phase e Limite de Mão (exceto se a IA estiver rodando)
+        bool aiRunning = !isPlayerTurn && OpponentAI.Instance != null && OpponentAI.Instance.gameObject.activeInHierarchy;
+        if (!aiRunning && !isSimulating)
         {
             if (CardEffectManager.Instance != null) yield return new WaitWhile(() => CardEffectManager.Instance.isBusy);
             yield return new WaitForSeconds(0.5f);
@@ -399,10 +404,11 @@ public partial class GameManager
         }
     }
 
-    private IEnumerator PlayerDiscardHandLimit(int count)
+    private IEnumerator DiscardHandLimitRoutine(bool isPlayer, int count)
     {
         bool done = false;
-        List<CardData> handData = GetPlayerHandData();
+        List<CardData> handData = isPlayer ? GetPlayerHandData() : GetOpponentHandData();
+        List<GameObject> hand = isPlayer ? playerHand : opponentHand;
         
         if (UIManager.Instance != null) UIManager.Instance.ShowMessage($"Limite de mão excedido. Descarte {count} cartas.");
         yield return new WaitForSeconds(1.5f);
@@ -412,14 +418,14 @@ public partial class GameManager
             {
                 for (int i = 0; i < count; i++)
                 {
-                    if (playerHand.Count > 0) DiscardCard(playerHand[0].GetComponent<CardDisplay>());
+                    if (hand.Count > 0) DiscardCard(hand[0].GetComponent<CardDisplay>());
                 }
             }
             else
             {
                 foreach(var c in selected)
                 {
-                    GameObject go = playerHand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c);
+                    GameObject go = hand.Find(g => g.GetComponent<CardDisplay>().CurrentCardData == c);
                     if (go != null) DiscardCard(go.GetComponent<CardDisplay>());
                 }
             }

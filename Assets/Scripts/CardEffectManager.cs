@@ -209,19 +209,27 @@ public class CardEffectManager : MonoBehaviour
     {
         if (triggerArgs == null) 
             return null; // OCGCore nativo exige que eventos sem alvo passem 'nil' em vez de um grupo falso com carta dummy.
-        if (triggerArgs is LuaCard card)
+        
+        object rawObj = triggerArgs;
+        if (triggerArgs is DynValue dv)
+        {
+            if (dv.Type == DataType.UserData) rawObj = dv.UserData.Object;
+            else if (dv.IsNil()) return null;
+        }
+
+        if (rawObj is LuaCard card)
         {
             LuaGroup group = new LuaGroup();
             group.AddCard(card);
             return group;
         }
-        else if (triggerArgs is List<CardDisplay> list)
+        else if (rawObj is List<CardDisplay> list)
         {
             LuaGroup group = new LuaGroup();
             foreach (var c in list) group.AddCard(new LuaCard(c));
             return group;
         }
-        return triggerArgs;
+        return rawObj;
     }
 
     public bool CanActivateEffect(LuaCard luaCard, LuaEffect effect, int tp, object triggerArgs)

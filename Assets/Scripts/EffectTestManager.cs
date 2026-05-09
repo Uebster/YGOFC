@@ -770,7 +770,8 @@ public class EffectTestManager : MonoBehaviour
         {
             for (int i = GameManager.Instance.playerHand.Count; i < 5; i++)
             {
-                GameManager.Instance.AddCardToHand(GameManager.Instance.cardDatabase.cardDatabase[i], true);
+                CardData clone = JsonUtility.FromJson<CardData>(JsonUtility.ToJson(GameManager.Instance.cardDatabase.cardDatabase[i]));
+                GameManager.Instance.AddCardToHand(clone, true);
             }
         }
     }

@@ -376,6 +376,34 @@ public partial class GameManager
         // Tokens evaporam ao sair do campo, não entram no GY.
         if (card == null || card.id == "TOKEN") return;
 
+        // FIX: Respeita o comando CancelToGrave emitido por scripts LUA
+        if (CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
+        {
+            if (CardEffectManager.Instance.luaDuel.persistentCards.TryGetValue(card, out LuaCard lc))
+            {
+                if (lc.isCanceledToGrave)
+                {
+                    lc.isCanceledToGrave = false; // Consome a proteção
+                    return;
+                }
+            }
+        }
+
+        // REGRA UNIVERSAL DA PRESENÇA LÓGICA:
+        // Se a carta já estiver abrigada em outra pilha definitiva (Deck, Extra Deck, Banidas),
+        // o C# respeita o destino LUA e ignora o envio automático para o cemitério!
+        if (GameManager.Instance.GetPlayerMainDeck().Contains(card) || GameManager.Instance.GetOpponentMainDeck().Contains(card) ||
+            GameManager.Instance.GetPlayerRemoved().Contains(card) || GameManager.Instance.GetOpponentRemoved().Contains(card) ||
+            GameManager.Instance.GetPlayerExtraDeck().Contains(card) || GameManager.Instance.GetOpponentExtraDeck().Contains(card))
+        {
+            return;
+        }
+
+        // Se estiver na mão, só permitimos ir pro cemitério se a origem for explicitamente a mão,
+        // evitando que o Faxineiro limpe uma carta que acabou de tomar Bounce.
+        bool isInHand = GameManager.Instance.GetPlayerHandData().Contains(card) || GameManager.Instance.GetOpponentHandData().Contains(card);
+        if (isInHand && fromLocation != CardLocation.Hand) return;
+
         if (isPlayer)
         {
             playerGraveyard.Add(card);
@@ -423,6 +451,27 @@ public partial class GameManager
         bool isOwner = card.ownerPlayer;
         CardData data = card.CurrentCardData;
         string logPrefix = $"[MoveCard] {data.name} ({(isOwner ? "Player" : "Opponent")})";
+
+        // FIX: Respeita o comando CancelToGrave (Apenas para o destino Graveyard)
+        if (destination == CardLocation.Graveyard && CardEffectManager.Instance != null && CardEffectManager.Instance.luaDuel != null)
+        {
+            if (CardEffectManager.Instance.luaDuel.persistentCards.TryGetValue(data, out LuaCard lc) && lc.isCanceledToGrave)
+            {
+                lc.isCanceledToGrave = false; 
+                return;
+            }
+            
+            // Regra Universal da Presença Lógica
+            if (GameManager.Instance.GetPlayerMainDeck().Contains(data) || GameManager.Instance.GetOpponentMainDeck().Contains(data) ||
+                GameManager.Instance.GetPlayerRemoved().Contains(data) || GameManager.Instance.GetOpponentRemoved().Contains(data) ||
+                GameManager.Instance.GetPlayerExtraDeck().Contains(data) || GameManager.Instance.GetOpponentExtraDeck().Contains(data))
+            {
+                return;
+            }
+            
+            bool isInHand = GameManager.Instance.GetPlayerHandData().Contains(data) || GameManager.Instance.GetOpponentHandData().Contains(data);
+            if (isInHand && card.previousLocation != CardLocation.Hand && card.CurrentLocation != CardLocation.Hand) return;
+        }
         
         // FASE 13: Track previous location before moving
         card.previousPreviousLocation = card.previousLocation;
@@ -670,8 +719,7 @@ public partial class GameManager
             Debug.LogWarning($"[PlaySpellTrap BLOCKED] {cardName}: canPlacePlayerCards desativado.");
             return false;
         }
-        // Bloqueia se for uma ação para o oponente, durante o turno do jogador, e o modo dev de controle do oponente estiver desligado.
-        // FIX: Se estiver simulando (!isSimulating), ignora essa trava.
+        
         if (!isPlayer && isPlayerTurn && !canPlaceOpponentCards && !isSimulating)
         {
             Debug.LogWarning($"[PlaySpellTrap BLOCKED] {cardName}: canPlaceOpponentCards desativado durante turno do jogador.");

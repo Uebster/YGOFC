@@ -139,6 +139,7 @@ public class LuaEngineCore
         auxTable.Table.Set("AddLavaProcedure", luaEngine.DoString("return function(...) end"));
         auxTable.Table.Set("AddNormalSetProcedure", luaEngine.DoString("return function(...) end"));
         auxTable.Table.Set("AddNormalSummonProcedure", luaEngine.DoString("return function(...) end"));
+        auxTable.Table.Set("AddProcGreaterCode", luaEngine.DoString("return function(...) end"));
         auxTable.Table.Set("AddPersistentProcedure", luaEngine.DoString("return function(...) end"));
         auxTable.Table.Set("AddUnionProcedure", luaEngine.DoString("return function(...) end"));
         auxTable.Table.Set("ChangeBattleDamage", luaEngine.DoString("return function(...) end"));

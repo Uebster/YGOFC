@@ -209,9 +209,7 @@ public partial class GameManager
             Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: canPlacePlayerCards desativado.");
             return false;
         }
-        // Bloqueia se for uma ação para o oponente, durante o turno do jogador, e o modo dev de controle do oponente estiver desligado.
-        // A IA (que roda no turno do oponente) não será bloqueada por esta verificação.
-        // FIX: Se estiver simulando (!isSimulating), ignora essa trava para permitir que o simulador jogue pelos dois lados rapidamente.
+        
         if (!isPlayer && isPlayerTurn && !canPlaceOpponentCards && !isSimulating)
         {
             Debug.LogWarning($"[TrySummonMonster BLOCKED] {cardName}: canPlaceOpponentCards desativado durante turno do jogador.");

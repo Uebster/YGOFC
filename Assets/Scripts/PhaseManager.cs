@@ -301,9 +301,9 @@ public class PhaseManager : MonoBehaviour
                 }
                 else
                 {
-                    // No modo normal, só pode avançar E se for turno do jogador
-                    bool isMyTurn = GameManager.Instance != null && GameManager.Instance.isPlayerTurn;
-                    button.interactable = isMyTurn && ((int)phase > (int)currentPhase);
+                    // No modo normal, só pode avançar se for turno do jogador ou controle manual do oponente
+                    bool canControl = GameManager.Instance != null && (GameManager.Instance.isPlayerTurn || GameManager.Instance.canPlaceOpponentCards);
+                    button.interactable = canControl && ((int)phase > (int)currentPhase);
                 }
             }
         }

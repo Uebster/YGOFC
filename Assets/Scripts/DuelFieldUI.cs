@@ -149,16 +149,18 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
                 return;
             }
 
+            bool canOpenPhaseMenu = GameManager.Instance.isPlayerTurn || GameManager.Instance.canPlaceOpponentCards;
+
             // Clique direito no vazio -> Abre o Menu de Fases (desde que não tenha acabado de cancelar algo)
             if (GameManager.Instance != null && !GameManager.Instance.justCanceledSomething && 
-                GameManager.Instance.enableRightClickPhaseMenu && GameManager.Instance.isPlayerTurn && !GameManager.Instance.isDuelOver)
+                GameManager.Instance.enableRightClickPhaseMenu && canOpenPhaseMenu && !GameManager.Instance.isDuelOver)
             {
                 GameManager.Instance.OpenPhaseSelectionMenu();
             }
         }
         else if (eventData.button == PointerEventData.InputButton.Left)
         {
-            if (GameManager.Instance != null && !GameManager.Instance.isPlayerTurn) return; // Bloqueia no turno inimigo
+            if (GameManager.Instance != null && !GameManager.Instance.isPlayerTurn && !GameManager.Instance.canPlaceOpponentCards) return;
 
             // Clique esquerdo no campo: Tenta ataque direto se houver atacante selecionado
             if (hasAttacker)
