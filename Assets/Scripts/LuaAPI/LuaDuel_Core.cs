@@ -146,11 +146,11 @@ public partial class LuaDuel
         if (CardEffectManager.Instance != null && GameManager.Instance != null && !GameManager.Instance.isSimulating)
         {
             CardEffectManager.Instance.isWaitingForLuaYield = true;
-            CardEffectManager.Instance.yieldReturnValue = null;
+            CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(aInt); // FIX: O LUA espera receber a quantidade de dano de volta!
             CardEffectManager.Instance.StartCoroutine(WaitVisualTasksRoutine());
             return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("UI_Wait") });
         }
-        return DynValue.Nil;
+        return DynValue.NewNumber(aInt);
     }
 
     public DynValue Recover(object player, object amount, object reason)
@@ -173,11 +173,11 @@ public partial class LuaDuel
         if (CardEffectManager.Instance != null && GameManager.Instance != null && !GameManager.Instance.isSimulating)
         {
             CardEffectManager.Instance.isWaitingForLuaYield = true;
-            CardEffectManager.Instance.yieldReturnValue = null;
+            CardEffectManager.Instance.yieldReturnValue = DynValue.NewNumber(aInt); // FIX: O LUA espera receber a quantidade de cura de volta!
             CardEffectManager.Instance.StartCoroutine(WaitVisualTasksRoutine());
             return DynValue.NewYieldReq(new DynValue[] { DynValue.NewString("UI_Wait") });
         }
-        return DynValue.Nil;
+        return DynValue.NewNumber(aInt);
     }
 
     // --- STATUS BASE (Resgatados das requisições LUA) ---
@@ -282,7 +282,6 @@ public partial class LuaDuel
             
         if (CardEffectManager.Instance != null)
         {
-            CardEffectManager.Instance.yieldReturnValue = DynValue.Nil;
             CardEffectManager.Instance.isWaitingForLuaYield = false;
         }
     }

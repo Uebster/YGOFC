@@ -872,8 +872,8 @@ public class CardDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
                 forceShowFaceUp = true;
             }
 
-            // Se a carta estiver virada para baixo (isFlipped), mostra o verso, a menos que seja do jogador ou extra deck
-            bool showFaceUp = !isFlipped || forceShowFaceUp || isPlayerCard;
+            // Se a carta estiver virada para baixo (isFlipped), mostra o verso, a menos que seja do jogador, extra deck, ou Olho de Pegasus ativo!
+            bool showFaceUp = !isFlipped || forceShowFaceUp || isPlayerCard || (GameManager.Instance != null && GameManager.Instance.pegasusEye);
             GameManager.Instance.UpdateCardViewer(this, showFaceUp);
         }
 

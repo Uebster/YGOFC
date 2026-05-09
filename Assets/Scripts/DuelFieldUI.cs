@@ -188,12 +188,21 @@ public class DuelFieldUI : MonoBehaviour, IPointerClickHandler
                 if (mustAttackMonsters && !canDirectAttack)
                 {
                     if (GameManager.Instance.showInvalidDirectAttackWarning && UIManager.Instance != null) UIManager.Instance.ShowMessage("Você não pode atacar diretamente enquanto o oponente possuir monstros!");
+                    // FIX: Aborta o estado de ataque para não travar a mira permanentemente!
+                    CardEffectManager.Instance.luaDuel.currentAttacker = null;
+                    attackerLc.unityCard.SetAttackSelectionVisual(false);
+                    if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
+                    GameManager.Instance.RefreshAttackIndicators();
                     return;
                 }
                 
                 if (attackerLc != null && attackerLc.IsHasEffect(73).Type != MoonSharp.Interpreter.DataType.Nil) // EFFECT_CANNOT_DIRECT_ATTACK
                 {
                     if (UIManager.Instance != null) UIManager.Instance.ShowMessage("Este monstro não pode atacar diretamente por um efeito de carta!");
+                    CardEffectManager.Instance.luaDuel.currentAttacker = null;
+                    attackerLc.unityCard.SetAttackSelectionVisual(false);
+                    if (TargetingSwordUI.Instance != null) TargetingSwordUI.Instance.Hide();
+                    GameManager.Instance.RefreshAttackIndicators();
                     return;
                 }
 

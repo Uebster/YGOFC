@@ -176,6 +176,8 @@ public partial class GameManager : MonoBehaviour
     public string testOpponentID = ""; 
     [Tooltip("ID do personagem para substituir o deck do jogador (ex: 020_pegasus). Deixe vazio para usar o deck do save.")]
     public string testPlayerID = "";
+    [Tooltip("Olho de Pegasus: Permite ver as cartas viradas para baixo e a mão do oponente no Card Viewer.")]
+    public bool pegasusEye = false;
     [Tooltip("Força a variante do deck do oponente em testes (0 = Aleatório, 1 = Deck A, 2 = Deck B, 3 = Deck C).")]
     public int testOpponentDeckVariant = 0;
     [Tooltip("Número do Ato (1-10) para forçar o tema visual. -1 para usar o padrão.")]

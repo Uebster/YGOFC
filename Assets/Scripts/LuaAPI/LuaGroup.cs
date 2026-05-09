@@ -40,6 +40,18 @@ public partial class LuaGroup
         }
         return false; 
     }
+    
+    public bool Equal(object other)
+    {
+        if (other is LuaGroup g)
+        {
+            if (cards.Count != g.cards.Count) return false;
+            foreach (var c in cards) if (!g.cards.Contains(c)) return false;
+            return true;
+        }
+        return false;
+    }
+
     public LuaGroup Clone() { return new LuaGroup { cards = new List<LuaCard>(this.cards) }; }
     public LuaGroup Sub(LuaGroup g) { return new LuaGroup { cards = new List<LuaCard>(this.cards) }; }
     public LuaGroup Add(LuaGroup g) { return new LuaGroup { cards = new List<LuaCard>(this.cards) }; }

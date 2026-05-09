@@ -126,3 +126,22 @@ Ocasionalmente, a Konami lança cartas promocionais injogáveis como piadas ou m
 ## Fontes Oficiais de Consulta Adicionais
 * **Fast Effect Timing Chart:** Yugipedia: Fast Effect Timing
 * **Detalhes do Damage Step:** Yugipedia: Damage Step
+
+---
+
+## 8. Erratas e Mudanças Históricas de Cartas (O Desafio do Goat Format)
+Muitas cartas icônicas sofreram "Erratas" (mudanças de texto e regras oficiais) pela Konami ao longo dos anos para balancear o jogo moderno. Como nossa Engine visa a experiência Clássica/Goat Format, devemos nos atentar a restaurar os efeitos originais destas cartas.
+
+### 8.1 Ring of Destruction (Destruição Mútua)
+* **Pós-Errata (Moderna):** Só pode ser ativada no turno do oponente. Você só pode alvejar monstros **do oponente** que tenham ATK menor ou igual aos LP dele. Você toma o dano primeiro, e depois o oponente toma.
+* **Pré-Errata (A Nossa Regra/Goat):** Pode ser ativada em **qualquer** turno (Speed 2). Você pode alvejar **qualquer** monstro virado para cima (seu ou do oponente), independentemente dos LP. O dano é causado simultaneamente a ambos. Permitia criar EMPATES e "Ataques Suicidas" letais. (A engine deve usar `PLAYER_ALL` para distribuir o dano simultâneo).
+
+### 8.2 Sinister Serpent (A Reciclagem Infinita)
+* **Pós-Errata (Moderna):** Volta para a mão na Standby Phase, mas você é obrigado a bani-la no próximo turno.
+* **Pré-Errata (A Nossa Regra/Goat):** Volta para a mão na Standby Phase infinitamente, sem nenhuma penalidade ou risco de ser banida. É o escudo infinito e custo de descarte definitivo.
+
+### 8.3 Sangan / Witch of the Black Forest (O Buscador de Campo)
+* **Pós-Errata (Moderna):** Ao buscar a carta, você não pode ativar os efeitos dela (ou cartas com o mesmo nome) no mesmo turno.
+* **Pré-Errata (A Nossa Regra/Goat):** Você pode usar a carta buscada imediatamente (Ex: buscar um Exodia, ou buscar um Kuriboh e descartá-lo no mesmo turno).
+
+*(Mantenha esta seção atualizada sempre que adaptarmos um script LUA de volta para a sua glória clássica!)*

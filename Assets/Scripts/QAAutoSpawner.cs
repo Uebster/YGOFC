@@ -190,6 +190,20 @@ public class QAAutoSpawner : MonoBehaviour
             GUILayout.Label("<b>--- GOD MODE / SANDBOX ---</b>", titleStyle);
             
             GUILayout.BeginVertical(boxStyle);
+
+            bool pegasus = GameManager.Instance != null && GameManager.Instance.pegasusEye;
+            if (GUILayout.Button(pegasus ? "👁️ Olho de Pegasus: LIGADO" : "👁️ Olho de Pegasus: DESLIGADO", btnStyle))
+            {
+                if (GameManager.Instance != null) GameManager.Instance.pegasusEye = !pegasus;
+            }
+            GUILayout.Space(5);
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Comprar (Draw):", GUILayout.Width(100));
+            if (GUILayout.Button("Player", btnStyle)) { if (GameManager.Instance != null) GameManager.Instance.DrawCard(true); }
+            if (GUILayout.Button("Oponente", btnStyle)) { if (GameManager.Instance != null) GameManager.Instance.DrawOpponentCard(); }
+            GUILayout.EndHorizontal();
+
             GUILayout.BeginHorizontal();
             GUILayout.Label("Mão:", GUILayout.Width(100));
             if (GUILayout.Button("Limpar (P)", btnStyle)) ClearHand(true);

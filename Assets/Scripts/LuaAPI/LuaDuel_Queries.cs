@@ -31,12 +31,12 @@ public partial class LuaDuel
         bool checkPlayer = (use_player == 0);
         int count = 0;
 
-        if (loc == 0x04) // LOCATION_MZONE
+        if ((loc & 0x04) != 0) // LOCATION_MZONE
         {
             Transform[] zones = checkPlayer ? GameManager.Instance.duelFieldUI.playerMonsterZones : GameManager.Instance.duelFieldUI.opponentMonsterZones;
             for (int i = 0; i < zones.Length; i++) { if ((uzone & (1 << i)) != 0 && zones[i].childCount == 0) count++; }
         }
-        else if (loc == 0x08) // LOCATION_SZONE
+        if ((loc & 0x08) != 0) // LOCATION_SZONE
         {
             Transform[] zones = checkPlayer ? GameManager.Instance.duelFieldUI.playerSpellZones : GameManager.Instance.duelFieldUI.opponentSpellZones;
             for (int i = 0; i < zones.Length; i++) { if ((uzone & (1 << i)) != 0 && zones[i].childCount == 0) count++; }
@@ -612,20 +612,27 @@ public partial class LuaDuel
         LuaGroup group = new LuaGroup();
         List<LuaCard> candidates = new List<LuaCard>();
 
+        int lSelf = ConvertToInt(locSelf);
+        int lOpp = ConvertToInt(locOpp);
+        int pInt = ConvertToInt(player);
+
         if (GameManager.Instance != null && GameManager.Instance.duelFieldUI != null)
         {
-            bool isPlayer = IsPlayer(ConvertToInt(player));
+            bool isPlayer = IsPlayer(pInt);
             
             LuaCard excludedCard = excluded as LuaCard; // Simplificado para compatibilidade
-            int lSelf = ConvertToInt(locSelf);
-            int lOpp = ConvertToInt(locOpp);
             if (lSelf != 0) CollectCandidates(lSelf, isPlayer, candidates, excludedCard);
             if (lOpp != 0) CollectCandidates(lOpp, !isPlayer, candidates, excludedCard);
         }
 
         // Aplica o filtro Lua em cada carta encontrada na Unity
         foreach (var c in candidates)
-        {            
+        {   
+            // Garantia Absoluta C#: A carta DEVE pertencer à localização exigida matematicamente para evitar vazamentos!
+            int cLoc = c.GetLocation();
+            bool locMatch = (c.GetControler() == pInt) ? ((lSelf & cLoc) != 0) : ((lOpp & cLoc) != 0);
+            if (!locMatch) continue;
+                     
             // Previne que cartas que acabaram de ser usadas como custo (ex: A Feather of the Phoenix) sejam alvo de si mesmas
             if (excluded is LuaGroup exg && exg.cards.Exists(exc => exc.unityData == c.unityData)) continue;
             else if (excluded is LuaCard excCard && excCard.unityData == c.unityData) continue;
