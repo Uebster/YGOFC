@@ -62,6 +62,7 @@ public class LuaEngineCore
             Xyz = setmetatable({}, moduleMt)
             Link = setmetatable({}, moduleMt)
             Pendulum = setmetatable({}, moduleMt)
+            Spirit = setmetatable({}, moduleMt)
             
             Debug = {}
             Debug.Message = function(msg) Log(tostring(msg)) end

@@ -538,7 +538,22 @@ public partial class LuaCard
     public int GetCardTargetCount() { return 0; }
     public bool IsOriginalCodeRule(params object[] codes) { return IsCode(codes); }
     public bool IsFieldSpell() { return IsType(0x80000); }
-    public int GetLocation() { return unityCard != null && unityCard.isOnField ? (unityData.type.Contains("Spell") || unityData.type.Contains("Trap") ? 0x08 : 0x04) : 0x02; }
+    
+    public int GetLocation() 
+    { 
+        if (unityCard != null && unityCard.isOnField) return (unityData.type.Contains("Spell") || unityData.type.Contains("Trap")) ? 0x08 : 0x04;
+        if (unityCard != null && !unityCard.isOnField) return 0x02; // Hand
+        
+        if (unityData != null && GameManager.Instance != null)
+        {
+            if (GameManager.Instance.GetPlayerGraveyard().Contains(unityData) || GameManager.Instance.GetOpponentGraveyard().Contains(unityData)) return 0x10;
+            if (GameManager.Instance.GetPlayerMainDeck().Contains(unityData) || GameManager.Instance.GetOpponentMainDeck().Contains(unityData)) return 0x01;
+            if (GameManager.Instance.GetPlayerExtraDeck().Contains(unityData) || GameManager.Instance.GetOpponentExtraDeck().Contains(unityData)) return 0x40;
+            if (GameManager.Instance.GetPlayerRemoved().Contains(unityData) || GameManager.Instance.GetOpponentRemoved().Contains(unityData)) return 0x20;
+        }
+        return 0x02; // Fallback
+    }
+
     public int GetDestination() { return 0; }
     public int GetLeaveFieldDest() { return 0; }
     public LuaGroup GetColumnGroup() { return new LuaGroup(); } // [FUTURO] Importante para Link Monsters
